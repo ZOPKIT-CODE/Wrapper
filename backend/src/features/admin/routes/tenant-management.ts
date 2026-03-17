@@ -1,6 +1,25 @@
 /**
- * Admin Tenant Management Routes - Independent tenant administration
- * Provides comprehensive tenant operations without modifying existing routes
+ * Admin Tenant Management Routes
+ * Audience: platform staff (ops / SRE / super-admins) managing ANY tenant.
+ * Mounted at: /api/admin/tenants
+ *
+ * Every route accepts a `:tenantId` path parameter so staff can operate on
+ * any tenant in the system.  Requires ADMIN_TENANTS_VIEW / ADMIN_TENANTS_MANAGE
+ * permissions (not available to ordinary company users).
+ *
+ * Routes:
+ *   GET  /:tenantId/credit-debug          — raw credit ledger inspection
+ *   POST /:tenantId/clean-orphaned-credits — remove credits with no valid owner
+ *   GET  /:tenantId/details               — full tenant record
+ *   PATCH /:tenantId/status               — update active/trial/subscription status
+ *   POST /bulk/status                     — multi-tenant status snapshot
+ *   GET  /:tenantId/activity              — recent audit-log events
+ *   GET  /:tenantId/export                — full tenant data export
+ *   GET  /:tenantId/stats                 — usage statistics
+ *   GET  /:tenantId/comprehensive         — combined details + stats + activity
+ *
+ * ⚠️  For company-user self-service on their OWN tenant see
+ *     company-tenant-settings-routes.ts (mounted at /api/admin via admin.ts).
  */
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { authenticateToken, requirePermission } from '../../../middleware/auth/auth.js';

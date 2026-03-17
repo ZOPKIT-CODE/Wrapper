@@ -498,12 +498,17 @@ export async function allocateCreditsToApplication(params: {
       await sqlConn.end();
     }
 
+    // deltaAmount = credits being added in this allocation (additive, not a replacement total).
+    // Wrapper does not track per-application consumption — FA owns that via accounting_credit_usage.
+    // FA will compute: newAllocated = existing.allocatedCredits + deltaAmount
+    //                  usedCredits  = SUM(accounting_credit_usage) [FA ledger]
+    //                  available    = newAllocated - usedCredits
+    // Do NOT send usedCredits or availableCredits — they would corrupt FA's local ledger.
     const allocationEventData = {
       entityId: sourceEntityId,
       targetApplication,
-      allocatedCredits: creditAmount,
-      usedCredits: 0,
-      availableCredits: creditAmount,
+      deltaAmount: creditAmount,       // FA reads this first — explicit additive delta
+      allocatedCredits: creditAmount,  // kept for backward compat; FA prefers deltaAmount
       allocationType: 'organization',
       allocationPurpose: allocationPurpose || `Credit allocation to ${targetApplication}`,
       allocationSource: 'admin_allocation',
@@ -714,7 +719,7 @@ export async function transferCredits(params: {
     let fromEntityId: string;
 
     const [sourceEntity] = await db
-      .select()
+      .select({ entityId: entities.entityId, tenantId: entities.tenantId })
       .from(entities)
       .where(and(eq(entities.entityId, fromTenantId), eq(entities.isActive, true)))
       .limit(1);
@@ -739,7 +744,7 @@ export async function transferCredits(params: {
     }
 
     const [targetEntity] = await db
-      .select()
+      .select({ entityId: entities.entityId })
       .from(entities)
       .where(
         and(

@@ -8,7 +8,6 @@ Parent/sub-organization and location management using a unified entities model, 
 organizations/
 ├── index.ts                                  # Feature exports
 ├── routes/
-│   ├── organizations.ts                      # Organization CRUD and hierarchy
 │   ├── entities.ts                           # Unified entity endpoints
 │   ├── entity-scope.ts                       # User entity scope and responsible persons
 │   ├── locations.ts                          # Location CRUD and analytics
@@ -21,25 +20,6 @@ organizations/
 
 ## Endpoints
 
-### Organizations (`/api/organizations`)
-
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/:organizationId` | Get organization details and hierarchy info |
-| GET | `/:organizationId/sub-organizations` | List sub-organizations for a parent |
-| GET | `/:organizationId/locations` | List locations for an organization |
-| GET | `/parent/:tenantId` | Get parent organization for a tenant |
-| GET | `/hierarchy/current` | Full organization hierarchy for current tenant |
-| GET | `/hierarchy/:tenantId` | Full organization hierarchy for a tenant |
-| POST | `/parent` | Create a parent organization (one per tenant) |
-| POST | `/sub` | Create a sub-organization under a parent |
-| POST | `/bulk` | Bulk create organizations |
-| PUT | `/:organizationId` | Update organization details |
-| PUT | `/bulk` | Bulk update organizations |
-| PATCH | `/:organizationId/move` | Move organization to a new parent |
-| DELETE | `/:organizationId` | Soft-delete organization |
-| DELETE | `/bulk` | Bulk delete organizations |
-
 ### Entities (`/api/entities`)
 
 | Method | Path | Description |
@@ -47,8 +27,8 @@ organizations/
 | GET | `/hierarchy/:tenantId` | Full entity hierarchy including locations |
 | GET | `/parent/:parentEntityId` | Parent entity and all descendants (tree) |
 | GET | `/tenant/:tenantId` | Tenant entities, optional `entityType` filter |
-| POST | `/organization` | Create organization entity |
-| POST | `/location` | Create location entity under an organization |
+| POST | `/` | Create entity (organization/location/department/team) |
+| GET | `/by-kinde-id/:kindeOrgId` | Resolve tenant context by Kinde org id |
 | PUT | `/:entityId` | Update entity |
 | DELETE | `/:entityId` | Delete entity |
 
@@ -99,6 +79,6 @@ organizations/
 
 | Service | Description |
 |---------|-------------|
-| **OrganizationService** | Parent/sub-organization CRUD, hierarchy management, move, bulk create/update/delete. Ensures one parent org per tenant. Publishes `org_created` events to Amazon MQ |
+| **OrganizationService** | Legacy organization operations still used by some internal flows |
 | **LocationService** | Location CRUD in unified entities table, locations by organization or tenant, entity hierarchy with locations, validation |
 | **OrganizationAssignmentService** | Publishes organization-assignment events (created/updated/deactivated/activated/deleted) to RabbitMQ with retries, validation, enrichment, and user lookup. Supports bulk publish and rate limiting |

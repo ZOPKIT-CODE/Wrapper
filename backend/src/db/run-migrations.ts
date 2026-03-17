@@ -6,9 +6,11 @@ import path from 'node:path';
 import postgres from 'postgres';
 
 async function runMigrations(): Promise<void> {
-  const databaseUrl = process.env.DATABASE_URL;
+  // Use privileged URL for migrations when set (e.g. Supabase postgres / migration user)
+  const databaseUrl =
+    process.env.MIGRATION_DATABASE_URL ?? process.env.DB_MIGRATION_URL ?? process.env.DATABASE_URL;
   if (!databaseUrl) {
-    throw new Error('DATABASE_URL environment variable is required');
+    throw new Error('DATABASE_URL, MIGRATION_DATABASE_URL, or DB_MIGRATION_URL is required');
   }
 
   const client = postgres(databaseUrl, { max: 1 });

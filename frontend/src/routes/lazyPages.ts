@@ -33,8 +33,9 @@ export const ActivityDashboard = React.lazy(() => import('@/features/dashboard/p
 export const ApplicationPage = React.lazy(() => import('@/features/applications/pages/ApplicationPage').then(m => ({ default: m.ApplicationPage })))
 export const ApplicationDetailsPage = React.lazy(() => import('@/features/applications/pages/ApplicationDetailsPage').then(m => ({ default: m.ApplicationDetailsPage })))
 
-// Users
-export const UserManagementDashboard = React.lazy(() => import('@/features/users/components/UserManagementDashboard').then(m => ({ default: m.UserManagementDashboard })))
+// Users — direct import to avoid dynamic chunk fetch failures (ERR_CONNECTION_REFUSED)
+import { UserManagementDashboard as UserManagementDashboardComponent } from '@/features/users/components/UserManagementDashboard'
+export const UserManagementDashboard = React.lazy(() => Promise.resolve({ default: UserManagementDashboardComponent }))
 export const InviteUserPage = React.lazy(() => import('@/features/users/pages/InviteUserPage').then(m => ({ default: m.InviteUserPage })))
 export const UserDetailsPage = React.lazy(() => import('@/features/users/pages/UserDetailsPage').then(m => ({ default: m.UserDetailsPage })))
 export const UserApplicationAccessPage = React.lazy(() => import('@/features/users/pages/UserApplicationAccess'))
@@ -46,6 +47,7 @@ export const RoleBuilderPage = React.lazy(() => import('@/features/roles/pages/R
 
 // Organizations — import directly from the page file, not the barrel (avoids pulling in reactflow)
 export const OrganizationPage = React.lazy(() => import('@/features/organizations/pages/OrganizationPage'))
+export const OrganizationCreatePage = React.lazy(() => import('@/features/organizations/pages/CreateOrganizationPage'))
 
 // Permissions / Settings — import directly from page files
 export const Permissions = React.lazy(() => import('@/features/permissions/pages/Permissions'))

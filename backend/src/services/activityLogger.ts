@@ -171,11 +171,6 @@ class ActivityLogger {
     CREDIT_PURCHASE_SUCCESS: 'credit.purchase_success',
     CREDIT_PURCHASE_FAILED: 'credit.purchase_failed',
 
-    // Organization Activities
-    ORGANIZATION_VIEWED: 'organization.viewed',
-    ORGANIZATION_CREATED: 'organization.created',
-    ORGANIZATION_UPDATED: 'organization.updated',
-
     // Entity Activities
     ENTITY_VIEWED: 'entity.viewed',
     ENTITY_CREATED: 'entity.created',

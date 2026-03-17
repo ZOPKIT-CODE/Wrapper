@@ -35,6 +35,62 @@ This feature does not define any HTTP routes. It is used internally by other fea
 |---------|-------------|
 | **AmazonMQPublisher** | Single publisher for Amazon MQ: topic exchange `inter-app-events`, fanout `inter-app-broadcast`. Publishes role, user, org, credit, and org-assignment events to applications. Handles routing keys, reconnection, and status |
 
+## Event Contract: `accounting.entity.provision.requested`
+
+This event is emitted by Wrapper when an eligible organization entity is created and should be auto-provisioned in the Accounting app.
+
+- **sourceApplication:** `wrapper`
+- **targetApplication:** `accounting`
+- **eventType:** `accounting.entity.provision.requested`
+- **idempotency:** `eventData.idempotencyKey = acct-provision:<tenantId>:<entityId>`
+
+### Publish Rules
+
+Wrapper publishes this event only when all conditions are true:
+
+1. `entityType === "organization"`
+2. `subType` is one of:
+   - `subsidiary`
+   - `branch`
+   - `division`
+   - `parent`
+   - `business_unit`
+
+### Payload Schema
+
+```json
+{
+  "eventType": "accounting.entity.provision.requested",
+  "sourceApplication": "wrapper",
+  "targetApplication": "accounting",
+  "tenantId": "uuid",
+  "entityId": "uuid",
+  "eventData": {
+    "idempotencyKey": "acct-provision:<tenantId>:<entityId>",
+    "entity": {
+      "entityId": "uuid",
+      "entityCode": "string",
+      "entityName": "string",
+      "entityType": "organization",
+      "subType": "subsidiary|branch|division|parent|business_unit",
+      "parentId": "uuid|null",
+      "description": "string|null",
+      "createdAt": "ISO-8601 string",
+      "createdBy": "uuid|string|null"
+    },
+    "requestedBy": "wrapper.entity.created"
+  }
+}
+```
+
+### Consumer Requirements (Accounting)
+
+- Treat `idempotencyKey` as the primary de-duplication key.
+- Upsert by `(tenantId, entity.entityId)` or by `idempotencyKey`.
+- Validate `entity.entityType === "organization"` and supported `subType` before provisioning.
+- Resolve accounting parent linkage using `entity.parentId` if present; otherwise create as root/top-level.
+- Acknowledge the event even when already provisioned (idempotent success).
+
 ## Ports and Adapters Convention
 
 - Define messaging contracts in `ports/` (for example `ports/message-bus.ts`).

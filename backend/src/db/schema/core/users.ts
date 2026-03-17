@@ -75,18 +75,6 @@ export const userSessions = pgTable('user_sessions', {
 });
 
 // Audit logs for tracking user actions and changes
-// Manager relationships (separate table to avoid circular references)
-export const userManagerRelationships = pgTable('user_manager_relationships', {
-  relationshipId: uuid('relationship_id').primaryKey().defaultRandom(),
-  tenantId: uuid('tenant_id').references(() => tenants.tenantId).notNull(),
-  userId: uuid('user_id').references(() => tenantUsers.userId).notNull(),
-  managerId: uuid('manager_id').references(() => tenantUsers.userId).notNull(),
-  relationshipType: varchar('relationship_type', { length: 50 }).default('direct'), // 'direct', 'functional', 'dotted'
-  isActive: boolean('is_active').default(true),
-  createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow(),
-});
-
 export const auditLogs = pgTable('audit_logs', {
   logId: uuid('log_id').primaryKey().defaultRandom(),
   tenantId: uuid('tenant_id').references(() => tenants.tenantId).notNull(),

@@ -32,47 +32,9 @@ const MIGRATIONS_FOLDER = path.resolve(__dirname, '../migrations');
 // Keep a reference so teardown() can stop the container.
 let container: StartedPostgreSqlContainer;
 
-// ---------------------------------------------------------------------------
-// setup() — called once before ANY test worker starts
-// ---------------------------------------------------------------------------
-export async function setup(): Promise<void> {
-  const useExistingDb =
-    process.env.SKIP_TESTCONTAINERS === 'true' &&
-    typeof process.env.DATABASE_URL === 'string' &&
-    process.env.DATABASE_URL.length > 0;
-
-  if (useExistingDb) {
-    console.log('\n🧪  [global-setup] SKIP_TESTCONTAINERS=true — using existing DATABASE_URL');
-    console.log('ℹ️   Ensure DATABASE_URL points to a dedicated test database.');
-    process.env.TEST_DATABASE_URL = process.env.DATABASE_URL;
-    return;
-  }
-
-  console.log('\n🐳  [global-setup] Starting PostgreSQL container…');
-
-  // Use a lightweight Alpine-based image for speed.
-  // The database/user/password are arbitrary — we own the whole container.
-  container = await new PostgreSqlContainer('postgres:15-alpine')
-    .withDatabase('wrapper_test')
-    .withUsername('tester')
-    .withPassword('tester_pass')
-    // Increase shared_buffers for faster bulk-inserts during migration.
-    .withCommand(['postgres', '-c', 'shared_buffers=128MB'])
-    .start();
-
-  const connectionUrl = container.getConnectionUri();
-  console.log(`✅  [global-setup] Container ready at: ${connectionUrl}`);
-
+async function applyMigrationsAndSchemaPatches(connectionUrl: string): Promise<void> {
   // -------------------------------------------------------------------------
-  // Make the URL available to every test worker.
-  // Vitest worker processes are forked AFTER globalSetup completes, so they
-  // inherit the env vars set here.
-  // -------------------------------------------------------------------------
-  process.env.DATABASE_URL = connectionUrl;
-  process.env.TEST_DATABASE_URL = connectionUrl; // convenience alias
-
-  // -------------------------------------------------------------------------
-  // Run Drizzle migrations against the fresh container.
+  // Run Drizzle migrations against the test database.
   // We create a dedicated, short-lived connection — NOT the singleton from
   // src/db/index.ts — to avoid any module-initialization side effects.
   // -------------------------------------------------------------------------
@@ -245,6 +207,51 @@ export async function setup(): Promise<void> {
   } finally {
     await syncSql.end();
   }
+}
+
+// ---------------------------------------------------------------------------
+// setup() — called once before ANY test worker starts
+// ---------------------------------------------------------------------------
+export async function setup(): Promise<void> {
+  const useExistingDb =
+    process.env.SKIP_TESTCONTAINERS === 'true' &&
+    typeof (process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL) === 'string' &&
+    (process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL ?? '').length > 0;
+
+  if (useExistingDb) {
+    console.log('\n🧪  [global-setup] SKIP_TESTCONTAINERS=true — using existing DATABASE_URL');
+    console.log('ℹ️   Ensure DATABASE_URL points to a dedicated test database.');
+    const externalUrl = process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL;
+    process.env.DATABASE_URL = externalUrl;
+    process.env.TEST_DATABASE_URL = externalUrl;
+
+    await applyMigrationsAndSchemaPatches(externalUrl as string);
+    return;
+  }
+
+  console.log('\n🐳  [global-setup] Starting PostgreSQL container…');
+
+  // Use a lightweight Alpine-based image for speed.
+  // The database/user/password are arbitrary — we own the whole container.
+  container = await new PostgreSqlContainer('postgres:15-alpine')
+    .withDatabase('wrapper_test')
+    .withUsername('tester')
+    .withPassword('tester_pass')
+    // Increase shared_buffers for faster bulk-inserts during migration.
+    .withCommand(['postgres', '-c', 'shared_buffers=128MB'])
+    .start();
+
+  const connectionUrl = container.getConnectionUri();
+  console.log(`✅  [global-setup] Container ready at: ${connectionUrl}`);
+
+  // -------------------------------------------------------------------------
+  // Make the URL available to every test worker.
+  // Vitest worker processes are forked AFTER globalSetup completes, so they
+  // inherit the env vars set here.
+  // -------------------------------------------------------------------------
+  process.env.DATABASE_URL = connectionUrl;
+  process.env.TEST_DATABASE_URL = connectionUrl; // convenience alias
+  await applyMigrationsAndSchemaPatches(connectionUrl);
 }
 
 // ---------------------------------------------------------------------------

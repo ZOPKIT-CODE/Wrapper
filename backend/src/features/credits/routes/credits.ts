@@ -132,11 +132,16 @@ export default async function creditRoutes(
       }
 
       // Find all organization entities for this tenant
+      // Select only columns we use so the query works when legal_name (and other FA fields) are not yet migrated
       console.log('🔍 Credit API: Finding organization entities for tenant:', tenantId);
-      let organizationEntities = [];
+      let organizationEntities: { entityId: string; entityName: string; isDefault: boolean | null }[] = [];
       try {
         organizationEntities = await db
-          .select()
+          .select({
+            entityId: entities.entityId,
+            entityName: entities.entityName,
+            isDefault: entities.isDefault,
+          })
           .from(entities)
           .where(and(
             eq(entities.tenantId, tenantId),
@@ -524,7 +529,11 @@ export default async function creditRoutes(
         console.log('🔍 Finding source entity with credits for tenant:', tenantId);
 
         const organizationEntities = await db
-          .select()
+          .select({
+            entityId: entities.entityId,
+            entityName: entities.entityName,
+            isDefault: entities.isDefault,
+          })
           .from(entities)
           .where(and(
             eq(entities.tenantId, tenantId),

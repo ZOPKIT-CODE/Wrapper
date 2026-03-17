@@ -9,7 +9,7 @@ import { UserClassification } from '../FlowSelector';
 import { Building2, Globe, Users2, FileText, CheckCircle2, Briefcase, Settings2, ChevronDown, ChevronUp, DollarSign, Clock, Calendar, Info } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { autoPopulateLocalization } from '../../config/countryConfig';
-import React, { useEffect, useState, memo, useMemo, useRef } from 'react';
+import React, { useEffect, useState, memo, useMemo } from 'react';
 import { useWatch } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -65,50 +65,58 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(({ f
     return null;
   }, [selectedCountry]);
 
-  // Apply localization only when country actually changes, not on every render
-  // Use ref to track previous country and prevent unnecessary updates
+  // Ensure India is selected by default when Business Details step loads with no country set
+  useEffect(() => {
+    const current = form.getValues('businessDetails.country' as any) || form.getValues('country');
+    if (!current || current === '') {
+      form.setValue('businessDetails.country' as any, 'IN', { shouldValidate: false, shouldDirty: false });
+      form.setValue('country' as any, 'IN', { shouldValidate: false, shouldDirty: false });
+    }
+  }, [form]);
+
+  // Apply regional settings when Registration Country is selected (or when step loads with a country set)
   const previousCountryRef = React.useRef<string | null>(null);
-  
+
+  const applyRegionalSettingsFromCountry = React.useCallback(() => {
+    if (!localizationConfig) return;
+    const countryCode = selectedCountry?.toUpperCase();
+    if (!countryCode || countryCode === 'OTHER' || countryCode === '') return;
+
+    const updates: Array<{ field: any; value: any }> = [];
+    if (localizationConfig.currency) {
+      updates.push({ field: 'defaultCurrency', value: localizationConfig.currency });
+    }
+    if (localizationConfig.language) {
+      updates.push({ field: 'defaultLanguage', value: localizationConfig.language });
+    }
+    if (localizationConfig.locale) {
+      updates.push({ field: 'defaultLocale', value: localizationConfig.locale });
+    }
+    if (localizationConfig.timezone) {
+      updates.push({ field: 'defaultTimeZone', value: localizationConfig.timezone });
+    }
+    updates.forEach(({ field, value }) => {
+      form.setValue(field as any, value, {
+        shouldValidate: false,
+        shouldDirty: false,
+        shouldTouch: false,
+      });
+    });
+  }, [localizationConfig, selectedCountry, form]);
+
+  // When Registration Country is selected or changes (including initial load with default), apply regional settings
   useEffect(() => {
     if (!localizationConfig) return;
-    
     const countryCode = selectedCountry?.toUpperCase();
-    
-    // Only update if country actually changed
-    if (countryCode && countryCode !== 'OTHER' && countryCode !== '' && countryCode !== previousCountryRef.current) {
+    if (!countryCode || countryCode === 'OTHER' || countryCode === '') return;
+
+    if (countryCode !== previousCountryRef.current) {
       previousCountryRef.current = countryCode;
-      
-      // Use requestAnimationFrame to batch updates and prevent re-renders during typing
-      const rafId = requestAnimationFrame(() => {
-        // Batch all setValue calls together
-        const updates: Array<{ field: any; value: any }> = [];
-        
-        if (localizationConfig.currency) {
-          updates.push({ field: 'defaultCurrency', value: localizationConfig.currency });
-        }
-        if (localizationConfig.language) {
-          updates.push({ field: 'defaultLanguage', value: localizationConfig.language });
-        }
-        if (localizationConfig.locale) {
-          updates.push({ field: 'defaultLocale', value: localizationConfig.locale });
-        }
-        if (localizationConfig.timezone) {
-          updates.push({ field: 'defaultTimeZone', value: localizationConfig.timezone });
-        }
-        
-        // Apply all updates in a single batch
-        updates.forEach(({ field, value }) => {
-          form.setValue(field as any, value, { 
-            shouldValidate: false, 
-            shouldDirty: false, 
-            shouldTouch: false 
-          });
-        });
-      });
-      
+      const rafId = requestAnimationFrame(applyRegionalSettingsFromCountry);
+      setIsRegionalSettingsOpen(true);
       return () => cancelAnimationFrame(rafId);
     }
-  }, [localizationConfig, selectedCountry, form]);
+  }, [localizationConfig, selectedCountry, applyRegionalSettingsFromCountry]);
 
   // Enhanced "Stripe-like" Enterprise Theme Styles
   const cardClasses = "glass-card p-10 rounded-xl bg-white/60 backdrop-blur-xl border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-slate-900/5";

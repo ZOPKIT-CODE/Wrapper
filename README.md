@@ -503,7 +503,7 @@ All routes are prefixed with `/api`. Interactive documentation is available at [
 | `/api/onboarding` | Tenant onboarding flows |
 | `/api/tenants` | Tenant CRUD and settings |
 | `/api/users` | User management |
-| `/api/organizations` | Organizations and entities |
+| `/api/entities` | Unified entities (organizations, locations, departments, teams) |
 | `/api/roles` | Roles and permissions |
 | `/api/permissions` | Permission management |
 | `/api/subscriptions` | Billing, plans, and subscriptions |
@@ -511,7 +511,7 @@ All routes are prefixed with `/api`. Interactive documentation is available at [
 | `/api/notifications` | Notification management |
 | `/api/admin/*` | Admin panel endpoints |
 | `/api/webhooks` | Webhook handlers (Stripe, etc.) |
-| `/api/wrapper` | App sync for downstream apps |
+| `/api/sync` | App sync for downstream apps |
 | `/health` | Health check |
 
 ---

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
+import { useNavigate } from '@tanstack/react-router'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { PearlButton } from '@/components/ui/pearl-button'
@@ -18,7 +19,6 @@ import { useTenantApplications } from '@/hooks/useSharedQueries'
 import { Container } from '@/components/common/Page'
 import { useDashboardData } from '@/hooks/useDashboardData'
 import { useOrganizationAuth } from '@/hooks/useOrganizationAuth'
-import { useOrganizationHierarchy } from '@/hooks/useOrganizationHierarchy'
 import api from '@/lib/api'
 
 import {
@@ -251,7 +251,7 @@ export function OrganizationTreeManagement({
   getResponsiblePersonName: (userId: string) => string;
   loadResponsiblePersonNames: (entities: (Entity | Organization)[]) => Promise<void>;
 }) {
-
+  const navigate = useNavigate()
   const { data: cachedApplications = [] } = useTenantApplications(tenantId);
 
   const effectiveApplications = useMemo(() => {
@@ -271,7 +271,6 @@ export function OrganizationTreeManagement({
   const [hierarchy, setHierarchy] = useState<OrganizationHierarchy | null>(null);
   const [parentOrg, setParentOrg] = useState<Organization | null>(null);
   const [locations, setLocations] = useState<Location[]>([]);
-  const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'active' | 'inactive'>('all');
@@ -280,7 +279,6 @@ export function OrganizationTreeManagement({
   // Dialog States
   const [showCreateSub, setShowCreateSub] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
-  const [showCreateLocation, setShowCreateLocation] = useState(false);
   const [showCreditTransfer, setShowCreditTransfer] = useState(false);
   const [showAllocationDialog, setShowAllocationDialog] = useState(false);
   const [showHierarchyChart, setShowHierarchyChart] = useState(false);
@@ -289,18 +287,34 @@ export function OrganizationTreeManagement({
   const [allocating, setAllocating] = useState(false);
   
   // Loading states for CRUD operations
-  const [isCreating, setIsCreating] = useState(false);
+  const [isCreatingEntity, setIsCreatingEntity] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [isCreatingLocation, setIsCreatingLocation] = useState(false);
   const [isTransferringCredits, setIsTransferringCredits] = useState(false);
 
   // Forms
-  const [subForm, setSubForm] = useState({ name: '', description: '', responsiblePersonId: '', organizationType: 'department' });
-  const [editForm, setEditForm] = useState({ name: '', description: '', isActive: true });
-  const [locationForm, setLocationForm] = useState({
-    name: '', locationType: 'office', address: '', city: '', state: '', zipCode: '', country: '', responsiblePersonId: ''
+  const [createFormStep, setCreateFormStep] = useState(0);
+  const [managerUsers, setManagerUsers] = useState<any[]>([]);
+  const [createForm, setCreateForm] = useState({
+    entityType: 'organization' as 'organization' | 'location' | 'department' | 'team',
+    subType: 'subsidiary',
+    name: '',
+    code: '',
+    legalName: '',
+    description: '',
+    status: 'active',
+    responsiblePersonId: '',
+    country: '',
+    currency: 'USD',
+    fiscalYearEnd: '12-31',
+    taxId: '',
+    registrationNumber: '',
+    email: '',
+    phone: '',
+    website: '',
+    notes: '',
   });
+  const [editForm, setEditForm] = useState({ name: '', description: '', isActive: true });
   const [creditTransferForm, setCreditTransferForm] = useState({
     sourceEntityType: 'organization', sourceEntityId: '', destinationEntityType: 'organization', destinationEntityId: '', amount: '', transferType: 'direct', isTemporary: false, recallDeadline: '', description: ''
   });
@@ -310,21 +324,26 @@ export function OrganizationTreeManagement({
 
   const queryClient = useQueryClient();
 
-  // Manager dropdown: prefer users from tenant API, fallback to employees from dashboard
+  const COUNTRY_CURRENCY_MAP: Record<string, string> = {
+    US: 'USD', GB: 'GBP', IN: 'INR', CA: 'CAD', AU: 'AUD',
+    JP: 'JPY', CN: 'CNY', DE: 'EUR', FR: 'EUR', SG: 'SGD', CH: 'CHF',
+  };
+
   const managerUserList = useMemo(() => {
-    const fromApi = (users || []).map((u: any) => ({
+    const fromApi = (managerUsers || []).map((u: any) => ({
       userId: u.userId || u.id,
       name: u.name ?? u.email ?? '',
       email: u.email ?? ''
     }));
     if (fromApi.length > 0) return fromApi;
-    const fromEmployees = (employees || []).map((e: any) => ({
+    return (employees || []).map((e: any) => ({
       userId: e.userId || e.id,
       name: e.name ?? e.email ?? '',
       email: e.email ?? ''
     }));
-    return fromEmployees;
-  }, [users, employees]);
+  }, [managerUsers, employees]);
+
+  const currentCreateSteps = ['Basic Information', 'Location & Currency', 'Legal & Compliance', 'Contact & Additional'];
 
   const loadData = async () => {
     try {
@@ -585,24 +604,6 @@ export function OrganizationTreeManagement({
         });
       }
 
-      // Load side data (users) from tenant user API
-      const userRes = await makeRequest('/tenants/current/users');
-      if (userRes?.success) {
-        const raw = userRes.data ?? userRes.users ?? [];
-        const list = Array.isArray(raw) ? raw : [];
-        const uniqueUsers = list
-          .filter((user: any) => user && (user.userId || user.id))
-          .map((user: any) => ({
-            userId: user.userId || user.id,
-            name: user.name ?? user.email ?? '',
-            email: user.email ?? ''
-          }))
-          .filter((user: any, index: number, self: any[]) =>
-            index === self.findIndex(u => u.userId === user.userId)
-          );
-        setUsers(uniqueUsers);
-      }
-
     } catch (error: any) {
       toast.error(`Failed to load data: ${error.message}`);
     } finally {
@@ -612,72 +613,91 @@ export function OrganizationTreeManagement({
 
   useEffect(() => { loadData(); }, [tenantId]);
 
-  // When Add Sub-Organization modal opens, ensure users are fetched from API if list is empty
-  useEffect(() => {
-    if (!showCreateSub || users.length > 0) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        const userRes = await makeRequest('/tenants/current/users');
-        if (cancelled || !userRes?.success) return;
-        const raw = userRes.data ?? userRes.users ?? [];
-        const list = Array.isArray(raw) ? raw : raw?.data ?? [];
-        const normalized = list
-          .filter((user: any) => user && (user.userId || user.id))
-          .map((user: any) => ({
-            userId: user.userId || user.id,
-            name: user.name ?? user.email ?? '',
-            email: user.email ?? ''
-          }))
-          .filter((user: any, index: number, self: any[]) =>
-            index === self.findIndex(u => u.userId === user.userId)
-          );
-        if (!cancelled && normalized.length > 0) setUsers(normalized);
-      } catch (_) { /* ignore */ }
-    })();
-    return () => { cancelled = true; };
-  }, [showCreateSub]);
-
   // --- Actions ---
 
   const createIdempotencyKey = (scope: string, entityId?: string): string =>
     `${scope}:${entityId ?? 'na'}:${Date.now()}:${Math.random().toString(36).slice(2, 10)}`;
 
-  const createSubOrganization = async () => {
-    if (isCreating) return; // Prevent double submission
-    if (!subForm.name || subForm.name.trim().length < 2) return toast.error('Name too short');
+  const validateCreateStep = (step: number): string | null => {
+    if (step === 0) {
+      if (!createForm.name.trim() || createForm.name.trim().length < 2) return 'Name must be at least 2 characters';
+      if (!createForm.legalName.trim()) return 'Legal name is required';
+    }
+    if (step === 1) {
+      if (!createForm.country) return 'Country is required';
+      if (!createForm.currency) return 'Currency is required';
+    }
+    return null;
+  };
 
-    const loadingToastId = toast.loading('Creating organization...');
-    const idempotencyKey = createIdempotencyKey('create-sub-organization', selectedOrg?.entityId);
-    setIsCreating(true);
+  const handleCreateNext = () => {
+    const err = validateCreateStep(createFormStep);
+    if (err) return toast.error(err);
+    setCreateFormStep(s => Math.min(s + 1, currentCreateSteps.length - 1));
+  };
+
+  const createEntity = async () => {
+    if (isCreatingEntity) return;
+    for (let step = 0; step < currentCreateSteps.length; step += 1) {
+      const err = validateCreateStep(step);
+      if (err) {
+        setCreateFormStep(step);
+        return toast.error(err);
+      }
+    }
+
+    const loadingToastId = toast.loading(`Creating ${createForm.entityType}...`);
+    const idempotencyKey = createIdempotencyKey(`create-${createForm.entityType}`, selectedOrg?.entityId);
+    setIsCreatingEntity(true);
     try {
-      const response = await makeRequest('/entities/organization', {
+      const payload: any = {
+        entityName: createForm.name.trim(),
+        entityType: createForm.entityType,
+        subType: createForm.subType,
+        parentEntityId: selectedOrg?.entityId ?? null,
+        parentTenantId: tenantId || '',
+        responsiblePersonId: createForm.responsiblePersonId === 'none' ? null : createForm.responsiblePersonId || null,
+        description: createForm.description || undefined,
+        entityCode: createForm.code.trim() || undefined,
+        status: createForm.status,
+      };
+
+      payload.legalName = createForm.legalName.trim();
+      payload.country = createForm.country;
+      payload.currency = createForm.currency;
+      payload.fiscalYearEnd = createForm.fiscalYearEnd;
+      payload.taxId = createForm.taxId || undefined;
+      payload.registrationNumber = createForm.registrationNumber || undefined;
+      payload.email = createForm.email || undefined;
+      payload.phone = createForm.phone || undefined;
+      payload.website = createForm.website || undefined;
+      payload.notes = createForm.notes || undefined;
+
+      const response = await makeRequest('/entities', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-Application': 'crm',
           'X-Idempotency-Key': idempotencyKey
         },
-        body: JSON.stringify({
-          entityName: subForm.name.trim(), description: subForm.description, parentEntityId: selectedOrg?.entityId || null, parentTenantId: tenantId || '', responsiblePersonId: subForm.responsiblePersonId === 'none' ? null : subForm.responsiblePersonId || null, entityType: 'organization', organizationType: subForm.organizationType || 'department'
-        })
+        body: JSON.stringify(payload)
       });
+
       if (response.success) {
-        toast.success('Organization created');
+        toast.success(`${createForm.entityType} created`);
         setShowCreateSub(false);
-        // Invalidate queries and reload data immediately
-        queryClient.invalidateQueries({ queryKey: ['organizations', 'hierarchy', tenantId] });
-        queryClient.invalidateQueries({ queryKey: ['organizations', 'available'] });
+        queryClient.invalidateQueries({ queryKey: ['entities', 'hierarchy', tenantId] });
+        queryClient.invalidateQueries({ queryKey: ['entities', 'available'] });
         queryClient.invalidateQueries({ queryKey: ['entities', tenantId] });
         await loadData();
       } else {
-        toast.error(response?.message || 'Failed to create organization');
+        toast.error(response?.message || `Failed to create ${createForm.entityType}`);
       }
     } catch (error: any) {
-      toast.error(error?.message || 'Failed to create organization');
+      toast.error(error?.message || `Failed to create ${createForm.entityType}`);
     } finally {
       toast.dismiss(loadingToastId);
-      setIsCreating(false);
+      setIsCreatingEntity(false);
     }
   };
 
@@ -702,8 +722,8 @@ export function OrganizationTreeManagement({
         toast.success('Updated successfully');
         setShowEdit(false);
         // Invalidate queries and reload data immediately
-        queryClient.invalidateQueries({ queryKey: ['organizations', 'hierarchy', tenantId] });
-        queryClient.invalidateQueries({ queryKey: ['organizations', 'available'] });
+        queryClient.invalidateQueries({ queryKey: ['entities', 'hierarchy', tenantId] });
+        queryClient.invalidateQueries({ queryKey: ['entities', 'available'] });
         queryClient.invalidateQueries({ queryKey: ['entities', tenantId] });
         await loadData();
       } else {
@@ -744,8 +764,8 @@ export function OrganizationTreeManagement({
       if (response.success) {
         toast.success('Deleted');
         // Invalidate queries and reload data immediately
-        queryClient.invalidateQueries({ queryKey: ['organizations', 'hierarchy', tenantId] });
-        queryClient.invalidateQueries({ queryKey: ['organizations', 'available'] });
+        queryClient.invalidateQueries({ queryKey: ['entities', 'hierarchy', tenantId] });
+        queryClient.invalidateQueries({ queryKey: ['entities', 'available'] });
         queryClient.invalidateQueries({ queryKey: ['entities', tenantId] });
         await loadData();
       } else {
@@ -756,45 +776,6 @@ export function OrganizationTreeManagement({
     } finally {
       toast.dismiss(loadingToastId);
       setIsDeleting(false);
-    }
-  };
-
-  const createLocation = async () => {
-    if (isCreatingLocation) return; // Prevent double submission
-    if (!selectedOrg) return;
-
-    const loadingToastId = toast.loading('Creating location...');
-    const idempotencyKey = createIdempotencyKey('create-location', selectedOrg.entityId);
-    setIsCreatingLocation(true);
-    try {
-      const response = await makeRequest('/entities/location', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Application': 'crm',
-          'X-Idempotency-Key': idempotencyKey
-        },
-        body: JSON.stringify({
-          entityName: locationForm.name, entityType: 'location', locationType: locationForm.locationType,
-          address: { street: locationForm.address, city: locationForm.city, state: locationForm.state, zipCode: locationForm.zipCode, country: locationForm.country },
-          parentEntityId: selectedOrg.entityId, responsiblePersonId: locationForm.responsiblePersonId === 'none' ? null : locationForm.responsiblePersonId
-        })
-      });
-      if (response.success) {
-        toast.success('Location created');
-        setShowCreateLocation(false);
-        // Invalidate queries and reload data immediately
-        queryClient.invalidateQueries({ queryKey: ['organizations', 'hierarchy', tenantId] });
-        queryClient.invalidateQueries({ queryKey: ['entities', tenantId] });
-        await loadData();
-      } else {
-        toast.error(response?.message || 'Failed to create location');
-      }
-    } catch (error: any) {
-      toast.error(error?.message || 'Failed to create location');
-    } finally {
-      toast.dismiss(loadingToastId);
-      setIsCreatingLocation(false);
     }
   };
 
@@ -822,7 +803,7 @@ export function OrganizationTreeManagement({
         queryClient.invalidateQueries({ queryKey: ['credit'] });
         queryClient.invalidateQueries({ queryKey: ['creditStatus'] });
         queryClient.invalidateQueries({ queryKey: ['entityScope'] });
-        queryClient.invalidateQueries({ queryKey: ['organizations', 'hierarchy', tenantId] });
+        queryClient.invalidateQueries({ queryKey: ['entities', 'hierarchy', tenantId] });
         queryClient.invalidateQueries({ queryKey: ['entities', tenantId] });
         await loadData();
       } else {
@@ -881,7 +862,7 @@ export function OrganizationTreeManagement({
         queryClient.invalidateQueries({ queryKey: ['credit'] });
         queryClient.invalidateQueries({ queryKey: ['creditStatus'] });
         queryClient.invalidateQueries({ queryKey: ['entityScope'] });
-        queryClient.invalidateQueries({ queryKey: ['organizations', 'hierarchy', tenantId] });
+        queryClient.invalidateQueries({ queryKey: ['entities', 'hierarchy', tenantId] });
         queryClient.invalidateQueries({ queryKey: ['entities', tenantId] });
         await loadData();
       } else {
@@ -1096,10 +1077,30 @@ export function OrganizationTreeManagement({
           <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
             {!isLocation && (
               <>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:text-blue-600" onClick={() => { setSelectedOrg(org as Organization); setSubForm(prev => ({ ...prev, name: '' })); setShowCreateSub(true); }}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-slate-500 hover:text-blue-600"
+                  onClick={() =>
+                    navigate({
+                      to: '/dashboard/organization/create',
+                      search: { parentId: (org as Organization).entityId, parentName: (org as Organization).entityName, entityType: 'organization' as any },
+                    })
+                  }
+                >
                   <Plus className="w-4 h-4" />
                 </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:text-emerald-600" onClick={() => { setSelectedOrg(org as Organization); setLocationForm(prev => ({ ...prev, name: '' })); setShowCreateLocation(true); }}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-slate-500 hover:text-emerald-600"
+                  onClick={() =>
+                    navigate({
+                      to: '/dashboard/organization/create',
+                      search: { parentId: (org as Organization).entityId, parentName: (org as Organization).entityName, entityType: 'location' as any },
+                    })
+                  }
+                >
                   <MapPin className="w-4 h-4" />
                 </Button>
                 <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:text-amber-600" onClick={() => { setSelectedOrg(org as Organization); setShowCreditTransfer(true); }} disabled={!canTransferCredits(org as Organization)}>
@@ -1275,10 +1276,26 @@ export function OrganizationTreeManagement({
                 <CardTitle className="text-base text-blue-900 dark:text-blue-100">Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <Button className="w-full justify-start bg-blue-600 hover:bg-blue-700" onClick={() => { setSelectedOrg(parentOrg); setSubForm({ name: '', description: '', responsiblePersonId: '', organizationType: 'department' }); setShowCreateSub(true); }}>
+                <Button
+                  className="w-full justify-start bg-blue-600 hover:bg-blue-700"
+                  onClick={() =>
+                    navigate({
+                      to: '/dashboard/organization/create',
+                      search: { parentId: parentOrg.entityId, parentName: parentOrg.entityName, entityType: 'organization' as any },
+                    })
+                  }
+                >
                   <Plus className="w-4 h-4 mr-2" /> Add Sub Organization
                 </Button>
-                <Button className="w-full justify-start bg-blue-600 hover:bg-blue-700" onClick={() => { setSelectedOrg(parentOrg); setLocationForm(prev => ({ ...prev, name: '' })); setShowCreateLocation(true); }}>
+                <Button
+                  className="w-full justify-start bg-blue-600 hover:bg-blue-700"
+                  onClick={() =>
+                    navigate({
+                      to: '/dashboard/organization/create',
+                      search: { parentId: parentOrg.entityId, parentName: parentOrg.entityName, entityType: 'location' as any },
+                    })
+                  }
+                >
                   <MapPin className="w-4 h-4 mr-2" /> Add Location
                 </Button>
               </CardContent>
@@ -1314,78 +1331,6 @@ export function OrganizationTreeManagement({
       </div>
 
       {/* --- Dialogs --- */}
-
-      {/* Create Sub Org Dialog */}
-      <Dialog open={showCreateSub} onOpenChange={setShowCreateSub}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Add Sub-Organization</DialogTitle>
-            <DialogDescription>Adding to: <span className="font-semibold text-blue-600">{selectedOrg?.entityName}</span></DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-2">
-            <div className="grid gap-2">
-              <Label>Name</Label>
-              <Input
-                value={subForm.name}
-                onChange={e => setSubForm({ ...subForm, name: e.target.value })}
-                placeholder="e.g. Engineering"
-                className="focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label>Type</Label>
-              <Select value={subForm.organizationType} onValueChange={v => setSubForm({ ...subForm, organizationType: v })}>
-                <SelectTrigger className="focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {['department', 'team', 'division', 'branch'].map(t => (
-                    <SelectItem key={t} value={t} className="capitalize">{t}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid gap-2">
-              <Label>Manager (Optional)</Label>
-              <Select value={subForm.responsiblePersonId} onValueChange={v => setSubForm({ ...subForm, responsiblePersonId: v })}>
-                <SelectTrigger className="focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
-                  <SelectValue placeholder="Select User" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
-                  {managerUserList.map(u => (
-                    <SelectItem key={u.userId} value={u.userId}>{u.name || u.email}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid gap-2">
-              <Label>Description</Label>
-              <Textarea
-                value={subForm.description}
-                onChange={e => setSubForm({ ...subForm, description: e.target.value })}
-                rows={3}
-                className="focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <PearlButton variant="outline" onClick={() => setShowCreateSub(false)} disabled={isCreating}>
-              Cancel
-            </PearlButton>
-            <PearlButton onClick={createSubOrganization} disabled={!subForm.name.trim() || isCreating}>
-              {isCreating ? (
-                <>
-                  <ZopkitRoundLoader size="xs" className="mr-2" />
-                  Creating...
-                </>
-              ) : (
-                'Create'
-              )}
-            </PearlButton>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Edit Dialog */}
       <Dialog open={showEdit} onOpenChange={setShowEdit}>
@@ -1431,45 +1376,206 @@ export function OrganizationTreeManagement({
         </DialogContent>
       </Dialog>
 
-      {/* Create Location Dialog */}
-      <Dialog open={showCreateLocation} onOpenChange={setShowCreateLocation}>
-        <DialogContent className="sm:max-w-xl">
+      {/* Create Entity Dialog (Unified) */}
+      <Dialog open={showCreateSub} onOpenChange={(open) => { setShowCreateSub(open); if (!open) setCreateFormStep(0); }}>
+        <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>New Location</DialogTitle>
-            <DialogDescription>Parent: {selectedOrg?.entityName}</DialogDescription>
+            <DialogTitle>Create Entity</DialogTitle>
+            <DialogDescription>
+              {selectedOrg ? <>Adding under: <span className="font-semibold text-blue-600">{selectedOrg.entityName}</span></> : 'Create a top-level entity'}
+            </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-2">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2"><Label>Name</Label><Input value={locationForm.name} onChange={e => setLocationForm({ ...locationForm, name: e.target.value })} className="focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" /></div>
-              <div className="space-y-2"><Label>Type</Label>
-                <Select value={locationForm.locationType} onValueChange={v => setLocationForm({ ...locationForm, locationType: v })}>
-                  <SelectTrigger className="focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"><SelectValue /></SelectTrigger>
-                  <SelectContent>{['office', 'warehouse', 'retail', 'remote', 'branch'].map(t => <SelectItem key={t} value={t} className="capitalize">{t}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="space-y-2"><Label>Address</Label><Input value={locationForm.address} onChange={e => setLocationForm({ ...locationForm, address: e.target.value })} placeholder="Street Address" className="focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" /></div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2"><Label>City</Label><Input value={locationForm.city} onChange={e => setLocationForm({ ...locationForm, city: e.target.value })} className="focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" /></div>
-              <div className="space-y-2"><Label>State</Label><Input value={locationForm.state} onChange={e => setLocationForm({ ...locationForm, state: e.target.value })} className="focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" /></div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2"><Label>Zip</Label><Input value={locationForm.zipCode} onChange={e => setLocationForm({ ...locationForm, zipCode: e.target.value })} className="focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" /></div>
-              <div className="space-y-2"><Label>Country</Label><Input value={locationForm.country} onChange={e => setLocationForm({ ...locationForm, country: e.target.value })} className="focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" /></div>
-            </div>
+
+          <div className="flex items-center gap-1 py-2">
+            {currentCreateSteps.map((step, i) => (
+              <React.Fragment key={step}>
+                <div className="flex items-center gap-1.5">
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold ${i === createFormStep ? 'bg-blue-600 text-white' : i < createFormStep ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-500'}`}>{i < createFormStep ? '✓' : i + 1}</div>
+                  <span className={`text-xs hidden sm:block ${i === createFormStep ? 'text-blue-600 font-medium' : 'text-gray-400'}`}>{step}</span>
+                </div>
+                {i < currentCreateSteps.length - 1 && <div className={`flex-1 h-px ${i < createFormStep ? 'bg-green-400' : 'bg-gray-200'}`} />}
+              </React.Fragment>
+            ))}
           </div>
-          <DialogFooter>
-            <PearlButton variant="outline" onClick={() => setShowCreateLocation(false)} disabled={isCreatingLocation}>Cancel</PearlButton>
-            <PearlButton onClick={createLocation} disabled={!locationForm.name.trim() || isCreatingLocation}>
-              {isCreatingLocation ? (
-                <>
-                  <ZopkitRoundLoader size="xs" className="mr-2" />
-                  Creating...
-                </>
-              ) : (
-                'Add Location'
-              )}
-            </PearlButton>
+
+          <div className="grid gap-4 py-2 min-h-[240px]">
+            {createFormStep === 0 && (
+              <>
+                <div className="grid gap-2">
+                  <Label>Entity Type</Label>
+                  <Select
+                    value={createForm.entityType}
+                    onValueChange={(v: any) => setCreateForm(prev => ({
+                      ...prev,
+                      entityType: v,
+                      subType: v === 'location' ? 'office' : v === 'department' ? 'department' : v === 'team' ? 'team' : 'subsidiary',
+                    }))}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="organization">Organization</SelectItem>
+                      <SelectItem value="department">Department</SelectItem>
+                      <SelectItem value="team">Team</SelectItem>
+                      <SelectItem value="location">Location</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label>Name <span className="text-red-500">*</span></Label>
+                    <Input value={createForm.name} onChange={e => setCreateForm({ ...createForm, name: e.target.value })} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Entity Code</Label>
+                    <Input value={createForm.code} onChange={e => setCreateForm({ ...createForm, code: e.target.value.toUpperCase() })} />
+                  </div>
+                </div>
+
+                <div className="grid gap-2">
+                  <Label>Legal Name <span className="text-red-500">*</span></Label>
+                  <Input value={createForm.legalName} onChange={e => setCreateForm({ ...createForm, legalName: e.target.value })} />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label>Subtype</Label>
+                    <Select value={createForm.subType} onValueChange={v => setCreateForm({ ...createForm, subType: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {createForm.entityType === 'organization' && (
+                          <>
+                            <SelectItem value="parent">Parent</SelectItem>
+                            <SelectItem value="subsidiary">Subsidiary</SelectItem>
+                            <SelectItem value="branch">Branch</SelectItem>
+                            <SelectItem value="division">Division</SelectItem>
+                          </>
+                        )}
+                        {createForm.entityType === 'location' && (
+                          <>
+                            <SelectItem value="office">Office</SelectItem>
+                            <SelectItem value="warehouse">Warehouse</SelectItem>
+                            <SelectItem value="retail">Retail</SelectItem>
+                            <SelectItem value="branch">Branch</SelectItem>
+                          </>
+                        )}
+                        {createForm.entityType === 'department' && <SelectItem value="department">Department</SelectItem>}
+                        {createForm.entityType === 'team' && <SelectItem value="team">Team</SelectItem>}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Status</Label>
+                    <Select value={createForm.status} onValueChange={v => setCreateForm({ ...createForm, status: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="inactive">Inactive</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid gap-2">
+                  <Label>Manager (Optional)</Label>
+                  <Select value={createForm.responsiblePersonId} onValueChange={v => setCreateForm({ ...createForm, responsiblePersonId: v })}>
+                    <SelectTrigger><SelectValue placeholder="Select User" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
+                      {managerUserList.map(u => <SelectItem key={u.userId} value={u.userId}>{u.name || u.email}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
+
+            {createFormStep === 1 && (
+              <>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label>Country <span className="text-red-500">*</span></Label>
+                    <Select value={createForm.country} onValueChange={v => setCreateForm({ ...createForm, country: v, currency: COUNTRY_CURRENCY_MAP[v] || createForm.currency })}>
+                      <SelectTrigger><SelectValue placeholder="Select country" /></SelectTrigger>
+                      <SelectContent>
+                        {[{ code: 'US', name: 'United States' }, { code: 'GB', name: 'United Kingdom' }, { code: 'IN', name: 'India' }, { code: 'CA', name: 'Canada' }, { code: 'AU', name: 'Australia' }, { code: 'JP', name: 'Japan' }, { code: 'CN', name: 'China' }, { code: 'DE', name: 'Germany' }, { code: 'FR', name: 'France' }, { code: 'SG', name: 'Singapore' }, { code: 'CH', name: 'Switzerland' }].map(c => (
+                          <SelectItem key={c.code} value={c.code}>{c.name} ({c.code})</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Currency <span className="text-red-500">*</span></Label>
+                    <Select value={createForm.currency} onValueChange={v => setCreateForm({ ...createForm, currency: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CHF', 'CNY', 'INR', 'SGD'].map(c => (
+                          <SelectItem key={c} value={c}>{c}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid gap-2">
+                  <Label>Fiscal Year End</Label>
+                  <Select value={createForm.fiscalYearEnd} onValueChange={v => setCreateForm({ ...createForm, fiscalYearEnd: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {[{ v: '12-31', l: 'December 31 (12-31)' }, { v: '03-31', l: 'March 31 (03-31)' }, { v: '06-30', l: 'June 30 (06-30)' }, { v: '09-30', l: 'September 30 (09-30)' }].map(o => (
+                        <SelectItem key={o.v} value={o.v}>{o.l}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
+
+            {createFormStep === 2 && (
+              <>
+                <div className="grid gap-2">
+                  <Label>Tax ID</Label>
+                  <Input value={createForm.taxId} onChange={e => setCreateForm({ ...createForm, taxId: e.target.value })} placeholder="Enter tax ID (optional)" />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Registration Number</Label>
+                  <Input value={createForm.registrationNumber} onChange={e => setCreateForm({ ...createForm, registrationNumber: e.target.value })} placeholder="Enter registration number (optional)" />
+                </div>
+              </>
+            )}
+
+            {createFormStep === 3 && (
+              <>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label>Email</Label>
+                    <Input value={createForm.email} onChange={e => setCreateForm({ ...createForm, email: e.target.value })} placeholder="contact@example.com" type="email" />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Phone</Label>
+                    <Input value={createForm.phone} onChange={e => setCreateForm({ ...createForm, phone: e.target.value })} placeholder="+1 555 000 0000" />
+                  </div>
+                </div>
+                <div className="grid gap-2">
+                  <Label>Website</Label>
+                  <Input value={createForm.website} onChange={e => setCreateForm({ ...createForm, website: e.target.value })} placeholder="https://example.com" />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Description / Notes</Label>
+                  <Textarea value={createForm.description || createForm.notes} onChange={e => setCreateForm({ ...createForm, description: e.target.value, notes: e.target.value })} rows={3} />
+                </div>
+              </>
+            )}
+          </div>
+
+          <DialogFooter className="gap-2">
+            <PearlButton variant="outline" onClick={() => { setShowCreateSub(false); setCreateFormStep(0); }} disabled={isCreatingEntity}>Cancel</PearlButton>
+            {createFormStep > 0 && <PearlButton variant="outline" onClick={() => setCreateFormStep(s => s - 1)} disabled={isCreatingEntity}>Back</PearlButton>}
+            {createFormStep < currentCreateSteps.length - 1 ? (
+              <PearlButton onClick={handleCreateNext}>Next</PearlButton>
+            ) : (
+              <PearlButton onClick={createEntity} disabled={isCreatingEntity}>
+                {isCreatingEntity ? <><ZopkitRoundLoader size="xs" className="mr-2" />Creating...</> : 'Create Entity'}
+              </PearlButton>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1757,17 +1863,19 @@ export function OrganizationTreeManagement({
               onAddSubOrganization={(parentId) => {
                 const org = findOrganizationById(parentId, processedHierarchy);
                 if (org) {
-                  setSelectedOrg(org);
-                  setSubForm(prev => ({ ...prev, name: '' }));
-                  setShowCreateSub(true);
+                  navigate({
+                    to: '/dashboard/organization/create',
+                    search: { parentId: org.entityId, parentName: org.entityName, entityType: 'organization' as any },
+                  });
                 }
               }}
               onAddLocation={(parentId) => {
                 const org = findOrganizationById(parentId, processedHierarchy);
                 if (org) {
-                  setSelectedOrg(org);
-                  setLocationForm(prev => ({ ...prev, name: '' }));
-                  setShowCreateLocation(true);
+                  navigate({
+                    to: '/dashboard/organization/create',
+                    search: { parentId: org.entityId, parentName: org.entityName, entityType: 'location' as any },
+                  });
                 }
               }}
               onTransferCredits={(orgId) => {
@@ -1867,8 +1975,8 @@ export function OrganizationManagement({
         onClose={() => setShowEditResponsiblePerson(false)}
         entity={editingEntity}
         onSuccess={async () => {
-          queryClient.invalidateQueries({ queryKey: ['organizations', 'hierarchy', tenantId] });
-          queryClient.invalidateQueries({ queryKey: ['organizations', 'available'] });
+          queryClient.invalidateQueries({ queryKey: ['entities', 'hierarchy', tenantId] });
+          queryClient.invalidateQueries({ queryKey: ['entities', 'available'] });
           queryClient.invalidateQueries({ queryKey: ['entities', tenantId] });
           queryClient.invalidateQueries({ queryKey: ['entityScope'] });
           loadDashboardData();

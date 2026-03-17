@@ -5,7 +5,6 @@ import type {
   onboardingEvents,
   tenantUsers,
   userSessions,
-  userManagerRelationships,
   auditLogs,
   subscriptions,
   payments,
@@ -18,13 +17,8 @@ import type {
   webhookLogs,
   eventTracking,
   onboardingFormData,
-  usageLogs,
-  usageMetricsDaily,
-  externalApplications,
   entities,
   organizationMemberships,
-  membershipInvitations,
-  membershipHistory,
   credits,
   creditTransactions,
   creditPurchases,
@@ -32,13 +26,10 @@ import type {
   creditConfigurations,
   responsiblePersons,
   responsibilityHistory,
-  responsibilityNotifications,
   notifications,
   notificationTemplates,
-  tenantTemplateCustomizations,
   seasonalCreditCampaigns,
   seasonalCreditAllocations,
-  changeLog,
   contactSubmissions,
 } from './index.js';
 
@@ -50,7 +41,6 @@ export type OnboardingEvent = InferSelectModel<typeof onboardingEvents>;
 
 export type TenantUser = InferSelectModel<typeof tenantUsers>;
 export type UserSession = InferSelectModel<typeof userSessions>;
-export type UserManagerRelationship = InferSelectModel<typeof userManagerRelationships>;
 export type AuditLog = InferSelectModel<typeof auditLogs>;
 
 export type Subscription = InferSelectModel<typeof subscriptions>;
@@ -67,14 +57,9 @@ export type UserApplicationPermission = InferSelectModel<typeof userApplicationP
 export type WebhookLog = InferSelectModel<typeof webhookLogs>;
 export type EventTrackingRecord = InferSelectModel<typeof eventTracking>;
 export type OnboardingFormData = InferSelectModel<typeof onboardingFormData>;
-export type UsageLog = InferSelectModel<typeof usageLogs>;
-export type UsageMetricDaily = InferSelectModel<typeof usageMetricsDaily>;
-export type ExternalApplication = InferSelectModel<typeof externalApplications>;
 
 export type Entity = InferSelectModel<typeof entities>;
 export type OrganizationMembership = InferSelectModel<typeof organizationMemberships>;
-export type MembershipInvitation = InferSelectModel<typeof membershipInvitations>;
-export type MembershipHistoryRecord = InferSelectModel<typeof membershipHistory>;
 
 export type Credit = InferSelectModel<typeof credits>;
 export type CreditTransaction = InferSelectModel<typeof creditTransactions>;
@@ -84,15 +69,12 @@ export type CreditConfiguration = InferSelectModel<typeof creditConfigurations>;
 
 export type ResponsiblePerson = InferSelectModel<typeof responsiblePersons>;
 export type ResponsibilityHistoryRecord = InferSelectModel<typeof responsibilityHistory>;
-export type ResponsibilityNotification = InferSelectModel<typeof responsibilityNotifications>;
 
 export type Notification = InferSelectModel<typeof notifications>;
 export type NotificationTemplate = InferSelectModel<typeof notificationTemplates>;
-export type TenantTemplateCustomization = InferSelectModel<typeof tenantTemplateCustomizations>;
 
 export type SeasonalCreditCampaign = InferSelectModel<typeof seasonalCreditCampaigns>;
 export type SeasonalCreditAllocation = InferSelectModel<typeof seasonalCreditAllocations>;
-export type ChangeLogRecord = InferSelectModel<typeof changeLog>;
 export type ContactSubmission = InferSelectModel<typeof contactSubmissions>;
 
 // ── Insert types (passed to .insert()) ──────────────────────────────
@@ -113,13 +95,9 @@ export type NewUserRoleAssignment = InferInsertModel<typeof userRoleAssignments>
 
 export type NewApplication = InferInsertModel<typeof applications>;
 export type NewOrganizationApplication = InferInsertModel<typeof organizationApplications>;
-export type NewExternalApplication = InferInsertModel<typeof externalApplications>;
-export type NewUsageLog = InferInsertModel<typeof usageLogs>;
-export type NewUsageMetricDaily = InferInsertModel<typeof usageMetricsDaily>;
 
 export type NewEntity = InferInsertModel<typeof entities>;
 export type NewOrganizationMembership = InferInsertModel<typeof organizationMemberships>;
-export type NewMembershipInvitation = InferInsertModel<typeof membershipInvitations>;
 
 export type NewCredit = InferInsertModel<typeof credits>;
 export type NewCreditTransaction = InferInsertModel<typeof creditTransactions>;
@@ -132,5 +110,4 @@ export type NewNotificationTemplate = InferInsertModel<typeof notificationTempla
 
 export type NewSeasonalCreditCampaign = InferInsertModel<typeof seasonalCreditCampaigns>;
 export type NewSeasonalCreditAllocation = InferInsertModel<typeof seasonalCreditAllocations>;
-export type NewChangeLog = InferInsertModel<typeof changeLog>;
 export type NewContactSubmission = InferInsertModel<typeof contactSubmissions>;

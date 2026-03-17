@@ -5,8 +5,6 @@ export * from './core/permissions.js';
 export * from './core/suite-schema.js';
 export * from './core/contact-submissions.js';
 export * from './core/onboarding-form-data.js';
-export * from './core/usage.js';
-export * from './core/external-applications.js';
 
 // Billing & Credits
 export * from './billing/subscriptions.js';
@@ -24,12 +22,10 @@ export * from './organizations/responsible_persons.js';
 // Notifications
 export * from './notifications/notifications.js';
 export * from './notifications/notification-templates.js';
-export * from './notifications/tenant-template-customizations.js';
 
 // Tracking
 export * from './tracking/event-tracking.js';
 export * from './tracking/webhook-logs.js';
-export * from './tracking/change-log.js';
 
 // Platform staff (cross-tenant access control)
 export * from './platform/platform-staff.js';
@@ -48,8 +44,6 @@ import {
   // New schema imports for relationships
   entities,
   organizationMemberships,
-  membershipInvitations,
-  membershipHistory,
   credits,
   creditTransactions,
   creditPurchases,
@@ -57,7 +51,6 @@ import {
   creditConfigurations,
   responsiblePersons,
   responsibilityHistory,
-  responsibilityNotifications,
   eventTracking,
   notifications
 } from './index.js';
@@ -209,8 +202,6 @@ export const organizationMembershipsRelations = relations(organizationMembership
     fields: [organizationMemberships.entityId],
     references: [entities.entityId],
   }),
-  invitations: many(membershipInvitations),
-  history: many(membershipHistory),
 }));
 
 export const creditsRelations = relations(credits, ({ many, one }) => ({
@@ -262,5 +253,4 @@ export const responsiblePersonsRelations = relations(responsiblePersons, ({ many
     references: [tenantUsers.userId],
   }),
   history: many(responsibilityHistory),
-  notifications: many(responsibilityNotifications),
 })); 

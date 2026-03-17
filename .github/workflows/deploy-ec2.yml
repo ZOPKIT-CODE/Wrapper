@@ -46,6 +46,7 @@ jobs:
       - name: Guard committed DB migrations
         run: |
           pnpm --filter wrapper-backend run db:generate
+          pnpm --filter wrapper-backend run db:check:registry
           if [ -n "$(git status --porcelain -- backend/src/db/migrations)" ]; then
             echo "::error::Schema changes detected without committed migration files."
             echo "Run: pnpm --filter wrapper-backend run db:generate"

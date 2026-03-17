@@ -658,7 +658,7 @@ export class UnifiedOnboardingService {
             expiresAt:        app.expiresAt ? new Date(app.expiresAt).toISOString() : null,
             onboardedAt:      new Date().toISOString(),
             // Signal: "pull your data when you're ready, via POST /bootstrap"
-            bootstrapHint:    'lazy — call POST /api/wrapper/tenants/:id/bootstrap on first user login',
+            bootstrapHint:    'lazy — call POST /api/sync/tenants/:id/bootstrap on first user login',
           },
         });
         console.log(`  ✅ Published tenant.app.provisioned → ${app.appCode} (tenant: ${tenantId})`);

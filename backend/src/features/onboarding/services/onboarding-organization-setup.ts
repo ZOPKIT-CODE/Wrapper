@@ -159,7 +159,7 @@ class OnboardingOrganizationSetupService {
                     expiresAt:        appRow?.expiresAt ? new Date(appRow.expiresAt).toISOString() : null,
                     provisionReason:  'plan_upgrade',
                     // No domain data embedded — app bootstraps lazily on first login
-                    bootstrapHint:    'lazy — call POST /api/wrapper/tenants/:id/bootstrap on first user login',
+                    bootstrapHint:    'lazy — call POST /api/sync/tenants/:id/bootstrap on first user login',
                   },
                 });
                 console.log(`  ✅ Published tenant.app.provisioned → ${newAppCode} (plan_upgrade for tenant ${tenantId})`);

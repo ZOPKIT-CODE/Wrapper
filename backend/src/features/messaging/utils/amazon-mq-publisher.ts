@@ -562,7 +562,9 @@ class AmazonMQPublisher {
   }
 
   /**
-   * Publish credit allocation event
+   * Publish credit allocation event.
+   * Sends deltaAmount (additive) so consumers (e.g. FA) accumulate; do NOT send
+   * usedCredits or availableCredits — per-application consumption is owned by the consumer.
    */
   async publishCreditAllocation(targetApplication: string, tenantId: string, entityId: string, amount: number, metadata: Record<string, unknown> = {}, publishedBy = 'system'): Promise<{ success: boolean; eventId: string; routingKey: string; messageId: string }> {
     return await this.publishCreditEvent(
@@ -571,6 +573,7 @@ class AmazonMQPublisher {
       tenantId,
       {
         entityId,
+        deltaAmount: amount,
         amount,
         allocationId: (metadata as { allocationId?: string }).allocationId,
         reason: ((metadata as { reason?: string }).reason) || 'credit_allocation',

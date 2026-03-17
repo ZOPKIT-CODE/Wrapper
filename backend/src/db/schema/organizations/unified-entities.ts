@@ -41,6 +41,14 @@ export const entities = pgTable('entities', {
   currency: varchar('currency', { length: 3 }).default('USD'),
   language: varchar('language', { length: 10 }).default('en'),
 
+  // Financial Accounting / Legal & Compliance fields
+  legalName: varchar('legal_name', { length: 255 }),
+  country: varchar('country', { length: 3 }),
+  fiscalYearEnd: varchar('fiscal_year_end', { length: 10 }).default('12-31'),
+  taxId: varchar('tax_id', { length: 50 }),
+  registrationNumber: varchar('registration_number', { length: 100 }),
+  contactWebsite: varchar('contact_website', { length: 500 }),
+
   // Branding (inherited from tenant → organization → location)
   logoUrl: varchar('logo_url', { length: 500 }),
   primaryColor: varchar('primary_color', { length: 7 }),

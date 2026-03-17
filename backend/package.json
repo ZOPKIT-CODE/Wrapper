@@ -22,6 +22,8 @@
     "test:integration:watch": "vitest --config vitest.integration.config.ts",
     "db:generate": "drizzle-kit generate:pg",
     "db:migrate": "node --import tsx src/db/run-migrations.ts",
+    "db:migrate:fa-entity-fields": "node src/scripts/run-fa-entity-fields-migration.js",
+    "db:check:registry": "node --import tsx src/scripts/check-migration-registry.ts",
     "db:studio": "drizzle-kit studio",
     "db:push": "node --import tsx ./node_modules/drizzle-kit/bin.cjs push:pg --config drizzle.config.dist.ts",
     "db:introspect": "drizzle-kit introspect:pg",

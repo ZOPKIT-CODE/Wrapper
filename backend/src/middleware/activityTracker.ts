@@ -351,13 +351,13 @@ function determineActivityType(method: string, url: string, body: Record<string,
     {
       pattern: /\/api\/organizations$/,
       method: 'POST',
-      action: ACTIVITY_TYPES.ORGANIZATION_CREATED,
+      action: ACTIVITY_TYPES.ENTITY_CREATED,
       appId: null
     },
     {
       pattern: /\/api\/organizations\/(.+)$/,
       method: 'PUT',
-      action: ACTIVITY_TYPES.ORGANIZATION_UPDATED,
+      action: ACTIVITY_TYPES.ENTITY_UPDATED,
       appId: null
     },
 

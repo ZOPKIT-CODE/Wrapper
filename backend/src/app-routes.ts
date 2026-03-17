@@ -36,10 +36,11 @@ import appSyncRoutes from './features/app-sync/routes/sync-routes.js';
 import healthRoutes from './routes/health.js';
 import permissionSyncRoutes from './features/roles/routes/permission-sync.js';
 import userApplicationRoutes from './features/users/routes/user-applications.js';
-import { organizationsRoutes, locationsRoutes, entitiesRoutes } from './features/organizations/index.js';
+import { locationsRoutes, entitiesRoutes } from './features/organizations/index.js';
 import { creditsRoutes, creditExpiryRoutes } from './features/credits/index.js';
 import demoRoutes from './routes/demo.js';
 import contactRoutes from './routes/contact.js';
+import applicationsRoutes from './routes/applications.js';
 import notificationRoutes from './features/notifications/routes/notifications.js';
 import entityScopeRoutes from './features/organizations/routes/entity-scope.js';
 import platformStaffManagementRoutes from './features/admin/routes/platform-staff-management.js';
@@ -49,8 +50,6 @@ import { errorHandler } from './middleware/error-handler.js';
 import { trialRestrictionMiddleware } from './middleware/restrictions/trial-restriction.js';
 import { restrictInvitedUsers } from './middleware/restrictions/invited-user-restriction.js';
 import { trackActivity } from './middleware/activityTracker.js';
-
-import { db } from './db/index.js';
 
 export async function registerMiddleware(fastify: FastifyInstance): Promise<void> {
   fastify.addHook('onRequest', trackActivity());
@@ -92,7 +91,6 @@ export async function registerRoutes(fastify: FastifyInstance): Promise<void> {
   await fastify.register(permissionRoutes, { prefix: '/api/permissions' });
   await fastify.register(rolesRoutes, { prefix: '/api/roles' });
   await fastify.register(customRolesRoutes, { prefix: '/api/custom-roles' });
-  await fastify.register(customRolesRoutes, { prefix: '/api/api/custom-roles' });
   await fastify.register(internalRoutes, { prefix: '/api/internal' });
   await fastify.register(webhookRoutes, { prefix: '/api/webhooks' });
   await fastify.register(onboardingRoutes, { prefix: '/api/onboarding' });
@@ -117,64 +115,23 @@ export async function registerRoutes(fastify: FastifyInstance): Promise<void> {
   await fastify.register(permissionSyncRoutes, { prefix: '/api/permission-sync' });
   await fastify.register(userSyncRoutes, { prefix: '/api/user-sync' });
   await fastify.register(userApplicationRoutes, { prefix: '/api/user-applications' });
-  await fastify.register(organizationsRoutes, { prefix: '/api/organizations' });
-  await fastify.register(locationsRoutes, { prefix: '/api/locations' });
-  console.log('📋 Registering entities routes...');
+  // Canonical entity routes
   await fastify.register(entitiesRoutes, { prefix: '/api/entities' });
-  console.log('✅ Entities routes registered successfully');
+  await fastify.register(locationsRoutes, { prefix: '/api/locations' });
   await fastify.register(paymentUpgradeRoutes, { prefix: '/api/payment-upgrade' });
   await fastify.register(creditsRoutes, { prefix: '/api/credits' });
   await fastify.register(creditExpiryRoutes, { prefix: '/api/credits/expiry' });
   await fastify.register(notificationRoutes, { prefix: '/api/notifications' });
   await fastify.register(demoRoutes, { prefix: '/api/demo' });
   await fastify.register(contactRoutes, { prefix: '/api/contact' });
-  await fastify.register(appSyncRoutes, { prefix: '/api/wrapper' });
-  await fastify.register(appSyncRoutes, { prefix: '/api/api/wrapper' });
+  await fastify.register(applicationsRoutes, { prefix: '/api/applications' });
+  // Canonical external-app sync prefix
+  await fastify.register(appSyncRoutes, { prefix: '/api/sync' });
   await fastify.register(userVerificationRoutes, { prefix: '/api' });
   await fastify.register(healthRoutes, { prefix: '/api' });
   await fastify.register(entityScopeRoutes, { prefix: '/api/admin' });
-  await fastify.register(platformStaffManagementRoutes, { prefix: '/api/internal/platform-staff' });
-
-  fastify.get('/api/applications', async (request: FastifyRequest, reply: FastifyReply) => {
-    try {
-      const tenantId = (request as any).userContext?.tenantId;
-      if (!tenantId) {
-        return reply.code(401).send({ error: 'Authentication required' });
-      }
-      console.log('📱 Getting applications for tenant:', { tenantId });
-      const { applications, organizationApplications } = await import('./db/schema/core/suite-schema.js');
-      const { eq, and } = await import('drizzle-orm');
-      const userApps = await db
-        .select({
-          appId: applications.appId,
-          appCode: applications.appCode,
-          appName: applications.appName,
-          description: applications.description,
-          icon: applications.icon,
-          baseUrl: applications.baseUrl,
-          isCore: applications.isCore,
-          sortOrder: applications.sortOrder,
-          isEnabled: organizationApplications.isEnabled,
-          subscriptionTier: organizationApplications.subscriptionTier,
-          enabledModules: organizationApplications.enabledModules
-        })
-        .from(organizationApplications)
-        .innerJoin(applications, eq(organizationApplications.appId, applications.appId))
-        .where(and(
-          eq(organizationApplications.tenantId, tenantId),
-          eq(organizationApplications.isEnabled, true)
-        ))
-        .orderBy(applications.sortOrder, applications.appName);
-      return { success: true, data: userApps };
-    } catch (err: unknown) {
-      const error = err as Error;
-      console.error('❌ Failed to get applications:', error);
-      return reply.code(500).send({
-        error: 'Failed to get applications',
-        message: error.message
-      });
-    }
-  });
+  // Canonical mount for platform staff administration
+  await fastify.register(platformStaffManagementRoutes, { prefix: '/api/admin/platform-staff' });
 
   await fastify.register(invitationRoutes, { prefix: '/api/invitations' });
 }

@@ -5,10 +5,10 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import OrganizationService from '../services/organization-service.js';
 import LocationService from '../services/location-service.js';
+import EntityService from '../services/entity-service.js';
 import { EntityAdminService } from '../../../features/admin/index.js';
 import { authenticateToken } from '../../../middleware/auth/auth.js';
 import {
-  validateOrganizationCreation,
   validateOrganizationUpdate,
   sanitizeInputMiddleware
 } from '../../../middleware/validation/validation.js';
@@ -24,6 +24,41 @@ import {
 
 console.log('🚀 Loading entities.js routes file...');
 
+/**
+ * Maps raw entity from DB to FA-relevant response format.
+ * Excludes internal/credit/branding fields not needed for Financial Accounting.
+ */
+function toEntityResponse(entity: Record<string, unknown>): Record<string, unknown> {
+  return {
+    entityId: entity.entityId,
+    tenantId: entity.tenantId,
+    entityType: entity.entityType,
+    parentEntityId: entity.parentEntityId,
+    entityName: entity.entityName,
+    entityCode: entity.entityCode,
+    description: entity.description,
+    organizationType: entity.organizationType,
+    locationType: entity.locationType,
+    address: entity.address,
+    timezone: entity.timezone,
+    currency: entity.currency,
+    legalName: entity.legalName,
+    country: entity.country,
+    fiscalYearEnd: entity.fiscalYearEnd,
+    taxId: entity.taxId,
+    registrationNumber: entity.registrationNumber,
+    contactEmail: entity.contactEmail,
+    contactPhone: entity.contactPhone,
+    contactWebsite: entity.contactWebsite,
+    responsiblePersonId: entity.responsiblePersonId,
+    isActive: entity.isActive,
+    createdBy: entity.createdBy,
+    updatedBy: entity.updatedBy,
+    createdAt: entity.createdAt,
+    updatedAt: entity.updatedAt,
+  };
+}
+
 export default async function entityRoutes(
   fastify: FastifyInstance,
   _options?: Record<string, unknown>
@@ -32,35 +67,63 @@ export default async function entityRoutes(
   // Simple logging to verify routes are loaded
   console.log('🔄 Entities routes are being registered...');
 
-  // Apply authentication and data isolation to all routes except public ones
+  // Apply authentication and data isolation to all entity routes
   fastify.addHook('preHandler', async (request, reply) => {
-    // Skip authentication for public routes that don't require it
-    const publicRoutes = [
-      'GET /api/entities/hierarchy',  // Allow hierarchy viewing with fallback auth
-      'GET /api/entities/parent',     // Allow parent entity viewing with fallback auth
-      'POST /api/entities/organization', // Allow entity creation with fallback auth
-      'POST /api/entities/location',  // Allow location creation with fallback auth
-    ];
+    // First authenticate the user
+    await authenticateToken(request, reply);
 
-    const routeKey = `${request.method} ${request.url}`;
+    // Add user context for data isolation
+    await addUserAccessContext()(request, reply);
 
-    const isPublic = publicRoutes.some(route => {
-      const routeParts = route.split(' ');
-      const method = routeParts[0];
-      const path = routeParts[1];
-      return request.method === method && request.url.includes(path);
-    });
+    // Validate application access
+    await validateApplicationExists()(request, reply);
+    await enforceApplicationAccess()(request, reply);
+  });
 
-    if (!isPublic) {
-      // First authenticate the user
-      await authenticateToken(request, reply);
+  // Resolve tenant by Kinde org ID (bootstrap helper endpoint)
+  fastify.get('/by-kinde-id/:kindeOrgId', async (request: FastifyRequest, reply: FastifyReply) => {
+    const params = request.params as Record<string, string>;
+    try {
+      const kindeOrgId = params.kindeOrgId ?? '';
+      if (!kindeOrgId) {
+        return reply.code(400).send({
+          success: false,
+          message: 'kindeOrgId is required',
+        });
+      }
 
-      // Add user context for data isolation
-      await addUserAccessContext()(request, reply);
+      const { db } = await import('../../../db/index.js');
+      const { tenants } = await import('../../../db/schema/index.js');
+      const { eq } = await import('drizzle-orm');
 
-      // Validate application access
-      await validateApplicationExists()(request, reply);
-      await enforceApplicationAccess()(request, reply);
+      const [tenant] = await db
+        .select({
+          id: tenants.tenantId,
+          name: tenants.companyName,
+          kindeOrgId: tenants.kindeOrgId,
+          code: tenants.subdomain,
+        })
+        .from(tenants)
+        .where(eq(tenants.kindeOrgId, kindeOrgId))
+        .limit(1);
+
+      if (!tenant) {
+        return reply.code(404).send({
+          success: false,
+          message: 'Tenant not found',
+        });
+      }
+
+      return reply.send({
+        success: true,
+        tenant,
+      });
+    } catch (error) {
+      console.error('❌ Get tenant by kinde org id failed:', error);
+      return reply.code(500).send({
+        success: false,
+        message: 'Failed to resolve tenant by kinde org id',
+      });
     }
   });
 
@@ -457,168 +520,88 @@ export default async function entityRoutes(
     }
   });
 
-  // Create organization entity - FULL DATABASE VERSION
-  fastify.post('/organization', {
+  // Unified create entity endpoint
+  fastify.post('/', {
     preHandler: [
       authenticateToken,
       addUserAccessContext(),
-      // enforceApplicationAccess,
       sanitizeInputMiddleware()
     ]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
     try {
-      const organizationData = body as any;
+      const entityData = body as any;
+      const entityType = entityData.entityType as 'organization' | 'location' | 'department' | 'team';
 
-      console.log('📝 Create organization endpoint called with data:', organizationData);
-      console.log('👤 Request user context:', request.user);
-      console.log('🔍 Starting organization creation process...');
-
-      // Validate required fields
-      if (!organizationData.entityName || organizationData.entityName.trim().length < 2) {
+      if (!entityData.entityName || entityData.entityName.trim().length < 2) {
         return reply.code(400).send({
           success: false,
           error: 'Validation failed',
-          message: 'Organization name is required and must be at least 2 characters long'
+          message: 'Entity name is required and must be at least 2 characters long'
         });
       }
 
-      // Check if parentEntityId is provided and valid
-      let parentOrgId = organizationData.parentEntityId;
-
-      console.log('🔍 Processing parentEntityId:', parentOrgId);
-
-      // If parentEntityId is a mock value or invalid, set it to null for top-level org
-      if (!parentOrgId || parentOrgId === 'parent-123' || !parentOrgId.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
-        console.log('ℹ️ Invalid or mock parentEntityId, creating top-level organization');
-        parentOrgId = null;
+      if (!['organization', 'location', 'department', 'team'].includes(entityType)) {
+        return reply.code(400).send({
+          success: false,
+          error: 'Validation failed',
+          message: 'entityType must be one of: organization, location, department, team',
+        });
       }
 
-      console.log('📋 Final parentOrgId:', parentOrgId);
-      console.log('🏗️ Calling OrganizationService.createSubOrganization...');
+      // organization and location require the same accounting fields
+      if (entityType === 'organization' || entityType === 'location') {
+        if (!entityData.legalName || !entityData.country || !entityData.currency) {
+          return reply.code(400).send({
+            success: false,
+            error: 'Validation failed',
+            message: `${entityType} requires legalName, country, and currency`,
+          });
+        }
+      }
+      // department/team: only name required (already validated above)
 
-      const result = await OrganizationService.createSubOrganization({
-        name: organizationData.entityName.trim(),
-        description: organizationData.description || '',
-        parentOrganizationId: parentOrgId,
-        tenantId: (organizationData as any).parentTenantId ?? (request as any).user?.tenantId ?? '', // Pass tenantId for top-level orgs
-        responsiblePersonId: organizationData.responsiblePersonId || null,
-        organizationType: organizationData.organizationType || 'department'
-      }, (request as any).user?.internalUserId ?? undefined);
-
-      console.log('✅ OrganizationService.createSubOrganization completed:', result);
+      const result = await EntityService.createEntity(
+        {
+          entityName: entityData.entityName.trim(),
+          entityType,
+          subType: (entityData.subType as string) || (entityData.organizationType as string) || (entityData.locationType as string),
+          parentEntityId: (entityData.parentEntityId as string) || null,
+          parentTenantId: (entityData.parentTenantId as string) ?? (request as any).user?.tenantId ?? '',
+          responsiblePersonId: (entityData.responsiblePersonId as string) || null,
+          entityCode: (entityData.entityCode as string) || undefined,
+          description: (entityData.description as string) || '',
+          legalName: (entityData.legalName as string) || undefined,
+          status: (entityData.status as string) || 'active',
+          country: (entityData.country as string) || undefined,
+          currency: (entityData.currency as string) || undefined,
+          fiscalYearEnd: (entityData.fiscalYearEnd as string) || '12-31',
+          taxId: (entityData.taxId as string) || undefined,
+          registrationNumber: (entityData.registrationNumber as string) || undefined,
+          email: (entityData.email as string) || undefined,
+          phone: (entityData.phone as string) || undefined,
+          website: (entityData.website as string) || undefined,
+          notes: (entityData.notes as string) || undefined,
+          address: entityData.address || undefined,
+        },
+        (request as any).user?.internalUserId ?? undefined,
+      );
 
       if (result.success) {
-        // Transform to entity format for frontend compatibility
-        const transformedOrg = {
-          entityId: result.organization.entityId,
-          entityName: result.organization.entityName,
-          entityType: 'organization',
-          organizationType: result.organization.organizationType,
-          entityLevel: result.organization.entityLevel,
-          hierarchyPath: result.organization.hierarchyPath,
-          fullHierarchyPath: result.organization.fullHierarchyPath,
-          description: result.organization.description,
-          isActive: result.organization.isActive,
-          createdAt: result.organization.createdAt,
-          parentEntityId: result.organization.parentEntityId,
-          responsiblePersonId: result.organization.responsiblePersonId
-        };
-
         return reply.send({
           success: true,
-          organization: transformedOrg,
-          message: 'Organization entity created successfully'
+          entity: toEntityResponse(result.entity as Record<string, unknown>),
+          message: 'Entity created successfully'
         });
-      } else {
-        return reply.code(400).send(result);
       }
+      return reply.code(400).send(result);
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Create organization failed:', error);
+      console.error('❌ Create entity failed:', error);
       return reply.code(500).send({
         success: false,
         error: 'Creation failed',
-        message: error.message || 'Failed to create organization entity'
-      });
-    }
-  });
-
-  // Create location entity - FULL DATABASE VERSION
-  fastify.post('/location', {
-    preHandler: [
-      authenticateToken,
-      addUserAccessContext(),
-      // enforceApplicationAccess,
-      sanitizeInputMiddleware()
-    ]
-  }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
-    try {
-      const locationData = body as any;
-
-      console.log('📍 Create location endpoint called with data:', locationData);
-
-      // Validate required fields
-      if (!locationData.entityName || locationData.entityName.trim().length < 2) {
-        return reply.code(400).send({
-          success: false,
-          error: 'Validation failed',
-          message: 'Location name is required and must be at least 2 characters long'
-        });
-      }
-
-      if (!locationData.parentEntityId) {
-        return reply.code(400).send({
-          success: false,
-          error: 'Validation failed',
-          message: 'Parent organization ID is required for location creation'
-        });
-      }
-
-      const result = await LocationService.createLocation({
-        name: locationData.entityName.trim(),
-        address: locationData.address?.street || '',
-        city: locationData.address?.city || '',
-        state: locationData.address?.state || '',
-        zipCode: locationData.address?.zipCode || '',
-        country: locationData.address?.country || '',
-        organizationId: locationData.parentEntityId,
-        responsiblePersonId: locationData.responsiblePersonId || null
-      }, (request as any).user?.internalUserId ?? undefined);
-
-      if (result.success) {
-        // Transform to entity format for frontend compatibility
-        const transformedLocation = {
-          entityId: result.location.entityId,
-          entityName: result.location.entityName,
-          entityType: 'location',
-          locationType: locationData.locationType || 'office',
-          entityLevel: result.location.entityLevel,
-          hierarchyPath: result.location.hierarchyPath,
-          fullHierarchyPath: result.location.fullHierarchyPath,
-          address: result.location.address,
-          isActive: (result.location as any).isActive,
-          createdAt: (result.location as any).createdAt,
-          parentEntityId: locationData.parentEntityId,
-          responsiblePersonId: (result.location as any).responsiblePersonId
-        };
-
-        return reply.send({
-          success: true,
-          location: transformedLocation,
-          message: 'Location entity created successfully'
-        });
-      } else {
-        return reply.code(400).send(result);
-      }
-    } catch (err: unknown) {
-      const error = err as Error;
-      console.error('❌ Create location failed:', error);
-      return reply.code(500).send({
-        success: false,
-        error: 'Creation failed',
-        message: error.message || 'Failed to create location entity'
+        message: error.message || 'Failed to create entity'
       });
     }
   });

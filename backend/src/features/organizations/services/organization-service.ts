@@ -13,6 +13,7 @@ import DataIsolationService from '../../../services/data-isolation-service.js';
 import ApplicationDataIsolationService from '../../../services/application-data-isolation-service.js';
 import HierarchyManager from '../../../utils/hierarchy-manager.js';
 import { amazonMQPublisher } from '../../messaging/utils/amazon-mq-publisher.js';
+import accountingEntityProvisioningService from '../../messaging/services/accounting-entity-provisioning-service.js';
 
 export class OrganizationService {
 
@@ -74,10 +75,12 @@ export class OrganizationService {
 
     // Publish organization creation event to AWS MQ
     try {
-      await amazonMQPublisher.publishOrgEventToSuite('org_created', parentTenantId, organization[0].entityId, {
-        orgCode: organization[0].entityId,
-        orgName: organization[0].entityName,
-        orgType: 'organization',
+      await amazonMQPublisher.publishOrgEventToSuite('entity.created', parentTenantId, organization[0].entityId, {
+        entityId: organization[0].entityId,
+        entityCode: organization[0].entityCode ?? organization[0].entityId,
+        entityName: organization[0].entityName,
+        entityType: 'organization',
+        subType: 'business_unit',
         organizationType: 'business_unit',
         description: organization[0].description,
         parentId: null,
@@ -89,6 +92,24 @@ export class OrganizationService {
     } catch (streamError: unknown) {
       const e = streamError as Error;
       console.warn('⚠️ Failed to publish organization creation event:', e.message);
+    }
+
+    try {
+      await accountingEntityProvisioningService.publishProvisionRequest({
+        tenantId: parentTenantId,
+        entityId: organization[0].entityId,
+        entityType: 'organization',
+        subType: 'business_unit',
+        entityCode: organization[0].entityCode ?? organization[0].entityId,
+        entityName: organization[0].entityName,
+        parentId: null,
+        description: organization[0].description ?? null,
+        createdBy,
+        createdAt: organization[0].createdAt ?? new Date(),
+      });
+    } catch (provisionError: unknown) {
+      const e = provisionError as Error;
+      console.warn('⚠️ Failed to publish accounting provisioning request:', e.message);
     }
 
     return {
@@ -128,8 +149,8 @@ export class OrganizationService {
   /**
    * Create a sub-organization under a parent organization
    */
-  async createSubOrganization(data: Record<string, unknown> & { name: string; description?: string; gstin?: string; parentOrganizationId?: string; organizationType?: string; tenantId?: string }, createdBy: string) {
-    const { name, description, gstin, parentOrganizationId, organizationType, tenantId } = data;
+  async createSubOrganization(data: Record<string, unknown> & { name: string; description?: string; gstin?: string; parentOrganizationId?: string; organizationType?: string; tenantId?: string; entityCode?: string; legalName?: string; status?: string; country?: string; currency?: string; fiscalYearEnd?: string; taxId?: string; registrationNumber?: string; email?: string; phone?: string; website?: string; notes?: string }, createdBy: string) {
+    const { name, description, gstin, parentOrganizationId, organizationType, tenantId, entityCode, legalName, status, country, currency, fiscalYearEnd, taxId, registrationNumber, email, phone, website, notes } = data;
 
     console.log('🏗️ OrganizationService.createSubOrganization called with:', {
       name,
@@ -200,21 +221,52 @@ export class OrganizationService {
 
     // Publish organization creation event to AWS MQ
     try {
-      await amazonMQPublisher.publishOrgEventToSuite('org_created', tenantIdToUse, organization[0].entityId, {
-        orgCode: organization[0].entityId,
-        orgName: organization[0].entityName,
-        orgType: organization[0].entityType,
+      await amazonMQPublisher.publishOrgEventToSuite('entity.created', tenantIdToUse, organization[0].entityId, {
+        entityId: organization[0].entityId,
+        entityCode: entityCode ?? organization[0].entityCode ?? organization[0].entityId,
+        entityName: organization[0].entityName,
+        entityType: organization[0].entityType,
+        subType: organization[0].organizationType,
         organizationType: organization[0].organizationType,
         description: organization[0].description,
         parentId: organization[0].parentEntityId,
         entityLevel: organization[0].entityLevel,
         isActive: organization[0].isActive,
         createdBy: organization[0].createdBy,
-        createdAt: organization[0].createdAt
+        createdAt: organization[0].createdAt,
+        legalName: legalName ?? name,
+        status: status ?? 'active',
+        country: country ?? undefined,
+        currency: currency ?? 'USD',
+        fiscalYearEnd: fiscalYearEnd ?? '12-31',
+        taxId: taxId ?? undefined,
+        registrationNumber: registrationNumber ?? undefined,
+        email: email ?? undefined,
+        phone: phone ?? undefined,
+        website: website ?? undefined,
+        notes: notes ?? undefined,
       });
     } catch (streamError: unknown) {
       const e = streamError as Error;
       console.warn('⚠️ Failed to publish organization creation event:', e.message);
+    }
+
+    try {
+      await accountingEntityProvisioningService.publishProvisionRequest({
+        tenantId: tenantIdToUse,
+        entityId: organization[0].entityId,
+        entityType: organization[0].entityType,
+        subType: organization[0].organizationType ?? null,
+        entityCode: entityCode ?? organization[0].entityCode ?? organization[0].entityId,
+        entityName: organization[0].entityName,
+        parentId: organization[0].parentEntityId ?? null,
+        description: organization[0].description ?? null,
+        createdBy: organization[0].createdBy ?? createdBy,
+        createdAt: organization[0].createdAt ?? new Date(),
+      });
+    } catch (provisionError: unknown) {
+      const e = provisionError as Error;
+      console.warn('⚠️ Failed to publish accounting provisioning request:', e.message);
     }
 
     return {

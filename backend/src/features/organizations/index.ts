@@ -5,7 +5,6 @@
  */
 
 // Routes
-export { default as organizationsRoutes } from './routes/organizations.js';
 export { default as entitiesRoutes } from './routes/entities.js';
 export { default as locationsRoutes } from './routes/locations.js';
 export { default as invitationRoutes } from './routes/invitations.js';

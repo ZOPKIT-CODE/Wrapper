@@ -12,7 +12,7 @@ admin/
 │   ├── admin-org-routes.ts           # Auth context, user tenants, organization management
 │   ├── admin-promotion.ts            # System Administrator promotion workflow
 │   ├── admin-role-routes.ts          # Custom role CRUD and audit logs
-│   ├── admin-tenant-routes.ts        # Tenant info, settings, onboarding status, deletion
+│   ├── company-tenant-settings-routes.ts  # Company-user self-service: own tenant info, settings, onboarding status, deletion
 │   ├── admin-trial-routes.ts         # Trial expiry, reminders, monitoring
 │   ├── admin-user-routes.ts          # User invites, roles, org assignments
 │   ├── admin-notifications.ts        # Send/bulk-send notifications, templates, AI

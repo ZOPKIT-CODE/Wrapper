@@ -98,16 +98,13 @@ DELETE FROM payments WHERE tenant_id IN (SELECT tenant_id FROM tenants);
 -- 27. subscriptions
 DELETE FROM subscriptions WHERE tenant_id IN (SELECT tenant_id FROM tenants);
 
--- 28. tenant_template_customizations
-DELETE FROM tenant_template_customizations WHERE tenant_id IN (SELECT tenant_id FROM tenants);
-
--- 29. seasonal_credit_allocations
+-- 28. seasonal_credit_allocations
 DELETE FROM seasonal_credit_allocations WHERE tenant_id IN (SELECT tenant_id FROM tenants);
 
--- 30. onboarding_events
+-- 29. onboarding_events
 DELETE FROM onboarding_events WHERE tenant_id IN (SELECT tenant_id FROM tenants);
 
--- 31. tenants
+-- 30. tenants
 DELETE FROM tenants;
 
 COMMIT;

@@ -1,3 +1,25 @@
+/**
+ * Company Tenant Settings Routes
+ * Audience: authenticated company users managing THEIR OWN tenant.
+ *
+ * Every route here resolves the tenant from `userContext.tenantId` (the
+ * caller's session) — there is NO `:tenantId` path param.  These routes are
+ * intentionally scoped so a company user can never read or mutate another
+ * tenant's data.
+ *
+ * Mounted via admin.ts → /api/admin
+ *
+ * Routes:
+ *   GET  /tenant                          — read own tenant details
+ *   GET  /tenant/onboarding-status        — rich onboarding + trial progress
+ *   PUT  /tenant                          — update own tenant settings
+ *   DELETE /tenant/complete-deletion/:id  — full data wipe (dev/test only)
+ *   GET  /tenant/:tenantId/data-summary   — record counts per table
+ *
+ * ⚠️  For platform-staff cross-tenant operations see tenant-management.ts
+ *     (mounted at /api/admin/tenants).
+ */
+
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { db } from '../../../db/index.js';
 import { tenants, tenantUsers, subscriptions } from '../../../db/schema/index.js';
@@ -10,7 +32,7 @@ import { deleteTenantData, getTenantDataSummary } from '../../../utils/tenant-cl
 
 type ReqWithUser = FastifyRequest & { userContext?: Record<string, unknown> };
 
-export default async function adminTenantRoutes(fastify: FastifyInstance): Promise<void> {
+export default async function companyTenantSettingsRoutes(fastify: FastifyInstance): Promise<void> {
   // Get tenant information
   fastify.get('/tenant', {
     preHandler: [authenticateToken]

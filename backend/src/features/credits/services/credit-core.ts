@@ -15,7 +15,7 @@ export async function ensureCreditRecord(tenantId: string, entityType = 'organiz
     const searchEntityId = entityId || tenantId;
     const { entities } = await import('../../../db/schema/index.js');
     const [existingEntity] = await db
-      .select()
+      .select({ entityId: entities.entityId })
       .from(entities)
       .where(and(
         eq(entities.entityId, searchEntityId),
@@ -80,7 +80,7 @@ export async function findRootOrganization(tenantId: string): Promise<string | n
     if (primaryOrgMembership.length > 0) {
       const primaryEntityId = primaryOrgMembership[0].entityId;
       const [primaryOrg] = await db
-        .select()
+        .select({ entityId: entities.entityId })
         .from(entities)
         .where(and(
           eq(entities.entityId, primaryEntityId),
@@ -91,7 +91,7 @@ export async function findRootOrganization(tenantId: string): Promise<string | n
     }
 
     const [defaultOrg] = await db
-      .select()
+      .select({ entityId: entities.entityId })
       .from(entities)
       .where(and(
         eq(entities.tenantId, tenantId),
@@ -104,7 +104,7 @@ export async function findRootOrganization(tenantId: string): Promise<string | n
     if (defaultOrg) return defaultOrg.entityId;
 
     const [rootOrg] = await db
-      .select()
+      .select({ entityId: entities.entityId })
       .from(entities)
       .where(and(
         eq(entities.tenantId, tenantId),

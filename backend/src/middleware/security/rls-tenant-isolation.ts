@@ -343,13 +343,10 @@ export class RLSTenantIsolationService {
       'audit_logs',
       'user_sessions',
       'trial_events',
-      'usage_logs',
-      'usage_metrics_daily',
       'applications',
       'user_application_permissions',
       'locations',
       'organization_locations',
-      'membership_invitations',
       'payments',
       'subscriptions'
     ];
@@ -554,13 +551,10 @@ export function createAllTenantRLSPolicies() {
     'audit_logs',
     'user_sessions',
     'trial_events',
-    'usage_logs',
-    'usage_metrics_daily',
     'applications',
     'user_application_permissions',
     'locations',
     'organization_locations',
-    'membership_invitations',
     'payments',
     'subscriptions'
   ];

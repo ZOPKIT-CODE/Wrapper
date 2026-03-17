@@ -91,37 +91,3 @@ export const responsibilityHistory = pgTable('responsibility_history', {
   metadata: jsonb('metadata').default({}),
   createdAt: timestamp('created_at').defaultNow(),
 });
-
-// Responsibility notifications
-export const responsibilityNotifications = pgTable('responsibility_notifications', {
-  notificationId: uuid('notification_id').primaryKey().defaultRandom(),
-  assignmentId: uuid('assignment_id').references(() => responsiblePersons.assignmentId, { onDelete: 'cascade' }).notNull(),
-
-  // Notification Details
-  notificationType: varchar('notification_type', { length: 50 }).notNull(),
-  // 'assignment_created', 'assignment_expired', 'delegation_requested', 'emergency_alert'
-
-  title: varchar('title', { length: 255 }).notNull(),
-  message: text('message').notNull(),
-  priority: varchar('priority', { length: 20 }).default('normal'), // 'low', 'normal', 'high', 'urgent'
-
-  // Action Required
-  actionRequired: varchar('action_required', { length: 100 }),
-  actionUrl: varchar('action_url', { length: 500 }),
-  actionDeadline: timestamp('action_deadline'),
-
-  // Delivery Status
-  sentAt: timestamp('sent_at'),
-  deliveredAt: timestamp('delivered_at'),
-  readAt: timestamp('read_at'),
-  status: varchar('status', { length: 20 }).default('pending'),
-
-  // Retry Logic
-  retryCount: integer('retry_count').default(0),
-  maxRetries: integer('max_retries').default(3),
-  nextRetryAt: timestamp('next_retry_at'),
-
-  // Metadata
-  metadata: jsonb('metadata').default({}),
-  createdAt: timestamp('created_at').defaultNow(),
-});

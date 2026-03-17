@@ -17,6 +17,7 @@ export const queryKeys = {
   notifications: ['notifications'] as const,
   unreadCount: ['unreadCount'] as const,
   users: (entityId?: string | null) => ['users', entityId].filter(Boolean) as const,
+  entities: (tenantId?: string) => ['entities', tenantId].filter(Boolean) as const,
   roles: (filters?: { search?: string; type?: string }) => ['roles', filters] as const,
   subscriptionCurrent: ['subscription', 'current'] as const,
 } as const
@@ -520,6 +521,7 @@ export function useInvalidateQueries() {
     invalidateNotifications: () => queryClient.invalidateQueries({ queryKey: queryKeys.notifications }),
     invalidateUnreadCount: () => queryClient.invalidateQueries({ queryKey: queryKeys.unreadCount }),
     invalidateUsers: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
+    invalidateEntities: (tenantId?: string) => queryClient.invalidateQueries({ queryKey: queryKeys.entities(tenantId || '') }),
     invalidateRoles: () => queryClient.invalidateQueries({ queryKey: ['roles'] }),
     invalidateAll: () => queryClient.invalidateQueries(),
     prefetchAuthStatus: () => queryClient.prefetchQuery({

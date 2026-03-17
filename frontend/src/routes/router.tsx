@@ -23,7 +23,7 @@ import {
   BillingUpgradePage, Billing, SuiteDashboard, ActivityDashboard,
   ApplicationPage, ApplicationDetailsPage, UserManagementDashboard,
   InviteUserPage, UserDetailsPage, UserApplicationAccessPage,
-  RolesPage, RoleDetailsPage, RoleBuilderPage, OrganizationPage,
+  RolesPage, RoleDetailsPage, RoleBuilderPage, OrganizationPage, OrganizationCreatePage,
   Permissions, Settings, AdminDashboardPage, TenantDetailsPage,
   CampaignDetailsPage, NotFound,
 } from './lazyPages'
@@ -207,6 +207,7 @@ const dashboardUsersInviteRoute = createRoute({
 const dashboardUserDetailRoute = createRoute({ getParentRoute: () => dashboardLayoutRoute, path: '/users/$userId', component: () => <AdminRoute><UserDetailsPage /></AdminRoute> })
 const dashboardUsersRoute = createRoute({ getParentRoute: () => dashboardLayoutRoute, path: '/users', component: () => <AdminRoute><UserManagementDashboard /></AdminRoute> })
 const dashboardOrganizationRoute = createRoute({ getParentRoute: () => dashboardLayoutRoute, path: '/organization', component: () => <AdminRoute><OrganizationPage /></AdminRoute> })
+const dashboardOrganizationCreateRoute = createRoute({ getParentRoute: () => dashboardLayoutRoute, path: '/organization/create', component: () => <AdminRoute><OrganizationCreatePage /></AdminRoute> })
 const dashboardRolesNewRoute = createRoute({ getParentRoute: () => dashboardLayoutRoute, path: '/roles/new', component: () => <AdminRoute><RoleBuilderPage /></AdminRoute> })
 const dashboardRolesEditRoute = createRoute({ getParentRoute: () => dashboardLayoutRoute, path: '/roles/$roleId/edit', component: () => <AdminRoute><RoleBuilderPage /></AdminRoute> })
 const dashboardRoleDetailRoute = createRoute({ getParentRoute: () => dashboardLayoutRoute, path: '/roles/$roleId', component: () => <AdminRoute><RoleDetailsPage /></AdminRoute> })
@@ -283,6 +284,7 @@ const routeTree = rootRoute.addChildren([
     dashboardUserDetailRoute,
     dashboardUsersRoute,
     dashboardOrganizationRoute,
+    dashboardOrganizationCreateRoute,
     dashboardRolesNewRoute,
     dashboardRolesEditRoute,
     dashboardRoleDetailRoute,
