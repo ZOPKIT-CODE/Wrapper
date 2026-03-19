@@ -27,5 +27,6 @@
   "supabase_drop_credit_allocation_tables.sql",
   "delete_all_data_except_applications_modules.sql",
   "drop_unused_tables.sql",
-  "fa_entity_fields_standalone.sql"
+  "fa_entity_fields_standalone.sql",
+  "drop_log_credit_config_change_trigger.sql"
 ]
