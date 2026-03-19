@@ -1,4 +1,5 @@
 import api from '@/lib/api';
+import { filterValidRoleIds } from '@/lib/utils';
 import { User, Role, UserOrganization } from '@/types/user-management';
 
 /**
@@ -256,8 +257,9 @@ export class UserService {
    */
   static async assignRoles(userId: string, roleIds: string[]): Promise<any> {
     try {
+      const validRoleIds = filterValidRoleIds(roleIds);
       const response = await api.post(`/tenants/current/users/${userId}/assign-roles`, {
-        roleIds
+        roleIds: validRoleIds
       });
       if (!response.data.success) {
         throw new Error(response.data.message || 'Failed to assign roles');

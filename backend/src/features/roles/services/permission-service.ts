@@ -634,8 +634,8 @@ class PermissionService {
           roleId: roleId,
           assignedAt: new Date().toISOString(),
           assignedBy: assignedBy,
-          expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
-          isReassignment: true
+          expiresAt: expiresAt ? new Date(expiresAt).toISOString() : undefined,
+          entityId: (updated[0] as { organizationId?: string }).organizationId
         });
         console.log('📡 Published role reassignment event successfully');
       } catch (err: unknown) {
@@ -673,7 +673,8 @@ class PermissionService {
         roleId: roleId,
         assignedAt: new Date().toISOString(),
         assignedBy: assignedBy,
-        expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null
+        expiresAt: expiresAt ? new Date(expiresAt).toISOString() : undefined,
+        entityId: (assignment[0] as { organizationId?: string }).organizationId
       });
       console.log('📡 Published role assignment event successfully');
     } catch (err: unknown) {

@@ -370,6 +370,7 @@ export class BootstrapService {
     const rows = await tx
       .select({
         entityId:    entities.entityId,
+        entityCode:  entities.entityCode,
         entityName:  entities.entityName,
         parentId:    entities.parentEntityId,
         level:       entities.entityLevel,
@@ -383,10 +384,19 @@ export class BootstrapService {
       ))
       .orderBy(entities.entityLevel, entities.entityName);
 
+    // Build entityId -> entityCode map so we can resolve parentId (UUID) to parent's entityCode.
+    // FA needs orgCode=entityCode and parentId=parent's entityCode to reconstruct hierarchy correctly.
+    const entityIdToCode = new Map<string, string>(
+      rows
+        .filter((r: any) => r.entityId && (r.entityCode ?? r.entityId))
+        .map((r: any) => [r.entityId, (r.entityCode ?? r.entityId) as string])
+    );
+
     return rows.map((r: any) => ({
-      orgCode:  r.entityId,
+      orgCode:  (r.entityCode ?? r.entityId) as string,
       orgName:  r.entityName ?? '',
-      parentId: r.parentId  ?? null,
+      entityId: r.entityId,
+      parentId: r.parentId ? (entityIdToCode.get(r.parentId) ?? r.parentId) : null,
       level:    r.level     ?? null,
       country:  null,
       currency: r.currency  ?? null,

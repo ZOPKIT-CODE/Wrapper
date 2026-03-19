@@ -761,6 +761,7 @@ export class TenantService {
           await amazonMQPublisher.publishUserEventToSuite('user_created', invitation.tenantId, user.userId, {
             userId: user.userId,
             email: user.email,
+            kindeUserId: user.kindeUserId,
             firstName: firstName,
             lastName: lastName,
             name: user.name || `${firstName} ${lastName}`.trim(),
@@ -787,7 +788,9 @@ export class TenantService {
                   userId,
                   roleId: a.roleId,
                   assignedAt: a.assignedAt ? (typeof a.assignedAt === 'string' ? a.assignedAt : a.assignedAt.toISOString()) : new Date().toISOString(),
-                  assignedBy
+                  assignedBy,
+                  expiresAt: (a as { expiresAt?: Date | string }).expiresAt,
+                  entityId: (a as { organizationId?: string }).organizationId
                 });
               }
               console.log('📡 Published role_assigned events for invitation acceptance:', assignments.length);
@@ -1776,9 +1779,11 @@ export class TenantService {
           const nameParts = (user.name || '').split(' ');
           const firstName = nameParts[0] || '';
           const lastName = nameParts.slice(1).join(' ') || '';
-          
-          await amazonMQPublisher.publishUserEventToSuite('user_deleted', tenantId, user.userId, {
+          // Use kindeUserId as entityId — FA/CRM look up wrapper_user_id_mapping by kindeId
+          const entityIdForEvent = user.kindeUserId || user.userId;
+          await amazonMQPublisher.publishUserEventToSuite('user_deleted', tenantId, entityIdForEvent, {
             userId: user.userId,
+            kindeUserId: user.kindeUserId,
             email: user.email,
             firstName: firstName,
             lastName: lastName,
@@ -2002,7 +2007,8 @@ export class TenantService {
             roleId: roleId,
             assignedAt: newRoleAssignment.assignedAt ? (typeof newRoleAssignment.assignedAt === 'string' ? newRoleAssignment.assignedAt : newRoleAssignment.assignedAt.toISOString()) : new Date().toISOString(),
             assignedBy: null, // Will be set by caller if available
-            reason: 'Role assigned via update'
+            expiresAt: (newRoleAssignment as { expiresAt?: Date | string }).expiresAt,
+            entityId: (newRoleAssignment as { organizationId?: string }).organizationId
           });
           console.log('📡 Published role assignment event successfully');
         } catch (err: unknown) {

@@ -7,6 +7,7 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import UnifiedOnboardingService from '../services/unified-onboarding-service.js';
 import OnboardingValidationService from '../services/onboarding-validation-service.js';
+import { invalidateUserCache } from '../../../middleware/auth/auth.js';
 
 export default async function coreOnboardingRoutes(
   fastify: FastifyInstance,
@@ -356,6 +357,13 @@ export default async function coreOnboardingRoutes(
       }, request);
 
       console.log('🎉 === FRONTEND ONBOARDING COMPLETE ===');
+
+      // Invalidate user cache so the next request (e.g. auth-status, tenant) does a fresh
+      // lookup and gets the new tenant_users row with the new tenantId (dashboard access).
+      const kindeUserId = (request as FastifyRequest & { userContext?: { userId?: string } }).userContext?.userId;
+      if (kindeUserId) {
+        invalidateUserCache(kindeUserId);
+      }
 
       const res = result as { tenant: { tenantId: string; subdomain: string }; adminUser: { userId: string }; organization: { organizationId: string }; adminRole: { roleId: string }; redirectUrl?: string; creditAllocated?: number; onboardingType?: string };
       return reply.code(201).send({

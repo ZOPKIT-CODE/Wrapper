@@ -119,6 +119,8 @@ export function useTenant(tenantId?: string) {
 }
 
 // Shared tenant applications hook with caching
+// Uses /api/applications which works for all authenticated users (including invited users).
+// The admin tenant-apps endpoint requires platform permission and blocks invited users.
 export function useTenantApplications(tenantId?: string) {
   const { isAuthenticated, user } = useKindeAuth()
   const { data: authData } = useAuthStatus()
@@ -132,11 +134,13 @@ export function useTenantApplications(tenantId?: string) {
         throw new Error('Tenant ID is required')
       }
       
-      const response = await api.get(`/admin/application-assignments/tenant-apps/${effectiveTenantId}`)
+      // /api/applications returns tenant's enabled apps for any authenticated user
+      const response = await api.get('/applications')
       
       if (response.data?.success) {
-        const apps = response.data.data?.applications || response.data.applications || []
-        return apps
+        // /api/applications returns { success, data: [...] }; tenant-apps returns { success, data: { applications: [...] } }
+        const apps = response.data.data?.applications ?? response.data.data ?? response.data.applications ?? []
+        return Array.isArray(apps) ? apps : []
       }
       
       throw new Error('Failed to fetch tenant applications')

@@ -139,7 +139,7 @@ export function ApplicationModuleRoleBuilder({
         setLoading(true);
         setError(null);
 
-        const response = await api.get('/api/custom-roles/builder-options');
+        const response = await api.get('/custom-roles/builder-options');
 
         if (response.data.success) {
           const { applications: apps, totalApps, totalModules, totalPermissions } = response.data.data;
@@ -472,7 +472,7 @@ export function ApplicationModuleRoleBuilder({
         }
 
       } else {
-        const response = await api.post('/api/custom-roles/create-from-builder', {
+        const response = await api.post('/custom-roles/create-from-builder', {
           roleName: roleData.roleName,
           description: roleData.description,
           selectedApps: roleData.selectedApps,

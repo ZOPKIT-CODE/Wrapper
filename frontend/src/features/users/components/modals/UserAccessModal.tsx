@@ -15,6 +15,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { useRoles } from '@/hooks/useSharedQueries';
 import { useOrganizationHierarchy } from '@/hooks/useOrganizationHierarchy';
+import { filterValidRoleIds } from '@/lib/utils';
 import { useOrganizationAuth } from '@/hooks/useOrganizationAuth';
 import { User as UserType } from '@/types/user-management';
 import api, { invitationAPI } from '@/lib/api';
@@ -192,7 +193,7 @@ export const UserAccessContent: React.FC<UserAccessContentProps> = ({ user }) =>
     if (!localUser) return;
     setAssigning(true);
     try {
-      const currentRoleIds = localUser.roles?.map(r => r.roleId) || [];
+      const currentRoleIds = filterValidRoleIds(localUser.roles?.map(r => r.roleId) || []);
       if (currentRoleIds.includes(roleId)) {
         toast.error('User already has this role');
         setConfirmationModal(null);
@@ -296,9 +297,13 @@ export const UserAccessContent: React.FC<UserAccessContentProps> = ({ user }) =>
     }
   };
 
-  // Assigned roles: support both roleId (UUID) and roleName (some APIs return name in roleId)
+  // Assigned roles: only consider valid UUIDs (exclude display strings like "No role assigned")
   const userRoleIds = useMemo(
-    () => new Set(localUser?.roles?.map(r => r.roleId || (r as any).id).filter(Boolean) || []),
+    () => new Set(filterValidRoleIds(localUser?.roles?.map(r => r.roleId || (r as any).id) || [])),
+    [localUser]
+  );
+  const displayRoles = useMemo(
+    () => (localUser?.roles || []).filter(r => filterValidRoleIds([r.roleId]).length > 0),
     [localUser]
   );
   const userAssignedRoleNames = useMemo(
@@ -487,20 +492,20 @@ export const UserAccessContent: React.FC<UserAccessContentProps> = ({ user }) =>
             {/* Summary */}
             <div className="px-3 py-2 rounded-lg bg-muted/50 border border-border/40">
               <p className="text-xs font-medium text-foreground/80">
-                <span className="text-emerald-600 dark:text-emerald-400">{localUser.roles?.length ?? 0} assigned</span>
+                <span className="text-emerald-600 dark:text-emerald-400">{displayRoles.length} assigned</span>
                 <span className="text-muted-foreground mx-1.5">·</span>
                 <span className="text-muted-foreground">{availableRoles.length} not assigned</span>
               </p>
             </div>
 
-            {/* Assigned to this user */}
+            {/* Assigned to this user - only show roles with valid UUIDs */}
             <div className="space-y-3">
               <Label className="text-xs font-medium text-muted-foreground/70 uppercase tracking-wider">
-                Assigned to this user ({localUser.roles?.length ?? 0})
+                Assigned to this user ({displayRoles.length})
               </Label>
-              {localUser.roles && localUser.roles.length > 0 ? (
+              {displayRoles.length > 0 ? (
                 <div className="space-y-2">
-                  {localUser.roles.map(role => (
+                  {displayRoles.map(role => (
                     <div
                       key={role.roleId}
                       className="group flex items-center justify-between p-3 bg-background rounded-xl border-2 border-emerald-200/60 dark:border-emerald-800/40 shadow-sm hover:shadow-md transition-all"

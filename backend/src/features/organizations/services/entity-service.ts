@@ -44,11 +44,13 @@ class EntityService {
 
     let tenantIdToUse = data.parentTenantId ?? '';
     let parentEntityId: string | null = data.parentEntityId ?? null;
+    let parentEntityCode: string | null = null;
 
     if (parentEntityId) {
       const [parent] = await db
         .select({
           entityId: entities.entityId,
+          entityCode: entities.entityCode,
           tenantId: entities.tenantId,
         })
         .from(entities)
@@ -60,6 +62,7 @@ class EntityService {
       }
       tenantIdToUse = parent.tenantId;
       parentEntityId = parent.entityId;
+      parentEntityCode = parent.entityCode ?? null;
     }
 
     if (!tenantIdToUse) {
@@ -127,6 +130,8 @@ class EntityService {
           phone: data.phone ?? null,
           website: data.website ?? null,
           parentId: parentEntityId,
+          parentEntityCode: parentEntityCode,
+          parentOrgCode: parentEntityCode,
           status: data.status ?? 'active',
           isActive: entity.isActive,
           description: data.description ?? null,

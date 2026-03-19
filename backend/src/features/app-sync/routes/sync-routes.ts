@@ -332,31 +332,60 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
         conditions.push(eq(entities.isActive, true));
       }
 
-      const organizations = await db
+      // Use entityCode as orgCode and resolve parentId to parent's entityCode so FA can
+      // reconstruct the same hierarchy. Include entityId for FA's entity_id FK.
+      const rawOrgs = await db
         .select({
-          orgCode: entities.entityId,
-          orgName: entities.entityName,
-          parentId: entities.parentEntityId,
-          status: sql`CASE WHEN ${entities.isActive} THEN 'active' ELSE 'inactive' END`,
-          hierarchy: sql`json_build_object(
-            'level', ${entities.entityLevel},
-            'path', ${entities.hierarchyPath},
-            'children', '[]'::jsonb
-          )`,
-          metadata: sql`json_build_object(
-            'description', ${entities.description},
-            'type', ${entities.entityType},
-            'createdAt', ${entities.createdAt},
-            'updatedAt', ${entities.updatedAt}
-          )`,
+          entityId: entities.entityId,
+          entityCode: entities.entityCode,
+          entityName: entities.entityName,
+          parentEntityId: entities.parentEntityId,
+          entityLevel: entities.entityLevel,
+          isActive: entities.isActive,
+          description: entities.description,
+          entityType: entities.entityType,
           createdAt: entities.createdAt,
-          updatedAt: entities.updatedAt
+          updatedAt: entities.updatedAt,
         })
         .from(entities)
         .where(and(...conditions))
         .orderBy(entities.entityLevel, entities.entityName)
         .limit(limit)
         .offset(offset);
+
+      // Resolve parent UUID to parent's entityCode for hierarchy reconstruction
+      const parentIds = [...new Set(rawOrgs.map((r: any) => r.parentEntityId).filter(Boolean))];
+      const parentCodeMap = new Map<string, string>();
+      if (parentIds.length > 0) {
+        const parents = await db
+          .select({ entityId: entities.entityId, entityCode: entities.entityCode })
+          .from(entities)
+          .where(and(eq(entities.tenantId, tenantId), inArray(entities.entityId, parentIds)));
+        for (const p of parents) {
+          parentCodeMap.set(p.entityId, (p.entityCode ?? p.entityId) as string);
+        }
+      }
+
+      const organizations = rawOrgs.map((r: any) => ({
+        orgCode: (r.entityCode ?? r.entityId) as string,
+        entityId: r.entityId,
+        orgName: r.entityName ?? '',
+        parentId: r.parentEntityId ? (parentCodeMap.get(r.parentEntityId) ?? r.parentEntityId) : null,
+        status: r.isActive ? 'active' : 'inactive',
+        hierarchy: {
+          level: r.entityLevel ?? 0,
+          path: null,
+          children: [],
+        },
+        metadata: {
+          description: r.description ?? null,
+          type: r.entityType ?? null,
+          createdAt: r.createdAt ?? null,
+          updatedAt: r.updatedAt ?? null,
+        },
+        createdAt: r.createdAt,
+        updatedAt: r.updatedAt,
+      }));
 
       // Get total count
       const countResult = await db

@@ -136,6 +136,19 @@ export function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
+/** UUID v4 regex - matches standard UUID format */
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Check if a string is a valid UUID */
+export function isValidUUID(str: string | null | undefined): boolean {
+  return typeof str === 'string' && str.trim() !== '' && UUID_REGEX.test(str.trim());
+}
+
+/** Filter an array of role IDs to only include valid UUIDs (excludes display strings like "No role assigned") */
+export function filterValidRoleIds(roleIds: (string | null | undefined)[]): string[] {
+  return roleIds.filter((id): id is string => isValidUUID(id));
+}
+
 // Get initials from name
 export function getInitials(name: string): string {
   return name

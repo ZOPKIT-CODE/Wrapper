@@ -79,7 +79,7 @@ async function deleteTenantData(tenantId) {
   };
 
   try {
-    // Verify tenant exists first
+    // Check if tenant row exists (optional - we still cleanup child data if missing)
     const [tenant] = await systemDbConnection
       .select({ tenantId: tenants.tenantId, companyName: tenants.companyName })
       .from(tenants)
@@ -87,10 +87,10 @@ async function deleteTenantData(tenantId) {
       .limit(1);
 
     if (!tenant) {
-      throw new Error(`Tenant ${tenantId} not found`);
+      console.log(`⚠️  Tenant row not found; cleaning up any remaining child data for ${tenantId}...\n`);
+    } else {
+      console.log(`✅ Found tenant: ${tenant.companyName}`);
     }
-
-    console.log(`✅ Found tenant: ${tenant.companyName}`);
     console.log(`📋 Starting deletion process...\n`);
 
     // Use transaction to ensure atomicity
@@ -505,10 +505,6 @@ async function deleteTenantData(tenantId) {
         .returning({ id: tenants.tenantId });
       deletionResults.deletedRecords.tenants = tenantResult.length;
       console.log(`   ✅ Deleted ${tenantResult.length} tenant record`);
-
-      if (tenantResult.length === 0) {
-        throw new Error(`Tenant ${tenantId} not found`);
-      }
     });
 
     deletionResults.success = true;

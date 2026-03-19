@@ -1319,6 +1319,12 @@ export default async function tenantRoutes(
         return reply.code(400).send({ error: 'roleIds must be an array' });
       }
 
+      // Filter out invalid role IDs (e.g. display strings like "No role assigned" that are not UUIDs)
+      const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const validRoleIds = (roleIds as string[]).filter(
+        (id): id is string => typeof id === 'string' && UUID_REGEX.test(id.trim())
+      );
+
       // Verify user exists in this tenant
       const [user] = await db
         .select()
@@ -1334,18 +1340,18 @@ export default async function tenantRoutes(
       }
 
       // Verify all roles exist and belong to this tenant
-      if (Array.isArray(roleIds) && roleIds.length > 0) {
+      if (validRoleIds.length > 0) {
         const roles = await db
           .select()
           .from(customRoles)
           .where(and(
             eq(customRoles.tenantId, tenantId ?? ''),
-            inArray(customRoles.roleId, roleIds as string[])
+            inArray(customRoles.roleId, validRoleIds)
           ));
 
-        if (roles.length !== roleIds.length) {
+        if (roles.length !== validRoleIds.length) {
           const foundRoleIds = roles.map(r => r.roleId);
-          const missingRoleIds = roleIds.filter(id => !foundRoleIds.includes(id));
+          const missingRoleIds = validRoleIds.filter(id => !foundRoleIds.includes(id));
           console.log(`❌ Missing roles: ${missingRoleIds.join(', ')}`);
           return reply.code(400).send({ 
             error: 'One or more roles not found',
@@ -1373,9 +1379,9 @@ export default async function tenantRoutes(
 
         // Add new role assignments
         let insertedAssignments: Array<{ id?: string; roleId: string; assignedAt?: Date; assignedBy?: string | null }> = [];
-        if (Array.isArray(roleIds) && roleIds.length > 0) {
-          console.log(`➕ Adding ${roleIds.length} new role assignments for user ${userId}`);
-          const assignments = (roleIds as string[]).map(roleId => ({
+        if (validRoleIds.length > 0) {
+          console.log(`➕ Adding ${validRoleIds.length} new role assignments for user ${userId}`);
+          const assignments = validRoleIds.map(roleId => ({
             userId,
             roleId,
             assignedBy: request.userContext?.internalUserId ?? '',
@@ -1397,7 +1403,7 @@ export default async function tenantRoutes(
       // Publish role unassignment events for removed roles
       const removedRoleIds = existingAssignments
         .map(a => a.roleId)
-        .filter(roleId => !roleIds.includes(roleId));
+        .filter(roleId => !validRoleIds.includes(roleId));
       
       if (removedRoleIds.length > 0) {
         try {
@@ -1426,7 +1432,7 @@ export default async function tenantRoutes(
       }
 
       // Publish role assignment events for new roles
-      const newRoleIds = roleIds.filter(roleId => 
+      const newRoleIds = validRoleIds.filter(roleId => 
         !existingAssignments.some(a => a.roleId === roleId)
       );
       
@@ -1441,7 +1447,9 @@ export default async function tenantRoutes(
                 userId: userId,
                 roleId: assignment.roleId,
                 assignedAt: assignment.assignedAt ? (typeof assignment.assignedAt === 'string' ? assignment.assignedAt : (assignment.assignedAt as Date).toISOString()) : new Date().toISOString(),
-                assignedBy: (assignment.assignedBy ?? request.userContext?.internalUserId) ?? ''
+                assignedBy: (assignment.assignedBy ?? request.userContext?.internalUserId) ?? '',
+                expiresAt: (assignment as { expiresAt?: Date | string }).expiresAt,
+                entityId: (assignment as { organizationId?: string }).organizationId
               });
               console.log(`📡 Published role assignment event for role ${assignment.roleId}`);
             } catch (streamErr) {
@@ -1459,7 +1467,7 @@ export default async function tenantRoutes(
       return {
         success: true,
         message: `Roles updated successfully for user`,
-        data: { userId, assignedRoles: Array.isArray(roleIds) ? roleIds.length : 0 }
+        data: { userId, assignedRoles: validRoleIds.length }
       };
     } catch (err) {
       const error = err as Error;

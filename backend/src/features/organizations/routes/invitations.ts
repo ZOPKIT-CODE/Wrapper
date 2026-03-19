@@ -2247,6 +2247,7 @@ export default async function invitationRoutes(
           await amazonMQPublisher.publishUserEventToSuite('user_created', invitation.tenantId, newUser.userId, {
             userId: newUser.userId,
             email: newUser.email,
+            kindeUserId: newUser.kindeUserId,
             firstName: firstName,
             lastName: lastName,
             name: newUser.name || `${firstName} ${lastName}`.trim(),
@@ -2278,6 +2279,7 @@ export default async function invitationRoutes(
 
       // Handle role/entity assignments based on invitation type
       const acceptTargetEntities = (invitation.targetEntities ?? []) as Array<{ entityId: string; roleId?: string | null; entityType?: string; membershipType?: string }>;
+      const orgAssignmentsToPublish: Array<{ entityId: string; isPrimary: boolean }> = [];
       if (invitation.invitationScope === 'multi-entity' && acceptTargetEntities.length > 0) {
         // Multi-entity invitation - create memberships for each target entity
         console.log('🎯 Processing multi-entity invitation with', acceptTargetEntities.length, 'target entities');
@@ -2304,6 +2306,7 @@ export default async function invitationRoutes(
               membershipId: existingMembership.membershipId
             });
             memberships.push(existingMembership);
+            orgAssignmentsToPublish.push({ entityId: targetEntity.entityId, isPrimary: targetEntity.entityId === invitation.primaryEntityId });
             
             // Still ensure role assignment exists
             if (targetEntity.roleId && !assignedRoleIds.has(targetEntity.roleId)) {
@@ -2376,6 +2379,7 @@ export default async function invitationRoutes(
               .returning();
 
             memberships.push(membership);
+            orgAssignmentsToPublish.push({ entityId: targetEntity.entityId, isPrimary: targetEntity.entityId === invitation.primaryEntityId });
             console.log('✅ Created membership for entity:', targetEntity.entityId);
           } catch (err) {
             const membershipError = err as Error & { code?: string };
@@ -2394,6 +2398,7 @@ export default async function invitationRoutes(
                 .limit(1);
               if (existing) {
                 memberships.push(existing);
+                orgAssignmentsToPublish.push({ entityId: targetEntity.entityId, isPrimary: targetEntity.entityId === invitation.primaryEntityId });
               }
             } else {
               console.error('❌ Failed to create membership:', (membershipError as Error).message);
@@ -2525,6 +2530,7 @@ export default async function invitationRoutes(
               entityId: targetEntityId,
               membershipId: existingMembership.membershipId
             });
+            orgAssignmentsToPublish.push({ entityId: targetEntityId, isPrimary: true });
           } else {
             // Get entity type for the target entity
             const [entityRecord] = await db
@@ -2560,6 +2566,7 @@ export default async function invitationRoutes(
               } as any)
               .returning();
 
+              orgAssignmentsToPublish.push({ entityId: targetEntityId, isPrimary: true });
               console.log('✅ Created organization membership:', {
                 membershipId: membership.membershipId,
                 entityId: targetEntityId,
@@ -2571,6 +2578,7 @@ export default async function invitationRoutes(
               // If membership already exists (race condition), that's okay
               if (membershipError.code === '23505') { // PostgreSQL unique constraint violation
                 console.log('ℹ️ Membership already exists (race condition), skipping duplicate');
+                orgAssignmentsToPublish.push({ entityId: targetEntityId, isPrimary: true });
               } else {
                 console.error('❌ Failed to create membership:', (membershipError as Error).message);
                 throw membershipError;
@@ -2646,12 +2654,58 @@ export default async function invitationRoutes(
               userId: newUser.userId,
               roleId: a.roleId,
               assignedAt: a.assignedAt ? (typeof a.assignedAt === 'string' ? a.assignedAt : a.assignedAt.toISOString()) : new Date().toISOString(),
-              assignedBy: invitation.invitedBy
+              assignedBy: invitation.invitedBy,
+              expiresAt: (a as { expiresAt?: Date | string }).expiresAt,
+              entityId: (a as { organizationId?: string }).organizationId
             });
           }
           console.log('📡 Published role_assigned events for invitation acceptance:', roleAssignmentsToPublish.length);
         } catch (publishError) {
           console.warn('⚠️ Failed to publish role assignment events (invitation accept):', (publishError as Error).message);
+        }
+      }
+
+      // Publish organization.assignment.created so FA creates wrapper_employee_org_assignments
+      if (orgAssignmentsToPublish.length > 0) {
+        try {
+          const { OrganizationAssignmentService } = await import('../services/organization-assignment-service.js');
+          for (const { entityId, isPrimary } of orgAssignmentsToPublish) {
+            const [organization] = await db
+              .select({
+                entityId: entities.entityId,
+                entityName: entities.entityName,
+                entityCode: entities.entityCode
+              })
+              .from(entities)
+              .where(and(
+                eq(entities.entityId, entityId),
+                eq(entities.tenantId, invitation.tenantId)
+              ))
+              .limit(1);
+
+            if (organization) {
+              const assignmentData = {
+                assignmentId: `${newUser.userId}_${entityId}_${Date.now()}`,
+                tenantId: invitation.tenantId,
+                userId: newUser.userId,
+                organizationId: entityId,
+                organizationCode: organization.entityCode ?? entityId,
+                assignmentType: isPrimary ? 'primary' : 'direct',
+                isActive: true,
+                assignedAt: new Date().toISOString(),
+                priority: isPrimary ? 1 : 2,
+                assignedBy: invitation.invitedBy,
+                metadata: {
+                  source: 'invitation_acceptance',
+                  invitationId: invitation.invitationId
+                }
+              };
+              await OrganizationAssignmentService.publishOrgAssignmentCreated(assignmentData);
+            }
+          }
+          console.log('📡 Published organization.assignment.created events for invitation acceptance:', orgAssignmentsToPublish.length);
+        } catch (publishError) {
+          console.warn('⚠️ Failed to publish organization assignment events (invitation accept):', (publishError as Error).message);
         }
       }
 

@@ -68,6 +68,25 @@ async function findUserInDatabase(kindeUserId: string): Promise<UserRecord | nul
   const cached = userRecordCache.get(kindeUserId);
   if (cached && Date.now() < cached.expiresAt) {
     if (shouldLogVerbose()) console.log('🔍 User cache HIT:', kindeUserId);
+    // If cached user has a tenant, verify that tenant still exists (e.g. not deleted).
+    // Otherwise we keep returning stale tenantId after tenant deletion until TTL expires.
+    if (cached.value?.tenantId) {
+      try {
+        const [tenant] = await db
+          .select({ tenantId: tenants.tenantId })
+          .from(tenants)
+          .where(eq(tenants.tenantId, cached.value.tenantId))
+          .limit(1);
+        if (!tenant) {
+          userRecordCache.delete(kindeUserId);
+          userRecordCache.set(kindeUserId, { value: null, expiresAt: Date.now() + USER_RECORD_CACHE_TTL_MS });
+          if (shouldLogVerbose()) console.log('🔍 User cache invalidated: tenant no longer exists');
+          return null;
+        }
+      } catch {
+        // On DB error, use cached value (fail open)
+      }
+    }
     return cached.value;
   }
 
@@ -148,6 +167,24 @@ async function findTenantByOrgCode(orgCode: string): Promise<string | null> {
   // Check in-process cache (hits AND misses).
   const cached = tenantLookupCache.get(orgCode);
   if (cached && Date.now() < cached.expiresAt) {
+    // If we have a cached tenantId, verify that tenant still exists (e.g. not deleted).
+    if (cached.value) {
+      try {
+        const [tenant] = await db
+          .select({ tenantId: tenants.tenantId })
+          .from(tenants)
+          .where(eq(tenants.tenantId, cached.value))
+          .limit(1);
+        if (!tenant) {
+          tenantLookupCache.delete(orgCode);
+          tenantLookupCache.set(orgCode, { value: null, expiresAt: Date.now() + TENANT_LOOKUP_CACHE_TTL_MS });
+          if (shouldLogVerbose()) console.log('🔍 Tenant lookup cache invalidated: tenant no longer exists');
+          return null;
+        }
+      } catch {
+        // On DB error, use cached value (fail open)
+      }
+    }
     return cached.value; // null means "not found" — also cached to avoid repeated DB hits
   }
 

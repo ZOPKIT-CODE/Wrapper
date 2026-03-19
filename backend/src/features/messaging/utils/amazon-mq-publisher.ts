@@ -414,7 +414,9 @@ class AmazonMQPublisher {
           userId: roleData.userId,
           assignedAt: roleData.assignedAt,
           assignedBy: roleData.assignedBy,
-          expiresAt: roleData.expiresAt
+          expiresAt: roleData.expiresAt != null ? (typeof roleData.expiresAt === 'string' ? roleData.expiresAt : (roleData.expiresAt as { toISOString?: () => string })?.toISOString?.()) : undefined,
+          entityId: roleData.entityId ?? roleData.entityIdString,
+          metadata: roleData.metadata
         }),
         ...(eventType === 'role_unassigned' && {
           assignmentId: roleData.assignmentId,
@@ -465,6 +467,7 @@ class AmazonMQPublisher {
     if (userData.deletedAt != null) eventData.deletedAt = toIso(userData.deletedAt);
     if (userData.deletedBy != null) eventData.deletedBy = userData.deletedBy;
     if (userData.reason != null) eventData.reason = userData.reason;
+    if (userData.kindeUserId != null) eventData.kindeUserId = userData.kindeUserId;
 
     return await this.publishInterAppEvent({
       eventType,

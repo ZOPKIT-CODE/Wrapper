@@ -44,6 +44,12 @@ export default async function companyTenantSettingsRoutes(fastify: FastifyInstan
     const tenantId = ((request as ReqWithUser).userContext?.tenantId ?? '') as string;
 
     try {
+      if (!tenantId || typeof tenantId !== 'string' || tenantId.trim() === '') {
+        return ErrorResponses.notFound(reply, 'Tenant', 'Tenant not found', {
+          requestId
+        });
+      }
+
       console.log(`🔍 [${requestId}] Getting tenant info for: ${tenantId}`);
 
       const tenant = await db

@@ -37,7 +37,7 @@ export const permissionsAPI = {
   }) => api.put(`/api/permissions/roles/${roleId}`, data),
   deleteRole: (roleId: string, force: boolean = true) => api.delete(`/api/permissions/roles/${roleId}`, { params: { force } }),
 
-  getRoleBuilderOptions: () => api.get('/api/custom-roles/builder-options'),
+  getRoleBuilderOptions: () => api.get('/custom-roles/builder-options'),
   createRoleFromBuilder: (data: {
     roleName: string;
     description?: string;

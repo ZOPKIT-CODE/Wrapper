@@ -485,14 +485,14 @@ export default async function adminOrgRoutes(fastify: FastifyInstance): Promise<
             }
           }
 
-          // Validate entities
+          // Validate entities - roleId is optional; role can be assigned after invitation is accepted
           const validatedEntities = [];
           for (const entity of targetEntities) {
-            if (!entity.entityId || !entity.roleId) {
+            if (!entity.entityId) {
               return reply.code(400).send({
                 success: false,
                 error: 'Invalid entity specification',
-                message: 'Each entity must have entityId and roleId'
+                message: 'Each entity must have entityId'
               });
             }
 
@@ -514,24 +514,27 @@ export default async function adminOrgRoutes(fastify: FastifyInstance): Promise<
               });
             }
 
-            // Verify role exists
-            const [roleRecord] = await db
-              .select()
-              .from(customRoles)
-              .where(eq(customRoles.roleId, entity.roleId))
-              .limit(1);
+            // Verify role exists only if roleId is provided and non-empty
+            const roleId = (entity.roleId && String(entity.roleId).trim()) ? entity.roleId : null;
+            if (roleId) {
+              const [roleRecord] = await db
+                .select()
+                .from(customRoles)
+                .where(eq(customRoles.roleId, roleId))
+                .limit(1);
 
-            if (!roleRecord) {
-              return reply.code(404).send({
-                success: false,
-                error: 'Role not found',
-                message: `Role ${entity.roleId} not found`
-              });
+              if (!roleRecord) {
+                return reply.code(404).send({
+                  success: false,
+                  error: 'Role not found',
+                  message: `Role ${roleId} not found`
+                });
+              }
             }
 
             validatedEntities.push({
               entityId: entity.entityId,
-              roleId: entity.roleId,
+              roleId: roleId,
               entityType: entityRecord.entityType,
               membershipType: entity.membershipType || 'direct'
             });
@@ -650,20 +653,22 @@ export default async function adminOrgRoutes(fastify: FastifyInstance): Promise<
               .where(eq(entities.entityId, entity.entityId))
               .limit(1);
 
-            const [roleRecord] = await db
-              .select({
-                roleName: customRoles.roleName
-              })
-              .from(customRoles)
-              .where(eq(customRoles.roleId, entity.roleId))
-              .limit(1);
-
-            if (entityRecord && roleRecord) {
-              roleNames.push(roleRecord.roleName);
+            if (entityRecord) {
               if (entityRecord.entityType === 'organization') {
                 organizations.push(entityRecord.entityName);
               } else if (entityRecord.entityType === 'location') {
                 locations.push(entityRecord.entityName);
+              }
+              // Add role name only if role was specified
+              if (entity.roleId) {
+                const [roleRecord] = await db
+                  .select({ roleName: customRoles.roleName })
+                  .from(customRoles)
+                  .where(eq(customRoles.roleId, entity.roleId))
+                  .limit(1);
+                if (roleRecord) {
+                  roleNames.push(roleRecord.roleName);
+                }
               }
             }
           }
