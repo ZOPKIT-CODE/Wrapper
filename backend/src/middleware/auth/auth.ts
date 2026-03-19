@@ -337,13 +337,45 @@ async function processAuthenticatedUser(request: FastifyRequest, reply: FastifyR
     tenantId = userRecord.tenantId;
   }
 
-  const { needsOnboarding } = determineOnboardingStatus(userRecord, tenantId);
+  // Use the user record that matches the resolved tenantId. When a user belongs to multiple
+  // tenants, findUserInDatabase may return a record from a different tenant, causing
+  // isTenantAdmin to be wrong (e.g. admin in new org but record from old org has isTenantAdmin: false).
+  let effectiveUserRecord = userRecord;
+  if (tenantId && userRecord?.tenantId && userRecord.tenantId !== tenantId) {
+    try {
+      const [tenantUser] = await db
+        .select({
+          userId: tenantUsers.userId,
+          tenantId: tenantUsers.tenantId,
+          email: tenantUsers.email,
+          name: tenantUsers.name,
+          onboardingCompleted: tenantUsers.onboardingCompleted,
+          isActive: tenantUsers.isActive,
+          isTenantAdmin: tenantUsers.isTenantAdmin
+        })
+        .from(tenantUsers)
+        .where(and(
+          eq(tenantUsers.kindeUserId, kindeUser.userId),
+          eq(tenantUsers.tenantId, tenantId),
+          eq(tenantUsers.isActive, true)
+        ))
+        .limit(1);
+
+      if (tenantUser) {
+        effectiveUserRecord = tenantUser as UserRecord;
+      }
+    } catch (err) {
+      if (shouldLogVerbose()) console.warn('⚠️ Failed to fetch user for tenant, using fallback:', (err as Error).message);
+    }
+  }
+
+  const { needsOnboarding } = determineOnboardingStatus(effectiveUserRecord, tenantId);
 
   let isSuperAdmin = false;
-  if (userRecord?.userId && tenantId) {
+  if (effectiveUserRecord?.userId && tenantId) {
     // Check role cache first — eliminates a DB round-trip on every request
     // for the same user within the 5-minute TTL window.
-    const cachedRole = roleCacheByUserId.get(userRecord.userId);
+    const cachedRole = roleCacheByUserId.get(effectiveUserRecord.userId);
     if (cachedRole && Date.now() < cachedRole.expiresAt) {
       isSuperAdmin = cachedRole.isSuperAdmin;
     } else {
@@ -356,29 +388,29 @@ async function processAuthenticatedUser(request: FastifyRequest, reply: FastifyR
           })
           .from(userRoleAssignments)
           .innerJoin(customRoles, eq(userRoleAssignments.roleId, customRoles.roleId))
-          .where(eq(userRoleAssignments.userId, userRecord.userId));
+          .where(eq(userRoleAssignments.userId, effectiveUserRecord.userId));
 
         isSuperAdmin = userRoles.some(role => role.roleName === 'Super Administrator' && role.isSystemRole);
-        roleCacheByUserId.set(userRecord.userId, { isSuperAdmin, expiresAt: Date.now() + ROLE_CACHE_TTL_MS });
+        roleCacheByUserId.set(effectiveUserRecord.userId, { isSuperAdmin, expiresAt: Date.now() + ROLE_CACHE_TTL_MS });
       } catch (error) {
         console.warn('⚠️ Failed to check super admin status:', error);
       }
     }
   }
 
-  const isTenantAdmin = userRecord?.isTenantAdmin || false;
+  const isTenantAdmin = effectiveUserRecord?.isTenantAdmin || false;
   request.userContext = {
     userId: kindeUser.userId,
     kindeUserId: kindeUser.userId,
-    internalUserId: userRecord?.userId || null,
+    internalUserId: effectiveUserRecord?.userId || null,
     tenantId,
     kindeOrgId: kindeUser.organization?.id,
-    email: userRecord?.email || kindeUser.email || '',
-    name: userRecord?.name || kindeUser.name || '',
+    email: effectiveUserRecord?.email || kindeUser.email || '',
+    name: effectiveUserRecord?.name || kindeUser.name || '',
     isAuthenticated: true,
     needsOnboarding,
-    onboardingCompleted: userRecord?.onboardingCompleted || false,
-    isActive: userRecord?.isActive || false,
+    onboardingCompleted: effectiveUserRecord?.onboardingCompleted || false,
+    isActive: effectiveUserRecord?.isActive || false,
     isAdmin: isTenantAdmin,
     isTenantAdmin,
     isSuperAdmin

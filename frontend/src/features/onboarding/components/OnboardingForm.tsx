@@ -1,6 +1,8 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useOnboardingForm } from '../hooks';
 import { useFormPersistence } from '../hooks/useFormPersistence';
+import { queryKeys } from '@/hooks/useSharedQueries';
 import { UserClassification } from './FlowSelector';
 import { MultiStepForm } from './MultiStepForm';
 import { ErrorBoundary } from './ErrorBoundary';
@@ -133,6 +135,7 @@ export const determineUserClassification = (
 };
 
 export const OnboardingForm = () => {
+  const queryClient = useQueryClient();
   const [selectedFlow] = useState<'newBusiness' | 'existingBusiness'>('newBusiness');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
@@ -381,6 +384,8 @@ export const OnboardingForm = () => {
       if (response.data.success) {
         sonnerToast.dismiss(loadingToastId);
         clearFormData();
+        // Invalidate auth-status so dashboard gets fresh isTenantAdmin and permissions
+        queryClient.invalidateQueries({ queryKey: queryKeys.authStatus });
         const baseUrl = response.data?.data?.redirectUrl || '/dashboard';
         const url = baseUrl.startsWith('/dashboard') && !baseUrl.includes('onboarding=complete')
           ? (baseUrl.includes('?') ? `${baseUrl}&onboarding=complete` : `${baseUrl}?onboarding=complete`)
