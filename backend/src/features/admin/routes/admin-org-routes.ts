@@ -178,9 +178,11 @@ export default async function adminOrgRoutes(fastify: FastifyInstance): Promise<
         }
       }
 
-      // Check if user is invited
+      // Check if user is invited and get onboarding state from DB (source of truth)
       let isInvitedUser = false;
       let userType = 'REGULAR_USER';
+      let needsOnboarding = req.userContext?.needsOnboarding ?? true;
+      let onboardingCompleted = req.userContext?.onboardingCompleted ?? false;
 
       if (req.userContext?.internalUserId && req.userContext?.tenantId) {
         try {
@@ -203,6 +205,9 @@ export default async function adminOrgRoutes(fastify: FastifyInstance): Promise<
             } else if (user.onboardingCompleted) {
               userType = 'EXISTING_USER';
             }
+            // Use DB as source of truth so auth-status matches onboarding state
+            onboardingCompleted = user.onboardingCompleted === true;
+            needsOnboarding = !onboardingCompleted;
           }
         } catch (err: unknown) {
           const error = err as Error;
@@ -219,8 +224,8 @@ export default async function adminOrgRoutes(fastify: FastifyInstance): Promise<
           tenantId: req.userContext?.tenantId,
           email: req.userContext?.email,
           isTenantAdmin: req.userContext?.isTenantAdmin,
-          needsOnboarding: req.userContext?.needsOnboarding,
-          onboardingCompleted: req.userContext?.onboardingCompleted,
+          needsOnboarding,
+          onboardingCompleted,
           isInvitedUser: isInvitedUser && !req.userContext?.isTenantAdmin,
           userType: userType,
           userPermissions,

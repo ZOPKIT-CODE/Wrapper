@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Shield, Lock, AlertCircle } from 'lucide-react';
 import AuthButton from './AuthButton';
-import { useAuthStatus } from '@/hooks/useSharedQueries';
+import { useAuthStatus, useOnboardingStatus } from '@/hooks/useSharedQueries';
 import AnimatedLoader from '@/components/common/feedback/AnimatedLoader';
 import { logger } from '@/lib/logger';
 
@@ -137,18 +137,27 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = React.memo(({
   const location = useLocation();
   const navigate = useNavigate();
   const { data: authData, isLoading: authStatusLoading } = useAuthStatus();
+  const { data: onboardingResponse, isLoading: onboardingStatusLoading } = useOnboardingStatus();
   const redirectingRef = useRef(false);
 
   const backendAuthStatus = authData?.authStatus || null;
+  const onboardingData = onboardingResponse?.data;
 
-  const isReady = !isLoading && !authStatusLoading;
+  // Treat as completed if onboarding/status says so (source of truth for completed flow)
+  const completedByOnboardingApi =
+    onboardingData?.isOnboarded === true ||
+    onboardingData?.needsOnboarding === false ||
+    onboardingData?.onboardingStep === 'completed';
+
+  const isReady = !isLoading && !authStatusLoading && !onboardingStatusLoading;
   const needsKindeLogin = isReady && (!isAuthenticated || !user);
   const needsBackendLogin = isReady && !needsKindeLogin && !backendAuthStatus?.isAuthenticated;
 
   const isInvitedOrOnboarded =
     backendAuthStatus?.onboardingCompleted === true ||
     backendAuthStatus?.userType === 'INVITED_USER' ||
-    backendAuthStatus?.isInvitedUser === true;
+    backendAuthStatus?.isInvitedUser === true ||
+    completedByOnboardingApi;
 
   const needsOnboarding =
     isReady &&

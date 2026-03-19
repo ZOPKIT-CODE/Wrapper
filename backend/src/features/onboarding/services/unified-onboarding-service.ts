@@ -45,6 +45,36 @@ interface DbOnboardingResult {
   creditResult: { amount: number };
 }
 
+/**
+ * Flatten nested permissions object to dot-notation strings and return structure.
+ * Used for tenant.onboarded snapshot so FA receives roles with permissions.
+ */
+function flattenPermissionsForSnapshot(permissions: unknown): { flat: string[]; structure: Record<string, unknown> } {
+  if (!permissions) return { flat: [], structure: {} };
+  let permObj: Record<string, unknown>;
+  try {
+    permObj = typeof permissions === 'string' ? (JSON.parse(permissions) as Record<string, unknown>) : (permissions as Record<string, unknown>);
+  } catch {
+    return { flat: [], structure: {} };
+  }
+  if (!permObj || typeof permObj !== 'object' || Array.isArray(permObj)) {
+    return { flat: [], structure: {} };
+  }
+  const flat: string[] = [];
+  for (const [appCode, appPerms] of Object.entries(permObj)) {
+    if (appPerms && typeof appPerms === 'object' && !Array.isArray(appPerms)) {
+      for (const [resource, actions] of Object.entries(appPerms as Record<string, unknown>)) {
+        if (Array.isArray(actions)) {
+          for (const action of actions as string[]) {
+            flat.push(`${appCode}.${resource}.${action}`);
+          }
+        }
+      }
+    }
+  }
+  return { flat, structure: permObj };
+}
+
 /** Onboarding payload from frontend/enhanced flow */
 interface OnboardingPayload {
   type?: string;
@@ -1692,13 +1722,17 @@ export class UnifiedOnboardingService {
               lastName: result.adminUser.lastName ?? '',
               status: { isActive: true },
             }] : [],
-            roles: result.adminRole ? [{
-              roleId: result.adminRole.roleId,
-              roleName: result.adminRole.roleName ?? 'admin',
-              permissions: Array.isArray(result.adminRole.permissions) ? result.adminRole.permissions : [],
-              isActive: true,
-              priority: 1,
-            }] : [],
+            roles: result.adminRole ? (() => {
+              const { flat, structure } = flattenPermissionsForSnapshot(result.adminRole?.permissions);
+              return [{
+                roleId: result.adminRole!.roleId,
+                roleName: result.adminRole!.roleName ?? 'admin',
+                permissions: flat,
+                permissionsStructure: structure,
+                isActive: true,
+                priority: 1,
+              }];
+            })() : [],
             employeeAssignments: result.orgMembership ? [{
               assignmentId: `emp_${result.tenant?.tenantId}_${result.adminUser?.userId}`,
               userId: result.adminUser?.userId,
