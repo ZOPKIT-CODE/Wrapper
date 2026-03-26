@@ -479,7 +479,7 @@ interface ProductNodeProps {
         priority: number;
         description: string;
     };
-    navigate: (path: string) => void;
+    navigate: ReturnType<typeof useNavigate>;
     priority: number;
     isEntryPoint?: boolean;
     isCore?: boolean;
@@ -566,7 +566,7 @@ const SVGWorkflowDiagram: React.FC<{
     topRow: IndustryProduct[];
     centerRow: IndustryProduct[];
     bottomRow: IndustryProduct[];
-    navigate: (path: string) => void;
+    navigate: ReturnType<typeof useNavigate>;
 }> = ({ topRow, centerRow, bottomRow, navigate }) => {
     const viewBox = { w: 920, h: 580 };
     const left = 180;
@@ -702,8 +702,7 @@ const SVGWorkflowDiagram: React.FC<{
 
 const IndustryPage: React.FC = () => {
     const { industrySlug } = useParams({ strict: false });
-    const routerNavigate = useNavigate();
-    const navigate = (path: string) => routerNavigate({ to: path });
+    const navigate = useNavigate();
     const { scrollY } = useScroll();
     const backgroundY = useTransform(scrollY, [0, 500], [0, 150]);
 
