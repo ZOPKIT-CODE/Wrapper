@@ -286,6 +286,28 @@ async function registerPlugins() {
     maxAge: 86400 // 24 hours
   });
 
+  // Defense-in-depth: make sure credentialed browser requests always receive
+  // the required header from this backend, including preflight responses.
+  fastify.addHook('onSend', async (request, reply, payload) => {
+    const requestOrigin = request.headers.origin;
+    if (!requestOrigin) {
+      return payload;
+    }
+
+    const isLocalOrigin = requestOrigin.includes('localhost') || requestOrigin.includes('127.0.0.1');
+    if (!isLocalOrigin) {
+      return payload;
+    }
+
+    reply.header('Access-Control-Allow-Credentials', 'true');
+    if (request.method === 'OPTIONS') {
+      reply.header('Access-Control-Allow-Origin', requestOrigin);
+      reply.header('Vary', 'Origin, Access-Control-Request-Headers');
+    }
+
+    return payload;
+  });
+
   const jwtSecret = process.env.JWT_SECRET;
   if (!jwtSecret && process.env.NODE_ENV !== 'test') {
     throw new Error('JWT_SECRET environment variable is required');
