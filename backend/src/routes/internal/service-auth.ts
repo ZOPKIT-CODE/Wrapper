@@ -132,7 +132,10 @@ export default async function internalServiceAuthRoutes(fastify: FastifyInstance
         exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60),
       };
 
-      const secret = process.env.JWT_SECRET || 'default-secret-change-in-production';
+      const secret = process.env.JWT_SECRET;
+      if (!secret) {
+        throw new Error('JWT_SECRET environment variable is not set');
+      }
       const token = sign(payload, secret);
 
       console.log(`✅ Service token generated for ${service}`);

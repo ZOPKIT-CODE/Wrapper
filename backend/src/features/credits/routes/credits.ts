@@ -1243,50 +1243,23 @@ export default async function creditRoutes(
       console.log('📦 Raw body type:', typeof rawBodyStr);
       console.log('📦 Raw body length:', rawBodyStr ? rawBodyStr.length : 'null');
 
-      // Handle webhook verification with development mode support
+      // Verify Stripe webhook signature — always required
       console.log('🔧 STARTING WEBHOOK VERIFICATION PROCESS');
       let event: { id: string; type: string; data: { object: unknown }; created: number };
       try {
-        // Check if we should bypass signature verification (development mode)
-        const bypassSignature = process.env.BYPASS_WEBHOOK_SIGNATURE === 'true' ||
-                               !process.env.STRIPE_WEBHOOK_SECRET ||
-                               process.env.NODE_ENV === 'development';
-        console.log('🔍 Bypass signature:', bypassSignature);
-
-        if (signature && process.env.STRIPE_WEBHOOK_SECRET && !bypassSignature) {
-          const Stripe = (await import('stripe')).default;
-          const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-            timeout: Number(process.env.STRIPE_TIMEOUT_MS ?? 10_000)
-          });
-          const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
-          event = stripe.webhooks.constructEvent(rawBodyStr, signature, endpointSecret) as typeof event;
-          console.log('✅ Webhook signature verified');
-        } else {
-          console.log('⚠️ Webhook signature verification bypassed (dev mode)');
-
-          // Parse the raw body - it's already a string from the content parser
-          let eventData: { id?: string; type?: string; data?: { object?: unknown } };
-          try {
-            console.log('🔍 Parsing webhook payload...');
-            console.log('📝 Raw body preview:', rawBodyStr.substring(0, 200) + '...');
-
-            eventData = JSON.parse(rawBodyStr);
-            console.log('✅ Successfully parsed webhook payload');
-            console.log('🎯 Event type:', eventData.type);
-
-          } catch (parseError: unknown) {
-            console.error('❌ Failed to parse webhook payload:', (parseError as Error).message);
-            console.log('🔍 Raw body content (first 500 chars):', rawBodyStr.substring(0, 500));
-            return reply.code(400).send({ error: 'Invalid webhook payload format' });
-          }
-
-          event = {
-            id: eventData.id || `evt_${Date.now()}`,
-            type: eventData.type || '',
-            data: { object: eventData.data?.object },
-            created: Math.floor(Date.now() / 1000)
-          };
+        if (!process.env.STRIPE_WEBHOOK_SECRET) {
+          throw new Error('STRIPE_WEBHOOK_SECRET environment variable is not set');
         }
+        if (!signature) {
+          throw new Error('Missing stripe-signature header');
+        }
+
+        const Stripe = (await import('stripe')).default;
+        const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+          timeout: Number(process.env.STRIPE_TIMEOUT_MS ?? 10_000)
+        });
+        event = stripe.webhooks.constructEvent(rawBodyStr, signature, process.env.STRIPE_WEBHOOK_SECRET) as typeof event;
+        console.log('✅ Webhook signature verified');
       } catch (error: unknown) {
         console.error('❌ Webhook verification failed:', (error as Error).message);
         return reply.code(400).send({ error: 'Webhook verification failed' });

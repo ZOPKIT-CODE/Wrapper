@@ -37,6 +37,8 @@ Thumbs.db
 # Editor
 .vscode/
 .idea/
+.cursor/
+.claude/
 
 # Infrastructure
 elasticsearch_data/
