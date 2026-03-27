@@ -321,23 +321,23 @@ const Landing: React.FC = () => {
   const secondaryColorHex = COLOR_TO_HEX_SECONDARY[activeProduct.color] ?? '#10b981';
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 selection:bg-blue-100 selection:text-blue-900 font-sans overflow-x-clip relative">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-white selection:bg-teal-500/30 selection:text-white font-sans overflow-x-clip relative">
 
       {/* Ambient Background Effects */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden" style={{ contain: 'strict' }}>
-        {/* Crosshair grid — fades out at edges */}
-        <div className="absolute inset-0 bg-grid opacity-40" />
+        {/* Subtle grid pattern overlay */}
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:64px_64px]" />
 
         {/* Subtle noise texture for premium depth */}
         <div className="absolute inset-0 bg-noise opacity-[0.018]" />
 
-        {/* Perspective grid floor — receding depth illusion */}
-        <div className="absolute inset-0 bg-grid-perspective opacity-30" />
+        {/* Radial teal glow blob — top right */}
+        <div className="absolute -top-40 -right-40 w-[800px] h-[800px] rounded-full bg-teal-500/10 blur-[120px]" />
 
-        {/* Secondary angled grid layer — offset for parallax depth */}
-        <div className="absolute inset-0 bg-grid-fine opacity-20" />
+        {/* Radial emerald glow blob — bottom left */}
+        <div className="absolute -bottom-40 -left-40 w-[600px] h-[600px] rounded-full bg-emerald-500/[0.08] blur-[100px]" />
 
-        {/* Dynamic color spotlight (reactive to active product) — uses CSS transition on background-color for GPU compositing */}
+        {/* Dynamic color spotlight (reactive to active product) */}
         <div
           className="absolute top-[-20%] right-[-10%] w-[100vw] h-[100vh] blur-[100px] rounded-full transition-[background-color] duration-1000 ease-in-out will-change-transform"
           style={{ backgroundColor: `${primaryColorHex}18` }}
@@ -355,7 +355,7 @@ const Landing: React.FC = () => {
         {/* Desktop Navigation */}
         <NavBody>
           <NavbarLogo />
-          <div className="flex-1 flex flex-row items-center justify-center space-x-1 text-sm font-medium text-slate-700 transition duration-200 px-4 min-w-0">
+          <div className="flex-1 flex flex-row items-center justify-center space-x-1 text-sm font-medium text-slate-400 transition duration-200 px-4 min-w-0">
             {/* Products Dropdown */}
             <div
               className="relative shrink-0"
@@ -363,18 +363,18 @@ const Landing: React.FC = () => {
               onMouseLeave={handleProductsMouseLeave}
             >
               <button
-                className="px-3 py-2 text-slate-700 hover:text-slate-900 font-medium flex items-center gap-1 whitespace-nowrap"
+                className="px-3 py-2 text-slate-400 hover:text-white font-medium flex items-center gap-1 whitespace-nowrap transition-colors"
               >
                 Products
                 <ChevronRight size={16} className={`transition-transform ${showProductsDropdown ? 'rotate-90' : ''}`} />
               </button>
               {showProductsDropdown && (
-                <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-slate-200 py-2 z-50">
+                <div className="absolute top-full left-0 mt-2 w-64 bg-slate-800/90 backdrop-blur-xl rounded-xl shadow-xl border border-white/10 py-2 z-50">
                   {allProducts.map((product) => (
                     <button
                       key={product.id}
                       onClick={() => navigate({ to: `/products/${product.id}` })}
-                      className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                      className="w-full text-left px-4 py-2.5 text-sm text-slate-300 hover:bg-white/10 hover:text-white transition-colors"
                     >
                       {product.name}
                     </button>
@@ -389,18 +389,18 @@ const Landing: React.FC = () => {
               onMouseLeave={handleIndustriesMouseLeave}
             >
               <button
-                className="px-3 py-2 text-slate-700 hover:text-slate-900 font-medium flex items-center gap-1 whitespace-nowrap"
+                className="px-3 py-2 text-slate-400 hover:text-white font-medium flex items-center gap-1 whitespace-nowrap transition-colors"
               >
                 Industries
                 <ChevronRight size={16} className={`transition-transform ${showIndustriesDropdown ? 'rotate-90' : ''}`} />
               </button>
               {showIndustriesDropdown && (
-                <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-slate-200 py-2 z-50">
+                <div className="absolute top-full left-0 mt-2 w-64 bg-slate-800/90 backdrop-blur-xl rounded-xl shadow-xl border border-white/10 py-2 z-50">
                   {allIndustries.map((industry) => (
                     <button
                       key={industry.slug}
                       onClick={() => navigate({ to: `/industries/${industry.slug}` })}
-                      className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                      className="w-full text-left px-4 py-2.5 text-sm text-slate-300 hover:bg-white/10 hover:text-white transition-colors"
                     >
                       {industry.name}
                     </button>
@@ -413,7 +413,7 @@ const Landing: React.FC = () => {
                 key={item.name}
                 href={item.link}
                 onClick={(e) => handleAnchorClick(e, item.link)}
-                className="px-3 py-2 text-slate-700 hover:text-slate-900 font-medium transition cursor-pointer whitespace-nowrap shrink-0"
+                className="px-3 py-2 text-slate-400 hover:text-white font-medium transition-colors cursor-pointer whitespace-nowrap shrink-0"
               >
                 {item.name}
               </a>
@@ -439,13 +439,13 @@ const Landing: React.FC = () => {
             <NavbarLogo />
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
+              className="p-2 rounded-lg hover:bg-white/10 transition-colors"
               aria-label="Toggle menu"
             >
               {isMobileMenuOpen ? (
-                <X className="w-6 h-6 text-slate-700" />
+                <X className="w-6 h-6 text-slate-300" />
               ) : (
-                <Menu className="w-6 h-6 text-slate-700" />
+                <Menu className="w-6 h-6 text-slate-300" />
               )}
             </button>
           </MobileNavHeader>
@@ -521,10 +521,10 @@ const Landing: React.FC = () => {
 
             <div className="space-y-6 relative">
               <div
-                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-slate-200 w-fit shadow-sm animate-[fadeInUp_0.5s_ease-out]"
+                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-teal-500/30 bg-teal-500/10 backdrop-blur-sm w-fit mb-6 animate-[fadeInUp_0.5s_ease-out]"
               >
-                <span className={`w-2 h-2 rounded-full bg-gradient-to-r ${activeProduct.gradient} animate-pulse`}></span>
-                <span className="text-[10px] sm:text-xs font-bold text-slate-600 tracking-wide uppercase">Complete Business Operations Suite</span>
+                <span className="w-2 h-2 rounded-full bg-teal-400 animate-pulse"></span>
+                <span className="text-teal-300 text-xs font-semibold tracking-widest uppercase">Complete Business Operations Suite</span>
               </div>
 
               <div className="relative h-[160px] lg:h-[200px] w-full z-20">
@@ -537,12 +537,12 @@ const Landing: React.FC = () => {
                     transition={{ duration: 0.4, ease: "easeOut" }}
                     className="absolute top-0 left-0 w-full"
                   >
-                    <h1 className="text-5xl lg:text-7xl font-bold tracking-tight leading-[1.05] mb-5 text-slate-900">
-                      <span className={`bg-clip-text text-transparent bg-gradient-to-r ${activeProduct.gradient}`}>
+                    <h1 className="text-5xl md:text-6xl lg:text-7xl font-black tracking-tight leading-tight mb-5 text-white">
+                      <span className="bg-gradient-to-r from-teal-400 via-emerald-400 to-cyan-400 bg-clip-text text-transparent">
                         {activeProduct.name}
                       </span>
                     </h1>
-                    <p className="text-lg text-slate-500 leading-relaxed max-w-md font-normal border-l-2 border-slate-200 pl-4">
+                    <p className="text-slate-400 text-lg md:text-xl leading-relaxed max-w-xl mt-4">
                       {activeProduct.description}
                     </p>
                   </motion.div>
@@ -554,36 +554,42 @@ const Landing: React.FC = () => {
               <button
                 onClick={primaryCta.action}
                 disabled={primaryCta.disabled}
-                className={`
-                  w-full sm:w-auto relative px-8 py-4 rounded-xl font-bold text-white transition-all duration-300 cursor-pointer
-                  bg-gradient-to-r ${activeProduct.gradient} shadow-lg shadow-blue-500/20
-                  overflow-hidden group hover:scale-105 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed
-                `}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-white font-semibold text-base shadow-lg shadow-teal-500/25 hover:shadow-teal-500/40 transition-all duration-200 hover:-translate-y-0.5 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
-                <span className="relative flex items-center justify-center gap-2">
-                  {hasAuthenticatedSession && onboardingCompleted ? <LayoutDashboard className="w-5 h-5" /> : null}
-                  {hasAuthenticatedSession && !onboardingCompleted ? <Rocket className="w-5 h-5" /> : null}
-                  {primaryCta.label}
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </span>
+                {hasAuthenticatedSession && onboardingCompleted ? <LayoutDashboard className="w-5 h-5" /> : null}
+                {hasAuthenticatedSession && !onboardingCompleted ? <Rocket className="w-5 h-5" /> : null}
+                {primaryCta.label}
+                <ArrowRight className="w-5 h-5" />
               </button>
 
               <button
-                className="w-full sm:w-auto flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-semibold text-slate-600 hover:text-slate-900 bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-300 transition-all group shadow-sm hover:scale-105 active:scale-95"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-white font-semibold text-base backdrop-blur-sm transition-all duration-200"
               >
-                <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center group-hover:bg-slate-200 group-hover:text-slate-900 transition-colors">
-                  <Play className="w-3 h-3 fill-current ml-0.5 text-slate-700" />
-                </div>
+                <Play className="w-4 h-4 fill-current" />
                 <span>Watch 2-Min Demo</span>
               </button>
             </div>
 
+            {/* Social Proof Stats Bar */}
+            <div className="flex items-center gap-6 mt-8 pt-8 border-t border-white/10">
+              {[
+                { value: "500+", label: "Companies" },
+                { value: "100M+", label: "Transactions" },
+                { value: "99.9%", label: "Uptime SLA" },
+                { value: "11", label: "Products" },
+              ].map((stat) => (
+                <div key={stat.label} className="text-center">
+                  <div className="text-2xl font-black text-white">{stat.value}</div>
+                  <div className="text-xs text-slate-500 mt-0.5">{stat.label}</div>
+                </div>
+              ))}
+            </div>
+
             {/* Product "Launchpad" Selector */}
-            <div className="mt-6 pt-8 border-t border-slate-200">
+            <div className="mt-6 pt-8 border-t border-white/10">
               <div className="flex justify-between items-center mb-4">
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Select Application</p>
-                <span className="text-xs text-slate-400">0{activeProduct.id} / {products.length}</span>
+                <p className="text-slate-500 text-xs font-semibold tracking-widest uppercase">Select Application</p>
+                <span className="text-xs text-slate-500">0{activeProduct.id} / {products.length}</span>
               </div>
 
               <div ref={scrollContainerRef} className="flex flex-row gap-3 overflow-x-auto gradient-scrollbar pb-4">
@@ -598,8 +604,8 @@ const Landing: React.FC = () => {
                     className={`
                         relative group flex flex-col items-start justify-between p-3 rounded-xl border transition-all duration-300 h-28 w-32 min-w-[128px] overflow-hidden text-left shrink-0
                         ${activeProduct.id === product.id
-                        ? 'bg-white border-slate-300 ring-2 ring-slate-200 shadow-lg'
-                        : 'bg-white border-slate-100 hover:border-slate-300 hover:shadow-md'}
+                        ? 'bg-teal-500/20 border-teal-500/40 shadow-lg'
+                        : 'bg-slate-800/60 border-white/10 hover:bg-white/5 hover:border-white/20'}
                       `}
                     title="Double-click to view details"
                   >
@@ -609,21 +615,21 @@ const Landing: React.FC = () => {
                     <div className="flex justify-between w-full items-start">
                       <div className={`
                            p-1.5 rounded-lg transition-colors duration-300
-                           ${activeProduct.id === product.id ? `bg-gradient-to-br ${product.gradient} text-white` : 'bg-slate-100 text-slate-500 group-hover:text-slate-700 group-hover:bg-slate-200'}
+                           ${activeProduct.id === product.id ? `bg-gradient-to-br ${product.gradient} text-white` : 'bg-white/10 text-slate-400 group-hover:text-slate-200 group-hover:bg-white/15'}
                          `}>
                         <DynamicIcon name={product.iconName} className="w-4 h-4" />
                       </div>
 
                       {activeProduct.id === product.id && (
-                        <motion.div layoutId="active-indicator" className="w-1.5 h-1.5 rounded-full bg-slate-900" />
+                        <motion.div layoutId="active-indicator" className="w-1.5 h-1.5 rounded-full bg-teal-400" />
                       )}
                     </div>
 
                     <div className="flex flex-col gap-1 mt-auto w-full">
-                      <span className={`text-[11px] font-semibold tracking-wide ${activeProduct.id === product.id ? 'text-slate-900' : 'text-slate-500 group-hover:text-slate-900'}`}>
+                      <span className={`text-[11px] font-semibold tracking-wide ${activeProduct.id === product.id ? 'text-teal-300' : 'text-slate-400 group-hover:text-slate-200'}`}>
                         {product.name}
                       </span>
-                      <span className="text-[9px] text-blue-600 dark:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span className="text-[9px] text-teal-400 opacity-0 group-hover:opacity-100 transition-opacity">
                         Double-click for details →
                       </span>
                     </div>
