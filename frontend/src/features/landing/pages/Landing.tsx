@@ -549,31 +549,19 @@ const Landing: React.FC = () => {
           {/* ── Left column (7 cols) ── */}
           <div className="lg:col-span-7 flex flex-col order-2 lg:order-1 lg:pt-4">
 
-            {/* ▸ Layer 1: The Promise */}
             <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-              <p className="text-[13px] font-semibold text-slate-400 mb-4 tracking-wide">
-                The business operating system
-              </p>
-              <h1 className="text-[2.25rem] sm:text-[2.75rem] lg:text-[3.25rem] xl:text-[3.75rem] font-extrabold tracking-[-0.035em] leading-[1.05] text-slate-900">
-                <span className="inline-block">
-                  <span className="tabular-nums text-transparent bg-clip-text bg-gradient-to-r from-slate-900 to-slate-600">11</span> tools.
-                </span>
-                <br />
-                One platform.
-                <br />
-                <span className="text-slate-300">Zero silos.</span>
+              <h1 className="text-[2.25rem] sm:text-[2.75rem] lg:text-[3.25rem] xl:text-[3.75rem] font-extrabold tracking-[-0.035em] leading-[1.06] text-slate-900">
+                One platform to<br />
+                run your entire<br className="hidden sm:block" />
+                business.
               </h1>
-            </motion.div>
 
-            {/* ▸ Layer 2: The Proof — compact inline metrics */}
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.08 }} className="mt-6">
-              <p className="text-slate-500 text-[15px] sm:text-base leading-relaxed max-w-md">
-                CRM, Finance, HR, Operations, Projects and more — every app shares data automatically so your teams stop copy-pasting between tools.
+              <p className="text-slate-500 text-base sm:text-[17px] leading-[1.7] max-w-[28rem] mt-6">
+                Stop juggling disconnected tools. Zopkit unifies CRM, Finance, HR, Operations, and 7 more applications into a single ecosystem where data flows automatically between every team.
               </p>
             </motion.div>
 
-            {/* ▸ CTAs */}
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.14 }} className="flex flex-col sm:flex-row items-start gap-3 mt-8">
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.12 }} className="flex flex-col sm:flex-row items-start gap-3 mt-8">
               <button
                 onClick={primaryCta.action}
                 disabled={primaryCta.disabled}
