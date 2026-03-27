@@ -33,12 +33,6 @@ export class ApplicationIsolationMiddleware {
     return async (request: FastifyRequest, reply: FastifyReply): Promise<void | ReturnType<FastifyReply['send']>> => {
       try {
         // Check if this is a public route that bypasses application isolation
-
-        // Simple check for entity routes - bypass application isolation
-        if (request.url.includes('/api/entities/')) {
-          return; // Skip application isolation for entity routes
-        }
-
         const isPublicRoute = PUBLIC_APPLICATION_ROUTES.some(route => {
           const routeParts = route.split(' ');
           const method = routeParts[0];
