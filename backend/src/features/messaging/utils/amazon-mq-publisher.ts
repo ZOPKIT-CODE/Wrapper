@@ -30,7 +30,8 @@ class AmazonMQPublisher {
   private readonly broadcastExchange = 'inter-app-broadcast';
   private reconnectAttempts = 0;
   private readonly maxReconnectAttempts = 10;
-  private readonly reconnectDelay = 5000; // 5 seconds
+  private readonly baseReconnectDelay = 1000; // 1 second
+  private readonly maxReconnectDelay = 60000; // 60 seconds
   private readonly businessSuiteApps: string[];
 
   constructor() {
@@ -199,7 +200,13 @@ class AmazonMQPublisher {
     this.reconnectAttempts++;
     console.log(`🔄 Attempting to reconnect to Amazon MQ (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
 
-    await new Promise(resolve => setTimeout(resolve, this.reconnectDelay));
+    const delay = Math.min(
+      this.baseReconnectDelay * Math.pow(2, this.reconnectAttempts - 1),
+      this.maxReconnectDelay
+    );
+    const jitter = delay * 0.1 * Math.random();
+    console.log(`⏳ Reconnect delay: ${Math.round(delay + jitter)}ms (attempt ${this.reconnectAttempts})`);
+    await new Promise(resolve => setTimeout(resolve, delay + jitter));
     
     try {
       await this.connect();

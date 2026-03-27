@@ -100,71 +100,77 @@ export async function purchaseCredits(opts: {
     type PurchaseRow = Record<string, unknown> & { purchaseId: string; status: string; paymentStatus?: string; stripePaymentIntentId?: string | null };
     let purchase: PurchaseRow | undefined;
 
-    if (isWebhookCompletion && sessionId) {
-      console.log('🔍 Finding existing purchase for webhook completion...');
-      const [existingPurchase] = await db
-        .select()
-        .from(creditPurchases)
-        .where(eq(creditPurchases.stripePaymentIntentId, String(sessionId)))
-        .limit(1);
+    purchase = await db.transaction(async (tx) => {
+      let txPurchase: PurchaseRow | undefined;
 
-      if (existingPurchase) {
-        console.log('✅ Found existing purchase:', existingPurchase.purchaseId);
+      if (isWebhookCompletion && sessionId) {
+        console.log('🔍 Finding existing purchase for webhook completion...');
+        const [existingPurchase] = await tx
+          .select()
+          .from(creditPurchases)
+          .where(eq(creditPurchases.stripePaymentIntentId, String(sessionId)))
+          .limit(1);
 
-        const updateData = {
-          status: 'completed',
-          paymentStatus: 'completed',
-          paidAt: new Date(),
-          creditedAt: new Date()
-        };
+        if (existingPurchase) {
+          console.log('✅ Found existing purchase:', existingPurchase.purchaseId);
 
-        await db
-          .update(creditPurchases)
-          .set(updateData)
-          .where(eq(creditPurchases.purchaseId, existingPurchase.purchaseId));
+          const updateData = {
+            status: 'completed',
+            paymentStatus: 'completed',
+            paidAt: new Date(),
+            creditedAt: new Date()
+          };
 
-        purchase = {
-          ...existingPurchase,
-          status: 'completed',
-          paymentStatus: 'completed',
-          paidAt: updateData.paidAt,
-          creditedAt: updateData.creditedAt
-        };
-      } else {
-        console.log('⚠️ No existing purchase found, creating new one for webhook completion');
+          await tx
+            .update(creditPurchases)
+            .set(updateData)
+            .where(eq(creditPurchases.purchaseId, existingPurchase.purchaseId));
+
+          txPurchase = {
+            ...existingPurchase,
+            status: 'completed',
+            paymentStatus: 'completed',
+            paidAt: updateData.paidAt,
+            creditedAt: updateData.creditedAt
+          };
+        } else {
+          console.log('⚠️ No existing purchase found, creating new one for webhook completion');
+        }
       }
-    }
 
-    if (!purchase) {
-      console.log('📝 Creating new purchase record...');
-      const [newPurchase] = await db
-        .insert(creditPurchases)
-        .values({
-          tenantId,
-          entityId: finalEntityId ?? undefined,
-          creditAmount: creditAmount.toString(),
-          unitPrice: unitPrice.toString(),
-          totalAmount: totalAmount.toString(),
-          batchId: randomUUID(),
-          paymentMethod,
-          status: isWebhookCompletion ? 'completed' : 'pending',
-          requestedBy: userId || '00000000-0000-0000-0000-000000000001',
-          paidAt: isWebhookCompletion ? new Date() : undefined,
-          creditedAt: isWebhookCompletion ? new Date() : undefined
-        })
-        .returning();
-
-      purchase = newPurchase as PurchaseRow;
-
-      if (sessionId) {
-        await db
-          .update(creditPurchases)
-          .set({
-            stripePaymentIntentId: sessionId
+      if (!txPurchase) {
+        console.log('📝 Creating new purchase record...');
+        const [newPurchase] = await tx
+          .insert(creditPurchases)
+          .values({
+            tenantId,
+            entityId: finalEntityId ?? undefined,
+            creditAmount: creditAmount.toString(),
+            unitPrice: unitPrice.toString(),
+            totalAmount: totalAmount.toString(),
+            batchId: randomUUID(),
+            paymentMethod,
+            status: isWebhookCompletion ? 'completed' : 'pending',
+            requestedBy: userId || '00000000-0000-0000-0000-000000000001',
+            paidAt: isWebhookCompletion ? new Date() : undefined,
+            creditedAt: isWebhookCompletion ? new Date() : undefined
           })
-          .where(eq(creditPurchases.purchaseId, purchase.purchaseId));
+          .returning();
+
+        txPurchase = newPurchase as PurchaseRow;
+
+        if (sessionId) {
+          await tx
+            .update(creditPurchases)
+            .set({
+              stripePaymentIntentId: sessionId
+            })
+            .where(eq(creditPurchases.purchaseId, txPurchase.purchaseId));
+        }
       }
-    }
+
+      return txPurchase;
+    });
 
     console.log('🔍 Checking purchase status for credit allocation:', {
       purchaseId: purchase.purchaseId,
