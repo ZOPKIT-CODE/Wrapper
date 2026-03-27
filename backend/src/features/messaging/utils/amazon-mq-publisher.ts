@@ -1,4 +1,5 @@
 import amqp from 'amqplib';
+import { CircuitBreaker } from '../../../utils/circuit-breaker.js';
 
 /** Minimal type for amqplib connection (library types can vary) */
 interface AmqpConnectionLike {
@@ -33,6 +34,7 @@ class AmazonMQPublisher {
   private readonly baseReconnectDelay = 1000; // 1 second
   private readonly maxReconnectDelay = 60000; // 60 seconds
   private readonly businessSuiteApps: string[];
+  private readonly circuitBreaker = new CircuitBreaker('amazon-mq', 3, 30000);
 
   constructor() {
     const suiteAppsEnv = process.env.BUSINESS_SUITE_TARGET_APPS;
@@ -263,6 +265,7 @@ class AmazonMQPublisher {
       await this.connect();
     }
 
+    return this.circuitBreaker.execute(async () => {
     try {
       const routingKey = this.generateRoutingKey(targetApplication, eventType);
       const resolvedEventId = eventId || `inter_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -357,14 +360,15 @@ class AmazonMQPublisher {
 
     } catch (error) {
       console.error('❌ Failed to publish to Amazon MQ:', error);
-      
+
       // Try to reconnect if connection lost
       if (!this.isConnected) {
         await this.handleReconnect();
       }
-      
+
       throw error;
     }
+    }); // end circuitBreaker.execute
   }
 
   /**
