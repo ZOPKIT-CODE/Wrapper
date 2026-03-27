@@ -358,6 +358,14 @@ async function registerPlugins() {
     }
   });
 
+  // TODO(api-hardening): Add per-route rate limits for public endpoints:
+  // - /api/v1/onboarding/verify-pan: 10 req/min (prevents enumeration)
+  // - /api/v1/onboarding/verify-gstin: 10 req/min
+  // - /api/v1/invitations/accept: 20 req/min
+  // - /api/v1/contact: 5 req/min (spam prevention)
+  // - /api/v1/demo: 5 req/min
+  // See: Scout 4 API audit (2026-03-28) for full list
+
   // File upload
   await fastify.register(multipart, {
     limits: {
