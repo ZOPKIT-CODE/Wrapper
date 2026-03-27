@@ -529,7 +529,6 @@ export default async function coreOnboardingRoutes(
         error: 'Onboarding failed',
         message: userMessage,
         code: errCode,
-        details: process.env.NODE_ENV === 'development' ? error.stack : undefined,
         canRetry: true
       });
     }
@@ -717,8 +716,7 @@ export default async function coreOnboardingRoutes(
       return reply.code(500).send({
         success: false,
         error: 'Retry failed',
-        message: error.message || 'An unexpected error occurred during retry',
-        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        message: 'An unexpected error occurred during retry',
       });
     }
   });

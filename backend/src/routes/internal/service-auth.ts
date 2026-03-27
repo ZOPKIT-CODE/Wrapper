@@ -140,7 +140,7 @@ export default async function internalServiceAuthRoutes(fastify: FastifyInstance
 
       console.log(`✅ Service token generated for ${service}`);
 
-      return {
+      return reply.code(201).send({
         success: true,
         data: {
           token,
@@ -150,7 +150,7 @@ export default async function internalServiceAuthRoutes(fastify: FastifyInstance
           expires_in: 24 * 60 * 60,
           token_type: 'service_jwt',
         },
-      };
+      });
     } catch (err: unknown) {
       fastify.log.error(err as Error, 'Service authentication error:');
       return reply.code(500).send({ error: 'Failed to authenticate service' });

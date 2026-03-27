@@ -766,33 +766,10 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
     } catch (err: unknown) {
       const error = err as Error;
       console.error('❌ Error fetching credit configurations:', error);
-      const params = request.params as Record<string, string>;
-      const tenantId = params.tenantId ?? '';
-      return {
-        success: true,
-        data: [{
-          configId: `default_${tenantId}`,
-          tenantId: tenantId,
-          entityId: tenantId,
-          configName: 'Default Credit Configuration',
-          creditLimit: 1000,
-          resetPeriod: 'monthly',
-          resetDay: 1,
-          lastResetAt: null,
-          isActive: true,
-          metadata: {
-            description: 'Default credit configuration for tenant',
-            createdAt: new Date(),
-            updatedAt: new Date()
-          }
-        }],
-        pagination: {
-          page: 1,
-          limit: 50,
-          total: 1,
-          totalPages: 1
-        }
-      };
+      return reply.code(500).send({
+        success: false,
+        error: 'Failed to fetch credit configurations'
+      });
     }
   });
 

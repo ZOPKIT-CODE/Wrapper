@@ -41,9 +41,12 @@ export default async function paymentRoutes(
       const limit = query?.limit ?? '50';
       const paymentHistory = await PaymentService.getPaymentHistory(tenantId, parseInt(limit, 10));
       
-      return { 
-        payments: paymentHistory,
-        pagination: { page: parseInt(page), limit: parseInt(limit) }
+      return {
+        success: true,
+        data: {
+          payments: paymentHistory,
+          pagination: { page: parseInt(page), limit: parseInt(limit) }
+        }
       };
     } catch (err: unknown) {
       const error = err as Error;
@@ -70,7 +73,7 @@ export default async function paymentRoutes(
       }
 
       const stats = await PaymentService.getPaymentStats(tenantId);
-      return { stats };
+      return { success: true, data: { stats } };
     } catch (err: unknown) {
       const error = err as Error;
       console.error('❌ Failed to get payment stats:', error);
@@ -92,7 +95,7 @@ export default async function paymentRoutes(
       }
 
       const methods = await PaymentService.getPaymentMethods(tenantId);
-      return { methods };
+      return { success: true, data: { methods } };
     } catch (err: unknown) {
       const error = err as Error;
       console.error('❌ Failed to get payment methods:', error);

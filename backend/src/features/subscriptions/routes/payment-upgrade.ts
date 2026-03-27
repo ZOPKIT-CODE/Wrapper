@@ -772,11 +772,13 @@ export default async function paymentUpgradeRoutes(
 
       return {
         success: true,
-        currentPlan: currentSubscription?.plan || 'trial',
-        availableUpgrades,
-        organizationSetup: {
-          hasGSTIN,
-          organizationName: organization?.organizationName || 'Not set'
+        data: {
+          currentPlan: currentSubscription?.plan || 'trial',
+          availableUpgrades,
+          organizationSetup: {
+            hasGSTIN,
+            organizationName: organization?.organizationName || 'Not set'
+          }
         }
       };
 

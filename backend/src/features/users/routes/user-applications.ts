@@ -202,8 +202,7 @@ export default async function userApplicationRoutes(fastify: FastifyInstance, _o
       fastify.log.error(error, `Error syncing users to ${params.appCode}:`);
       return reply.code(500).send({
         success: false,
-        error: `Failed to sync users to ${params.appCode}`,
-        details: error.message
+        error: `Failed to sync users to ${params.appCode}`
       });
     }
   });
@@ -235,8 +234,7 @@ export default async function userApplicationRoutes(fastify: FastifyInstance, _o
       fastify.log.error(error, 'Error in bulk sync:');
       return reply.code(500).send({
         success: false,
-        error: 'Failed to perform bulk sync',
-        details: error.message
+        error: 'Failed to perform bulk sync'
       });
     }
   });
@@ -274,8 +272,7 @@ export default async function userApplicationRoutes(fastify: FastifyInstance, _o
       fastify.log.error(error, `Error syncing user ${params.userId}:`);
       return reply.code(500).send({
         success: false,
-        error: `Failed to sync user ${params.userId}`,
-        details: error.message
+        error: `Failed to sync user ${params.userId}`
       });
     }
   });
