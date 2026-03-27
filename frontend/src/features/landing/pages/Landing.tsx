@@ -812,7 +812,7 @@ const Landing: React.FC = () => {
             </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {getAllIndustries().map((industry) => {
               const iconMap: Record<string, string> = {
                 'e-commerce': 'ShoppingCart',
@@ -825,27 +825,35 @@ const Landing: React.FC = () => {
               return (
                 <div
                   key={industry.slug}
-                  className="group cursor-pointer rounded-2xl border border-slate-200 bg-white hover:border-slate-300 p-6 transition-all duration-200 hover:shadow-lg"
+                  className="group cursor-pointer rounded-2xl bg-[#fafafa] hover:bg-slate-900 p-6 sm:p-7 transition-all duration-300 flex flex-col"
                   onClick={() => navigate({ to: `/industries/${industry.slug}` })}
                 >
-                  <div className="w-10 h-10 rounded-xl bg-slate-100 group-hover:bg-slate-900 flex items-center justify-center mb-5 transition-colors duration-200">
-                    <DynamicIcon name={iconMap[industry.slug] ?? 'Building2'} className="w-5 h-5 text-slate-600 group-hover:text-white transition-colors duration-200" />
+                  {/* Icon */}
+                  <div className="w-11 h-11 rounded-xl bg-white group-hover:bg-white/10 flex items-center justify-center mb-6 transition-colors duration-300">
+                    <DynamicIcon name={iconMap[industry.slug] ?? 'Building2'} className="w-5 h-5 text-slate-700 group-hover:text-white transition-colors duration-300" />
                   </div>
-                  <h3 className="text-base font-bold text-slate-900 mb-1.5 tracking-tight">
+
+                  {/* Content */}
+                  <h3 className="text-lg font-bold text-slate-900 group-hover:text-white mb-2 tracking-tight transition-colors duration-300">
                     {industry.name}
                   </h3>
-                  <p className="text-slate-500 text-sm leading-relaxed mb-4">
+                  <p className="text-sm text-slate-500 group-hover:text-slate-400 leading-relaxed mb-6 transition-colors duration-300 flex-1">
                     {industry.hero.subheadline}
                   </p>
-                  <div className="space-y-1.5 mb-5">
+
+                  {/* Stats */}
+                  <div className="flex items-center gap-4 mb-6 pt-5 border-t border-slate-200/60 group-hover:border-white/10 transition-colors duration-300">
                     {topStats.map((stat, i) => (
-                      <p key={i} className="text-xs text-slate-500">
-                        <span className="font-semibold text-slate-900">{stat.value}</span> {stat.label}
-                      </p>
+                      <div key={i}>
+                        <p className="text-lg font-extrabold text-slate-900 group-hover:text-white tracking-tight transition-colors duration-300">{stat.value}</p>
+                        <p className="text-[11px] text-slate-400 group-hover:text-slate-500 transition-colors duration-300">{stat.label}</p>
+                      </div>
                     ))}
                   </div>
-                  <span className="text-sm font-semibold text-slate-400 group-hover:text-slate-900 transition-colors inline-flex items-center gap-1">
-                    Learn more <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+
+                  {/* CTA */}
+                  <span className="text-sm font-semibold text-slate-900 group-hover:text-white inline-flex items-center gap-1.5 transition-colors duration-300">
+                    Explore <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
                   </span>
                 </div>
               );
