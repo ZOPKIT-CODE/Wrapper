@@ -356,18 +356,37 @@ const Landing: React.FC = () => {
   const primaryCta = getPrimaryCtaConfig()
 
   return (
-    <div className="min-h-screen bg-white text-slate-900 selection:bg-teal-100 selection:text-teal-900 font-sans overflow-x-clip">
+    <div className="min-h-screen bg-white text-slate-900 selection:bg-teal-100 selection:text-teal-900 font-sans overflow-x-clip relative">
 
-      {/* Hero background — scoped to hero area only */}
-      <div className="absolute top-0 left-0 right-0 h-[900px] z-0 pointer-events-none overflow-hidden">
-        <div className="absolute inset-0 bg-[#fafafa]" />
-        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1440 900" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <polygon points="1440,0 1200,0 1440,120" fill="#eef2f7" />
-          <polygon points="1440,900 1440,800 1380,900" fill="#eef2f7" />
-          <line x1="1438" y1="140" x2="1438" y2="780" stroke="#e2e8f0" strokeWidth="2" />
-          <line x1="0" y1="1" x2="500" y2="1" stroke="#e2e8f0" strokeWidth="2" />
+      {/* Full-page SVG decoration layer — sits behind all content */}
+      <div className="fixed inset-0 z-0 pointer-events-none" style={{ contain: 'strict' }}>
+        <svg className="w-full h-full" viewBox="0 0 1440 3000" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          {/* Hero zone bg */}
+          <rect x="0" y="0" width="1440" height="900" fill="#fafafa" />
+
+          {/* Top-right corner cut */}
+          <polygon points="1440,0 1160,0 1440,180" fill="#f1f5f9" />
+          {/* Left-side accent stripe at hero level */}
+          <rect x="0" y="100" width="4" height="700" fill="#e2e8f0" rx="2" />
+          {/* Horizontal rule below hero */}
+          <line x1="0" y1="900" x2="1440" y2="900" stroke="#e2e8f0" strokeWidth="1" />
+
+          {/* Mid-page diagonal accent — between workflows and industries */}
+          <line x1="100" y1="1100" x2="1340" y2="1500" stroke="#f1f5f9" strokeWidth="80" />
+          <line x1="100" y1="1100" x2="1340" y2="1500" stroke="#e2e8f0" strokeWidth="1" />
+
+          {/* Bottom-left corner triangle */}
+          <polygon points="0,2700 0,2900 200,2900" fill="#f1f5f9" />
+          {/* Right-side accent stripe near contact section */}
+          <rect x="1436" y="1800" width="4" height="600" fill="#e2e8f0" rx="2" />
+
+          {/* Dotted horizontal accents */}
+          <line x1="60" y1="1700" x2="200" y2="1700" stroke="#e2e8f0" strokeWidth="1" strokeDasharray="6 6" />
+          <line x1="1240" y1="2200" x2="1380" y2="2200" stroke="#e2e8f0" strokeWidth="1" strokeDasharray="6 6" />
+
+          {/* Small diamond accent */}
+          <path d="M720 1650 L735 1635 L750 1650 L735 1665 Z" fill="none" stroke="#e2e8f0" strokeWidth="1.5" />
         </svg>
-        <div className="absolute bottom-0 left-0 right-0 h-px bg-slate-200" />
       </div>
 
       {/* Resizable Navbar */}
