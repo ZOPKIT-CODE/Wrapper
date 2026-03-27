@@ -1,4 +1,4 @@
-import React, { Suspense, useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import React, { Suspense, useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate, useLocation } from '@tanstack/react-router'
 import { useKindeAuth } from '@kinde-oss/kinde-auth-react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -9,9 +9,6 @@ import { Product } from '@/types'
 import toast from 'react-hot-toast'
 import { consumeSessionRecoveryReason } from '@/lib/auth/session-recovery'
 
-const StackedCardsSection = React.lazy(() =>
-  import('@/features/landing/components/StackedCardsSection').then(m => ({ default: m.StackedCardsSection }))
-)
 const WorkflowVisualizer = React.lazy(() =>
   import('@/features/landing/components/WorkflowVisualizer').then(m => ({ default: m.WorkflowVisualizer }))
 )
@@ -358,14 +355,6 @@ const Landing: React.FC = () => {
 
   const primaryCta = getPrimaryCtaConfig()
 
-  const businessApps = useMemo(() =>
-    products.map(p => ({
-      ...p,
-      icon: (props: any) => <DynamicIcon name={p.iconName} {...props} />
-    })),
-    []
-  );
-
   return (
     <div className="min-h-screen bg-white text-slate-900 selection:bg-teal-100 selection:text-teal-900 font-sans overflow-x-clip relative">
 
@@ -390,72 +379,106 @@ const Landing: React.FC = () => {
         {/* Desktop Navigation */}
         <NavBody>
           <NavbarLogo />
-          <div className="flex-1 flex flex-row items-center justify-center gap-1 text-[13px] font-medium text-slate-500 px-4 min-w-0">
-            {/* Products Dropdown */}
+          <div className="flex-1 flex flex-row items-center justify-center gap-0.5 text-[13px] font-medium px-4 min-w-0">
+            {/* Products Mega Dropdown */}
             <div
               className="relative shrink-0"
               onMouseEnter={handleProductsMouseEnter}
               onMouseLeave={handleProductsMouseLeave}
             >
-              <button className="px-3 py-2 text-slate-500 hover:text-slate-900 font-medium flex items-center gap-1 whitespace-nowrap transition-colors">
-                Products
-                <ChevronRight size={14} className={`transition-transform duration-200 ${showProductsDropdown ? 'rotate-90' : ''}`} />
+              <button className="group px-3.5 py-2 text-neutral-500 hover:text-indigo-700 font-medium flex items-center gap-1.5 whitespace-nowrap transition-all duration-200">
+                <span>Products</span>
+                <ChevronRight size={13} className={`transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${showProductsDropdown ? 'rotate-90 text-indigo-500' : 'text-neutral-400'}`} />
               </button>
-              {showProductsDropdown && (
-                <div className="absolute top-full left-0 mt-1 w-72 bg-white rounded-2xl shadow-2xl border border-slate-200/80 py-2 z-50">
-                  <div className="px-4 py-2 border-b border-slate-100 mb-1">
-                    <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Products</p>
-                  </div>
-                  {allProducts.map((product) => (
-                    <button
-                      key={product.id}
-                      onClick={() => navigate({ to: `/products/${product.id}` })}
-                      className="w-full text-left px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors flex items-center gap-2.5"
-                    >
-                      <span className="w-6 h-6 rounded-md bg-slate-100 flex items-center justify-center shrink-0">
-                        <DynamicIcon name={ORBIT_APPS.find(a => a.id === product.id)?.icon ?? 'Box'} className="w-3.5 h-3.5 text-slate-500" />
-                      </span>
-                      <span className="font-medium">{product.name}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
+              <AnimatePresence>
+                {showProductsDropdown && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 6, scale: 0.97 }}
+                    transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                    className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-[340px] z-50"
+                  >
+                    {/* Dropdown glow */}
+                    <div className="absolute -inset-1 rounded-2xl bg-gradient-to-b from-indigo-500/10 to-purple-500/5 blur-lg pointer-events-none" />
+                    <div className="relative bg-white/95 backdrop-blur-xl rounded-2xl border border-indigo-100/50 shadow-[0_20px_60px_-12px_rgba(99,102,241,0.15)] overflow-hidden">
+                      {/* Header accent bar */}
+                      <div className="h-[2px] bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
+                      <div className="px-4 pt-3 pb-2">
+                        <p className="text-[10px] font-bold text-indigo-400/80 uppercase tracking-[0.15em]">Our Suite</p>
+                      </div>
+                      <div className="px-2 pb-2 max-h-[380px] overflow-y-auto scrollbar-none">
+                        {allProducts.map((product) => (
+                          <button
+                            key={product.id}
+                            onClick={() => navigate({ to: `/products/${product.id}` })}
+                            className="group/item w-full text-left px-3 py-2 text-sm text-neutral-600 hover:text-indigo-700 transition-all duration-200 flex items-center gap-3 rounded-xl hover:bg-gradient-to-r hover:from-indigo-50/80 hover:to-purple-50/40"
+                          >
+                            <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-50 to-purple-50 group-hover/item:from-indigo-100 group-hover/item:to-purple-100 flex items-center justify-center shrink-0 transition-all duration-200 ring-1 ring-indigo-100/50 group-hover/item:ring-indigo-200/80 group-hover/item:shadow-sm">
+                              <DynamicIcon name={ORBIT_APPS.find(a => a.id === product.id)?.icon ?? 'Box'} className="w-4 h-4 text-indigo-500/70 group-hover/item:text-indigo-600 transition-colors" />
+                            </span>
+                            <span className="font-medium">{product.name}</span>
+                            <ArrowRight size={13} className="ml-auto opacity-0 -translate-x-2 group-hover/item:opacity-60 group-hover/item:translate-x-0 transition-all duration-200 text-indigo-400" />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
-            {/* Industries Dropdown */}
+            {/* Industries Mega Dropdown */}
             <div
               className="relative shrink-0"
               onMouseEnter={handleIndustriesMouseEnter}
               onMouseLeave={handleIndustriesMouseLeave}
             >
-              <button className="px-3 py-2 text-slate-500 hover:text-slate-900 font-medium flex items-center gap-1 whitespace-nowrap transition-colors">
-                Industries
-                <ChevronRight size={14} className={`transition-transform duration-200 ${showIndustriesDropdown ? 'rotate-90' : ''}`} />
+              <button className="group px-3.5 py-2 text-neutral-500 hover:text-indigo-700 font-medium flex items-center gap-1.5 whitespace-nowrap transition-all duration-200">
+                <span>Industries</span>
+                <ChevronRight size={13} className={`transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${showIndustriesDropdown ? 'rotate-90 text-indigo-500' : 'text-neutral-400'}`} />
               </button>
-              {showIndustriesDropdown && (
-                <div className="absolute top-full left-0 mt-1 w-64 bg-white rounded-2xl shadow-2xl border border-slate-200/80 py-2 z-50">
-                  <div className="px-4 py-2 border-b border-slate-100 mb-1">
-                    <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Industries</p>
-                  </div>
-                  {allIndustries.map((industry) => (
-                    <button
-                      key={industry.slug}
-                      onClick={() => navigate({ to: `/industries/${industry.slug}` })}
-                      className="w-full text-left px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors font-medium"
-                    >
-                      {industry.name}
-                    </button>
-                  ))}
-                </div>
-              )}
+              <AnimatePresence>
+                {showIndustriesDropdown && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 6, scale: 0.97 }}
+                    transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                    className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-[280px] z-50"
+                  >
+                    <div className="absolute -inset-1 rounded-2xl bg-gradient-to-b from-purple-500/10 to-pink-500/5 blur-lg pointer-events-none" />
+                    <div className="relative bg-white/95 backdrop-blur-xl rounded-2xl border border-purple-100/50 shadow-[0_20px_60px_-12px_rgba(139,92,246,0.15)] overflow-hidden">
+                      <div className="h-[2px] bg-gradient-to-r from-purple-500 via-pink-500 to-rose-500" />
+                      <div className="px-4 pt-3 pb-2">
+                        <p className="text-[10px] font-bold text-purple-400/80 uppercase tracking-[0.15em]">Industries</p>
+                      </div>
+                      <div className="px-2 pb-2">
+                        {allIndustries.map((industry) => (
+                          <button
+                            key={industry.slug}
+                            onClick={() => navigate({ to: `/industries/${industry.slug}` })}
+                            className="group/item w-full text-left px-3 py-2.5 text-sm text-neutral-600 hover:text-purple-700 font-medium transition-all duration-200 flex items-center gap-3 rounded-xl hover:bg-gradient-to-r hover:from-purple-50/80 hover:to-pink-50/40"
+                          >
+                            <span className="w-2 h-2 rounded-full bg-purple-300/60 group-hover/item:bg-purple-500 group-hover/item:shadow-[0_0_8px_rgba(139,92,246,0.4)] transition-all duration-200 shrink-0" />
+                            <span>{industry.name}</span>
+                            <ArrowRight size={13} className="ml-auto opacity-0 -translate-x-2 group-hover/item:opacity-60 group-hover/item:translate-x-0 transition-all duration-200 text-purple-400" />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
             {navItems.map((item) => (
               <a
                 key={item.name}
                 href={item.link}
                 onClick={(e) => handleAnchorClick(e, item.link)}
-                className="px-3 py-2 text-slate-500 hover:text-slate-900 font-medium transition-colors cursor-pointer whitespace-nowrap shrink-0"
+                className="px-3.5 py-2 text-neutral-500 hover:text-indigo-700 font-medium transition-all duration-200 cursor-pointer whitespace-nowrap shrink-0 relative group"
               >
                 {item.name}
+                <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-0 group-hover:w-4/5 h-[2px] bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]" />
               </a>
             ))}
           </div>
@@ -465,7 +488,7 @@ const Landing: React.FC = () => {
               onClick={primaryCta.action}
               disabled={primaryCta.disabled}
               as="button"
-              className="rounded-2xl px-6 py-2.5 cursor-pointer text-[13px]"
+              className="rounded-xl px-6 py-2.5 cursor-pointer text-[13px]"
             >
               {primaryCta.icon}
               {primaryCta.label}
@@ -479,14 +502,14 @@ const Landing: React.FC = () => {
             <NavbarLogo />
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
+              className="relative p-2.5 rounded-xl transition-all duration-200 hover:bg-indigo-50/60 group"
               aria-label="Toggle menu"
             >
-              {isMobileMenuOpen ? (
-                <X className="w-6 h-6 text-slate-700" />
-              ) : (
-                <Menu className="w-6 h-6 text-slate-700" />
-              )}
+              <div className="relative w-5 h-5">
+                <span className={`absolute left-0 block w-5 h-[2px] rounded-full bg-neutral-600 group-hover:bg-indigo-600 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${isMobileMenuOpen ? 'top-[9px] rotate-45' : 'top-[3px] rotate-0'}`} />
+                <span className={`absolute left-0 top-[9px] block w-5 h-[2px] rounded-full bg-neutral-600 group-hover:bg-indigo-600 transition-all duration-200 ${isMobileMenuOpen ? 'opacity-0 scale-x-0' : 'opacity-100 scale-x-100'}`} />
+                <span className={`absolute left-0 block w-5 h-[2px] rounded-full bg-neutral-600 group-hover:bg-indigo-600 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${isMobileMenuOpen ? 'top-[9px] -rotate-45' : 'top-[15px] rotate-0'}`} />
+              </div>
             </button>
           </MobileNavHeader>
 
@@ -494,32 +517,48 @@ const Landing: React.FC = () => {
             isOpen={isMobileMenuOpen}
             onClose={() => setIsMobileMenuOpen(false)}
           >
-            <div className="mb-4">
-              <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 px-4">Products</div>
-              {allProducts.map((product) => (
-                <a
-                  key={product.id}
-                  href={`/products/${product.id}`}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="block px-4 py-2 text-slate-700 hover:bg-slate-50 rounded-lg transition"
-                >
-                  {product.name}
-                </a>
-              ))}
+            {/* Products section */}
+            <div className="mb-3">
+              <div className="flex items-center gap-2 mb-2 px-1">
+                <div className="h-[2px] w-4 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500" />
+                <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-[0.15em]">Products</span>
+              </div>
+              <div className="grid grid-cols-2 gap-1">
+                {allProducts.map((product) => (
+                  <a
+                    key={product.id}
+                    href={`/products/${product.id}`}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="px-3 py-2 text-[13px] text-neutral-600 hover:text-indigo-700 hover:bg-indigo-50/60 rounded-xl transition-all duration-200 font-medium truncate"
+                  >
+                    {product.name}
+                  </a>
+                ))}
+              </div>
             </div>
-            <div className="mb-4">
-              <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 px-4">Industries</div>
+
+            {/* Industries section */}
+            <div className="mb-3">
+              <div className="flex items-center gap-2 mb-2 px-1">
+                <div className="h-[2px] w-4 rounded-full bg-gradient-to-r from-purple-500 to-pink-500" />
+                <span className="text-[10px] font-bold text-purple-400 uppercase tracking-[0.15em]">Industries</span>
+              </div>
               {allIndustries.map((industry) => (
                 <a
                   key={industry.slug}
                   href={`/industries/${industry.slug}`}
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="block px-4 py-2 text-slate-700 hover:bg-slate-50 rounded-lg transition"
+                  className="block px-3 py-2 text-[13px] text-neutral-600 hover:text-purple-700 hover:bg-purple-50/60 rounded-xl transition-all duration-200 font-medium"
                 >
                   {industry.name}
                 </a>
               ))}
             </div>
+
+            {/* Divider */}
+            <div className="h-px bg-gradient-to-r from-transparent via-neutral-200 to-transparent my-2" />
+
+            {/* Nav links */}
             {navItems.map((item, idx) => (
               <a
                 key={`mobile-link-${idx}`}
@@ -528,19 +567,21 @@ const Landing: React.FC = () => {
                   setIsMobileMenuOpen(false);
                   handleAnchorClick(e, item.link);
                 }}
-                className="relative text-slate-600 hover:text-slate-900 cursor-pointer"
+                className="px-3 py-2 text-[13px] text-neutral-600 hover:text-indigo-700 hover:bg-indigo-50/60 rounded-xl transition-all duration-200 font-medium cursor-pointer"
               >
-                <span className="block">{item.name}</span>
+                {item.name}
               </a>
             ))}
-            <div className="flex w-full flex-col gap-3">
+
+            {/* CTA */}
+            <div className="flex w-full flex-col gap-3 mt-2">
               <NavbarButton
                 onClick={() => {
                   setIsMobileMenuOpen(false);
                   primaryCta.action();
                 }}
                 variant={hasAuthenticatedSession ? "gradient" : "primary"}
-                className="w-full rounded-xl cursor-pointer"
+                className="w-full rounded-xl cursor-pointer py-3"
                 as="button"
                 disabled={primaryCta.disabled}
               >
@@ -552,7 +593,7 @@ const Landing: React.FC = () => {
         </MobileNav>
       </Navbar>
 
-      {/* Hero */}
+{/* Hero */}
       <main className="relative pt-28 sm:pt-32 lg:pt-40 pb-16 sm:pb-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 z-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-12 items-start">
 
@@ -765,16 +806,6 @@ const Landing: React.FC = () => {
         </div>
       </main>
 
-      {/* Solutions by product — vertical scrolling cards */}
-      <section id="solutions">
-        <Suspense fallback={<div className="min-h-[500px]" />}>
-          <StackedCardsSection
-            businessApps={businessApps}
-            activeProduct={activeProduct}
-            onProductChange={setActiveProduct}
-          />
-        </Suspense>
-      </section>
       <section id="workflows" className="py-10 bg-white" style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 800px' }}>
         <Suspense fallback={<div className="min-h-[400px]" />}>
           <WorkflowVisualizer />
