@@ -369,27 +369,20 @@ const Landing: React.FC = () => {
   return (
     <div className="min-h-screen bg-white text-slate-900 selection:bg-teal-100 selection:text-teal-900 font-sans overflow-x-clip relative">
 
-      {/* Background — visible geometric SVG shapes */}
+      {/* Background — bold diagonal band + geometric accents */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-white to-slate-50" />
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-white to-slate-50/80" />
         <svg className="absolute w-full h-full" preserveAspectRatio="none" viewBox="0 0 1440 900" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          {/* Large angular slab — top right corner */}
-          <path d="M1050 0 L1440 0 L1440 280 Z" fill="#e2e8f0" opacity="0.5" />
-          {/* Bottom-left triangle */}
-          <path d="M0 650 L0 900 L350 900 Z" fill="#e2e8f0" opacity="0.4" />
-          {/* Diagonal slash lines */}
-          <line x1="180" y1="0" x2="1440" y2="780" stroke="#cbd5e1" strokeWidth="1" opacity="0.3" />
-          <line x1="380" y1="0" x2="1440" y2="660" stroke="#cbd5e1" strokeWidth="0.5" opacity="0.2" />
-          {/* Grid crosshair at right-center */}
-          <line x1="1350" y1="350" x2="1440" y2="350" stroke="#cbd5e1" strokeWidth="1" opacity="0.25" />
-          <line x1="1395" y1="300" x2="1395" y2="400" stroke="#cbd5e1" strokeWidth="1" opacity="0.25" />
-          {/* Small outlined diamond */}
-          <path d="M120 180 L140 160 L160 180 L140 200 Z" fill="none" stroke="#cbd5e1" strokeWidth="1.5" opacity="0.25" />
-          {/* Dotted horizontal accents */}
-          <line x1="0" y1="500" x2="100" y2="500" stroke="#cbd5e1" strokeWidth="1" strokeDasharray="4 4" opacity="0.3" />
-          <line x1="1340" y1="700" x2="1440" y2="700" stroke="#cbd5e1" strokeWidth="1" strokeDasharray="4 4" opacity="0.25" />
-          {/* Subtle right-edge chevron */}
-          <path d="M1440 500 L1400 540 L1440 580 Z" fill="#e2e8f0" opacity="0.3" />
+          {/* Main diagonal band — sweeps from top-left to bottom-right */}
+          <polygon points="0,200 1440,550 1440,700 0,350" fill="#f1f5f9" opacity="0.7" />
+          {/* Thinner parallel band above */}
+          <polygon points="0,120 1440,470 1440,510 0,160" fill="#f1f5f9" opacity="0.4" />
+          {/* Edge line along the main band */}
+          <line x1="0" y1="200" x2="1440" y2="550" stroke="#e2e8f0" strokeWidth="1" />
+          <line x1="0" y1="350" x2="1440" y2="700" stroke="#e2e8f0" strokeWidth="1" />
+          {/* Corner accents */}
+          <path d="M1380 0 L1440 0 L1440 80 Z" fill="#e2e8f0" opacity="0.5" />
+          <path d="M0 820 L0 900 L100 900 Z" fill="#e2e8f0" opacity="0.4" />
         </svg>
       </div>
 
@@ -398,28 +391,32 @@ const Landing: React.FC = () => {
         {/* Desktop Navigation */}
         <NavBody>
           <NavbarLogo />
-          <div className="flex-1 flex flex-row items-center justify-center space-x-1 text-sm font-medium text-slate-600 transition duration-200 px-4 min-w-0">
+          <div className="flex-1 flex flex-row items-center justify-center gap-1 text-[13px] font-medium text-slate-500 px-4 min-w-0">
             {/* Products Dropdown */}
             <div
               className="relative shrink-0"
               onMouseEnter={handleProductsMouseEnter}
               onMouseLeave={handleProductsMouseLeave}
             >
-              <button
-                className="px-3 py-2 text-slate-600 hover:text-slate-900 font-medium flex items-center gap-1 whitespace-nowrap transition-colors"
-              >
+              <button className="px-3 py-2 text-slate-500 hover:text-slate-900 font-medium flex items-center gap-1 whitespace-nowrap transition-colors">
                 Products
-                <ChevronRight size={16} className={`transition-transform ${showProductsDropdown ? 'rotate-90' : ''}`} />
+                <ChevronRight size={14} className={`transition-transform duration-200 ${showProductsDropdown ? 'rotate-90' : ''}`} />
               </button>
               {showProductsDropdown && (
-                <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-slate-200 py-2 z-50">
+                <div className="absolute top-full left-0 mt-1 w-72 bg-white rounded-2xl shadow-2xl border border-slate-200/80 py-2 z-50">
+                  <div className="px-4 py-2 border-b border-slate-100 mb-1">
+                    <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Products</p>
+                  </div>
                   {allProducts.map((product) => (
                     <button
                       key={product.id}
                       onClick={() => navigate({ to: `/products/${product.id}` })}
-                      className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+                      className="w-full text-left px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors flex items-center gap-2.5"
                     >
-                      {product.name}
+                      <span className="w-6 h-6 rounded-md bg-slate-100 flex items-center justify-center shrink-0">
+                        <DynamicIcon name={ORBIT_APPS.find(a => a.id === product.id)?.icon ?? 'Box'} className="w-3.5 h-3.5 text-slate-500" />
+                      </span>
+                      <span className="font-medium">{product.name}</span>
                     </button>
                   ))}
                 </div>
@@ -431,19 +428,20 @@ const Landing: React.FC = () => {
               onMouseEnter={handleIndustriesMouseEnter}
               onMouseLeave={handleIndustriesMouseLeave}
             >
-              <button
-                className="px-3 py-2 text-slate-600 hover:text-slate-900 font-medium flex items-center gap-1 whitespace-nowrap transition-colors"
-              >
+              <button className="px-3 py-2 text-slate-500 hover:text-slate-900 font-medium flex items-center gap-1 whitespace-nowrap transition-colors">
                 Industries
-                <ChevronRight size={16} className={`transition-transform ${showIndustriesDropdown ? 'rotate-90' : ''}`} />
+                <ChevronRight size={14} className={`transition-transform duration-200 ${showIndustriesDropdown ? 'rotate-90' : ''}`} />
               </button>
               {showIndustriesDropdown && (
-                <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-slate-200 py-2 z-50">
+                <div className="absolute top-full left-0 mt-1 w-64 bg-white rounded-2xl shadow-2xl border border-slate-200/80 py-2 z-50">
+                  <div className="px-4 py-2 border-b border-slate-100 mb-1">
+                    <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Industries</p>
+                  </div>
                   {allIndustries.map((industry) => (
                     <button
                       key={industry.slug}
                       onClick={() => navigate({ to: `/industries/${industry.slug}` })}
-                      className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+                      className="w-full text-left px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors font-medium"
                     >
                       {industry.name}
                     </button>
@@ -456,7 +454,7 @@ const Landing: React.FC = () => {
                 key={item.name}
                 href={item.link}
                 onClick={(e) => handleAnchorClick(e, item.link)}
-                className="px-3 py-2 text-slate-600 hover:text-slate-900 font-medium transition-colors cursor-pointer whitespace-nowrap shrink-0"
+                className="px-3 py-2 text-slate-500 hover:text-slate-900 font-medium transition-colors cursor-pointer whitespace-nowrap shrink-0"
               >
                 {item.name}
               </a>
@@ -468,7 +466,7 @@ const Landing: React.FC = () => {
               onClick={primaryCta.action}
               disabled={primaryCta.disabled}
               as="button"
-              className="rounded-xl px-6 py-2.5 cursor-pointer"
+              className="rounded-2xl px-6 py-2.5 cursor-pointer text-[13px]"
             >
               {primaryCta.icon}
               {primaryCta.label}
@@ -610,51 +608,75 @@ const Landing: React.FC = () => {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -6 }}
                   transition={{ duration: 0.2 }}
-                  className="bg-slate-50/80 rounded-2xl border border-slate-200/80 p-4 sm:p-5"
+                  className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden"
                 >
-                  <div className="flex items-start gap-3.5">
-                    <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center shrink-0">
-                      <DynamicIcon name={activeProduct.iconName} className="w-5 h-5 text-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="text-base font-bold text-slate-900 tracking-tight">{activeProduct.name}</h3>
-                        <ArrowRight className="w-3.5 h-3.5 text-slate-300" />
-                        <span className="text-xs text-slate-400">{activeProduct.tagline}</span>
+                  {/* Top accent bar — colored strip */}
+                  <div className="h-1 bg-slate-900" />
+                  <div className="p-4 sm:p-5">
+                    {/* Product header */}
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-11 h-11 rounded-xl bg-slate-900 flex items-center justify-center shrink-0">
+                        <DynamicIcon name={activeProduct.iconName} className="w-5 h-5 text-white" />
                       </div>
-                      {/* Data flow connections */}
-                      {(() => {
-                        const deps = DEPENDENCIES.filter(([f, t]) =>
-                          ORBIT_APPS[f].id === activeProduct.id || ORBIT_APPS[t].id === activeProduct.id
-                        );
-                        const hubLabel = HUB_PRODUCT_LABELS[activeProduct.id];
-                        if (deps.length === 0 && !hubLabel) return null;
-                        return (
-                          <div className="flex flex-wrap gap-1.5 mt-2.5">
-                            <span className="text-[10px] text-slate-400 font-medium self-center">Syncs data with</span>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight leading-tight">{activeProduct.name}</h3>
+                        <p className="text-xs sm:text-sm text-slate-500 mt-0.5">{activeProduct.tagline}</p>
+                      </div>
+                      <button
+                        onClick={() => navigate({ to: `/products/${activeProduct.id}` })}
+                        className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition-colors shrink-0"
+                      >
+                        Explore <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    {/* Description */}
+                    <p className="text-sm text-slate-500 leading-relaxed mb-4">{activeProduct.description}</p>
+
+                    {/* Data flow connections */}
+                    {(() => {
+                      const deps = DEPENDENCIES.filter(([f, t]) =>
+                        ORBIT_APPS[f].id === activeProduct.id || ORBIT_APPS[t].id === activeProduct.id
+                      );
+                      const hubLabel = HUB_PRODUCT_LABELS[activeProduct.id];
+                      if (deps.length === 0 && !hubLabel) return null;
+                      return (
+                        <div className="pt-3 border-t border-slate-100">
+                          <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-2">Data Connections</p>
+                          <div className="flex flex-wrap gap-2">
                             {hubLabel && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white border border-slate-200 text-[10px] sm:text-[11px] text-slate-600 font-medium shadow-sm">
-                                <Zap className="w-3 h-3 text-slate-400" />
-                                Zopkit
-                                <span className="text-slate-300 mx-0.5">/</span>
-                                <span className="text-slate-400">{hubLabel}</span>
-                              </span>
+                              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-100">
+                                <Zap className="w-3.5 h-3.5 text-slate-500" />
+                                <div>
+                                  <div className="text-[11px] font-semibold text-slate-700">Zopkit Platform</div>
+                                  <div className="text-[10px] text-slate-400">{hubLabel}</div>
+                                </div>
+                              </div>
                             )}
                             {deps.map(([f, t, label], i) => {
                               const other = ORBIT_APPS[f].id === activeProduct.id ? ORBIT_APPS[t] : ORBIT_APPS[f];
                               return (
-                                <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white border border-slate-200 text-[10px] sm:text-[11px] text-slate-600 font-medium shadow-sm">
-                                  <DynamicIcon name={other.icon} className="w-3 h-3 text-slate-400" />
-                                  {other.label}
-                                  <span className="text-slate-300 mx-0.5">/</span>
-                                  <span className="text-slate-400">{label}</span>
-                                </span>
+                                <div key={i} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-100">
+                                  <DynamicIcon name={other.icon} className="w-3.5 h-3.5 text-slate-500" />
+                                  <div>
+                                    <div className="text-[11px] font-semibold text-slate-700">{other.label}</div>
+                                    <div className="text-[10px] text-slate-400">{label}</div>
+                                  </div>
+                                </div>
                               );
                             })}
                           </div>
-                        );
-                      })()}
-                    </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Mobile explore button */}
+                    <button
+                      onClick={() => navigate({ to: `/products/${activeProduct.id}` })}
+                      className="sm:hidden mt-4 w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg bg-slate-900 text-white text-sm font-semibold"
+                    >
+                      Explore {activeProduct.name} <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </motion.div>
               </AnimatePresence>
