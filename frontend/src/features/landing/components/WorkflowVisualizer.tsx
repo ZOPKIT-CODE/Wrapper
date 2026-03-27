@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
     Briefcase, CheckCircle2, Box, Truck, FileCheck, DollarSign,
     UserPlus, Users, Monitor, GraduationCap, CreditCard, ShoppingCart,
@@ -78,10 +78,17 @@ export const WorkflowVisualizer = () => {
     const [isMobile, setIsMobile] = useState(false);
 
     useEffect(() => {
-        const checkMobile = () => setIsMobile(window.innerWidth < 640);
+        let resizeTimer: ReturnType<typeof setTimeout>;
+        const checkMobile = () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => setIsMobile(window.innerWidth < 640), 150);
+        };
         checkMobile();
         window.addEventListener('resize', checkMobile);
-        return () => window.removeEventListener('resize', checkMobile);
+        return () => {
+            window.removeEventListener('resize', checkMobile);
+            clearTimeout(resizeTimer);
+        };
     }, []);
 
     const activeWorkflow = workflows[activeWorkflowIndex];
@@ -97,13 +104,16 @@ export const WorkflowVisualizer = () => {
     // Generate a random ID
     const generateId = () => Math.floor(1000 + Math.random() * 9000);
 
+    const logsRef = useRef(logs);
+    logsRef.current = logs;
+
     // Workflow Cycle Logic
     useEffect(() => {
         let stepTimer: ReturnType<typeof setTimeout>;
         let nextFlowTimer: ReturnType<typeof setTimeout>;
 
         // New execution ID when starting a flow
-        if (activeStepIndex === 0 && logs.length === 0) {
+        if (activeStepIndex === 0 && logsRef.current.length === 0) {
             setExecutionId(`SYS-${generateId()}`);
         }
 
@@ -112,13 +122,16 @@ export const WorkflowVisualizer = () => {
             const now = new Date();
             const timestamp = now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
-            // Simulating simpler, readable business logs
-            setLogs(prev => [
-                ...prev,
-                `[${timestamp}] STARTED: ${step.title} (${step.app})`,
-                `[${timestamp}] ACTION: ${step.action}...`,
-                `[${timestamp}] COMPLETED: Status '${step.status}' verified.`
-            ]);
+            // Cap logs at 50 entries to prevent unbounded DOM growth
+            setLogs(prev => {
+                const newLogs = [
+                    ...prev,
+                    `[${timestamp}] STARTED: ${step.title} (${step.app})`,
+                    `[${timestamp}] ACTION: ${step.action}...`,
+                    `[${timestamp}] COMPLETED: Status '${step.status}' verified.`
+                ];
+                return newLogs.length > 50 ? newLogs.slice(-50) : newLogs;
+            });
 
             if (activeStepIndex < activeWorkflow.steps.length - 1) {
                 stepTimer = setTimeout(() => {

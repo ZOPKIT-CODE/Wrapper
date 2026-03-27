@@ -1,4 +1,4 @@
-import React, { Suspense, useState, useEffect, useRef } from 'react'
+import React, { Suspense, useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useNavigate, useLocation } from '@tanstack/react-router'
 import { useKindeAuth } from '@kinde-oss/kinde-auth-react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -32,6 +32,49 @@ import {
   MobileNavMenu,
 } from "@/components/ui/resizable-navbar"
 import { LandingFooter } from "@/components/layout/LandingFooter"
+
+const ALL_PRODUCTS = [
+  { id: 'operations-management', name: 'Operations Management' },
+  { id: 'b2b-crm', name: 'B2B CRM' },
+  { id: 'financial-accounting', name: 'Financial Accounting' },
+  { id: 'project-management', name: 'Project Management' },
+  { id: 'hrms', name: 'HRMS' },
+  { id: 'esop-system', name: 'ESOP System' },
+  { id: 'affiliate-connect', name: 'Affiliate Connect' },
+  { id: 'flowtilla', name: 'Flowtilla' },
+  { id: 'zopkit-academy', name: 'Zopkit Academy' },
+  { id: 'zopkit-itsm', name: 'Zopkit ITSM' },
+  { id: 'b2c-crm', name: 'B2C CRM' },
+] as const;
+
+const ALL_INDUSTRIES = [
+  { slug: 'e-commerce', name: 'E-Commerce & Retail' },
+  { slug: 'saas', name: 'SaaS & Technology' },
+  { slug: 'manufacturing', name: 'Manufacturing' },
+  { slug: 'professional-services', name: 'Professional Services' },
+] as const;
+
+const NAV_ITEMS = [
+  { name: "Pricing", link: "/pricing" },
+  { name: "Workflows", link: "#workflows" },
+  { name: "Contact Us", link: "#contact" },
+] as const;
+
+const COLOR_TO_HEX_PRIMARY: Record<string, string> = {
+  blue: '#3b82f6',
+  green: '#10b981',
+  purple: '#a855f7',
+  orange: '#f97316',
+  indigo: '#6366f1',
+};
+
+const COLOR_TO_HEX_SECONDARY: Record<string, string> = {
+  blue: '#6366f1',
+  green: '#06b6d4',
+  purple: '#ec4899',
+  orange: '#f59e0b',
+  indigo: '#8b5cf6',
+};
 
 const Landing: React.FC = () => {
   const navigate = useNavigate()
@@ -176,55 +219,38 @@ const Landing: React.FC = () => {
     }
   }
 
-  const allProducts = [
-    { id: 'operations-management', name: 'Operations Management' },
-    { id: 'b2b-crm', name: 'B2B CRM' },
-    { id: 'financial-accounting', name: 'Financial Accounting' },
-    { id: 'project-management', name: 'Project Management' },
-    { id: 'hrms', name: 'HRMS' },
-    { id: 'esop-system', name: 'ESOP System' },
-    { id: 'affiliate-connect', name: 'Affiliate Connect' },
-    { id: 'flowtilla', name: 'Flowtilla' },
-    { id: 'zopkit-academy', name: 'Zopkit Academy' },
-    { id: 'zopkit-itsm', name: 'Zopkit ITSM' },
-    { id: 'b2c-crm', name: 'B2C CRM' },
-  ];
+  const allProducts = ALL_PRODUCTS;
 
-  const handleProductsMouseEnter = () => {
+  const handleProductsMouseEnter = useCallback(() => {
     if (productsDropdownTimeoutRef.current) {
       clearTimeout(productsDropdownTimeoutRef.current);
     }
     setShowProductsDropdown(true);
-  };
+  }, []);
 
-  const handleProductsMouseLeave = () => {
+  const handleProductsMouseLeave = useCallback(() => {
     productsDropdownTimeoutRef.current = setTimeout(() => {
       setShowProductsDropdown(false);
     }, 300);
-  };
+  }, []);
 
-  const allIndustries = [
-    { slug: 'e-commerce', name: 'E-Commerce & Retail' },
-    { slug: 'saas', name: 'SaaS & Technology' },
-    { slug: 'manufacturing', name: 'Manufacturing' },
-    { slug: 'professional-services', name: 'Professional Services' },
-  ];
+  const allIndustries = ALL_INDUSTRIES;
 
-  const handleIndustriesMouseEnter = () => {
+  const handleIndustriesMouseEnter = useCallback(() => {
     if (industriesDropdownTimeoutRef.current) {
       clearTimeout(industriesDropdownTimeoutRef.current);
     }
     setShowIndustriesDropdown(true);
-  };
+  }, []);
 
-  const handleIndustriesMouseLeave = () => {
+  const handleIndustriesMouseLeave = useCallback(() => {
     industriesDropdownTimeoutRef.current = setTimeout(() => {
       setShowIndustriesDropdown(false);
     }, 300);
-  };
+  }, []);
 
   // Handle nav links: path links use React Router; hash links scroll in-page
-  const handleAnchorClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+  const handleAnchorClick = useCallback((e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     if (href.startsWith('/')) {
       e.preventDefault();
       navigate({ to: href });
@@ -239,13 +265,9 @@ const Landing: React.FC = () => {
       const offsetPosition = elementPosition + window.pageYOffset - navbarOffset;
       window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
     }
-  };
+  }, [navigate]);
 
-  const navItems = [
-    { name: "Pricing", link: "/pricing" },
-    { name: "Workflows", link: "#workflows" },
-    { name: "Contact Us", link: "#contact" },
-  ];
+  const navItems = NAV_ITEMS;
 
   const hasAuthenticatedSession = authChecked && (backendAuthenticated ?? isAuthenticated)
 
@@ -287,6 +309,17 @@ const Landing: React.FC = () => {
 
   const primaryCta = getPrimaryCtaConfig()
 
+  const businessApps = useMemo(() =>
+    products.map(p => ({
+      ...p,
+      icon: (props: any) => <DynamicIcon name={p.iconName} {...props} />
+    })),
+    []
+  );
+
+  const primaryColorHex = COLOR_TO_HEX_PRIMARY[activeProduct.color] ?? '#14b8a6';
+  const secondaryColorHex = COLOR_TO_HEX_SECONDARY[activeProduct.color] ?? '#10b981';
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 selection:bg-blue-100 selection:text-blue-900 font-sans overflow-x-clip relative">
 
@@ -304,32 +337,16 @@ const Landing: React.FC = () => {
         {/* Secondary angled grid layer — offset for parallax depth */}
         <div className="absolute inset-0 bg-grid-fine opacity-20" />
 
-        {/* Dynamic color spotlight (reactive to active product) */}
-        <motion.div
-          animate={{
-            background: `radial-gradient(circle at 60% 40%, ${activeProduct.color === 'blue' ? '#3b82f6' :
-              activeProduct.color === 'green' ? '#10b981' :
-                activeProduct.color === 'purple' ? '#a855f7' :
-                  activeProduct.color === 'orange' ? '#f97316' :
-                    activeProduct.color === 'indigo' ? '#6366f1' : '#14b8a6'
-              }18 0%, transparent 55%)`
-          }}
-          transition={{ duration: 1.2, ease: 'easeInOut' }}
-          className="absolute top-[-20%] right-[-10%] w-[100vw] h-[100vh] blur-[100px] will-change-[background]"
+        {/* Dynamic color spotlight (reactive to active product) — uses CSS transition on background-color for GPU compositing */}
+        <div
+          className="absolute top-[-20%] right-[-10%] w-[100vw] h-[100vh] blur-[100px] rounded-full transition-[background-color] duration-1000 ease-in-out will-change-transform"
+          style={{ backgroundColor: `${primaryColorHex}18` }}
         />
 
         {/* Secondary spotlight — bottom left */}
-        <motion.div
-          animate={{
-            background: `radial-gradient(circle at 30% 80%, ${activeProduct.color === 'blue' ? '#6366f1' :
-              activeProduct.color === 'green' ? '#06b6d4' :
-                activeProduct.color === 'purple' ? '#ec4899' :
-                  activeProduct.color === 'orange' ? '#f59e0b' :
-                    activeProduct.color === 'indigo' ? '#8b5cf6' : '#10b981'
-              }10 0%, transparent 50%)`
-          }}
-          transition={{ duration: 1.5, ease: 'easeInOut' }}
-          className="absolute bottom-[-10%] left-[-5%] w-[80vw] h-[70vh] blur-[120px] will-change-[background]"
+        <div
+          className="absolute bottom-[-10%] left-[-5%] w-[80vw] h-[70vh] blur-[120px] rounded-full transition-[background-color] duration-1000 ease-in-out will-change-transform"
+          style={{ backgroundColor: `${secondaryColorHex}10` }}
         />
       </div>
 
@@ -632,10 +649,7 @@ const Landing: React.FC = () => {
       <section id="solutions">
         <Suspense fallback={<div className="min-h-[500px]" />}>
           <StackedCardsSection
-            businessApps={products.map(p => ({
-              ...p,
-              icon: (props: any) => <DynamicIcon name={p.iconName} {...props} />
-            }))}
+            businessApps={businessApps}
             activeProduct={activeProduct}
             onProductChange={setActiveProduct}
           />

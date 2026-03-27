@@ -13,6 +13,21 @@ interface VisualHubProps {
     product: Product;
 }
 
+const INSIGHT_FALLBACKS = [
+    "System parameters optimized.",
+    "Real-time data synchronization complete.",
+    "Workflow efficiency increased by 14%.",
+    "Predictive analytics module active.",
+    "Latency reduced by 40%. Velocity nominal.",
+    "Resource allocation optimized. Efficiency at 98%.",
+] as const;
+
+// Deterministic seeded PRNG — avoids Math.random() so data is stable per product
+const seededRandom = (seed: number) => {
+    const x = Math.sin(seed) * 10000;
+    return x - Math.floor(x);
+};
+
 const generateData = (id: number | string) => {
     let seed = 0;
     if (typeof id === 'number') {
@@ -25,13 +40,13 @@ const generateData = (id: number | string) => {
     }
     const base = Math.abs(seed) % 1000;
     return [
-        { name: 'Mon', value: base + Math.random() * 200 },
-        { name: 'Tue', value: base + Math.random() * 300 + 100 },
-        { name: 'Wed', value: base + Math.random() * 200 + 50 },
-        { name: 'Thu', value: base + Math.random() * 400 + 100 },
-        { name: 'Fri', value: base + Math.random() * 500 + 200 },
-        { name: 'Sat', value: base + Math.random() * 300 + 100 },
-        { name: 'Sun', value: base + Math.random() * 600 + 300 },
+        { name: 'Mon', value: base + seededRandom(seed + 1) * 200 },
+        { name: 'Tue', value: base + seededRandom(seed + 2) * 300 + 100 },
+        { name: 'Wed', value: base + seededRandom(seed + 3) * 200 + 50 },
+        { name: 'Thu', value: base + seededRandom(seed + 4) * 400 + 100 },
+        { name: 'Fri', value: base + seededRandom(seed + 5) * 500 + 200 },
+        { name: 'Sat', value: base + seededRandom(seed + 6) * 300 + 100 },
+        { name: 'Sun', value: base + seededRandom(seed + 7) * 600 + 300 },
     ];
 };
 
@@ -43,10 +58,18 @@ export const VisualHub: React.FC<VisualHubProps> = ({ product }) => {
     const rafRef = useRef<number>(0);
 
     useEffect(() => {
-        const checkMobile = () => setIsMobile(window.innerWidth < 768);
-        checkMobile();
+        let resizeTimer: ReturnType<typeof setTimeout>;
+        const checkMobile = () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => setIsMobile(window.innerWidth < 768), 150);
+        };
+        // Run immediately on mount (no debounce needed for initial check)
+        setIsMobile(window.innerWidth < 768);
         window.addEventListener('resize', checkMobile);
-        return () => window.removeEventListener('resize', checkMobile);
+        return () => {
+            window.removeEventListener('resize', checkMobile);
+            clearTimeout(resizeTimer);
+        };
     }, []);
 
     const disableTilt = isMobile || prefersReducedMotion;
@@ -79,20 +102,11 @@ export const VisualHub: React.FC<VisualHubProps> = ({ product }) => {
 
     useEffect(() => () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); }, []);
 
-    const insightFallbacks = [
-        "System parameters optimized.",
-        "Real-time data synchronization complete.",
-        "Workflow efficiency increased by 14%.",
-        "Predictive analytics module active.",
-        "Latency reduced by 40%. Velocity nominal.",
-        "Resource allocation optimized. Efficiency at 98%.",
-    ];
-
     useEffect(() => {
         setChartData(generateData(product.id));
         const hash = typeof product.id === 'number' ? product.id : product.id.length;
-        setInsight(insightFallbacks[Math.abs(hash) % insightFallbacks.length]);
-    }, [product]);
+        setInsight(INSIGHT_FALLBACKS[Math.abs(hash) % INSIGHT_FALLBACKS.length]);
+    }, [product.id]);
 
     const getFeaturePosition = (index: number, total: number, radius: number) => {
         // Distribute nicely around the circle
@@ -119,9 +133,9 @@ export const VisualHub: React.FC<VisualHubProps> = ({ product }) => {
 
             {/* Dynamic Background Glow - Centered & Contained */}
             <motion.div
-                animate={{ scale: [0.9, 1.1, 0.9], opacity: [0.2, 0.4, 0.2] }}
+                animate={prefersReducedMotion ? undefined : { scale: [0.9, 1.1, 0.9], opacity: [0.2, 0.4, 0.2] }}
                 transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-                className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] md:w-[600px] md:h-[600px] lg:w-[800px] lg:h-[800px] bg-gradient-to-tr ${product.gradient} blur-[80px] md:blur-[120px] rounded-full transition-colors duration-1000 opacity-20 pointer-events-none`}
+                className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] md:w-[600px] md:h-[600px] lg:w-[800px] lg:h-[800px] bg-gradient-to-tr ${product.gradient} blur-[80px] md:blur-[120px] rounded-full transition-colors duration-1000 opacity-20 pointer-events-none will-change-transform`}
             />
 
             {/* Isometric Plane Wrapper */}

@@ -265,8 +265,8 @@ const NetworkVisual = ({ color = 'blue' }: { color?: string }) => {
   return (
     <div className="w-full h-full relative flex items-center justify-center preserve-3d">
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="w-64 h-64 rounded-full border border-slate-100 animate-[spin_10s_linear_infinite]"></div>
-        <div className="absolute w-40 h-40 rounded-full border border-slate-100 animate-[spin_15s_linear_infinite_reverse]"></div>
+        <div className="w-64 h-64 rounded-full border border-slate-100 animate-[spin_10s_linear_infinite] will-change-transform"></div>
+        <div className="absolute w-40 h-40 rounded-full border border-slate-100 animate-[spin_15s_linear_infinite_reverse] will-change-transform"></div>
       </div>
       <motion.div className={`relative z-10 w-16 h-16 rounded-full ${theme.bgDark} shadow-xl flex items-center justify-center text-white`} style={{ transform: 'translateZ(30px)' }}>
         <Globe size={24} />
@@ -614,7 +614,7 @@ const getModuleVisual = (productName: string, moduleName: string, color: string)
 
 // --- MAIN CARD COMPONENT ---
 
-const StackedCard: React.FC<CardProps> = ({
+const StackedCard: React.FC<CardProps> = React.memo(({
   app,
   index,
   isActive,
@@ -637,7 +637,7 @@ const StackedCard: React.FC<CardProps> = ({
   return (
     <div
       className="h-screen sticky top-0 flex items-center justify-center px-4"
-      style={{ zIndex: index + 1 }}
+      style={{ zIndex: index + 1, contain: 'layout style paint' }}
     >
       <div className="w-full max-w-[95vw] lg:max-w-[1400px]">
         <div
@@ -731,7 +731,7 @@ const StackedCard: React.FC<CardProps> = ({
       </div>
     </div>
   );
-};
+});
 
 interface StackedCardsSectionProps {
   businessApps: BusinessApp[];
