@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from '@tanstack/react-router'
 import { useKindeAuth } from '@kinde-oss/kinde-auth-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { DynamicIcon } from '@/features/landing/components/Icons'
-import { ArrowRight, Play, ChevronRight, FileText, GraduationCap, Users, Zap, Mail, Phone, MapPin, Menu, X, LayoutDashboard, Rocket, Shield, Clock, Globe, BarChart3, Settings, CreditCard, UserCheck, Workflow, CheckCircle2, TrendingUp } from 'lucide-react'
+import { ArrowRight, Play, ChevronRight, FileText, GraduationCap, Users, Zap, Mail, Phone, MapPin, Menu, X, LayoutDashboard, Rocket, Shield, Clock, Globe, Workflow, CheckCircle2 } from 'lucide-react'
 import api, { createCancelableRequest } from '@/lib/api'
 import { Product } from '@/types'
 import toast from 'react-hot-toast'
@@ -58,31 +58,31 @@ const NAV_ITEMS = [
   { name: "Contact Us", link: "#contact" },
 ] as const;
 
-// Product color → CSS-safe Tailwind color token for the interactive dashboard
-const PRODUCT_ACCENT: Record<string, { bar: string; bg: string; text: string; border: string }> = {
-  blue:   { bar: '#3b82f6', bg: 'bg-blue-50',   text: 'text-blue-600',   border: 'border-blue-200' },
-  green:  { bar: '#10b981', bg: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-200' },
-  purple: { bar: '#a855f7', bg: 'bg-purple-50',  text: 'text-purple-600',  border: 'border-purple-200' },
-  orange: { bar: '#f97316', bg: 'bg-orange-50',  text: 'text-orange-600',  border: 'border-orange-200' },
-  indigo: { bar: '#6366f1', bg: 'bg-indigo-50',  text: 'text-indigo-600',  border: 'border-indigo-200' },
-};
-const DEFAULT_ACCENT = { bar: '#14b8a6', bg: 'bg-teal-50', text: 'text-teal-600', border: 'border-teal-200' };
+// Ecosystem node positions (percentage-based for responsive SVG)
+// 6 core products in a hexagonal ring + center hub, with connection map
+const ECOSYSTEM_NODES = [
+  { id: 'b2b-crm',              label: 'CRM',          icon: 'Briefcase',     x: 50,  y: 8,   color: '#3b82f6' },
+  { id: 'finance',              label: 'Finance',       icon: 'Landmark',      x: 88,  y: 28,  color: '#10b981' },
+  { id: 'operations',           label: 'Operations',    icon: 'Box',           x: 88,  y: 68,  color: '#f97316' },
+  { id: 'b2c-crm',             label: 'B2C CRM',       icon: 'ShoppingCart',   x: 50,  y: 88,  color: '#ec4899' },
+  { id: 'hrms',                 label: 'HRMS',          icon: 'UserCheck',     x: 12,  y: 68,  color: '#8b5cf6' },
+  { id: 'project-management',   label: 'Projects',      icon: 'ClipboardList', x: 12,  y: 28,  color: '#0ea5e9' },
+] as const;
 
-// Bar chart heights per product (7 bars, values 20-90) — gives each product a unique chart shape
-const PRODUCT_CHART_DATA: Record<string, number[]> = {
-  'operations-management': [35, 55, 70, 50, 80, 90, 65],
-  'b2b-crm':               [40, 65, 45, 75, 60, 85, 70],
-  'financial-accounting':   [50, 40, 60, 80, 55, 70, 90],
-  'project-management':     [30, 50, 75, 60, 85, 45, 70],
-  'hrms':                   [45, 60, 35, 70, 55, 80, 65],
-  'esop-system':            [55, 45, 65, 40, 75, 60, 85],
-  'affiliate-connect':      [60, 75, 50, 65, 40, 80, 55],
-  'flowtilla':              [35, 70, 55, 85, 65, 45, 75],
-  'zopkit-academy':         [50, 60, 80, 45, 70, 55, 65],
-  'zopkit-itsm':            [65, 45, 55, 75, 50, 85, 60],
-  'b2c-crm':                [40, 70, 60, 50, 80, 65, 75],
-};
-const DEFAULT_BARS = [40, 55, 70, 50, 80, 65, 75];
+// Which nodes connect to which (index pairs) — shows data flow between products
+const ECOSYSTEM_CONNECTIONS: [number, number][] = [
+  [0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 0], // outer ring
+  [0, 3], [1, 4], [2, 5], // cross connections
+];
+
+// Secondary products shown as smaller satellite dots
+const SATELLITE_NODES = [
+  { id: 'esop-system',       label: 'ESOP',       x: 70, y: 5,   color: '#a855f7' },
+  { id: 'affiliate-connect', label: 'Affiliates', x: 96, y: 48,  color: '#f59e0b' },
+  { id: 'flowtilla',         label: 'Flowtilla',  x: 70, y: 92,  color: '#06b6d4' },
+  { id: 'zopkit-academy',    label: 'Academy',    x: 30, y: 92,  color: '#22c55e' },
+  { id: 'zopkit-itsm',       label: 'ITSM',       x: 4,  y: 48,  color: '#ef4444' },
+] as const;
 
 const Landing: React.FC = () => {
   const navigate = useNavigate()
@@ -498,233 +498,222 @@ const Landing: React.FC = () => {
       </Navbar>
 
       {/* Hero Section */}
-      <main className="relative pt-24 sm:pt-28 lg:pt-36 pb-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+      <main className="relative pt-24 sm:pt-28 lg:pt-32 pb-8 sm:pb-12 lg:pb-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 z-10">
+        {/* Top: centered headline area */}
+        <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-10 lg:mb-12">
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.05 }}
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-teal-50 border border-teal-200 mb-5"
+          >
+            <CheckCircle2 className="w-3.5 h-3.5 text-teal-600" />
+            <span className="text-teal-700 text-xs font-semibold tracking-wide">The Operating System for Modern Business</span>
+          </motion.div>
 
-          {/* Left Column: Text Content */}
-          <div className="flex flex-col gap-5 relative z-20 order-2 lg:order-1">
-
-            {/* Badge */}
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.1 }}
-              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-teal-50 border border-teal-200 w-fit"
-            >
-              <CheckCircle2 className="w-3.5 h-3.5 text-teal-600" />
-              <span className="text-teal-700 text-xs font-semibold tracking-wide">Trusted by 500+ companies</span>
-            </motion.div>
-
-            {/* Headline with rotating product name */}
-            <div className="relative min-h-[110px] sm:min-h-[130px] lg:min-h-[170px]">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={activeProduct.id}
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -16 }}
-                  transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
-                  className="absolute top-0 left-0 w-full"
-                >
-                  <h1 className="text-3xl sm:text-4xl lg:text-[3.5rem] xl:text-6xl font-black tracking-tight leading-[1.08] text-slate-900">
-                    <span className={PRODUCT_ACCENT[activeProduct.color]?.text ?? 'text-teal-600'}>
-                      {activeProduct.name}
-                    </span>
-                  </h1>
-                  <p className="text-slate-500 text-sm sm:text-base lg:text-lg leading-relaxed max-w-lg mt-3">
-                    {activeProduct.description}
-                  </p>
-                </motion.div>
-              </AnimatePresence>
-            </div>
-
-            {/* CTA Buttons */}
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.25 }}
-              className="flex flex-col sm:flex-row gap-3 mt-2"
-            >
-              <button
-                onClick={primaryCta.action}
-                disabled={primaryCta.disabled}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm sm:text-base shadow-sm hover:shadow-md transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.97]"
+          <div className="relative min-h-[100px] sm:min-h-[120px] lg:min-h-[150px]">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeProduct.id}
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -14 }}
+                transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
+                className="absolute inset-x-0 top-0"
               >
-                {hasAuthenticatedSession && onboardingCompleted ? <LayoutDashboard className="w-4 h-4" /> : null}
-                {hasAuthenticatedSession && !onboardingCompleted ? <Rocket className="w-4 h-4" /> : null}
-                {primaryCta.label}
-                <ArrowRight className="w-4 h-4" />
-              </button>
-
-              <button
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-300 text-slate-700 font-semibold text-sm sm:text-base shadow-sm transition-all active:scale-[0.97]"
-              >
-                <Play className="w-3.5 h-3.5 fill-current text-slate-500" />
-                Watch Demo
-              </button>
-            </motion.div>
-
-            {/* Trust indicators */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.4, delay: 0.4 }}
-              className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-1 text-xs text-slate-500"
-            >
-              <span className="inline-flex items-center gap-1.5"><Shield className="w-3.5 h-3.5 text-teal-500" />SOC 2</span>
-              <span className="inline-flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 text-teal-500" />99.9% Uptime</span>
-              <span className="inline-flex items-center gap-1.5"><Globe className="w-3.5 h-3.5 text-teal-500" />GDPR Ready</span>
-              <span className="inline-flex items-center gap-1.5"><TrendingUp className="w-3.5 h-3.5 text-teal-500" />11 Products</span>
-            </motion.div>
-
-            {/* Product Selector — compact scrollable pills */}
-            <div className="mt-3 pt-5 border-t border-slate-100">
-              <p className="text-slate-400 text-[10px] sm:text-xs font-semibold tracking-widest uppercase mb-3">Select Application</p>
-              <div ref={scrollContainerRef} className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-none">
-                {products.map((product) => {
-                  const isActive = activeProduct.id === product.id;
-                  const accent = PRODUCT_ACCENT[product.color] ?? DEFAULT_ACCENT;
-                  return (
-                    <button
-                      key={product.id}
-                      ref={(el) => {
-                        if (el) productRefs.current.set(product.id, el);
-                      }}
-                      onClick={() => setActiveProduct(product)}
-                      onDoubleClick={() => navigate({ to: `/products/${product.id}` })}
-                      className={`
-                        shrink-0 flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-medium transition-all duration-200
-                        ${isActive
-                          ? `${accent.bg} ${accent.border} ${accent.text} shadow-sm`
-                          : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:text-slate-700 hover:shadow-sm'}
-                      `}
-                    >
-                      <DynamicIcon name={product.iconName} className="w-3.5 h-3.5" />
-                      {product.name}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+                <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-black tracking-tight leading-[1.08] text-slate-900">
+                  {activeProduct.name}
+                </h1>
+                <p className="text-slate-500 text-sm sm:text-base lg:text-lg leading-relaxed max-w-xl mx-auto mt-3">
+                  {activeProduct.description}
+                </p>
+              </motion.div>
+            </AnimatePresence>
           </div>
 
-          {/* Right Column: Interactive Dashboard — reacts to activeProduct */}
-          <div className="relative z-10 flex justify-center items-center order-1 lg:order-2">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.15 }}
-              className="w-full max-w-md lg:max-w-lg"
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.2 }}
+            className="flex flex-col sm:flex-row justify-center gap-3 mt-4"
+          >
+            <button
+              onClick={primaryCta.action}
+              disabled={primaryCta.disabled}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm sm:text-base shadow-sm hover:shadow-md transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.97]"
             >
-              {/* Dashboard Card */}
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
-                {/* Titlebar */}
-                <div className="flex items-center gap-2 px-4 py-3 bg-slate-50 border-b border-slate-100">
-                  <span className="w-3 h-3 rounded-full" style={{ backgroundColor: (PRODUCT_ACCENT[activeProduct.color] ?? DEFAULT_ACCENT).bar, transition: 'background-color 0.4s' }} />
-                  <span className="w-3 h-3 rounded-full bg-slate-200" />
-                  <span className="w-3 h-3 rounded-full bg-slate-200" />
-                  <div className="ml-3 flex-1">
-                    <AnimatePresence mode="wait">
-                      <motion.span
-                        key={activeProduct.id}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="text-xs font-medium text-slate-500"
-                      >
-                        {activeProduct.name} — Dashboard
-                      </motion.span>
-                    </AnimatePresence>
-                  </div>
-                </div>
+              {hasAuthenticatedSession && onboardingCompleted ? <LayoutDashboard className="w-4 h-4" /> : null}
+              {hasAuthenticatedSession && !onboardingCompleted ? <Rocket className="w-4 h-4" /> : null}
+              {primaryCta.label}
+              <ArrowRight className="w-4 h-4" />
+            </button>
+            <button className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-300 text-slate-700 font-semibold text-sm sm:text-base shadow-sm transition-all active:scale-[0.97]">
+              <Play className="w-3.5 h-3.5 fill-current text-slate-500" />
+              Watch Demo
+            </button>
+          </motion.div>
 
-                {/* Metric cards — values change per product */}
-                <div className="grid grid-cols-3 gap-3 p-4">
-                  {[
-                    { label: 'Active Users', icon: Users },
-                    { label: 'Revenue', icon: TrendingUp },
-                    { label: 'Tasks Done', icon: CheckCircle2 },
-                  ].map((metric, i) => {
-                    const accent = PRODUCT_ACCENT[activeProduct.color] ?? DEFAULT_ACCENT;
-                    return (
-                      <div key={metric.label} className={`rounded-xl border p-3 transition-colors duration-300 ${i === 0 ? `${accent.bg} ${accent.border}` : 'bg-slate-50 border-slate-100'}`}>
-                        <metric.icon className={`w-4 h-4 mb-1.5 transition-colors duration-300 ${i === 0 ? accent.text : 'text-slate-400'}`} />
-                        <div className="text-[10px] text-slate-400 mb-0.5">{metric.label}</div>
-                        <div className={`text-lg font-bold transition-colors duration-300 ${i === 0 ? accent.text : 'text-slate-700'}`}>
-                          {/* Dynamic number per product index */}
-                          {i === 0 ? `${(products.findIndex(p => p.id === activeProduct.id) + 1) * 847}` :
-                           i === 1 ? `$${((products.findIndex(p => p.id === activeProduct.id) + 1) * 12.4).toFixed(0)}k` :
-                           `${(products.findIndex(p => p.id === activeProduct.id) + 1) * 234}`}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4, delay: 0.35 }}
+            className="flex flex-wrap justify-center items-center gap-x-5 gap-y-2 mt-5 text-xs text-slate-500"
+          >
+            <span className="inline-flex items-center gap-1.5"><Shield className="w-3.5 h-3.5 text-teal-500" />SOC 2</span>
+            <span className="inline-flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 text-teal-500" />99.9% Uptime</span>
+            <span className="inline-flex items-center gap-1.5"><Globe className="w-3.5 h-3.5 text-teal-500" />GDPR Ready</span>
+          </motion.div>
+        </div>
 
-                {/* Interactive bar chart — bars animate height on product change */}
-                <div className="px-4 pb-4">
-                  <div className="rounded-xl border border-slate-100 bg-slate-50/50 p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-xs font-semibold text-slate-700">Performance Overview</span>
-                      <span className="text-[10px] text-slate-400">Last 7 days</span>
-                    </div>
-                    <div className="flex items-end gap-[6px] sm:gap-2 h-24">
-                      {(PRODUCT_CHART_DATA[activeProduct.id as string] ?? DEFAULT_BARS).map((height, i) => {
-                        const accent = PRODUCT_ACCENT[activeProduct.color] ?? DEFAULT_ACCENT;
-                        const opacity = 0.3 + (i / 6) * 0.7;
-                        return (
-                          <div
-                            key={i}
-                            className="flex-1 rounded-t-md transition-all duration-500 ease-out"
-                            style={{
-                              height: `${height}%`,
-                              backgroundColor: accent.bar,
-                              opacity,
-                            }}
-                          />
-                        );
-                      })}
-                    </div>
-                    <div className="flex justify-between mt-2 text-[9px] text-slate-400">
-                      {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d => (
-                        <span key={d} className="flex-1 text-center">{d}</span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
+        {/* Ecosystem Constellation — the hero visual */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.96 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, delay: 0.15 }}
+          className="relative w-full max-w-2xl lg:max-w-3xl mx-auto aspect-square"
+        >
+          {/* SVG connection lines */}
+          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+            {ECOSYSTEM_CONNECTIONS.map(([from, to], i) => {
+              const a = ECOSYSTEM_NODES[from];
+              const b = ECOSYSTEM_NODES[to];
+              const isActiveConn =
+                activeProduct.id === a.id || activeProduct.id === b.id;
+              return (
+                <line
+                  key={i}
+                  x1={a.x} y1={a.y} x2={b.x} y2={b.y}
+                  stroke={isActiveConn ? '#14b8a6' : '#e2e8f0'}
+                  strokeWidth={isActiveConn ? 0.5 : 0.3}
+                  strokeDasharray={isActiveConn ? undefined : '1.5 1.5'}
+                  className="transition-all duration-500"
+                />
+              );
+            })}
+            {/* Lines from satellites to nearest main node */}
+            {SATELLITE_NODES.map((sat, si) => {
+              const nearest = ECOSYSTEM_NODES[si % ECOSYSTEM_NODES.length];
+              const isActiveSat = activeProduct.id === sat.id;
+              return (
+                <line
+                  key={`sat-${si}`}
+                  x1={sat.x} y1={sat.y} x2={nearest.x} y2={nearest.y}
+                  stroke={isActiveSat ? sat.color : '#f1f5f9'}
+                  strokeWidth={0.25}
+                  strokeDasharray="1 2"
+                  className="transition-all duration-500"
+                />
+              );
+            })}
+          </svg>
 
-                {/* Activity feed — changes per product */}
-                <div className="px-4 pb-4">
-                  <div className="space-y-2">
-                    {[
-                      { text: 'New report generated', time: '2m ago' },
-                      { text: 'Team sync completed', time: '15m ago' },
-                      { text: 'Workflow automated', time: '1h ago' },
-                    ].map((item, i) => (
-                      <div key={i} className="flex items-center gap-3 py-2 px-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors cursor-default group">
-                        <span
-                          className="w-2 h-2 rounded-full shrink-0 transition-colors duration-300"
-                          style={{ backgroundColor: (PRODUCT_ACCENT[activeProduct.color] ?? DEFAULT_ACCENT).bar }}
-                        />
-                        <span className="text-xs text-slate-600 flex-1 group-hover:text-slate-900 transition-colors">{item.text}</span>
-                        <span className="text-[10px] text-slate-400">{item.time}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
+          {/* Center hub */}
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-teal-500/20">
+              <Zap className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
+            </div>
+            <p className="text-center text-[10px] sm:text-xs font-bold text-slate-700 mt-1.5">Zopkit</p>
+          </div>
 
-              {/* Floating labels — CSS hover only */}
-              <div className="hidden sm:flex absolute -top-3 right-2 lg:-right-4 items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-3 py-1.5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
-                <BarChart3 className="w-3.5 h-3.5 text-teal-500" />
-                <span className="text-xs font-medium text-slate-700">Analytics</span>
-              </div>
-              <div className="hidden sm:flex absolute -bottom-3 left-2 lg:-left-4 items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-3 py-1.5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
-                <Workflow className="w-3.5 h-3.5 text-teal-500" />
-                <span className="text-xs font-medium text-slate-700">Automation</span>
-              </div>
-            </motion.div>
+          {/* Main product nodes — hexagonal ring */}
+          {ECOSYSTEM_NODES.map((node) => {
+            const isActive = activeProduct.id === node.id;
+            const matchingProduct = products.find(p => p.id === node.id);
+            return (
+              <button
+                key={node.id}
+                onClick={() => {
+                  if (matchingProduct) setActiveProduct(matchingProduct);
+                }}
+                ref={(el) => {
+                  if (el) productRefs.current.set(node.id, el);
+                }}
+                className="absolute z-10 -translate-x-1/2 -translate-y-1/2 group focus:outline-none"
+                style={{ left: `${node.x}%`, top: `${node.y}%` }}
+              >
+                <div
+                  className={`
+                    w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center transition-all duration-300 border-2
+                    ${isActive
+                      ? 'scale-110 shadow-lg border-transparent'
+                      : 'bg-white shadow-sm border-slate-200 group-hover:shadow-md group-hover:scale-105 group-hover:border-slate-300'}
+                  `}
+                  style={isActive ? { backgroundColor: node.color, borderColor: node.color } : undefined}
+                >
+                  <DynamicIcon
+                    name={node.icon}
+                    className={`w-5 h-5 sm:w-6 sm:h-6 transition-colors duration-300 ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-slate-700'}`}
+                  />
+                </div>
+                <p className={`text-center text-[10px] sm:text-xs font-semibold mt-1 transition-colors duration-300 whitespace-nowrap ${isActive ? 'text-slate-900' : 'text-slate-500 group-hover:text-slate-700'}`}>
+                  {node.label}
+                </p>
+              </button>
+            );
+          })}
+
+          {/* Satellite nodes — smaller, secondary products */}
+          {SATELLITE_NODES.map((sat) => {
+            const isActive = activeProduct.id === sat.id;
+            const matchingProduct = products.find(p => p.id === sat.id);
+            return (
+              <button
+                key={sat.id}
+                onClick={() => {
+                  if (matchingProduct) setActiveProduct(matchingProduct);
+                }}
+                ref={(el) => {
+                  if (el) productRefs.current.set(sat.id, el);
+                }}
+                className="absolute z-10 -translate-x-1/2 -translate-y-1/2 group focus:outline-none"
+                style={{ left: `${sat.x}%`, top: `${sat.y}%` }}
+              >
+                <div
+                  className={`
+                    w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center transition-all duration-300 border
+                    ${isActive
+                      ? 'scale-110 shadow-md border-transparent'
+                      : 'bg-white shadow-sm border-slate-100 group-hover:shadow-md group-hover:scale-105'}
+                  `}
+                  style={isActive ? { backgroundColor: sat.color, borderColor: sat.color } : undefined}
+                >
+                  <div className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full transition-colors duration-300 ${isActive ? 'bg-white' : 'bg-slate-300 group-hover:bg-slate-400'}`}
+                    style={!isActive ? undefined : { backgroundColor: 'white' }}
+                  />
+                </div>
+                <p className={`text-center text-[8px] sm:text-[10px] font-medium mt-0.5 transition-colors duration-300 whitespace-nowrap ${isActive ? 'text-slate-900' : 'text-slate-400 group-hover:text-slate-600'}`}>
+                  {sat.label}
+                </p>
+              </button>
+            );
+          })}
+        </motion.div>
+
+        {/* Product scroll strip — below the constellation */}
+        <div className="mt-6 sm:mt-8 max-w-2xl mx-auto">
+          <div ref={scrollContainerRef} className="flex gap-2 overflow-x-auto pb-2 px-1 scrollbar-none justify-start sm:justify-center">
+            {products.map((product) => {
+              const isActive = activeProduct.id === product.id;
+              const nodeColor = [...ECOSYSTEM_NODES, ...SATELLITE_NODES].find(n => n.id === product.id)?.color ?? '#14b8a6';
+              return (
+                <button
+                  key={product.id}
+                  onClick={() => setActiveProduct(product)}
+                  onDoubleClick={() => navigate({ to: `/products/${product.id}` })}
+                  className={`
+                    shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[11px] font-medium transition-all duration-200
+                    ${isActive
+                      ? 'text-white shadow-sm border-transparent'
+                      : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:text-slate-700'}
+                  `}
+                  style={isActive ? { backgroundColor: nodeColor, borderColor: nodeColor } : undefined}
+                >
+                  <DynamicIcon name={product.iconName} className="w-3 h-3" />
+                  <span className="hidden sm:inline">{product.name}</span>
+                  <span className="sm:hidden">{product.name.length > 12 ? product.name.slice(0, 10) + '…' : product.name}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
       </main>
