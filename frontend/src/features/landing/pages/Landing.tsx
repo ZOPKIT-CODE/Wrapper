@@ -358,36 +358,8 @@ const Landing: React.FC = () => {
   return (
     <div className="min-h-screen bg-white text-slate-900 selection:bg-teal-100 selection:text-teal-900 font-sans overflow-x-clip relative">
 
-      {/* Full-page SVG decoration layer — sits behind all content */}
-      <div className="fixed inset-0 z-0 pointer-events-none" style={{ contain: 'strict' }}>
-        <svg className="w-full h-full" viewBox="0 0 1440 3000" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          {/* Hero zone bg */}
-          <rect x="0" y="0" width="1440" height="900" fill="#fafafa" />
-
-          {/* Top-right corner cut */}
-          <polygon points="1440,0 1160,0 1440,180" fill="#f1f5f9" />
-          {/* Left-side accent stripe at hero level */}
-          <rect x="0" y="100" width="4" height="700" fill="#e2e8f0" rx="2" />
-          {/* Horizontal rule below hero */}
-          <line x1="0" y1="900" x2="1440" y2="900" stroke="#e2e8f0" strokeWidth="1" />
-
-          {/* Mid-page diagonal accent — between workflows and industries */}
-          <line x1="100" y1="1100" x2="1340" y2="1500" stroke="#f1f5f9" strokeWidth="80" />
-          <line x1="100" y1="1100" x2="1340" y2="1500" stroke="#e2e8f0" strokeWidth="1" />
-
-          {/* Bottom-left corner triangle */}
-          <polygon points="0,2700 0,2900 200,2900" fill="#f1f5f9" />
-          {/* Right-side accent stripe near contact section */}
-          <rect x="1436" y="1800" width="4" height="600" fill="#e2e8f0" rx="2" />
-
-          {/* Dotted horizontal accents */}
-          <line x1="60" y1="1700" x2="200" y2="1700" stroke="#e2e8f0" strokeWidth="1" strokeDasharray="6 6" />
-          <line x1="1240" y1="2200" x2="1380" y2="2200" stroke="#e2e8f0" strokeWidth="1" strokeDasharray="6 6" />
-
-          {/* Small diamond accent */}
-          <path d="M720 1650 L735 1635 L750 1650 L735 1665 Z" fill="none" stroke="#e2e8f0" strokeWidth="1.5" />
-        </svg>
-      </div>
+      {/* Gradient top band — fades from slate-100 to transparent */}
+      <div className="absolute top-0 left-0 right-0 h-[500px] z-0 pointer-events-none bg-gradient-to-b from-slate-100/80 via-slate-50/40 to-transparent" />
 
       {/* Resizable Navbar */}
       <Navbar>
