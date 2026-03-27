@@ -216,7 +216,7 @@ const SeasonalCreditsManagement: React.FC = () => {
 
   const handleSendExpiryWarnings = async () => {
     try {
-      const response = await api.post('/admin/seasonal-credits/send-warnings', {
+      const response = await api.post('/admin/seasonal-credits/warnings', {
         daysAhead: 7
       });
 
