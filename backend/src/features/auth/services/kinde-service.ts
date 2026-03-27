@@ -269,7 +269,20 @@ class KindeService {
         const payload = await this.verifyJWTSignature(accessToken);
         if (payload) {
           if (shouldLogVerbose()) console.log('getUserInfo: JWKS verified');
-          return normalizeKindePayload(payload as unknown as Record<string, unknown>);
+          const normalized = normalizeKindePayload(payload as unknown as Record<string, unknown>);
+          // Kinde access tokens often lack email claims — fetch from userinfo endpoint
+          if (!normalized.email) {
+            try {
+              const profileResponse = await axios.get(`${this.baseURL}/oauth2/v2/user_profile`, {
+                headers: { Authorization: `Bearer ${accessToken}` },
+                timeout: 3000
+              });
+              if (profileResponse.data?.email) {
+                normalized.email = profileResponse.data.email;
+              }
+            } catch { /* email enrichment is best-effort */ }
+          }
+          return normalized;
         }
       } catch (jwksErr: unknown) {
         if (shouldLogVerbose()) console.log('⚠️ getUserInfo - JWKS verification failed, trying API endpoints...');
