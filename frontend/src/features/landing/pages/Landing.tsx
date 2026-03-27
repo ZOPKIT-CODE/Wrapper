@@ -58,30 +58,20 @@ const NAV_ITEMS = [
   { name: "Contact Us", link: "#contact" },
 ] as const;
 
-// Ecosystem node positions (percentage-based for responsive SVG)
-// 6 core products in a hexagonal ring + center hub, with connection map
-const ECOSYSTEM_NODES = [
-  { id: 'b2b-crm',              label: 'CRM',          icon: 'Briefcase',     x: 50,  y: 8,   color: '#3b82f6' },
-  { id: 'finance',              label: 'Finance',       icon: 'Landmark',      x: 88,  y: 28,  color: '#10b981' },
-  { id: 'operations',           label: 'Operations',    icon: 'Box',           x: 88,  y: 68,  color: '#f97316' },
-  { id: 'b2c-crm',             label: 'B2C CRM',       icon: 'ShoppingCart',   x: 50,  y: 88,  color: '#ec4899' },
-  { id: 'hrms',                 label: 'HRMS',          icon: 'UserCheck',     x: 12,  y: 68,  color: '#8b5cf6' },
-  { id: 'project-management',   label: 'Projects',      icon: 'ClipboardList', x: 12,  y: 28,  color: '#0ea5e9' },
-] as const;
-
-// Which nodes connect to which (index pairs) — shows data flow between products
-const ECOSYSTEM_CONNECTIONS: [number, number][] = [
-  [0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 0], // outer ring
-  [0, 3], [1, 4], [2, 5], // cross connections
-];
-
-// Secondary products shown as smaller satellite dots
-const SATELLITE_NODES = [
-  { id: 'esop-system',       label: 'ESOP',       x: 70, y: 5,   color: '#a855f7' },
-  { id: 'affiliate-connect', label: 'Affiliates', x: 96, y: 48,  color: '#f59e0b' },
-  { id: 'flowtilla',         label: 'Flowtilla',  x: 70, y: 92,  color: '#06b6d4' },
-  { id: 'zopkit-academy',    label: 'Academy',    x: 30, y: 92,  color: '#22c55e' },
-  { id: 'zopkit-itsm',       label: 'ITSM',       x: 4,  y: 48,  color: '#ef4444' },
+// All 11 products in a single flat array for the ecosystem grid
+// Using consistent slate-900 + teal accent palette — no rainbow colors
+const ECOSYSTEM_APPS = [
+  { id: 'b2b-crm',            label: 'B2B CRM',       short: 'CRM',        icon: 'Briefcase' },
+  { id: 'b2c-crm',            label: 'B2C CRM',       short: 'B2C',        icon: 'ShoppingCart' },
+  { id: 'finance',            label: 'Finance',        short: 'Finance',    icon: 'Landmark' },
+  { id: 'operations',         label: 'Operations',     short: 'Ops',        icon: 'Box' },
+  { id: 'project-management', label: 'Projects',       short: 'Projects',   icon: 'ClipboardList' },
+  { id: 'hrms',               label: 'HRMS',           short: 'HR',         icon: 'UserCheck' },
+  { id: 'esop-system',        label: 'ESOP',           short: 'ESOP',       icon: 'Award' },
+  { id: 'affiliate-connect',  label: 'Affiliates',     short: 'Affiliates', icon: 'Link' },
+  { id: 'flowtilla',          label: 'Flowtilla',      short: 'Flow',       icon: 'GitBranch' },
+  { id: 'zopkit-academy',     label: 'Academy',        short: 'Academy',    icon: 'GraduationCap' },
+  { id: 'zopkit-itsm',        label: 'ITSM',           short: 'ITSM',       icon: 'Wrench' },
 ] as const;
 
 const Landing: React.FC = () => {
@@ -328,26 +318,14 @@ const Landing: React.FC = () => {
   return (
     <div className="min-h-screen bg-white text-slate-900 selection:bg-teal-100 selection:text-teal-900 font-sans overflow-x-clip relative">
 
-      {/* Geometric SVG background — sharp, cutting-edge, no blur */}
+      {/* Background — clean geometric grid, slate-only palette */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-        {/* Fine dot grid */}
-        <div className="absolute inset-0 bg-[radial-gradient(rgba(148,163,184,0.06)_1px,transparent_1px)] bg-[size:28px_28px]" />
-        {/* Sharp geometric shapes */}
-        <svg className="absolute inset-0 w-full h-full opacity-[0.04]" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          {/* Large diamond — top right */}
-          <polygon points="85%,0 100%,15% 85%,30% 70%,15%" fill="#0d9488" />
-          {/* Triangle — bottom left */}
-          <polygon points="0,75% 18%,100% 0,100%" fill="#0d9488" />
-          {/* Thin diagonal line */}
-          <line x1="20%" y1="0" x2="100%" y2="80%" stroke="#94a3b8" strokeWidth="0.5" />
-          <line x1="0" y1="30%" x2="60%" y2="100%" stroke="#94a3b8" strokeWidth="0.5" />
-          {/* Small hexagon cluster — center left */}
-          <polygon points="8%,45% 12%,42% 16%,45% 16%,50% 12%,53% 8%,50%" fill="none" stroke="#14b8a6" strokeWidth="0.5" />
-          <polygon points="16%,45% 20%,42% 24%,45% 24%,50% 20%,53% 16%,50%" fill="none" stroke="#14b8a6" strokeWidth="0.5" />
-          {/* Angular accent — top left */}
-          <polyline points="0,8% 5%,8% 5%,0" fill="none" stroke="#94a3b8" strokeWidth="0.8" />
-          {/* Corner bracket — bottom right */}
-          <polyline points="95%,100% 95%,92% 100%,92%" fill="none" stroke="#94a3b8" strokeWidth="0.8" />
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(15,23,42,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(15,23,42,0.03)_1px,transparent_1px)] bg-[size:48px_48px]" />
+        <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <line x1="0" y1="0" x2="100%" y2="100%" stroke="#0f172a" strokeWidth="1" opacity="0.02" />
+          <line x1="100%" y1="0" x2="0" y2="100%" stroke="#0f172a" strokeWidth="1" opacity="0.02" />
+          <rect x="85%" y="2%" width="12%" height="12%" rx="2" fill="none" stroke="#0f172a" strokeWidth="0.5" opacity="0.04" />
+          <rect x="3%" y="80%" width="8%" height="8%" rx="2" fill="none" stroke="#0f172a" strokeWidth="0.5" opacity="0.04" />
         </svg>
       </div>
 
@@ -514,33 +492,33 @@ const Landing: React.FC = () => {
       </Navbar>
 
       {/* Hero Section */}
-      <main className="relative pt-24 sm:pt-28 lg:pt-32 pb-8 sm:pb-12 lg:pb-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 z-10">
-        {/* Top: centered headline area */}
-        <div className="text-center max-w-3xl mx-auto mb-6 sm:mb-8 lg:mb-10">
+      <main className="relative pt-24 sm:pt-28 lg:pt-32 pb-8 sm:pb-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 z-10">
+        {/* Headline + CTA */}
+        <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-14">
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.05 }}
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-teal-50 border border-teal-200 mb-5"
+            transition={{ duration: 0.4 }}
+            className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900 text-white text-xs font-medium tracking-wide mb-6"
           >
-            <CheckCircle2 className="w-3.5 h-3.5 text-teal-600" />
-            <span className="text-teal-700 text-xs font-semibold tracking-wide">The Operating System for Modern Business</span>
+            <Zap className="w-3 h-3" />
+            11 Products. One Platform. Zero Silos.
           </motion.div>
 
-          <div className="relative min-h-[100px] sm:min-h-[120px] lg:min-h-[140px]">
+          <div className="relative min-h-[90px] sm:min-h-[110px] lg:min-h-[130px]">
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeProduct.id}
-                initial={{ opacity: 0, y: 14 }}
+                initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -14 }}
+                exit={{ opacity: 0, y: -12 }}
                 transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
                 className="absolute inset-x-0 top-0"
               >
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-black tracking-tight leading-[1.08] text-slate-900">
+                <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-[3.5rem] font-black tracking-tight leading-[1.1] text-slate-900">
                   {activeProduct.name}
                 </h1>
-                <p className="text-slate-500 text-sm sm:text-base lg:text-lg leading-relaxed max-w-xl mx-auto mt-3">
+                <p className="text-slate-500 text-sm sm:text-base lg:text-lg leading-relaxed max-w-lg mx-auto mt-3">
                   {activeProduct.description}
                 </p>
               </motion.div>
@@ -550,274 +528,163 @@ const Landing: React.FC = () => {
           <motion.div
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.2 }}
-            className="flex flex-col sm:flex-row justify-center gap-3 mt-4"
+            transition={{ duration: 0.4, delay: 0.15 }}
+            className="flex flex-col sm:flex-row justify-center gap-3 mt-5"
           >
             <button
               onClick={primaryCta.action}
               disabled={primaryCta.disabled}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm sm:text-base shadow-sm hover:shadow-md transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.97]"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm sm:text-base transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.97]"
             >
               {hasAuthenticatedSession && onboardingCompleted ? <LayoutDashboard className="w-4 h-4" /> : null}
               {hasAuthenticatedSession && !onboardingCompleted ? <Rocket className="w-4 h-4" /> : null}
               {primaryCta.label}
               <ArrowRight className="w-4 h-4" />
             </button>
-            <button className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-300 text-slate-700 font-semibold text-sm sm:text-base shadow-sm transition-all active:scale-[0.97]">
-              <Play className="w-3.5 h-3.5 fill-current text-slate-500" />
+            <button className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-semibold text-sm sm:text-base transition-colors active:scale-[0.97]">
+              <Play className="w-3.5 h-3.5 fill-current" />
               Watch Demo
             </button>
           </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.4, delay: 0.35 }}
-            className="flex flex-wrap justify-center items-center gap-x-5 gap-y-2 mt-5 text-xs text-slate-500"
-          >
-            <span className="inline-flex items-center gap-1.5"><Shield className="w-3.5 h-3.5 text-teal-500" />SOC 2</span>
-            <span className="inline-flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 text-teal-500" />99.9% Uptime</span>
-            <span className="inline-flex items-center gap-1.5"><Globe className="w-3.5 h-3.5 text-teal-500" />GDPR Ready</span>
-          </motion.div>
+          <div className="flex flex-wrap justify-center items-center gap-x-5 gap-y-2 mt-6 text-xs text-slate-400 font-medium">
+            <span className="inline-flex items-center gap-1.5"><Shield className="w-3.5 h-3.5" />SOC 2</span>
+            <span className="inline-flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" />99.9% Uptime</span>
+            <span className="inline-flex items-center gap-1.5"><Globe className="w-3.5 h-3.5" />GDPR</span>
+          </div>
         </div>
 
-        {/* Ecosystem Constellation */}
+        {/* Ecosystem Grid — click any app to select */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.96 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.15 }}
-          className="relative w-full max-w-xl sm:max-w-2xl lg:max-w-3xl mx-auto aspect-square"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="max-w-4xl mx-auto"
         >
-          {/* SVG connection lines + geometric accents */}
-          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-            {/* Faint concentric hexagonal rings */}
-            <polygon points="50,18 78,32 78,62 50,78 22,62 22,32" fill="none" stroke="#e2e8f0" strokeWidth="0.15" />
-            <polygon points="50,28 68,38 68,58 50,68 32,58 32,38" fill="none" stroke="#e2e8f0" strokeWidth="0.1" />
-
-            {/* Connection lines */}
-            {ECOSYSTEM_CONNECTIONS.map(([from, to], i) => {
-              const a = ECOSYSTEM_NODES[from];
-              const b = ECOSYSTEM_NODES[to];
-              const aActive = activeProduct.id === a.id;
-              const bActive = activeProduct.id === b.id;
-              const isActiveConn = aActive || bActive;
-              const activeNode = aActive ? a : bActive ? b : null;
-              return (
-                <g key={i}>
-                  <line
-                    x1={a.x} y1={a.y} x2={b.x} y2={b.y}
-                    stroke={isActiveConn && activeNode ? activeNode.color : '#e2e8f0'}
-                    strokeWidth={isActiveConn ? 0.4 : 0.2}
-                    strokeDasharray={isActiveConn ? undefined : '1.2 1.2'}
-                    className="transition-all duration-500"
-                  />
-                  {/* Data flow dot — small circle at midpoint when active */}
-                  {isActiveConn && (
-                    <circle
-                      cx={(a.x + b.x) / 2}
-                      cy={(a.y + b.y) / 2}
-                      r="0.8"
-                      fill={activeNode?.color ?? '#14b8a6'}
-                      className="transition-all duration-500"
-                      opacity="0.6"
-                    />
-                  )}
-                </g>
-              );
-            })}
-
-            {/* Satellite connection lines */}
-            {SATELLITE_NODES.map((sat, si) => {
-              const nearest = ECOSYSTEM_NODES[si % ECOSYSTEM_NODES.length];
-              const isActiveSat = activeProduct.id === sat.id;
-              return (
-                <line
-                  key={`sat-${si}`}
-                  x1={sat.x} y1={sat.y} x2={nearest.x} y2={nearest.y}
-                  stroke={isActiveSat ? sat.color : '#f1f5f9'}
-                  strokeWidth={isActiveSat ? 0.3 : 0.15}
-                  strokeDasharray={isActiveSat ? '1 1' : '0.8 2'}
-                  className="transition-all duration-500"
-                />
-              );
-            })}
-
-            {/* Lines from all main nodes to center hub (50,50) */}
-            {ECOSYSTEM_NODES.map((node, i) => {
-              const isActive = activeProduct.id === node.id;
-              return (
-                <line
-                  key={`hub-${i}`}
-                  x1={50} y1={50} x2={node.x} y2={node.y}
-                  stroke={isActive ? node.color : '#f1f5f9'}
-                  strokeWidth={isActive ? 0.3 : 0.1}
-                  strokeDasharray={isActive ? undefined : '0.6 2'}
-                  className="transition-all duration-500"
-                />
-              );
-            })}
-          </svg>
-
-          {/* Center hub — elevated with ring */}
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
-            <div className="relative">
-              {/* Outer ring that reacts to active product */}
-              <div
-                className="absolute -inset-2 rounded-full border-2 transition-colors duration-500 opacity-30"
-                style={{ borderColor: [...ECOSYSTEM_NODES, ...SATELLITE_NODES].find(n => n.id === activeProduct.id)?.color ?? '#14b8a6' }}
-              />
-              <div className="w-14 h-14 sm:w-18 sm:h-18 lg:w-20 lg:h-20 rounded-full bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center shadow-lg">
-                <Zap className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 text-white" />
-              </div>
-            </div>
-            <p className="text-center text-[10px] sm:text-xs font-bold text-slate-700 mt-1.5 tracking-wide">ZOPKIT</p>
+          {/* Section label */}
+          <div className="flex items-center gap-3 mb-4">
+            <div className="h-px flex-1 bg-slate-200" />
+            <span className="text-[10px] sm:text-xs font-semibold text-slate-400 tracking-widest uppercase shrink-0">The Ecosystem</span>
+            <div className="h-px flex-1 bg-slate-200" />
           </div>
 
-          {/* Main product nodes */}
-          {ECOSYSTEM_NODES.map((node) => {
-            const isActive = activeProduct.id === node.id;
-            const matchingProduct = products.find(p => p.id === node.id);
-            return (
-              <button
-                key={node.id}
-                onClick={() => { if (matchingProduct) setActiveProduct(matchingProduct); }}
-                ref={(el) => { if (el) productRefs.current.set(node.id, el); }}
-                className="absolute z-10 -translate-x-1/2 -translate-y-1/2 group focus:outline-none"
-                style={{ left: `${node.x}%`, top: `${node.y}%` }}
-                aria-label={node.label}
-              >
-                {/* Outer glow ring on active */}
-                <div
-                  className="absolute -inset-1.5 rounded-2xl transition-opacity duration-300"
-                  style={{
-                    backgroundColor: node.color,
-                    opacity: isActive ? 0.1 : 0,
-                  }}
-                />
-                <div
-                  className={`
-                    relative w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center transition-all duration-300 border-2
-                    ${isActive
-                      ? 'scale-110 shadow-lg border-transparent'
-                      : 'bg-white shadow-sm border-slate-200 group-hover:shadow-md group-hover:scale-105 group-hover:border-slate-300'}
-                  `}
-                  style={isActive ? { backgroundColor: node.color, borderColor: node.color } : undefined}
-                >
-                  <DynamicIcon
-                    name={node.icon}
-                    className={`w-5 h-5 sm:w-6 sm:h-6 transition-colors duration-300 ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-slate-700'}`}
-                  />
-                </div>
-                <p className={`text-center text-[10px] sm:text-xs font-semibold mt-1.5 transition-colors duration-300 whitespace-nowrap ${isActive ? 'text-slate-900' : 'text-slate-400 group-hover:text-slate-700'}`}>
-                  {node.label}
-                </p>
-                {/* Stat badge — shows on active */}
-                {isActive && matchingProduct?.stats?.[0] && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="absolute -bottom-7 left-1/2 -translate-x-1/2 bg-white border border-slate-200 rounded-md px-2 py-0.5 shadow-sm whitespace-nowrap"
-                  >
-                    <span className="text-[9px] font-bold" style={{ color: node.color }}>{matchingProduct.stats[0].value}</span>
-                    <span className="text-[8px] text-slate-400 ml-1">{matchingProduct.stats[0].label}</span>
-                  </motion.div>
-                )}
-              </button>
-            );
-          })}
-
-          {/* Satellite nodes */}
-          {SATELLITE_NODES.map((sat) => {
-            const isActive = activeProduct.id === sat.id;
-            const matchingProduct = products.find(p => p.id === sat.id);
-            return (
-              <button
-                key={sat.id}
-                onClick={() => { if (matchingProduct) setActiveProduct(matchingProduct); }}
-                ref={(el) => { if (el) productRefs.current.set(sat.id, el); }}
-                className="absolute z-10 -translate-x-1/2 -translate-y-1/2 group focus:outline-none"
-                style={{ left: `${sat.x}%`, top: `${sat.y}%` }}
-                aria-label={sat.label}
-              >
-                <div
-                  className={`
-                    w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center transition-all duration-300 border
-                    ${isActive
-                      ? 'scale-110 shadow-md border-transparent'
-                      : 'bg-white shadow-sm border-slate-100 group-hover:shadow-md group-hover:scale-105 group-hover:border-slate-200'}
-                  `}
-                  style={isActive ? { backgroundColor: sat.color, borderColor: sat.color } : undefined}
-                >
-                  <div
-                    className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full transition-colors duration-300 ${isActive ? 'bg-white' : 'bg-slate-300 group-hover:bg-slate-400'}`}
-                  />
-                </div>
-                <p className={`text-center text-[8px] sm:text-[10px] font-medium mt-0.5 transition-colors duration-300 whitespace-nowrap ${isActive ? 'text-slate-800' : 'text-slate-400 group-hover:text-slate-600'}`}>
-                  {sat.label}
-                </p>
-              </button>
-            );
-          })}
-        </motion.div>
-
-        {/* Active product detail panel — interactive card below constellation */}
-        <div className="mt-6 sm:mt-8 max-w-2xl mx-auto">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeProduct.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.25 }}
-              className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-5"
-            >
-              <div className="flex items-start gap-3 sm:gap-4 mb-3">
-                <div
-                  className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center shrink-0"
-                  style={{ backgroundColor: [...ECOSYSTEM_NODES, ...SATELLITE_NODES].find(n => n.id === activeProduct.id)?.color ?? '#14b8a6' }}
-                >
-                  <DynamicIcon name={activeProduct.iconName} className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-sm sm:text-base font-bold text-slate-900">{activeProduct.name}</h3>
-                  <p className="text-xs sm:text-sm text-slate-500 mt-0.5">{activeProduct.tagline}</p>
-                </div>
-                {activeProduct.stats && (
-                  <div className="hidden sm:flex items-center gap-4">
-                    {activeProduct.stats.map((stat, i) => (
-                      <div key={i} className="text-center">
-                        <div className="text-sm font-bold text-slate-900">{stat.value}</div>
-                        <div className="text-[10px] text-slate-400">{stat.label}</div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+          {/* App grid — clean, aligned, responsive */}
+          <div ref={scrollContainerRef} className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-3">
+            {/* Center hub tile — always first, spans on lg */}
+            <div className="col-span-3 sm:col-span-4 lg:col-span-6 flex justify-center mb-1">
+              <div className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-xl bg-slate-900 text-white">
+                <Zap className="w-4 h-4" />
+                <span className="text-sm font-bold tracking-wide">Zopkit Platform</span>
+                <span className="text-slate-400 text-xs">|</span>
+                <span className="text-slate-400 text-xs font-medium">{products.length} apps connected</span>
               </div>
+            </div>
 
-              {/* Feature pills — first 4 features */}
-              <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                {activeProduct.features.slice(0, 5).map((feat, i) => (
-                  <span
-                    key={i}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-slate-50 border border-slate-100 text-[10px] sm:text-xs text-slate-600 font-medium hover:bg-slate-100 hover:text-slate-800 transition-colors cursor-default"
-                  >
-                    <DynamicIcon name={feat.icon} className="w-3 h-3 text-slate-400" />
-                    {feat.title}
+            {ECOSYSTEM_APPS.map((app) => {
+              const isActive = activeProduct.id === app.id;
+              const matchingProduct = products.find(p => p.id === app.id);
+              return (
+                <button
+                  key={app.id}
+                  ref={(el) => { if (el) productRefs.current.set(app.id, el); }}
+                  onClick={() => { if (matchingProduct) setActiveProduct(matchingProduct); }}
+                  className={`
+                    group relative flex flex-col items-center gap-1.5 py-4 sm:py-5 px-2 rounded-xl border-2 transition-all duration-200 cursor-pointer focus:outline-none
+                    ${isActive
+                      ? 'bg-slate-900 border-slate-900 shadow-md scale-[1.02]'
+                      : 'bg-white border-slate-100 hover:border-slate-300 hover:shadow-sm'}
+                  `}
+                >
+                  {/* Connector line to indicate "connected" — small SVG dash at top */}
+                  <svg className="absolute -top-[9px] left-1/2 -translate-x-1/2 w-px h-[9px]" aria-hidden="true">
+                    <line x1="0" y1="0" x2="0" y2="9" stroke={isActive ? '#0f172a' : '#e2e8f0'} strokeWidth="2" className="transition-colors duration-200" />
+                  </svg>
+
+                  <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center transition-colors duration-200 ${isActive ? 'bg-white/10' : 'bg-slate-50 group-hover:bg-slate-100'}`}>
+                    <DynamicIcon
+                      name={app.icon}
+                      className={`w-4 h-4 sm:w-[18px] sm:h-[18px] transition-colors duration-200 ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-slate-700'}`}
+                    />
+                  </div>
+                  <span className={`text-[10px] sm:text-xs font-semibold transition-colors duration-200 text-center leading-tight ${isActive ? 'text-white' : 'text-slate-600 group-hover:text-slate-900'}`}>
+                    <span className="sm:hidden">{app.short}</span>
+                    <span className="hidden sm:inline">{app.label}</span>
                   </span>
-                ))}
-                {activeProduct.features.length > 5 && (
+                  {/* Active indicator dot */}
+                  {isActive && (
+                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-slate-900" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Active product detail card */}
+          <div className="mt-4 sm:mt-5">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeProduct.id}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.2 }}
+                className="bg-slate-50 rounded-xl border border-slate-200 p-4 sm:p-5"
+              >
+                <div className="flex items-start gap-3 sm:gap-4">
+                  <div className="w-10 h-10 rounded-lg bg-slate-900 flex items-center justify-center shrink-0">
+                    <DynamicIcon name={activeProduct.iconName} className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="text-sm sm:text-base font-bold text-slate-900">{activeProduct.name}</h3>
+                      {activeProduct.stats?.[0] && (
+                        <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-semibold text-slate-500 bg-white border border-slate-200 rounded px-1.5 py-0.5">
+                          {activeProduct.stats[0].value} {activeProduct.stats[0].label}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs sm:text-sm text-slate-500 leading-relaxed">{activeProduct.tagline}</p>
+                  </div>
                   <button
                     onClick={() => navigate({ to: `/products/${activeProduct.id}` })}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-teal-50 border border-teal-100 text-[10px] sm:text-xs text-teal-600 font-medium hover:bg-teal-100 transition-colors cursor-pointer"
+                    className="hidden sm:inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-medium hover:bg-slate-800 transition-colors shrink-0"
                   >
-                    +{activeProduct.features.length - 5} more
-                    <ArrowRight className="w-3 h-3" />
+                    Explore <ArrowRight className="w-3 h-3" />
                   </button>
-                )}
-              </div>
-            </motion.div>
-          </AnimatePresence>
-        </div>
+                </div>
+
+                {/* Features row */}
+                <div className="flex flex-wrap gap-1.5 mt-3">
+                  {activeProduct.features.slice(0, 4).map((feat, i) => (
+                    <span
+                      key={i}
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-white border border-slate-100 text-[10px] sm:text-xs text-slate-600 font-medium"
+                    >
+                      <DynamicIcon name={feat.icon} className="w-3 h-3 text-slate-400" />
+                      {feat.title}
+                    </span>
+                  ))}
+                  {activeProduct.features.length > 4 && (
+                    <button
+                      onClick={() => navigate({ to: `/products/${activeProduct.id}` })}
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] sm:text-xs text-slate-400 font-medium hover:text-slate-600 transition-colors"
+                    >
+                      +{activeProduct.features.length - 4} more
+                    </button>
+                  )}
+                </div>
+
+                {/* Mobile explore button */}
+                <button
+                  onClick={() => navigate({ to: `/products/${activeProduct.id}` })}
+                  className="sm:hidden mt-3 w-full inline-flex items-center justify-center gap-1 px-3 py-2 rounded-lg bg-slate-900 text-white text-xs font-medium"
+                >
+                  Explore {activeProduct.name} <ArrowRight className="w-3 h-3" />
+                </button>
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        </motion.div>
       </main>
 
       {/* Solutions by product — vertical scrolling cards */}
