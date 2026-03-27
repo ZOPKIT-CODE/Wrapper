@@ -348,7 +348,7 @@ async function registerPlugins() {
     },
   });
 
-  // Stricter rate limiting for auth endpoints (50 req/15min)
+  // Per-route rate limiting for sensitive endpoints
   fastify.addHook('onRoute', (routeOptions) => {
     if (routeOptions.url?.startsWith('/api/v1/auth/')) {
       routeOptions.config = {
@@ -356,15 +356,19 @@ async function registerPlugins() {
         rateLimit: { max: 50, timeWindow: 900000 },
       };
     }
+    if (routeOptions.url?.startsWith('/api/v1/onboarding/verify-')) {
+      routeOptions.config = {
+        ...(routeOptions.config as Record<string, unknown>),
+        rateLimit: { max: 10, timeWindow: 60000 },
+      };
+    }
+    if (routeOptions.url === '/api/v1/contact' || routeOptions.url === '/api/v1/demo') {
+      routeOptions.config = {
+        ...(routeOptions.config as Record<string, unknown>),
+        rateLimit: { max: 5, timeWindow: 60000 },
+      };
+    }
   });
-
-  // TODO(api-hardening): Add per-route rate limits for public endpoints:
-  // - /api/v1/onboarding/verify-pan: 10 req/min (prevents enumeration)
-  // - /api/v1/onboarding/verify-gstin: 10 req/min
-  // - /api/v1/invitations/accept: 20 req/min
-  // - /api/v1/contact: 5 req/min (spam prevention)
-  // - /api/v1/demo: 5 req/min
-  // See: Scout 4 API audit (2026-03-28) for full list
 
   // File upload
   await fastify.register(multipart, {
