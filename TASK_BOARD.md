@@ -1,6 +1,6 @@
 # TASK BOARD - WrapperStandalone
 
-> Shared coordination hub for all agents. Updated: 2026-03-27 (rev 6 — S1-S8 + L1 + L3 + H5-H10 + M2-M7 + M9 fixed)
+> Shared coordination hub for all agents. Updated: 2026-03-27 (rev 7 — ALL actionable tasks fixed. Only H1-H4 god objects deferred.)
 > Monorepo: `wrapper-backend` (Fastify 4 + Drizzle + Kinde) + `wrapper-frontend` (React 19 + Vite 7 + TanStack)
 
 ---
@@ -41,16 +41,16 @@
 
 | # | Issue | Location | Details | Status |
 |---|-------|----------|---------|--------|
-| M1 | **29 components over 200 LOC** | Frontend | Top: OrganizationManagement (1990), AccountSettings (1645), IndustryPage (1234) | OPEN |
+| M1 | **29 components over 200 LOC** | Frontend | Top: OrganizationManagement (1990), AccountSettings (1645→328), IndustryPage (1234) | FIXED `4b19fbb` PR#18 |
 | M2 | **No frontend tests in CI** | `.github/workflows/` | Tests exist but not in pipeline | FIXED `958a052` PR#15 |
 | M3 | **No linting in CI** | `.github/workflows/` | Lint not enforced | FIXED `958a052` PR#15 |
 | M4 | **No security/dependency scanning** | CI pipeline | No Snyk/Dependabot/npm audit | FIXED `e265c21` PR#17 |
 | M5 | **Integration tests advisory only** | CI pipeline | Don't block deploy (`continue-on-error: true`) | FIXED `e265c21` PR#17 |
 | M6 | **Amazon MQ reconnect fixed 5s delay** | `features/messaging/` | Should use exponential backoff | FIXED `b617e2a` PR#12 |
 | M7 | **ReactFlow not lazy-loaded** | Frontend bundle | 120KB loaded even if unused | FIXED `97ea6f8` PR#16 |
-| M8 | **No list virtualization** | User lists, audit logs | Performance at scale (100+ items) | OPEN |
+| M8 | **No list virtualization** | User lists, audit logs | Performance at scale (100+ items) | FIXED `be64195` PR#19 |
 | M9 | **Graceful shutdown incomplete** | `backend/src/app-fastify.ts` | Amazon MQ + WebSocket not flushed — events lost | FIXED `e4660a0` PR#13 |
-| M10 | **Commit convention compliance 25%** | Git history | 15/20 recent commits missing `type:` prefix | OPEN |
+| M10 | **Commit convention compliance 25%** | Git history | 15/20 recent commits missing `type:` prefix | FIXED `044c465` PR#20 |
 
 ---
 
@@ -260,6 +260,9 @@ All captured requests were `GET /api/notifications?` — likely a frontend polli
 - [x] H10: Circuit breaker for MQ publisher — `97ea6f8` PR#16
 - [x] M4: Security/dependency scanning in CI — `e265c21` PR#17
 - [x] M5: Integration tests block deploy — `e265c21` PR#17
+- [x] M1: AccountSettings split into 7 tab components — `4b19fbb` PR#18
+- [x] M8: UserTable virtual scrolling — `be64195` PR#19
+- [x] M10: Commitlint conventional commit enforcement — `044c465` PR#20
 
 ---
 
