@@ -61,7 +61,7 @@ export default async function seasonalCreditsRoutes(fastify: FastifyInstance, _o
       
       const campaign = await SeasonalCreditService.createDistributionCampaign(campaignData);
       
-      reply.send({
+      reply.code(201).send({
         success: true,
         data: campaign,
         message: 'Campaign created successfully. Ready for distribution.'
@@ -120,7 +120,7 @@ export default async function seasonalCreditsRoutes(fastify: FastifyInstance, _o
         params.campaignId ?? ''
       );
       
-      reply.send({
+      reply.code(201).send({
         success: true,
         data: result,
         message: `Credit distribution ${result.status}. ${result.distributedCount} successful, ${result.failedCount} failed.`

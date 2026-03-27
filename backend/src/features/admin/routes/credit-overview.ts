@@ -417,7 +417,7 @@ export default async function adminCreditOverviewRoutes(fastify: FastifyInstance
 
       console.log(`Admin ${(request as any).userContext?.userId ?? ''} bulk allocated credits to ${successCount} entities${reason ? `: ${reason}` : ''}`);
 
-      return {
+      return reply.code(201).send({
         success: true,
         data: {
           results,
@@ -427,7 +427,7 @@ export default async function adminCreditOverviewRoutes(fastify: FastifyInstance
             failed: failureCount
           }
         }
-      };
+      });
     } catch (err: unknown) {
       const error = err as Error;
       console.error('Error bulk allocating credits:', error);

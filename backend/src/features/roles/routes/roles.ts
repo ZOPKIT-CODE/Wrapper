@@ -606,11 +606,11 @@ export default async function roleRoutes(
         hasRestrictions: Object.keys(restrictions).length > 0
       });
       
-      return {
+      return reply.code(201).send({
         success: true,
         data: parsedRole,
         message: 'Role created successfully'
-      };
+      });
     } catch (err: unknown) {
       const error = err as Error;
       console.error('🚨 Error creating role:', {
@@ -927,11 +927,7 @@ export default async function roleRoutes(
         }
       }
 
-      return {
-        success: true,
-        data: result,
-        message: 'Role deleted successfully'
-      };
+      return reply.code(204).send({ success: true });
     } catch (err: unknown) {
       const error = err as Error;
       request.log.error(error, 'Error deleting role:');

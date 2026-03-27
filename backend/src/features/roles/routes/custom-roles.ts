@@ -92,11 +92,11 @@ export default async function customRolesRoutes(
         metadata
       } as any);
       
-      return {
+      return reply.code(201).send({
         success: true,
         message: `Created custom role "${roleName}"`,
         data: role
-      };
+      });
       
     } catch (err: unknown) {
       const error = err as Error;

@@ -584,7 +584,7 @@ export default async function adminNotificationRoutes(fastify: FastifyInstance, 
         createdBy: (request as any).userContext?.internalUserId
       } as any);
       
-      reply.send({
+      reply.code(201).send({
         success: true,
         data: template,
         message: 'Template created successfully'
@@ -651,10 +651,7 @@ export default async function adminNotificationRoutes(fastify: FastifyInstance, 
     try {
       await templateService.deleteTemplate(params.templateId ?? '');
       
-      reply.send({
-        success: true,
-        message: 'Template deleted successfully'
-      });
+      reply.code(204).send({ success: true });
     } catch (err: unknown) {
       const error = err as Error;
       request.log.error(error, 'Error deleting template:');

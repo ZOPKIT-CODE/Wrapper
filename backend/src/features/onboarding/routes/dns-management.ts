@@ -357,14 +357,7 @@ export default async function dnsManagementRoutes(fastify: FastifyInstance, _opt
 
       console.log(`✅ Subdomain deleted: ${fullDomain}`);
 
-      return reply.send({
-        success: true,
-        message: 'Subdomain deleted successfully',
-        data: {
-          deletedDomain: fullDomain,
-          dnsDeleted: dnsResult.deleted
-        }
-      });
+      return reply.code(204).send({ success: true });
 
     } catch (err: unknown) {
       const error = err as Error;
@@ -424,14 +417,7 @@ export default async function dnsManagementRoutes(fastify: FastifyInstance, _opt
 
       console.log(`✅ Custom domain deleted: ${tenant[0].customDomain}`);
 
-      return reply.send({
-        success: true,
-        message: 'Custom domain deleted successfully',
-        data: {
-          deletedDomain: tenant[0].customDomain,
-          dnsDeleted: dnsResult.deleted
-        }
-      });
+      return reply.code(204).send({ success: true });
 
     } catch (err: unknown) {
       const error = err as Error;

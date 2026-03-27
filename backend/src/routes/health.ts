@@ -83,8 +83,7 @@ export default async function healthRoutes(fastify: FastifyInstance, _options?: 
       reply.code(500).send({
         status: 'error',
         timestamp: new Date().toISOString(),
-        error: error.message,
-        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        error: error.message
       });
     }
   });
@@ -207,8 +206,7 @@ export default async function healthRoutes(fastify: FastifyInstance, _options?: 
       reply.code(500).send({
         status: 'error',
         timestamp: new Date().toISOString(),
-        error: error.message,
-        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        error: error.message
       });
     }
   });
@@ -388,8 +386,7 @@ export default async function healthRoutes(fastify: FastifyInstance, _options?: 
       reply.code(500).send({
         timestamp: new Date().toISOString(),
         rls_enabled: false,
-        error: error.message,
-        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        error: error.message
       });
     }
   });
@@ -463,8 +460,7 @@ export default async function healthRoutes(fastify: FastifyInstance, _options?: 
       const error = err as Error;
       reply.code(500).send({
         timestamp: new Date().toISOString(),
-        error: error.message,
-        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        error: error.message
       });
     }
   });
@@ -546,8 +542,7 @@ export default async function healthRoutes(fastify: FastifyInstance, _options?: 
       const error = err as Error;
       reply.code(500).send({
         timestamp: new Date().toISOString(),
-        error: error.message,
-        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        error: error.message
       });
     }
   });

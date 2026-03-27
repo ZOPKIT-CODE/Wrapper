@@ -432,14 +432,14 @@ export default async function operationCostRoutes(fastify: FastifyInstance, _opt
       const configType = isGlobal ? 'Global' : 'Tenant-specific';
       console.log(`✅ Successfully created ${configType.toLowerCase()} configuration:`, newConfig[0]);
 
-      return {
+      return reply.code(201).send({
         success: true,
         message: `${configType} operation cost created successfully`,
         data: {
           operation: newConfig[0],
           action: 'created'
         }
-      };
+      });
     } catch (err: unknown) {
       const error = err as Error & { code?: string };
       console.error('❌ Error creating operation cost:', err);
@@ -579,13 +579,7 @@ export default async function operationCostRoutes(fastify: FastifyInstance, _opt
 
       await publishCreditConfigToTargets(existing[0] as Record<string, unknown>, 'deleted', 'system');
 
-      return reply.send({
-        success: true,
-        data: {
-          message: 'Operation cost configuration deleted successfully',
-          deletedOperation: existing[0]
-        }
-      });
+      return reply.code(204).send({ success: true });
     } catch (err: unknown) {
       const error = err as Error;
       request.log.error(error, 'Error deleting operation cost:');
