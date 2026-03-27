@@ -143,27 +143,27 @@ export function InviteAccept() {
     }
   }, [isAuthenticated, user, token])
 
-  // Store invitation context in localStorage to preserve it during authentication
+  // Store invitation context in sessionStorage to preserve it during authentication
   useEffect(() => {
     if (token) {
-      localStorage.setItem('pendingInvitationToken', token)
-      logger.debug('💾 Stored invitation token in localStorage:', token)
+      sessionStorage.setItem('pendingInvitationToken', token)
+      logger.debug('💾 Stored invitation token in sessionStorage:', token)
     }
-    
+
     // Cleanup on unmount
     return () => {
       if (token) {
-        localStorage.removeItem('pendingInvitationToken')
-        logger.debug('🧹 Cleaned up invitation token from localStorage')
+        sessionStorage.removeItem('pendingInvitationToken')
+        logger.debug('🧹 Cleaned up invitation token from sessionStorage')
       }
     }
   }, [token])
 
   // Check for pending invitation on mount
   useEffect(() => {
-    const pendingToken = localStorage.getItem('pendingInvitationToken')
+    const pendingToken = sessionStorage.getItem('pendingInvitationToken')
     if (pendingToken && !token) {
-      logger.debug('🔄 Found pending invitation token in localStorage:', pendingToken)
+      logger.debug('🔄 Found pending invitation token in sessionStorage:', pendingToken)
       // Redirect back to invitation acceptance with the stored token
       navigate({ to: `/invite/accept?token=${pendingToken}`, replace: true })
     }
@@ -199,7 +199,7 @@ export function InviteAccept() {
 
         if (response.data.success) {
           toast.success(`Welcome to ${invitation.organizationName}!`)
-          localStorage.removeItem('pendingInvitationToken')
+          sessionStorage.removeItem('pendingInvitationToken')
           // Invalidate and refetch auth/onboarding so dashboard sees updated status (avoids redirect to onboarding)
           invalidateAuthStatus()
           invalidateOnboardingStatus()
@@ -230,7 +230,7 @@ export function InviteAccept() {
 
         if (response.data.success) {
           toast.success(`Welcome to ${invitation.organizationName}!`)
-          localStorage.removeItem('pendingInvitationToken')
+          sessionStorage.removeItem('pendingInvitationToken')
           invalidateAuthStatus()
           invalidateOnboardingStatus()
           await queryClient.refetchQueries({ queryKey: queryKeys.authStatus })

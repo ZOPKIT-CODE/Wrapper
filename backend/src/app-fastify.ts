@@ -229,9 +229,11 @@ async function registerPlugins() {
       // Check against allowed production origins
       const allowedOrigins = [
         process.env.FRONTEND_URL,
-        /^https?:\/\/[a-z0-9-]+\.zopkit\.com$/i, // Any subdomain of zopkit.com (prod)
-        /^https?:\/\/zopkit\.com$/i // Root domain if used
-      ];
+        'https://app.zopkit.com',
+        'https://www.zopkit.com',
+        'https://zopkit.com',
+        /^https:\/\/[a-z0-9-]+\.zopkit\.com$/, // HTTPS only, no HTTP
+      ].filter(Boolean);
 
       const isAllowed = allowedOrigins.some((allowed: string | RegExp | undefined) => {
         if (allowed === undefined) return false;
@@ -344,6 +346,16 @@ async function registerPlugins() {
       // Don't rate-limit health checks
       return request.url === '/health';
     },
+  });
+
+  // Stricter rate limiting for auth endpoints (50 req/15min)
+  fastify.addHook('onRoute', (routeOptions) => {
+    if (routeOptions.url?.startsWith('/api/auth/')) {
+      routeOptions.config = {
+        ...(routeOptions.config as Record<string, unknown>),
+        rateLimit: { max: 50, timeWindow: 900000 },
+      };
+    }
   });
 
   // File upload
