@@ -71,10 +71,20 @@ export default async function subscriptionRoutes(
   // Get available subscription plans (single source of truth for frontend)
   fastify.get('/plans', async (request, reply) => {
     try {
-      const plans = await SubscriptionService.getAvailablePlans();
+      const query = request.query as { page?: string; limit?: string; [key: string]: unknown };
+      const page = Math.max(1, parseInt(query.page || '1', 10));
+      const limit = Math.min(Math.max(1, parseInt(query.limit || '20', 10)), 100);
+      const offset = (page - 1) * limit;
+
+      const allPlans = await SubscriptionService.getAvailablePlans();
+      const sliced = allPlans.slice(offset, offset + limit + 1);
+      const hasMore = sliced.length > limit;
+      const items = hasMore ? sliced.slice(0, limit) : sliced;
+
       return {
         success: true,
-        data: plans
+        data: items,
+        meta: { page, limit, hasMore }
       };
     } catch (error) {
       request.log.error(error, 'Error fetching plans:');
@@ -85,10 +95,20 @@ export default async function subscriptionRoutes(
   // Get available credit packages (alias; same data as /plans)
   fastify.get('/credit-packages', async (request, reply) => {
     try {
-      const packages = await SubscriptionService.getAvailablePlans();
+      const query = request.query as { page?: string; limit?: string; [key: string]: unknown };
+      const page = Math.max(1, parseInt(query.page || '1', 10));
+      const limit = Math.min(Math.max(1, parseInt(query.limit || '20', 10)), 100);
+      const offset = (page - 1) * limit;
+
+      const allPackages = await SubscriptionService.getAvailablePlans();
+      const sliced = allPackages.slice(offset, offset + limit + 1);
+      const hasMore = sliced.length > limit;
+      const items = hasMore ? sliced.slice(0, limit) : sliced;
+
       return {
         success: true,
-        data: packages
+        data: items,
+        meta: { page, limit, hasMore }
       };
     } catch (error) {
       request.log.error(error, 'Error fetching credit packages:');
@@ -385,11 +405,20 @@ export default async function subscriptionRoutes(
         return ErrorResponses.notFound(reply, 'Organization', 'User is not associated with any organization');
       }
 
-      const billingHistory = await SubscriptionService.getBillingHistory(tenantId);
-      
+      const query = request.query as { page?: string; limit?: string; [key: string]: unknown };
+      const page = Math.max(1, parseInt(query.page || '1', 10));
+      const limit = Math.min(Math.max(1, parseInt(query.limit || '20', 10)), 100);
+      const offset = (page - 1) * limit;
+
+      const allBillingHistory = await SubscriptionService.getBillingHistory(tenantId);
+      const sliced = allBillingHistory.slice(offset, offset + limit + 1);
+      const hasMore = sliced.length > limit;
+      const items = hasMore ? sliced.slice(0, limit) : sliced;
+
       return {
         success: true,
-        data: billingHistory
+        data: items,
+        meta: { page, limit, hasMore }
       };
     } catch (err: unknown) {
       const error = err as Error;

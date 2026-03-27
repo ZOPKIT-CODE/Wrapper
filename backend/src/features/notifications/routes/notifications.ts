@@ -23,9 +23,10 @@ export default async function notificationRoutes(fastify: FastifyInstance, _opti
       // This ensures seasonal credit notifications (which have targetUserId=null) are visible to all users
       const effectiveUserId = null; // Always pass null to get all tenant notifications
 
-      const q = request.query as Record<string, unknown>;
-      const limit = q.limit ?? 50;
-      const offset = q.offset ?? 0;
+      const q = request.query as { page?: string; limit?: string; [key: string]: unknown };
+      const page = Math.max(1, parseInt(q.page as string || '1', 10));
+      const limit = Math.min(Math.max(1, parseInt(q.limit as string || '20', 10)), 100);
+      const offset = (page - 1) * limit;
       const includeRead = q.includeRead ?? true;
       const includeDismissed = q.includeDismissed ?? false;
       const type = q.type;
@@ -35,8 +36,8 @@ export default async function notificationRoutes(fastify: FastifyInstance, _opti
         tenantId,
         effectiveUserId,
         {
-          limit: Number(limit),
-          offset: Number(offset),
+          limit: limit + 1,
+          offset,
           includeRead: includeRead === 'true' || includeRead === true,
           includeDismissed: includeDismissed === 'true' || includeDismissed === true,
           type: type as string | undefined,
@@ -44,9 +45,13 @@ export default async function notificationRoutes(fastify: FastifyInstance, _opti
         }
       );
 
+      const hasMore = notifications.length > limit;
+      const items = hasMore ? notifications.slice(0, limit) : notifications;
+
       reply.send({
         success: true,
-        data: notifications
+        data: items,
+        meta: { page, limit, hasMore }
       });
 
     } catch (err: unknown) {

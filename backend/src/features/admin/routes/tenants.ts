@@ -21,6 +21,11 @@ export default async function tenantRoutes(
     preHandler: [authenticateToken]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
+      const query = request.query as { page?: string; limit?: string; [key: string]: unknown };
+      const page = Math.max(1, parseInt(query.page || '1', 10));
+      const limit = Math.min(Math.max(1, parseInt(query.limit || '20', 10)), 100);
+      const offset = (page - 1) * limit;
+
       const tenantsList = await db
         .select({
           tenantId: tenants.tenantId,
@@ -33,11 +38,17 @@ export default async function tenantRoutes(
           trialEndsAt: tenants.trialEndsAt
         })
         .from(tenants)
-        .orderBy(tenants.createdAt);
+        .orderBy(tenants.createdAt)
+        .limit(limit + 1)
+        .offset(offset);
+
+      const hasMore = tenantsList.length > limit;
+      const items = hasMore ? tenantsList.slice(0, limit) : tenantsList;
 
       return {
         success: true,
-        tenants: tenantsList
+        data: items,
+        meta: { page, limit, hasMore }
       };
     } catch (error) {
       request.log.error(error, 'Error fetching tenants:');
@@ -134,11 +145,12 @@ export default async function tenantRoutes(
     try {
       const tenantId = request.userContext.tenantId;
       const userId = request.userContext.internalUserId;
-      const query = request.query as Record<string, string>;
-      const { limit = '20', offset = '0', includeActivity = 'true' } = query;
+      const query = request.query as { page?: string; limit?: string; includeActivity?: string; [key: string]: unknown };
+      const { includeActivity = 'true' } = query;
       const shouldIncludeActivity = includeActivity === 'true';
-      const parsedLimit = parseInt(limit) || 20;
-      const parsedOffset = parseInt(offset) || 0;
+      const page = Math.max(1, parseInt(query.page || '1', 10));
+      const parsedLimit = Math.min(Math.max(1, parseInt(query.limit || '20', 10)), 100);
+      const parsedOffset = (page - 1) * parsedLimit;
       
       if (!tenantId) {
         return ErrorResponses.notFound(reply, 'Tenant', 'Tenant not found');
@@ -329,19 +341,17 @@ export default async function tenantRoutes(
         metadata: {}
       });
 
-      const hasMore = parsedOffset + parsedLimit < activityTotal;
+      // Paginate the combined events list
+      const paginatedEvents = events.slice(parsedOffset, parsedOffset + parsedLimit + 1);
+      const hasMore = paginatedEvents.length > parsedLimit;
+      const items = hasMore ? paginatedEvents.slice(0, parsedLimit) : paginatedEvents;
 
       return {
         success: true,
         data: {
-          events,
-          pagination: {
-            offset: parsedOffset,
-            limit: parsedLimit,
-            activityTotal,
-            hasMore
-          }
-        }
+          events: items
+        },
+        meta: { page, limit: parsedLimit, hasMore }
       };
     } catch (error) {
       request.log.error(error, 'Error fetching timeline:');

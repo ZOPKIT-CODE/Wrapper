@@ -25,17 +25,27 @@ export default async function adminRoleRoutes(fastify: FastifyInstance): Promise
     try {
       console.log(`🔍 [${requestId}] Getting roles for tenant: ${tenantId}`);
 
+      const page = Math.max(1, parseInt(query.page || '1', 10));
+      const pageLimit = Math.min(Math.max(1, parseInt(query.limit || '20', 10)), 100);
+      const pageOffset = (page - 1) * pageLimit;
+
       const roles = await db
         .select()
         .from(customRoles)
-        .where(eq(customRoles.tenantId, tenantId));
+        .where(eq(customRoles.tenantId, tenantId))
+        .limit(pageLimit + 1)
+        .offset(pageOffset);
 
-      console.log(`✅ [${requestId}] Found ${roles.length} roles`);
+      const hasMore = roles.length > pageLimit;
+      const items = hasMore ? roles.slice(0, pageLimit) : roles;
+
+      console.log(`✅ [${requestId}] Found ${items.length} roles`);
 
       return {
         success: true,
-        data: roles,
-        count: roles.length,
+        data: items,
+        count: items.length,
+        meta: { page, limit: pageLimit, hasMore },
         requestId
       };
     } catch (err: unknown) {
@@ -232,10 +242,13 @@ export default async function adminRoleRoutes(fastify: FastifyInstance): Promise
     const query = request.query as Record<string, string>;
     const requestId = Logger.generateRequestId('audit-logs');
     const tenantId = ((request as ReqWithUser).userContext?.tenantId ?? '') as string;
-    const page = (query.page as string) ?? '1'; const limit = (query.limit as string) ?? '50'; const action = query.action as string | undefined; const userId = query.userId as string | undefined;
+    const action = query.action as string | undefined; const userId = query.userId as string | undefined;
+    const page = Math.max(1, parseInt(query.page || '1', 10));
+    const pageLimit = Math.min(Math.max(1, parseInt(query.limit || '20', 10)), 100);
+    const pageOffset = (page - 1) * pageLimit;
 
     try {
-      console.log(`🔍 [${requestId}] Getting audit logs:`, { tenantId, page, limit, action, userId });
+      console.log(`🔍 [${requestId}] Getting audit logs:`, { tenantId, page, limit: pageLimit, action, userId });
 
       const whereClause = action && userId
         ? and(eq(auditLogs.tenantId, tenantId), eq(auditLogs.action, action), eq(auditLogs.userId, userId))
@@ -249,19 +262,18 @@ export default async function adminRoleRoutes(fastify: FastifyInstance): Promise
         .from(auditLogs)
         .where(whereClause)
         .orderBy(auditLogs.createdAt)
-        .limit(parseInt(limit))
-        .offset((parseInt(page) - 1) * parseInt(limit));
+        .limit(pageLimit + 1)
+        .offset(pageOffset);
 
-      console.log(`✅ [${requestId}] Found ${logs.length} audit logs`);
+      const hasMore = logs.length > pageLimit;
+      const items = hasMore ? logs.slice(0, pageLimit) : logs;
+
+      console.log(`✅ [${requestId}] Found ${items.length} audit logs`);
 
       return {
         success: true,
-        data: logs,
-        pagination: {
-          page: parseInt(page),
-          limit: parseInt(limit),
-          count: logs.length
-        },
+        data: items,
+        meta: { page, limit: pageLimit, hasMore },
         requestId
       };
     } catch (err: unknown) {
@@ -287,6 +299,10 @@ export default async function adminRoleRoutes(fastify: FastifyInstance): Promise
     const tenantId = ((request as ReqWithUser).userContext?.tenantId ?? '') as string;
 
     try {
+      const page = Math.max(1, parseInt(query.page || '1', 10));
+      const pageLimit = Math.min(Math.max(1, parseInt(query.limit || '20', 10)), 100);
+      const pageOffset = (page - 1) * pageLimit;
+
       console.log(`🔍 [${requestId}] Getting all roles for tenant: ${tenantId}`);
 
       if (!tenantId) {
@@ -414,10 +430,15 @@ export default async function adminRoleRoutes(fastify: FastifyInstance): Promise
         };
       }).filter(role => role !== null); // Remove any null entries
 
+      const sliced = transformedRoles.slice(pageOffset, pageOffset + pageLimit + 1);
+      const hasMore = sliced.length > pageLimit;
+      const paginatedRoles = hasMore ? sliced.slice(0, pageLimit) : sliced;
+
       return {
         success: true,
-        data: transformedRoles,
-        count: transformedRoles.length,
+        data: paginatedRoles,
+        count: paginatedRoles.length,
+        meta: { page, limit: pageLimit, hasMore },
         requestId
       };
     } catch (err: unknown) {

@@ -125,6 +125,11 @@ export default async function permissionRoutes(fastify: FastifyInstance, _option
     try {
       const tenantId = getTenantId(request);
       
+      const query = request.query as { page?: string; limit?: string; [key: string]: unknown };
+      const page = Math.max(1, parseInt(query.page || '1', 10));
+      const limit = Math.min(Math.max(1, parseInt(query.limit || '20', 10)), 100);
+      const offset = (page - 1) * limit;
+
       const users = await db
         .select({
           userId: tenantUsers.userId,
@@ -135,11 +140,17 @@ export default async function permissionRoutes(fastify: FastifyInstance, _option
           createdAt: tenantUsers.createdAt
         })
         .from(tenantUsers)
-        .where(eq(tenantUsers.tenantId, tenantId));
+        .where(eq(tenantUsers.tenantId, tenantId))
+        .limit(limit + 1)
+        .offset(offset);
+
+      const hasMore = users.length > limit;
+      const items = hasMore ? users.slice(0, limit) : users;
 
       return {
         success: true,
-        data: users
+        data: items,
+        meta: { page, limit, hasMore }
       };
     } catch (err: unknown) {
       const error = err as Error;

@@ -45,15 +45,24 @@ export default async function creditExpiryRoutes(
       const tenantId = (request.userContext as { tenantId?: string | null })?.tenantId;
       const entityId = query?.entityId || null;
 
-      const expiringCredits = await CreditExpiryService.getExpiringCredits(
+      const page = Math.max(1, parseInt(String(query.page || '1'), 10));
+      const limit = Math.min(Math.max(1, parseInt(String(query.limit || '20'), 10)), 100);
+      const offset = (page - 1) * limit;
+
+      const allExpiringCredits = await CreditExpiryService.getExpiringCredits(
         parseInt(String(daysAhead)),
         tenantId ?? undefined,
         entityId ?? undefined
       );
 
+      const sliced = allExpiringCredits.slice(offset, offset + limit + 1);
+      const hasMore = sliced.length > limit;
+      const items = hasMore ? sliced.slice(0, limit) : sliced;
+
       return {
         success: true,
-        data: expiringCredits
+        data: items,
+        meta: { page, limit, hasMore }
       };
     } catch (err: unknown) {
       const error = err as Error;

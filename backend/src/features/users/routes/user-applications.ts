@@ -56,10 +56,22 @@ export default async function userApplicationRoutes(fastify: FastifyInstance, _o
         };
       });
 
+      const queryParams = request.query as { page?: string; limit?: string; [key: string]: unknown };
+      const page = Math.max(1, parseInt(queryParams.page || '1', 10));
+      const limit = Math.min(Math.max(1, parseInt(queryParams.limit || '20', 10)), 100);
+      const offset = (page - 1) * limit;
+
+      const sliced = users.slice(offset, offset + limit + 1);
+      const hasMore = sliced.length > limit;
+      const items = hasMore ? sliced.slice(0, limit) : sliced;
+
       return reply.send({
         success: true,
-        data: users,
+        data: items,
         meta: {
+          page,
+          limit,
+          hasMore,
           total: users.length,
           usersWithAccess: users.filter(u => u.hasAnyAccess).length,
           usersWithoutAccess: users.filter(u => !u.hasAnyAccess).length

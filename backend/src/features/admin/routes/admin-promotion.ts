@@ -72,10 +72,19 @@ export default async function adminPromotionRoutes(fastify: FastifyInstance, _op
         });
       }
 
-      const [eligibleUsers, currentAdmin] = await Promise.all([
+      const query = request.query as { page?: string; limit?: string; [key: string]: unknown };
+      const page = Math.max(1, parseInt(query.page || '1', 10));
+      const limit = Math.min(Math.max(1, parseInt(query.limit || '20', 10)), 100);
+      const offset = (page - 1) * limit;
+
+      const [allEligibleUsers, currentAdmin] = await Promise.all([
         AdminPromotionService.getEligibleUsers(tenantId, currentAdminId ?? ''),
         AdminPromotionService.getCurrentSystemAdmin(tenantId)
       ]);
+
+      const sliced = allEligibleUsers.slice(offset, offset + limit + 1);
+      const hasMore = sliced.length > limit;
+      const eligibleUsers = hasMore ? sliced.slice(0, limit) : sliced;
 
       return reply.send({
         success: true,
@@ -86,8 +95,9 @@ export default async function adminPromotionRoutes(fastify: FastifyInstance, _op
             userName: currentAdmin.name ?? '',
             userEmail: currentAdmin.email ?? ''
           } : null,
-          totalEligible: eligibleUsers.length
-        }
+          totalEligible: allEligibleUsers.length
+        },
+        meta: { page, limit, hasMore }
       });
 
     } catch (err: unknown) {
