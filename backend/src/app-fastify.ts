@@ -414,17 +414,14 @@ async function gracefulShutdown() {
     await fastify.close();
     console.log('✅ Fastify server closed.');
 
-    // Redis connection disabled - no need to disconnect
-    // Disconnect Redis connections
-    /*
+    // Disconnect Amazon MQ publisher
     try {
-      const redisManager = (await import('./utils/redis.js')).default;
-      await redisManager.disconnect();
-      console.log('✅ Redis connections closed.');
-    } catch (redisError) {
-      console.warn('⚠️ Error closing Redis connections:', redisError.message);
+      const { amazonMQPublisher } = await import('./features/messaging/utils/amazon-mq-publisher.js');
+      await amazonMQPublisher.disconnect();
+      console.log('✅ Amazon MQ disconnected.');
+    } catch (mqError: unknown) {
+      console.warn('⚠️ Error closing Amazon MQ:', (mqError as Error).message);
     }
-    */
 
     console.log('✅ Graceful shutdown completed.');
     process.exit(0);
