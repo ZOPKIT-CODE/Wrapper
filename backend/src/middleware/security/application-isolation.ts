@@ -13,15 +13,15 @@ const applicationDataIsolationService = new ApplicationDataIsolationService();
 
 // Public routes that bypass application isolation
 const PUBLIC_APPLICATION_ROUTES = [
-  'POST /api/locations',
+  'POST /api/v1/locations',
   // New unified entities routes
-  'GET /api/entities/hierarchy',
-  'GET /api/entities/parent',
-  'POST /api/entities/parent',
-  'POST /api/entities/sub',
-  'POST /api/entities/bulk',
-  'GET /api/entities/tenant',
-  'POST /api/entities'
+  'GET /api/v1/entities/hierarchy',
+  'GET /api/v1/entities/parent',
+  'POST /api/v1/entities/parent',
+  'POST /api/v1/entities/sub',
+  'POST /api/v1/entities/bulk',
+  'GET /api/v1/entities/tenant',
+  'POST /api/v1/entities'
 ];
 
 export class ApplicationIsolationMiddleware {
