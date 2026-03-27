@@ -537,78 +537,25 @@ const Landing: React.FC = () => {
         </MobileNav>
       </Navbar>
 
-      {/* Hero Section — two-column: left text, right orbital */}
+      {/* Hero — left: static value prop + dynamic product detail, right: orbital */}
       <main className="relative pt-24 sm:pt-28 lg:pt-36 pb-10 sm:pb-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-6 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-8 items-center">
 
-          {/* ── Left column: text + CTAs ── */}
-          <div className="flex flex-col gap-5 order-2 lg:order-1">
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4 }}
-              className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900 text-white text-xs font-medium tracking-wide w-fit"
-            >
-              <Zap className="w-3 h-3" />
-              11 Products. One Platform.
+          {/* ── Left column ── */}
+          <div className="flex flex-col order-2 lg:order-1">
+            {/* Static headline — never changes, instant comprehension */}
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+              <p className="text-sm font-semibold text-slate-500 tracking-wide mb-3">The Business Operating System</p>
+              <h1 className="text-3xl sm:text-4xl lg:text-[2.75rem] xl:text-5xl font-black tracking-tight leading-[1.1] text-slate-900">
+                Run your entire company<br className="hidden sm:block" /> from one platform
+              </h1>
+              <p className="text-slate-500 text-sm sm:text-base lg:text-lg leading-relaxed max-w-md mt-4">
+                CRM, Finance, HR, Operations, Projects — 11 tools that share data automatically. No more copy-pasting between apps.
+              </p>
             </motion.div>
 
-            <div className="relative min-h-[100px] sm:min-h-[120px] lg:min-h-[140px]">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={activeProduct.id}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -12 }}
-                  transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
-                  className="absolute top-0 left-0 w-full"
-                >
-                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-[1.1] text-slate-900">
-                    {activeProduct.name}
-                  </h1>
-                  <p className="text-slate-500 text-sm sm:text-base lg:text-lg leading-relaxed max-w-md mt-3">
-                    {activeProduct.description}
-                  </p>
-                </motion.div>
-              </AnimatePresence>
-            </div>
-
-            {/* Connected-to pills — shows what this product integrates with */}
-            {(() => {
-              const activeDeps = DEPENDENCIES.filter(([f, t]) =>
-                ORBIT_APPS[f].id === activeProduct.id || ORBIT_APPS[t].id === activeProduct.id
-              );
-              if (activeDeps.length === 0) return null;
-              return (
-                <motion.div
-                  key={`deps-${activeProduct.id}`}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.2, delay: 0.1 }}
-                  className="flex flex-wrap gap-1.5"
-                >
-                  <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest self-center mr-1">Integrates with</span>
-                  {activeDeps.map(([f, t, label], i) => {
-                    const other = ORBIT_APPS[f].id === activeProduct.id ? ORBIT_APPS[t] : ORBIT_APPS[f];
-                    return (
-                      <span key={i} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-white border border-slate-200 text-[10px] sm:text-xs text-slate-600 font-medium">
-                        <DynamicIcon name={other.icon} className="w-3 h-3 text-slate-400" />
-                        {other.label}
-                        <span className="text-slate-300">·</span>
-                        <span className="text-slate-400">{label}</span>
-                      </span>
-                    );
-                  })}
-                </motion.div>
-              );
-            })()}
-
-            <motion.div
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.15 }}
-              className="flex flex-col sm:flex-row gap-3 mt-1"
-            >
+            {/* CTAs */}
+            <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.12 }} className="flex flex-col sm:flex-row gap-3 mt-6">
               <button
                 onClick={primaryCta.action}
                 disabled={primaryCta.disabled}
@@ -625,19 +572,66 @@ const Landing: React.FC = () => {
               </button>
             </motion.div>
 
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-slate-400 font-medium">
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-5 text-xs text-slate-400 font-medium">
               <span className="inline-flex items-center gap-1.5"><Shield className="w-3.5 h-3.5" />SOC 2</span>
               <span className="inline-flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" />99.9% Uptime</span>
               <span className="inline-flex items-center gap-1.5"><Globe className="w-3.5 h-3.5" />GDPR</span>
             </div>
+
+            {/* Active product detail — appears when user clicks a node */}
+            <div className="mt-6 pt-6 border-t border-slate-100">
+              <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-3">
+                Click any app to explore →
+              </p>
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeProduct.id}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: 0.2 }}
+                  className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-slate-900 flex items-center justify-center shrink-0">
+                      <DynamicIcon name={activeProduct.iconName} className="w-[18px] h-[18px] text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm font-bold text-slate-900">{activeProduct.name}</h3>
+                      <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">{activeProduct.description}</p>
+                    </div>
+                  </div>
+                  {/* Dependency data flows */}
+                  {(() => {
+                    const deps = DEPENDENCIES.filter(([f, t]) =>
+                      ORBIT_APPS[f].id === activeProduct.id || ORBIT_APPS[t].id === activeProduct.id
+                    );
+                    if (deps.length === 0) return null;
+                    return (
+                      <div className="flex flex-wrap gap-1.5 mt-3">
+                        {deps.map(([f, t, label], i) => {
+                          const other = ORBIT_APPS[f].id === activeProduct.id ? ORBIT_APPS[t] : ORBIT_APPS[f];
+                          return (
+                            <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-50 border border-slate-100 text-[10px] text-slate-500 font-medium">
+                              <DynamicIcon name={other.icon} className="w-3 h-3 text-slate-400" />
+                              {label} ↔ {other.label}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
+                </motion.div>
+              </AnimatePresence>
+            </div>
           </div>
 
-          {/* ── Right column: orbital ecosystem ── */}
+          {/* ── Right column: orbital ── */}
           <motion.div
             initial={{ opacity: 0, scale: 0.97 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="relative aspect-square max-w-md sm:max-w-lg mx-auto lg:mx-0 lg:max-w-none order-1 lg:order-2"
+            className="relative aspect-square max-w-sm sm:max-w-md lg:max-w-none mx-auto lg:mx-0 order-1 lg:order-2"
           >
             <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" aria-hidden="true">
               <defs>
@@ -648,41 +642,31 @@ const Landing: React.FC = () => {
               </defs>
 
               {/* Orbit track */}
-              <circle cx="50" cy="50" r={ORBITAL_R} fill="none" stroke="#e2e8f0" strokeWidth="0.3" />
+              <circle cx="50" cy="50" r={ORBITAL_R} fill="none" stroke="#e2e8f0" strokeWidth="0.25" />
 
-              {/* Radial spokes — only active product's spoke is visible */}
+              {/* Radial spokes */}
               {ORBIT_APPS.map((app) => (
-                <line
-                  key={`spoke-${app.id}`}
-                  x1="50" y1="50" x2={app.x} y2={app.y}
-                  stroke={activeProduct.id === app.id ? '#0f172a' : '#f8fafc'}
+                <line key={`spoke-${app.id}`} x1="50" y1="50" x2={app.x} y2={app.y}
+                  stroke={activeProduct.id === app.id ? '#0f172a' : '#f1f5f9'}
                   strokeWidth={activeProduct.id === app.id ? 0.4 : 0.12}
                   className="transition-all duration-300"
                 />
               ))}
 
-              {/* Dependency paths — ONLY active product's deps shown with flow */}
+              {/* Dependency flow paths */}
               {DEPENDENCIES.map(([from, to, label], i) => {
                 const fromApp = ORBIT_APPS[from];
                 const toApp = ORBIT_APPS[to];
                 const isActive = activeProduct.id === fromApp.id || activeProduct.id === toApp.id;
+                if (!isActive) return null;
                 const d = depPath(from, to);
                 const mx = (fromApp.x + toApp.x) / 2 + (50 - (fromApp.x + toApp.x) / 2) * 0.25;
                 const my = (fromApp.y + toApp.y) / 2 + (50 - (fromApp.y + toApp.y) / 2) * 0.25;
                 return (
                   <g key={`dep-${i}`}>
-                    {isActive && (
-                      <>
-                        {/* Glow under-path */}
-                        <path d={d} fill="none" stroke="#0f172a" strokeWidth="0.7" strokeLinecap="round" opacity="0.08" />
-                        {/* Flowing dashes */}
-                        <path d={d} fill="none" stroke="#0f172a" strokeWidth="0.4" strokeDasharray="3 3" strokeLinecap="round" className="dep-flow" />
-                        {/* Label */}
-                        <text x={mx} y={my - 1.5} textAnchor="middle" fill="#94a3b8" fontSize="2.2" fontWeight="600" fontFamily="system-ui, sans-serif">
-                          {label}
-                        </text>
-                      </>
-                    )}
+                    <path d={d} fill="none" stroke="#0f172a" strokeWidth="0.6" strokeLinecap="round" opacity="0.08" />
+                    <path d={d} fill="none" stroke="#0f172a" strokeWidth="0.35" strokeDasharray="3 3" strokeLinecap="round" className="dep-flow" />
+                    <text x={mx} y={my - 1.5} textAnchor="middle" fill="#94a3b8" fontSize="2" fontWeight="600" fontFamily="system-ui, sans-serif">{label}</text>
                   </g>
                 );
               })}
@@ -709,18 +693,13 @@ const Landing: React.FC = () => {
                   style={{ left: `${app.x}%`, top: `${app.y}%` }}
                   aria-label={app.label}
                 >
-                  <div
-                    className={`
-                      w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 rounded-2xl flex items-center justify-center transition-all duration-200 border-2
-                      ${isActive
-                        ? 'bg-slate-900 border-slate-900 shadow-lg scale-110'
-                        : 'bg-white border-slate-200 shadow-sm group-hover:border-slate-400 group-hover:shadow-md group-hover:scale-105'}
-                    `}
-                  >
-                    <DynamicIcon
-                      name={app.icon}
-                      className={`w-4 h-4 sm:w-5 sm:h-5 transition-colors duration-200 ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-slate-700'}`}
-                    />
+                  <div className={`
+                    w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 rounded-2xl flex items-center justify-center transition-all duration-200 border-2
+                    ${isActive
+                      ? 'bg-slate-900 border-slate-900 shadow-lg scale-110'
+                      : 'bg-white border-slate-200 shadow-sm group-hover:border-slate-400 group-hover:shadow-md group-hover:scale-105'}
+                  `}>
+                    <DynamicIcon name={app.icon} className={`w-4 h-4 sm:w-5 sm:h-5 transition-colors duration-200 ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-slate-700'}`} />
                   </div>
                   <p className={`text-center text-[8px] sm:text-[10px] lg:text-xs font-semibold mt-1 transition-colors duration-200 whitespace-nowrap ${isActive ? 'text-slate-900' : 'text-slate-400 group-hover:text-slate-700'}`}>
                     {app.label}
@@ -731,15 +710,13 @@ const Landing: React.FC = () => {
           </motion.div>
         </div>
 
-        {/* Mobile product selector strip (below hero on mobile, hidden on lg since orbital handles it) */}
+        {/* Mobile scroll strip */}
         <div ref={scrollContainerRef} className="lg:hidden mt-6 flex gap-2 overflow-x-auto pb-2 scrollbar-none">
           {ORBIT_APPS.map((app) => {
             const isActive = activeProduct.id === app.id;
             const matchingProduct = products.find(p => p.id === app.id);
             return (
-              <button
-                key={`strip-${app.id}`}
-                onClick={() => { if (matchingProduct) setActiveProduct(matchingProduct); }}
+              <button key={`strip-${app.id}`} onClick={() => { if (matchingProduct) setActiveProduct(matchingProduct); }}
                 className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg border text-[11px] font-medium transition-colors ${isActive ? 'bg-slate-900 border-slate-900 text-white' : 'bg-white border-slate-200 text-slate-600'}`}
               >
                 <DynamicIcon name={app.icon} className="w-3.5 h-3.5" />
