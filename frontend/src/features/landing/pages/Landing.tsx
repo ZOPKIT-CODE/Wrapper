@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from '@tanstack/react-router'
 import { useKindeAuth } from '@kinde-oss/kinde-auth-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { DynamicIcon } from '@/features/landing/components/Icons'
-import { ArrowRight, Play, ChevronRight, FileText, GraduationCap, Users, Zap, Mail, Phone, MapPin, Menu, X, LayoutDashboard, Rocket } from 'lucide-react'
+import { ArrowRight, Play, ChevronRight, FileText, GraduationCap, Users, Zap, Mail, Phone, MapPin, Menu, X, LayoutDashboard, Rocket, Shield, Clock, Globe, BarChart3, Settings, CreditCard, UserCheck, Workflow } from 'lucide-react'
 import api, { createCancelableRequest } from '@/lib/api'
 import { Product } from '@/types'
 import toast from 'react-hot-toast'
@@ -15,9 +15,7 @@ const StackedCardsSection = React.lazy(() =>
 const WorkflowVisualizer = React.lazy(() =>
   import('@/features/landing/components/WorkflowVisualizer').then(m => ({ default: m.WorkflowVisualizer }))
 )
-const VisualHub = React.lazy(() =>
-  import('@/features/landing/components/VisualHub').then(m => ({ default: m.VisualHub }))
-)
+// VisualHub removed from hero for performance — available for other sections if needed
 import { products } from '@/data/content'
 import { getAllIndustries } from '@/data/industryPages'
 
@@ -60,21 +58,6 @@ const NAV_ITEMS = [
   { name: "Contact Us", link: "#contact" },
 ] as const;
 
-const COLOR_TO_HEX_PRIMARY: Record<string, string> = {
-  blue: '#3b82f6',
-  green: '#10b981',
-  purple: '#a855f7',
-  orange: '#f97316',
-  indigo: '#6366f1',
-};
-
-const COLOR_TO_HEX_SECONDARY: Record<string, string> = {
-  blue: '#6366f1',
-  green: '#06b6d4',
-  purple: '#ec4899',
-  orange: '#f59e0b',
-  indigo: '#8b5cf6',
-};
 
 const Landing: React.FC = () => {
   const navigate = useNavigate()
@@ -317,34 +300,14 @@ const Landing: React.FC = () => {
     []
   );
 
-  const primaryColorHex = COLOR_TO_HEX_PRIMARY[activeProduct.color] ?? '#14b8a6';
-  const secondaryColorHex = COLOR_TO_HEX_SECONDARY[activeProduct.color] ?? '#10b981';
-
   return (
     <div className="min-h-screen bg-white text-slate-900 selection:bg-teal-100 selection:text-teal-900 font-sans overflow-x-clip relative">
 
-      {/* Ambient Background Effects */}
-      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden" style={{ contain: 'strict' }}>
-        {/* Subtle dot grid pattern */}
-        <div className="absolute inset-0 bg-[radial-gradient(rgba(148,163,184,0.15)_1px,transparent_1px)] bg-[size:24px_24px]" />
-
-        {/* Soft watercolor wash — top right (teal-50) */}
-        <div className="absolute -top-40 -right-40 w-[800px] h-[800px] rounded-full bg-teal-50 blur-[120px]" />
-
-        {/* Soft watercolor wash — bottom left (emerald-50) */}
-        <div className="absolute -bottom-40 -left-40 w-[600px] h-[600px] rounded-full bg-emerald-50 blur-[100px]" />
-
-        {/* Dynamic color spotlight (reactive to active product) */}
-        <div
-          className="absolute top-[-20%] right-[-10%] w-[100vw] h-[100vh] blur-[100px] rounded-full transition-[background-color] duration-1000 ease-in-out will-change-transform"
-          style={{ backgroundColor: `${primaryColorHex}0a` }}
-        />
-
-        {/* Secondary spotlight — bottom left */}
-        <div
-          className="absolute bottom-[-10%] left-[-5%] w-[80vw] h-[70vh] blur-[120px] rounded-full transition-[background-color] duration-1000 ease-in-out will-change-transform"
-          style={{ backgroundColor: `${secondaryColorHex}08` }}
-        />
+      {/* Lightweight background — CSS-only, no blur, no fixed layers */}
+      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(rgba(148,163,184,0.08)_1px,transparent_1px)] bg-[size:32px_32px]" />
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full bg-teal-50/60" />
+        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full bg-emerald-50/40" />
       </div>
 
       {/* Resizable Navbar */}
@@ -366,7 +329,7 @@ const Landing: React.FC = () => {
                 <ChevronRight size={16} className={`transition-transform ${showProductsDropdown ? 'rotate-90' : ''}`} />
               </button>
               {showProductsDropdown && (
-                <div className="absolute top-full left-0 mt-2 w-64 bg-white backdrop-blur-xl rounded-xl shadow-xl border border-slate-200 py-2 z-50">
+                <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-slate-200 py-2 z-50">
                   {allProducts.map((product) => (
                     <button
                       key={product.id}
@@ -392,7 +355,7 @@ const Landing: React.FC = () => {
                 <ChevronRight size={16} className={`transition-transform ${showIndustriesDropdown ? 'rotate-90' : ''}`} />
               </button>
               {showIndustriesDropdown && (
-                <div className="absolute top-full left-0 mt-2 w-64 bg-white backdrop-blur-xl rounded-xl shadow-xl border border-slate-200 py-2 z-50">
+                <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-slate-200 py-2 z-50">
                   {allIndustries.map((industry) => (
                     <button
                       key={industry.slug}
@@ -509,118 +472,72 @@ const Landing: React.FC = () => {
         </MobileNav>
       </Navbar>
 
-      {/* Main Content */}
-      <main className="relative pt-20 sm:pt-24 lg:pt-36 pb-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 z-10 overflow-visible">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-0 items-center">
+      {/* Hero Section */}
+      <main className="relative pt-24 sm:pt-28 lg:pt-36 pb-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 z-10">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
 
-          {/* Left Column: Content (Compressed to 5 cols) */}
-          <div className="lg:col-span-5 flex flex-col gap-8 lg:pr-6 relative z-20">
+          {/* Left Column: Text Content */}
+          <div className="flex flex-col gap-6 relative z-20 order-2 lg:order-1">
 
-            <div className="space-y-6 relative">
-              {/* Announcement Badge */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5, ease: "easeOut" }}
-                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white border border-teal-200 shadow-sm w-fit"
-              >
-                <span className="w-2 h-2 rounded-full bg-teal-500 animate-pulse"></span>
-                <span className="text-teal-700 text-xs font-semibold tracking-wide uppercase">Trusted by 500+ companies across 11 industries</span>
-              </motion.div>
+            {/* Badge */}
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-50 border border-teal-200 w-fit">
+              <span className="w-1.5 h-1.5 rounded-full bg-teal-500" />
+              <span className="text-teal-700 text-xs font-semibold tracking-wide">Trusted by 500+ companies</span>
+            </div>
 
-              {/* Hero Headline */}
-              <div className="relative h-[160px] lg:h-[200px] w-full z-20">
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={activeProduct.id}
-                    initial={{ opacity: 0, y: 10, filter: 'blur(10px)' }}
-                    animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-                    exit={{ opacity: 0, y: -10, filter: 'blur(10px)' }}
-                    transition={{ duration: 0.4, ease: "easeOut" }}
-                    className="absolute top-0 left-0 w-full"
-                  >
-                    <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight leading-tight mb-5 text-slate-900">
-                      <span className="text-teal-600">
-                        {activeProduct.name}
-                      </span>
-                    </h1>
-                    <p className="text-slate-500 text-sm sm:text-base lg:text-xl leading-relaxed max-w-2xl mt-4">
-                      {activeProduct.description}
-                    </p>
-                  </motion.div>
-                </AnimatePresence>
-              </div>
+            {/* Headline with rotating product name */}
+            <div className="relative min-h-[120px] sm:min-h-[140px] lg:min-h-[180px]">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeProduct.id}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -12 }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
+                  className="absolute top-0 left-0 w-full"
+                >
+                  <h1 className="text-3xl sm:text-4xl lg:text-6xl font-black tracking-tight leading-[1.1] text-slate-900">
+                    <span className="text-teal-600">{activeProduct.name}</span>
+                  </h1>
+                  <p className="text-slate-500 text-sm sm:text-base lg:text-lg leading-relaxed max-w-lg mt-3 sm:mt-4">
+                    {activeProduct.description}
+                  </p>
+                </motion.div>
+              </AnimatePresence>
             </div>
 
             {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row items-center mt-24 gap-4 z-20">
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+            <div className="flex flex-col sm:flex-row gap-3 mt-4 sm:mt-2">
+              <button
                 onClick={primaryCta.action}
                 disabled={primaryCta.disabled}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold text-base shadow-lg shadow-teal-600/20 transition-colors duration-200 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm sm:text-base shadow-sm transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.98]"
               >
-                {hasAuthenticatedSession && onboardingCompleted ? <LayoutDashboard className="w-5 h-5" /> : null}
-                {hasAuthenticatedSession && !onboardingCompleted ? <Rocket className="w-5 h-5" /> : null}
+                {hasAuthenticatedSession && onboardingCompleted ? <LayoutDashboard className="w-4 h-4" /> : null}
+                {hasAuthenticatedSession && !onboardingCompleted ? <Rocket className="w-4 h-4" /> : null}
                 {primaryCta.label}
-                <ArrowRight className="w-5 h-5" />
-              </motion.button>
+                <ArrowRight className="w-4 h-4" />
+              </button>
 
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-300 text-slate-700 font-semibold text-base shadow-sm transition-colors duration-200"
+              <button
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-semibold text-sm sm:text-base transition-colors active:scale-[0.98]"
               >
-                <Play className="w-4 h-4 fill-current text-slate-500" />
-                <span>Watch 2-Min Demo</span>
-              </motion.button>
+                <Play className="w-3.5 h-3.5 fill-current text-slate-500" />
+                Watch Demo
+              </button>
             </div>
 
-            {/* Floating Trust Badges */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-6">
-              {[
-                { label: "SOC 2 Compliant" },
-                { label: "99.9% Uptime" },
-                { label: "GDPR Ready" },
-              ].map((badge, i) => (
-                <motion.div
-                  key={badge.label}
-                  animate={{ y: [0, -6, 0] }}
-                  transition={{ duration: 3, repeat: Infinity, delay: i * 0.4, ease: "easeInOut" }}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white border border-slate-100 shadow-sm"
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-teal-500 shrink-0" />
-                  <span className="text-xs font-medium text-slate-600">{badge.label}</span>
-                </motion.div>
-              ))}
+            {/* Trust row — clean, no animation */}
+            <div className="flex flex-wrap items-center gap-4 mt-2 text-xs text-slate-500">
+              <span className="inline-flex items-center gap-1.5"><Shield className="w-3.5 h-3.5 text-teal-500" />SOC 2 Compliant</span>
+              <span className="inline-flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 text-teal-500" />99.9% Uptime</span>
+              <span className="inline-flex items-center gap-1.5"><Globe className="w-3.5 h-3.5 text-teal-500" />GDPR Ready</span>
             </div>
 
-            {/* Stats Bar */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8 pt-8 border-t border-slate-100">
-              {[
-                { value: "500+", label: "Companies" },
-                { value: "100M+", label: "Transactions" },
-                { value: "99.9%", label: "Uptime SLA" },
-                { value: "11", label: "Products" },
-              ].map((stat) => (
-                <div key={stat.label} className="text-center">
-                  <div className="text-2xl font-black text-slate-900">{stat.value}</div>
-                  <div className="text-xs text-slate-400 mt-0.5">{stat.label}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* Product "Launchpad" Selector */}
-            <div className="mt-6 pt-8 border-t border-slate-100">
-              <div className="flex justify-between items-center mb-4">
-                <p className="text-slate-400 text-xs font-semibold tracking-widest uppercase">Select Application</p>
-                <span className="text-xs text-slate-400">0{activeProduct.id} / {products.length}</span>
-              </div>
-
-              <div ref={scrollContainerRef} className="flex flex-row gap-3 overflow-x-auto gradient-scrollbar pb-4">
+            {/* Product Selector — compact scrollable row */}
+            <div className="mt-4 pt-6 border-t border-slate-100">
+              <p className="text-slate-400 text-[10px] sm:text-xs font-semibold tracking-widest uppercase mb-3">Select Application</p>
+              <div ref={scrollContainerRef} className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
                 {products.map((product) => (
                   <button
                     key={product.id}
@@ -630,49 +547,95 @@ const Landing: React.FC = () => {
                     onClick={() => setActiveProduct(product)}
                     onDoubleClick={() => navigate({ to: `/products/${product.id}` })}
                     className={`
-                        relative group flex flex-col items-start justify-between p-3 rounded-xl border transition-all duration-300 h-28 w-32 min-w-[128px] overflow-hidden text-left shrink-0
-                        ${activeProduct.id === product.id
-                        ? 'bg-teal-50 border-teal-200 shadow-md ring-1 ring-teal-200'
-                        : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-md'}
-                      `}
-                    title="Double-click to view details"
+                      shrink-0 flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-medium transition-colors
+                      ${activeProduct.id === product.id
+                        ? 'bg-teal-600 border-teal-600 text-white'
+                        : 'bg-white border-slate-200 text-slate-600 hover:border-teal-200 hover:text-teal-700'}
+                    `}
                   >
-                    {/* Hover Glow */}
-                    <div className={`absolute inset-0 bg-gradient-to-br ${product.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
-
-                    <div className="flex justify-between w-full items-start">
-                      <div className={`
-                           p-1.5 rounded-lg transition-colors duration-300
-                           ${activeProduct.id === product.id ? `bg-gradient-to-br ${product.gradient} text-white` : 'bg-slate-100 text-slate-500 group-hover:text-slate-700 group-hover:bg-slate-200'}
-                         `}>
-                        <DynamicIcon name={product.iconName} className="w-4 h-4" />
-                      </div>
-
-                      {activeProduct.id === product.id && (
-                        <motion.div layoutId="active-indicator" className="w-1.5 h-1.5 rounded-full bg-teal-500" />
-                      )}
-                    </div>
-
-                    <div className="flex flex-col gap-1 mt-auto w-full">
-                      <span className={`text-[11px] font-semibold tracking-wide ${activeProduct.id === product.id ? 'text-teal-700' : 'text-slate-500 group-hover:text-slate-900'}`}>
-                        {product.name}
-                      </span>
-                      <span className="text-[9px] text-teal-600 opacity-0 group-hover:opacity-100 transition-opacity">
-                        Double-click for details →
-                      </span>
-                    </div>
+                    <DynamicIcon name={product.iconName} className="w-3.5 h-3.5" />
+                    {product.name}
                   </button>
                 ))}
               </div>
             </div>
           </div>
 
-          {/* Right Column: Visual Hub (Expanded to 7 cols and shifted left) */}
-          <div className="lg:col-span-7 relative z-10 flex justify-center lg:justify-start items-center h-full min-h-[350px] sm:min-h-[500px]">
-            <div className="w-full lg:w-[100%] flex justify-center lg:-ml-6">
-              <Suspense fallback={<div className="min-h-[350px] sm:min-h-[500px]" />}>
-                <VisualHub product={activeProduct} />
-              </Suspense>
+          {/* Right Column: Clean SVG illustration — replaces heavy VisualHub */}
+          <div className="relative z-10 flex justify-center items-center order-1 lg:order-2">
+            <div className="w-full max-w-md lg:max-w-lg">
+              {/* Lightweight dashboard mockup SVG */}
+              <svg viewBox="0 0 480 360" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-auto drop-shadow-lg" aria-hidden="true">
+                {/* Card background */}
+                <rect x="16" y="16" width="448" height="328" rx="16" fill="white" stroke="#e2e8f0" strokeWidth="1"/>
+
+                {/* Top bar */}
+                <rect x="16" y="16" width="448" height="48" rx="16" fill="#f8fafc"/>
+                <rect x="16" y="48" width="448" height="16" fill="#f8fafc"/>
+                <circle cx="44" cy="40" r="6" fill="#0d9488"/>
+                <circle cx="64" cy="40" r="6" fill="#e2e8f0"/>
+                <circle cx="84" cy="40" r="6" fill="#e2e8f0"/>
+                <rect x="120" y="34" width="80" height="12" rx="6" fill="#e2e8f0"/>
+                <rect x="210" y="34" width="60" height="12" rx="6" fill="#e2e8f0"/>
+                <rect x="280" y="34" width="70" height="12" rx="6" fill="#e2e8f0"/>
+
+                {/* Sidebar */}
+                <rect x="16" y="64" width="100" height="280" fill="#f1f5f9"/>
+                <rect x="28" y="80" width="76" height="10" rx="5" fill="#cbd5e1"/>
+                <rect x="28" y="100" width="60" height="8" rx="4" fill="#0d9488" opacity="0.7"/>
+                <rect x="28" y="118" width="68" height="8" rx="4" fill="#e2e8f0"/>
+                <rect x="28" y="136" width="52" height="8" rx="4" fill="#e2e8f0"/>
+                <rect x="28" y="154" width="64" height="8" rx="4" fill="#e2e8f0"/>
+                <rect x="28" y="172" width="48" height="8" rx="4" fill="#e2e8f0"/>
+                <rect x="28" y="198" width="76" height="10" rx="5" fill="#cbd5e1"/>
+                <rect x="28" y="218" width="56" height="8" rx="4" fill="#e2e8f0"/>
+                <rect x="28" y="236" width="70" height="8" rx="4" fill="#e2e8f0"/>
+
+                {/* Stat cards row */}
+                <rect x="132" y="76" width="96" height="56" rx="8" fill="white" stroke="#e2e8f0" strokeWidth="1"/>
+                <rect x="144" y="88" width="40" height="8" rx="4" fill="#cbd5e1"/>
+                <rect x="144" y="104" width="60" height="14" rx="4" fill="#0d9488"/>
+
+                <rect x="240" y="76" width="96" height="56" rx="8" fill="white" stroke="#e2e8f0" strokeWidth="1"/>
+                <rect x="252" y="88" width="40" height="8" rx="4" fill="#cbd5e1"/>
+                <rect x="252" y="104" width="56" height="14" rx="4" fill="#0f766e"/>
+
+                <rect x="348" y="76" width="96" height="56" rx="8" fill="white" stroke="#e2e8f0" strokeWidth="1"/>
+                <rect x="360" y="88" width="40" height="8" rx="4" fill="#cbd5e1"/>
+                <rect x="360" y="104" width="48" height="14" rx="4" fill="#14b8a6"/>
+
+                {/* Chart area */}
+                <rect x="132" y="148" width="320" height="140" rx="8" fill="white" stroke="#e2e8f0" strokeWidth="1"/>
+                <rect x="148" y="160" width="80" height="10" rx="5" fill="#cbd5e1"/>
+                {/* Bar chart */}
+                <rect x="160" y="244" width="24" height="28" rx="4" fill="#ccfbf1"/>
+                <rect x="196" y="224" width="24" height="48" rx="4" fill="#99f6e4"/>
+                <rect x="232" y="210" width="24" height="62" rx="4" fill="#5eead4"/>
+                <rect x="268" y="230" width="24" height="42" rx="4" fill="#2dd4bf"/>
+                <rect x="304" y="200" width="24" height="72" rx="4" fill="#14b8a6"/>
+                <rect x="340" y="190" width="24" height="82" rx="4" fill="#0d9488"/>
+                <rect x="376" y="210" width="24" height="62" rx="4" fill="#0f766e"/>
+                {/* Chart baseline */}
+                <line x1="148" y1="272" x2="420" y2="272" stroke="#e2e8f0" strokeWidth="1"/>
+
+                {/* Bottom info row */}
+                <rect x="132" y="300" width="152" height="32" rx="8" fill="white" stroke="#e2e8f0" strokeWidth="1"/>
+                <rect x="148" y="312" width="60" height="8" rx="4" fill="#e2e8f0"/>
+                <rect x="296" y="300" width="156" height="32" rx="8" fill="white" stroke="#e2e8f0" strokeWidth="1"/>
+                <rect x="312" y="312" width="72" height="8" rx="4" fill="#e2e8f0"/>
+              </svg>
+
+              {/* Floating feature labels — CSS only, no motion */}
+              <div className="hidden sm:block absolute -top-2 right-4 lg:right-0 bg-white border border-slate-200 rounded-lg px-3 py-1.5 shadow-sm">
+                <span className="flex items-center gap-1.5 text-xs font-medium text-slate-700">
+                  <BarChart3 className="w-3.5 h-3.5 text-teal-500" />Analytics
+                </span>
+              </div>
+              <div className="hidden sm:block absolute bottom-8 -left-2 lg:-left-4 bg-white border border-slate-200 rounded-lg px-3 py-1.5 shadow-sm">
+                <span className="flex items-center gap-1.5 text-xs font-medium text-slate-700">
+                  <Workflow className="w-3.5 h-3.5 text-teal-500" />Automation
+                </span>
+              </div>
             </div>
           </div>
         </div>
