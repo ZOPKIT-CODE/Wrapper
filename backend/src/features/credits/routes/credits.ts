@@ -3,7 +3,7 @@ import { CreditService } from '../services/credit-service.js';
 import { authenticateToken, requirePermission } from '../../../middleware/auth/auth.js';
 import { PERMISSIONS } from '../../../constants/permissions.js';
 import { db } from '../../../db/index.js';
-import { creditPurchases, tenantUsers, entities } from '../../../db/schema/index.js';
+import { creditPurchases, tenantUsers, entities, eventTracking } from '../../../db/schema/index.js';
 import { eq, and } from 'drizzle-orm';
 import ErrorResponses from '../../../utils/error-responses.js';
 
@@ -1268,6 +1268,21 @@ export default async function creditRoutes(
       console.log('🎯 Processing webhook event:', event.type);
       console.log('📋 Event ID:', event.id);
 
+      // Idempotency check — skip already-processed events
+      try {
+        const [existing] = await db
+          .select({ id: eventTracking.id })
+          .from(eventTracking)
+          .where(eq(eventTracking.eventId, event.id))
+          .limit(1);
+        if (existing) {
+          console.log('⏭️ Skipping already-processed webhook event:', event.id);
+          return reply.code(200).send({ received: true, duplicate: true });
+        }
+      } catch (dedupeErr) {
+        console.warn('⚠️ Idempotency check failed, proceeding with processing:', (dedupeErr as Error).message);
+      }
+
       // Handle credit purchase completion
       if (event.type === 'checkout.session.completed') {
         const session = event.data.object as { id: string; payment_status?: string; amount_total?: number; payment_intent?: string; metadata?: Record<string, unknown>; customer?: string; currency?: string };
@@ -1379,6 +1394,22 @@ export default async function creditRoutes(
             console.log('   • Purchase ID:', purchaseResult.purchaseId);
             console.log('   • Credits Allocated:', creditAmount);
             console.log('   • Status: completed');
+
+            // Record processed event for idempotency
+            try {
+              await db.insert(eventTracking).values({
+                eventId: event.id,
+                eventType: event.type,
+                tenantId: tenantId,
+                streamKey: 'stripe-credit-webhook',
+                sourceApplication: 'stripe',
+                targetApplication: 'wrapper-backend',
+                eventData: session as Record<string, unknown>,
+                status: 'processed',
+              });
+            } catch (trackErr) {
+              console.warn('⚠️ Failed to record webhook event:', (trackErr as Error).message);
+            }
 
             return reply.code(200).send({
               success: true,
