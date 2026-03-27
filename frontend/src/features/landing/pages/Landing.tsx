@@ -78,33 +78,47 @@ const ORBIT_APPS = [
   return { ...app, x: 50 + ORBITAL_R * Math.cos(rad), y: 50 + ORBITAL_R * Math.sin(rad) };
 });
 
-// Cross-product dependencies — smooth bezier curves show real data flows
-// [fromIndex, toIndex, label] — describes what data flows between them
+// Cross-product dependencies — data flows between products
+// [fromIndex, toIndex, label]
+// ESOP (6) and Academy (9) connect directly to hub (Zopkit) — no cross-product dep
 const DEPENDENCIES: [number, number, string][] = [
   [0, 1, 'Invoices'],    // CRM → Finance
-  [0, 2, 'Orders'],      // CRM → Operations
+  [0, 2, 'Orders'],      // CRM → Ops
   [1, 5, 'Payroll'],     // Finance → HRMS
-  [1, 2, 'Costs'],       // Finance → Operations
+  [1, 2, 'Costs'],       // Finance → Ops
   [4, 5, 'Resources'],   // Projects → HRMS
   [4, 1, 'Budgets'],     // Projects → Finance
-  [5, 6, 'Equity'],      // HRMS → ESOP
   [7, 0, 'Referrals'],   // Affiliates → CRM
   [8, 4, 'Workflows'],   // Flowtilla → Projects
   [10, 4, 'Tickets'],    // ITSM → Projects
-  [9, 5, 'Training'],    // Academy → HRMS
   [3, 0, 'Contacts'],    // B2C → CRM
 ];
 
-// Compute a smooth quadratic bezier path curving inward toward center
+// Products that connect directly to hub (Zopkit core) — always show spoke
+const HUB_CONNECTED_IDS = new Set(['esop-system', 'zopkit-academy']);
+
+// Smooth bezier path curving inward
 function depPath(fromIdx: number, toIdx: number): string {
   const a = ORBIT_APPS[fromIdx];
   const b = ORBIT_APPS[toIdx];
-  // Control point: midpoint pulled 40% toward center (50,50)
   const mx = (a.x + b.x) / 2;
   const my = (a.y + b.y) / 2;
   const cx = mx + (50 - mx) * 0.45;
   const cy = my + (50 - my) * 0.45;
   return `M ${a.x} ${a.y} Q ${cx} ${cy} ${b.x} ${b.y}`;
+}
+
+// Label position: pushed OUTWARD from center so it doesn't overlap nodes
+function depLabelPos(fromIdx: number, toIdx: number): { x: number; y: number } {
+  const a = ORBIT_APPS[fromIdx];
+  const b = ORBIT_APPS[toIdx];
+  const mx = (a.x + b.x) / 2;
+  const my = (a.y + b.y) / 2;
+  // Push outward from center by 8 units
+  const dx = mx - 50;
+  const dy = my - 50;
+  const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+  return { x: mx + (dx / dist) * 6, y: my + (dy / dist) * 6 };
 }
 
 const Landing: React.FC = () => {
@@ -351,33 +365,32 @@ const Landing: React.FC = () => {
   return (
     <div className="min-h-screen bg-white text-slate-900 selection:bg-teal-100 selection:text-teal-900 font-sans overflow-x-clip relative">
 
-      {/* Sharp SVG background — geometric accents */}
+      {/* Background — Razorpay-inspired bold geometric SVG */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
         <svg className="absolute w-full h-full" preserveAspectRatio="none" viewBox="0 0 1440 900" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          {/* Gradient wash */}
           <defs>
-            <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <linearGradient id="bgG" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="#f8fafc" />
+              <stop offset="50%" stopColor="#ffffff" />
               <stop offset="100%" stopColor="#f1f5f9" />
             </linearGradient>
           </defs>
-          <rect width="1440" height="900" fill="url(#bgGrad)" />
-
-          {/* Sharp geometric shapes */}
-          {/* Large chevron — top right */}
-          <path d="M1200 0 L1440 0 L1440 200 L1280 120 Z" fill="#e2e8f0" opacity="0.3" />
-          {/* Triangle — bottom left */}
-          <path d="M0 700 L0 900 L180 900 Z" fill="#e2e8f0" opacity="0.25" />
-          {/* Diamond — center right */}
-          <path d="M1380 400 L1440 360 L1440 440 Z" fill="#cbd5e1" opacity="0.15" />
-          {/* Thin angled line */}
-          <line x1="300" y1="0" x2="1000" y2="900" stroke="#cbd5e1" strokeWidth="1" opacity="0.12" />
-          <line x1="500" y1="0" x2="1200" y2="900" stroke="#cbd5e1" strokeWidth="1" opacity="0.08" />
-          {/* Small square accent — top left */}
-          <rect x="60" y="80" width="40" height="40" rx="4" fill="none" stroke="#cbd5e1" strokeWidth="1" opacity="0.2" />
-          {/* Dotted horizontal line */}
-          <line x1="0" y1="450" x2="200" y2="450" stroke="#cbd5e1" strokeWidth="1" strokeDasharray="4 6" opacity="0.2" />
-          <line x1="1240" y1="600" x2="1440" y2="600" stroke="#cbd5e1" strokeWidth="1" strokeDasharray="4 6" opacity="0.15" />
+          <rect width="1440" height="900" fill="url(#bgG)" />
+          {/* Bold top-right angular block */}
+          <path d="M1100 0 L1440 0 L1440 320 L1200 180 Z" fill="#0f172a" opacity="0.025" />
+          {/* Bottom-left triangle slab */}
+          <path d="M0 600 L0 900 L400 900 Z" fill="#0f172a" opacity="0.02" />
+          {/* Razor-thin diagonal cuts */}
+          <line x1="200" y1="0" x2="1440" y2="750" stroke="#0f172a" strokeWidth="1.5" opacity="0.03" />
+          <line x1="0" y1="100" x2="1200" y2="900" stroke="#0f172a" strokeWidth="1" opacity="0.02" />
+          {/* Horizontal accent bars */}
+          <rect x="0" y="0" width="6" height="900" fill="#0f172a" opacity="0.02" />
+          <rect x="1434" y="0" width="6" height="900" fill="#0f172a" opacity="0.02" />
+          {/* Mid-page cross accent */}
+          <line x1="0" y1="450" x2="160" y2="450" stroke="#0f172a" strokeWidth="1" opacity="0.04" />
+          <line x1="1280" y1="450" x2="1440" y2="450" stroke="#0f172a" strokeWidth="1" opacity="0.04" />
+          {/* Small diamond at bottom-right */}
+          <path d="M1360 800 L1380 780 L1400 800 L1380 820 Z" fill="none" stroke="#0f172a" strokeWidth="1" opacity="0.04" />
         </svg>
       </div>
 
@@ -655,50 +668,71 @@ const Landing: React.FC = () => {
                 `}</style>
               </defs>
 
-              {/* Outer orbit ring */}
-              <circle cx="50" cy="50" r={ORBITAL_R} fill="none" stroke="#e2e8f0" strokeWidth="0.3" />
-              {/* Inner subtle ring */}
-              <circle cx="50" cy="50" r={ORBITAL_R * 0.55} fill="none" stroke="#f1f5f9" strokeWidth="0.2" strokeDasharray="1.5 2" />
+              {/* Orbit track */}
+              <circle cx="50" cy="50" r={ORBITAL_R} fill="none" stroke="#e2e8f0" strokeWidth="0.25" />
 
-              {/* Spokes */}
+              {/* Spokes — hub-connected products (ESOP, Academy) always visible */}
               {ORBIT_APPS.map((app) => {
                 const isActive = activeProduct.id === app.id;
+                const isHubProduct = HUB_CONNECTED_IDS.has(app.id);
                 return (
                   <line key={`spoke-${app.id}`} x1="50" y1="50" x2={app.x} y2={app.y}
-                    stroke={isActive ? '#0f172a' : '#f1f5f9'}
-                    strokeWidth={isActive ? 0.5 : 0.12}
+                    stroke={isActive ? '#0f172a' : isHubProduct ? '#cbd5e1' : '#f1f5f9'}
+                    strokeWidth={isActive ? 0.5 : isHubProduct ? 0.25 : 0.1}
+                    strokeDasharray={!isActive && isHubProduct ? '1 1.5' : undefined}
                     className="transition-all duration-300"
                   />
                 );
               })}
 
-              {/* Dependency flow paths — no text labels to avoid overlap */}
-              {DEPENDENCIES.map(([from, to], i) => {
+              {/* Dependency flow paths with outward-positioned labels */}
+              {DEPENDENCIES.map(([from, to, label], i) => {
                 const fromApp = ORBIT_APPS[from];
                 const toApp = ORBIT_APPS[to];
                 const isActive = activeProduct.id === fromApp.id || activeProduct.id === toApp.id;
                 if (!isActive) return null;
                 const d = depPath(from, to);
+                const lbl = depLabelPos(from, to);
                 return (
                   <g key={`dep-${i}`}>
-                    <path d={d} fill="none" stroke="#0f172a" strokeWidth="0.6" strokeLinecap="round" opacity="0.06" />
+                    <path d={d} fill="none" stroke="#0f172a" strokeWidth="0.5" strokeLinecap="round" opacity="0.06" />
                     <path d={d} fill="none" stroke="#0f172a" strokeWidth="0.3" strokeDasharray="2 2.5" strokeLinecap="round" className="dep-flow" />
+                    {/* Label positioned outward from center — avoids node overlap */}
+                    <text x={lbl.x} y={lbl.y} textAnchor="middle" dominantBaseline="central" fill="#94a3b8" fontSize="1.8" fontWeight="600" fontFamily="system-ui, sans-serif">{label}</text>
                   </g>
+                );
+              })}
+
+              {/* Hub-connected labels (ESOP, Academy connect to Zopkit directly) */}
+              {ORBIT_APPS.filter(a => HUB_CONNECTED_IDS.has(a.id)).map((app) => {
+                const isActive = activeProduct.id === app.id;
+                if (!isActive) return null;
+                const mx = 50 + (app.x - 50) * 0.5;
+                const my = 50 + (app.y - 50) * 0.5;
+                return (
+                  <text key={`hub-lbl-${app.id}`} x={mx} y={my - 1.5} textAnchor="middle" fill="#94a3b8" fontSize="1.8" fontWeight="600" fontFamily="system-ui, sans-serif">
+                    {app.id === 'esop-system' ? 'Equity Plans' : 'Learning'}
+                  </text>
                 );
               })}
             </svg>
 
-            {/* Center hub */}
+            {/* Center hub — Zopkit logo */}
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 text-center">
-              <div className="w-16 h-16 sm:w-18 sm:h-18 lg:w-[88px] lg:h-[88px] rounded-full bg-slate-900 flex items-center justify-center mx-auto shadow-xl shadow-slate-900/10">
-                <Zap className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
+              <div className="w-16 h-16 sm:w-18 sm:h-18 lg:w-[88px] lg:h-[88px] rounded-full bg-slate-900 flex items-center justify-center mx-auto shadow-xl shadow-slate-900/10 overflow-hidden">
+                <img
+                  src="https://res.cloudinary.com/dr9vzaa7u/image/upload/v1765126845/Zopkit_Simple_Logo_glohfr.jpg"
+                  alt="Zopkit"
+                  className="w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 rounded-full object-cover"
+                  loading="eager"
+                />
               </div>
-              <p className="text-[10px] lg:text-xs font-bold text-slate-600 mt-2 tracking-[0.15em] uppercase">Zopkit</p>
             </div>
 
             {/* Product nodes */}
             {ORBIT_APPS.map((app) => {
               const isActive = activeProduct.id === app.id;
+              const isHubProduct = HUB_CONNECTED_IDS.has(app.id);
               const matchingProduct = products.find(p => p.id === app.id);
               return (
                 <button
@@ -713,7 +747,9 @@ const Landing: React.FC = () => {
                     w-11 h-11 sm:w-[52px] sm:h-[52px] lg:w-14 lg:h-14 rounded-2xl flex items-center justify-center transition-all duration-200 border-2
                     ${isActive
                       ? 'bg-slate-900 border-slate-900 shadow-lg shadow-slate-900/15 scale-[1.12]'
-                      : 'bg-white border-slate-200 shadow-sm group-hover:border-slate-300 group-hover:shadow-md group-hover:scale-[1.06]'}
+                      : isHubProduct
+                        ? 'bg-white border-slate-300 shadow-sm group-hover:border-slate-400 group-hover:shadow-md group-hover:scale-[1.06]'
+                        : 'bg-white border-slate-200 shadow-sm group-hover:border-slate-300 group-hover:shadow-md group-hover:scale-[1.06]'}
                   `}>
                     <DynamicIcon name={app.icon} className={`w-[18px] h-[18px] sm:w-5 sm:h-5 transition-colors duration-200 ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-slate-700'}`} />
                   </div>
