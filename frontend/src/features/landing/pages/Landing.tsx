@@ -328,11 +328,27 @@ const Landing: React.FC = () => {
   return (
     <div className="min-h-screen bg-white text-slate-900 selection:bg-teal-100 selection:text-teal-900 font-sans overflow-x-clip relative">
 
-      {/* Lightweight background — CSS-only, no blur, no fixed layers */}
+      {/* Geometric SVG background — sharp, cutting-edge, no blur */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(rgba(148,163,184,0.08)_1px,transparent_1px)] bg-[size:32px_32px]" />
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full bg-teal-50/60" />
-        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full bg-emerald-50/40" />
+        {/* Fine dot grid */}
+        <div className="absolute inset-0 bg-[radial-gradient(rgba(148,163,184,0.06)_1px,transparent_1px)] bg-[size:28px_28px]" />
+        {/* Sharp geometric shapes */}
+        <svg className="absolute inset-0 w-full h-full opacity-[0.04]" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          {/* Large diamond — top right */}
+          <polygon points="85%,0 100%,15% 85%,30% 70%,15%" fill="#0d9488" />
+          {/* Triangle — bottom left */}
+          <polygon points="0,75% 18%,100% 0,100%" fill="#0d9488" />
+          {/* Thin diagonal line */}
+          <line x1="20%" y1="0" x2="100%" y2="80%" stroke="#94a3b8" strokeWidth="0.5" />
+          <line x1="0" y1="30%" x2="60%" y2="100%" stroke="#94a3b8" strokeWidth="0.5" />
+          {/* Small hexagon cluster — center left */}
+          <polygon points="8%,45% 12%,42% 16%,45% 16%,50% 12%,53% 8%,50%" fill="none" stroke="#14b8a6" strokeWidth="0.5" />
+          <polygon points="16%,45% 20%,42% 24%,45% 24%,50% 20%,53% 16%,50%" fill="none" stroke="#14b8a6" strokeWidth="0.5" />
+          {/* Angular accent — top left */}
+          <polyline points="0,8% 5%,8% 5%,0" fill="none" stroke="#94a3b8" strokeWidth="0.8" />
+          {/* Corner bracket — bottom right */}
+          <polyline points="95%,100% 95%,92% 100%,92%" fill="none" stroke="#94a3b8" strokeWidth="0.8" />
+        </svg>
       </div>
 
       {/* Resizable Navbar */}
@@ -500,7 +516,7 @@ const Landing: React.FC = () => {
       {/* Hero Section */}
       <main className="relative pt-24 sm:pt-28 lg:pt-32 pb-8 sm:pb-12 lg:pb-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 z-10">
         {/* Top: centered headline area */}
-        <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-10 lg:mb-12">
+        <div className="text-center max-w-3xl mx-auto mb-6 sm:mb-8 lg:mb-10">
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -511,7 +527,7 @@ const Landing: React.FC = () => {
             <span className="text-teal-700 text-xs font-semibold tracking-wide">The Operating System for Modern Business</span>
           </motion.div>
 
-          <div className="relative min-h-[100px] sm:min-h-[120px] lg:min-h-[150px]">
+          <div className="relative min-h-[100px] sm:min-h-[120px] lg:min-h-[140px]">
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeProduct.id}
@@ -565,32 +581,52 @@ const Landing: React.FC = () => {
           </motion.div>
         </div>
 
-        {/* Ecosystem Constellation — the hero visual */}
+        {/* Ecosystem Constellation */}
         <motion.div
           initial={{ opacity: 0, scale: 0.96 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.15 }}
-          className="relative w-full max-w-2xl lg:max-w-3xl mx-auto aspect-square"
+          className="relative w-full max-w-xl sm:max-w-2xl lg:max-w-3xl mx-auto aspect-square"
         >
-          {/* SVG connection lines */}
+          {/* SVG connection lines + geometric accents */}
           <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+            {/* Faint concentric hexagonal rings */}
+            <polygon points="50,18 78,32 78,62 50,78 22,62 22,32" fill="none" stroke="#e2e8f0" strokeWidth="0.15" />
+            <polygon points="50,28 68,38 68,58 50,68 32,58 32,38" fill="none" stroke="#e2e8f0" strokeWidth="0.1" />
+
+            {/* Connection lines */}
             {ECOSYSTEM_CONNECTIONS.map(([from, to], i) => {
               const a = ECOSYSTEM_NODES[from];
               const b = ECOSYSTEM_NODES[to];
-              const isActiveConn =
-                activeProduct.id === a.id || activeProduct.id === b.id;
+              const aActive = activeProduct.id === a.id;
+              const bActive = activeProduct.id === b.id;
+              const isActiveConn = aActive || bActive;
+              const activeNode = aActive ? a : bActive ? b : null;
               return (
-                <line
-                  key={i}
-                  x1={a.x} y1={a.y} x2={b.x} y2={b.y}
-                  stroke={isActiveConn ? '#14b8a6' : '#e2e8f0'}
-                  strokeWidth={isActiveConn ? 0.5 : 0.3}
-                  strokeDasharray={isActiveConn ? undefined : '1.5 1.5'}
-                  className="transition-all duration-500"
-                />
+                <g key={i}>
+                  <line
+                    x1={a.x} y1={a.y} x2={b.x} y2={b.y}
+                    stroke={isActiveConn && activeNode ? activeNode.color : '#e2e8f0'}
+                    strokeWidth={isActiveConn ? 0.4 : 0.2}
+                    strokeDasharray={isActiveConn ? undefined : '1.2 1.2'}
+                    className="transition-all duration-500"
+                  />
+                  {/* Data flow dot — small circle at midpoint when active */}
+                  {isActiveConn && (
+                    <circle
+                      cx={(a.x + b.x) / 2}
+                      cy={(a.y + b.y) / 2}
+                      r="0.8"
+                      fill={activeNode?.color ?? '#14b8a6'}
+                      className="transition-all duration-500"
+                      opacity="0.6"
+                    />
+                  )}
+                </g>
               );
             })}
-            {/* Lines from satellites to nearest main node */}
+
+            {/* Satellite connection lines */}
             {SATELLITE_NODES.map((sat, si) => {
               const nearest = ECOSYSTEM_NODES[si % ECOSYSTEM_NODES.length];
               const isActiveSat = activeProduct.id === sat.id;
@@ -599,41 +635,68 @@ const Landing: React.FC = () => {
                   key={`sat-${si}`}
                   x1={sat.x} y1={sat.y} x2={nearest.x} y2={nearest.y}
                   stroke={isActiveSat ? sat.color : '#f1f5f9'}
-                  strokeWidth={0.25}
-                  strokeDasharray="1 2"
+                  strokeWidth={isActiveSat ? 0.3 : 0.15}
+                  strokeDasharray={isActiveSat ? '1 1' : '0.8 2'}
+                  className="transition-all duration-500"
+                />
+              );
+            })}
+
+            {/* Lines from all main nodes to center hub (50,50) */}
+            {ECOSYSTEM_NODES.map((node, i) => {
+              const isActive = activeProduct.id === node.id;
+              return (
+                <line
+                  key={`hub-${i}`}
+                  x1={50} y1={50} x2={node.x} y2={node.y}
+                  stroke={isActive ? node.color : '#f1f5f9'}
+                  strokeWidth={isActive ? 0.3 : 0.1}
+                  strokeDasharray={isActive ? undefined : '0.6 2'}
                   className="transition-all duration-500"
                 />
               );
             })}
           </svg>
 
-          {/* Center hub */}
+          {/* Center hub — elevated with ring */}
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-teal-500/20">
-              <Zap className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
+            <div className="relative">
+              {/* Outer ring that reacts to active product */}
+              <div
+                className="absolute -inset-2 rounded-full border-2 transition-colors duration-500 opacity-30"
+                style={{ borderColor: [...ECOSYSTEM_NODES, ...SATELLITE_NODES].find(n => n.id === activeProduct.id)?.color ?? '#14b8a6' }}
+              />
+              <div className="w-14 h-14 sm:w-18 sm:h-18 lg:w-20 lg:h-20 rounded-full bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center shadow-lg">
+                <Zap className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 text-white" />
+              </div>
             </div>
-            <p className="text-center text-[10px] sm:text-xs font-bold text-slate-700 mt-1.5">Zopkit</p>
+            <p className="text-center text-[10px] sm:text-xs font-bold text-slate-700 mt-1.5 tracking-wide">ZOPKIT</p>
           </div>
 
-          {/* Main product nodes — hexagonal ring */}
+          {/* Main product nodes */}
           {ECOSYSTEM_NODES.map((node) => {
             const isActive = activeProduct.id === node.id;
             const matchingProduct = products.find(p => p.id === node.id);
             return (
               <button
                 key={node.id}
-                onClick={() => {
-                  if (matchingProduct) setActiveProduct(matchingProduct);
-                }}
-                ref={(el) => {
-                  if (el) productRefs.current.set(node.id, el);
-                }}
+                onClick={() => { if (matchingProduct) setActiveProduct(matchingProduct); }}
+                ref={(el) => { if (el) productRefs.current.set(node.id, el); }}
                 className="absolute z-10 -translate-x-1/2 -translate-y-1/2 group focus:outline-none"
                 style={{ left: `${node.x}%`, top: `${node.y}%` }}
+                aria-label={node.label}
               >
+                {/* Outer glow ring on active */}
+                <div
+                  className="absolute -inset-1.5 rounded-2xl transition-opacity duration-300"
+                  style={{
+                    backgroundColor: node.color,
+                    opacity: isActive ? 0.1 : 0,
+                  }}
+                />
                 <div
                   className={`
-                    w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center transition-all duration-300 border-2
+                    relative w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center transition-all duration-300 border-2
                     ${isActive
                       ? 'scale-110 shadow-lg border-transparent'
                       : 'bg-white shadow-sm border-slate-200 group-hover:shadow-md group-hover:scale-105 group-hover:border-slate-300'}
@@ -645,43 +708,51 @@ const Landing: React.FC = () => {
                     className={`w-5 h-5 sm:w-6 sm:h-6 transition-colors duration-300 ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-slate-700'}`}
                   />
                 </div>
-                <p className={`text-center text-[10px] sm:text-xs font-semibold mt-1 transition-colors duration-300 whitespace-nowrap ${isActive ? 'text-slate-900' : 'text-slate-500 group-hover:text-slate-700'}`}>
+                <p className={`text-center text-[10px] sm:text-xs font-semibold mt-1.5 transition-colors duration-300 whitespace-nowrap ${isActive ? 'text-slate-900' : 'text-slate-400 group-hover:text-slate-700'}`}>
                   {node.label}
                 </p>
+                {/* Stat badge — shows on active */}
+                {isActive && matchingProduct?.stats?.[0] && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="absolute -bottom-7 left-1/2 -translate-x-1/2 bg-white border border-slate-200 rounded-md px-2 py-0.5 shadow-sm whitespace-nowrap"
+                  >
+                    <span className="text-[9px] font-bold" style={{ color: node.color }}>{matchingProduct.stats[0].value}</span>
+                    <span className="text-[8px] text-slate-400 ml-1">{matchingProduct.stats[0].label}</span>
+                  </motion.div>
+                )}
               </button>
             );
           })}
 
-          {/* Satellite nodes — smaller, secondary products */}
+          {/* Satellite nodes */}
           {SATELLITE_NODES.map((sat) => {
             const isActive = activeProduct.id === sat.id;
             const matchingProduct = products.find(p => p.id === sat.id);
             return (
               <button
                 key={sat.id}
-                onClick={() => {
-                  if (matchingProduct) setActiveProduct(matchingProduct);
-                }}
-                ref={(el) => {
-                  if (el) productRefs.current.set(sat.id, el);
-                }}
+                onClick={() => { if (matchingProduct) setActiveProduct(matchingProduct); }}
+                ref={(el) => { if (el) productRefs.current.set(sat.id, el); }}
                 className="absolute z-10 -translate-x-1/2 -translate-y-1/2 group focus:outline-none"
                 style={{ left: `${sat.x}%`, top: `${sat.y}%` }}
+                aria-label={sat.label}
               >
                 <div
                   className={`
-                    w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center transition-all duration-300 border
+                    w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center transition-all duration-300 border
                     ${isActive
                       ? 'scale-110 shadow-md border-transparent'
-                      : 'bg-white shadow-sm border-slate-100 group-hover:shadow-md group-hover:scale-105'}
+                      : 'bg-white shadow-sm border-slate-100 group-hover:shadow-md group-hover:scale-105 group-hover:border-slate-200'}
                   `}
                   style={isActive ? { backgroundColor: sat.color, borderColor: sat.color } : undefined}
                 >
-                  <div className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full transition-colors duration-300 ${isActive ? 'bg-white' : 'bg-slate-300 group-hover:bg-slate-400'}`}
-                    style={!isActive ? undefined : { backgroundColor: 'white' }}
+                  <div
+                    className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full transition-colors duration-300 ${isActive ? 'bg-white' : 'bg-slate-300 group-hover:bg-slate-400'}`}
                   />
                 </div>
-                <p className={`text-center text-[8px] sm:text-[10px] font-medium mt-0.5 transition-colors duration-300 whitespace-nowrap ${isActive ? 'text-slate-900' : 'text-slate-400 group-hover:text-slate-600'}`}>
+                <p className={`text-center text-[8px] sm:text-[10px] font-medium mt-0.5 transition-colors duration-300 whitespace-nowrap ${isActive ? 'text-slate-800' : 'text-slate-400 group-hover:text-slate-600'}`}>
                   {sat.label}
                 </p>
               </button>
@@ -689,32 +760,63 @@ const Landing: React.FC = () => {
           })}
         </motion.div>
 
-        {/* Product scroll strip — below the constellation */}
+        {/* Active product detail panel — interactive card below constellation */}
         <div className="mt-6 sm:mt-8 max-w-2xl mx-auto">
-          <div ref={scrollContainerRef} className="flex gap-2 overflow-x-auto pb-2 px-1 scrollbar-none justify-start sm:justify-center">
-            {products.map((product) => {
-              const isActive = activeProduct.id === product.id;
-              const nodeColor = [...ECOSYSTEM_NODES, ...SATELLITE_NODES].find(n => n.id === product.id)?.color ?? '#14b8a6';
-              return (
-                <button
-                  key={product.id}
-                  onClick={() => setActiveProduct(product)}
-                  onDoubleClick={() => navigate({ to: `/products/${product.id}` })}
-                  className={`
-                    shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[11px] font-medium transition-all duration-200
-                    ${isActive
-                      ? 'text-white shadow-sm border-transparent'
-                      : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:text-slate-700'}
-                  `}
-                  style={isActive ? { backgroundColor: nodeColor, borderColor: nodeColor } : undefined}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeProduct.id}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.25 }}
+              className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-5"
+            >
+              <div className="flex items-start gap-3 sm:gap-4 mb-3">
+                <div
+                  className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center shrink-0"
+                  style={{ backgroundColor: [...ECOSYSTEM_NODES, ...SATELLITE_NODES].find(n => n.id === activeProduct.id)?.color ?? '#14b8a6' }}
                 >
-                  <DynamicIcon name={product.iconName} className="w-3 h-3" />
-                  <span className="hidden sm:inline">{product.name}</span>
-                  <span className="sm:hidden">{product.name.length > 12 ? product.name.slice(0, 10) + '…' : product.name}</span>
-                </button>
-              );
-            })}
-          </div>
+                  <DynamicIcon name={activeProduct.iconName} className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm sm:text-base font-bold text-slate-900">{activeProduct.name}</h3>
+                  <p className="text-xs sm:text-sm text-slate-500 mt-0.5">{activeProduct.tagline}</p>
+                </div>
+                {activeProduct.stats && (
+                  <div className="hidden sm:flex items-center gap-4">
+                    {activeProduct.stats.map((stat, i) => (
+                      <div key={i} className="text-center">
+                        <div className="text-sm font-bold text-slate-900">{stat.value}</div>
+                        <div className="text-[10px] text-slate-400">{stat.label}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Feature pills — first 4 features */}
+              <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                {activeProduct.features.slice(0, 5).map((feat, i) => (
+                  <span
+                    key={i}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-slate-50 border border-slate-100 text-[10px] sm:text-xs text-slate-600 font-medium hover:bg-slate-100 hover:text-slate-800 transition-colors cursor-default"
+                  >
+                    <DynamicIcon name={feat.icon} className="w-3 h-3 text-slate-400" />
+                    {feat.title}
+                  </span>
+                ))}
+                {activeProduct.features.length > 5 && (
+                  <button
+                    onClick={() => navigate({ to: `/products/${activeProduct.id}` })}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-teal-50 border border-teal-100 text-[10px] sm:text-xs text-teal-600 font-medium hover:bg-teal-100 transition-colors cursor-pointer"
+                  >
+                    +{activeProduct.features.length - 5} more
+                    <ArrowRight className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+            </motion.div>
+          </AnimatePresence>
         </div>
       </main>
 
