@@ -58,10 +58,8 @@ const NAV_ITEMS = [
   { name: "Contact Us", link: "#contact" },
 ] as const;
 
-// Orbital ecosystem — 11 products in a ring around a center hub
-// Positions computed from angle: x = 50 + R*cos(angle-90°), y = 50 + R*sin(angle-90°)
-// R=42 for the orbital radius in a 100x100 viewBox, starting from top (−90°)
-const ORBITAL_RADIUS = 42;
+// Orbital ecosystem — positions computed via trig
+const ORBITAL_R = 42;
 const ORBIT_APPS = [
   { id: 'b2b-crm',            label: 'CRM',        icon: 'Briefcase' },
   { id: 'finance',            label: 'Finance',     icon: 'Landmark' },
@@ -75,10 +73,39 @@ const ORBIT_APPS = [
   { id: 'zopkit-academy',     label: 'Academy',     icon: 'GraduationCap' },
   { id: 'zopkit-itsm',        label: 'ITSM',        icon: 'Wrench' },
 ].map((app, i, arr) => {
-  const angle = (360 / arr.length) * i - 90; // start from top
+  const angle = (360 / arr.length) * i - 90;
   const rad = (angle * Math.PI) / 180;
-  return { ...app, x: 50 + ORBITAL_RADIUS * Math.cos(rad), y: 50 + ORBITAL_RADIUS * Math.sin(rad) };
+  return { ...app, x: 50 + ORBITAL_R * Math.cos(rad), y: 50 + ORBITAL_R * Math.sin(rad) };
 });
+
+// Cross-product dependencies — smooth bezier curves show real data flows
+// [fromIndex, toIndex, label] — describes what data flows between them
+const DEPENDENCIES: [number, number, string][] = [
+  [0, 1, 'Invoices'],    // CRM → Finance
+  [0, 2, 'Orders'],      // CRM → Operations
+  [1, 5, 'Payroll'],     // Finance → HRMS
+  [1, 2, 'Costs'],       // Finance → Operations
+  [4, 5, 'Resources'],   // Projects → HRMS
+  [4, 1, 'Budgets'],     // Projects → Finance
+  [5, 6, 'Equity'],      // HRMS → ESOP
+  [7, 0, 'Referrals'],   // Affiliates → CRM
+  [8, 4, 'Workflows'],   // Flowtilla → Projects
+  [10, 4, 'Tickets'],    // ITSM → Projects
+  [9, 5, 'Training'],    // Academy → HRMS
+  [3, 0, 'Contacts'],    // B2C → CRM
+];
+
+// Compute a smooth quadratic bezier path curving inward toward center
+function depPath(fromIdx: number, toIdx: number): string {
+  const a = ORBIT_APPS[fromIdx];
+  const b = ORBIT_APPS[toIdx];
+  // Control point: midpoint pulled 40% toward center (50,50)
+  const mx = (a.x + b.x) / 2;
+  const my = (a.y + b.y) / 2;
+  const cx = mx + (50 - mx) * 0.45;
+  const cy = my + (50 - my) * 0.45;
+  return `M ${a.x} ${a.y} Q ${cx} ${cy} ${b.x} ${b.y}`;
+}
 
 const Landing: React.FC = () => {
   const navigate = useNavigate()
@@ -560,61 +587,98 @@ const Landing: React.FC = () => {
           </div>
         </div>
 
-        {/* Orbital Ecosystem */}
+        {/* Orbital Ecosystem with flowing dependency paths */}
         <motion.div
           initial={{ opacity: 0, scale: 0.97 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.1 }}
           className="max-w-xl sm:max-w-2xl lg:max-w-3xl mx-auto"
         >
-          {/* Desktop: orbital ring | Mobile: horizontal scroll strip */}
-
-          {/* ── Orbital view (sm+) ── */}
+          {/* ── Desktop orbital (sm+) ── */}
           <div className="hidden sm:block relative aspect-square">
-            {/* SVG layer — orbit ring + radial spokes + arc connections */}
             <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" aria-hidden="true">
-              {/* Orbit track circle */}
-              <circle cx="50" cy="50" r={ORBITAL_RADIUS} fill="none" stroke="#e2e8f0" strokeWidth="0.3" />
-              {/* Inner decorative ring */}
-              <circle cx="50" cy="50" r="12" fill="none" stroke="#e2e8f0" strokeWidth="0.2" strokeDasharray="1 1.5" />
+              {/* Flow animation keyframe */}
+              <defs>
+                <style>{`
+                  @keyframes flowDash {
+                    to { stroke-dashoffset: -12; }
+                  }
+                  .dep-flow {
+                    animation: flowDash 1.5s linear infinite;
+                  }
+                `}</style>
+              </defs>
 
-              {/* Radial spokes — hub to each product */}
-              {ORBIT_APPS.map((app) => {
-                const isActive = activeProduct.id === app.id;
-                return (
-                  <line
-                    key={`spoke-${app.id}`}
-                    x1="50" y1="50" x2={app.x} y2={app.y}
-                    stroke={isActive ? '#0f172a' : '#f1f5f9'}
-                    strokeWidth={isActive ? 0.5 : 0.2}
-                    className="transition-all duration-300"
-                  />
-                );
-              })}
+              {/* Orbit track */}
+              <circle cx="50" cy="50" r={ORBITAL_R} fill="none" stroke="#e2e8f0" strokeWidth="0.25" />
+              {/* Inner ring */}
+              <circle cx="50" cy="50" r="12" fill="none" stroke="#f1f5f9" strokeWidth="0.2" />
 
-              {/* Arc connections between adjacent nodes */}
-              {ORBIT_APPS.map((app, i) => {
-                const next = ORBIT_APPS[(i + 1) % ORBIT_APPS.length];
-                const isActive = activeProduct.id === app.id || activeProduct.id === next.id;
-                return (
-                  <line
-                    key={`arc-${i}`}
-                    x1={app.x} y1={app.y} x2={next.x} y2={next.y}
-                    stroke={isActive ? '#0f172a' : '#e2e8f0'}
-                    strokeWidth={isActive ? 0.4 : 0.15}
-                    strokeDasharray={isActive ? undefined : '0.8 1'}
-                    className="transition-all duration-300"
-                  />
-                );
-              })}
+              {/* Radial spokes — thin lines from hub to every node */}
+              {ORBIT_APPS.map((app) => (
+                <line
+                  key={`spoke-${app.id}`}
+                  x1="50" y1="50" x2={app.x} y2={app.y}
+                  stroke={activeProduct.id === app.id ? '#0f172a' : '#f1f5f9'}
+                  strokeWidth={activeProduct.id === app.id ? 0.4 : 0.15}
+                  className="transition-all duration-400"
+                />
+              ))}
 
-              {/* Active spoke endpoint dot */}
-              {ORBIT_APPS.map((app) => {
-                if (activeProduct.id !== app.id) return null;
-                const mx = 50 + ((app.x - 50) * 0.35);
-                const my = 50 + ((app.y - 50) * 0.35);
+              {/* Dependency paths — smooth bezier curves between interdependent products */}
+              {DEPENDENCIES.map(([from, to, label], i) => {
+                const fromApp = ORBIT_APPS[from];
+                const toApp = ORBIT_APPS[to];
+                const isActive = activeProduct.id === fromApp.id || activeProduct.id === toApp.id;
+                const d = depPath(from, to);
+                // Midpoint for label
+                const mx = (fromApp.x + toApp.x) / 2 + (50 - (fromApp.x + toApp.x) / 2) * 0.25;
+                const my = (fromApp.y + toApp.y) / 2 + (50 - (fromApp.y + toApp.y) / 2) * 0.25;
                 return (
-                  <circle key={`dot-${app.id}`} cx={mx} cy={my} r="0.8" fill="#0f172a" className="transition-all duration-300" />
+                  <g key={`dep-${i}`}>
+                    {/* Background path — always faintly visible */}
+                    <path
+                      d={d}
+                      fill="none"
+                      stroke="#f1f5f9"
+                      strokeWidth="0.2"
+                      className="transition-all duration-400"
+                    />
+                    {/* Active flowing path */}
+                    {isActive && (
+                      <>
+                        <path
+                          d={d}
+                          fill="none"
+                          stroke="#0f172a"
+                          strokeWidth="0.6"
+                          strokeLinecap="round"
+                          opacity="0.15"
+                        />
+                        <path
+                          d={d}
+                          fill="none"
+                          stroke="#0f172a"
+                          strokeWidth="0.4"
+                          strokeDasharray="3 3"
+                          strokeLinecap="round"
+                          className="dep-flow"
+                        />
+                        {/* Label at curve midpoint */}
+                        <text
+                          x={mx}
+                          y={my - 1.2}
+                          textAnchor="middle"
+                          fill="#64748b"
+                          fontSize="2"
+                          fontWeight="600"
+                          fontFamily="system-ui, sans-serif"
+                        >
+                          {label}
+                        </text>
+                      </>
+                    )}
+                  </g>
                 );
               })}
             </svg>
@@ -625,13 +689,14 @@ const Landing: React.FC = () => {
                 <Zap className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
               </div>
               <p className="text-[10px] sm:text-xs font-bold text-slate-800 mt-1.5 tracking-wide">ZOPKIT</p>
-              <p className="text-[8px] sm:text-[10px] text-slate-400 font-medium">Unified Platform</p>
             </div>
 
-            {/* Product nodes around the orbit */}
+            {/* Product nodes */}
             {ORBIT_APPS.map((app) => {
               const isActive = activeProduct.id === app.id;
               const matchingProduct = products.find(p => p.id === app.id);
+              // Count how many dependencies this product has
+              const depCount = DEPENDENCIES.filter(([f, t]) => ORBIT_APPS[f].id === app.id || ORBIT_APPS[t].id === app.id).length;
               return (
                 <button
                   key={app.id}
@@ -639,11 +704,11 @@ const Landing: React.FC = () => {
                   onClick={() => { if (matchingProduct) setActiveProduct(matchingProduct); }}
                   className="absolute z-10 -translate-x-1/2 -translate-y-1/2 group focus:outline-none"
                   style={{ left: `${app.x}%`, top: `${app.y}%` }}
-                  aria-label={app.label}
+                  aria-label={`${app.label} — ${depCount} connections`}
                 >
                   <div
                     className={`
-                      w-11 h-11 sm:w-13 sm:h-13 lg:w-14 lg:h-14 rounded-2xl flex items-center justify-center transition-all duration-200 border-2
+                      relative w-11 h-11 sm:w-[52px] sm:h-[52px] lg:w-14 lg:h-14 rounded-2xl flex items-center justify-center transition-all duration-200 border-2
                       ${isActive
                         ? 'bg-slate-900 border-slate-900 shadow-lg scale-110'
                         : 'bg-white border-slate-200 shadow-sm group-hover:border-slate-400 group-hover:shadow-md group-hover:scale-105'}
@@ -653,6 +718,10 @@ const Landing: React.FC = () => {
                       name={app.icon}
                       className={`w-4 h-4 sm:w-5 sm:h-5 transition-colors duration-200 ${isActive ? 'text-white' : 'text-slate-600 group-hover:text-slate-800'}`}
                     />
+                    {/* Connection count badge */}
+                    <span className={`absolute -top-1 -right-1 w-4 h-4 rounded-full text-[7px] font-bold flex items-center justify-center transition-all duration-200 ${isActive ? 'bg-white text-slate-900' : 'bg-slate-100 text-slate-400 group-hover:bg-slate-200'}`}>
+                      {depCount}
+                    </span>
                   </div>
                   <p className={`text-center text-[9px] sm:text-[10px] lg:text-xs font-semibold mt-1 transition-colors duration-200 whitespace-nowrap ${isActive ? 'text-slate-900' : 'text-slate-400 group-hover:text-slate-700'}`}>
                     {app.label}
@@ -662,45 +731,70 @@ const Landing: React.FC = () => {
             })}
           </div>
 
-          {/* ── Mobile view (below sm) — horizontal scroll strip with center hub ── */}
+          {/* ── Mobile (below sm) — compact card list with dependency indicators ── */}
           <div className="sm:hidden">
-            {/* Hub */}
-            <div className="flex justify-center mb-4">
+            <div className="flex justify-center mb-3">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 text-white">
                 <Zap className="w-4 h-4" />
                 <span className="text-sm font-bold">Zopkit</span>
               </div>
             </div>
-            {/* Connector line */}
             <div className="flex justify-center mb-2">
-              <div className="w-px h-4 bg-slate-300" />
+              <div className="w-px h-3 bg-slate-300" />
             </div>
-            {/* Scrollable product row */}
             <div ref={scrollContainerRef} className="flex gap-2 overflow-x-auto pb-3 px-1 scrollbar-none">
               {ORBIT_APPS.map((app) => {
                 const isActive = activeProduct.id === app.id;
                 const matchingProduct = products.find(p => p.id === app.id);
+                const depCount = DEPENDENCIES.filter(([f, t]) => ORBIT_APPS[f].id === app.id || ORBIT_APPS[t].id === app.id).length;
                 return (
                   <button
                     key={app.id}
                     ref={(el) => { if (el) productRefs.current.set(app.id, el); }}
                     onClick={() => { if (matchingProduct) setActiveProduct(matchingProduct); }}
                     className={`
-                      shrink-0 flex flex-col items-center gap-1 py-3 px-3 rounded-xl border-2 transition-all duration-200 min-w-[72px]
-                      ${isActive
-                        ? 'bg-slate-900 border-slate-900 shadow-md'
-                        : 'bg-white border-slate-200'}
+                      shrink-0 relative flex flex-col items-center gap-1 py-3 px-3 rounded-xl border-2 transition-all duration-200 min-w-[72px]
+                      ${isActive ? 'bg-slate-900 border-slate-900 shadow-md' : 'bg-white border-slate-200'}
                     `}
                   >
                     <DynamicIcon name={app.icon} className={`w-5 h-5 transition-colors duration-200 ${isActive ? 'text-white' : 'text-slate-600'}`} />
                     <span className={`text-[10px] font-semibold ${isActive ? 'text-white' : 'text-slate-600'}`}>{app.label}</span>
+                    <span className={`absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full text-[8px] font-bold flex items-center justify-center ${isActive ? 'bg-white text-slate-900' : 'bg-slate-100 text-slate-400'}`}>
+                      {depCount}
+                    </span>
                   </button>
                 );
               })}
             </div>
+
+            {/* Mobile dependency list for active product */}
+            {(() => {
+              const activeDeps = DEPENDENCIES.filter(([f, t]) =>
+                ORBIT_APPS[f].id === activeProduct.id || ORBIT_APPS[t].id === activeProduct.id
+              );
+              if (activeDeps.length === 0) return null;
+              return (
+                <div className="mt-2 px-1">
+                  <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-1.5">Connected to</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {activeDeps.map(([f, t, label], i) => {
+                      const other = ORBIT_APPS[f].id === activeProduct.id ? ORBIT_APPS[t] : ORBIT_APPS[f];
+                      return (
+                        <span key={i} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-slate-50 border border-slate-200 text-[10px] text-slate-600 font-medium">
+                          <DynamicIcon name={other.icon} className="w-3 h-3 text-slate-400" />
+                          {other.label}
+                          <span className="text-slate-300">·</span>
+                          <span className="text-slate-400 italic">{label}</span>
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
 
-          {/* Detail panel — always visible below */}
+          {/* Detail panel */}
           <div className="mt-5 sm:mt-6">
             <AnimatePresence mode="wait">
               <motion.div
