@@ -14,9 +14,12 @@
     "lint": "pnpm --filter wrapper-backend lint && pnpm --filter wrapper-frontend lint",
     "test": "pnpm --filter wrapper-backend test && pnpm --filter wrapper-frontend test",
     "test:integration": "pnpm --filter wrapper-backend test:integration",
-    "clean": "rm -rf node_modules backend/node_modules frontend/node_modules"
+    "clean": "rm -rf node_modules backend/node_modules frontend/node_modules",
+    "commitlint": "commitlint --from HEAD~1"
   },
   "devDependencies": {
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
     "concurrently": "^9.1.2"
   },
   "engines": {
