@@ -547,94 +547,94 @@ const Landing: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-12 items-start">
 
           {/* ── Left column (7 cols) ── */}
-          <div className="lg:col-span-7 flex flex-col order-2 lg:order-1 lg:pt-4">
+          <div className="lg:col-span-7 flex flex-col order-2 lg:order-1 lg:pt-6">
 
+            {/* Headline block */}
             <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-              <h1 className="text-[2.25rem] sm:text-[2.75rem] lg:text-[3.25rem] xl:text-[3.75rem] font-extrabold tracking-[-0.035em] leading-[1.06] text-slate-900">
-                One platform to<br />
-                run your entire<br className="hidden sm:block" />
-                business.
+              {/* Mixed-weight headline — light intro, bold punchline */}
+              <h1 className="text-slate-900 tracking-[-0.03em] leading-[1.08]">
+                <span className="block text-[1.5rem] sm:text-[1.75rem] lg:text-[2rem] font-normal text-slate-400">
+                  Your CRM, Finance, HR, Ops &amp; more —
+                </span>
+                <span className="block text-[2.25rem] sm:text-[3rem] lg:text-[3.5rem] xl:text-[4rem] font-extrabold mt-1">
+                  finally talking<br className="hidden lg:block" /> to each other.
+                </span>
               </h1>
 
-              <p className="text-slate-500 text-base sm:text-[17px] leading-[1.7] max-w-[28rem] mt-6">
-                Stop juggling disconnected tools. Zopkit unifies CRM, Finance, HR, Operations, and 7 more applications into a single ecosystem where data flows automatically between every team.
+              {/* Value prop — short, benefit-focused */}
+              <p className="text-slate-500 text-base sm:text-[17px] leading-[1.65] max-w-[26rem] mt-5">
+                Zopkit replaces your disconnected stack with 11 integrated apps. One login, one source of truth, zero data entry duplication.
               </p>
             </motion.div>
 
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.12 }} className="flex flex-col sm:flex-row items-start gap-3 mt-8">
-              <button
-                onClick={primaryCta.action}
-                disabled={primaryCta.disabled}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full bg-slate-900 hover:bg-slate-800 text-white font-semibold text-[15px] transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.97]"
-              >
-                {hasAuthenticatedSession && onboardingCompleted ? <LayoutDashboard className="w-4 h-4" /> : null}
-                {hasAuthenticatedSession && !onboardingCompleted ? <Rocket className="w-4 h-4" /> : null}
-                {primaryCta.label}
-                <ArrowRight className="w-4 h-4" />
-              </button>
-              <button className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-full text-slate-500 hover:text-slate-900 font-medium text-[15px] transition-colors active:scale-[0.97]">
-                <Play className="w-4 h-4 fill-current" />
-                Watch demo
-              </button>
-            </motion.div>
-
-            {/* ▸ Layer 3: Active product explorer */}
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4, delay: 0.22 }} className="mt-10 pt-8 border-t border-slate-100">
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-[0.15em]">Exploring</p>
+            {/* CTAs + inline proof */}
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }}>
+              <div className="flex flex-col sm:flex-row items-start gap-3 mt-7">
                 <button
-                  onClick={() => navigate({ to: `/products/${activeProduct.id}` })}
-                  className="text-[11px] font-semibold text-slate-400 hover:text-slate-900 transition-colors"
+                  onClick={primaryCta.action}
+                  disabled={primaryCta.disabled}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full bg-slate-900 hover:bg-slate-800 text-white font-semibold text-[15px] transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.97]"
                 >
-                  View details →
+                  {hasAuthenticatedSession && onboardingCompleted ? <LayoutDashboard className="w-4 h-4" /> : null}
+                  {hasAuthenticatedSession && !onboardingCompleted ? <Rocket className="w-4 h-4" /> : null}
+                  {primaryCta.label}
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+                <button className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-full text-slate-500 hover:text-slate-900 font-medium text-[15px] transition-colors active:scale-[0.97]">
+                  <Play className="w-4 h-4 fill-current" />
+                  Watch demo
                 </button>
               </div>
+              {/* Compact proof points */}
+              <div className="flex items-center gap-4 mt-5 text-sm text-slate-400">
+                <span className="font-semibold text-slate-900">500+</span> companies
+                <span className="text-slate-200">|</span>
+                <span className="font-semibold text-slate-900">99.9%</span> uptime
+                <span className="text-slate-200">|</span>
+                <span className="font-semibold text-slate-900">SOC 2</span>
+              </div>
+            </motion.div>
+
+            {/* Product explorer — tighter, more visual */}
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4, delay: 0.2 }} className="mt-8">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={activeProduct.id}
-                  initial={{ opacity: 0, x: -8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 8 }}
-                  transition={{ duration: 0.2 }}
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.15 }}
+                  className="group rounded-xl bg-slate-50 hover:bg-slate-100/80 transition-colors p-4 cursor-pointer"
+                  onClick={() => navigate({ to: `/products/${activeProduct.id}` })}
                 >
-                  {/* Product name + description */}
-                  <div className="flex items-start gap-3.5 mb-4">
-                    <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center shrink-0 mt-0.5">
-                      <DynamicIcon name={activeProduct.iconName} className="w-5 h-5 text-white" />
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-slate-900 flex items-center justify-center shrink-0">
+                      <DynamicIcon name={activeProduct.iconName} className="w-[18px] h-[18px] text-white" />
                     </div>
-                    <div>
-                      <h3 className="text-lg font-bold text-slate-900 tracking-tight leading-tight">{activeProduct.name}</h3>
-                      <p className="text-sm text-slate-500 mt-1 leading-relaxed">{activeProduct.description}</p>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-slate-900 leading-tight">{activeProduct.name}</p>
+                      <p className="text-xs text-slate-500 mt-0.5 truncate">{activeProduct.tagline}</p>
                     </div>
+                    <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-slate-600 group-hover:translate-x-0.5 transition-all shrink-0" />
                   </div>
-
-                  {/* Data connections — clean inline tags */}
+                  {/* Connections inline */}
                   {(() => {
                     const deps = DEPENDENCIES.filter(([f, t]) =>
                       ORBIT_APPS[f].id === activeProduct.id || ORBIT_APPS[t].id === activeProduct.id
                     );
                     const hubLabel = HUB_PRODUCT_LABELS[activeProduct.id];
-                    const connections = [
-                      ...(hubLabel ? [{ icon: 'Zap', name: 'Zopkit', dataType: hubLabel, isHub: true }] : []),
-                      ...deps.map(([f, t, label]) => {
+                    const names = [
+                      ...(hubLabel ? ['Zopkit'] : []),
+                      ...deps.map(([f, t]) => {
                         const other = ORBIT_APPS[f].id === activeProduct.id ? ORBIT_APPS[t] : ORBIT_APPS[f];
-                        return { icon: other.icon, name: other.label, dataType: label, isHub: false };
+                        return other.label;
                       }),
                     ];
-                    if (connections.length === 0) return null;
+                    if (names.length === 0) return null;
                     return (
-                      <div className="flex flex-wrap items-center gap-1.5 ml-[52px]">
-                        <span className="text-[10px] text-slate-400 font-medium">Connects to</span>
-                        {connections.map((conn, i) => (
-                          <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-[10px] sm:text-[11px] font-medium text-slate-600">
-                            {conn.isHub
-                              ? <Zap className="w-2.5 h-2.5 text-slate-400" />
-                              : <DynamicIcon name={conn.icon} className="w-2.5 h-2.5 text-slate-400" />
-                            }
-                            {conn.name}
-                          </span>
-                        ))}
-                      </div>
+                      <p className="text-[11px] text-slate-400 mt-2 ml-12">
+                        Connects to {names.join(', ')}
+                      </p>
                     );
                   })()}
                 </motion.div>
