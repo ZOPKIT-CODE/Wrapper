@@ -876,7 +876,7 @@ const Landing: React.FC = () => {
                 </div>
               ))}
               <div className="pt-4 border-t border-slate-100">
-                <p className="text-xs text-slate-400">Mon \u2013 Fri, 9 AM \u2013 6 PM IST</p>
+                <p className="text-xs text-slate-400">Mon – Fri, 9 AM – 6 PM IST</p>
               </div>
             </div>
 
@@ -928,10 +928,10 @@ const Landing: React.FC = () => {
                     <select id="c-size" value={contactForm.companySize} onChange={(e) => setContactForm(prev => ({ ...prev, companySize: e.target.value }))}
                       className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition-colors">
                       <option value="">Select</option>
-                      <option value="1-10">1\u201310</option>
-                      <option value="11-50">11\u201350</option>
-                      <option value="51-200">51\u2013200</option>
-                      <option value="201-500">201\u2013500</option>
+                      <option value="1-10">1-10</option>
+                      <option value="11-50">11-50</option>
+                      <option value="51-200">51-200</option>
+                      <option value="201-500">201-500</option>
                       <option value="500+">500+</option>
                     </select>
                   </div>
