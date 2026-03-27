@@ -1775,7 +1775,7 @@ export default async function tenantRoutes(
    * PUT /current/users/:userId/update-organization
    * Update a user's organization assignment
    */
-  fastify.put('/current/users/:userId/update-organization', {
+  fastify.put('/current/users/:userId/organization', {
     schema: {
       description: 'Update a user\'s organization assignment within the tenant',
       tags: ['Tenant', 'Organization Assignment']
@@ -1917,7 +1917,7 @@ export default async function tenantRoutes(
    * DELETE /current/users/:userId/remove-organization
    * Remove a user from an organization
    */
-  fastify.delete('/current/users/:userId/remove-organization', {
+  fastify.delete('/current/users/:userId/organization', {
     schema: {
       description: 'Remove a user from an organization within the tenant',
       tags: ['Tenant', 'Organization Assignment']

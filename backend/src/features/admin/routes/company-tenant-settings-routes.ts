@@ -250,7 +250,7 @@ export default async function companyTenantSettingsRoutes(fastify: FastifyInstan
   });
 
   // Delete tenant and all associated data (DANGER!)
-  fastify.delete('/tenant/complete-deletion/:tenantId', {
+  fastify.delete('/tenants/:tenantId', {
     preHandler: [authenticateToken, requirePermission(PERMISSIONS.TENANT_SETTINGS_DELETE)]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;

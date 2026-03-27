@@ -166,7 +166,7 @@ export const onboardingAPIOptimized = {
     apiOptimized.post('/onboarding/get-data', { email, kindeUserId }),
 
   markComplete: (organizationId: string) =>
-    apiOptimized.post('/onboarding/mark-complete', { organizationId }),
+    apiOptimized.post('/onboarding/completions', { organizationId }),
 
   updateStep: (step: string, data?: any, email?: string, formData?: any, kindeUserId?: string) =>
     apiOptimized.post('/onboarding/update-step', { step, data, email, formData, kindeUserId }),

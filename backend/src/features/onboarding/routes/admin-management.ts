@@ -93,7 +93,7 @@ export default async function adminManagementRoutes(
   });
 
   // SIMPLE: Create Organization Endpoint
-  fastify.post('/create-organization', {
+  fastify.post('/organizations', {
     schema: {
       body: {
         type: 'object',

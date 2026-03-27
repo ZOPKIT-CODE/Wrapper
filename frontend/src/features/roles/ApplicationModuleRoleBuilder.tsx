@@ -455,7 +455,7 @@ export function ApplicationModuleRoleBuilder({
       const isEditing = initialRole?.roleId;
 
       if (isEditing) {
-        const response = await api.put(`/custom-roles/update-from-builder/${initialRole.roleId}`, {
+        const response = await api.put(`/custom-roles/${initialRole.roleId}`, {
           roleName: roleData.roleName,
           description: roleData.description,
           selectedApps: roleData.selectedApps,
@@ -472,7 +472,7 @@ export function ApplicationModuleRoleBuilder({
         }
 
       } else {
-        const response = await api.post('/custom-roles/create-from-builder', {
+        const response = await api.post('/custom-roles', {
           roleName: roleData.roleName,
           description: roleData.description,
           selectedApps: roleData.selectedApps,

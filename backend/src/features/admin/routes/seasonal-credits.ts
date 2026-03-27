@@ -205,7 +205,7 @@ export default async function seasonalCreditsRoutes(fastify: FastifyInstance, _o
    * POST /admin/seasonal-credits/send-warnings
    * Send expiry warnings
    */
-  fastify.post('/send-warnings', {
+  fastify.post('/warnings', {
     preHandler: [authenticateToken, requirePermission(PERMISSIONS.ADMIN_CREDITS_MANAGE)],
     schema: {
       description: 'Send expiry warnings'

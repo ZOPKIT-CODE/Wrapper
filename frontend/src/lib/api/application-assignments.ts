@@ -67,12 +67,12 @@ export const applicationAssignmentAPI = {
     tenantId: string;
     moduleId: string;
     permissions: string[];
-  }) => api.put('/admin/application-assignments/update-module-permissions', data),
+  }) => api.put('/admin/application-assignments/module-permissions', data),
 
   removeModule: (data: {
     tenantId: string;
     moduleId: string;
-  }) => api.delete('/admin/application-assignments/remove-module', { data }),
+  }) => api.delete('/admin/application-assignments/modules', { data }),
 
   getTenantModules: (tenantId: string) =>
     api.get(`/admin/application-assignments/tenant-modules/${tenantId}`)

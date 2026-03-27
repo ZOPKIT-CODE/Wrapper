@@ -30,7 +30,7 @@ export default async function adminNotificationRoutes(fastify: FastifyInstance, 
    * POST /api/admin/notifications/send
    * Send notification to a single tenant
    */
-  fastify.post('/send', {
+  fastify.post('/', {
     preHandler: [authenticateToken, requirePermission(PERMISSIONS.ADMIN_NOTIFICATIONS_SEND)],
     schema: {
       description: 'Send notification to a single tenant'
@@ -108,7 +108,7 @@ export default async function adminNotificationRoutes(fastify: FastifyInstance, 
    * POST /api/admin/notifications/bulk-send
    * Send notification to multiple tenants
    */
-  fastify.post('/bulk-send', {
+  fastify.post('/bulk', {
     preHandler: [authenticateToken, requirePermission(PERMISSIONS.ADMIN_NOTIFICATIONS_SEND)],
     schema: {
       description: 'Send notification to multiple tenants'

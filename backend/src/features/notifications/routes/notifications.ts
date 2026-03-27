@@ -172,7 +172,7 @@ export default async function notificationRoutes(fastify: FastifyInstance, _opti
    * PUT /api/notifications/mark-all-read
    * Mark all notifications as read for the current tenant/user
    */
-  fastify.put('/mark-all-read', async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.put('/read-status', async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const { tenantId, internalUserId: userId } = request.userContext || {};
 

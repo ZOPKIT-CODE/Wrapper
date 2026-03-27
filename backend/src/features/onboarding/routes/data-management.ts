@@ -69,7 +69,7 @@ export default async function dataManagementRoutes(
   });
 
   // Mark onboarding as complete (with organization ID)
-  fastify.post('/mark-complete', {
+  fastify.post('/completions', {
     preHandler: authenticateToken,
     schema: {}
   }, async (request: FastifyRequest, reply: FastifyReply) => {

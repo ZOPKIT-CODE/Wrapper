@@ -109,7 +109,7 @@ export default async function creditExpiryRoutes(
   });
 
   // Send expiry warnings
-  fastify.post('/send-warnings', {
+  fastify.post('/warnings', {
     preHandler: [authenticateToken, requirePermission(PERMISSIONS.CREDITS_BALANCE_MANAGE)]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {

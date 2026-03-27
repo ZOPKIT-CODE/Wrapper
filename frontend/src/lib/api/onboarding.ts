@@ -19,7 +19,7 @@ export const onboardingAPI = {
     api.post('/onboarding/get-data', { email }),
   
   markComplete: (organizationId: string) => 
-    api.post('/onboarding/mark-complete', { organizationId }),
+    api.post('/onboarding/completions', { organizationId }),
   
   updateStep: (step: string, data?: any, email?: string, formData?: any, kindeUserId?: string) => 
     api.post('/onboarding/update-step', { step, data, email, formData, kindeUserId }),

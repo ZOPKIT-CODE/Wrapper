@@ -1401,7 +1401,7 @@ export default async function applicationAssignmentRoutes(fastify: FastifyInstan
    * PUT /api/admin/application-assignments/update-module-permissions
    * Update specific permissions for a module
    */
-  fastify.put('/update-module-permissions', {
+  fastify.put('/module-permissions', {
     schema: {
       description: 'Update specific permissions for a module assigned to a tenant',
       tags: ['Admin', 'Application Assignment']
@@ -1505,7 +1505,7 @@ export default async function applicationAssignmentRoutes(fastify: FastifyInstan
    * DELETE /api/admin/application-assignments/remove-module
    * Remove a specific module from a tenant
    */
-  fastify.delete('/remove-module', {
+  fastify.delete('/modules', {
     schema: {
       description: 'Remove a specific module from a tenant',
       tags: ['Admin', 'Application Assignment']

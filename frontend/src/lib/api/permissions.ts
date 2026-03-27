@@ -46,7 +46,7 @@ export const permissionsAPI = {
     selectedPermissions: Record<string, string[]>;
     restrictions?: Record<string, boolean>;
     metadata?: any;
-  }) => api.post('/custom-roles/create-from-builder', data),
+  }) => api.post('/custom-roles', data),
   assignUserPermissions: (data: {
     userId: string;
     appCode: string;

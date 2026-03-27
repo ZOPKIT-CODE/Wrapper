@@ -58,7 +58,7 @@ export default async function customRolesRoutes(
    * 2️⃣ **CREATE ROLE FROM BUILDER**
    * Creates custom role using selected apps, modules, and permissions
    */
-  fastify.post('/create-from-builder', {
+  fastify.post('/', {
     preHandler: [authenticateToken, requirePermission(PERMISSIONS.ROLES_MANAGEMENT_CREATE)]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
@@ -112,7 +112,7 @@ export default async function customRolesRoutes(
    * 2.5️⃣ **UPDATE ROLE FROM BUILDER**
    * Updates existing custom role using builder format data
    */
-  fastify.put('/update-from-builder/:roleId', {
+  fastify.put('/:roleId', {
     preHandler: [authenticateToken, requirePermission(PERMISSIONS.ROLES_MANAGEMENT_EDIT)],
     schema: {}
   }, async (request: FastifyRequest, reply: FastifyReply) => {

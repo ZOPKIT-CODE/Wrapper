@@ -344,10 +344,10 @@ export function RoleManagementDashboard() {
         if (payload.roleId || editingRole?.roleId) {
           const roleId = payload.roleId || editingRole?.roleId;
           delete payload.roleId;
-          response = await api.put(`/custom-roles/update-from-builder/${roleId}`, payload);
+          response = await api.put(`/custom-roles/${roleId}`, payload);
         } else {
           delete payload.roleId;
-          response = await api.post('/custom-roles/create-from-builder', payload);
+          response = await api.post('/custom-roles', payload);
         }
 
       } else {

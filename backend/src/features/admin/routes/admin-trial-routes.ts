@@ -53,7 +53,7 @@ export default async function adminTrialRoutes(
   });
 
   // Manually trigger trial reminders (FOR TESTING)
-  fastify.post('/trials/send-reminders', {
+  fastify.post('/trials/reminders', {
     preHandler: [authenticateToken]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
