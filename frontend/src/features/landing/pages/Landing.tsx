@@ -58,40 +58,40 @@ const NAV_ITEMS = [
   { name: "Contact Us", link: "#contact" },
 ] as const;
 
-// Orbital ecosystem — positions computed via trig
+// Orbital ecosystem — clockwise from B2B CRM at top
 const ORBITAL_R = 40;
 const ORBIT_APPS = [
-  { id: 'b2b-crm',            label: 'CRM',        icon: 'Briefcase' },
-  { id: 'finance',            label: 'Finance',     icon: 'Landmark' },
-  { id: 'operations',         label: 'Ops',         icon: 'Box' },
-  { id: 'b2c-crm',            label: 'B2C',         icon: 'ShoppingCart' },
-  { id: 'project-management', label: 'Projects',    icon: 'ClipboardList' },
-  { id: 'hrms',               label: 'HRMS',        icon: 'UserCheck' },
-  { id: 'esop-system',        label: 'ESOP',        icon: 'Award' },
-  { id: 'affiliate-connect',  label: 'Affiliates',  icon: 'Link' },
-  { id: 'flowtilla',          label: 'Flowtilla',   icon: 'GitBranch' },
-  { id: 'zopkit-academy',     label: 'Academy',     icon: 'GraduationCap' },
-  { id: 'zopkit-itsm',        label: 'ITSM',        icon: 'Wrench' },
+  { id: 'b2b-crm',            label: 'B2B CRM',     icon: 'Briefcase' },
+  { id: 'b2c-crm',            label: 'B2C CRM',     icon: 'ShoppingCart' },
+  { id: 'finance',            label: 'Finance',      icon: 'Landmark' },
+  { id: 'operations',         label: 'Operations',   icon: 'Box' },
+  { id: 'project-management', label: 'Projects',     icon: 'ClipboardList' },
+  { id: 'hrms',               label: 'HRMS',         icon: 'UserCheck' },
+  { id: 'esop-system',        label: 'ESOP',         icon: 'Award' },
+  { id: 'affiliate-connect',  label: 'Affiliates',   icon: 'Link' },
+  { id: 'flowtilla',          label: 'Flowtilla',    icon: 'GitBranch' },
+  { id: 'zopkit-academy',     label: 'Academy',      icon: 'GraduationCap' },
+  { id: 'zopkit-itsm',        label: 'ITSM',         icon: 'Wrench' },
 ].map((app, i, arr) => {
-  const angle = (360 / arr.length) * i - 90;
+  const angle = (360 / arr.length) * i - 90; // starts at top, goes clockwise
   const rad = (angle * Math.PI) / 180;
   return { ...app, x: 50 + ORBITAL_R * Math.cos(rad), y: 50 + ORBITAL_R * Math.sin(rad) };
 });
 
-// Cross-product dependencies — data flows between products
-// [fromIndex, toIndex, label]
-// ESOP (6) and Academy (9) connect directly to hub (Zopkit) — no cross-product dep
+// Cross-product dependencies — indices match ORBIT_APPS order above
+// 0:B2B CRM  1:B2C CRM  2:Finance  3:Operations  4:Projects  5:HRMS
+// 6:ESOP(hub) 7:Affiliates 8:Flowtilla 9:Academy(hub) 10:ITSM
 const DEPENDENCIES: [number, number, string][] = [
-  [0, 1, 'Invoices'],    // CRM → Finance
-  [0, 2, 'Orders'],      // CRM → Ops
-  [1, 5, 'Payroll'],     // Finance → HRMS
-  [1, 2, 'Costs'],       // Finance → Ops
+  [0, 2, 'Invoices'],    // B2B CRM → Finance
+  [0, 3, 'Orders'],      // B2B CRM → Operations
+  [1, 0, 'Contacts'],    // B2C CRM → B2B CRM
+  [2, 5, 'Payroll'],     // Finance → HRMS
+  [2, 3, 'Costs'],       // Finance → Operations
   [4, 5, 'Resources'],   // Projects → HRMS
-  [4, 1, 'Budgets'],     // Projects → Finance
-  [7, 0, 'Referrals'],   // Affiliates → CRM
+  [4, 2, 'Budgets'],     // Projects → Finance
+  [7, 0, 'Referrals'],   // Affiliates → B2B CRM
   [8, 4, 'Workflows'],   // Flowtilla → Projects
   [10, 4, 'Tickets'],    // ITSM → Projects
-  [3, 0, 'Contacts'],    // B2C → CRM
 ];
 
 // Products that connect to hub (Zopkit) instead of to another product
@@ -369,20 +369,23 @@ const Landing: React.FC = () => {
   return (
     <div className="min-h-screen bg-white text-slate-900 selection:bg-teal-100 selection:text-teal-900 font-sans overflow-x-clip relative">
 
-      {/* Background — bold diagonal band + geometric accents */}
+      {/* Background — left-side vertical SVG decoration + subtle gradient */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-white to-slate-50/80" />
-        <svg className="absolute w-full h-full" preserveAspectRatio="none" viewBox="0 0 1440 900" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          {/* Main diagonal band — sweeps from top-left to bottom-right */}
-          <polygon points="0,200 1440,550 1440,700 0,350" fill="#f1f5f9" opacity="0.7" />
-          {/* Thinner parallel band above */}
-          <polygon points="0,120 1440,470 1440,510 0,160" fill="#f1f5f9" opacity="0.4" />
-          {/* Edge line along the main band */}
-          <line x1="0" y1="200" x2="1440" y2="550" stroke="#e2e8f0" strokeWidth="1" />
-          <line x1="0" y1="350" x2="1440" y2="700" stroke="#e2e8f0" strokeWidth="1" />
-          {/* Corner accents */}
-          <path d="M1380 0 L1440 0 L1440 80 Z" fill="#e2e8f0" opacity="0.5" />
-          <path d="M0 820 L0 900 L100 900 Z" fill="#e2e8f0" opacity="0.4" />
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-50/80 via-white to-white" />
+        {/* Left-side geometric SVG strip */}
+        <svg className="absolute left-0 top-0 h-full w-[120px] sm:w-[200px] lg:w-[280px]" viewBox="0 0 280 900" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          {/* Vertical bar */}
+          <rect x="0" y="0" width="280" height="900" fill="#f8fafc" />
+          {/* Diagonal cuts through the bar */}
+          <line x1="0" y1="120" x2="280" y2="300" stroke="#e2e8f0" strokeWidth="1" />
+          <line x1="0" y1="400" x2="280" y2="580" stroke="#e2e8f0" strokeWidth="1" />
+          <line x1="0" y1="680" x2="280" y2="860" stroke="#e2e8f0" strokeWidth="1" />
+          {/* Filled triangular chips */}
+          <path d="M0 0 L120 0 L0 80 Z" fill="#e2e8f0" opacity="0.6" />
+          <path d="M280 300 L280 420 L200 360 Z" fill="#f1f5f9" opacity="0.8" />
+          <path d="M0 700 L80 700 L0 760 Z" fill="#e2e8f0" opacity="0.4" />
+          {/* Thin right edge border */}
+          <line x1="279" y1="0" x2="279" y2="900" stroke="#e2e8f0" strokeWidth="1" />
         </svg>
       </div>
 
@@ -599,85 +602,87 @@ const Landing: React.FC = () => {
             </motion.div>
 
 
-            {/* Active product detail card */}
+            {/* Active product detail card — modern glass-card style */}
             <div className="mt-8">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={activeProduct.id}
-                  initial={{ opacity: 0, y: 6 }}
+                  initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -6 }}
-                  transition={{ duration: 0.2 }}
-                  className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden"
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.25 }}
+                  className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-lg shadow-slate-200/50 p-5 sm:p-6"
                 >
-                  {/* Top accent bar — colored strip */}
-                  <div className="h-1 bg-slate-900" />
-                  <div className="p-4 sm:p-5">
-                    {/* Product header */}
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-11 h-11 rounded-xl bg-slate-900 flex items-center justify-center shrink-0">
-                        <DynamicIcon name={activeProduct.iconName} className="w-5 h-5 text-white" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight leading-tight">{activeProduct.name}</h3>
-                        <p className="text-xs sm:text-sm text-slate-500 mt-0.5">{activeProduct.tagline}</p>
-                      </div>
-                      <button
-                        onClick={() => navigate({ to: `/products/${activeProduct.id}` })}
-                        className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition-colors shrink-0"
-                      >
-                        Explore <ArrowRight className="w-3.5 h-3.5" />
-                      </button>
+                  {/* Header row */}
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-12 h-12 rounded-2xl bg-slate-900 flex items-center justify-center shrink-0 shadow-md shadow-slate-900/10">
+                      <DynamicIcon name={activeProduct.iconName} className="w-6 h-6 text-white" />
                     </div>
-
-                    {/* Description */}
-                    <p className="text-sm text-slate-500 leading-relaxed mb-4">{activeProduct.description}</p>
-
-                    {/* Data flow connections */}
-                    {(() => {
-                      const deps = DEPENDENCIES.filter(([f, t]) =>
-                        ORBIT_APPS[f].id === activeProduct.id || ORBIT_APPS[t].id === activeProduct.id
-                      );
-                      const hubLabel = HUB_PRODUCT_LABELS[activeProduct.id];
-                      if (deps.length === 0 && !hubLabel) return null;
-                      return (
-                        <div className="pt-3 border-t border-slate-100">
-                          <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-2">Data Connections</p>
-                          <div className="flex flex-wrap gap-2">
-                            {hubLabel && (
-                              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-100">
-                                <Zap className="w-3.5 h-3.5 text-slate-500" />
-                                <div>
-                                  <div className="text-[11px] font-semibold text-slate-700">Zopkit Platform</div>
-                                  <div className="text-[10px] text-slate-400">{hubLabel}</div>
-                                </div>
-                              </div>
-                            )}
-                            {deps.map(([f, t, label], i) => {
-                              const other = ORBIT_APPS[f].id === activeProduct.id ? ORBIT_APPS[t] : ORBIT_APPS[f];
-                              return (
-                                <div key={i} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-100">
-                                  <DynamicIcon name={other.icon} className="w-3.5 h-3.5 text-slate-500" />
-                                  <div>
-                                    <div className="text-[11px] font-semibold text-slate-700">{other.label}</div>
-                                    <div className="text-[10px] text-slate-400">{label}</div>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      );
-                    })()}
-
-                    {/* Mobile explore button */}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">{activeProduct.name}</h3>
+                      <p className="text-sm text-slate-400 font-medium">{activeProduct.tagline}</p>
+                    </div>
                     <button
                       onClick={() => navigate({ to: `/products/${activeProduct.id}` })}
-                      className="sm:hidden mt-4 w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg bg-slate-900 text-white text-sm font-semibold"
+                      className="hidden sm:inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold transition-colors shrink-0"
                     >
-                      Explore {activeProduct.name} <ArrowRight className="w-3.5 h-3.5" />
+                      Learn more <ArrowRight className="w-4 h-4" />
                     </button>
                   </div>
+
+                  {/* Data connections — horizontal flow with arrows */}
+                  {(() => {
+                    const deps = DEPENDENCIES.filter(([f, t]) =>
+                      ORBIT_APPS[f].id === activeProduct.id || ORBIT_APPS[t].id === activeProduct.id
+                    );
+                    const hubLabel = HUB_PRODUCT_LABELS[activeProduct.id];
+                    const connections = [
+                      ...(hubLabel ? [{ icon: 'Zap', name: 'Zopkit', dataType: hubLabel, isHub: true }] : []),
+                      ...deps.map(([f, t, label]) => {
+                        const other = ORBIT_APPS[f].id === activeProduct.id ? ORBIT_APPS[t] : ORBIT_APPS[f];
+                        return { icon: other.icon, name: other.label, dataType: label, isHub: false };
+                      }),
+                    ];
+                    if (connections.length === 0) return null;
+                    return (
+                      <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1 -mx-1 px-1">
+                        {/* Source: this product */}
+                        <div className="shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-900 text-white">
+                          <DynamicIcon name={activeProduct.iconName} className="w-4 h-4" />
+                          <span className="text-xs font-semibold whitespace-nowrap">{activeProduct.name.split(' ')[0]}</span>
+                        </div>
+                        {/* Arrow + connections flow */}
+                        {connections.map((conn, i) => (
+                          <React.Fragment key={i}>
+                            {/* Arrow with label */}
+                            <div className="shrink-0 flex flex-col items-center gap-0.5">
+                              <span className="text-[9px] text-slate-400 font-medium whitespace-nowrap">{conn.dataType}</span>
+                              <svg width="32" height="8" className="text-slate-300" aria-hidden="true">
+                                <line x1="0" y1="4" x2="24" y2="4" stroke="currentColor" strokeWidth="1.5" />
+                                <path d="M22 1 L28 4 L22 7" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                              </svg>
+                            </div>
+                            {/* Target product chip */}
+                            <div className="shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200">
+                              {conn.isHub
+                                ? <Zap className="w-4 h-4 text-slate-500" />
+                                : <DynamicIcon name={conn.icon} className="w-4 h-4 text-slate-500" />
+                              }
+                              <span className="text-xs font-semibold text-slate-700 whitespace-nowrap">{conn.name}</span>
+                            </div>
+                          </React.Fragment>
+                        ))}
+                      </div>
+                    );
+                  })()}
+
+                  {/* Mobile explore */}
+                  <button
+                    onClick={() => navigate({ to: `/products/${activeProduct.id}` })}
+                    className="sm:hidden mt-4 w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-semibold"
+                  >
+                    Learn more <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
                 </motion.div>
               </AnimatePresence>
             </div>
