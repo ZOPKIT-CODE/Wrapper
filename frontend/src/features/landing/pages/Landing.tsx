@@ -356,19 +356,15 @@ const Landing: React.FC = () => {
   const primaryCta = getPrimaryCtaConfig()
 
   return (
-    <div className="min-h-screen bg-white text-slate-900 selection:bg-teal-100 selection:text-teal-900 font-sans overflow-x-clip relative">
+    <div className="min-h-screen bg-white text-slate-900 selection:bg-teal-100 selection:text-teal-900 font-sans overflow-x-clip">
 
-      {/* Background — edge-only SVG accents, never overlapping content */}
-      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+      {/* Hero background — scoped to hero area only */}
+      <div className="absolute top-0 left-0 right-0 h-[900px] z-0 pointer-events-none overflow-hidden">
         <div className="absolute inset-0 bg-[#fafafa]" />
         <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1440 900" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          {/* Top-right corner triangle */}
           <polygon points="1440,0 1200,0 1440,120" fill="#eef2f7" />
-          {/* Bottom-right corner mark */}
           <polygon points="1440,900 1440,800 1380,900" fill="#eef2f7" />
-          {/* Right-edge vertical accent line */}
           <line x1="1438" y1="140" x2="1438" y2="780" stroke="#e2e8f0" strokeWidth="2" />
-          {/* Top-edge horizontal accent */}
           <line x1="0" y1="1" x2="500" y2="1" stroke="#e2e8f0" strokeWidth="2" />
         </svg>
         <div className="absolute bottom-0 left-0 right-0 h-px bg-slate-200" />
