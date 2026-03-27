@@ -537,52 +537,76 @@ const Landing: React.FC = () => {
         </MobileNav>
       </Navbar>
 
-      {/* Hero — left: static value prop + dynamic product detail, right: orbital */}
-      <main className="relative pt-24 sm:pt-28 lg:pt-36 pb-10 sm:pb-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-8 items-center">
+      {/* Hero */}
+      <main className="relative pt-28 sm:pt-32 lg:pt-40 pb-12 sm:pb-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 z-10">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
 
-          {/* ── Left column ── */}
-          <div className="flex flex-col order-2 lg:order-1">
-            {/* Static headline — never changes, instant comprehension */}
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-              <p className="text-sm font-semibold text-slate-500 tracking-wide mb-3">The Business Operating System</p>
-              <h1 className="text-3xl sm:text-4xl lg:text-[2.75rem] xl:text-5xl font-black tracking-tight leading-[1.1] text-slate-900">
-                Run your entire company<br className="hidden sm:block" /> from one platform
+          {/* ── Left column (7 cols on lg) ── */}
+          <div className="lg:col-span-7 flex flex-col order-2 lg:order-1">
+
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+              {/* Eyebrow */}
+              <div className="flex items-center gap-2 mb-5">
+                <div className="h-px w-8 bg-slate-300" />
+                <span className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em]">Business Operating System</span>
+              </div>
+
+              {/* Headline — large, clear, modern inter-style */}
+              <h1 className="text-[2rem] sm:text-[2.5rem] lg:text-[3.25rem] xl:text-[3.75rem] font-extrabold tracking-[-0.025em] leading-[1.08] text-slate-900">
+                Run your entire<br />
+                company from<br className="hidden lg:block" />
+                <span className="text-slate-400">one platform.</span>
               </h1>
-              <p className="text-slate-500 text-sm sm:text-base lg:text-lg leading-relaxed max-w-md mt-4">
-                CRM, Finance, HR, Operations, Projects — 11 tools that share data automatically. No more copy-pasting between apps.
+
+              {/* Subhead — crisp, readable, proper line height */}
+              <p className="text-slate-500 text-base sm:text-lg lg:text-xl leading-[1.6] max-w-lg mt-5">
+                CRM, Finance, HR, Operations, and 7 more tools — all sharing data in real time. Replace the spreadsheet chaos.
               </p>
             </motion.div>
 
-            {/* CTAs */}
-            <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.12 }} className="flex flex-col sm:flex-row gap-3 mt-6">
+            {/* CTAs — generous sizing, clear hierarchy */}
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, delay: 0.12 }} className="flex flex-col sm:flex-row gap-3 mt-8">
               <button
                 onClick={primaryCta.action}
                 disabled={primaryCta.disabled}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm sm:text-base transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.97]"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-base transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.97] shadow-sm hover:shadow-md"
               >
-                {hasAuthenticatedSession && onboardingCompleted ? <LayoutDashboard className="w-4 h-4" /> : null}
-                {hasAuthenticatedSession && !onboardingCompleted ? <Rocket className="w-4 h-4" /> : null}
+                {hasAuthenticatedSession && onboardingCompleted ? <LayoutDashboard className="w-[18px] h-[18px]" /> : null}
+                {hasAuthenticatedSession && !onboardingCompleted ? <Rocket className="w-[18px] h-[18px]" /> : null}
                 {primaryCta.label}
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-[18px] h-[18px]" />
               </button>
-              <button className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-semibold text-sm sm:text-base transition-colors active:scale-[0.97]">
-                <Play className="w-3.5 h-3.5 fill-current" />
+              <button className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-300 text-slate-700 font-semibold text-base transition-all active:scale-[0.97]">
+                <Play className="w-4 h-4 fill-current" />
                 Watch Demo
               </button>
             </motion.div>
 
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-5 text-xs text-slate-400 font-medium">
-              <span className="inline-flex items-center gap-1.5"><Shield className="w-3.5 h-3.5" />SOC 2</span>
-              <span className="inline-flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" />99.9% Uptime</span>
-              <span className="inline-flex items-center gap-1.5"><Globe className="w-3.5 h-3.5" />GDPR</span>
-            </div>
+            {/* Social proof bar */}
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4, delay: 0.25 }} className="flex items-center gap-6 mt-8 pt-6 border-t border-slate-100">
+              <div>
+                <div className="text-xl font-extrabold text-slate-900 tracking-tight">500+</div>
+                <div className="text-[11px] text-slate-400 font-medium mt-0.5">Companies</div>
+              </div>
+              <div className="w-px h-8 bg-slate-200" />
+              <div>
+                <div className="text-xl font-extrabold text-slate-900 tracking-tight">99.9%</div>
+                <div className="text-[11px] text-slate-400 font-medium mt-0.5">Uptime SLA</div>
+              </div>
+              <div className="w-px h-8 bg-slate-200" />
+              <div>
+                <div className="text-xl font-extrabold text-slate-900 tracking-tight">11</div>
+                <div className="text-[11px] text-slate-400 font-medium mt-0.5">Products</div>
+              </div>
+              <div className="w-px h-8 bg-slate-200 hidden sm:block" />
+              <div className="hidden sm:flex items-center gap-3 text-[11px] text-slate-400 font-medium">
+                <span className="inline-flex items-center gap-1"><Shield className="w-3.5 h-3.5" />SOC 2</span>
+                <span className="inline-flex items-center gap-1"><Globe className="w-3.5 h-3.5" />GDPR</span>
+              </div>
+            </motion.div>
 
-            {/* Active product detail — appears when user clicks a node */}
-            <div className="mt-6 pt-6 border-t border-slate-100">
-              <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-3">
-                Click any app to explore →
-              </p>
+            {/* Active product detail card */}
+            <div className="mt-8">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={activeProduct.id}
@@ -590,48 +614,54 @@ const Landing: React.FC = () => {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -6 }}
                   transition={{ duration: 0.2 }}
-                  className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm"
+                  className="bg-slate-50/80 rounded-2xl border border-slate-200/80 p-4 sm:p-5"
                 >
-                  <div className="flex items-start gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-slate-900 flex items-center justify-center shrink-0">
-                      <DynamicIcon name={activeProduct.iconName} className="w-[18px] h-[18px] text-white" />
+                  <div className="flex items-start gap-3.5">
+                    <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center shrink-0">
+                      <DynamicIcon name={activeProduct.iconName} className="w-5 h-5 text-white" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-bold text-slate-900">{activeProduct.name}</h3>
-                      <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">{activeProduct.description}</p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="text-base font-bold text-slate-900 tracking-tight">{activeProduct.name}</h3>
+                        <ArrowRight className="w-3.5 h-3.5 text-slate-300" />
+                        <span className="text-xs text-slate-400">{activeProduct.tagline}</span>
+                      </div>
+                      {/* Data flow connections */}
+                      {(() => {
+                        const deps = DEPENDENCIES.filter(([f, t]) =>
+                          ORBIT_APPS[f].id === activeProduct.id || ORBIT_APPS[t].id === activeProduct.id
+                        );
+                        if (deps.length === 0) return null;
+                        return (
+                          <div className="flex flex-wrap gap-1.5 mt-2.5">
+                            <span className="text-[10px] text-slate-400 font-medium self-center">Syncs data with</span>
+                            {deps.map(([f, t, label], i) => {
+                              const other = ORBIT_APPS[f].id === activeProduct.id ? ORBIT_APPS[t] : ORBIT_APPS[f];
+                              return (
+                                <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white border border-slate-200 text-[10px] sm:text-[11px] text-slate-600 font-medium shadow-sm">
+                                  <DynamicIcon name={other.icon} className="w-3 h-3 text-slate-400" />
+                                  {other.label}
+                                  <span className="text-slate-300 mx-0.5">/</span>
+                                  <span className="text-slate-400">{label}</span>
+                                </span>
+                              );
+                            })}
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
-                  {/* Dependency data flows */}
-                  {(() => {
-                    const deps = DEPENDENCIES.filter(([f, t]) =>
-                      ORBIT_APPS[f].id === activeProduct.id || ORBIT_APPS[t].id === activeProduct.id
-                    );
-                    if (deps.length === 0) return null;
-                    return (
-                      <div className="flex flex-wrap gap-1.5 mt-3">
-                        {deps.map(([f, t, label], i) => {
-                          const other = ORBIT_APPS[f].id === activeProduct.id ? ORBIT_APPS[t] : ORBIT_APPS[f];
-                          return (
-                            <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-50 border border-slate-100 text-[10px] text-slate-500 font-medium">
-                              <DynamicIcon name={other.icon} className="w-3 h-3 text-slate-400" />
-                              {label} ↔ {other.label}
-                            </span>
-                          );
-                        })}
-                      </div>
-                    );
-                  })()}
                 </motion.div>
               </AnimatePresence>
             </div>
           </div>
 
-          {/* ── Right column: orbital ── */}
+          {/* ── Right column: orbital (5 cols on lg) ── */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.97 }}
+            initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="relative aspect-square max-w-sm sm:max-w-md lg:max-w-none mx-auto lg:mx-0 order-1 lg:order-2"
+            transition={{ duration: 0.6, delay: 0.08 }}
+            className="lg:col-span-5 relative aspect-square max-w-xs sm:max-w-sm lg:max-w-none mx-auto lg:mx-0 order-1 lg:order-2"
           >
             <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" aria-hidden="true">
               <defs>
@@ -641,17 +671,22 @@ const Landing: React.FC = () => {
                 `}</style>
               </defs>
 
-              {/* Orbit track */}
-              <circle cx="50" cy="50" r={ORBITAL_R} fill="none" stroke="#e2e8f0" strokeWidth="0.25" />
+              {/* Outer orbit ring */}
+              <circle cx="50" cy="50" r={ORBITAL_R} fill="none" stroke="#e2e8f0" strokeWidth="0.3" />
+              {/* Inner subtle ring */}
+              <circle cx="50" cy="50" r={ORBITAL_R * 0.55} fill="none" stroke="#f1f5f9" strokeWidth="0.2" strokeDasharray="1.5 2" />
 
-              {/* Radial spokes */}
-              {ORBIT_APPS.map((app) => (
-                <line key={`spoke-${app.id}`} x1="50" y1="50" x2={app.x} y2={app.y}
-                  stroke={activeProduct.id === app.id ? '#0f172a' : '#f1f5f9'}
-                  strokeWidth={activeProduct.id === app.id ? 0.4 : 0.12}
-                  className="transition-all duration-300"
-                />
-              ))}
+              {/* Spokes */}
+              {ORBIT_APPS.map((app) => {
+                const isActive = activeProduct.id === app.id;
+                return (
+                  <line key={`spoke-${app.id}`} x1="50" y1="50" x2={app.x} y2={app.y}
+                    stroke={isActive ? '#0f172a' : '#f1f5f9'}
+                    strokeWidth={isActive ? 0.5 : 0.12}
+                    className="transition-all duration-300"
+                  />
+                );
+              })}
 
               {/* Dependency flow paths */}
               {DEPENDENCIES.map(([from, to, label], i) => {
@@ -660,13 +695,13 @@ const Landing: React.FC = () => {
                 const isActive = activeProduct.id === fromApp.id || activeProduct.id === toApp.id;
                 if (!isActive) return null;
                 const d = depPath(from, to);
-                const mx = (fromApp.x + toApp.x) / 2 + (50 - (fromApp.x + toApp.x) / 2) * 0.25;
-                const my = (fromApp.y + toApp.y) / 2 + (50 - (fromApp.y + toApp.y) / 2) * 0.25;
+                const mx = (fromApp.x + toApp.x) / 2 + (50 - (fromApp.x + toApp.x) / 2) * 0.3;
+                const my = (fromApp.y + toApp.y) / 2 + (50 - (fromApp.y + toApp.y) / 2) * 0.3;
                 return (
                   <g key={`dep-${i}`}>
-                    <path d={d} fill="none" stroke="#0f172a" strokeWidth="0.6" strokeLinecap="round" opacity="0.08" />
-                    <path d={d} fill="none" stroke="#0f172a" strokeWidth="0.35" strokeDasharray="3 3" strokeLinecap="round" className="dep-flow" />
-                    <text x={mx} y={my - 1.5} textAnchor="middle" fill="#94a3b8" fontSize="2" fontWeight="600" fontFamily="system-ui, sans-serif">{label}</text>
+                    <path d={d} fill="none" stroke="#0f172a" strokeWidth="0.7" strokeLinecap="round" opacity="0.06" />
+                    <path d={d} fill="none" stroke="#0f172a" strokeWidth="0.35" strokeDasharray="2.5 2.5" strokeLinecap="round" className="dep-flow" />
+                    <text x={mx} y={my - 1.8} textAnchor="middle" fill="#94a3b8" fontSize="2.2" fontWeight="600" fontFamily="system-ui, sans-serif" letterSpacing="0.02em">{label}</text>
                   </g>
                 );
               })}
@@ -674,10 +709,10 @@ const Landing: React.FC = () => {
 
             {/* Center hub */}
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 text-center">
-              <div className="w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 rounded-full bg-slate-900 flex items-center justify-center mx-auto shadow-lg">
-                <Zap className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 text-white" />
+              <div className="w-16 h-16 sm:w-18 sm:h-18 lg:w-[88px] lg:h-[88px] rounded-full bg-slate-900 flex items-center justify-center mx-auto shadow-xl shadow-slate-900/10">
+                <Zap className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
               </div>
-              <p className="text-[9px] sm:text-[10px] lg:text-xs font-bold text-slate-700 mt-1 tracking-wide">ZOPKIT</p>
+              <p className="text-[10px] lg:text-xs font-bold text-slate-600 mt-2 tracking-[0.15em] uppercase">Zopkit</p>
             </div>
 
             {/* Product nodes */}
@@ -694,14 +729,14 @@ const Landing: React.FC = () => {
                   aria-label={app.label}
                 >
                   <div className={`
-                    w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 rounded-2xl flex items-center justify-center transition-all duration-200 border-2
+                    w-11 h-11 sm:w-[52px] sm:h-[52px] lg:w-14 lg:h-14 rounded-2xl flex items-center justify-center transition-all duration-200 border-2
                     ${isActive
-                      ? 'bg-slate-900 border-slate-900 shadow-lg scale-110'
-                      : 'bg-white border-slate-200 shadow-sm group-hover:border-slate-400 group-hover:shadow-md group-hover:scale-105'}
+                      ? 'bg-slate-900 border-slate-900 shadow-lg shadow-slate-900/15 scale-[1.12]'
+                      : 'bg-white border-slate-200 shadow-sm group-hover:border-slate-300 group-hover:shadow-md group-hover:scale-[1.06]'}
                   `}>
-                    <DynamicIcon name={app.icon} className={`w-4 h-4 sm:w-5 sm:h-5 transition-colors duration-200 ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-slate-700'}`} />
+                    <DynamicIcon name={app.icon} className={`w-[18px] h-[18px] sm:w-5 sm:h-5 transition-colors duration-200 ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-slate-700'}`} />
                   </div>
-                  <p className={`text-center text-[8px] sm:text-[10px] lg:text-xs font-semibold mt-1 transition-colors duration-200 whitespace-nowrap ${isActive ? 'text-slate-900' : 'text-slate-400 group-hover:text-slate-700'}`}>
+                  <p className={`text-center text-[9px] sm:text-[10px] lg:text-[11px] font-semibold mt-1.5 transition-colors duration-200 whitespace-nowrap ${isActive ? 'text-slate-900' : 'text-slate-400 group-hover:text-slate-600'}`}>
                     {app.label}
                   </p>
                 </button>
@@ -710,14 +745,14 @@ const Landing: React.FC = () => {
           </motion.div>
         </div>
 
-        {/* Mobile scroll strip */}
-        <div ref={scrollContainerRef} className="lg:hidden mt-6 flex gap-2 overflow-x-auto pb-2 scrollbar-none">
+        {/* Mobile product selector */}
+        <div ref={scrollContainerRef} className="lg:hidden mt-8 flex gap-2 overflow-x-auto pb-2 scrollbar-none">
           {ORBIT_APPS.map((app) => {
             const isActive = activeProduct.id === app.id;
             const matchingProduct = products.find(p => p.id === app.id);
             return (
               <button key={`strip-${app.id}`} onClick={() => { if (matchingProduct) setActiveProduct(matchingProduct); }}
-                className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg border text-[11px] font-medium transition-colors ${isActive ? 'bg-slate-900 border-slate-900 text-white' : 'bg-white border-slate-200 text-slate-600'}`}
+                className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl border text-[11px] font-semibold transition-colors ${isActive ? 'bg-slate-900 border-slate-900 text-white' : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'}`}
               >
                 <DynamicIcon name={app.icon} className="w-3.5 h-3.5" />
                 {app.label}
