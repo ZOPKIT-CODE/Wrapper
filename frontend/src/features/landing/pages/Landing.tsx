@@ -373,7 +373,7 @@ const Landing: React.FC = () => {
               onMouseEnter={handleProductsMouseEnter}
               onMouseLeave={handleProductsMouseLeave}
             >
-              <button className="px-3 py-2 text-slate-500 hover:text-slate-900 font-medium flex items-center gap-1 whitespace-nowrap transition-colors duration-150 cursor-pointer">
+              <button className="px-3 py-2 text-slate-500 hover:text-[#1B2E5A] font-medium flex items-center gap-1 whitespace-nowrap transition-colors duration-150 cursor-pointer">
                 Products
                 <ChevronRight size={14} className={`transition-transform duration-200 ${showProductsDropdown ? 'rotate-90' : ''}`} />
               </button>
@@ -395,7 +395,7 @@ const Landing: React.FC = () => {
                           <button
                             key={product.id}
                             onClick={() => navigate({ to: `/products/${product.id}` })}
-                            className="w-full text-left px-3 py-2 text-[13px] text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors duration-100 flex items-center gap-2.5 rounded-lg cursor-pointer"
+                            className="w-full text-left px-3 py-2 text-[13px] text-slate-600 hover:text-[#1B2E5A] hover:bg-slate-50 transition-colors duration-100 flex items-center gap-2.5 rounded-lg cursor-pointer"
                           >
                             <span className="w-7 h-7 rounded-md bg-slate-100 flex items-center justify-center shrink-0">
                               <DynamicIcon name={ORBIT_APPS.find(a => a.id === product.id)?.icon ?? 'Box'} className="w-3.5 h-3.5 text-slate-500" />
@@ -416,7 +416,7 @@ const Landing: React.FC = () => {
               onMouseEnter={handleIndustriesMouseEnter}
               onMouseLeave={handleIndustriesMouseLeave}
             >
-              <button className="px-3 py-2 text-slate-500 hover:text-slate-900 font-medium flex items-center gap-1 whitespace-nowrap transition-colors duration-150 cursor-pointer">
+              <button className="px-3 py-2 text-slate-500 hover:text-[#1B2E5A] font-medium flex items-center gap-1 whitespace-nowrap transition-colors duration-150 cursor-pointer">
                 Industries
                 <ChevronRight size={14} className={`transition-transform duration-200 ${showIndustriesDropdown ? 'rotate-90' : ''}`} />
               </button>
@@ -438,7 +438,7 @@ const Landing: React.FC = () => {
                           <button
                             key={industry.slug}
                             onClick={() => navigate({ to: `/industries/${industry.slug}` })}
-                            className="w-full text-left px-3 py-2 text-[13px] text-slate-600 hover:text-slate-900 hover:bg-slate-50 font-medium transition-colors duration-100 rounded-lg cursor-pointer"
+                            className="w-full text-left px-3 py-2 text-[13px] text-slate-600 hover:text-[#1B2E5A] hover:bg-slate-50 font-medium transition-colors duration-100 rounded-lg cursor-pointer"
                           >
                             {industry.name}
                           </button>
@@ -455,7 +455,7 @@ const Landing: React.FC = () => {
                 key={item.name}
                 href={item.link}
                 onClick={(e) => handleAnchorClick(e, item.link)}
-                className="px-3 py-2 text-slate-500 hover:text-slate-900 font-medium transition-colors duration-150 cursor-pointer whitespace-nowrap shrink-0"
+                className="px-3 py-2 text-slate-500 hover:text-[#1B2E5A] font-medium transition-colors duration-150 cursor-pointer whitespace-nowrap shrink-0"
               >
                 {item.name}
               </a>
@@ -504,7 +504,7 @@ const Landing: React.FC = () => {
                   key={product.id}
                   href={`/products/${product.id}`}
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="block px-3 py-1.5 text-[13px] text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors duration-100 font-medium"
+                  className="block px-3 py-1.5 text-[13px] text-slate-600 hover:text-[#1B2E5A] hover:bg-slate-50 rounded-lg transition-colors duration-100 font-medium"
                 >
                   {product.name}
                 </a>
@@ -518,7 +518,7 @@ const Landing: React.FC = () => {
                   key={industry.slug}
                   href={`/industries/${industry.slug}`}
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="block px-3 py-1.5 text-[13px] text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors duration-100 font-medium"
+                  className="block px-3 py-1.5 text-[13px] text-slate-600 hover:text-[#1B2E5A] hover:bg-slate-50 rounded-lg transition-colors duration-100 font-medium"
                 >
                   {industry.name}
                 </a>
@@ -533,7 +533,7 @@ const Landing: React.FC = () => {
                   setIsMobileMenuOpen(false);
                   handleAnchorClick(e, item.link);
                 }}
-                className="block px-3 py-1.5 text-[13px] text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors duration-100 font-medium cursor-pointer"
+                className="block px-3 py-1.5 text-[13px] text-slate-600 hover:text-[#1B2E5A] hover:bg-slate-50 rounded-lg transition-colors duration-100 font-medium cursor-pointer"
               >
                 {item.name}
               </a>
@@ -595,7 +595,7 @@ const Landing: React.FC = () => {
                 {primaryCta.label}
                 <ArrowRight className="w-4 h-4" />
               </button>
-              <button className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-full text-slate-500 hover:text-slate-900 font-medium text-[15px] transition-colors active:scale-[0.97]">
+              <button className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-full text-slate-500 hover:text-[#1B2E5A] font-medium text-[15px] transition-colors active:scale-[0.97]">
                 <Play className="w-4 h-4 fill-current" />
                 Watch demo
               </button>
@@ -614,7 +614,7 @@ const Landing: React.FC = () => {
                   onClick={() => navigate({ to: `/products/${activeProduct.id}` })}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-slate-900 flex items-center justify-center shrink-0">
+                    <div className="w-9 h-9 rounded-lg bg-[#1B2E5A] flex items-center justify-center shrink-0">
                       <DynamicIcon name={activeProduct.iconName} className="w-[18px] h-[18px] text-white" />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -689,8 +689,8 @@ const Landing: React.FC = () => {
                 const lbl = depLabelPos(from, to);
                 return (
                   <g key={`dep-${i}`}>
-                    <path d={d} fill="none" stroke="#0f172a" strokeWidth="0.5" strokeLinecap="round" opacity="0.06" />
-                    <path d={d} fill="none" stroke="#0f172a" strokeWidth="0.3" strokeDasharray="2 2.5" strokeLinecap="round" className="dep-flow" />
+                    <path d={d} fill="none" stroke="#1B2E5A" strokeWidth="0.5" strokeLinecap="round" opacity="0.06" />
+                    <path d={d} fill="none" stroke="#1B2E5A" strokeWidth="0.3" strokeDasharray="2 2.5" strokeLinecap="round" className="dep-flow" />
                     <text x={lbl.x} y={lbl.y} textAnchor="middle" dominantBaseline="central" fill="#94a3b8" fontSize="2.2" fontWeight="600" fontFamily="system-ui, sans-serif" className="hidden sm:block">{label}</text>
                   </g>
                 );
@@ -705,7 +705,7 @@ const Landing: React.FC = () => {
                 const ly = 50 + (app.y - 50) * 0.55;
                 return (
                   <g key={`hub-flow-${app.id}`}>
-                    <line x1="50" y1="50" x2={app.x} y2={app.y} stroke="#0f172a" strokeWidth="0.3" strokeDasharray="2 2.5" strokeLinecap="round" className="dep-flow" />
+                    <line x1="50" y1="50" x2={app.x} y2={app.y} stroke="#1B2E5A" strokeWidth="0.3" strokeDasharray="2 2.5" strokeLinecap="round" className="dep-flow" />
                     <text x={lx} y={ly - 1.5} textAnchor="middle" fill="#94a3b8" fontSize="2.2" fontWeight="600" fontFamily="system-ui, sans-serif" className="hidden sm:block">{hubLabel}</text>
                   </g>
                 );
@@ -714,7 +714,7 @@ const Landing: React.FC = () => {
 
             {/* Center hub */}
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 text-center">
-              <div className="w-11 h-11 sm:w-16 sm:h-16 lg:w-20 lg:h-20 rounded-full bg-slate-900 flex items-center justify-center mx-auto overflow-hidden ring-2 sm:ring-4 ring-white">
+              <div className="w-11 h-11 sm:w-16 sm:h-16 lg:w-20 lg:h-20 rounded-full bg-[#1B2E5A] flex items-center justify-center mx-auto overflow-hidden ring-2 sm:ring-4 ring-white">
                 <img
                   src="https://res.cloudinary.com/dr9vzaa7u/image/upload/v1765126845/Zopkit_Simple_Logo_glohfr.jpg"
                   alt="Zopkit"
@@ -740,7 +740,7 @@ const Landing: React.FC = () => {
                   <div className={`
                     w-8 h-8 sm:w-11 sm:h-11 lg:w-[52px] lg:h-[52px] rounded-lg sm:rounded-xl flex items-center justify-center transition-all duration-200
                     ${isActive
-                      ? 'bg-slate-900 ring-1 sm:ring-2 ring-slate-900 ring-offset-1 sm:ring-offset-2 ring-offset-white scale-110'
+                      ? 'bg-[#1B2E5A] ring-1 sm:ring-2 ring-[#1B2E5A] ring-offset-1 sm:ring-offset-2 ring-offset-white scale-110'
                       : 'bg-white border border-slate-200 group-hover:border-slate-300 group-hover:shadow-md group-hover:scale-105'}
                   `}>
                     <DynamicIcon name={app.icon} className={`w-3.5 h-3.5 sm:w-[18px] sm:h-[18px] lg:w-5 lg:h-5 transition-colors duration-200 ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-slate-700'}`} />
@@ -765,7 +765,7 @@ const Landing: React.FC = () => {
               const matchingProduct = products.find(p => p.id === app.id);
               return (
                 <button key={`strip-${app.id}`} onClick={() => { if (matchingProduct) setActiveProduct(matchingProduct); }}
-                  className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all ${isActive ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600'}`}
+                  className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all ${isActive ? 'bg-[#1B2E5A] text-white' : 'bg-slate-100 text-slate-600'}`}
                 >
                   <DynamicIcon name={app.icon} className="w-3.5 h-3.5" />
                   {app.label}
@@ -808,7 +808,7 @@ const Landing: React.FC = () => {
               return (
                 <div
                   key={industry.slug}
-                  className="group cursor-pointer rounded-2xl bg-[#fafafa] hover:bg-slate-900 p-6 sm:p-7 transition-all duration-300 flex flex-col"
+                  className="group cursor-pointer rounded-2xl bg-[#fafafa] hover:bg-[#243B6E] p-6 sm:p-7 transition-all duration-300 flex flex-col"
                   onClick={() => navigate({ to: `/industries/${industry.slug}` })}
                 >
                   {/* Icon */}
@@ -911,13 +911,13 @@ const Landing: React.FC = () => {
                   <div>
                     <label htmlFor="c-name" className="block text-sm font-medium text-slate-700 mb-1.5">Name</label>
                     <input type="text" id="c-name" required value={contactForm.name} onChange={(e) => setContactForm(prev => ({ ...prev, name: e.target.value }))}
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition-colors"
+                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#1B2E5A]/10 focus:border-slate-400 transition-colors"
                       placeholder="Jane Smith" />
                   </div>
                   <div>
                     <label htmlFor="c-email" className="block text-sm font-medium text-slate-700 mb-1.5">Work email</label>
                     <input type="email" id="c-email" required value={contactForm.email} onChange={(e) => setContactForm(prev => ({ ...prev, email: e.target.value }))}
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition-colors"
+                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#1B2E5A]/10 focus:border-slate-400 transition-colors"
                       placeholder="jane@company.com" />
                   </div>
                 </div>
@@ -925,13 +925,13 @@ const Landing: React.FC = () => {
                   <div>
                     <label htmlFor="c-company" className="block text-sm font-medium text-slate-700 mb-1.5">Company</label>
                     <input type="text" id="c-company" required value={contactForm.company} onChange={(e) => setContactForm(prev => ({ ...prev, company: e.target.value }))}
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition-colors"
+                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#1B2E5A]/10 focus:border-slate-400 transition-colors"
                       placeholder="Acme Inc." />
                   </div>
                   <div>
                     <label htmlFor="c-size" className="block text-sm font-medium text-slate-700 mb-1.5">Team size</label>
                     <select id="c-size" value={contactForm.companySize} onChange={(e) => setContactForm(prev => ({ ...prev, companySize: e.target.value }))}
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition-colors">
+                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#1B2E5A]/10 focus:border-slate-400 transition-colors">
                       <option value="">Select</option>
                       <option value="1-10">1-10</option>
                       <option value="11-50">11-50</option>
@@ -944,13 +944,13 @@ const Landing: React.FC = () => {
                 <div>
                   <label htmlFor="c-msg" className="block text-sm font-medium text-slate-700 mb-1.5">How can we help?</label>
                   <textarea id="c-msg" rows={4} value={contactForm.comments} onChange={(e) => setContactForm(prev => ({ ...prev, comments: e.target.value }))}
-                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition-colors resize-none"
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#1B2E5A]/10 focus:border-slate-400 transition-colors resize-none"
                     placeholder="Tell us about your use case, team size, or any questions..." />
                 </div>
                 <button
                   type="submit"
                   disabled={isSubmittingContact}
-                  className="w-full sm:w-auto px-7 py-3 rounded-full bg-slate-900 hover:bg-slate-800 text-white font-semibold text-[15px] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full sm:w-auto px-7 py-3 rounded-full bg-[#1B2E5A] hover:bg-[#243B6E] text-white font-semibold text-[15px] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSubmittingContact ? 'Sending...' : 'Send message'}
                 </button>
@@ -976,7 +976,7 @@ const Landing: React.FC = () => {
               { icon: Users, title: 'Community', desc: 'Join our user community' },
               { icon: Zap, title: 'Support', desc: '24/7 customer support' },
             ].map((item) => (
-              <div key={item.title} className="group cursor-pointer rounded-2xl bg-[#fafafa] hover:bg-slate-900 p-6 sm:p-7 transition-all duration-300">
+              <div key={item.title} className="group cursor-pointer rounded-2xl bg-[#fafafa] hover:bg-[#243B6E] p-6 sm:p-7 transition-all duration-300">
                 <div className="w-10 h-10 rounded-xl bg-white group-hover:bg-white/10 flex items-center justify-center mb-5 transition-colors duration-300">
                   <item.icon className="w-5 h-5 text-slate-600 group-hover:text-white transition-colors duration-300" />
                 </div>
