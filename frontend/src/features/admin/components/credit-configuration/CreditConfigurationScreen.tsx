@@ -106,7 +106,7 @@ const CreditConfigurationScreen: React.FC = () => {
     try {
       setLoading(true);
       const response = await api.get('/tenants');
-      setTenants(response.data.tenants || []);
+      setTenants(response.data.data || []);
     } catch (error) {
       console.error('Error loading tenants:', error);
       toast.error('Failed to load tenants');
