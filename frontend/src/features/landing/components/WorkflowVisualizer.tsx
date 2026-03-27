@@ -159,14 +159,14 @@ export const WorkflowVisualizer = () => {
     }, [activeStepIndex, activeWorkflowIndex]);
 
     return (
-        <div className="w-full max-w-7xl mx-auto px-4">
-            <div className="text-center mb-8">
-                <h2 className="text-3xl sm:text-5xl md:text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-900 via-slate-600 to-slate-900 mb-4 tracking-tight">
-                    Intelligent Workflow Orchestration
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12 sm:mb-16">
+                <p className="text-sm font-semibold text-slate-400 tracking-wide mb-3">Workflow Engine</p>
+                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-[-0.025em] leading-tight">
+                    Intelligent Workflow<br className="hidden sm:block" /> Orchestration
                 </h2>
-                <p className="text-slate-500 text-lg md:text-xl max-w-2xl mx-auto font-light leading-relaxed">
-                    Automate complex business processes with our Zopkit Ecosystem.
-                    Seamlessly connect apps, data, and teams.
+                <p className="text-slate-500 text-base sm:text-lg max-w-xl mx-auto mt-4 leading-relaxed">
+                    Automate complex business processes across your entire Zopkit ecosystem. Connect apps, data, and teams seamlessly.
                 </p>
             </div>
 
