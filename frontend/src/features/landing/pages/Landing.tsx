@@ -567,32 +567,22 @@ const Landing: React.FC = () => {
               </p>
             </motion.div>
 
-            {/* CTAs + inline proof */}
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }}>
-              <div className="flex flex-col sm:flex-row items-start gap-3 mt-7">
-                <button
-                  onClick={primaryCta.action}
-                  disabled={primaryCta.disabled}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full bg-slate-900 hover:bg-slate-800 text-white font-semibold text-[15px] transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.97]"
-                >
-                  {hasAuthenticatedSession && onboardingCompleted ? <LayoutDashboard className="w-4 h-4" /> : null}
-                  {hasAuthenticatedSession && !onboardingCompleted ? <Rocket className="w-4 h-4" /> : null}
-                  {primaryCta.label}
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-                <button className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-full text-slate-500 hover:text-slate-900 font-medium text-[15px] transition-colors active:scale-[0.97]">
-                  <Play className="w-4 h-4 fill-current" />
-                  Watch demo
-                </button>
-              </div>
-              {/* Compact proof points */}
-              <div className="flex items-center gap-4 mt-5 text-sm text-slate-400">
-                <span className="font-semibold text-slate-900">500+</span> companies
-                <span className="text-slate-200">|</span>
-                <span className="font-semibold text-slate-900">99.9%</span> uptime
-                <span className="text-slate-200">|</span>
-                <span className="font-semibold text-slate-900">SOC 2</span>
-              </div>
+            {/* CTAs */}
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }} className="flex flex-col sm:flex-row items-start gap-3 mt-7">
+              <button
+                onClick={primaryCta.action}
+                disabled={primaryCta.disabled}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full bg-slate-900 hover:bg-slate-800 text-white font-semibold text-[15px] transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.97]"
+              >
+                {hasAuthenticatedSession && onboardingCompleted ? <LayoutDashboard className="w-4 h-4" /> : null}
+                {hasAuthenticatedSession && !onboardingCompleted ? <Rocket className="w-4 h-4" /> : null}
+                {primaryCta.label}
+                <ArrowRight className="w-4 h-4" />
+              </button>
+              <button className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-full text-slate-500 hover:text-slate-900 font-medium text-[15px] transition-colors active:scale-[0.97]">
+                <Play className="w-4 h-4 fill-current" />
+                Watch demo
+              </button>
             </motion.div>
 
             {/* Product explorer — tighter, more visual */}
