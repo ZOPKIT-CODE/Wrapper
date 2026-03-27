@@ -58,21 +58,27 @@ const NAV_ITEMS = [
   { name: "Contact Us", link: "#contact" },
 ] as const;
 
-// All 11 products in a single flat array for the ecosystem grid
-// Using consistent slate-900 + teal accent palette — no rainbow colors
-const ECOSYSTEM_APPS = [
-  { id: 'b2b-crm',            label: 'B2B CRM',       short: 'CRM',        icon: 'Briefcase' },
-  { id: 'b2c-crm',            label: 'B2C CRM',       short: 'B2C',        icon: 'ShoppingCart' },
-  { id: 'finance',            label: 'Finance',        short: 'Finance',    icon: 'Landmark' },
-  { id: 'operations',         label: 'Operations',     short: 'Ops',        icon: 'Box' },
-  { id: 'project-management', label: 'Projects',       short: 'Projects',   icon: 'ClipboardList' },
-  { id: 'hrms',               label: 'HRMS',           short: 'HR',         icon: 'UserCheck' },
-  { id: 'esop-system',        label: 'ESOP',           short: 'ESOP',       icon: 'Award' },
-  { id: 'affiliate-connect',  label: 'Affiliates',     short: 'Affiliates', icon: 'Link' },
-  { id: 'flowtilla',          label: 'Flowtilla',      short: 'Flow',       icon: 'GitBranch' },
-  { id: 'zopkit-academy',     label: 'Academy',        short: 'Academy',    icon: 'GraduationCap' },
-  { id: 'zopkit-itsm',        label: 'ITSM',           short: 'ITSM',       icon: 'Wrench' },
-] as const;
+// Orbital ecosystem — 11 products in a ring around a center hub
+// Positions computed from angle: x = 50 + R*cos(angle-90°), y = 50 + R*sin(angle-90°)
+// R=42 for the orbital radius in a 100x100 viewBox, starting from top (−90°)
+const ORBITAL_RADIUS = 42;
+const ORBIT_APPS = [
+  { id: 'b2b-crm',            label: 'CRM',        icon: 'Briefcase' },
+  { id: 'finance',            label: 'Finance',     icon: 'Landmark' },
+  { id: 'operations',         label: 'Ops',         icon: 'Box' },
+  { id: 'b2c-crm',            label: 'B2C',         icon: 'ShoppingCart' },
+  { id: 'project-management', label: 'Projects',    icon: 'ClipboardList' },
+  { id: 'hrms',               label: 'HRMS',        icon: 'UserCheck' },
+  { id: 'esop-system',        label: 'ESOP',        icon: 'Award' },
+  { id: 'affiliate-connect',  label: 'Affiliates',  icon: 'Link' },
+  { id: 'flowtilla',          label: 'Flowtilla',   icon: 'GitBranch' },
+  { id: 'zopkit-academy',     label: 'Academy',     icon: 'GraduationCap' },
+  { id: 'zopkit-itsm',        label: 'ITSM',        icon: 'Wrench' },
+].map((app, i, arr) => {
+  const angle = (360 / arr.length) * i - 90; // start from top
+  const rad = (angle * Math.PI) / 180;
+  return { ...app, x: 50 + ORBITAL_RADIUS * Math.cos(rad), y: 50 + ORBITAL_RADIUS * Math.sin(rad) };
+});
 
 const Landing: React.FC = () => {
   const navigate = useNavigate()
@@ -554,50 +560,124 @@ const Landing: React.FC = () => {
           </div>
         </div>
 
-        {/* Connected Ecosystem — hub-and-spoke with visible connector lines */}
+        {/* Orbital Ecosystem */}
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, scale: 0.97 }}
+          animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="max-w-4xl mx-auto"
+          className="max-w-xl sm:max-w-2xl lg:max-w-3xl mx-auto"
         >
-          {/* The Ecosystem visual — 3 tiers connected by lines */}
-          <div className="relative">
+          {/* Desktop: orbital ring | Mobile: horizontal scroll strip */}
 
-            {/* ── Tier 1: Platform Hub ── */}
-            <div className="flex justify-center">
-              <div className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-xl bg-slate-900 text-white relative z-10">
+          {/* ── Orbital view (sm+) ── */}
+          <div className="hidden sm:block relative aspect-square">
+            {/* SVG layer — orbit ring + radial spokes + arc connections */}
+            <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" aria-hidden="true">
+              {/* Orbit track circle */}
+              <circle cx="50" cy="50" r={ORBITAL_RADIUS} fill="none" stroke="#e2e8f0" strokeWidth="0.3" />
+              {/* Inner decorative ring */}
+              <circle cx="50" cy="50" r="12" fill="none" stroke="#e2e8f0" strokeWidth="0.2" strokeDasharray="1 1.5" />
+
+              {/* Radial spokes — hub to each product */}
+              {ORBIT_APPS.map((app) => {
+                const isActive = activeProduct.id === app.id;
+                return (
+                  <line
+                    key={`spoke-${app.id}`}
+                    x1="50" y1="50" x2={app.x} y2={app.y}
+                    stroke={isActive ? '#0f172a' : '#f1f5f9'}
+                    strokeWidth={isActive ? 0.5 : 0.2}
+                    className="transition-all duration-300"
+                  />
+                );
+              })}
+
+              {/* Arc connections between adjacent nodes */}
+              {ORBIT_APPS.map((app, i) => {
+                const next = ORBIT_APPS[(i + 1) % ORBIT_APPS.length];
+                const isActive = activeProduct.id === app.id || activeProduct.id === next.id;
+                return (
+                  <line
+                    key={`arc-${i}`}
+                    x1={app.x} y1={app.y} x2={next.x} y2={next.y}
+                    stroke={isActive ? '#0f172a' : '#e2e8f0'}
+                    strokeWidth={isActive ? 0.4 : 0.15}
+                    strokeDasharray={isActive ? undefined : '0.8 1'}
+                    className="transition-all duration-300"
+                  />
+                );
+              })}
+
+              {/* Active spoke endpoint dot */}
+              {ORBIT_APPS.map((app) => {
+                if (activeProduct.id !== app.id) return null;
+                const mx = 50 + ((app.x - 50) * 0.35);
+                const my = 50 + ((app.y - 50) * 0.35);
+                return (
+                  <circle key={`dot-${app.id}`} cx={mx} cy={my} r="0.8" fill="#0f172a" className="transition-all duration-300" />
+                );
+              })}
+            </svg>
+
+            {/* Center hub */}
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 text-center">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-slate-900 flex items-center justify-center mx-auto shadow-lg">
+                <Zap className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
+              </div>
+              <p className="text-[10px] sm:text-xs font-bold text-slate-800 mt-1.5 tracking-wide">ZOPKIT</p>
+              <p className="text-[8px] sm:text-[10px] text-slate-400 font-medium">Unified Platform</p>
+            </div>
+
+            {/* Product nodes around the orbit */}
+            {ORBIT_APPS.map((app) => {
+              const isActive = activeProduct.id === app.id;
+              const matchingProduct = products.find(p => p.id === app.id);
+              return (
+                <button
+                  key={app.id}
+                  ref={(el) => { if (el) productRefs.current.set(app.id, el); }}
+                  onClick={() => { if (matchingProduct) setActiveProduct(matchingProduct); }}
+                  className="absolute z-10 -translate-x-1/2 -translate-y-1/2 group focus:outline-none"
+                  style={{ left: `${app.x}%`, top: `${app.y}%` }}
+                  aria-label={app.label}
+                >
+                  <div
+                    className={`
+                      w-11 h-11 sm:w-13 sm:h-13 lg:w-14 lg:h-14 rounded-2xl flex items-center justify-center transition-all duration-200 border-2
+                      ${isActive
+                        ? 'bg-slate-900 border-slate-900 shadow-lg scale-110'
+                        : 'bg-white border-slate-200 shadow-sm group-hover:border-slate-400 group-hover:shadow-md group-hover:scale-105'}
+                    `}
+                  >
+                    <DynamicIcon
+                      name={app.icon}
+                      className={`w-4 h-4 sm:w-5 sm:h-5 transition-colors duration-200 ${isActive ? 'text-white' : 'text-slate-600 group-hover:text-slate-800'}`}
+                    />
+                  </div>
+                  <p className={`text-center text-[9px] sm:text-[10px] lg:text-xs font-semibold mt-1 transition-colors duration-200 whitespace-nowrap ${isActive ? 'text-slate-900' : 'text-slate-400 group-hover:text-slate-700'}`}>
+                    {app.label}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* ── Mobile view (below sm) — horizontal scroll strip with center hub ── */}
+          <div className="sm:hidden">
+            {/* Hub */}
+            <div className="flex justify-center mb-4">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 text-white">
                 <Zap className="w-4 h-4" />
-                <span className="text-sm font-bold tracking-wide">Zopkit</span>
-                <span className="text-slate-500 text-[10px] font-medium hidden sm:inline">Unified Platform</span>
+                <span className="text-sm font-bold">Zopkit</span>
               </div>
             </div>
-
-            {/* ── Connector: Hub → Row 1 (branching lines via SVG) ── */}
-            <div className="flex justify-center">
-              <svg width="100%" height="32" className="max-w-3xl" viewBox="0 0 768 32" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-                {/* Trunk down from center */}
-                <line x1="384" y1="0" x2="384" y2="14" stroke="#cbd5e1" strokeWidth="1.5" />
-                {/* Horizontal bar */}
-                <line x1="64" y1="14" x2="704" y2="14" stroke="#cbd5e1" strokeWidth="1.5" />
-                {/* 6 branches down to Row 1 cards */}
-                {[64, 192, 320, 448, 576, 704].map((cx, i) => (
-                  <line key={i} x1={cx} y1="14" x2={cx} y2="32" stroke={
-                    ECOSYSTEM_APPS[i] && activeProduct.id === ECOSYSTEM_APPS[i].id ? '#0f172a' : '#cbd5e1'
-                  } strokeWidth="1.5" className="transition-colors duration-200" />
-                ))}
-                {/* Active highlight on the horizontal segment */}
-                {ECOSYSTEM_APPS.slice(0, 6).map((app, i) => {
-                  if (activeProduct.id !== app.id) return null;
-                  const cx = [64, 192, 320, 448, 576, 704][i];
-                  return <circle key={app.id} cx={cx} cy="14" r="3" fill="#0f172a" className="transition-all duration-200" />;
-                })}
-              </svg>
+            {/* Connector line */}
+            <div className="flex justify-center mb-2">
+              <div className="w-px h-4 bg-slate-300" />
             </div>
-
-            {/* ── Tier 2: Core 6 products ── */}
-            <div ref={scrollContainerRef} className="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-3">
-              {ECOSYSTEM_APPS.slice(0, 6).map((app) => {
+            {/* Scrollable product row */}
+            <div ref={scrollContainerRef} className="flex gap-2 overflow-x-auto pb-3 px-1 scrollbar-none">
+              {ORBIT_APPS.map((app) => {
                 const isActive = activeProduct.id === app.id;
                 const matchingProduct = products.find(p => p.id === app.id);
                 return (
@@ -606,144 +686,80 @@ const Landing: React.FC = () => {
                     ref={(el) => { if (el) productRefs.current.set(app.id, el); }}
                     onClick={() => { if (matchingProduct) setActiveProduct(matchingProduct); }}
                     className={`
-                      group flex flex-col items-center gap-1.5 py-3.5 sm:py-4 px-2 rounded-xl border-2 transition-all duration-200 cursor-pointer focus:outline-none
+                      shrink-0 flex flex-col items-center gap-1 py-3 px-3 rounded-xl border-2 transition-all duration-200 min-w-[72px]
                       ${isActive
                         ? 'bg-slate-900 border-slate-900 shadow-md'
-                        : 'bg-white border-slate-200 hover:border-slate-400 hover:shadow-sm'}
+                        : 'bg-white border-slate-200'}
                     `}
                   >
-                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors duration-200 ${isActive ? 'bg-white/15' : 'bg-slate-50 group-hover:bg-slate-100'}`}>
-                      <DynamicIcon name={app.icon} className={`w-[18px] h-[18px] transition-colors duration-200 ${isActive ? 'text-white' : 'text-slate-600 group-hover:text-slate-800'}`} />
-                    </div>
-                    <span className={`text-[10px] sm:text-xs font-semibold transition-colors duration-200 text-center leading-tight ${isActive ? 'text-white' : 'text-slate-700'}`}>
-                      <span className="sm:hidden">{app.short}</span>
-                      <span className="hidden sm:inline">{app.label}</span>
-                    </span>
+                    <DynamicIcon name={app.icon} className={`w-5 h-5 transition-colors duration-200 ${isActive ? 'text-white' : 'text-slate-600'}`} />
+                    <span className={`text-[10px] font-semibold ${isActive ? 'text-white' : 'text-slate-600'}`}>{app.label}</span>
                   </button>
                 );
               })}
-            </div>
-
-            {/* ── Connector: Row 1 → Row 2 (branching lines) ── */}
-            <div className="flex justify-center">
-              <svg width="100%" height="28" className="max-w-2xl" viewBox="0 0 640 28" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-                {/* Horizontal bar */}
-                <line x1="64" y1="10" x2="576" y2="10" stroke="#e2e8f0" strokeWidth="1" />
-                {/* Vertical trunks up from row 1 */}
-                {[64, 192, 320, 448, 576].map((cx, i) => (
-                  <g key={i}>
-                    <line x1={cx} y1="0" x2={cx} y2="10" stroke="#e2e8f0" strokeWidth="1" />
-                    <line x1={cx} y1="10" x2={cx} y2="28" stroke={
-                      ECOSYSTEM_APPS[6 + i] && activeProduct.id === ECOSYSTEM_APPS[6 + i].id ? '#0f172a' : '#e2e8f0'
-                    } strokeWidth="1" className="transition-colors duration-200" />
-                  </g>
-                ))}
-                {/* Cross-connections: short horizontal dashes between row 1 and row 2 nodes */}
-                <line x1="128" y1="10" x2="128" y2="10" stroke="#e2e8f0" strokeWidth="1" strokeDasharray="2 3" />
-                {/* Active dot */}
-                {ECOSYSTEM_APPS.slice(6).map((app, i) => {
-                  if (activeProduct.id !== app.id) return null;
-                  const cx = [64, 192, 320, 448, 576][i];
-                  return <circle key={app.id} cx={cx} cy="10" r="2.5" fill="#0f172a" className="transition-all duration-200" />;
-                })}
-              </svg>
-            </div>
-
-            {/* ── Tier 3: Remaining 5 products ── */}
-            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-3 max-w-2xl mx-auto">
-              {ECOSYSTEM_APPS.slice(6).map((app) => {
-                const isActive = activeProduct.id === app.id;
-                const matchingProduct = products.find(p => p.id === app.id);
-                return (
-                  <button
-                    key={app.id}
-                    ref={(el) => { if (el) productRefs.current.set(app.id, el); }}
-                    onClick={() => { if (matchingProduct) setActiveProduct(matchingProduct); }}
-                    className={`
-                      group flex flex-col items-center gap-1.5 py-3 sm:py-3.5 px-2 rounded-xl border transition-all duration-200 cursor-pointer focus:outline-none
-                      ${isActive
-                        ? 'bg-slate-900 border-slate-900 shadow-md'
-                        : 'bg-white border-slate-200 hover:border-slate-400 hover:shadow-sm'}
-                    `}
-                  >
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors duration-200 ${isActive ? 'bg-white/15' : 'bg-slate-50 group-hover:bg-slate-100'}`}>
-                      <DynamicIcon name={app.icon} className={`w-4 h-4 transition-colors duration-200 ${isActive ? 'text-white' : 'text-slate-600 group-hover:text-slate-800'}`} />
-                    </div>
-                    <span className={`text-[10px] sm:text-xs font-semibold transition-colors duration-200 text-center leading-tight ${isActive ? 'text-white' : 'text-slate-700'}`}>
-                      <span className="sm:hidden">{app.short}</span>
-                      <span className="hidden sm:inline">{app.label}</span>
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* ── Connector: Row 2 → Detail panel ── */}
-            <div className="flex justify-center">
-              <svg width="2" height="20" aria-hidden="true">
-                <line x1="1" y1="0" x2="1" y2="20" stroke="#cbd5e1" strokeWidth="1.5" />
-              </svg>
             </div>
           </div>
 
-          {/* Active product detail card — connected to the tree above */}
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeProduct.id}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.2 }}
-              className="bg-slate-50 rounded-xl border border-slate-200 p-4 sm:p-5"
-            >
-              <div className="flex items-start gap-3 sm:gap-4">
-                <div className="w-10 h-10 rounded-lg bg-slate-900 flex items-center justify-center shrink-0">
-                  <DynamicIcon name={activeProduct.iconName} className="w-5 h-5 text-white" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <h3 className="text-sm sm:text-base font-bold text-slate-900">{activeProduct.name}</h3>
-                    {activeProduct.stats?.map((stat, i) => (
-                      <span key={i} className="hidden sm:inline-flex text-[10px] font-semibold text-slate-500 bg-white border border-slate-200 rounded px-1.5 py-0.5">
-                        {stat.value} {stat.label}
-                      </span>
-                    ))}
+          {/* Detail panel — always visible below */}
+          <div className="mt-5 sm:mt-6">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeProduct.id}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.2 }}
+                className="bg-slate-50 rounded-xl border border-slate-200 p-4 sm:p-5"
+              >
+                <div className="flex items-start gap-3 sm:gap-4">
+                  <div className="w-10 h-10 rounded-lg bg-slate-900 flex items-center justify-center shrink-0">
+                    <DynamicIcon name={activeProduct.iconName} className="w-5 h-5 text-white" />
                   </div>
-                  <p className="text-xs sm:text-sm text-slate-500 leading-relaxed">{activeProduct.tagline}</p>
-                </div>
-                <button
-                  onClick={() => navigate({ to: `/products/${activeProduct.id}` })}
-                  className="hidden sm:inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-medium hover:bg-slate-800 transition-colors shrink-0"
-                >
-                  Explore <ArrowRight className="w-3 h-3" />
-                </button>
-              </div>
-
-              <div className="flex flex-wrap gap-1.5 mt-3">
-                {activeProduct.features.slice(0, 4).map((feat, i) => (
-                  <span key={i} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-white border border-slate-100 text-[10px] sm:text-xs text-slate-600 font-medium">
-                    <DynamicIcon name={feat.icon} className="w-3 h-3 text-slate-400" />
-                    {feat.title}
-                  </span>
-                ))}
-                {activeProduct.features.length > 4 && (
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <h3 className="text-sm sm:text-base font-bold text-slate-900">{activeProduct.name}</h3>
+                      {activeProduct.stats?.map((stat, i) => (
+                        <span key={i} className="hidden sm:inline-flex text-[10px] font-semibold text-slate-500 bg-white border border-slate-200 rounded px-1.5 py-0.5">
+                          {stat.value} {stat.label}
+                        </span>
+                      ))}
+                    </div>
+                    <p className="text-xs sm:text-sm text-slate-500 leading-relaxed">{activeProduct.tagline}</p>
+                  </div>
                   <button
                     onClick={() => navigate({ to: `/products/${activeProduct.id}` })}
-                    className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] sm:text-xs text-slate-400 font-medium hover:text-slate-600 transition-colors"
+                    className="hidden sm:inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-medium hover:bg-slate-800 transition-colors shrink-0"
                   >
-                    +{activeProduct.features.length - 4} more
+                    Explore <ArrowRight className="w-3 h-3" />
                   </button>
-                )}
-              </div>
+                </div>
 
-              <button
-                onClick={() => navigate({ to: `/products/${activeProduct.id}` })}
-                className="sm:hidden mt-3 w-full inline-flex items-center justify-center gap-1 px-3 py-2 rounded-lg bg-slate-900 text-white text-xs font-medium"
-              >
-                Explore {activeProduct.name} <ArrowRight className="w-3 h-3" />
-              </button>
-            </motion.div>
-          </AnimatePresence>
+                <div className="flex flex-wrap gap-1.5 mt-3">
+                  {activeProduct.features.slice(0, 4).map((feat, i) => (
+                    <span key={i} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-white border border-slate-100 text-[10px] sm:text-xs text-slate-600 font-medium">
+                      <DynamicIcon name={feat.icon} className="w-3 h-3 text-slate-400" />
+                      {feat.title}
+                    </span>
+                  ))}
+                  {activeProduct.features.length > 4 && (
+                    <button
+                      onClick={() => navigate({ to: `/products/${activeProduct.id}` })}
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] sm:text-xs text-slate-400 font-medium hover:text-slate-600 transition-colors"
+                    >
+                      +{activeProduct.features.length - 4} more
+                    </button>
+                  )}
+                </div>
+
+                <button
+                  onClick={() => navigate({ to: `/products/${activeProduct.id}` })}
+                  className="sm:hidden mt-3 w-full inline-flex items-center justify-center gap-1 px-3 py-2 rounded-lg bg-slate-900 text-white text-xs font-medium"
+                >
+                  Explore {activeProduct.name} <ArrowRight className="w-3 h-3" />
+                </button>
+              </motion.div>
+            </AnimatePresence>
+          </div>
         </motion.div>
       </main>
 
