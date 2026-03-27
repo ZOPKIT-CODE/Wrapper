@@ -1,6 +1,6 @@
 # TASK BOARD - WrapperStandalone
 
-> Shared coordination hub for all agents. Updated: 2026-03-27 (rev 4 — S1-S8 + L1 + H5-H9 + M6 fixed)
+> Shared coordination hub for all agents. Updated: 2026-03-27 (rev 5 — S1-S8 + L1 + L3 + H5-H9 + M2 + M3 + M6 + M9 fixed)
 > Monorepo: `wrapper-backend` (Fastify 4 + Drizzle + Kinde) + `wrapper-frontend` (React 19 + Vite 7 + TanStack)
 
 ---
@@ -42,14 +42,14 @@
 | # | Issue | Location | Details | Status |
 |---|-------|----------|---------|--------|
 | M1 | **29 components over 200 LOC** | Frontend | Top: OrganizationManagement (1990), AccountSettings (1645), IndustryPage (1234) | OPEN |
-| M2 | **No frontend tests in CI** | `.github/workflows/` | Tests exist but not in pipeline | OPEN |
-| M3 | **No linting in CI** | `.github/workflows/` | Lint not enforced | OPEN |
+| M2 | **No frontend tests in CI** | `.github/workflows/` | Tests exist but not in pipeline | FIXED `958a052` PR#15 |
+| M3 | **No linting in CI** | `.github/workflows/` | Lint not enforced | FIXED `958a052` PR#15 |
 | M4 | **No security/dependency scanning** | CI pipeline | No Snyk/Dependabot/npm audit | OPEN |
 | M5 | **Integration tests advisory only** | CI pipeline | Don't block deploy (`continue-on-error: true`) | OPEN |
 | M6 | **Amazon MQ reconnect fixed 5s delay** | `features/messaging/` | Should use exponential backoff | FIXED `b617e2a` PR#12 |
 | M7 | **ReactFlow not lazy-loaded** | Frontend bundle | 120KB loaded even if unused | OPEN |
 | M8 | **No list virtualization** | User lists, audit logs | Performance at scale (100+ items) | OPEN |
-| M9 | **Graceful shutdown incomplete** | `backend/src/app-fastify.ts` | Amazon MQ + WebSocket not flushed — events lost | OPEN |
+| M9 | **Graceful shutdown incomplete** | `backend/src/app-fastify.ts` | Amazon MQ + WebSocket not flushed — events lost | FIXED `e4660a0` PR#13 |
 | M10 | **Commit convention compliance 25%** | Git history | 15/20 recent commits missing `type:` prefix | OPEN |
 
 ---
@@ -115,7 +115,7 @@ wrapper-standalone/
 |---|----------|-------|---------|
 | L1 | **HIGH** | **`email: undefined` on every auth request** — FIXED `28cbd7c` PR#6 | `validateToken` returns `email: undefined` because Kinde access tokens (JWT) don't include `email`/`preferred_email` claims. The JWKS strategy succeeds (signature verified), but `normalizeKindePayload()` finds no email field in the JWT payload. **File:** `backend/src/features/auth/services/kinde-service.ts:57` — `email: u.email \|\| u.preferred_email` resolves to `undefined`. Auth still works because the user is looked up by `kindeUserId` in `tenant_users` table, but any code path relying on `userContext.email` from JWT will fail silently. |
 | L2 | **MEDIUM** | **`No tenant found for org code: org_b060751e890`** | First request per session triggers a tenant lookup by Kinde org code that fails. Suppressed for 120s after first occurrence. Auth still succeeds by falling back to `tenant_users` table lookup. May indicate stale org mapping. |
-| L3 | **LOW** | **Winston logger identity undefined** | Log line: `undefined [undefined] info: Server started successfully` — the Winston logger service name and instance ID are not being set correctly, producing `undefined [undefined]` prefix on structured logs. |
+| L3 | **LOW** | **Winston logger identity undefined** — FIXED `f11e8ee` PR#14 | Log line: `undefined [undefined] info: Server started successfully` — the Winston logger service name and instance ID are not being set correctly, producing `undefined [undefined]` prefix on structured logs. |
 | L4 | **INFO** | **Email provider initialized twice** | Brevo email detection block runs twice during startup (lines ~28-34 and ~41-47 in logs). Duplicate initialization — not harmful but wasteful. |
 | L5 | **INFO** | **Stripe in TEST mode** | `Stripe adapter initialised in TEST mode` — expected for local dev. |
 | L6 | **INFO** | **Trial restriction bypassed** | `Trial restriction: BYPASSED for local development` on every request — expected for local dev. |
@@ -252,6 +252,10 @@ All captured requests were `GET /api/notifications?` — likely a frontend polli
 - [x] H5: Dead AppRoutes.tsx (react-router-dom) removed — `a9a561d` PR#11
 - [x] H8: Credit purchase wrapped in DB transaction — `b617e2a` PR#12
 - [x] M6: Amazon MQ exponential backoff reconnect — `b617e2a` PR#12
+- [x] M9: Graceful shutdown MQ flush — `e4660a0` PR#13
+- [x] L3: Winston logger identity fixed — `f11e8ee` PR#14
+- [x] M2: Frontend tests added to CI — `958a052` PR#15
+- [x] M3: Linting added to CI — `958a052` PR#15
 
 ---
 
