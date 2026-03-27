@@ -369,18 +369,18 @@ const Landing: React.FC = () => {
   return (
     <div className="min-h-screen bg-white text-slate-900 selection:bg-teal-100 selection:text-teal-900 font-sans overflow-x-clip relative">
 
-      {/* Background */}
+      {/* Background — edge-only SVG accents, never overlapping content */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
         <div className="absolute inset-0 bg-[#fafafa]" />
         <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1440 900" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          {/* Top-right angular cut */}
-          <polygon points="1440,0 1000,0 1440,160" fill="#f1f5f9" />
-          {/* Bottom-left angular cut */}
-          <polygon points="0,900 0,760 280,900" fill="#f1f5f9" />
-          {/* Diagonal line */}
-          <line x1="140" y1="0" x2="1300" y2="900" stroke="#e2e8f0" strokeWidth="1.5" />
-          {/* Parallel thinner line */}
-          <line x1="200" y1="0" x2="1360" y2="900" stroke="#e2e8f0" strokeWidth="1" opacity="0.4" />
+          {/* Top-right corner triangle */}
+          <polygon points="1440,0 1200,0 1440,120" fill="#eef2f7" />
+          {/* Bottom-right corner mark */}
+          <polygon points="1440,900 1440,800 1380,900" fill="#eef2f7" />
+          {/* Right-edge vertical accent line */}
+          <line x1="1438" y1="140" x2="1438" y2="780" stroke="#e2e8f0" strokeWidth="2" />
+          {/* Top-edge horizontal accent */}
+          <line x1="0" y1="1" x2="500" y2="1" stroke="#e2e8f0" strokeWidth="2" />
         </svg>
         <div className="absolute bottom-0 left-0 right-0 h-px bg-slate-200" />
       </div>
