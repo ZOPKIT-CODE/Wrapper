@@ -30,7 +30,7 @@ export function LandingFooter() {
 
           {/* Product Column */}
           <div>
-            <h3 className="font-bold text-slate-900 mb-6 text-lg">Product</h3>
+            <h3 className="font-bold text-[#1B2E5A] mb-6 text-lg">Product</h3>
             <ul className="space-y-4">
               <FooterLink to="/products/affiliate-connect">Affiliate Connect</FooterLink>
               <FooterLink to="/products/b2b-crm">B2B CRM</FooterLink>
@@ -48,7 +48,7 @@ export function LandingFooter() {
 
           {/* Industries Column */}
           <div>
-            <h3 className="font-bold text-slate-900 mb-6 text-lg">Industries</h3>
+            <h3 className="font-bold text-[#1B2E5A] mb-6 text-lg">Industries</h3>
             <ul className="space-y-4">
               <FooterLink to="/industries/e-commerce">E-Commerce & Retail</FooterLink>
               <FooterLink to="/industries/saas">SaaS & Technology</FooterLink>
@@ -59,7 +59,7 @@ export function LandingFooter() {
 
           {/* Resources Column */}
           <div>
-            <h3 className="font-bold text-slate-900 mb-6 text-lg">Resources</h3>
+            <h3 className="font-bold text-[#1B2E5A] mb-6 text-lg">Resources</h3>
             <ul className="space-y-4">
               <FooterLink to="/blog">Blog</FooterLink>
               <FooterLink to="/case-studies">Case Studies</FooterLink>
@@ -73,7 +73,7 @@ export function LandingFooter() {
 
           {/* Contact Column */}
           <div>
-            <h3 className="font-bold text-slate-900 mb-6 text-lg">Contact</h3>
+            <h3 className="font-bold text-[#1B2E5A] mb-6 text-lg">Contact</h3>
             <ul className="space-y-4">
               <li className="flex items-start gap-3 text-slate-600">
                 <MapPin className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
@@ -90,12 +90,12 @@ export function LandingFooter() {
             </ul>
             
             <div className="mt-8">
-              <h4 className="font-semibold text-slate-900 mb-2">Subscribe to our newsletter</h4>
+              <h4 className="font-semibold text-[#1B2E5A] mb-2">Subscribe to our newsletter</h4>
               <div className="flex flex-col sm:flex-row gap-2">
                 <input 
                   type="email" 
                   placeholder="Enter your email" 
-                  className="bg-white border border-slate-300 text-slate-900 rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  className="bg-white border border-slate-300 text-[#1B2E5A] rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 />
                 <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
                   Go
