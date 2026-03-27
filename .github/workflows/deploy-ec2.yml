@@ -68,6 +68,21 @@ jobs:
         continue-on-error: true
         run: pnpm exec tsc --noEmit
 
+      - name: Unit tests (frontend)
+        working-directory: frontend
+        continue-on-error: true
+        run: pnpm test -- --run
+
+      - name: Lint backend
+        working-directory: backend
+        continue-on-error: true
+        run: pnpm lint || true
+
+      - name: Lint frontend
+        working-directory: frontend
+        continue-on-error: true
+        run: pnpm lint || true
+
   # ── 2. Build (frontend + backend compile) ─────────────────────────────────
   build:
     name: Build
