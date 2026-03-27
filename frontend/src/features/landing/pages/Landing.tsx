@@ -800,60 +800,53 @@ const Landing: React.FC = () => {
       </section>
 
       {/* Industries Section */}
-      <section id="industries" className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-slate-50" style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 900px' }}>
+      <section id="industries" className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6 lg:px-8 bg-white" style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 700px' }}>
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
-              Solutions by Industry
+          <div className="text-center mb-12 sm:mb-16">
+            <p className="text-sm font-semibold text-slate-400 tracking-wide mb-3">Industries</p>
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-[-0.025em]">
+              Built for how you work
             </h2>
-            <p className="text-xl text-slate-600 max-w-3xl mx-auto">
-              Every industry has unique challenges. Discover how our platform is tailored to your specific needs.
+            <p className="text-slate-500 text-base sm:text-lg max-w-lg mx-auto mt-4 leading-relaxed">
+              Tailored solutions for the unique challenges of your industry.
             </p>
           </div>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
             {getAllIndustries().map((industry) => {
-              // Map industry slugs to icon names and gradients
-              const industryConfig: Record<string, { icon: string; gradient: string }> = {
-                'e-commerce': { icon: 'ShoppingCart', gradient: 'from-orange-500 to-amber-600' },
-                'saas': { icon: 'Briefcase', gradient: 'from-blue-500 to-indigo-600' },
-                'manufacturing': { icon: 'Box', gradient: 'from-slate-600 to-slate-800' },
-                'professional-services': { icon: 'Users', gradient: 'from-purple-500 to-pink-600' }
+              const iconMap: Record<string, string> = {
+                'e-commerce': 'ShoppingCart',
+                'saas': 'Briefcase',
+                'manufacturing': 'Box',
+                'professional-services': 'Users',
               };
-              
-              const config = industryConfig[industry.slug] || { icon: 'Building2', gradient: 'from-slate-500 to-slate-700' };
               const topStats = industry.hero.stats.slice(0, 2);
-              
+
               return (
                 <div
                   key={industry.slug}
-                  className="bg-white rounded-2xl border border-slate-200 shadow-lg hover:shadow-xl hover:-translate-y-2 hover:scale-[1.02] transition-all duration-300 overflow-hidden group cursor-pointer"
+                  className="group cursor-pointer rounded-2xl border border-slate-200 bg-white hover:border-slate-300 p-6 transition-all duration-200 hover:shadow-lg"
                   onClick={() => navigate({ to: `/industries/${industry.slug}` })}
                 >
-                  <div className={`h-2 bg-gradient-to-r ${config.gradient}`} />
-                  <div className="p-6">
-                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${config.gradient} flex items-center justify-center mb-4 text-white`}>
-                      <DynamicIcon name={config.icon} className="w-6 h-6" />
-                    </div>
-                    <h3 className="text-xl font-bold text-slate-900 mb-2 group-hover:text-blue-600 transition-colors">
-                      {industry.name}
-                    </h3>
-                    <p className="text-slate-600 mb-4 text-sm leading-relaxed">
-                      {industry.hero.subheadline}
-                    </p>
-                    <div className="space-y-2 mb-4">
-                      {topStats.map((stat, i) => (
-                        <div key={i} className="flex items-center gap-2 text-sm text-slate-600">
-                          <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                          {stat.label}: {stat.value}
-                        </div>
-                      ))}
-                    </div>
-                    <button className="w-full mt-4 px-4 py-2.5 bg-slate-50 hover:bg-blue-50 text-slate-700 hover:text-blue-600 rounded-lg font-semibold text-sm transition-all flex items-center justify-center gap-2 group-hover:bg-blue-50 group-hover:text-blue-600">
-                      Explore Solution
-                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                    </button>
+                  <div className="w-10 h-10 rounded-xl bg-slate-100 group-hover:bg-slate-900 flex items-center justify-center mb-5 transition-colors duration-200">
+                    <DynamicIcon name={iconMap[industry.slug] ?? 'Building2'} className="w-5 h-5 text-slate-600 group-hover:text-white transition-colors duration-200" />
                   </div>
+                  <h3 className="text-base font-bold text-slate-900 mb-1.5 tracking-tight">
+                    {industry.name}
+                  </h3>
+                  <p className="text-slate-500 text-sm leading-relaxed mb-4">
+                    {industry.hero.subheadline}
+                  </p>
+                  <div className="space-y-1.5 mb-5">
+                    {topStats.map((stat, i) => (
+                      <p key={i} className="text-xs text-slate-500">
+                        <span className="font-semibold text-slate-900">{stat.value}</span> {stat.label}
+                      </p>
+                    ))}
+                  </div>
+                  <span className="text-sm font-semibold text-slate-400 group-hover:text-slate-900 transition-colors inline-flex items-center gap-1">
+                    Learn more <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                  </span>
                 </div>
               );
             })}
