@@ -143,7 +143,7 @@ export function InviteAccept() {
     }
   }, [isAuthenticated, user, token])
 
-  // Store invitation context in localStorage to preserve it during authentication
+  // Store invitation context in sessionStorage to preserve it during authentication
   useEffect(() => {
     if (token) {
       sessionStorage.setItem('pendingInvitationToken', token)
@@ -199,7 +199,7 @@ export function InviteAccept() {
 
         if (response.data.success) {
           toast.success(`Welcome to ${invitation.organizationName}!`)
-          localStorage.removeItem('pendingInvitationToken')
+          sessionStorage.removeItem('pendingInvitationToken')
           // Invalidate and refetch auth/onboarding so dashboard sees updated status (avoids redirect to onboarding)
           invalidateAuthStatus()
           invalidateOnboardingStatus()
@@ -230,7 +230,7 @@ export function InviteAccept() {
 
         if (response.data.success) {
           toast.success(`Welcome to ${invitation.organizationName}!`)
-          localStorage.removeItem('pendingInvitationToken')
+          sessionStorage.removeItem('pendingInvitationToken')
           invalidateAuthStatus()
           invalidateOnboardingStatus()
           await queryClient.refetchQueries({ queryKey: queryKeys.authStatus })
