@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, Suspense } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { OrganizationHierarchyFlow } from '@/features/organizations/components/OrganizationHierarchyFlow'
+const OrganizationHierarchyFlow = React.lazy(() => import('@/features/organizations/components/OrganizationHierarchyFlow').then(m => ({ default: m.OrganizationHierarchyFlow })))
 import { EditResponsiblePersonModal } from './modals/EditResponsiblePersonModal'
 import { Application } from '@/hooks/useDashboardData'
 import { useTenantApplications } from '@/hooks/useSharedQueries'
@@ -1833,6 +1833,7 @@ export function OrganizationTreeManagement({
           </div>
           <div className="flex-1 min-h-0 overflow-hidden relative" style={{ minHeight: '400px' }}>
             <div className="absolute inset-0 w-full h-full">
+              <Suspense fallback={<div className="flex items-center justify-center p-8"><span>Loading hierarchy...</span></div>}>
               <OrganizationHierarchyFlow
               hierarchy={hierarchy ? { ...hierarchy, hierarchy: processedHierarchy } : null}
               loading={loading}
@@ -1887,6 +1888,7 @@ export function OrganizationTreeManagement({
                 }
               }}
             />
+              </Suspense>
             </div>
           </div>
         </div>
