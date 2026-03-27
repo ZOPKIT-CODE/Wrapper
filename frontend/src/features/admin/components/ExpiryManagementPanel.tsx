@@ -24,7 +24,7 @@ const ExpiryManagementPanel: React.FC<ExpiryManagementPanelProps> = ({ onRefresh
   const handleSendExpiryWarnings = async (daysAhead: number) => {
     setSendingWarnings(true);
     try {
-      const response = await api.post('/admin/seasonal-credits/send-warnings', {
+      const response = await api.post('/admin/seasonal-credits/warnings', {
         daysAhead
       });
 
