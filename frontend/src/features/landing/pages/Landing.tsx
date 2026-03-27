@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from '@tanstack/react-router'
 import { useKindeAuth } from '@kinde-oss/kinde-auth-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { DynamicIcon } from '@/features/landing/components/Icons'
-import { ArrowRight, Play, ChevronRight, FileText, GraduationCap, Users, Zap, Mail, Phone, MapPin, Menu, X, LayoutDashboard, Rocket, Shield, Clock, Globe, Workflow, CheckCircle2 } from 'lucide-react'
+import { ArrowRight, Play, ChevronRight, FileText, GraduationCap, Users, Zap, Mail, Phone, MapPin, Menu, X, LayoutDashboard, Rocket, Workflow } from 'lucide-react'
 import api, { createCancelableRequest } from '@/lib/api'
 import { Product } from '@/types'
 import toast from 'react-hot-toast'
@@ -59,7 +59,7 @@ const NAV_ITEMS = [
 ] as const;
 
 // Orbital ecosystem — positions computed via trig
-const ORBITAL_R = 42;
+const ORBITAL_R = 40;
 const ORBIT_APPS = [
   { id: 'b2b-crm',            label: 'CRM',        icon: 'Briefcase' },
   { id: 'finance',            label: 'Finance',     icon: 'Landmark' },
@@ -351,27 +351,33 @@ const Landing: React.FC = () => {
   return (
     <div className="min-h-screen bg-white text-slate-900 selection:bg-teal-100 selection:text-teal-900 font-sans overflow-x-clip relative">
 
-      {/* Stripe-style gradient mesh background */}
+      {/* Sharp SVG background — geometric accents */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
         <svg className="absolute w-full h-full" preserveAspectRatio="none" viewBox="0 0 1440 900" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          {/* Gradient wash */}
           <defs>
-            <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#e0f2fe" stopOpacity="0.5" />
-              <stop offset="50%" stopColor="#ffffff" stopOpacity="0" />
-              <stop offset="100%" stopColor="#f0fdf4" stopOpacity="0.4" />
-            </linearGradient>
-            <linearGradient id="g2" x1="100%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#faf5ff" stopOpacity="0.3" />
-              <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+            <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#f8fafc" />
+              <stop offset="100%" stopColor="#f1f5f9" />
             </linearGradient>
           </defs>
-          <rect width="1440" height="900" fill="url(#g1)" />
-          <rect width="1440" height="900" fill="url(#g2)" />
-          {/* Diagonal stripe accents — Stripe-style */}
-          <line x1="400" y1="0" x2="900" y2="900" stroke="#e2e8f0" strokeWidth="1" opacity="0.4" />
-          <line x1="600" y1="0" x2="1100" y2="900" stroke="#e2e8f0" strokeWidth="1" opacity="0.25" />
-          <line x1="800" y1="0" x2="1300" y2="900" stroke="#e2e8f0" strokeWidth="1" opacity="0.15" />
-          <line x1="200" y1="0" x2="700" y2="900" stroke="#e2e8f0" strokeWidth="1" opacity="0.15" />
+          <rect width="1440" height="900" fill="url(#bgGrad)" />
+
+          {/* Sharp geometric shapes */}
+          {/* Large chevron — top right */}
+          <path d="M1200 0 L1440 0 L1440 200 L1280 120 Z" fill="#e2e8f0" opacity="0.3" />
+          {/* Triangle — bottom left */}
+          <path d="M0 700 L0 900 L180 900 Z" fill="#e2e8f0" opacity="0.25" />
+          {/* Diamond — center right */}
+          <path d="M1380 400 L1440 360 L1440 440 Z" fill="#cbd5e1" opacity="0.15" />
+          {/* Thin angled line */}
+          <line x1="300" y1="0" x2="1000" y2="900" stroke="#cbd5e1" strokeWidth="1" opacity="0.12" />
+          <line x1="500" y1="0" x2="1200" y2="900" stroke="#cbd5e1" strokeWidth="1" opacity="0.08" />
+          {/* Small square accent — top left */}
+          <rect x="60" y="80" width="40" height="40" rx="4" fill="none" stroke="#cbd5e1" strokeWidth="1" opacity="0.2" />
+          {/* Dotted horizontal line */}
+          <line x1="0" y1="450" x2="200" y2="450" stroke="#cbd5e1" strokeWidth="1" strokeDasharray="4 6" opacity="0.2" />
+          <line x1="1240" y1="600" x2="1440" y2="600" stroke="#cbd5e1" strokeWidth="1" strokeDasharray="4 6" opacity="0.15" />
         </svg>
       </div>
 
@@ -582,28 +588,6 @@ const Landing: React.FC = () => {
               </button>
             </motion.div>
 
-            {/* Social proof bar */}
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4, delay: 0.25 }} className="flex items-center gap-6 mt-8 pt-6 border-t border-slate-100">
-              <div>
-                <div className="text-xl font-extrabold text-slate-900 tracking-tight">500+</div>
-                <div className="text-[11px] text-slate-400 font-medium mt-0.5">Companies</div>
-              </div>
-              <div className="w-px h-8 bg-slate-200" />
-              <div>
-                <div className="text-xl font-extrabold text-slate-900 tracking-tight">99.9%</div>
-                <div className="text-[11px] text-slate-400 font-medium mt-0.5">Uptime SLA</div>
-              </div>
-              <div className="w-px h-8 bg-slate-200" />
-              <div>
-                <div className="text-xl font-extrabold text-slate-900 tracking-tight">11</div>
-                <div className="text-[11px] text-slate-400 font-medium mt-0.5">Products</div>
-              </div>
-              <div className="w-px h-8 bg-slate-200 hidden sm:block" />
-              <div className="hidden sm:flex items-center gap-3 text-[11px] text-slate-400 font-medium">
-                <span className="inline-flex items-center gap-1"><Shield className="w-3.5 h-3.5" />SOC 2</span>
-                <span className="inline-flex items-center gap-1"><Globe className="w-3.5 h-3.5" />GDPR</span>
-              </div>
-            </motion.div>
 
             {/* Active product detail card */}
             <div className="mt-8">
@@ -688,20 +672,17 @@ const Landing: React.FC = () => {
                 );
               })}
 
-              {/* Dependency flow paths */}
-              {DEPENDENCIES.map(([from, to, label], i) => {
+              {/* Dependency flow paths — no text labels to avoid overlap */}
+              {DEPENDENCIES.map(([from, to], i) => {
                 const fromApp = ORBIT_APPS[from];
                 const toApp = ORBIT_APPS[to];
                 const isActive = activeProduct.id === fromApp.id || activeProduct.id === toApp.id;
                 if (!isActive) return null;
                 const d = depPath(from, to);
-                const mx = (fromApp.x + toApp.x) / 2 + (50 - (fromApp.x + toApp.x) / 2) * 0.3;
-                const my = (fromApp.y + toApp.y) / 2 + (50 - (fromApp.y + toApp.y) / 2) * 0.3;
                 return (
                   <g key={`dep-${i}`}>
-                    <path d={d} fill="none" stroke="#0f172a" strokeWidth="0.7" strokeLinecap="round" opacity="0.06" />
-                    <path d={d} fill="none" stroke="#0f172a" strokeWidth="0.35" strokeDasharray="2.5 2.5" strokeLinecap="round" className="dep-flow" />
-                    <text x={mx} y={my - 1.8} textAnchor="middle" fill="#94a3b8" fontSize="2.2" fontWeight="600" fontFamily="system-ui, sans-serif" letterSpacing="0.02em">{label}</text>
+                    <path d={d} fill="none" stroke="#0f172a" strokeWidth="0.6" strokeLinecap="round" opacity="0.06" />
+                    <path d={d} fill="none" stroke="#0f172a" strokeWidth="0.3" strokeDasharray="2 2.5" strokeLinecap="round" className="dep-flow" />
                   </g>
                 );
               })}
