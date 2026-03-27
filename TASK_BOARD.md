@@ -1,6 +1,6 @@
 # TASK BOARD - WrapperStandalone
 
-> Shared coordination hub for all agents. Updated: 2026-03-27 (rev 5 — S1-S8 + L1 + L3 + H5-H9 + M2 + M3 + M6 + M9 fixed)
+> Shared coordination hub for all agents. Updated: 2026-03-27 (rev 6 — S1-S8 + L1 + L3 + H5-H10 + M2-M7 + M9 fixed)
 > Monorepo: `wrapper-backend` (Fastify 4 + Drizzle + Kinde) + `wrapper-frontend` (React 19 + Vite 7 + TanStack)
 
 ---
@@ -33,7 +33,7 @@
 | H7 | **3 numbered duplicate files** | `frontend/src/features/organizations/components/` | `index 2.ts`, `OrganizationUserManagement 2.tsx`, `OrganizationTreeManagement 2.tsx` | FIXED `096c6d9` PR#8 |
 | H8 | **No DB transactions on multi-step writes** | Multiple backend services | Credit allocation, user deletion not atomic | FIXED `b617e2a` PR#12 |
 | H9 | **No webhook idempotency checks** | Stripe webhook handlers | Duplicate event processing possible | FIXED `c9174e1` PR#9 |
-| H10 | **No circuit breaker for external services** | Stripe/Kinde/Brevo/MQ calls | Cascading failures possible | OPEN |
+| H10 | **No circuit breaker for external services** | Stripe/Kinde/Brevo/MQ calls | Cascading failures possible | FIXED `97ea6f8` PR#16 |
 
 ---
 
@@ -44,10 +44,10 @@
 | M1 | **29 components over 200 LOC** | Frontend | Top: OrganizationManagement (1990), AccountSettings (1645), IndustryPage (1234) | OPEN |
 | M2 | **No frontend tests in CI** | `.github/workflows/` | Tests exist but not in pipeline | FIXED `958a052` PR#15 |
 | M3 | **No linting in CI** | `.github/workflows/` | Lint not enforced | FIXED `958a052` PR#15 |
-| M4 | **No security/dependency scanning** | CI pipeline | No Snyk/Dependabot/npm audit | OPEN |
-| M5 | **Integration tests advisory only** | CI pipeline | Don't block deploy (`continue-on-error: true`) | OPEN |
+| M4 | **No security/dependency scanning** | CI pipeline | No Snyk/Dependabot/npm audit | FIXED `e265c21` PR#17 |
+| M5 | **Integration tests advisory only** | CI pipeline | Don't block deploy (`continue-on-error: true`) | FIXED `e265c21` PR#17 |
 | M6 | **Amazon MQ reconnect fixed 5s delay** | `features/messaging/` | Should use exponential backoff | FIXED `b617e2a` PR#12 |
-| M7 | **ReactFlow not lazy-loaded** | Frontend bundle | 120KB loaded even if unused | OPEN |
+| M7 | **ReactFlow not lazy-loaded** | Frontend bundle | 120KB loaded even if unused | FIXED `97ea6f8` PR#16 |
 | M8 | **No list virtualization** | User lists, audit logs | Performance at scale (100+ items) | OPEN |
 | M9 | **Graceful shutdown incomplete** | `backend/src/app-fastify.ts` | Amazon MQ + WebSocket not flushed — events lost | FIXED `e4660a0` PR#13 |
 | M10 | **Commit convention compliance 25%** | Git history | 15/20 recent commits missing `type:` prefix | OPEN |
@@ -256,6 +256,10 @@ All captured requests were `GET /api/notifications?` — likely a frontend polli
 - [x] L3: Winston logger identity fixed — `f11e8ee` PR#14
 - [x] M2: Frontend tests added to CI — `958a052` PR#15
 - [x] M3: Linting added to CI — `958a052` PR#15
+- [x] M7: ReactFlow lazy-loaded — `97ea6f8` PR#16
+- [x] H10: Circuit breaker for MQ publisher — `97ea6f8` PR#16
+- [x] M4: Security/dependency scanning in CI — `e265c21` PR#17
+- [x] M5: Integration tests block deploy — `e265c21` PR#17
 
 ---
 
