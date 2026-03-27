@@ -76,15 +76,15 @@ export function LandingFooter() {
             <h3 className="font-bold text-[#1B2E5A] mb-6 text-lg">Contact</h3>
             <ul className="space-y-4">
               <li className="flex items-start gap-3 text-slate-600">
-                <MapPin className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+                <MapPin className="w-5 h-5 text-[#1B2E5A] shrink-0 mt-0.5" />
                 <span>Hi-Tech City, Hyderabad</span>
               </li>
               <li className="flex items-center gap-3 text-slate-600">
-                <Phone className="w-5 h-5 text-blue-600 shrink-0" />
+                <Phone className="w-5 h-5 text-[#1B2E5A] shrink-0" />
                 <span>8971055515</span>
               </li>
               <li className="flex items-center gap-3 text-slate-600">
-                <Mail className="w-5 h-5 text-blue-600 shrink-0" />
+                <Mail className="w-5 h-5 text-[#1B2E5A] shrink-0" />
                 <span>sales@zopkit.com</span>
               </li>
             </ul>
@@ -95,9 +95,9 @@ export function LandingFooter() {
                 <input 
                   type="email" 
                   placeholder="Enter your email" 
-                  className="bg-white border border-slate-300 text-[#1B2E5A] rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  className="bg-white border border-slate-300 text-[#1B2E5A] rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-[#1B2E5A]/20 focus:border-[#1B2E5A]/40 transition-all"
                 />
-                <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                <button className="bg-[#1B2E5A] hover:bg-[#243B6E] text-white px-4 py-2 rounded-lg font-medium transition-colors">
                   Go
                 </button>
               </div>
@@ -110,10 +110,10 @@ export function LandingFooter() {
             © {new Date().getFullYear()} Zopkit Inc. All rights reserved.
           </p>
           <div className="flex flex-wrap gap-6 text-sm text-slate-500">
-            <Link to="/privacy" className="hover:text-blue-600 transition-colors">Privacy Policy</Link>
-            <Link to="/terms" className="hover:text-blue-600 transition-colors">Terms of Service</Link>
-            <Link to="/cookies" className="hover:text-blue-600 transition-colors">Cookie Policy</Link>
-            <Link to="/security" className="hover:text-blue-600 transition-colors">Security</Link>
+            <Link to="/privacy" className="hover:text-[#1B2E5A] transition-colors">Privacy Policy</Link>
+            <Link to="/terms" className="hover:text-[#1B2E5A] transition-colors">Terms of Service</Link>
+            <Link to="/cookies" className="hover:text-[#1B2E5A] transition-colors">Cookie Policy</Link>
+            <Link to="/security" className="hover:text-[#1B2E5A] transition-colors">Security</Link>
           </div>
         </div>
       </div>
@@ -127,7 +127,7 @@ function SocialLink({ href, icon, label, target, rel }: { href: string; icon: Re
       href={href}
       target={target}
       rel={rel}
-      className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all duration-300 shadow-sm hover:shadow"
+      className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-[#1B2E5A]/5 hover:text-[#1B2E5A] hover:border-[#1B2E5A]/20 transition-all duration-300 shadow-sm hover:shadow"
       aria-label={label}
     >
       {icon}
@@ -140,9 +140,9 @@ function FooterLink({ to, children }: { to: string; children: React.ReactNode })
     <li>
       <Link 
         to={to} 
-        className="text-slate-600 hover:text-blue-600 transition-colors flex items-center gap-1 group"
+        className="text-slate-600 hover:text-[#1B2E5A] transition-colors flex items-center gap-1 group"
       >
-        <span className="w-1 h-1 rounded-full bg-slate-300 group-hover:bg-blue-600 transition-colors mr-2"></span>
+        <span className="w-1 h-1 rounded-full bg-slate-300 group-hover:bg-[#1B2E5A] transition-colors mr-2"></span>
         {children}
       </Link>
     </li>
