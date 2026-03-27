@@ -146,24 +146,24 @@ export function InviteAccept() {
   // Store invitation context in localStorage to preserve it during authentication
   useEffect(() => {
     if (token) {
-      localStorage.setItem('pendingInvitationToken', token)
-      logger.debug('💾 Stored invitation token in localStorage:', token)
+      sessionStorage.setItem('pendingInvitationToken', token)
+      logger.debug('💾 Stored invitation token in sessionStorage:', token)
     }
-    
+
     // Cleanup on unmount
     return () => {
       if (token) {
-        localStorage.removeItem('pendingInvitationToken')
-        logger.debug('🧹 Cleaned up invitation token from localStorage')
+        sessionStorage.removeItem('pendingInvitationToken')
+        logger.debug('🧹 Cleaned up invitation token from sessionStorage')
       }
     }
   }, [token])
 
   // Check for pending invitation on mount
   useEffect(() => {
-    const pendingToken = localStorage.getItem('pendingInvitationToken')
+    const pendingToken = sessionStorage.getItem('pendingInvitationToken')
     if (pendingToken && !token) {
-      logger.debug('🔄 Found pending invitation token in localStorage:', pendingToken)
+      logger.debug('🔄 Found pending invitation token in sessionStorage:', pendingToken)
       // Redirect back to invitation acceptance with the stored token
       navigate({ to: `/invite/accept?token=${pendingToken}`, replace: true })
     }
