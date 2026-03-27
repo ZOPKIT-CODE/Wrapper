@@ -37,7 +37,7 @@ export const config: Config = {
   JWT_SECRET: getEnvVar('VITE_JWT_SECRET', 'your-super-secret-jwt-key-change-this-in-production'),
   NODE_ENV: getEnvVar('NODE_ENV', 'development'),
 
-  API_URL: getEnvVar('VITE_API_URL', 'http://localhost:3000/api'),
+  API_URL: getEnvVar('VITE_API_URL', 'http://localhost:3000/api/v1'),
   API_BASE_URL: getEnvVar('VITE_API_BASE_URL', 'http://localhost:3000'),
   WRAPPER_DOMAIN: getEnvVar('VITE_WRAPPER_DOMAIN', 'https://wrapper.zopkit.com'),
 
