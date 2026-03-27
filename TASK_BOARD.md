@@ -1,6 +1,6 @@
 # TASK BOARD - WrapperStandalone
 
-> Shared coordination hub for all agents. Updated: 2026-03-27 (rev 3 — S1-S8 + L1 fixed)
+> Shared coordination hub for all agents. Updated: 2026-03-27 (rev 4 — S1-S8 + L1 + H5-H9 + M6 fixed)
 > Monorepo: `wrapper-backend` (Fastify 4 + Drizzle + Kinde) + `wrapper-frontend` (React 19 + Vite 7 + TanStack)
 
 ---
@@ -28,11 +28,11 @@
 | H2 | **`invitations.ts` god file** | `backend/src/features/*/invitations.ts` | 2766 LOC — split routes/services | OPEN |
 | H3 | **`permission-service.ts` bloat** | `backend/src/features/roles/services/` | 1957 LOC, multiple responsibilities | OPEN |
 | H4 | **729 `any` types in frontend** | `frontend/src/` (163 files) | Top: `OrganizationManagement.tsx` (71), `AdminDetailsStep.tsx` (12) | OPEN |
-| H5 | **React Router + TanStack Router conflict** | `frontend/src/routes/AppRoutes.tsx` | Uses `react-router-dom` while rest uses `@tanstack/react-router` | OPEN |
-| H6 | **Duplicate auth stores** | `frontend/src/stores/auth.store.ts` vs `authStore.ts` | Two files (818B vs 2520B), potential state conflicts | OPEN |
-| H7 | **3 numbered duplicate files** | `frontend/src/features/organizations/components/` | `index 2.ts`, `OrganizationUserManagement 2.tsx`, `OrganizationTreeManagement 2.tsx` | OPEN |
-| H8 | **No DB transactions on multi-step writes** | Multiple backend services | Credit allocation, user deletion not atomic | OPEN |
-| H9 | **No webhook idempotency checks** | Stripe webhook handlers | Duplicate event processing possible | OPEN |
+| H5 | **React Router + TanStack Router conflict** | `frontend/src/routes/AppRoutes.tsx` | Uses `react-router-dom` while rest uses `@tanstack/react-router` | FIXED `a9a561d` PR#11 |
+| H6 | **Duplicate auth stores** | `frontend/src/stores/auth.store.ts` vs `authStore.ts` | Two files (818B vs 2520B), potential state conflicts | FIXED `c9174e1` PR#9 |
+| H7 | **3 numbered duplicate files** | `frontend/src/features/organizations/components/` | `index 2.ts`, `OrganizationUserManagement 2.tsx`, `OrganizationTreeManagement 2.tsx` | FIXED `096c6d9` PR#8 |
+| H8 | **No DB transactions on multi-step writes** | Multiple backend services | Credit allocation, user deletion not atomic | FIXED `b617e2a` PR#12 |
+| H9 | **No webhook idempotency checks** | Stripe webhook handlers | Duplicate event processing possible | FIXED `c9174e1` PR#9 |
 | H10 | **No circuit breaker for external services** | Stripe/Kinde/Brevo/MQ calls | Cascading failures possible | OPEN |
 
 ---
@@ -46,7 +46,7 @@
 | M3 | **No linting in CI** | `.github/workflows/` | Lint not enforced | OPEN |
 | M4 | **No security/dependency scanning** | CI pipeline | No Snyk/Dependabot/npm audit | OPEN |
 | M5 | **Integration tests advisory only** | CI pipeline | Don't block deploy (`continue-on-error: true`) | OPEN |
-| M6 | **Amazon MQ reconnect fixed 5s delay** | `features/messaging/` | Should use exponential backoff | OPEN |
+| M6 | **Amazon MQ reconnect fixed 5s delay** | `features/messaging/` | Should use exponential backoff | FIXED `b617e2a` PR#12 |
 | M7 | **ReactFlow not lazy-loaded** | Frontend bundle | 120KB loaded even if unused | OPEN |
 | M8 | **No list virtualization** | User lists, audit logs | Performance at scale (100+ items) | OPEN |
 | M9 | **Graceful shutdown incomplete** | `backend/src/app-fastify.ts` | Amazon MQ + WebSocket not flushed — events lost | OPEN |
@@ -246,6 +246,12 @@ All captured requests were `GET /api/notifications?` — likely a frontend polli
 - [x] S6: localStorage → sessionStorage for invitation tokens — `28cbd7c` PR#6
 - [x] S7: CORS tightened to explicit subdomain allowlist — `28cbd7c` PR#6
 - [x] S8: Auth endpoints rate limited to 50 req/15min — `28cbd7c` PR#6
+- [x] H7: 3 numbered duplicate files removed — `096c6d9` PR#8
+- [x] H6: Duplicate auth stores consolidated — `c9174e1` PR#9
+- [x] H9: Webhook idempotency checks added — `c9174e1` PR#9
+- [x] H5: Dead AppRoutes.tsx (react-router-dom) removed — `a9a561d` PR#11
+- [x] H8: Credit purchase wrapped in DB transaction — `b617e2a` PR#12
+- [x] M6: Amazon MQ exponential backoff reconnect — `b617e2a` PR#12
 
 ---
 
