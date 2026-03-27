@@ -56,7 +56,7 @@ const NAV_ITEMS = [
 ] as const;
 
 // Orbital ecosystem — clockwise from B2B CRM at top
-const ORBITAL_R = 40;
+const ORBITAL_R = 36;
 const ORBIT_APPS = [
   { id: 'b2b-crm',            label: 'B2B CRM',     icon: 'Briefcase' },
   { id: 'b2c-crm',            label: 'B2C CRM',     icon: 'ShoppingCart' },
@@ -653,8 +653,10 @@ const Landing: React.FC = () => {
             initial={{ opacity: 0, scale: 0.97 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5, delay: 0.06 }}
-            className="lg:col-span-5 relative aspect-square w-full max-w-[360px] sm:max-w-[420px] lg:max-w-none mx-auto lg:mx-0 order-2 lg:order-2"
+            className="lg:col-span-5 order-2 lg:order-2 mx-auto lg:mx-0 w-full"
           >
+            {/* Orbital inner — aspect-square with overflow visible for node labels */}
+            <div className="relative aspect-square w-full max-w-[300px] sm:max-w-[380px] lg:max-w-none mx-auto overflow-visible">
             <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" aria-hidden="true">
               <defs>
                 <style>{`
@@ -751,6 +753,7 @@ const Landing: React.FC = () => {
                 </button>
               );
             })}
+            </div>
           </motion.div>
         </div>
 
