@@ -369,9 +369,19 @@ const Landing: React.FC = () => {
   return (
     <div className="min-h-screen bg-white text-slate-900 selection:bg-teal-100 selection:text-teal-900 font-sans overflow-x-clip relative">
 
-      {/* Background — pure white, no decoration */}
-      <div className="absolute inset-0 z-0 pointer-events-none">
+      {/* Background */}
+      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
         <div className="absolute inset-0 bg-[#fafafa]" />
+        <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          {/* Top-right angular cut */}
+          <polygon points="100%,0 70%,0 100%,18%" fill="#f1f5f9" />
+          {/* Bottom-left angular cut */}
+          <polygon points="0,100% 0,85% 20%,100%" fill="#f1f5f9" />
+          {/* Diagonal line — top-left to bottom-right */}
+          <line x1="10%" y1="0" x2="90%" y2="100%" stroke="#e2e8f0" strokeWidth="1" />
+          {/* Parallel thinner line */}
+          <line x1="14%" y1="0" x2="94%" y2="100%" stroke="#e2e8f0" strokeWidth="0.5" opacity="0.5" />
+        </svg>
         <div className="absolute bottom-0 left-0 right-0 h-px bg-slate-200" />
       </div>
 
