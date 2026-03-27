@@ -6,7 +6,8 @@ import {
   payments,
   tenants,
   entities,
-  tenantUsers
+  tenantUsers,
+  eventTracking
 } from '../../../db/schema/index.js';
 import { EmailService } from '../../../utils/email.js';
 import { v4 as uuidv4 } from 'uuid';
@@ -90,6 +91,21 @@ export async function handleWebhook(
 
     console.log('🎣 Webhook received:', event.type, '(provider:', event.provider + ')');
 
+    // Idempotency check — skip already-processed events
+    try {
+      const [existing] = await db
+        .select({ id: eventTracking.id })
+        .from(eventTracking)
+        .where(eq(eventTracking.eventId, event.id))
+        .limit(1);
+      if (existing) {
+        console.log('⏭️ Skipping already-processed webhook event:', event.id);
+        return { processed: true, eventType: event.type, duplicate: true };
+      }
+    } catch (dedupeErr) {
+      console.warn('⚠️ Idempotency check failed, proceeding with processing:', (dedupeErr as Error).message);
+    }
+
     const eventObj = event.data;
 
     switch (event.type) {
@@ -141,6 +157,22 @@ export async function handleWebhook(
 
       default:
         console.log(`⚠️ Unhandled webhook event type: ${event.type}`);
+    }
+
+    // Record processed event for idempotency
+    try {
+      await db.insert(eventTracking).values({
+        eventId: event.id,
+        eventType: event.type,
+        tenantId: 'system',
+        streamKey: 'stripe-subscription-webhook',
+        sourceApplication: 'stripe',
+        targetApplication: 'wrapper-backend',
+        eventData: event.data,
+        status: 'processed',
+      });
+    } catch (trackErr) {
+      console.warn('⚠️ Failed to record webhook event:', (trackErr as Error).message);
     }
 
     return { processed: true, eventType: event.type, provider: event.provider };
