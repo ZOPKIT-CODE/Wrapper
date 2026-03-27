@@ -109,7 +109,7 @@ export function SubscriptionTab({
                 <Crown className="h-7 w-7" />
               </div>
               <div>
-                <CardTitle className="text-xl font-bold tracking-tight text-slate-900">
+                <CardTitle className="text-xl font-bold tracking-tight text-[#1B2E5A]">
                   {getPlanDisplayName(planId)} Plan
                 </CardTitle>
                 <CardDescription className="flex items-center gap-2 text-slate-500 mt-1">
@@ -157,7 +157,7 @@ export function SubscriptionTab({
                 <Button
                   onClick={() => setActiveTab('plans')}
                   size="sm"
-                  className="bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20 rounded-full px-6 transition-all hover:scale-105"
+                  className="bg-[#1B2E5A] hover:bg-[#152449] text-white shadow-md shadow-blue-500/20 rounded-full px-6 transition-all hover:scale-105"
                   data-tour-feature="upgrade-plans"
                 >
                   Upgrade Now <ArrowRight className="w-4 h-4 ml-1" />
@@ -196,7 +196,7 @@ export function SubscriptionTab({
                     <TrendingUp className="w-5 h-5 text-indigo-500" />
                   </div>
                   <div>
-                    <CardTitle className="text-base font-bold text-slate-900">Subscription Details</CardTitle>
+                    <CardTitle className="text-base font-bold text-[#1B2E5A]">Subscription Details</CardTitle>
                     <CardDescription className="text-xs">Your plan configuration</CardDescription>
                   </div>
                 </div>
@@ -257,7 +257,7 @@ export function SubscriptionTab({
                     </div>
                     <div>
                       <div className="text-xs font-medium text-slate-500">Lifetime Credits</div>
-                      <div className="text-lg font-bold text-slate-900">{totalCredits.toLocaleString()}</div>
+                      <div className="text-lg font-bold text-[#1B2E5A]">{totalCredits.toLocaleString()}</div>
                     </div>
                   </div>
                   <div className="rounded-2xl border border-slate-100 bg-white shadow-sm flex items-center p-3 gap-3">
@@ -266,7 +266,7 @@ export function SubscriptionTab({
                     </div>
                     <div>
                       <div className="text-xs font-medium text-slate-500">System Alerts</div>
-                      <div className="text-lg font-bold text-slate-900">{(displaySubscription.alerts ?? []).length} active</div>
+                      <div className="text-lg font-bold text-[#1B2E5A]">{(displaySubscription.alerts ?? []).length} active</div>
                     </div>
                   </div>
                 </div>

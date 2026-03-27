@@ -29,7 +29,7 @@ export function PlansTab({
       {/* Credit Top-ups */}
       <div className="space-y-8">
         <div className="text-center max-w-2xl mx-auto">
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+          <h2 className="text-3xl font-bold text-[#1B2E5A] dark:text-white mb-4">
             Credit Top-ups
           </h2>
           <p className="text-lg text-gray-600 dark:text-gray-400 leading-relaxed">
@@ -77,7 +77,7 @@ export function PlansTab({
       {/* Application Plans */}
       <div className="space-y-8" data-tour-feature="upgrade-plans">
         <div className="text-center max-w-2xl mx-auto">
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+          <h2 className="text-3xl font-bold text-[#1B2E5A] dark:text-white mb-4">
             Application Plans
           </h2>
           <p className="text-lg text-gray-600 dark:text-gray-400 leading-relaxed">

@@ -227,7 +227,7 @@ export const CreditConfigurationBuilder: React.FC<CreditConfigurationBuilderProp
                   />
 
                   <div className="flex-1">
-                          <h4 className="text-xl font-bold text-gray-900 flex items-center gap-3 mb-2">
+                          <h4 className="text-xl font-bold text-[#1B2E5A] flex items-center gap-3 mb-2">
                             <Package className="w-6 h-6 text-purple-600" />
                             {app.appName}
                             {mode === 'tenant' && (() => {

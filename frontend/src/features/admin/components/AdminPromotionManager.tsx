@@ -205,7 +205,7 @@ export const AdminPromotionManager: React.FC = () => {
         <div className="flex items-center gap-3 mb-4">
           <Crown className="w-8 h-8 text-yellow-600" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">System Administrator Management</h1>
+            <h1 className="text-2xl font-bold text-[#1B2E5A]">System Administrator Management</h1>
             <p className="text-gray-600">Manage the single System Administrator role for your organization</p>
           </div>
         </div>
@@ -381,7 +381,7 @@ export const AdminPromotionManager: React.FC = () => {
             <div className="space-y-6">
               {/* Promotion Impact */}
               <div className="space-y-4">
-                <h3 className="font-semibold text-gray-900">Promotion Impact</h3>
+                <h3 className="font-semibold text-[#1B2E5A]">Promotion Impact</h3>
                 
                 {/* New Admin */}
                 <div className="flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-lg">

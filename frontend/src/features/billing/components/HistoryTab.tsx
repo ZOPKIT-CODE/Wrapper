@@ -74,7 +74,7 @@ export function HistoryTab({
             <PaymentHistoryIcon className="w-6 h-6" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Payment History</h3>
+            <h3 className="text-lg font-bold text-[#1B2E5A] dark:text-white">Payment History</h3>
           </div>
         </div>
       </div>
@@ -91,7 +91,7 @@ export function HistoryTab({
           <div className="p-4 bg-gray-100 dark:bg-gray-700 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
             <ReceiptIcon className="h-8 w-8 text-gray-400" />
           </div>
-          <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+          <h4 className="text-lg font-semibold text-[#1B2E5A] dark:text-white mb-2">
             No payment history yet
           </h4>
           <p className="text-gray-600 dark:text-gray-400">
@@ -134,7 +134,7 @@ export function HistoryTab({
 
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
-                          <h4 className="font-semibold text-gray-900 dark:text-white text-lg">
+                          <h4 className="font-semibold text-[#1B2E5A] dark:text-white text-lg">
                             {isPlanUpgrade
                               ? payment.planDisplayName
                                 ? `Plan: ${payment.planDisplayName}`
@@ -417,7 +417,7 @@ export function HistoryTab({
                     <X className="h-5 w-5 text-red-600 dark:text-red-400" />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-white">
+                    <h4 className="font-semibold text-[#1B2E5A] dark:text-white">
                       Cancel Subscription
                     </h4>
                     <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">

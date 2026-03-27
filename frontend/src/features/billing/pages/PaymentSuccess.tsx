@@ -506,7 +506,7 @@ const PaymentSuccess: React.FC = () => {
             </motion.div>
 
             <motion.h2
-              className="text-xl font-black text-slate-900 mb-2 tracking-tight"
+              className="text-xl font-black text-[#1B2E5A] mb-2 tracking-tight"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.6 }}
@@ -591,7 +591,7 @@ const PaymentSuccess: React.FC = () => {
                   <CardHeader className="p-4 lg:p-5 pb-3 bg-gradient-to-br from-slate-50/80 to-white border-b border-slate-100 relative z-10">
                     <div className="flex items-center justify-between gap-4">
                       <div className="min-w-0">
-                        <CardTitle className="text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
+                        <CardTitle className="text-lg font-black text-[#1B2E5A] tracking-tight flex items-center gap-2">
                           <motion.div
                             className="p-1.5 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg text-white shadow-lg shrink-0"
                             whileHover={{ rotate: 360, scale: 1.1 }}
@@ -652,7 +652,7 @@ const PaymentSuccess: React.FC = () => {
                       {/* New Balance */}
                       <div className="space-y-2.5">
                         <h3 className="text-[9px] font-black text-blue-600 uppercase tracking-[0.2em] flex items-center gap-1.5 mb-2">
-                          <div className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-pulse shrink-0" />
+                          <div className="w-1.5 h-1.5 bg-[#1B2E5A] rounded-full animate-pulse shrink-0" />
                           New Balance
                         </h3>
                         <div className="space-y-2">
@@ -756,7 +756,7 @@ const PaymentSuccess: React.FC = () => {
                   <div className="absolute inset-0 bg-gradient-to-br from-blue-50/0 to-blue-50/0 group-hover:from-blue-50/50 group-hover:to-transparent transition-all duration-500 rounded-[2rem]" />
                   <Shimmer className="rounded-[2rem] opacity-0 group-hover:opacity-100" />
                   <CardHeader className="pb-2 pt-4 px-4 relative z-10">
-                    <CardTitle className="text-base font-black text-slate-900 flex items-center gap-2">
+                    <CardTitle className="text-base font-black text-[#1B2E5A] flex items-center gap-2">
                       <motion.div
                         className="p-1.5 bg-slate-50 rounded-lg group-hover:bg-blue-50 transition-colors"
                         whileHover={{ rotate: [0, -10, 10, -10, 0] }}

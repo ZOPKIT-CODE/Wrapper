@@ -612,7 +612,7 @@ export function DashboardLayout() {
                     </div>
                   </div>
                   <div>
-                    <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
+                    <h3 className="text-base font-semibold text-[#1B2E5A] dark:text-slate-100">
                       Free Trial Active
                     </h3>
                     <p className="text-sm text-slate-600 dark:text-slate-300">
@@ -727,7 +727,7 @@ export function DashboardLayout() {
           <div className="flex items-start gap-3">
             <BookOpen className="w-5 h-5 text-indigo-500 mt-0.5 flex-shrink-0" />
             <div className="flex-1">
-              <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-1">
+              <h3 className="font-semibold text-[#1B2E5A] dark:text-slate-100 mb-1">
                 Resume your guide?
               </h3>
               <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">

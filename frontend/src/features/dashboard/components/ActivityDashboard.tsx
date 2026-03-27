@@ -228,7 +228,7 @@ export function ActivityDashboard() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
+          <h1 className="text-3xl font-bold text-[#1B2E5A] flex items-center gap-2">
             <Activity className="w-8 h-8" />
             Activity & Audit Logs
           </h1>

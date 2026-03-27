@@ -846,7 +846,7 @@ export const DashboardFeatureTour = ({ onComplete, onSkip, initialStep = 0, onDi
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base">{currentStepData.title}</h3>
+                  <h3 className="font-semibold text-[#1B2E5A] dark:text-slate-100 text-base">{currentStepData.title}</h3>
                   {currentStepData.isNew && (
                     <span className="px-2 py-0.5 text-xs font-medium bg-gradient-to-r from-indigo-500 to-violet-500 text-white rounded-full">
                       New
@@ -1077,7 +1077,7 @@ export const DashboardFeatureTour = ({ onComplete, onSkip, initialStep = 0, onDi
             >
               <div className="flex flex-col items-center gap-4">
                 <CheckCircle2 className="w-16 h-16 text-indigo-500" />
-                <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100">You're all set!</h3>
+                <h3 className="text-xl font-semibold text-[#1B2E5A] dark:text-slate-100">You're all set!</h3>
                 <p className="text-sm text-slate-600 dark:text-slate-400">You've completed the tour</p>
               </div>
             </motion.div>

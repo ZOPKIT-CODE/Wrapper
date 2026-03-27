@@ -67,7 +67,7 @@ const PaymentCancelled: React.FC = () => {
             <div className="inline-flex items-center justify-center w-20 h-20 bg-red-100 rounded-full mb-6">
               <XCircle className="h-12 w-12 text-red-600" />
             </div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">
+            <h1 className="text-4xl font-bold text-[#1B2E5A] mb-4">
               Payment Cancelled
             </h1>
             <p className="text-xl text-gray-600 mb-8">

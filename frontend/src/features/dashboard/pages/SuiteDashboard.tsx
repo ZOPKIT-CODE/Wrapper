@@ -146,7 +146,7 @@ const SuiteDashboard: React.FC = () => {
               <span className="text-2xl">🚀</span>
             </div>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Business Suite</h2>
+          <h2 className="text-2xl font-bold text-[#1B2E5A] mb-4">Business Suite</h2>
           <p className="text-gray-600 mb-6">Please log in to access your applications</p>
         </div>
       </div>
@@ -201,14 +201,14 @@ const SuiteDashboard: React.FC = () => {
             {/* Applications Grid */}
             <div className="lg:col-span-2">
               <div className="mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">Your Applications</h2>
+                <h2 className="text-2xl font-bold text-[#1B2E5A]">Your Applications</h2>
                 <p className="text-gray-600">Access your business tools and services</p>
               </div>
 
               {applications.length === 0 ? (
                 <div className="text-center py-12 bg-white rounded-lg border-2 border-dashed border-gray-300">
                   <span className="text-4xl mb-4 block">📱</span>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Applications Available</h3>
+                  <h3 className="text-lg font-medium text-[#1B2E5A] mb-2">No Applications Available</h3>
                   <p className="text-gray-600">Contact your administrator to enable applications for your organization.</p>
                 </div>
               ) : (
@@ -225,7 +225,7 @@ const SuiteDashboard: React.FC = () => {
                             {getAppIcon(app.appCode, app.icon)}
                           </div>
                           <div>
-                            <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600">
+                            <h3 className="text-lg font-semibold text-[#1B2E5A] group-hover:text-blue-600">
                               {app.appName}
                             </h3>
                             <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${getTierColor(app.subscriptionTier)}`}>
@@ -272,7 +272,7 @@ const SuiteDashboard: React.FC = () => {
               
               {/* Quick Stats */}
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Stats</h3>
+                <h3 className="text-lg font-semibold text-[#1B2E5A] mb-4">Quick Stats</h3>
                 <div className="space-y-3">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Available Apps</span>
@@ -291,7 +291,7 @@ const SuiteDashboard: React.FC = () => {
 
               {/* Recent Activity */}
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
+                <h3 className="text-lg font-semibold text-[#1B2E5A] mb-4">Recent Activity</h3>
                 {activities.length === 0 ? (
                   <p className="text-gray-600 text-sm">No recent activity</p>
                 ) : (
@@ -323,7 +323,7 @@ const SuiteDashboard: React.FC = () => {
                 <p className="text-blue-700 text-sm mb-4">
                   Get support or request new applications for your organization.
                 </p>
-                <button className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm font-medium">
+                <button className="w-full bg-[#1B2E5A] text-white px-4 py-2 rounded-md hover:bg-[#152449] transition-colors text-sm font-medium">
                   Contact Support
                 </button>
               </div>

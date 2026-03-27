@@ -189,8 +189,8 @@ export function ActivityDashboard() {
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-slate-900 flex items-center gap-3">
-            <div className="p-2 bg-blue-600 rounded-xl shadow-lg shadow-blue-200">
+          <h1 className="text-3xl font-black tracking-tight text-[#1B2E5A] flex items-center gap-3">
+            <div className="p-2 bg-[#1B2E5A] rounded-xl shadow-lg shadow-blue-200">
               <Activity className="w-6 h-6 text-white" />
             </div>
             Activity Logs
@@ -211,7 +211,7 @@ export function ActivityDashboard() {
           <Button
             onClick={() => handleExport('json')}
             disabled={loading || activities.length === 0}
-            className="bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-100 font-semibold h-10"
+            className="bg-[#1B2E5A] hover:bg-[#152449] text-white shadow-md shadow-blue-100 font-semibold h-10"
           >
             <Download className="w-4 h-4 mr-2" />
             Export Logs
@@ -361,7 +361,7 @@ export function ActivityDashboard() {
                 <div className="p-4 bg-slate-50 rounded-full mb-4">
                   <Activity className="w-8 h-8 text-slate-300" />
                 </div>
-                <h4 className="text-slate-900 font-bold mb-1">No Activities Found</h4>
+                <h4 className="text-[#1B2E5A] font-bold mb-1">No Activities Found</h4>
                 <p className="text-slate-500 text-sm">No activity matches your current filters.</p>
                 <Button variant="link" onClick={clearFilters} className="text-blue-600 mt-2 font-bold">
                   Clear All Filters
@@ -385,7 +385,7 @@ export function ActivityDashboard() {
                       {React.cloneElement(getActivityIcon(selectedLog.action) as React.ReactElement, { className: "w-6 h-6" })}
                     </div>
                     <div>
-                      <h2 className="text-xl font-black text-slate-900">{formatActionName(selectedLog.action)}</h2>
+                      <h2 className="text-xl font-black text-[#1B2E5A]">{formatActionName(selectedLog.action)}</h2>
                       <div className="flex items-center gap-3 mt-1 text-sm font-medium text-slate-500">
                         <span className="flex items-center gap-1.5">
                           <Calendar className="w-3.5 h-3.5" />
@@ -468,7 +468,7 @@ export function ActivityDashboard() {
                 <div className="absolute -inset-4 bg-blue-100/50 rounded-full blur-xl animate-pulse"></div>
                 <Eye className="w-16 h-16 text-blue-200 relative z-10" />
               </div>
-              <h3 className="text-xl font-black text-slate-900 mb-2">Select an Activity</h3>
+              <h3 className="text-xl font-black text-[#1B2E5A] mb-2">Select an Activity</h3>
               <p className="text-slate-500 max-w-xs mx-auto leading-relaxed">
                 Click on any event from the left panel to view detailed metadata and security information.
               </p>
@@ -504,7 +504,7 @@ function StatsCard({ title, value, icon, color, loading }: {
             {loading ? (
               <div className="h-8 w-16 bg-slate-100 animate-pulse rounded-lg mt-1" />
             ) : (
-              <h3 className="text-3xl font-black text-slate-900 tracking-tight">{value}</h3>
+              <h3 className="text-3xl font-black text-[#1B2E5A] tracking-tight">{value}</h3>
             )}
           </div>
           <div className={cn("p-3 rounded-2xl border transition-transform group-hover:rotate-12", colorMap[color])}>

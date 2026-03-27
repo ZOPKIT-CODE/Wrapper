@@ -134,7 +134,7 @@ export function LegalPageLayout({ title, lastUpdated = '', children, wide = fals
       <main className={`relative pt-24 pb-16 mx-auto px-4 sm:px-6 lg:px-8 ${wide ? 'max-w-6xl' : 'max-w-4xl'}`}>
         {contained ? (
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 md:p-12">
-            <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-2">{title}</h1>
+            <h1 className="text-3xl md:text-4xl font-bold text-[#1B2E5A] mb-2">{title}</h1>
             {lastUpdated && <p className="text-slate-500 text-sm mb-10">Last updated: {lastUpdated}</p>}
             <div className="prose prose-slate max-w-none space-y-10">{children}</div>
           </div>

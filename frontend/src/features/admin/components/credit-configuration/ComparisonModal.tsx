@@ -90,7 +90,7 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({
             ].map((stat, i) => (
               <div key={i} className={cn("p-4 rounded-3xl border flex flex-col items-center text-center transition-all hover:shadow-lg", stat.bg, "dark:bg-slate-900 border-slate-100 dark:border-slate-800")}>
                 <stat.icon className={cn("h-5 w-5 mb-2", stat.color)} />
-                <div className="text-2xl font-black text-slate-900 dark:text-white">{stat.val}</div>
+                <div className="text-2xl font-black text-[#1B2E5A] dark:text-white">{stat.val}</div>
                 <div className="text-[9px] font-black uppercase text-slate-500 tracking-wider leading-none mt-1">{stat.label}</div>
               </div>
             ))}
@@ -99,7 +99,7 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({
           {/* Detailed Ledger */}
           <div className="space-y-6">
             <div className="flex items-center justify-between border-b pb-2">
-              <h4 className="text-[12px] font-black uppercase tracking-widest text-slate-900 dark:text-white">Detailed Change Ledger</h4>
+              <h4 className="text-[12px] font-black uppercase tracking-widest text-[#1B2E5A] dark:text-white">Detailed Change Ledger</h4>
               <Badge variant="outline" className="text-[9px] font-bold uppercase">Chronological Order</Badge>
             </div>
 
@@ -112,7 +112,7 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-lg bg-white dark:bg-slate-800 border shadow-sm flex items-center justify-center font-black text-[10px] text-primary">{appCode}</div>
                         <div>
-                          <h5 className="text-[13px] font-black text-slate-900 dark:text-white uppercase leading-none">{app?.appName || appCode}</h5>
+                          <h5 className="text-[13px] font-black text-[#1B2E5A] dark:text-white uppercase leading-none">{app?.appName || appCode}</h5>
                           <p className="text-[9px] text-slate-500 font-bold uppercase mt-1 tracking-tighter">Application Domain Infrastructure</p>
                         </div>
                       </div>
@@ -181,7 +181,7 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({
                           <div key={operationCode} className="bg-white dark:bg-slate-950 p-4 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col justify-between group h-fit">
                             <div className="flex items-start justify-between mb-3">
                               <div>
-                                <h6 className="text-[11px] font-black text-slate-900 dark:text-white uppercase tracking-tight">{currentOp?.operationName || operationCode.split('.').pop()}</h6>
+                                <h6 className="text-[11px] font-black text-[#1B2E5A] dark:text-white uppercase tracking-tight">{currentOp?.operationName || operationCode.split('.').pop()}</h6>
                                 <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest truncate w-24">{operationCode}</p>
                               </div>
                               <Activity className="w-4 h-4 text-emerald-200" />
@@ -256,7 +256,7 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({
           <div className="flex items-center gap-4">
             <div className="text-right mr-4 border-r pr-6 hidden md:block border-slate-200 dark:border-slate-800">
               <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Total Modifications</p>
-              <p className="text-xl font-black text-slate-900 dark:text-white">{summary.operationsChanged + summary.modulesChanged + summary.appCostsChanged} Points</p>
+              <p className="text-xl font-black text-[#1B2E5A] dark:text-white">{summary.operationsChanged + summary.modulesChanged + summary.appCostsChanged} Points</p>
             </div>
             <Button
               onClick={() => { onClose(); onProceed(); }}

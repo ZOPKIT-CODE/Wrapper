@@ -70,7 +70,7 @@ function getEventIcon(type: string) {
 // Styling helper for the icon container
 function getEventStyles(type: string, isToday: boolean, isActivity: boolean) {
   if (isToday) return {
-      container: 'bg-indigo-600 ring-4 ring-indigo-50 text-white shadow-md shadow-indigo-200',
+      container: 'bg-[#1B2E5A] ring-4 ring-indigo-50 text-white shadow-md shadow-indigo-200',
       line: 'bg-indigo-200'
   }
   if (isActivity) return {
@@ -104,7 +104,7 @@ export function TimelineTab({ timelineData, timelineLoading, hasMore, isLoadingM
               <ListOrdered className="w-6 h-6" />
             </div>
             <div>
-              <CardTitle className="text-xl font-bold text-slate-900">Complete Timeline</CardTitle>
+              <CardTitle className="text-xl font-bold text-[#1B2E5A]">Complete Timeline</CardTitle>
               <CardDescription className="text-slate-500 mt-1">
                 Your entire history of activities and transactions
               </CardDescription>
@@ -123,7 +123,7 @@ export function TimelineTab({ timelineData, timelineLoading, hasMore, isLoadingM
               <div className="h-20 w-20 rounded-full bg-slate-50 flex items-center justify-center mb-4">
                 <Clock className="h-10 w-10 text-slate-300" />
               </div>
-              <h4 className="text-lg font-bold text-slate-900 mb-1">
+              <h4 className="text-lg font-bold text-[#1B2E5A] mb-1">
                 No events recorded
               </h4>
               <p className="text-slate-500 max-w-xs mx-auto text-sm">
@@ -151,7 +151,7 @@ export function TimelineTab({ timelineData, timelineLoading, hasMore, isLoadingM
                       {/* Content Card */}
                       <div className="flex-1 min-w-0 pt-1">
                          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2">
-                            <h4 className={`text-sm font-bold ${isToday ? 'text-indigo-600' : 'text-slate-900'}`}>
+                            <h4 className={`text-sm font-bold ${isToday ? 'text-indigo-600' : 'text-[#1B2E5A]'}`}>
                                 {event.label}
                             </h4>
                             <span className="text-xs font-medium text-slate-400 whitespace-nowrap">
