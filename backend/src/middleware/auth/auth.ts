@@ -387,7 +387,7 @@ async function processAuthenticatedUser(request: FastifyRequest, reply: FastifyR
             organizationId: userRoleAssignments.organizationId
           })
           .from(userRoleAssignments)
-          .innerJoin(customRoles, eq(userRoleAssignments.roleId, customRoles.roleId))
+          .innerJoin(customRoles, and(eq(userRoleAssignments.roleId, customRoles.roleId), eq(customRoles.tenantId, tenantId)))
           .where(eq(userRoleAssignments.userId, effectiveUserRecord.userId));
 
         isSuperAdmin = userRoles.some(role => role.roleName === 'Super Administrator' && role.isSystemRole);

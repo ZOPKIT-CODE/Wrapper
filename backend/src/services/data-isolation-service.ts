@@ -39,7 +39,8 @@ export class DataIsolationService {
         .where(and(
           eq(organizationMemberships.userId, internalUserId || userId),
           eq(organizationMemberships.entityType, 'organization'),
-          eq(organizationMemberships.membershipStatus, 'active')
+          eq(organizationMemberships.membershipStatus, 'active'),
+          ...(tenantId ? [eq(organizationMemberships.tenantId, tenantId)] : [])
         ));
       userMemberships = result as unknown as MembershipRow[];
       console.log('✅ User organization memberships query successful:', userMemberships.length, 'records');
