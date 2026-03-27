@@ -554,136 +554,196 @@ const Landing: React.FC = () => {
           </div>
         </div>
 
-        {/* Ecosystem Grid — click any app to select */}
+        {/* Connected Ecosystem — hub-and-spoke with visible connector lines */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
           className="max-w-4xl mx-auto"
         >
-          {/* Section label */}
-          <div className="flex items-center gap-3 mb-4">
-            <div className="h-px flex-1 bg-slate-200" />
-            <span className="text-[10px] sm:text-xs font-semibold text-slate-400 tracking-widest uppercase shrink-0">The Ecosystem</span>
-            <div className="h-px flex-1 bg-slate-200" />
-          </div>
+          {/* The Ecosystem visual — 3 tiers connected by lines */}
+          <div className="relative">
 
-          {/* App grid — clean, aligned, responsive */}
-          <div ref={scrollContainerRef} className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-3">
-            {/* Center hub tile — always first, spans on lg */}
-            <div className="col-span-3 sm:col-span-4 lg:col-span-6 flex justify-center mb-1">
-              <div className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-xl bg-slate-900 text-white">
+            {/* ── Tier 1: Platform Hub ── */}
+            <div className="flex justify-center">
+              <div className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-xl bg-slate-900 text-white relative z-10">
                 <Zap className="w-4 h-4" />
-                <span className="text-sm font-bold tracking-wide">Zopkit Platform</span>
-                <span className="text-slate-400 text-xs">|</span>
-                <span className="text-slate-400 text-xs font-medium">{products.length} apps connected</span>
+                <span className="text-sm font-bold tracking-wide">Zopkit</span>
+                <span className="text-slate-500 text-[10px] font-medium hidden sm:inline">Unified Platform</span>
               </div>
             </div>
 
-            {ECOSYSTEM_APPS.map((app) => {
-              const isActive = activeProduct.id === app.id;
-              const matchingProduct = products.find(p => p.id === app.id);
-              return (
-                <button
-                  key={app.id}
-                  ref={(el) => { if (el) productRefs.current.set(app.id, el); }}
-                  onClick={() => { if (matchingProduct) setActiveProduct(matchingProduct); }}
-                  className={`
-                    group relative flex flex-col items-center gap-1.5 py-4 sm:py-5 px-2 rounded-xl border-2 transition-all duration-200 cursor-pointer focus:outline-none
-                    ${isActive
-                      ? 'bg-slate-900 border-slate-900 shadow-md scale-[1.02]'
-                      : 'bg-white border-slate-100 hover:border-slate-300 hover:shadow-sm'}
-                  `}
-                >
-                  {/* Connector line to indicate "connected" — small SVG dash at top */}
-                  <svg className="absolute -top-[9px] left-1/2 -translate-x-1/2 w-px h-[9px]" aria-hidden="true">
-                    <line x1="0" y1="0" x2="0" y2="9" stroke={isActive ? '#0f172a' : '#e2e8f0'} strokeWidth="2" className="transition-colors duration-200" />
-                  </svg>
+            {/* ── Connector: Hub → Row 1 (branching lines via SVG) ── */}
+            <div className="flex justify-center">
+              <svg width="100%" height="32" className="max-w-3xl" viewBox="0 0 768 32" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+                {/* Trunk down from center */}
+                <line x1="384" y1="0" x2="384" y2="14" stroke="#cbd5e1" strokeWidth="1.5" />
+                {/* Horizontal bar */}
+                <line x1="64" y1="14" x2="704" y2="14" stroke="#cbd5e1" strokeWidth="1.5" />
+                {/* 6 branches down to Row 1 cards */}
+                {[64, 192, 320, 448, 576, 704].map((cx, i) => (
+                  <line key={i} x1={cx} y1="14" x2={cx} y2="32" stroke={
+                    ECOSYSTEM_APPS[i] && activeProduct.id === ECOSYSTEM_APPS[i].id ? '#0f172a' : '#cbd5e1'
+                  } strokeWidth="1.5" className="transition-colors duration-200" />
+                ))}
+                {/* Active highlight on the horizontal segment */}
+                {ECOSYSTEM_APPS.slice(0, 6).map((app, i) => {
+                  if (activeProduct.id !== app.id) return null;
+                  const cx = [64, 192, 320, 448, 576, 704][i];
+                  return <circle key={app.id} cx={cx} cy="14" r="3" fill="#0f172a" className="transition-all duration-200" />;
+                })}
+              </svg>
+            </div>
 
-                  <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center transition-colors duration-200 ${isActive ? 'bg-white/10' : 'bg-slate-50 group-hover:bg-slate-100'}`}>
-                    <DynamicIcon
-                      name={app.icon}
-                      className={`w-4 h-4 sm:w-[18px] sm:h-[18px] transition-colors duration-200 ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-slate-700'}`}
-                    />
-                  </div>
-                  <span className={`text-[10px] sm:text-xs font-semibold transition-colors duration-200 text-center leading-tight ${isActive ? 'text-white' : 'text-slate-600 group-hover:text-slate-900'}`}>
-                    <span className="sm:hidden">{app.short}</span>
-                    <span className="hidden sm:inline">{app.label}</span>
-                  </span>
-                  {/* Active indicator dot */}
-                  {isActive && (
-                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-slate-900" />
-                  )}
-                </button>
-              );
-            })}
+            {/* ── Tier 2: Core 6 products ── */}
+            <div ref={scrollContainerRef} className="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-3">
+              {ECOSYSTEM_APPS.slice(0, 6).map((app) => {
+                const isActive = activeProduct.id === app.id;
+                const matchingProduct = products.find(p => p.id === app.id);
+                return (
+                  <button
+                    key={app.id}
+                    ref={(el) => { if (el) productRefs.current.set(app.id, el); }}
+                    onClick={() => { if (matchingProduct) setActiveProduct(matchingProduct); }}
+                    className={`
+                      group flex flex-col items-center gap-1.5 py-3.5 sm:py-4 px-2 rounded-xl border-2 transition-all duration-200 cursor-pointer focus:outline-none
+                      ${isActive
+                        ? 'bg-slate-900 border-slate-900 shadow-md'
+                        : 'bg-white border-slate-200 hover:border-slate-400 hover:shadow-sm'}
+                    `}
+                  >
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors duration-200 ${isActive ? 'bg-white/15' : 'bg-slate-50 group-hover:bg-slate-100'}`}>
+                      <DynamicIcon name={app.icon} className={`w-[18px] h-[18px] transition-colors duration-200 ${isActive ? 'text-white' : 'text-slate-600 group-hover:text-slate-800'}`} />
+                    </div>
+                    <span className={`text-[10px] sm:text-xs font-semibold transition-colors duration-200 text-center leading-tight ${isActive ? 'text-white' : 'text-slate-700'}`}>
+                      <span className="sm:hidden">{app.short}</span>
+                      <span className="hidden sm:inline">{app.label}</span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* ── Connector: Row 1 → Row 2 (branching lines) ── */}
+            <div className="flex justify-center">
+              <svg width="100%" height="28" className="max-w-2xl" viewBox="0 0 640 28" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+                {/* Horizontal bar */}
+                <line x1="64" y1="10" x2="576" y2="10" stroke="#e2e8f0" strokeWidth="1" />
+                {/* Vertical trunks up from row 1 */}
+                {[64, 192, 320, 448, 576].map((cx, i) => (
+                  <g key={i}>
+                    <line x1={cx} y1="0" x2={cx} y2="10" stroke="#e2e8f0" strokeWidth="1" />
+                    <line x1={cx} y1="10" x2={cx} y2="28" stroke={
+                      ECOSYSTEM_APPS[6 + i] && activeProduct.id === ECOSYSTEM_APPS[6 + i].id ? '#0f172a' : '#e2e8f0'
+                    } strokeWidth="1" className="transition-colors duration-200" />
+                  </g>
+                ))}
+                {/* Cross-connections: short horizontal dashes between row 1 and row 2 nodes */}
+                <line x1="128" y1="10" x2="128" y2="10" stroke="#e2e8f0" strokeWidth="1" strokeDasharray="2 3" />
+                {/* Active dot */}
+                {ECOSYSTEM_APPS.slice(6).map((app, i) => {
+                  if (activeProduct.id !== app.id) return null;
+                  const cx = [64, 192, 320, 448, 576][i];
+                  return <circle key={app.id} cx={cx} cy="10" r="2.5" fill="#0f172a" className="transition-all duration-200" />;
+                })}
+              </svg>
+            </div>
+
+            {/* ── Tier 3: Remaining 5 products ── */}
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-3 max-w-2xl mx-auto">
+              {ECOSYSTEM_APPS.slice(6).map((app) => {
+                const isActive = activeProduct.id === app.id;
+                const matchingProduct = products.find(p => p.id === app.id);
+                return (
+                  <button
+                    key={app.id}
+                    ref={(el) => { if (el) productRefs.current.set(app.id, el); }}
+                    onClick={() => { if (matchingProduct) setActiveProduct(matchingProduct); }}
+                    className={`
+                      group flex flex-col items-center gap-1.5 py-3 sm:py-3.5 px-2 rounded-xl border transition-all duration-200 cursor-pointer focus:outline-none
+                      ${isActive
+                        ? 'bg-slate-900 border-slate-900 shadow-md'
+                        : 'bg-white border-slate-200 hover:border-slate-400 hover:shadow-sm'}
+                    `}
+                  >
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors duration-200 ${isActive ? 'bg-white/15' : 'bg-slate-50 group-hover:bg-slate-100'}`}>
+                      <DynamicIcon name={app.icon} className={`w-4 h-4 transition-colors duration-200 ${isActive ? 'text-white' : 'text-slate-600 group-hover:text-slate-800'}`} />
+                    </div>
+                    <span className={`text-[10px] sm:text-xs font-semibold transition-colors duration-200 text-center leading-tight ${isActive ? 'text-white' : 'text-slate-700'}`}>
+                      <span className="sm:hidden">{app.short}</span>
+                      <span className="hidden sm:inline">{app.label}</span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* ── Connector: Row 2 → Detail panel ── */}
+            <div className="flex justify-center">
+              <svg width="2" height="20" aria-hidden="true">
+                <line x1="1" y1="0" x2="1" y2="20" stroke="#cbd5e1" strokeWidth="1.5" />
+              </svg>
+            </div>
           </div>
 
-          {/* Active product detail card */}
-          <div className="mt-4 sm:mt-5">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={activeProduct.id}
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.2 }}
-                className="bg-slate-50 rounded-xl border border-slate-200 p-4 sm:p-5"
-              >
-                <div className="flex items-start gap-3 sm:gap-4">
-                  <div className="w-10 h-10 rounded-lg bg-slate-900 flex items-center justify-center shrink-0">
-                    <DynamicIcon name={activeProduct.iconName} className="w-5 h-5 text-white" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="text-sm sm:text-base font-bold text-slate-900">{activeProduct.name}</h3>
-                      {activeProduct.stats?.[0] && (
-                        <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-semibold text-slate-500 bg-white border border-slate-200 rounded px-1.5 py-0.5">
-                          {activeProduct.stats[0].value} {activeProduct.stats[0].label}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs sm:text-sm text-slate-500 leading-relaxed">{activeProduct.tagline}</p>
-                  </div>
-                  <button
-                    onClick={() => navigate({ to: `/products/${activeProduct.id}` })}
-                    className="hidden sm:inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-medium hover:bg-slate-800 transition-colors shrink-0"
-                  >
-                    Explore <ArrowRight className="w-3 h-3" />
-                  </button>
+          {/* Active product detail card — connected to the tree above */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeProduct.id}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.2 }}
+              className="bg-slate-50 rounded-xl border border-slate-200 p-4 sm:p-5"
+            >
+              <div className="flex items-start gap-3 sm:gap-4">
+                <div className="w-10 h-10 rounded-lg bg-slate-900 flex items-center justify-center shrink-0">
+                  <DynamicIcon name={activeProduct.iconName} className="w-5 h-5 text-white" />
                 </div>
-
-                {/* Features row */}
-                <div className="flex flex-wrap gap-1.5 mt-3">
-                  {activeProduct.features.slice(0, 4).map((feat, i) => (
-                    <span
-                      key={i}
-                      className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-white border border-slate-100 text-[10px] sm:text-xs text-slate-600 font-medium"
-                    >
-                      <DynamicIcon name={feat.icon} className="w-3 h-3 text-slate-400" />
-                      {feat.title}
-                    </span>
-                  ))}
-                  {activeProduct.features.length > 4 && (
-                    <button
-                      onClick={() => navigate({ to: `/products/${activeProduct.id}` })}
-                      className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] sm:text-xs text-slate-400 font-medium hover:text-slate-600 transition-colors"
-                    >
-                      +{activeProduct.features.length - 4} more
-                    </button>
-                  )}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <h3 className="text-sm sm:text-base font-bold text-slate-900">{activeProduct.name}</h3>
+                    {activeProduct.stats?.map((stat, i) => (
+                      <span key={i} className="hidden sm:inline-flex text-[10px] font-semibold text-slate-500 bg-white border border-slate-200 rounded px-1.5 py-0.5">
+                        {stat.value} {stat.label}
+                      </span>
+                    ))}
+                  </div>
+                  <p className="text-xs sm:text-sm text-slate-500 leading-relaxed">{activeProduct.tagline}</p>
                 </div>
-
-                {/* Mobile explore button */}
                 <button
                   onClick={() => navigate({ to: `/products/${activeProduct.id}` })}
-                  className="sm:hidden mt-3 w-full inline-flex items-center justify-center gap-1 px-3 py-2 rounded-lg bg-slate-900 text-white text-xs font-medium"
+                  className="hidden sm:inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-medium hover:bg-slate-800 transition-colors shrink-0"
                 >
-                  Explore {activeProduct.name} <ArrowRight className="w-3 h-3" />
+                  Explore <ArrowRight className="w-3 h-3" />
                 </button>
-              </motion.div>
-            </AnimatePresence>
-          </div>
+              </div>
+
+              <div className="flex flex-wrap gap-1.5 mt-3">
+                {activeProduct.features.slice(0, 4).map((feat, i) => (
+                  <span key={i} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-white border border-slate-100 text-[10px] sm:text-xs text-slate-600 font-medium">
+                    <DynamicIcon name={feat.icon} className="w-3 h-3 text-slate-400" />
+                    {feat.title}
+                  </span>
+                ))}
+                {activeProduct.features.length > 4 && (
+                  <button
+                    onClick={() => navigate({ to: `/products/${activeProduct.id}` })}
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] sm:text-xs text-slate-400 font-medium hover:text-slate-600 transition-colors"
+                  >
+                    +{activeProduct.features.length - 4} more
+                  </button>
+                )}
+              </div>
+
+              <button
+                onClick={() => navigate({ to: `/products/${activeProduct.id}` })}
+                className="sm:hidden mt-3 w-full inline-flex items-center justify-center gap-1 px-3 py-2 rounded-lg bg-slate-900 text-white text-xs font-medium"
+              >
+                Explore {activeProduct.name} <ArrowRight className="w-3 h-3" />
+              </button>
+            </motion.div>
+          </AnimatePresence>
         </motion.div>
       </main>
 
