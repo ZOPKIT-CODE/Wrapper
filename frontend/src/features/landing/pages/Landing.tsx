@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from '@tanstack/react-router'
 import { useKindeAuth } from '@kinde-oss/kinde-auth-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { DynamicIcon } from '@/features/landing/components/Icons'
-import { ArrowRight, Play, ChevronRight, FileText, GraduationCap, Users, Zap, Mail, Phone, MapPin, Menu, X, LayoutDashboard, Rocket, Shield, Clock, Globe, BarChart3, Settings, CreditCard, UserCheck, Workflow } from 'lucide-react'
+import { ArrowRight, Play, ChevronRight, FileText, GraduationCap, Users, Zap, Mail, Phone, MapPin, Menu, X, LayoutDashboard, Rocket, Shield, Clock, Globe, BarChart3, Settings, CreditCard, UserCheck, Workflow, CheckCircle2, TrendingUp } from 'lucide-react'
 import api, { createCancelableRequest } from '@/lib/api'
 import { Product } from '@/types'
 import toast from 'react-hot-toast'
@@ -58,6 +58,31 @@ const NAV_ITEMS = [
   { name: "Contact Us", link: "#contact" },
 ] as const;
 
+// Product color → CSS-safe Tailwind color token for the interactive dashboard
+const PRODUCT_ACCENT: Record<string, { bar: string; bg: string; text: string; border: string }> = {
+  blue:   { bar: '#3b82f6', bg: 'bg-blue-50',   text: 'text-blue-600',   border: 'border-blue-200' },
+  green:  { bar: '#10b981', bg: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-200' },
+  purple: { bar: '#a855f7', bg: 'bg-purple-50',  text: 'text-purple-600',  border: 'border-purple-200' },
+  orange: { bar: '#f97316', bg: 'bg-orange-50',  text: 'text-orange-600',  border: 'border-orange-200' },
+  indigo: { bar: '#6366f1', bg: 'bg-indigo-50',  text: 'text-indigo-600',  border: 'border-indigo-200' },
+};
+const DEFAULT_ACCENT = { bar: '#14b8a6', bg: 'bg-teal-50', text: 'text-teal-600', border: 'border-teal-200' };
+
+// Bar chart heights per product (7 bars, values 20-90) — gives each product a unique chart shape
+const PRODUCT_CHART_DATA: Record<string, number[]> = {
+  'operations-management': [35, 55, 70, 50, 80, 90, 65],
+  'b2b-crm':               [40, 65, 45, 75, 60, 85, 70],
+  'financial-accounting':   [50, 40, 60, 80, 55, 70, 90],
+  'project-management':     [30, 50, 75, 60, 85, 45, 70],
+  'hrms':                   [45, 60, 35, 70, 55, 80, 65],
+  'esop-system':            [55, 45, 65, 40, 75, 60, 85],
+  'affiliate-connect':      [60, 75, 50, 65, 40, 80, 55],
+  'flowtilla':              [35, 70, 55, 85, 65, 45, 75],
+  'zopkit-academy':         [50, 60, 80, 45, 70, 55, 65],
+  'zopkit-itsm':            [65, 45, 55, 75, 50, 85, 60],
+  'b2c-crm':                [40, 70, 60, 50, 80, 65, 75],
+};
+const DEFAULT_BARS = [40, 55, 70, 50, 80, 65, 75];
 
 const Landing: React.FC = () => {
   const navigate = useNavigate()
@@ -474,32 +499,39 @@ const Landing: React.FC = () => {
 
       {/* Hero Section */}
       <main className="relative pt-24 sm:pt-28 lg:pt-36 pb-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
 
           {/* Left Column: Text Content */}
-          <div className="flex flex-col gap-6 relative z-20 order-2 lg:order-1">
+          <div className="flex flex-col gap-5 relative z-20 order-2 lg:order-1">
 
             {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-50 border border-teal-200 w-fit">
-              <span className="w-1.5 h-1.5 rounded-full bg-teal-500" />
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.1 }}
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-teal-50 border border-teal-200 w-fit"
+            >
+              <CheckCircle2 className="w-3.5 h-3.5 text-teal-600" />
               <span className="text-teal-700 text-xs font-semibold tracking-wide">Trusted by 500+ companies</span>
-            </div>
+            </motion.div>
 
             {/* Headline with rotating product name */}
-            <div className="relative min-h-[120px] sm:min-h-[140px] lg:min-h-[180px]">
+            <div className="relative min-h-[110px] sm:min-h-[130px] lg:min-h-[170px]">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={activeProduct.id}
-                  initial={{ opacity: 0, y: 12 }}
+                  initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -12 }}
-                  transition={{ duration: 0.3, ease: "easeOut" }}
+                  exit={{ opacity: 0, y: -16 }}
+                  transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
                   className="absolute top-0 left-0 w-full"
                 >
-                  <h1 className="text-3xl sm:text-4xl lg:text-6xl font-black tracking-tight leading-[1.1] text-slate-900">
-                    <span className="text-teal-600">{activeProduct.name}</span>
+                  <h1 className="text-3xl sm:text-4xl lg:text-[3.5rem] xl:text-6xl font-black tracking-tight leading-[1.08] text-slate-900">
+                    <span className={PRODUCT_ACCENT[activeProduct.color]?.text ?? 'text-teal-600'}>
+                      {activeProduct.name}
+                    </span>
                   </h1>
-                  <p className="text-slate-500 text-sm sm:text-base lg:text-lg leading-relaxed max-w-lg mt-3 sm:mt-4">
+                  <p className="text-slate-500 text-sm sm:text-base lg:text-lg leading-relaxed max-w-lg mt-3">
                     {activeProduct.description}
                   </p>
                 </motion.div>
@@ -507,11 +539,16 @@ const Landing: React.FC = () => {
             </div>
 
             {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-3 mt-4 sm:mt-2">
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.25 }}
+              className="flex flex-col sm:flex-row gap-3 mt-2"
+            >
               <button
                 onClick={primaryCta.action}
                 disabled={primaryCta.disabled}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm sm:text-base shadow-sm transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.98]"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm sm:text-base shadow-sm hover:shadow-md transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.97]"
               >
                 {hasAuthenticatedSession && onboardingCompleted ? <LayoutDashboard className="w-4 h-4" /> : null}
                 {hasAuthenticatedSession && !onboardingCompleted ? <Rocket className="w-4 h-4" /> : null}
@@ -520,123 +557,174 @@ const Landing: React.FC = () => {
               </button>
 
               <button
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-semibold text-sm sm:text-base transition-colors active:scale-[0.98]"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-300 text-slate-700 font-semibold text-sm sm:text-base shadow-sm transition-all active:scale-[0.97]"
               >
                 <Play className="w-3.5 h-3.5 fill-current text-slate-500" />
                 Watch Demo
               </button>
-            </div>
+            </motion.div>
 
-            {/* Trust row — clean, no animation */}
-            <div className="flex flex-wrap items-center gap-4 mt-2 text-xs text-slate-500">
-              <span className="inline-flex items-center gap-1.5"><Shield className="w-3.5 h-3.5 text-teal-500" />SOC 2 Compliant</span>
+            {/* Trust indicators */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.4, delay: 0.4 }}
+              className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-1 text-xs text-slate-500"
+            >
+              <span className="inline-flex items-center gap-1.5"><Shield className="w-3.5 h-3.5 text-teal-500" />SOC 2</span>
               <span className="inline-flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 text-teal-500" />99.9% Uptime</span>
               <span className="inline-flex items-center gap-1.5"><Globe className="w-3.5 h-3.5 text-teal-500" />GDPR Ready</span>
-            </div>
+              <span className="inline-flex items-center gap-1.5"><TrendingUp className="w-3.5 h-3.5 text-teal-500" />11 Products</span>
+            </motion.div>
 
-            {/* Product Selector — compact scrollable row */}
-            <div className="mt-4 pt-6 border-t border-slate-100">
+            {/* Product Selector — compact scrollable pills */}
+            <div className="mt-3 pt-5 border-t border-slate-100">
               <p className="text-slate-400 text-[10px] sm:text-xs font-semibold tracking-widest uppercase mb-3">Select Application</p>
-              <div ref={scrollContainerRef} className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
-                {products.map((product) => (
-                  <button
-                    key={product.id}
-                    ref={(el) => {
-                      if (el) productRefs.current.set(product.id, el);
-                    }}
-                    onClick={() => setActiveProduct(product)}
-                    onDoubleClick={() => navigate({ to: `/products/${product.id}` })}
-                    className={`
-                      shrink-0 flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-medium transition-colors
-                      ${activeProduct.id === product.id
-                        ? 'bg-teal-600 border-teal-600 text-white'
-                        : 'bg-white border-slate-200 text-slate-600 hover:border-teal-200 hover:text-teal-700'}
-                    `}
-                  >
-                    <DynamicIcon name={product.iconName} className="w-3.5 h-3.5" />
-                    {product.name}
-                  </button>
-                ))}
+              <div ref={scrollContainerRef} className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-none">
+                {products.map((product) => {
+                  const isActive = activeProduct.id === product.id;
+                  const accent = PRODUCT_ACCENT[product.color] ?? DEFAULT_ACCENT;
+                  return (
+                    <button
+                      key={product.id}
+                      ref={(el) => {
+                        if (el) productRefs.current.set(product.id, el);
+                      }}
+                      onClick={() => setActiveProduct(product)}
+                      onDoubleClick={() => navigate({ to: `/products/${product.id}` })}
+                      className={`
+                        shrink-0 flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-medium transition-all duration-200
+                        ${isActive
+                          ? `${accent.bg} ${accent.border} ${accent.text} shadow-sm`
+                          : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:text-slate-700 hover:shadow-sm'}
+                      `}
+                    >
+                      <DynamicIcon name={product.iconName} className="w-3.5 h-3.5" />
+                      {product.name}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
 
-          {/* Right Column: Clean SVG illustration — replaces heavy VisualHub */}
+          {/* Right Column: Interactive Dashboard — reacts to activeProduct */}
           <div className="relative z-10 flex justify-center items-center order-1 lg:order-2">
-            <div className="w-full max-w-md lg:max-w-lg">
-              {/* Lightweight dashboard mockup SVG */}
-              <svg viewBox="0 0 480 360" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-auto drop-shadow-lg" aria-hidden="true">
-                {/* Card background */}
-                <rect x="16" y="16" width="448" height="328" rx="16" fill="white" stroke="#e2e8f0" strokeWidth="1"/>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.15 }}
+              className="w-full max-w-md lg:max-w-lg"
+            >
+              {/* Dashboard Card */}
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
+                {/* Titlebar */}
+                <div className="flex items-center gap-2 px-4 py-3 bg-slate-50 border-b border-slate-100">
+                  <span className="w-3 h-3 rounded-full" style={{ backgroundColor: (PRODUCT_ACCENT[activeProduct.color] ?? DEFAULT_ACCENT).bar, transition: 'background-color 0.4s' }} />
+                  <span className="w-3 h-3 rounded-full bg-slate-200" />
+                  <span className="w-3 h-3 rounded-full bg-slate-200" />
+                  <div className="ml-3 flex-1">
+                    <AnimatePresence mode="wait">
+                      <motion.span
+                        key={activeProduct.id}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="text-xs font-medium text-slate-500"
+                      >
+                        {activeProduct.name} — Dashboard
+                      </motion.span>
+                    </AnimatePresence>
+                  </div>
+                </div>
 
-                {/* Top bar */}
-                <rect x="16" y="16" width="448" height="48" rx="16" fill="#f8fafc"/>
-                <rect x="16" y="48" width="448" height="16" fill="#f8fafc"/>
-                <circle cx="44" cy="40" r="6" fill="#0d9488"/>
-                <circle cx="64" cy="40" r="6" fill="#e2e8f0"/>
-                <circle cx="84" cy="40" r="6" fill="#e2e8f0"/>
-                <rect x="120" y="34" width="80" height="12" rx="6" fill="#e2e8f0"/>
-                <rect x="210" y="34" width="60" height="12" rx="6" fill="#e2e8f0"/>
-                <rect x="280" y="34" width="70" height="12" rx="6" fill="#e2e8f0"/>
+                {/* Metric cards — values change per product */}
+                <div className="grid grid-cols-3 gap-3 p-4">
+                  {[
+                    { label: 'Active Users', icon: Users },
+                    { label: 'Revenue', icon: TrendingUp },
+                    { label: 'Tasks Done', icon: CheckCircle2 },
+                  ].map((metric, i) => {
+                    const accent = PRODUCT_ACCENT[activeProduct.color] ?? DEFAULT_ACCENT;
+                    return (
+                      <div key={metric.label} className={`rounded-xl border p-3 transition-colors duration-300 ${i === 0 ? `${accent.bg} ${accent.border}` : 'bg-slate-50 border-slate-100'}`}>
+                        <metric.icon className={`w-4 h-4 mb-1.5 transition-colors duration-300 ${i === 0 ? accent.text : 'text-slate-400'}`} />
+                        <div className="text-[10px] text-slate-400 mb-0.5">{metric.label}</div>
+                        <div className={`text-lg font-bold transition-colors duration-300 ${i === 0 ? accent.text : 'text-slate-700'}`}>
+                          {/* Dynamic number per product index */}
+                          {i === 0 ? `${(products.findIndex(p => p.id === activeProduct.id) + 1) * 847}` :
+                           i === 1 ? `$${((products.findIndex(p => p.id === activeProduct.id) + 1) * 12.4).toFixed(0)}k` :
+                           `${(products.findIndex(p => p.id === activeProduct.id) + 1) * 234}`}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
 
-                {/* Sidebar */}
-                <rect x="16" y="64" width="100" height="280" fill="#f1f5f9"/>
-                <rect x="28" y="80" width="76" height="10" rx="5" fill="#cbd5e1"/>
-                <rect x="28" y="100" width="60" height="8" rx="4" fill="#0d9488" opacity="0.7"/>
-                <rect x="28" y="118" width="68" height="8" rx="4" fill="#e2e8f0"/>
-                <rect x="28" y="136" width="52" height="8" rx="4" fill="#e2e8f0"/>
-                <rect x="28" y="154" width="64" height="8" rx="4" fill="#e2e8f0"/>
-                <rect x="28" y="172" width="48" height="8" rx="4" fill="#e2e8f0"/>
-                <rect x="28" y="198" width="76" height="10" rx="5" fill="#cbd5e1"/>
-                <rect x="28" y="218" width="56" height="8" rx="4" fill="#e2e8f0"/>
-                <rect x="28" y="236" width="70" height="8" rx="4" fill="#e2e8f0"/>
+                {/* Interactive bar chart — bars animate height on product change */}
+                <div className="px-4 pb-4">
+                  <div className="rounded-xl border border-slate-100 bg-slate-50/50 p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs font-semibold text-slate-700">Performance Overview</span>
+                      <span className="text-[10px] text-slate-400">Last 7 days</span>
+                    </div>
+                    <div className="flex items-end gap-[6px] sm:gap-2 h-24">
+                      {(PRODUCT_CHART_DATA[activeProduct.id as string] ?? DEFAULT_BARS).map((height, i) => {
+                        const accent = PRODUCT_ACCENT[activeProduct.color] ?? DEFAULT_ACCENT;
+                        const opacity = 0.3 + (i / 6) * 0.7;
+                        return (
+                          <div
+                            key={i}
+                            className="flex-1 rounded-t-md transition-all duration-500 ease-out"
+                            style={{
+                              height: `${height}%`,
+                              backgroundColor: accent.bar,
+                              opacity,
+                            }}
+                          />
+                        );
+                      })}
+                    </div>
+                    <div className="flex justify-between mt-2 text-[9px] text-slate-400">
+                      {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d => (
+                        <span key={d} className="flex-1 text-center">{d}</span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
 
-                {/* Stat cards row */}
-                <rect x="132" y="76" width="96" height="56" rx="8" fill="white" stroke="#e2e8f0" strokeWidth="1"/>
-                <rect x="144" y="88" width="40" height="8" rx="4" fill="#cbd5e1"/>
-                <rect x="144" y="104" width="60" height="14" rx="4" fill="#0d9488"/>
-
-                <rect x="240" y="76" width="96" height="56" rx="8" fill="white" stroke="#e2e8f0" strokeWidth="1"/>
-                <rect x="252" y="88" width="40" height="8" rx="4" fill="#cbd5e1"/>
-                <rect x="252" y="104" width="56" height="14" rx="4" fill="#0f766e"/>
-
-                <rect x="348" y="76" width="96" height="56" rx="8" fill="white" stroke="#e2e8f0" strokeWidth="1"/>
-                <rect x="360" y="88" width="40" height="8" rx="4" fill="#cbd5e1"/>
-                <rect x="360" y="104" width="48" height="14" rx="4" fill="#14b8a6"/>
-
-                {/* Chart area */}
-                <rect x="132" y="148" width="320" height="140" rx="8" fill="white" stroke="#e2e8f0" strokeWidth="1"/>
-                <rect x="148" y="160" width="80" height="10" rx="5" fill="#cbd5e1"/>
-                {/* Bar chart */}
-                <rect x="160" y="244" width="24" height="28" rx="4" fill="#ccfbf1"/>
-                <rect x="196" y="224" width="24" height="48" rx="4" fill="#99f6e4"/>
-                <rect x="232" y="210" width="24" height="62" rx="4" fill="#5eead4"/>
-                <rect x="268" y="230" width="24" height="42" rx="4" fill="#2dd4bf"/>
-                <rect x="304" y="200" width="24" height="72" rx="4" fill="#14b8a6"/>
-                <rect x="340" y="190" width="24" height="82" rx="4" fill="#0d9488"/>
-                <rect x="376" y="210" width="24" height="62" rx="4" fill="#0f766e"/>
-                {/* Chart baseline */}
-                <line x1="148" y1="272" x2="420" y2="272" stroke="#e2e8f0" strokeWidth="1"/>
-
-                {/* Bottom info row */}
-                <rect x="132" y="300" width="152" height="32" rx="8" fill="white" stroke="#e2e8f0" strokeWidth="1"/>
-                <rect x="148" y="312" width="60" height="8" rx="4" fill="#e2e8f0"/>
-                <rect x="296" y="300" width="156" height="32" rx="8" fill="white" stroke="#e2e8f0" strokeWidth="1"/>
-                <rect x="312" y="312" width="72" height="8" rx="4" fill="#e2e8f0"/>
-              </svg>
-
-              {/* Floating feature labels — CSS only, no motion */}
-              <div className="hidden sm:block absolute -top-2 right-4 lg:right-0 bg-white border border-slate-200 rounded-lg px-3 py-1.5 shadow-sm">
-                <span className="flex items-center gap-1.5 text-xs font-medium text-slate-700">
-                  <BarChart3 className="w-3.5 h-3.5 text-teal-500" />Analytics
-                </span>
+                {/* Activity feed — changes per product */}
+                <div className="px-4 pb-4">
+                  <div className="space-y-2">
+                    {[
+                      { text: 'New report generated', time: '2m ago' },
+                      { text: 'Team sync completed', time: '15m ago' },
+                      { text: 'Workflow automated', time: '1h ago' },
+                    ].map((item, i) => (
+                      <div key={i} className="flex items-center gap-3 py-2 px-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors cursor-default group">
+                        <span
+                          className="w-2 h-2 rounded-full shrink-0 transition-colors duration-300"
+                          style={{ backgroundColor: (PRODUCT_ACCENT[activeProduct.color] ?? DEFAULT_ACCENT).bar }}
+                        />
+                        <span className="text-xs text-slate-600 flex-1 group-hover:text-slate-900 transition-colors">{item.text}</span>
+                        <span className="text-[10px] text-slate-400">{item.time}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
-              <div className="hidden sm:block absolute bottom-8 -left-2 lg:-left-4 bg-white border border-slate-200 rounded-lg px-3 py-1.5 shadow-sm">
-                <span className="flex items-center gap-1.5 text-xs font-medium text-slate-700">
-                  <Workflow className="w-3.5 h-3.5 text-teal-500" />Automation
-                </span>
+
+              {/* Floating labels — CSS hover only */}
+              <div className="hidden sm:flex absolute -top-3 right-2 lg:-right-4 items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-3 py-1.5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
+                <BarChart3 className="w-3.5 h-3.5 text-teal-500" />
+                <span className="text-xs font-medium text-slate-700">Analytics</span>
               </div>
-            </div>
+              <div className="hidden sm:flex absolute -bottom-3 left-2 lg:-left-4 items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-3 py-1.5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
+                <Workflow className="w-3.5 h-3.5 text-teal-500" />
+                <span className="text-xs font-medium text-slate-700">Automation</span>
+              </div>
+            </motion.div>
           </div>
         </div>
       </main>
