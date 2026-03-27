@@ -373,9 +373,9 @@ const Landing: React.FC = () => {
               onMouseEnter={handleProductsMouseEnter}
               onMouseLeave={handleProductsMouseLeave}
             >
-              <button className="group px-3.5 py-2 text-neutral-500 hover:text-indigo-700 font-medium flex items-center gap-1.5 whitespace-nowrap transition-all duration-200">
+              <button className="group px-3.5 py-2 text-neutral-500 hover:text-[#1B2E5A] font-medium flex items-center gap-1.5 whitespace-nowrap transition-all duration-200">
                 <span>Products</span>
-                <ChevronRight size={13} className={`transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${showProductsDropdown ? 'rotate-90 text-indigo-500' : 'text-neutral-400'}`} />
+                <ChevronRight size={13} className={`transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${showProductsDropdown ? 'rotate-90 text-teal-600' : 'text-neutral-400'}`} />
               </button>
               <AnimatePresence>
                 {showProductsDropdown && (
@@ -387,10 +387,10 @@ const Landing: React.FC = () => {
                     className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-[340px] z-50"
                   >
                     {/* Dropdown glow */}
-                    <div className="absolute -inset-1 rounded-2xl bg-gradient-to-b from-indigo-500/10 to-purple-500/5 blur-lg pointer-events-none" />
-                    <div className="relative bg-white/95 backdrop-blur-xl rounded-2xl border border-indigo-100/50 shadow-[0_20px_60px_-12px_rgba(99,102,241,0.15)] overflow-hidden">
+                    <div className="absolute -inset-1 rounded-2xl bg-gradient-to-b from-teal-500/10 to-[#1B2E5A]/05 blur-lg pointer-events-none" />
+                    <div className="relative bg-white/95 backdrop-blur-xl rounded-2xl border border-teal-100/50 shadow-[0_20px_60px_-12px_rgba(20,184,166,0.12)] overflow-hidden">
                       {/* Header accent bar */}
-                      <div className="h-[2px] bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
+                      <div className="h-[2px] bg-gradient-to-r from-[#1B2E5A] via-teal-500 to-[#7C3AED]" />
                       <div className="px-4 pt-3 pb-2">
                         <p className="text-[10px] font-bold text-indigo-400/80 uppercase tracking-[0.15em]">Our Suite</p>
                       </div>
@@ -399,13 +399,13 @@ const Landing: React.FC = () => {
                           <button
                             key={product.id}
                             onClick={() => navigate({ to: `/products/${product.id}` })}
-                            className="group/item w-full text-left px-3 py-2 text-sm text-neutral-600 hover:text-indigo-700 transition-all duration-200 flex items-center gap-3 rounded-xl hover:bg-gradient-to-r hover:from-indigo-50/80 hover:to-purple-50/40"
+                            className="group/item w-full text-left px-3 py-2 text-sm text-neutral-600 hover:text-[#1B2E5A] transition-all duration-200 flex items-center gap-3 rounded-xl hover:bg-teal-50/50"
                           >
-                            <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-50 to-purple-50 group-hover/item:from-indigo-100 group-hover/item:to-purple-100 flex items-center justify-center shrink-0 transition-all duration-200 ring-1 ring-indigo-100/50 group-hover/item:ring-indigo-200/80 group-hover/item:shadow-sm">
-                              <DynamicIcon name={ORBIT_APPS.find(a => a.id === product.id)?.icon ?? 'Box'} className="w-4 h-4 text-indigo-500/70 group-hover/item:text-indigo-600 transition-colors" />
+                            <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-teal-50 to-teal-50 group-hover/item:from-teal-100 group-hover/item:to-teal-100 flex items-center justify-center shrink-0 transition-all duration-200 ring-1 ring-teal-100/50 group-hover/item:ring-teal-200/80 group-hover/item:shadow-sm">
+                              <DynamicIcon name={ORBIT_APPS.find(a => a.id === product.id)?.icon ?? 'Box'} className="w-4 h-4 text-teal-600/70 group-hover/item:text-teal-700 transition-colors" />
                             </span>
                             <span className="font-medium">{product.name}</span>
-                            <ArrowRight size={13} className="ml-auto opacity-0 -translate-x-2 group-hover/item:opacity-60 group-hover/item:translate-x-0 transition-all duration-200 text-indigo-400" />
+                            <ArrowRight size={13} className="ml-auto opacity-0 -translate-x-2 group-hover/item:opacity-60 group-hover/item:translate-x-0 transition-all duration-200 text-teal-500" />
                           </button>
                         ))}
                       </div>
@@ -420,9 +420,9 @@ const Landing: React.FC = () => {
               onMouseEnter={handleIndustriesMouseEnter}
               onMouseLeave={handleIndustriesMouseLeave}
             >
-              <button className="group px-3.5 py-2 text-neutral-500 hover:text-indigo-700 font-medium flex items-center gap-1.5 whitespace-nowrap transition-all duration-200">
+              <button className="group px-3.5 py-2 text-neutral-500 hover:text-[#1B2E5A] font-medium flex items-center gap-1.5 whitespace-nowrap transition-all duration-200">
                 <span>Industries</span>
-                <ChevronRight size={13} className={`transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${showIndustriesDropdown ? 'rotate-90 text-indigo-500' : 'text-neutral-400'}`} />
+                <ChevronRight size={13} className={`transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${showIndustriesDropdown ? 'rotate-90 text-teal-600' : 'text-neutral-400'}`} />
               </button>
               <AnimatePresence>
                 {showIndustriesDropdown && (
@@ -433,9 +433,9 @@ const Landing: React.FC = () => {
                     transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
                     className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-[280px] z-50"
                   >
-                    <div className="absolute -inset-1 rounded-2xl bg-gradient-to-b from-purple-500/10 to-pink-500/5 blur-lg pointer-events-none" />
-                    <div className="relative bg-white/95 backdrop-blur-xl rounded-2xl border border-purple-100/50 shadow-[0_20px_60px_-12px_rgba(139,92,246,0.15)] overflow-hidden">
-                      <div className="h-[2px] bg-gradient-to-r from-purple-500 via-pink-500 to-rose-500" />
+                    <div className="absolute -inset-1 rounded-2xl bg-gradient-to-b from-[#7C3AED]/10 to-[#1B2E5A]/05 blur-lg pointer-events-none" />
+                    <div className="relative bg-white/95 backdrop-blur-xl rounded-2xl border border-purple-100/50 shadow-[0_20px_60px_-12px_rgba(124,58,237,0.10)] overflow-hidden">
+                      <div className="h-[2px] bg-gradient-to-r from-[#7C3AED] via-[#1B2E5A] to-teal-500" />
                       <div className="px-4 pt-3 pb-2">
                         <p className="text-[10px] font-bold text-purple-400/80 uppercase tracking-[0.15em]">Industries</p>
                       </div>
@@ -444,11 +444,11 @@ const Landing: React.FC = () => {
                           <button
                             key={industry.slug}
                             onClick={() => navigate({ to: `/industries/${industry.slug}` })}
-                            className="group/item w-full text-left px-3 py-2.5 text-sm text-neutral-600 hover:text-purple-700 font-medium transition-all duration-200 flex items-center gap-3 rounded-xl hover:bg-gradient-to-r hover:from-purple-50/80 hover:to-pink-50/40"
+                            className="group/item w-full text-left px-3 py-2.5 text-sm text-neutral-600 hover:text-[#1B2E5A] font-medium transition-all duration-200 flex items-center gap-3 rounded-xl hover:bg-purple-50/40"
                           >
-                            <span className="w-2 h-2 rounded-full bg-purple-300/60 group-hover/item:bg-purple-500 group-hover/item:shadow-[0_0_8px_rgba(139,92,246,0.4)] transition-all duration-200 shrink-0" />
+                            <span className="w-2 h-2 rounded-full bg-[#7C3AED]/40 group-hover/item:bg-[#7C3AED] group-hover/item:shadow-[0_0_8px_rgba(124,58,237,0.3)] transition-all duration-200 shrink-0" />
                             <span>{industry.name}</span>
-                            <ArrowRight size={13} className="ml-auto opacity-0 -translate-x-2 group-hover/item:opacity-60 group-hover/item:translate-x-0 transition-all duration-200 text-purple-400" />
+                            <ArrowRight size={13} className="ml-auto opacity-0 -translate-x-2 group-hover/item:opacity-60 group-hover/item:translate-x-0 transition-all duration-200 text-[#7C3AED]/60" />
                           </button>
                         ))}
                       </div>
@@ -462,10 +462,10 @@ const Landing: React.FC = () => {
                 key={item.name}
                 href={item.link}
                 onClick={(e) => handleAnchorClick(e, item.link)}
-                className="px-3.5 py-2 text-neutral-500 hover:text-indigo-700 font-medium transition-all duration-200 cursor-pointer whitespace-nowrap shrink-0 relative group"
+                className="px-3.5 py-2 text-neutral-500 hover:text-[#1B2E5A] font-medium transition-all duration-200 cursor-pointer whitespace-nowrap shrink-0 relative group"
               >
                 {item.name}
-                <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-0 group-hover:w-4/5 h-[2px] bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]" />
+                <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-0 group-hover:w-4/5 h-[2px] bg-gradient-to-r from-teal-500 to-[#1B2E5A] rounded-full transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]" />
               </a>
             ))}
           </div>
@@ -489,13 +489,13 @@ const Landing: React.FC = () => {
             <NavbarLogo />
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="relative p-2.5 rounded-xl transition-all duration-200 hover:bg-indigo-50/60 group"
+              className="relative p-2.5 rounded-xl transition-all duration-200 hover:bg-teal-50/50 group"
               aria-label="Toggle menu"
             >
               <div className="relative w-5 h-5">
-                <span className={`absolute left-0 block w-5 h-[2px] rounded-full bg-neutral-600 group-hover:bg-indigo-600 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${isMobileMenuOpen ? 'top-[9px] rotate-45' : 'top-[3px] rotate-0'}`} />
-                <span className={`absolute left-0 top-[9px] block w-5 h-[2px] rounded-full bg-neutral-600 group-hover:bg-indigo-600 transition-all duration-200 ${isMobileMenuOpen ? 'opacity-0 scale-x-0' : 'opacity-100 scale-x-100'}`} />
-                <span className={`absolute left-0 block w-5 h-[2px] rounded-full bg-neutral-600 group-hover:bg-indigo-600 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${isMobileMenuOpen ? 'top-[9px] -rotate-45' : 'top-[15px] rotate-0'}`} />
+                <span className={`absolute left-0 block w-5 h-[2px] rounded-full bg-neutral-600 group-hover:bg-[#1B2E5A] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${isMobileMenuOpen ? 'top-[9px] rotate-45' : 'top-[3px] rotate-0'}`} />
+                <span className={`absolute left-0 top-[9px] block w-5 h-[2px] rounded-full bg-neutral-600 group-hover:bg-[#1B2E5A] transition-all duration-200 ${isMobileMenuOpen ? 'opacity-0 scale-x-0' : 'opacity-100 scale-x-100'}`} />
+                <span className={`absolute left-0 block w-5 h-[2px] rounded-full bg-neutral-600 group-hover:bg-[#1B2E5A] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${isMobileMenuOpen ? 'top-[9px] -rotate-45' : 'top-[15px] rotate-0'}`} />
               </div>
             </button>
           </MobileNavHeader>
@@ -516,7 +516,7 @@ const Landing: React.FC = () => {
                     key={product.id}
                     href={`/products/${product.id}`}
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className="px-3 py-2 text-[13px] text-neutral-600 hover:text-indigo-700 hover:bg-indigo-50/60 rounded-xl transition-all duration-200 font-medium truncate"
+                    className="px-3 py-2 text-[13px] text-neutral-600 hover:text-[#1B2E5A] hover:bg-teal-50/50 rounded-xl transition-all duration-200 font-medium truncate"
                   >
                     {product.name}
                   </a>
@@ -535,7 +535,7 @@ const Landing: React.FC = () => {
                   key={industry.slug}
                   href={`/industries/${industry.slug}`}
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="block px-3 py-2 text-[13px] text-neutral-600 hover:text-purple-700 hover:bg-purple-50/60 rounded-xl transition-all duration-200 font-medium"
+                  className="block px-3 py-2 text-[13px] text-neutral-600 hover:text-[#1B2E5A] hover:bg-purple-50/40 rounded-xl transition-all duration-200 font-medium"
                 >
                   {industry.name}
                 </a>
@@ -554,7 +554,7 @@ const Landing: React.FC = () => {
                   setIsMobileMenuOpen(false);
                   handleAnchorClick(e, item.link);
                 }}
-                className="px-3 py-2 text-[13px] text-neutral-600 hover:text-indigo-700 hover:bg-indigo-50/60 rounded-xl transition-all duration-200 font-medium cursor-pointer"
+                className="px-3 py-2 text-[13px] text-neutral-600 hover:text-[#1B2E5A] hover:bg-teal-50/50 rounded-xl transition-all duration-200 font-medium cursor-pointer"
               >
                 {item.name}
               </a>
@@ -863,303 +863,300 @@ const Landing: React.FC = () => {
       </section>
 
       {/* Contact Us Section */}
-      <section id="contact" className="py-20 px-4 sm:px-6 lg:px-8 bg-white" style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 1000px' }}>
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
-              Get in Touch
-            </h2>
-            <p className="text-xl text-slate-600 max-w-3xl mx-auto">
-              Have questions? We'd love to hear from you. Send us a message and we'll respond as soon as possible.
-            </p>
+      <section id="contact" className="relative py-24 sm:py-32 px-4 sm:px-6 lg:px-8 overflow-hidden" style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 1000px' }}>
+        {/* Background */}
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-50 via-white to-slate-50" />
+        <div className="absolute inset-0 pointer-events-none" style={{
+          backgroundImage: 'radial-gradient(circle at 20% 50%, rgba(20,184,166,0.05) 0%, transparent 50%), radial-gradient(circle at 80% 50%, rgba(27,46,90,0.04) 0%, transparent 50%)',
+        }} />
+        {/* Subtle grid */}
+        <div className="absolute inset-0 pointer-events-none opacity-[0.025]" style={{
+          backgroundImage: 'linear-gradient(rgba(27,46,90,0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(27,46,90,0.15) 1px, transparent 1px)',
+          backgroundSize: '60px 60px',
+        }} />
+
+        <div className="relative max-w-6xl mx-auto">
+          {/* Header */}
+          <div className="text-center mb-16 sm:mb-20">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.5 }}
+            >
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-teal-50 border border-teal-200/60 mb-6">
+                <div className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse" />
+                <span className="text-xs font-semibold text-teal-700 uppercase tracking-wider">Get in Touch</span>
+              </div>
+              <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-[#1B2E5A] mb-5 tracking-tight">
+                Let's build something{' '}
+                <span className="bg-gradient-to-r from-teal-600 to-[#7C3AED] bg-clip-text text-transparent">
+                  great together
+                </span>
+              </h2>
+              <p className="text-lg sm:text-xl text-slate-500 max-w-2xl mx-auto leading-relaxed">
+                Have questions? We'd love to hear from you. Reach out and we'll respond as soon as possible.
+              </p>
+            </motion.div>
           </div>
-          
-          <div className="grid md:grid-cols-2 gap-8 lg:gap-12 max-w-6xl mx-auto">
-            {/* Contact Information */}
-            <div className="space-y-8">
-              <div>
-                <h3 className="text-2xl font-bold text-slate-900 mb-6">Contact Information</h3>
-                <div className="space-y-6">
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
-                      <Mail className="w-6 h-6 text-blue-600" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-slate-900 mb-1">Email</h4>
-                      <a href="mailto:sales@zopkit.com" className="text-slate-600 hover:text-blue-600 transition-colors">
-                        sales@zopkit.com
-                      </a>
-                    </div>
+
+          <div className="grid lg:grid-cols-5 gap-8 lg:gap-12 items-start">
+            {/* Left — Contact Info Cards */}
+            <motion.div
+              className="lg:col-span-2 space-y-5"
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+            >
+              {/* Email card */}
+              <div className="group relative p-5 rounded-2xl bg-white border border-slate-200/60 hover:border-teal-200/80 transition-all duration-300 hover:shadow-[0_8px_30px_-8px_rgba(20,184,166,0.10)]">
+                <div className="absolute inset-0 rounded-2xl bg-teal-50/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="relative flex items-start gap-4">
+                  <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center shrink-0 shadow-lg shadow-teal-500/20">
+                    <Mail className="w-5 h-5 text-white" />
                   </div>
-                  
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
-                      <Phone className="w-6 h-6 text-blue-600" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-slate-900 mb-1">Phone</h4>
-                      <p className="text-slate-600">8971055515</p>
-                    </div>
+                  <div>
+                    <h4 className="text-sm font-semibold text-[#1B2E5A] mb-0.5">Email us</h4>
+                    <a href="mailto:sales@zopkit.com" className="text-sm text-slate-500 hover:text-teal-600 transition-colors">
+                      sales@zopkit.com
+                    </a>
                   </div>
-                  
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
-                      <MapPin className="w-6 h-6 text-blue-600" />
+                </div>
+              </div>
+
+              {/* Phone card */}
+              <div className="group relative p-5 rounded-2xl bg-white border border-slate-200/60 hover:border-[#7C3AED]/20 transition-all duration-300 hover:shadow-[0_8px_30px_-8px_rgba(124,58,237,0.08)]">
+                <div className="absolute inset-0 rounded-2xl bg-purple-50/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="relative flex items-start gap-4">
+                  <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#7C3AED] to-[#6D28D9] flex items-center justify-center shrink-0 shadow-lg shadow-purple-500/20">
+                    <Phone className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold text-[#1B2E5A] mb-0.5">Call us</h4>
+                    <p className="text-sm text-slate-500">8971055515</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Address card */}
+              <div className="group relative p-5 rounded-2xl bg-white border border-slate-200/60 hover:border-[#1B2E5A]/15 transition-all duration-300 hover:shadow-[0_8px_30px_-8px_rgba(27,46,90,0.08)]">
+                <div className="absolute inset-0 rounded-2xl bg-slate-50/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="relative flex items-start gap-4">
+                  <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#1B2E5A] to-[#243B6A] flex items-center justify-center shrink-0 shadow-lg shadow-[#1B2E5A]/20">
+                    <MapPin className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold text-[#1B2E5A] mb-0.5">Visit us</h4>
+                    <p className="text-sm text-slate-500">Hi-Tech City, Hyderabad</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Business hours */}
+              <div className="relative p-5 rounded-2xl bg-[#1B2E5A] text-white overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-teal-500/15 to-transparent rounded-bl-full" />
+                <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-[#7C3AED]/15 to-transparent rounded-tr-full" />
+                <div className="relative">
+                  <h4 className="text-sm font-semibold text-white/90 mb-3">Business Hours</h4>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-slate-300">Mon – Fri</span>
+                      <span className="text-white font-medium">9:00 AM – 6:00 PM</span>
                     </div>
-                    <div>
-                      <h4 className="font-semibold text-slate-900 mb-1">Address</h4>
-                      <p className="text-slate-600">
-                        Hi-Tech City, Hyderabad
-                      </p>
+                    <div className="h-px bg-white/10" />
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-slate-300">Sat – Sun</span>
+                      <span className="text-slate-400 font-medium">Closed</span>
                     </div>
                   </div>
                 </div>
               </div>
-              
-              <div className="pt-8 border-t border-slate-200">
-                <h4 className="font-semibold text-slate-900 mb-4">Business Hours</h4>
-                <div className="space-y-2 text-slate-600">
-                  <p>Monday - Friday: 9:00 AM - 6:00 PM PST</p>
-                  <p>Saturday - Sunday: Closed</p>
-                </div>
-              </div>
-            </div>
-            
-            {/* Contact Form */}
-            <div className="bg-slate-50 p-6 md:p-8 rounded-2xl border border-slate-200 overflow-hidden">
-              <h3 className="text-2xl font-bold text-slate-900 mb-6">Send us a Message</h3>
-              <form 
-                className="max-w-full"
-                onSubmit={async (e) => {
-                  e.preventDefault()
-                  setIsSubmittingContact(true)
-                  
-                  try {
-                    const response = await api.post('/contact/submit', contactForm)
-                    
-                    if (response.data.success) {
-                      toast.success('Thank you for contacting us! We will get back to you soon.')
-                      // Reset form
-                      setContactForm({
-                        name: '',
-                        email: '',
-                        company: '',
-                        phone: '',
-                        jobTitle: '',
-                        companySize: '',
-                        preferredTime: '',
-                        comments: ''
-                      })
-                    } else {
-                      throw new Error(response.data.message || 'Failed to submit contact form')
-                    }
-                  } catch (error: any) {
-                    console.error('Contact form submission error:', error)
-                    toast.error(error.response?.data?.message || 'Failed to submit contact form. Please try again.')
-                  } finally {
-                    setIsSubmittingContact(false)
-                  }
-                }}
-              >
-                {/* Top Section: Two Columns */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5 mb-5">
-                  <div>
-                    <label htmlFor="name" className="block text-sm font-medium text-slate-700 mb-2">
-                      Full Name *
-                    </label>
-                    <input
-                      type="text"
-                      id="name"
-                      name="name"
-                      required
-                      value={contactForm.name}
-                      onChange={(e) => setContactForm(prev => ({ ...prev, name: e.target.value }))}
-                      className="w-full px-4 py-2.5 md:py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white text-sm md:text-base"
-                      placeholder="John Smith"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-2">
-                      Email Address *
-                    </label>
-                    <input
-                      type="email"
-                      id="email"
-                      name="email"
-                      required
-                      value={contactForm.email}
-                      onChange={(e) => setContactForm(prev => ({ ...prev, email: e.target.value }))}
-                      className="w-full px-4 py-2.5 md:py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white text-sm md:text-base"
-                      placeholder="john@company.com"
-                    />
-                  </div>
-                </div>
-                
-                {/* Bottom Section: Two Columns */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5 mb-5">
-                  <div>
-                    <label htmlFor="company" className="block text-sm font-medium text-slate-700 mb-2">
-                      Company Name *
-                    </label>
-                    <input
-                      type="text"
-                      id="company"
-                      name="company"
-                      required
-                      value={contactForm.company}
-                      onChange={(e) => setContactForm(prev => ({ ...prev, company: e.target.value }))}
-                      className="w-full px-4 py-2.5 md:py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white text-sm md:text-base"
-                      placeholder="Acme Corporation"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="phone" className="block text-sm font-medium text-slate-700 mb-2">
-                      Phone Number
-                    </label>
-                    <input
-                      type="tel"
-                      id="phone"
-                      name="phone"
-                      value={contactForm.phone}
-                      onChange={(e) => setContactForm(prev => ({ ...prev, phone: e.target.value }))}
-                      className="w-full px-4 py-2.5 md:py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white text-sm md:text-base"
-                      placeholder="+1 (555) 123-4567"
-                    />
-                  </div>
-                </div>
-                
-                {/* Second Row: Two Columns */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5 mb-5">
-                  <div>
-                    <label htmlFor="jobTitle" className="block text-sm font-medium text-slate-700 mb-2">
-                      Job Title *
-                    </label>
-                    <input
-                      type="text"
-                      id="jobTitle"
-                      name="jobTitle"
-                      required
-                      value={contactForm.jobTitle}
-                      onChange={(e) => setContactForm(prev => ({ ...prev, jobTitle: e.target.value }))}
-                      className="w-full px-4 py-2.5 md:py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white text-sm md:text-base"
-                      placeholder="CEO, CTO, Manager..."
-                    />
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="companySize" className="block text-sm font-medium text-slate-700 mb-2">
-                      Company Size
-                    </label>
-                    <select
-                      id="companySize"
-                      name="companySize"
-                      value={contactForm.companySize}
-                      onChange={(e) => setContactForm(prev => ({ ...prev, companySize: e.target.value }))}
-                      className="w-full px-4 py-2.5 md:py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white text-sm md:text-base"
+            </motion.div>
+
+            {/* Right — Contact Form */}
+            <motion.div
+              className="lg:col-span-3"
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
+              <div className="relative">
+                {/* Form glow */}
+                <div className="absolute -inset-1 rounded-3xl bg-gradient-to-br from-teal-500/8 via-transparent to-[#7C3AED]/6 blur-xl pointer-events-none" />
+
+                <div className="relative bg-white rounded-2xl border border-slate-200/60 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.05)] overflow-hidden">
+                  {/* Top gradient accent */}
+                  <div className="h-[2px] bg-gradient-to-r from-[#1B2E5A] via-teal-500 to-[#7C3AED]" />
+
+                  <div className="p-6 sm:p-8">
+                    <h3 className="text-xl font-bold text-[#1B2E5A] mb-1">Send us a message</h3>
+                    <p className="text-sm text-slate-400 mb-6">Fill out the form and our team will get back to you within 24 hours.</p>
+
+                    <form
+                      className="max-w-full"
+                      onSubmit={async (e) => {
+                        e.preventDefault()
+                        setIsSubmittingContact(true)
+                        try {
+                          const response = await api.post('/contact/submit', contactForm)
+                          if (response.data.success) {
+                            toast.success('Thank you for contacting us! We will get back to you soon.')
+                            setContactForm({ name: '', email: '', company: '', phone: '', jobTitle: '', companySize: '', preferredTime: '', comments: '' })
+                          } else {
+                            throw new Error(response.data.message || 'Failed to submit contact form')
+                          }
+                        } catch (error: any) {
+                          console.error('Contact form submission error:', error)
+                          toast.error(error.response?.data?.message || 'Failed to submit contact form. Please try again.')
+                        } finally {
+                          setIsSubmittingContact(false)
+                        }
+                      }}
                     >
-                      <option value="">Select company size</option>
-                      <option value="1-10">1-10 employees</option>
-                      <option value="11-50">11-50 employees</option>
-                      <option value="51-200">51-200 employees</option>
-                      <option value="201-500">201-500 employees</option>
-                      <option value="501-1000">501-1000 employees</option>
-                      <option value="1000+">1000+ employees</option>
-                    </select>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                        <div>
+                          <label htmlFor="name" className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Full Name *</label>
+                          <input type="text" id="name" name="name" required value={contactForm.name} onChange={(e) => setContactForm(prev => ({ ...prev, name: e.target.value }))}
+                            className="w-full px-4 py-2.5 bg-slate-50/80 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/25 focus:border-teal-400 transition-all duration-200 hover:border-slate-300"
+                            placeholder="John Smith" />
+                        </div>
+                        <div>
+                          <label htmlFor="email" className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Email *</label>
+                          <input type="email" id="email" name="email" required value={contactForm.email} onChange={(e) => setContactForm(prev => ({ ...prev, email: e.target.value }))}
+                            className="w-full px-4 py-2.5 bg-slate-50/80 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/25 focus:border-teal-400 transition-all duration-200 hover:border-slate-300"
+                            placeholder="john@company.com" />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                        <div>
+                          <label htmlFor="company" className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Company *</label>
+                          <input type="text" id="company" name="company" required value={contactForm.company} onChange={(e) => setContactForm(prev => ({ ...prev, company: e.target.value }))}
+                            className="w-full px-4 py-2.5 bg-slate-50/80 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/25 focus:border-teal-400 transition-all duration-200 hover:border-slate-300"
+                            placeholder="Acme Corporation" />
+                        </div>
+                        <div>
+                          <label htmlFor="phone" className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Phone</label>
+                          <input type="tel" id="phone" name="phone" value={contactForm.phone} onChange={(e) => setContactForm(prev => ({ ...prev, phone: e.target.value }))}
+                            className="w-full px-4 py-2.5 bg-slate-50/80 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/25 focus:border-teal-400 transition-all duration-200 hover:border-slate-300"
+                            placeholder="+1 (555) 123-4567" />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                        <div>
+                          <label htmlFor="jobTitle" className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Job Title *</label>
+                          <input type="text" id="jobTitle" name="jobTitle" required value={contactForm.jobTitle} onChange={(e) => setContactForm(prev => ({ ...prev, jobTitle: e.target.value }))}
+                            className="w-full px-4 py-2.5 bg-slate-50/80 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/25 focus:border-teal-400 transition-all duration-200 hover:border-slate-300"
+                            placeholder="CEO, CTO, Manager..." />
+                        </div>
+                        <div>
+                          <label htmlFor="companySize" className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Company Size</label>
+                          <select id="companySize" name="companySize" value={contactForm.companySize} onChange={(e) => setContactForm(prev => ({ ...prev, companySize: e.target.value }))}
+                            className="w-full px-4 py-2.5 bg-slate-50/80 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-500/25 focus:border-teal-400 transition-all duration-200 hover:border-slate-300 appearance-none"
+                            style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'12\' viewBox=\'0 0 12 12\'%3E%3Cpath d=\'M3 5l3 3 3-3\' stroke=\'%2394a3b8\' stroke-width=\'1.5\' fill=\'none\' stroke-linecap=\'round\' stroke-linejoin=\'round\'/%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 14px center' }}>
+                            <option value="">Select size</option>
+                            <option value="1-10">1-10 employees</option>
+                            <option value="11-50">11-50 employees</option>
+                            <option value="51-200">51-200 employees</option>
+                            <option value="201-500">201-500 employees</option>
+                            <option value="501-1000">501-1000 employees</option>
+                            <option value="1000+">1000+ employees</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="mb-4">
+                        <label htmlFor="preferredTime" className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Preferred Demo Time</label>
+                        <select id="preferredTime" name="preferredTime"
+                          className="w-full px-4 py-2.5 bg-slate-50/80 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-500/25 focus:border-teal-400 transition-all duration-200 hover:border-slate-300 appearance-none"
+                          style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'12\' viewBox=\'0 0 12 12\'%3E%3Cpath d=\'M3 5l3 3 3-3\' stroke=\'%2394a3b8\' stroke-width=\'1.5\' fill=\'none\' stroke-linecap=\'round\' stroke-linejoin=\'round\'/%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 14px center' }}>
+                          <option value="">Select preferred time</option>
+                          <option value="morning">Morning (9 AM - 12 PM)</option>
+                          <option value="afternoon">Afternoon (12 PM - 5 PM)</option>
+                          <option value="evening">Evening (5 PM - 8 PM)</option>
+                          <option value="flexible">Flexible</option>
+                        </select>
+                      </div>
+
+                      <div className="mb-6">
+                        <label htmlFor="comments" className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Message</label>
+                        <textarea id="comments" name="comments" rows={4} value={contactForm.comments} onChange={(e) => setContactForm(prev => ({ ...prev, comments: e.target.value }))}
+                          className="w-full px-4 py-2.5 bg-slate-50/80 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/25 focus:border-teal-400 transition-all duration-200 hover:border-slate-300 resize-none"
+                          placeholder="Tell us about your specific needs or questions..." />
+                      </div>
+
+                      {/* Submit Button */}
+                      <button
+                        type="submit"
+                        disabled={isSubmittingContact}
+                        className="group relative w-full inline-flex items-center justify-center rounded-xl transition-all duration-300 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 overflow-hidden"
+                      >
+                        {/* Rotating brand gradient border */}
+                        <div className="absolute inset-0 rounded-xl p-[1.5px] overflow-hidden" style={{
+                          background: 'conic-gradient(from var(--nav-angle, 0deg), #1B2E5A, #14B8A6, #7C3AED, #0D9488, #1B2E5A)',
+                          animation: 'nav-border-rotate 3s linear infinite',
+                        }}>
+                          <div className="absolute inset-[1.5px] rounded-[calc(0.75rem-1.5px)] bg-white transition-colors duration-300 group-hover:bg-slate-50/80" />
+                        </div>
+                        {/* Outer glow on hover */}
+                        <div className="absolute -inset-1 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none blur-md" style={{
+                          background: 'conic-gradient(from var(--nav-angle, 0deg), #1B2E5A80, #14B8A680, #7C3AED80, #0D948880, #1B2E5A80)',
+                          animation: 'nav-border-rotate 3s linear infinite',
+                        }} />
+                        <span className="relative z-10 flex items-center justify-center gap-2 py-3 font-semibold text-sm text-[#1B2E5A] group-hover:text-[#1B2E5A] transition-colors">
+                          {isSubmittingContact ? (
+                            <>
+                              <svg className="animate-spin h-4 w-4 text-teal-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                              Sending...
+                            </>
+                          ) : (
+                            <>
+                              Send Message
+                              <ArrowRight size={15} className="-translate-x-1 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300 text-teal-600" />
+                            </>
+                          )}
+                        </span>
+                      </button>
+                    </form>
                   </div>
                 </div>
-                
-                {/* Preferred Demo Time: Full Width */}
-                <div className="mb-5">
-                  <label htmlFor="preferredTime" className="block text-sm font-medium text-slate-700 mb-2">
-                    Preferred Demo Time
-                  </label>
-                  <select
-                    id="preferredTime"
-                    name="preferredTime"
-                    className="w-full px-4 py-2.5 md:py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white text-sm md:text-base"
-                  >
-                    <option value="">Select preferred time</option>
-                    <option value="morning">Morning (9 AM - 12 PM)</option>
-                    <option value="afternoon">Afternoon (12 PM - 5 PM)</option>
-                    <option value="evening">Evening (5 PM - 8 PM)</option>
-                    <option value="flexible">Flexible</option>
-                  </select>
-                </div>
-                
-                {/* Additional Comments: Full Width */}
-                <div className="mb-5">
-                  <label htmlFor="comments" className="block text-sm font-medium text-slate-700 mb-2">
-                    Additional Comments
-                  </label>
-                  <textarea
-                    id="comments"
-                    name="comments"
-                    rows={5}
-                    value={contactForm.comments}
-                    onChange={(e) => setContactForm(prev => ({ ...prev, comments: e.target.value }))}
-                    className="w-full px-4 py-2.5 md:py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none bg-white text-sm md:text-base"
-                    placeholder="Tell us about your specific needs or questions..."
-                  />
-                </div>
-                
-                {/* Send Message Button at Bottom */}
-                <div className="flex justify-center">
-                  <button
-                    type="submit"
-                    disabled={isSubmittingContact}
-                    className="w-full md:w-auto px-8 py-2.5 md:py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors text-sm md:text-base shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isSubmittingContact ? 'Sending...' : 'Send Message'}
-                  </button>
-                </div>
-              </form>
-            </div>
+              </div>
+            </motion.div>
           </div>
         </div>
       </section>
 
-      {/* Resources Section */}
-      <section id="resources" className="py-20 px-4 sm:px-6 lg:px-8 bg-slate-50" style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 600px' }}>
+{/* Resources Section */}
+      <section id="resources" className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6 lg:px-8 bg-white border-t border-slate-100" style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 500px' }}>
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
-              Resources & Support
+          <div className="text-center mb-12 sm:mb-16">
+            <p className="text-sm font-semibold text-slate-400 tracking-wide mb-3">Resources</p>
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-[-0.025em]">
+              Everything you need to succeed
             </h2>
-            <p className="text-xl text-slate-600 max-w-3xl mx-auto">
-              Everything you need to get started and succeed with Zopkit.
-            </p>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-white p-6 rounded-xl border border-slate-200 hover:border-blue-300 transition cursor-pointer group">
-              <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center mb-4 group-hover:bg-blue-600 transition">
-                <FileText className="w-6 h-6 text-blue-600 group-hover:text-white transition" />
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              { icon: FileText, title: 'Documentation', desc: 'Comprehensive guides and API docs' },
+              { icon: GraduationCap, title: 'Academy', desc: 'Video tutorials and courses' },
+              { icon: Users, title: 'Community', desc: 'Join our user community' },
+              { icon: Zap, title: 'Support', desc: '24/7 customer support' },
+            ].map((item) => (
+              <div key={item.title} className="group cursor-pointer rounded-2xl bg-[#fafafa] hover:bg-slate-900 p-6 sm:p-7 transition-all duration-300">
+                <div className="w-10 h-10 rounded-xl bg-white group-hover:bg-white/10 flex items-center justify-center mb-5 transition-colors duration-300">
+                  <item.icon className="w-5 h-5 text-slate-600 group-hover:text-white transition-colors duration-300" />
+                </div>
+                <h3 className="text-base font-bold text-slate-900 group-hover:text-white mb-1.5 tracking-tight transition-colors duration-300">
+                  {item.title}
+                </h3>
+                <p className="text-sm text-slate-500 group-hover:text-slate-400 leading-relaxed transition-colors duration-300">
+                  {item.desc}
+                </p>
               </div>
-              <h3 className="text-lg font-bold text-slate-900 mb-2">Documentation</h3>
-              <p className="text-slate-600 text-sm">Comprehensive guides and API docs</p>
-            </div>
-            <div className="bg-white p-6 rounded-xl border border-slate-200 hover:border-blue-300 transition cursor-pointer group">
-              <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center mb-4 group-hover:bg-blue-600 transition">
-                <GraduationCap className="w-6 h-6 text-blue-600 group-hover:text-white transition" />
-              </div>
-              <h3 className="text-lg font-bold text-slate-900 mb-2">Academy</h3>
-              <p className="text-slate-600 text-sm">Video tutorials and courses</p>
-            </div>
-            <div className="bg-white p-6 rounded-xl border border-slate-200 hover:border-blue-300 transition cursor-pointer group">
-              <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center mb-4 group-hover:bg-blue-600 transition">
-                <Users className="w-6 h-6 text-blue-600 group-hover:text-white transition" />
-              </div>
-              <h3 className="text-lg font-bold text-slate-900 mb-2">Community</h3>
-              <p className="text-slate-600 text-sm">Join our user community</p>
-            </div>
-            <div className="bg-white p-6 rounded-xl border border-slate-200 hover:border-blue-300 transition cursor-pointer group">
-              <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center mb-4 group-hover:bg-blue-600 transition">
-                <Zap className="w-6 h-6 text-blue-600 group-hover:text-white transition" />
-              </div>
-              <h3 className="text-lg font-bold text-slate-900 mb-2">Support</h3>
-              <p className="text-slate-600 text-sm">24/7 customer support</p>
-            </div>
+            ))}
           </div>
         </div>
       </section>
