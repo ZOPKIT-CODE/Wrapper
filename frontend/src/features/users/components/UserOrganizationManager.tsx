@@ -89,7 +89,7 @@ const EntityTreeNode: React.FC<{
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <span className={`font-medium text-sm truncate ${
-              isAssigned ? 'text-blue-900' : 'text-gray-900'
+              isAssigned ? 'text-blue-900' : 'text-[#1B2E5A]'
             }`} title={entity.entityName}>
               {entity.entityName}
             </span>
@@ -289,7 +289,7 @@ export const UserOrganizationManager: React.FC<UserOrganizationManagerProps> = (
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Building2 className="w-5 h-5 text-blue-600" />
-          <h3 className="font-semibold text-gray-900 dark:text-white">Organization & Location Access</h3>
+          <h3 className="font-semibold text-[#1B2E5A] dark:text-white">Organization & Location Access</h3>
         </div>
         <button
           onClick={loadAssignments}

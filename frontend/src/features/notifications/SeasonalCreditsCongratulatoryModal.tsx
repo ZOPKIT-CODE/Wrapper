@@ -78,7 +78,7 @@ export const SeasonalCreditsCongratulatoryModal: React.FC<SeasonalCreditsCongrat
               <div className="inline-flex items-center justify-center w-16 h-16 bg-emerald-100 rounded-full mb-4">
                 <CheckCircle className="w-8 h-8 text-emerald-600" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              <h3 className="text-lg font-semibold text-[#1B2E5A] mb-2">
                 Credits Successfully Allocated
               </h3>
               <p className="text-gray-600 text-sm leading-relaxed">
@@ -91,7 +91,7 @@ export const SeasonalCreditsCongratulatoryModal: React.FC<SeasonalCreditsCongrat
               <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
                 <div className="flex items-center gap-2 mb-2">
                   <TrendingUp className="w-4 h-4 text-slate-600" />
-                  <span className="text-sm font-medium text-slate-900">Premium Features</span>
+                  <span className="text-sm font-medium text-[#1B2E5A]">Premium Features</span>
                 </div>
                 <p className="text-xs text-slate-600">
                   Access advanced tools and integrations
@@ -101,7 +101,7 @@ export const SeasonalCreditsCongratulatoryModal: React.FC<SeasonalCreditsCongrat
               <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
                 <div className="flex items-center gap-2 mb-2">
                   <Gift className="w-4 h-4 text-slate-600" />
-                  <span className="text-sm font-medium text-slate-900">Usage Credits</span>
+                  <span className="text-sm font-medium text-[#1B2E5A]">Usage Credits</span>
                 </div>
                 <p className="text-xs text-slate-600">
                   Apply towards service consumption

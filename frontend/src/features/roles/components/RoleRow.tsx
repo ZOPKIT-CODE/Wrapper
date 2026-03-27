@@ -76,7 +76,7 @@ export function RoleRow({
           {role.metadata?.icon || '👤'}
         </div>
         <div className="min-w-0 flex-1">
-          <div className="font-semibold text-gray-900 truncate">{role.roleName}</div>
+          <div className="font-semibold text-[#1B2E5A] truncate">{role.roleName}</div>
           <div className="text-sm text-gray-500 truncate">
             {role.description}
           </div>

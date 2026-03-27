@@ -169,7 +169,7 @@ export const NotificationItem: React.FC<NotificationDisplayProps> = ({
                   {getPriorityIcon(notification.priority)}
                   <h4 className={cn(
                     "font-semibold text-base leading-tight truncate",
-                    !notification.isRead ? "text-gray-900" : "text-gray-700"
+                    !notification.isRead ? "text-[#1B2E5A]" : "text-gray-700"
                   )}>
                     {notification.title}
                   </h4>

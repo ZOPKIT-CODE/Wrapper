@@ -386,7 +386,7 @@ function OrganizationHierarchyFlowInner({
       <div className="w-full h-full flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <Building className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">No Organizations Found</h3>
+          <h3 className="text-xl font-semibold text-[#1B2E5A] mb-2">No Organizations Found</h3>
           <p className="text-gray-600 mb-4">
             Create your first organization to get started.
           </p>

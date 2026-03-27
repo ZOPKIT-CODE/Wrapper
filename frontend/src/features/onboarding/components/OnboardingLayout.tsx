@@ -65,7 +65,7 @@ export const OnboardingLayout = React.memo(({
     return (
       <div className="h-screen w-full flex items-center justify-center bg-white">
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="w-8 h-8 text-slate-900 animate-spin" />
+          <Loader2 className="w-8 h-8 text-[#1B2E5A] animate-spin" />
           <p className="text-slate-500 font-medium text-sm">Initializing...</p>
         </div>
       </div>
@@ -123,7 +123,7 @@ export const OnboardingLayout = React.memo(({
   const footerContent = getFooterContent(currentStep);
 
   return (
-    <div className="h-screen w-full flex flex-col lg:flex-row overflow-hidden font-sans text-slate-900 selection:bg-slate-200 selection:text-slate-900 relative">
+    <div className="h-screen w-full flex flex-col lg:flex-row overflow-hidden font-sans text-[#1B2E5A] selection:bg-slate-200 selection:text-slate-900 relative">
       {/* Global Background Gradients (Moved from main to cover the entire container) */}
       <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-blue-100 to-indigo-100 pointer-events-none -z-10" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-300 via-transparent to-pink-200/40 pointer-events-none -z-10" />
@@ -290,13 +290,13 @@ export const OnboardingLayout = React.memo(({
                className="h-8 w-auto object-contain"
              />
              <div>
-               <span className="block text-sm font-bold text-slate-900">Step {currentStep}</span>
+               <span className="block text-sm font-bold text-[#1B2E5A]">Step {currentStep}</span>
                <span className="text-[10px] text-slate-500 font-medium uppercase tracking-wide">
                  {stepsConfig.find(s => s.number === currentStep)?.title}
                </span>
              </div>
            </div>
-           <span className="text-xs font-bold text-slate-900">{progressPercent}%</span>
+           <span className="text-xs font-bold text-[#1B2E5A]">{progressPercent}%</span>
         </div>
         <div className="h-1 w-full bg-slate-100 rounded-full overflow-hidden">
           <div 

@@ -84,7 +84,7 @@ export const OrganizationHierarchyStep: React.FC<OrganizationHierarchyStepProps>
             <Building2 className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-slate-900">Organization Structure</h2>
+            <h2 className="text-2xl font-bold text-[#1B2E5A]">Organization Structure</h2>
             <p className="text-slate-600 text-sm">Learn how to organize your company hierarchy</p>
           </div>
         </div>
@@ -111,7 +111,7 @@ export const OrganizationHierarchyStep: React.FC<OrganizationHierarchyStepProps>
 
       {/* Hierarchy Visualization */}
       <motion.div variants={fadeInUp} className="space-y-4">
-        <h3 className="text-lg font-semibold text-slate-900">Hierarchy Levels</h3>
+        <h3 className="text-lg font-semibold text-[#1B2E5A]">Hierarchy Levels</h3>
         <div className="space-y-3">
           {hierarchyLevels.map((level, index) => {
             const Icon = level.icon;
@@ -130,7 +130,7 @@ export const OrganizationHierarchyStep: React.FC<OrganizationHierarchyStepProps>
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <h4 className="font-semibold text-slate-900">{level.name}</h4>
+                          <h4 className="font-semibold text-[#1B2E5A]">{level.name}</h4>
                           <Badge variant="outline" className="text-xs">
                             Level {level.level}
                           </Badge>

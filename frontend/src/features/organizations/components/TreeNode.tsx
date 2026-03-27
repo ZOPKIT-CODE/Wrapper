@@ -113,7 +113,7 @@ export function TreeNode({
         {/* Organization Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <span className="font-medium text-gray-900 truncate">{(org as any).entityName || 'Unknown'}</span>
+            <span className="font-medium text-[#1B2E5A] truncate">{(org as any).entityName || 'Unknown'}</span>
             <Badge variant={(org as any).isActive !== false ? "default" : "secondary"} className="text-xs">
               {(org as any).entityType || 'unknown'}
             </Badge>

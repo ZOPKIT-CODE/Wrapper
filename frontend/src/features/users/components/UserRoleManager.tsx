@@ -221,7 +221,7 @@ export const UserRoleManager: React.FC<UserRoleManagerProps> = ({
             <Users className="w-5 h-5 text-blue-600" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">User Role Management</h2>
+            <h2 className="text-lg font-semibold text-[#1B2E5A]">User Role Management</h2>
             <p className="text-sm text-gray-600">Assign and manage user roles and permissions</p>
           </div>
         </div>
@@ -241,7 +241,7 @@ export const UserRoleManager: React.FC<UserRoleManagerProps> = ({
       {!userId && (
         <div className="bg-white rounded-lg border border-gray-200">
           <div className="p-4 border-b border-gray-200">
-            <h3 className="text-md font-medium text-gray-900">Select User</h3>
+            <h3 className="text-md font-medium text-[#1B2E5A]">Select User</h3>
             <p className="text-sm text-gray-600">Choose a user to manage their roles</p>
           </div>
           
@@ -271,7 +271,7 @@ export const UserRoleManager: React.FC<UserRoleManagerProps> = ({
                           <Users className="w-4 h-4 text-gray-600" />
                         </div>
                         <div>
-                          <p className="font-medium text-gray-900">{user.firstName} {user.lastName}</p>
+                          <p className="font-medium text-[#1B2E5A]">{user.firstName} {user.lastName}</p>
                           <p className="text-sm text-gray-600">{user.email}</p>
                         </div>
                       </div>
@@ -307,7 +307,7 @@ export const UserRoleManager: React.FC<UserRoleManagerProps> = ({
             <div className="p-6 border-b border-gray-200 bg-gray-50 rounded-t-lg">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">
+                  <h3 className="text-lg font-semibold text-[#1B2E5A]">
                     Manage Roles: {selectedUser.name || `${selectedUser.firstName || ''} ${selectedUser.lastName || ''}`.trim() || selectedUser.email}
                   </h3>
                   <p className="text-sm text-gray-600">{selectedUser.email}</p>
@@ -337,7 +337,7 @@ export const UserRoleManager: React.FC<UserRoleManagerProps> = ({
 
             {/* Assigned to this user */}
             <div className="p-6 border-b border-gray-200 bg-emerald-50/30">
-              <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-1 flex items-center gap-2">
+              <h4 className="text-sm font-semibold text-[#1B2E5A] uppercase tracking-wider mb-1 flex items-center gap-2">
                 <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold">
                   {userRoles.length}
                 </span>
@@ -369,7 +369,7 @@ export const UserRoleManager: React.FC<UserRoleManagerProps> = ({
                           <Shield className="w-5 h-5" style={{ color: getRoleColor(role.color) }} />
                         </div>
                         <div>
-                          <p className="font-medium text-gray-900">{role.roleName}</p>
+                          <p className="font-medium text-[#1B2E5A]">{role.roleName}</p>
                           {role.description && (
                             <p className="text-sm text-gray-600">{role.description}</p>
                           )}
@@ -391,7 +391,7 @@ export const UserRoleManager: React.FC<UserRoleManagerProps> = ({
 
             {/* Not assigned — click to assign */}
             <div className="p-6">
-              <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-1 flex items-center gap-2">
+              <h4 className="text-sm font-semibold text-[#1B2E5A] uppercase tracking-wider mb-1 flex items-center gap-2">
                 <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-slate-200 text-slate-600 text-xs font-bold">
                   {availableRolesToAssign.length}
                 </span>
@@ -420,7 +420,7 @@ export const UserRoleManager: React.FC<UserRoleManagerProps> = ({
                             className="w-2 h-2 rounded-full"
                             style={{ backgroundColor: getRoleColor(role.color) }}
                           />
-                          <span className="font-medium text-gray-900 truncate" title={role.roleName}>
+                          <span className="font-medium text-[#1B2E5A] truncate" title={role.roleName}>
                             {role.roleName}
                           </span>
                         </div>

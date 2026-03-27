@@ -136,7 +136,7 @@ export const FlowSelector: React.FC<FlowSelectorProps> = ({
               </Badge>
             )}
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+          <h1 className="text-4xl font-bold text-[#1B2E5A] mb-4">
             {getPersonalizedGreeting()}
           </h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
@@ -265,7 +265,7 @@ export const FlowSelector: React.FC<FlowSelectorProps> = ({
                   </div>
                   <CardTitle className={cn(
                     'text-2xl font-bold',
-                    isSelected ? (flow.color === 'green' ? 'text-green-700' : 'text-blue-700') : 'text-gray-900'
+                    isSelected ? (flow.color === 'green' ? 'text-green-700' : 'text-blue-700') : 'text-[#1B2E5A]'
                   )}>
                     {flow.title}
                   </CardTitle>
@@ -303,7 +303,7 @@ export const FlowSelector: React.FC<FlowSelectorProps> = ({
                       'w-full mt-6',
                       flow.color === 'green'
                         ? 'bg-green-600 hover:bg-green-700'
-                        : 'bg-blue-600 hover:bg-blue-700',
+                        : 'bg-[#1B2E5A] hover:bg-[#152449]',
                       isSelected && 'ring-2 ring-white'
                     )}
                     variant={isSelected ? 'default' : 'outline'}

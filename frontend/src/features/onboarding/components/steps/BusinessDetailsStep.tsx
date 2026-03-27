@@ -122,7 +122,7 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(({ f
   const cardClasses = "glass-card p-10 rounded-xl bg-white/60 backdrop-blur-xl border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-slate-900/5";
   const labelClasses = "block text-sm font-semibold text-slate-700 mb-1.5 flex items-center gap-2";
   const inputContainerClasses = "relative group";
-  const inputClasses = "w-full h-11 pl-4 pr-4 bg-white/50 border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none hover:border-slate-300 shadow-sm";
+  const inputClasses = "w-full h-11 pl-4 pr-4 bg-white/50 border border-slate-200 rounded-lg text-[#1B2E5A] placeholder:text-slate-400 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none hover:border-slate-300 shadow-sm";
   const iconClasses = "absolute left-4 top-3 h-5 w-5 text-slate-400 group-focus-within:text-indigo-500";
 
   return (
@@ -137,7 +137,7 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(({ f
               </Badge>
             )}
           </div>
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 mb-3 drop-shadow-sm">
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-[#1B2E5A] mb-3 drop-shadow-sm">
             {content.title}
           </h1>
           <p className="text-lg text-slate-500 leading-relaxed max-w-2xl font-light">
@@ -466,7 +466,7 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(({ f
                     <Settings2 className="w-4 h-4" />
                   </div>
                   <div className="text-left">
-                    <h4 className="font-semibold text-slate-900 text-sm flex items-center gap-2">
+                    <h4 className="font-semibold text-[#1B2E5A] text-sm flex items-center gap-2">
                       Regional Settings
                       {selectedCountry && selectedCountry !== 'OTHER' && (
                         <span className="px-2 py-0.5 text-[10px] font-medium bg-slate-100 text-slate-600 rounded-full border border-slate-200">
@@ -670,7 +670,7 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(({ f
             <div>
               <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 flex flex-col gap-4 relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-4 opacity-10">
-                   <CheckCircle2 className="w-24 h-24 text-slate-900" />
+                   <CheckCircle2 className="w-24 h-24 text-[#1B2E5A]" />
                 </div>
                 <FormField
                   control={form.control}

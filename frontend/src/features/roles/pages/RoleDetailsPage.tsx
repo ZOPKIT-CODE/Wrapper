@@ -295,7 +295,7 @@ export function RoleDetailsPage() {
               >
                 {role.metadata?.icon || '👤'}
               </div>
-              <h1 className="text-2xl font-black uppercase tracking-tight text-slate-900 dark:text-white">
+              <h1 className="text-2xl font-black uppercase tracking-tight text-[#1B2E5A] dark:text-white">
                 {role.roleName}
               </h1>
             </div>
@@ -315,7 +315,7 @@ export function RoleDetailsPage() {
               <span className="text-[7px] font-black uppercase text-slate-400 tracking-widest leading-none mb-1">Total Permissions</span>
               <div className="flex items-center gap-2">
                 <Shield className="w-3 h-3 text-blue-500" />
-                <span className="text-[10px] font-black text-slate-900 dark:text-white tabular-nums">{permissionSummary.total}</span>
+                <span className="text-[10px] font-black text-[#1B2E5A] dark:text-white tabular-nums">{permissionSummary.total}</span>
               </div>
             </div>
             <div className="w-px h-6 bg-slate-200 dark:bg-slate-800" />
@@ -323,7 +323,7 @@ export function RoleDetailsPage() {
               <span className="text-[7px] font-black uppercase text-slate-400 tracking-widest leading-none mb-1">Applications</span>
               <div className="flex items-center gap-2">
                 <LayoutGrid className="w-3 h-3 text-indigo-500" />
-                <span className="text-[10px] font-black text-slate-900 dark:text-white tabular-nums">{permissionSummary.applicationCount}</span>
+                <span className="text-[10px] font-black text-[#1B2E5A] dark:text-white tabular-nums">{permissionSummary.applicationCount}</span>
               </div>
             </div>
             <div className="w-px h-6 bg-slate-200 dark:border-slate-800" />
@@ -331,7 +331,7 @@ export function RoleDetailsPage() {
               <span className="text-[7px] font-black uppercase text-slate-400 tracking-widest leading-none mb-1">Modules</span>
               <div className="flex items-center gap-2">
                 <Layers className="w-3 h-3 text-purple-500" />
-                <span className="text-[10px] font-black text-slate-900 dark:text-white tabular-nums">{permissionSummary.moduleCount}</span>
+                <span className="text-[10px] font-black text-[#1B2E5A] dark:text-white tabular-nums">{permissionSummary.moduleCount}</span>
               </div>
             </div>
             <div className="w-px h-6 bg-slate-200 dark:bg-slate-800" />
@@ -339,7 +339,7 @@ export function RoleDetailsPage() {
               <span className="text-[7px] font-black uppercase text-slate-400 tracking-widest leading-none mb-1">Users</span>
               <div className="flex items-center gap-2">
                 <Users className="w-3 h-3 text-emerald-500" />
-                <span className="text-[10px] font-black text-slate-900 dark:text-white tabular-nums">{usersWithRole.length}</span>
+                <span className="text-[10px] font-black text-[#1B2E5A] dark:text-white tabular-nums">{usersWithRole.length}</span>
               </div>
             </div>
           </div>
@@ -372,7 +372,7 @@ export function RoleDetailsPage() {
                       "border-blue-200/50 bg-blue-50/5 dark:border-blue-900/20 dark:bg-blue-900/5"
                     )}
                   >
-                    <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all [&[data-state=open]]:bg-blue-600/5 group/trigger">
+                    <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all [&[data-state=open]]:bg-[#1B2E5A]/5 group/trigger">
                       <div className="flex items-center justify-between w-full pr-6 text-left">
                         <div className="flex items-center gap-4">
                           <div className="w-10 h-10 rounded-xl flex items-center justify-center transition-all border relative shadow-sm bg-white dark:bg-slate-800 border-blue-500 text-white shadow-blue-500/10">
@@ -380,7 +380,7 @@ export function RoleDetailsPage() {
                             <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-blue-500 rounded-full border-2 border-white dark:border-slate-900 animate-pulse" />
                           </div>
                           <div>
-                            <div className="text-[13px] font-black text-slate-900 dark:text-white uppercase flex items-center gap-2 leading-none tracking-tight">
+                            <div className="text-[13px] font-black text-[#1B2E5A] dark:text-white uppercase flex items-center gap-2 leading-none tracking-tight">
                               {app.appName}
                               <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/20 text-[8px] font-black tracking-widest uppercase px-1.5 py-0.5">Active</Badge>
                             </div>
@@ -410,7 +410,7 @@ export function RoleDetailsPage() {
                                 <div>
                                   <h4 className={cn(
                                     "text-[13px] font-black uppercase tracking-tight leading-tight mb-1",
-                                    isModuleActive ? "text-slate-900 dark:text-white" : "text-slate-400"
+                                    isModuleActive ? "text-[#1B2E5A] dark:text-white" : "text-slate-400"
                                   )}>
                                     {module.moduleName}
                                   </h4>
@@ -421,7 +421,7 @@ export function RoleDetailsPage() {
                                   <div className={cn(
                                     "w-full py-1.5 px-2 rounded-xl text-[8px] font-black uppercase tracking-widest text-center shadow-sm border",
                                     isAllModuleSelected
-                                      ? "bg-blue-600 border-blue-500 text-white"
+                                      ? "bg-[#1B2E5A] border-blue-500 text-white"
                                       : isModuleActive
                                         ? "bg-blue-50 border-blue-200 text-blue-600"
                                         : "bg-slate-50 border-slate-200 text-slate-400"
@@ -477,7 +477,7 @@ export function RoleDetailsPage() {
                                         <div className="flex-1">
                                           <div className={cn(
                                             "text-[10px] font-black uppercase leading-tight tracking-tight mb-0.5",
-                                            isSelected ? "text-slate-900 dark:text-white" : "text-slate-400"
+                                            isSelected ? "text-[#1B2E5A] dark:text-white" : "text-slate-400"
                                           )}>
                                             {permName}
                                           </div>
@@ -502,7 +502,7 @@ export function RoleDetailsPage() {
           ) : (
             <div className="flex flex-col items-center justify-center py-12 bg-slate-50/50 dark:bg-slate-900/10 rounded-[24px] border-2 border-dashed border-slate-200 dark:border-slate-800">
               <Search className="w-10 h-10 text-slate-300 mb-3" />
-              <h3 className="text-base font-black text-slate-900 dark:text-white uppercase tracking-tight">
+              <h3 className="text-base font-black text-[#1B2E5A] dark:text-white uppercase tracking-tight">
                 {searchQuery ? 'No matching applications found' : 'No permissions assigned'}
               </h3>
             </div>
@@ -514,7 +514,7 @@ export function RoleDetailsPage() {
           <div className="mt-4">
             <Card className="rounded-[24px] overflow-hidden border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
               <CardHeader className="p-4 pb-3">
-                <CardTitle className="text-[13px] font-black uppercase tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+                <CardTitle className="text-[13px] font-black uppercase tracking-tight text-[#1B2E5A] dark:text-white flex items-center gap-2">
                   <Users className="w-4 h-4 text-emerald-500" />
                   Users with this Role ({usersWithRole.length})
                 </CardTitle>
@@ -537,7 +537,7 @@ export function RoleDetailsPage() {
                             {userInitial}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="text-sm font-black text-slate-900 dark:text-white truncate">
+                            <div className="text-sm font-black text-[#1B2E5A] dark:text-white truncate">
                               {userName}
                             </div>
                             <div className="flex items-center gap-1 mt-0.5">

@@ -34,7 +34,7 @@ export const PreferencesStep = ({ form, userClassification }: PreferencesStepPro
   };
 
   const personalizedContent = getPersonalizedContent();
-  const inputClasses = "w-full px-4 py-3.5 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-200 hover:border-slate-300 shadow-sm";
+  const inputClasses = "w-full px-4 py-3.5 bg-white border border-slate-200 rounded-xl text-[#1B2E5A] placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-200 hover:border-slate-300 shadow-sm";
   const labelClasses = "block text-sm font-semibold text-slate-700 mb-1.5 ml-1";
 
   return (
@@ -47,7 +47,7 @@ export const PreferencesStep = ({ form, userClassification }: PreferencesStepPro
             </Badge>
           )}
         </div>
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+        <h1 className="text-3xl font-bold tracking-tight text-[#1B2E5A]">
           {personalizedContent.title}
         </h1>
         <p className="text-lg text-slate-500 leading-relaxed max-w-2xl">
@@ -186,7 +186,7 @@ export const PreferencesStep = ({ form, userClassification }: PreferencesStepPro
             {['Accurate date/time displays', 'Correct currency formatting', 'Localized content', 'Timezone-aware scheduling'].map((benefit, i) => (
               <div key={i} className="flex items-center text-sm text-blue-700">
                 <div className="w-4 h-4 rounded-full bg-blue-200 flex items-center justify-center mr-2">
-                  <div className="w-1.5 h-1.5 bg-blue-600 rounded-full"></div>
+                  <div className="w-1.5 h-1.5 bg-[#1B2E5A] rounded-full"></div>
                 </div>
                 {benefit}
               </div>

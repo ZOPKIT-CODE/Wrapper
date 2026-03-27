@@ -226,7 +226,7 @@ export const OnboardingWelcomeSuccess: React.FC<OnboardingWelcomeSuccessProps> =
           <div className="bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-xl w-full max-w-6xl">
             {/* Header */}
             <div className="h-12 border-b border-slate-100 bg-white/80 backdrop-blur-md flex items-center justify-between px-4 sm:px-6">
-              <h3 className="text-lg font-bold text-slate-900">Setting Up Your Workspace</h3>
+              <h3 className="text-lg font-bold text-[#1B2E5A]">Setting Up Your Workspace</h3>
               <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
                 <span>Progress: {Math.round((currentStep / steps.length) * 100)}%</span>
               </div>
@@ -303,7 +303,7 @@ export const OnboardingWelcomeSuccess: React.FC<OnboardingWelcomeSuccessProps> =
                           </div>
                           <div className={`
                             text-xs font-bold transition-all duration-300
-                            ${isActive ? 'text-slate-900 scale-105' : isCompleted ? 'text-slate-700' : 'text-slate-400'}
+                            ${isActive ? 'text-[#1B2E5A] scale-105' : isCompleted ? 'text-slate-700' : 'text-slate-400'}
                           `}>
                             {step.title}
                           </div>

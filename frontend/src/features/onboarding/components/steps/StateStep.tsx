@@ -26,7 +26,7 @@ export const StateStep = ({ selectedState, onSelect, userClassification }: State
             </Badge>
           )}
         </div>
-        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 mb-3">
+        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-[#1B2E5A] mb-3">
           {content.title}
         </h1>
         <p className="text-lg text-slate-500 leading-relaxed max-w-2xl">
@@ -89,7 +89,7 @@ export const StateStep = ({ selectedState, onSelect, userClassification }: State
           <Info className="w-5 h-5" />
         </div>
         <div className="space-y-1">
-          <h4 className="font-semibold text-slate-900 text-sm">Why Delaware?</h4>
+          <h4 className="font-semibold text-[#1B2E5A] text-sm">Why Delaware?</h4>
           <p className="text-sm text-slate-500 leading-relaxed">
             Delaware is the gold standard for corporate law. Over 65% of Fortune 500 companies are incorporated there due to its business-friendly court system and investor preference.
           </p>

@@ -141,7 +141,7 @@ export const CreditPackagesStep: React.FC<CreditPackagesStepProps> = ({ form }) 
             <Coins className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-slate-900">Credit Packages</h2>
+            <h2 className="text-2xl font-bold text-[#1B2E5A]">Credit Packages</h2>
             <p className="text-slate-600 text-sm">Choose a credit package that fits your needs (optional)</p>
           </div>
         </div>
@@ -213,7 +213,7 @@ export const CreditPackagesStep: React.FC<CreditPackagesStepProps> = ({ form }) 
                       <CardTitle className="text-lg">{pkg.name}</CardTitle>
                     </div>
                     <div className="space-y-1">
-                      <div className="text-3xl font-bold text-slate-900">
+                      <div className="text-3xl font-bold text-[#1B2E5A]">
                         {pkg.price === 0 ? 'Free' : `$${pkg.price}`}
                         {pkg.price > 0 && (
                           <span className="text-sm font-normal text-slate-500">/{pkg.currency}</span>

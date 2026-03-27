@@ -217,7 +217,7 @@ export function OrganizationManagementPage() {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Organizations</p>
-                  <p className="text-2xl font-bold text-gray-900">--</p>
+                  <p className="text-2xl font-bold text-[#1B2E5A]">--</p>
                 </div>
               </div>
             </CardContent>
@@ -231,7 +231,7 @@ export function OrganizationManagementPage() {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Team Members</p>
-                  <p className="text-2xl font-bold text-gray-900">{employees.length}</p>
+                  <p className="text-2xl font-bold text-[#1B2E5A]">{employees.length}</p>
                 </div>
               </div>
             </CardContent>
@@ -245,7 +245,7 @@ export function OrganizationManagementPage() {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Locations</p>
-                  <p className="text-2xl font-bold text-gray-900">--</p>
+                  <p className="text-2xl font-bold text-[#1B2E5A]">--</p>
                 </div>
               </div>
             </CardContent>
@@ -259,7 +259,7 @@ export function OrganizationManagementPage() {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Applications</p>
-                  <p className="text-2xl font-bold text-gray-900">{applications.length}</p>
+                  <p className="text-2xl font-bold text-[#1B2E5A]">{applications.length}</p>
                 </div>
               </div>
             </CardContent>

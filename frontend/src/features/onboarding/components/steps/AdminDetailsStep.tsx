@@ -152,7 +152,7 @@ export const AdminDetailsStep = memo(({ form, userClassification }: AdminDetails
   const requiresMobileVerification = userClassification === 'withGST' || userClassification === 'enterprise';
 
   // Shared Styles
-  const inputClasses = "w-full px-4 py-3.5 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-200 hover:border-slate-300 shadow-sm";
+  const inputClasses = "w-full px-4 py-3.5 bg-white border border-slate-200 rounded-xl text-[#1B2E5A] placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-200 hover:border-slate-300 shadow-sm";
   const labelClasses = "block text-sm font-semibold text-slate-700 mb-1.5 ml-1";
 
   return (
@@ -165,7 +165,7 @@ export const AdminDetailsStep = memo(({ form, userClassification }: AdminDetails
             </Badge>
           )}
         </div>
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+        <h1 className="text-3xl font-bold tracking-tight text-[#1B2E5A]">
           {personalizedContent.title}
         </h1>
         <p className="text-lg text-slate-500 leading-relaxed max-w-2xl">
@@ -178,7 +178,7 @@ export const AdminDetailsStep = memo(({ form, userClassification }: AdminDetails
           {/* MANDATORY FIELDS SECTION */}
           <div className="space-y-6">
             <div className="pb-4 border-b border-slate-200">
-              <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+              <h2 className="text-lg font-bold text-[#1B2E5A] flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-red-500"></span>
                 Required Information
               </h2>
@@ -652,7 +652,7 @@ export const AdminDetailsStep = memo(({ form, userClassification }: AdminDetails
               render={({ field }) => (
                 <FormItem className="flex flex-row items-center justify-between rounded-lg border border-slate-200 p-4 bg-white/70 backdrop-blur-sm">
                   <div className="space-y-0.5 flex-1 pr-4">
-                    <FormLabel className="text-base font-semibold text-slate-900 flex items-center gap-2">
+                    <FormLabel className="text-base font-semibold text-[#1B2E5A] flex items-center gap-2">
                       Tax Registered <span className="text-slate-400 font-normal">(Optional)</span>
                       <Tooltip>
                         <TooltipTrigger asChild>

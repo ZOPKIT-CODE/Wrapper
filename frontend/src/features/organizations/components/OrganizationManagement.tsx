@@ -1037,7 +1037,7 @@ export function OrganizationTreeManagement({
                   L{level + 1}
                 </Badge>
               )}
-              <span className="font-semibold text-slate-900 dark:text-slate-100 truncate text-sm sm:text-base">
+              <span className="font-semibold text-[#1B2E5A] dark:text-slate-100 truncate text-sm sm:text-base">
                 {org.entityName}
               </span>
               <Badge variant={org.isActive !== false ? "outline" : "destructive"} className="text-[10px] px-1.5 py-0 h-5">
@@ -1111,7 +1111,7 @@ export function OrganizationTreeManagement({
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:text-slate-900">
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:text-[#1B2E5A]">
                   <MoreHorizontal className="w-4 h-4" />
                 </Button>
               </DropdownMenuTrigger>
@@ -1262,7 +1262,7 @@ export function OrganizationTreeManagement({
           ) : (
             <div className="text-center py-12 bg-slate-50 dark:bg-slate-900 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">
               <TreePine className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-              <h3 className="text-slate-900 dark:text-white font-medium">No results found</h3>
+              <h3 className="text-[#1B2E5A] dark:text-white font-medium">No results found</h3>
               <p className="text-slate-500 text-sm mt-1">Try adjusting your filters or search terms.</p>
             </div>
           )}
@@ -1277,7 +1277,7 @@ export function OrganizationTreeManagement({
               </CardHeader>
               <CardContent className="space-y-2">
                 <Button
-                  className="w-full justify-start bg-blue-600 hover:bg-blue-700"
+                  className="w-full justify-start bg-[#1B2E5A] hover:bg-[#152449]"
                   onClick={() =>
                     navigate({
                       to: '/dashboard/organization/create',
@@ -1288,7 +1288,7 @@ export function OrganizationTreeManagement({
                   <Plus className="w-4 h-4 mr-2" /> Add Sub Organization
                 </Button>
                 <Button
-                  className="w-full justify-start bg-blue-600 hover:bg-blue-700"
+                  className="w-full justify-start bg-[#1B2E5A] hover:bg-[#152449]"
                   onClick={() =>
                     navigate({
                       to: '/dashboard/organization/create',
@@ -1390,7 +1390,7 @@ export function OrganizationTreeManagement({
             {currentCreateSteps.map((step, i) => (
               <React.Fragment key={step}>
                 <div className="flex items-center gap-1.5">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold ${i === createFormStep ? 'bg-blue-600 text-white' : i < createFormStep ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-500'}`}>{i < createFormStep ? '✓' : i + 1}</div>
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold ${i === createFormStep ? 'bg-[#1B2E5A] text-white' : i < createFormStep ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-500'}`}>{i < createFormStep ? '✓' : i + 1}</div>
                   <span className={`text-xs hidden sm:block ${i === createFormStep ? 'text-blue-600 font-medium' : 'text-gray-400'}`}>{step}</span>
                 </div>
                 {i < currentCreateSteps.length - 1 && <div className={`flex-1 h-px ${i < createFormStep ? 'bg-green-400' : 'bg-gray-200'}`} />}

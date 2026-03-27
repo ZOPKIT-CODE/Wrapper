@@ -439,7 +439,7 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({
             
             {/* User Details Section */}
             <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-200 flex items-center gap-2">
+              <h3 className="text-sm font-semibold text-[#1B2E5A] dark:text-slate-200 flex items-center gap-2">
                 <User className="w-4 h-4" /> User Details
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -498,7 +498,7 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({
             {/* Entity Selection Section */}
             <div className="space-y-4 flex-1">
               <div className="flex items-center justify-between">
-                 <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-200 flex items-center gap-2">
+                 <h3 className="text-sm font-semibold text-[#1B2E5A] dark:text-slate-200 flex items-center gap-2">
                   <Building className="w-4 h-4" /> Assign Access
                 </h3>
                 <div className="relative w-48 pointer-events-auto">
@@ -559,7 +559,7 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({
                                 className={`
                                   w-5 h-5 rounded border flex items-center justify-center transition-colors cursor-pointer pointer-events-auto
                                   ${selected 
-                                    ? 'bg-blue-600 border-blue-600 text-white' 
+                                    ? 'bg-[#1B2E5A] border-blue-600 text-white' 
                                   : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800'
                                   }
                                 `}
@@ -694,7 +694,7 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({
           <div className="w-full md:w-80 bg-slate-50 dark:bg-slate-900/30 border-l border-slate-200 dark:border-slate-800 p-6 flex flex-col overflow-y-auto pointer-events-auto">
              <div className="space-y-6 flex-1">
                 <div className="space-y-2">
-                  <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-200">Access Summary</h3>
+                  <h3 className="text-sm font-semibold text-[#1B2E5A] dark:text-slate-200">Access Summary</h3>
                   {(!inviteForm?.entities || inviteForm.entities.length === 0) ? (
                     <div className="text-sm text-slate-500 italic">No organizations selected yet.</div>
                   ) : (
@@ -715,11 +715,11 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({
                             `}
                           >
                              <div className="flex items-start justify-between mb-1">
-                               <div className="font-medium text-slate-900 dark:text-slate-200">
+                               <div className="font-medium text-[#1B2E5A] dark:text-slate-200">
                                  {entityData?.entityName}
                                </div>
                                {isPrimary ? (
-                                 <Badge className="bg-blue-600 text-[10px] h-5">Primary</Badge>
+                                 <Badge className="bg-[#1B2E5A] text-[10px] h-5">Primary</Badge>
                                ) : (
                                  <button 
                                   onClick={() => handlePrimaryEntityChange(entity.entityId)}

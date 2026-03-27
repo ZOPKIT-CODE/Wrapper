@@ -309,11 +309,11 @@ function PermissionsContent() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 sticky top-0 z-10">
                 <tr>
-                  <th className="text-left p-3 font-medium text-gray-900 min-w-[180px] sticky left-0 bg-gray-50 border-r">
+                  <th className="text-left p-3 font-medium text-[#1B2E5A] min-w-[180px] sticky left-0 bg-gray-50 border-r">
                     User
                   </th>
                   {filteredPermissions.slice(0, 8).map(permission => (
-                    <th key={permission.id} className="text-center p-3 font-medium text-gray-900 min-w-[100px]">
+                    <th key={permission.id} className="text-center p-3 font-medium text-[#1B2E5A] min-w-[100px]">
                       <div className="flex flex-col items-center gap-1">
                         <span className="text-xs">{permission.tool.toUpperCase()}</span>
                         <span className="text-xs font-normal truncate">{permission.name}</span>
@@ -502,7 +502,7 @@ function PermissionsContent() {
                 onClick={() => setViewMode(key as any)}
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${viewMode === key
                     ? 'bg-white text-blue-600 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
+                    : 'text-gray-600 hover:text-[#1B2E5A]'
                   }`}
               >
                 <Icon className="w-4 h-4" />
@@ -614,7 +614,7 @@ function PermissionsContent() {
                     <Key className="w-6 h-6 text-white" />
                   </div>
                   <div className="text-left">
-                    <h2 className="text-xl font-bold text-gray-900">Available Permissions</h2>
+                    <h2 className="text-xl font-bold text-[#1B2E5A]">Available Permissions</h2>
                     <p className="text-sm text-gray-600 mt-1">{filteredPermissions.length} permissions ready to assign</p>
                   </div>
                 </div>
@@ -659,7 +659,7 @@ function PermissionsContent() {
                     <Users className="w-6 h-6 text-white" />
                   </div>
                   <div className="text-left">
-                    <h2 className="text-xl font-bold text-gray-900">Team Members</h2>
+                    <h2 className="text-xl font-bold text-[#1B2E5A]">Team Members</h2>
                     <p className="text-sm text-gray-600 mt-1">{filteredUsers.length} active team members</p>
                   </div>
                 </div>
@@ -704,7 +704,7 @@ function PermissionsContent() {
                     <Crown className="w-6 h-6 text-white" />
                   </div>
                   <div className="text-left">
-                    <h2 className="text-xl font-bold text-gray-900">Roles</h2>
+                    <h2 className="text-xl font-bold text-[#1B2E5A]">Roles</h2>
                     <p className="text-sm text-gray-600 mt-1">{filteredRoles.length} role templates</p>
                   </div>
                 </div>

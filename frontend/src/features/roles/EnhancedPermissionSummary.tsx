@@ -272,7 +272,7 @@ export function EnhancedPermissionSummary({
                 <Shield className="w-5 h-5 text-blue-600" />
               </div>
               <div>
-                <CardTitle className="text-lg font-bold text-slate-900 tracking-tight">
+                <CardTitle className="text-lg font-bold text-[#1B2E5A] tracking-tight">
                   Permission Matrix
                 </CardTitle>
                 <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium">
@@ -361,7 +361,7 @@ export function EnhancedPermissionSummary({
                     </td>
                     <td className="p-0 border-r border-slate-100/50 w-[160px] align-middle bg-slate-50/10 group-hover:bg-slate-50/30 transition-colors">
                       <div className="p-4 flex flex-col items-center justify-center">
-                        <span className="inline-block font-bold text-[12px] text-slate-600 tracking-tight group-hover:text-slate-900 transition-colors text-center">
+                        <span className="inline-block font-bold text-[12px] text-slate-600 tracking-tight group-hover:text-[#1B2E5A] transition-colors text-center">
                           {group.module}
                         </span>
                       </div>

@@ -235,7 +235,7 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({ form, onEditStep, userCl
                 <div className="sm:col-span-2 pt-4 border-t border-slate-100">
                   <div className="flex items-center gap-2 mb-3">
                     <MapPin className="w-4 h-4 text-pink-500" />
-                    <span className="text-sm font-semibold text-slate-900">Billing Address</span>
+                    <span className="text-sm font-semibold text-[#1B2E5A]">Billing Address</span>
                   </div>
                   <p className="text-sm text-slate-600 pl-6 leading-relaxed">
                     {values.billingStreet || values.billingAddress || 'N/A'}
@@ -263,7 +263,7 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({ form, onEditStep, userCl
                     {(values.firstName?.[0] || 'A')}{(values.lastName?.[0] || '')}
                   </div>
                   <div>
-                    <p className="text-lg font-bold text-slate-900">{values.firstName} {values.lastName}</p>
+                    <p className="text-lg font-bold text-[#1B2E5A]">{values.firstName} {values.lastName}</p>
                     <div className="flex items-center gap-2 text-sm text-slate-500">
                        <Briefcase className="w-3.5 h-3.5" />
                        {values.contactJobTitle || 'Administrator'}
@@ -326,7 +326,7 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({ form, onEditStep, userCl
                     />
                   </FormControl>
                   <div className="space-y-2 leading-none flex-1">
-                    <FormLabel className="text-base font-bold text-slate-900 cursor-pointer hover:text-pink-700 transition-colors">
+                    <FormLabel className="text-base font-bold text-[#1B2E5A] cursor-pointer hover:text-pink-700 transition-colors">
                       I accept the Terms and Conditions
                     </FormLabel>
                     <p className="text-sm text-slate-500 leading-relaxed">

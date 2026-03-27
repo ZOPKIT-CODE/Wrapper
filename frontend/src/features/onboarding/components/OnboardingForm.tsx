@@ -744,7 +744,7 @@ export const OnboardingForm = () => {
                 form.reset();
                 window.location.reload();
               }}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              className="px-4 py-2 bg-[#1B2E5A] text-white rounded-lg hover:bg-[#152449]"
             >
               Reload Page
             </button>
@@ -760,7 +760,7 @@ export const OnboardingForm = () => {
         <div className="h-screen w-full overflow-hidden flex items-center justify-center bg-gray-50">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Loading Form</h2>
+            <h2 className="text-xl font-semibold text-[#1B2E5A] mb-2">Loading Form</h2>
             <p className="text-gray-600">Preparing your onboarding experience...</p>
           </div>
         </div>
