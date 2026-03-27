@@ -547,25 +547,33 @@ const Landing: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-12 items-start">
 
           {/* ── Left column (7 cols) ── */}
-          <div className="lg:col-span-7 flex flex-col order-2 lg:order-1 lg:pt-8">
+          <div className="lg:col-span-7 flex flex-col order-2 lg:order-1 lg:pt-4">
 
-            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-              {/* Headline — oversized, tight, modern */}
-              <h1 className="text-[2.25rem] sm:text-[3rem] lg:text-[3.5rem] xl:text-[4rem] font-extrabold tracking-[-0.03em] leading-[1.05] text-slate-900">
-                Every tool your<br className="hidden sm:block" />
-                business needs,{' '}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-slate-900 via-slate-500 to-slate-400">
-                  unified.
+            {/* ▸ Layer 1: The Promise */}
+            <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+              <p className="text-[13px] font-semibold text-slate-400 mb-4 tracking-wide">
+                The business operating system
+              </p>
+              <h1 className="text-[2.25rem] sm:text-[2.75rem] lg:text-[3.25rem] xl:text-[3.75rem] font-extrabold tracking-[-0.035em] leading-[1.05] text-slate-900">
+                <span className="inline-block">
+                  <span className="tabular-nums text-transparent bg-clip-text bg-gradient-to-r from-slate-900 to-slate-600">11</span> tools.
                 </span>
+                <br />
+                One platform.
+                <br />
+                <span className="text-slate-300">Zero silos.</span>
               </h1>
+            </motion.div>
 
-              <p className="text-slate-500 text-base sm:text-lg leading-relaxed max-w-md mt-5">
-                11 integrated applications — from CRM to HRMS — sharing data in real time across your entire organization.
+            {/* ▸ Layer 2: The Proof — compact inline metrics */}
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.08 }} className="mt-6">
+              <p className="text-slate-500 text-[15px] sm:text-base leading-relaxed max-w-md">
+                CRM, Finance, HR, Operations, Projects and more — every app shares data automatically so your teams stop copy-pasting between tools.
               </p>
             </motion.div>
 
-            {/* CTAs */}
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, delay: 0.1 }} className="flex flex-col sm:flex-row gap-3 mt-8">
+            {/* ▸ CTAs */}
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.14 }} className="flex flex-col sm:flex-row items-start gap-3 mt-8">
               <button
                 onClick={primaryCta.action}
                 disabled={primaryCta.disabled}
@@ -576,77 +584,71 @@ const Landing: React.FC = () => {
                 {primaryCta.label}
                 <ArrowRight className="w-4 h-4" />
               </button>
-              <button className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full text-slate-600 hover:text-slate-900 font-semibold text-[15px] transition-colors active:scale-[0.97]">
+              <button className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-full text-slate-500 hover:text-slate-900 font-medium text-[15px] transition-colors active:scale-[0.97]">
                 <Play className="w-4 h-4 fill-current" />
-                Watch Demo
+                Watch demo
               </button>
             </motion.div>
 
-            {/* Active product — bento card */}
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4, delay: 0.2 }} className="mt-10">
+            {/* ▸ Layer 3: Active product explorer */}
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4, delay: 0.22 }} className="mt-10 pt-8 border-t border-slate-100">
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-[0.15em]">Exploring</p>
+                <button
+                  onClick={() => navigate({ to: `/products/${activeProduct.id}` })}
+                  className="text-[11px] font-semibold text-slate-400 hover:text-slate-900 transition-colors"
+                >
+                  View details →
+                </button>
+              </div>
               <AnimatePresence mode="wait">
                 <motion.div
                   key={activeProduct.id}
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -6 }}
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 8 }}
                   transition={{ duration: 0.2 }}
-                  className="flex items-stretch gap-0 rounded-2xl border border-slate-200 bg-white overflow-hidden"
                 >
-                  {/* Left accent strip */}
-                  <div className="w-1 bg-slate-900 shrink-0" />
-
-                  <div className="flex-1 p-4 sm:p-5">
-                    {/* Top row: icon, name, tagline, CTA */}
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
-                        <DynamicIcon name={activeProduct.iconName} className="w-[18px] h-[18px] text-slate-700" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-baseline gap-2">
-                          <h3 className="text-sm font-bold text-slate-900">{activeProduct.name}</h3>
-                          <span className="text-xs text-slate-400 hidden sm:inline truncate">{activeProduct.tagline}</span>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => navigate({ to: `/products/${activeProduct.id}` })}
-                        className="text-xs font-semibold text-slate-400 hover:text-slate-900 transition-colors shrink-0"
-                      >
-                        View →
-                      </button>
+                  {/* Product name + description */}
+                  <div className="flex items-start gap-3.5 mb-4">
+                    <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center shrink-0 mt-0.5">
+                      <DynamicIcon name={activeProduct.iconName} className="w-5 h-5 text-white" />
                     </div>
-
-                    {/* Connections */}
-                    {(() => {
-                      const deps = DEPENDENCIES.filter(([f, t]) =>
-                        ORBIT_APPS[f].id === activeProduct.id || ORBIT_APPS[t].id === activeProduct.id
-                      );
-                      const hubLabel = HUB_PRODUCT_LABELS[activeProduct.id];
-                      const connections = [
-                        ...(hubLabel ? [{ icon: 'Zap', name: 'Zopkit', dataType: hubLabel, isHub: true }] : []),
-                        ...deps.map(([f, t, label]) => {
-                          const other = ORBIT_APPS[f].id === activeProduct.id ? ORBIT_APPS[t] : ORBIT_APPS[f];
-                          return { icon: other.icon, name: other.label, dataType: label, isHub: false };
-                        }),
-                      ];
-                      if (connections.length === 0) return null;
-                      return (
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          {connections.map((conn, i) => (
-                            <div key={i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-50 text-[10px] sm:text-[11px] font-medium text-slate-500">
-                              {conn.isHub
-                                ? <Zap className="w-3 h-3 text-slate-400" />
-                                : <DynamicIcon name={conn.icon} className="w-3 h-3 text-slate-400" />
-                              }
-                              <span className="text-slate-600">{conn.name}</span>
-                              <span className="text-slate-300">/</span>
-                              {conn.dataType}
-                            </div>
-                          ))}
-                        </div>
-                      );
-                    })()}
+                    <div>
+                      <h3 className="text-lg font-bold text-slate-900 tracking-tight leading-tight">{activeProduct.name}</h3>
+                      <p className="text-sm text-slate-500 mt-1 leading-relaxed">{activeProduct.description}</p>
+                    </div>
                   </div>
+
+                  {/* Data connections — clean inline tags */}
+                  {(() => {
+                    const deps = DEPENDENCIES.filter(([f, t]) =>
+                      ORBIT_APPS[f].id === activeProduct.id || ORBIT_APPS[t].id === activeProduct.id
+                    );
+                    const hubLabel = HUB_PRODUCT_LABELS[activeProduct.id];
+                    const connections = [
+                      ...(hubLabel ? [{ icon: 'Zap', name: 'Zopkit', dataType: hubLabel, isHub: true }] : []),
+                      ...deps.map(([f, t, label]) => {
+                        const other = ORBIT_APPS[f].id === activeProduct.id ? ORBIT_APPS[t] : ORBIT_APPS[f];
+                        return { icon: other.icon, name: other.label, dataType: label, isHub: false };
+                      }),
+                    ];
+                    if (connections.length === 0) return null;
+                    return (
+                      <div className="flex flex-wrap items-center gap-1.5 ml-[52px]">
+                        <span className="text-[10px] text-slate-400 font-medium">Connects to</span>
+                        {connections.map((conn, i) => (
+                          <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-[10px] sm:text-[11px] font-medium text-slate-600">
+                            {conn.isHub
+                              ? <Zap className="w-2.5 h-2.5 text-slate-400" />
+                              : <DynamicIcon name={conn.icon} className="w-2.5 h-2.5 text-slate-400" />
+                            }
+                            {conn.name}
+                          </span>
+                        ))}
+                      </div>
+                    );
+                  })()}
                 </motion.div>
               </AnimatePresence>
             </motion.div>
