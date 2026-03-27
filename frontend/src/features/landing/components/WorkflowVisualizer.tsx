@@ -170,7 +170,7 @@ export const WorkflowVisualizer = () => {
                 </p>
             </div>
 
-            <div className="bg-white rounded-xl sm:rounded-2xl overflow-hidden border border-slate-200 shadow-lg sm:shadow-2xl flex flex-col lg:flex-row h-auto lg:h-[700px]">
+            <div className="bg-white rounded-xl sm:rounded-2xl overflow-hidden border border-slate-200 shadow-lg sm:shadow-2xl flex flex-col lg:flex-row h-auto lg:h-[600px] xl:h-[700px]">
 
                 {/* Sidebar / Control Panel */}
                 <div className="w-full lg:w-72 bg-slate-50 border-b lg:border-b-0 lg:border-r border-slate-200 flex flex-col shrink-0">
@@ -188,7 +188,7 @@ export const WorkflowVisualizer = () => {
                         </div>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-2 sm:p-4 space-y-1.5 sm:space-y-3 custom-scrollbar max-h-[160px] sm:max-h-[240px] lg:max-h-none">
+                    <div className="flex-1 overflow-y-auto lg:overflow-x-hidden overflow-x-auto p-2 sm:p-4 space-y-1.5 sm:space-y-3 no-scrollbar max-h-[120px] sm:max-h-[200px] lg:max-h-none">
                         {workflows.map((wf, idx) => {
                             const isActive = activeWorkflowIndex === idx;
                             return (
@@ -263,14 +263,14 @@ export const WorkflowVisualizer = () => {
                         {/* Stepper Container */}
                         <div className="relative w-full">
                             {/* 1. Track Background */}
-                            <div className="absolute top-5 sm:top-7 md:top-10 left-4 right-4 sm:left-8 sm:right-8 h-1 sm:h-1.5 md:h-2 bg-slate-100 rounded-full z-0 overflow-hidden">
+                            <div className="absolute top-[18px] sm:top-6 md:top-8 lg:top-10 left-[8%] right-[8%] h-0.5 sm:h-1 md:h-1.5 lg:h-2 bg-slate-100 rounded-full z-0 overflow-hidden">
                                 {/* Dashed pattern overlay */}
                                 <div className="w-full h-full opacity-30" style={{ backgroundImage: 'linear-gradient(90deg, transparent 50%, #cbd5e1 50%)', backgroundSize: '10px 100%' }}></div>
                             </div>
 
                             {/* 2. Active Progress Line */}
                             <div
-                                className="absolute top-5 sm:top-7 md:top-10 left-4 sm:left-8 h-1 sm:h-1.5 md:h-2 rounded-full z-0 transition-all duration-1000 ease-in-out shadow-sm md:shadow-lg shadow-blue-200"
+                                className="absolute top-[18px] sm:top-6 md:top-8 lg:top-10 left-[8%] h-0.5 sm:h-1 md:h-1.5 lg:h-2 rounded-full z-0 transition-all duration-1000 ease-in-out shadow-sm lg:shadow-lg shadow-blue-200"
                                 style={{
                                     width: `calc(${(activeStepIndex / (activeWorkflow.steps.length - 1)) * 100}% - ${isMobile ? '2rem' : '4rem'})`,
                                     background: `linear-gradient(to right, ${activeWorkflowIndex === 0 ? '#2563eb' : activeWorkflowIndex === 1 ? '#9333ea' : '#ea580c'}, ${activeWorkflowIndex === 0 ? '#06b6d4' : activeWorkflowIndex === 1 ? '#db2777' : '#f59e0b'})`
@@ -278,49 +278,49 @@ export const WorkflowVisualizer = () => {
                             ></div>
 
                             {/* 3. Steps Grid */}
-                            <div className="flex gap-1 sm:gap-2 md:gap-4 relative z-10 pb-4 md:pb-0 overflow-x-auto no-scrollbar">
+                            <div className="grid grid-cols-6 gap-1 sm:gap-2 md:gap-4 relative z-10 pb-2 md:pb-0">
                                 {activeWorkflow.steps.map((step, idx) => {
                                     const isActive = idx === activeStepIndex;
                                     const isCompleted = idx < activeStepIndex;
                                     const Icon = step.icon;
 
                                     return (
-                                        <div key={step.id} className="flex flex-col items-center group relative shrink-0 w-[calc(100%/3.5)] sm:w-[calc(100%/4)] md:flex-1">
+                                        <div key={step.id} className="flex flex-col items-center group relative">
 
                                             {/* Node Circle */}
                                             <div className={cn(
-                                                "w-10 h-10 sm:w-14 sm:h-14 md:w-20 md:h-20 rounded-full flex items-center justify-center border-2 md:border-[3px] transition-all duration-500 relative bg-white z-10",
+                                                "w-9 h-9 sm:w-12 sm:h-12 md:w-16 md:h-16 lg:w-20 lg:h-20 rounded-full flex items-center justify-center border-2 lg:border-[3px] transition-all duration-500 relative bg-white z-10",
                                                 isActive
-                                                    ? cn("border-white shadow-lg md:shadow-xl scale-105 md:scale-110 ring-2 md:ring-4 ring-offset-1 md:ring-offset-2 ring-opacity-50", activeWorkflow.text.replace('text-', 'ring-'))
+                                                    ? cn("border-white shadow-md sm:shadow-lg scale-105 sm:scale-110 ring-1 sm:ring-2 lg:ring-4 ring-offset-1 lg:ring-offset-2 ring-opacity-50", activeWorkflow.text.replace('text-', 'ring-'))
                                                     : isCompleted
-                                                        ? cn("border-white shadow-md text-white scale-100", activeWorkflow.bg)
+                                                        ? cn("border-white shadow-sm sm:shadow-md text-white scale-100", activeWorkflow.bg)
                                                         : "border-slate-100 text-slate-300 shadow-sm"
                                             )}>
                                                 {isActive && (
-                                                    <div className={cn("absolute inset-0 rounded-full animate-ping opacity-20 hidden md:block", activeWorkflow.bg)}></div>
+                                                    <div className={cn("absolute inset-0 rounded-full animate-ping opacity-20 hidden lg:block", activeWorkflow.bg)}></div>
                                                 )}
 
-                                                <Icon className={cn("w-4 h-4 sm:w-5 sm:h-5 md:w-7 md:h-7 transition-all duration-300", isActive && "scale-110")} />
+                                                <Icon className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-7 lg:h-7 transition-all duration-300", isActive && "scale-110")} />
 
                                                 {isCompleted && (
-                                                    <div className="absolute -right-0.5 -bottom-0.5 bg-white text-emerald-500 rounded-full p-0.5 shadow-md border border-slate-100">
-                                                        <CheckCircle2 className="w-3 h-3" />
+                                                    <div className="absolute -right-0.5 -bottom-0.5 bg-white text-emerald-500 rounded-full p-0.5 shadow border border-slate-100">
+                                                        <CheckCircle2 className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                                                     </div>
                                                 )}
                                             </div>
 
                                             {/* Text Labels */}
-                                            <div className="mt-1.5 sm:mt-3 md:mt-5 text-center w-full">
-                                                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 hidden md:block">
+                                            <div className="mt-1 sm:mt-2 md:mt-4 text-center w-full">
+                                                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 hidden lg:block">
                                                     Step 0{idx + 1}
                                                 </div>
                                                 <div className={cn(
-                                                    "text-[9px] sm:text-[11px] md:text-sm font-bold transition-all duration-300 leading-tight",
+                                                    "text-[7px] sm:text-[9px] md:text-xs lg:text-sm font-bold transition-all duration-300 leading-tight truncate",
                                                     isActive ? "text-slate-900" : isCompleted ? "text-slate-700" : "text-slate-400"
                                                 )}>
                                                     {step.title}
                                                 </div>
-                                                <div className="text-[7px] sm:text-[9px] md:text-[10px] text-slate-500 mt-0.5 font-medium hidden sm:inline-block bg-slate-50 px-1.5 py-0.5 rounded-full border border-slate-100">
+                                                <div className="text-[7px] sm:text-[8px] md:text-[10px] text-slate-500 mt-0.5 font-medium hidden sm:inline-block bg-slate-50 px-1 sm:px-1.5 py-0.5 rounded-full border border-slate-100 truncate max-w-full">
                                                     {step.app}
                                                 </div>
                                             </div>
@@ -332,7 +332,7 @@ export const WorkflowVisualizer = () => {
                     </div>
 
                     {/* Bottom Activity Panel */}
-                    <div className="h-36 sm:h-44 md:h-52 bg-slate-50 border-t border-slate-200 flex flex-col md:flex-row shrink-0 relative z-20">
+                    <div className="h-28 sm:h-36 md:h-44 lg:h-52 bg-slate-50 border-t border-slate-200 flex flex-col md:flex-row shrink-0 relative z-20">
 
                         {/* Live Logs */}
                         <div className="flex-1 p-0 flex flex-col font-mono text-[10px] sm:text-xs overflow-hidden">

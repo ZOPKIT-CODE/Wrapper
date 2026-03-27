@@ -58,19 +58,19 @@ const NAV_ITEMS = [
 // Orbital ecosystem — clockwise from B2B CRM at top
 const ORBITAL_R = 36;
 const ORBIT_APPS = [
-  { id: 'b2b-crm',            label: 'B2B CRM',     icon: 'Briefcase' },
-  { id: 'b2c-crm',            label: 'B2C CRM',     icon: 'ShoppingCart' },
-  { id: 'finance',            label: 'Finance',      icon: 'Landmark' },
-  { id: 'operations',         label: 'Operations',   icon: 'Box' },
-  { id: 'project-management', label: 'Projects',     icon: 'ClipboardList' },
-  { id: 'hrms',               label: 'HRMS',         icon: 'UserCheck' },
-  { id: 'esop-system',        label: 'ESOP',         icon: 'Award' },
-  { id: 'affiliate-connect',  label: 'Affiliates',   icon: 'Link' },
-  { id: 'flowtilla',          label: 'Flowtilla',    icon: 'GitBranch' },
-  { id: 'zopkit-academy',     label: 'Academy',      icon: 'GraduationCap' },
-  { id: 'zopkit-itsm',        label: 'ITSM',         icon: 'Wrench' },
+  { id: 'b2b-crm',            label: 'B2B CRM',     short: 'CRM',   icon: 'Briefcase' },
+  { id: 'b2c-crm',            label: 'B2C CRM',     short: 'B2C',   icon: 'ShoppingCart' },
+  { id: 'finance',            label: 'Finance',      short: 'Fin',   icon: 'Landmark' },
+  { id: 'operations',         label: 'Operations',   short: 'Ops',   icon: 'Box' },
+  { id: 'project-management', label: 'Projects',     short: 'PM',    icon: 'ClipboardList' },
+  { id: 'hrms',               label: 'HRMS',         short: 'HR',    icon: 'UserCheck' },
+  { id: 'esop-system',        label: 'ESOP',         short: 'ESOP',  icon: 'Award' },
+  { id: 'affiliate-connect',  label: 'Affiliates',   short: 'Aff',   icon: 'Link' },
+  { id: 'flowtilla',          label: 'Flowtilla',    short: 'Flow',  icon: 'GitBranch' },
+  { id: 'zopkit-academy',     label: 'Academy',      short: 'Acad',  icon: 'GraduationCap' },
+  { id: 'zopkit-itsm',        label: 'ITSM',         short: 'ITSM',  icon: 'Wrench' },
 ].map((app, i, arr) => {
-  const angle = (360 / arr.length) * i - 90; // starts at top, goes clockwise
+  const angle = (360 / arr.length) * i - 90;
   const rad = (angle * Math.PI) / 180;
   return { ...app, x: 50 + ORBITAL_R * Math.cos(rad), y: 50 + ORBITAL_R * Math.sin(rad) };
 });
@@ -648,14 +648,14 @@ const Landing: React.FC = () => {
             </motion.div>
           </div>
 
-          {/* ── Right column: orbital (5 cols) — hidden on mobile, visible sm+ ── */}
+          {/* ── Right column: orbital (5 cols) ── */}
           <motion.div
             initial={{ opacity: 0, scale: 0.97 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5, delay: 0.06 }}
-            className="hidden sm:block lg:col-span-5 order-2 lg:order-2 mx-auto lg:mx-0 w-full"
+            className="lg:col-span-5 order-2 lg:order-2 mx-auto lg:mx-0 w-full"
           >
-            <div className="relative aspect-square w-full max-w-[380px] lg:max-w-none mx-auto overflow-visible">
+            <div className="relative aspect-square w-full max-w-[260px] sm:max-w-[360px] lg:max-w-none mx-auto overflow-visible">
             <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" aria-hidden="true">
               <defs>
                 <style>{`
@@ -691,7 +691,7 @@ const Landing: React.FC = () => {
                   <g key={`dep-${i}`}>
                     <path d={d} fill="none" stroke="#0f172a" strokeWidth="0.5" strokeLinecap="round" opacity="0.06" />
                     <path d={d} fill="none" stroke="#0f172a" strokeWidth="0.3" strokeDasharray="2 2.5" strokeLinecap="round" className="dep-flow" />
-                    <text x={lbl.x} y={lbl.y} textAnchor="middle" dominantBaseline="central" fill="#94a3b8" fontSize="2.2" fontWeight="600" fontFamily="system-ui, sans-serif">{label}</text>
+                    <text x={lbl.x} y={lbl.y} textAnchor="middle" dominantBaseline="central" fill="#94a3b8" fontSize="2.2" fontWeight="600" fontFamily="system-ui, sans-serif" className="hidden sm:block">{label}</text>
                   </g>
                 );
               })}
@@ -706,7 +706,7 @@ const Landing: React.FC = () => {
                 return (
                   <g key={`hub-flow-${app.id}`}>
                     <line x1="50" y1="50" x2={app.x} y2={app.y} stroke="#0f172a" strokeWidth="0.3" strokeDasharray="2 2.5" strokeLinecap="round" className="dep-flow" />
-                    <text x={lx} y={ly - 1.5} textAnchor="middle" fill="#94a3b8" fontSize="2.2" fontWeight="600" fontFamily="system-ui, sans-serif">{hubLabel}</text>
+                    <text x={lx} y={ly - 1.5} textAnchor="middle" fill="#94a3b8" fontSize="2.2" fontWeight="600" fontFamily="system-ui, sans-serif" className="hidden sm:block">{hubLabel}</text>
                   </g>
                 );
               })}
@@ -714,7 +714,7 @@ const Landing: React.FC = () => {
 
             {/* Center hub */}
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 text-center">
-              <div className="w-16 h-16 lg:w-20 lg:h-20 rounded-full bg-slate-900 flex items-center justify-center mx-auto overflow-hidden ring-4 ring-white">
+              <div className="w-11 h-11 sm:w-16 sm:h-16 lg:w-20 lg:h-20 rounded-full bg-slate-900 flex items-center justify-center mx-auto overflow-hidden ring-2 sm:ring-4 ring-white">
                 <img
                   src="https://res.cloudinary.com/dr9vzaa7u/image/upload/v1765126845/Zopkit_Simple_Logo_glohfr.jpg"
                   alt="Zopkit"
@@ -738,15 +738,16 @@ const Landing: React.FC = () => {
                   aria-label={app.label}
                 >
                   <div className={`
-                    w-11 h-11 lg:w-[52px] lg:h-[52px] rounded-xl flex items-center justify-center transition-all duration-200
+                    w-8 h-8 sm:w-11 sm:h-11 lg:w-[52px] lg:h-[52px] rounded-lg sm:rounded-xl flex items-center justify-center transition-all duration-200
                     ${isActive
-                      ? 'bg-slate-900 ring-2 ring-slate-900 ring-offset-2 ring-offset-white scale-110'
+                      ? 'bg-slate-900 ring-1 sm:ring-2 ring-slate-900 ring-offset-1 sm:ring-offset-2 ring-offset-white scale-110'
                       : 'bg-white border border-slate-200 group-hover:border-slate-300 group-hover:shadow-md group-hover:scale-105'}
                   `}>
-                    <DynamicIcon name={app.icon} className={`w-[18px] h-[18px] lg:w-5 lg:h-5 transition-colors duration-200 ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-slate-700'}`} />
+                    <DynamicIcon name={app.icon} className={`w-3.5 h-3.5 sm:w-[18px] sm:h-[18px] lg:w-5 lg:h-5 transition-colors duration-200 ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-slate-700'}`} />
                   </div>
-                  <p className={`text-center text-[9px] lg:text-[11px] font-semibold mt-1 transition-colors duration-200 whitespace-nowrap ${isActive ? 'text-slate-900' : 'text-slate-400 group-hover:text-slate-600'}`}>
-                    {app.label}
+                  <p className={`text-center text-[6px] sm:text-[9px] lg:text-[11px] font-semibold mt-0.5 sm:mt-1 transition-colors duration-200 whitespace-nowrap ${isActive ? 'text-slate-900' : 'text-slate-400 group-hover:text-slate-600'}`}>
+                    <span className="sm:hidden">{app.short}</span>
+                    <span className="hidden sm:inline">{app.label}</span>
                   </p>
                 </button>
               );
@@ -755,8 +756,8 @@ const Landing: React.FC = () => {
           </motion.div>
         </div>
 
-        {/* Mobile product selector — shows on mobile where orbital is hidden */}
-        <div className="sm:hidden mt-6">
+        {/* Mobile product selector — below orbital on small screens */}
+        <div className="lg:hidden mt-4">
           <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-2">Explore the ecosystem</p>
           <div ref={scrollContainerRef} className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
             {ORBIT_APPS.map((app) => {
