@@ -559,32 +559,32 @@ const Landing: React.FC = () => {
       </Navbar>
 
       {/* Hero */}
-      <main className="relative pt-28 sm:pt-32 lg:pt-40 pb-16 sm:pb-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-12 items-start">
+      <main className="relative pt-24 sm:pt-28 lg:pt-40 pb-12 sm:pb-16 lg:pb-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 z-10">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
 
           {/* ── Left column (7 cols) ── */}
-          <div className="lg:col-span-7 flex flex-col order-2 lg:order-1 lg:pt-6">
+          <div className="lg:col-span-7 flex flex-col order-1 lg:order-1 lg:pt-6">
 
             {/* Headline block */}
             <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
               {/* Mixed-weight headline — light intro, bold punchline */}
               <h1 className="text-slate-900 tracking-[-0.03em] leading-[1.08]">
-                <span className="block text-[1.5rem] sm:text-[1.75rem] lg:text-[2rem] font-normal text-slate-400">
+                <span className="block text-base sm:text-lg lg:text-[1.75rem] font-normal text-slate-400">
                   Your CRM, Finance, HR, Ops &amp; more —
                 </span>
-                <span className="block text-[2.25rem] sm:text-[3rem] lg:text-[3.5rem] xl:text-[4rem] font-extrabold mt-1">
-                  finally talking<br className="hidden lg:block" /> to each other.
+                <span className="block text-[1.75rem] sm:text-[2.5rem] lg:text-[3.5rem] xl:text-[4rem] font-extrabold mt-1">
+                  finally talking<br className="hidden sm:block" /> to each other.
                 </span>
               </h1>
 
               {/* Value prop — short, benefit-focused */}
-              <p className="text-slate-500 text-base sm:text-[17px] leading-[1.65] max-w-[26rem] mt-5">
+              <p className="text-slate-500 text-sm sm:text-base lg:text-[17px] leading-[1.65] max-w-[26rem] mt-4">
                 Zopkit replaces your disconnected stack with 11 integrated apps. One login, one source of truth, zero data entry duplication.
               </p>
             </motion.div>
 
             {/* CTAs */}
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }} className="flex flex-col sm:flex-row items-start gap-3 mt-7">
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }} className="flex flex-col sm:flex-row items-stretch sm:items-start gap-3 mt-6">
               <button
                 onClick={primaryCta.action}
                 disabled={primaryCta.disabled}
@@ -653,7 +653,7 @@ const Landing: React.FC = () => {
             initial={{ opacity: 0, scale: 0.97 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5, delay: 0.06 }}
-            className="lg:col-span-5 relative aspect-square max-w-[320px] sm:max-w-[380px] lg:max-w-none mx-auto lg:mx-0 order-1 lg:order-2"
+            className="lg:col-span-5 relative aspect-square w-full max-w-[360px] sm:max-w-[420px] lg:max-w-none mx-auto lg:mx-0 order-2 lg:order-2"
           >
             <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" aria-hidden="true">
               <defs>
@@ -714,7 +714,7 @@ const Landing: React.FC = () => {
 
             {/* Center hub */}
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 text-center">
-              <div className="w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 rounded-full bg-slate-900 flex items-center justify-center mx-auto overflow-hidden ring-4 ring-white">
+              <div className="w-16 h-16 sm:w-18 sm:h-18 lg:w-20 lg:h-20 rounded-full bg-slate-900 flex items-center justify-center mx-auto overflow-hidden ring-4 ring-white">
                 <img
                   src="https://res.cloudinary.com/dr9vzaa7u/image/upload/v1765126845/Zopkit_Simple_Logo_glohfr.jpg"
                   alt="Zopkit"
@@ -738,14 +738,14 @@ const Landing: React.FC = () => {
                   aria-label={app.label}
                 >
                   <div className={`
-                    w-10 h-10 sm:w-12 sm:h-12 lg:w-[52px] lg:h-[52px] rounded-xl flex items-center justify-center transition-all duration-200
+                    w-11 h-11 sm:w-12 sm:h-12 lg:w-[52px] lg:h-[52px] rounded-xl flex items-center justify-center transition-all duration-200
                     ${isActive
                       ? 'bg-slate-900 ring-2 ring-slate-900 ring-offset-2 ring-offset-[#fafafa] scale-110'
                       : 'bg-white border border-slate-200 group-hover:border-slate-300 group-hover:shadow-md group-hover:scale-105'}
                   `}>
-                    <DynamicIcon name={app.icon} className={`w-4 h-4 sm:w-[18px] sm:h-[18px] transition-colors duration-200 ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-slate-700'}`} />
+                    <DynamicIcon name={app.icon} className={`w-[18px] h-[18px] sm:w-5 sm:h-5 transition-colors duration-200 ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-slate-700'}`} />
                   </div>
-                  <p className={`text-center text-[8px] sm:text-[9px] lg:text-[10px] font-medium mt-1 transition-colors duration-200 whitespace-nowrap ${isActive ? 'text-slate-900' : 'text-slate-400 group-hover:text-slate-600'}`}>
+                  <p className={`text-center text-[9px] sm:text-[10px] lg:text-[11px] font-semibold mt-1 transition-colors duration-200 whitespace-nowrap ${isActive ? 'text-slate-900' : 'text-slate-400 group-hover:text-slate-600'}`}>
                     {app.label}
                   </p>
                 </button>
@@ -754,20 +754,23 @@ const Landing: React.FC = () => {
           </motion.div>
         </div>
 
-        {/* Mobile product selector */}
-        <div ref={scrollContainerRef} className="lg:hidden mt-8 flex gap-1.5 overflow-x-auto pb-2 no-scrollbar">
-          {ORBIT_APPS.map((app) => {
-            const isActive = activeProduct.id === app.id;
-            const matchingProduct = products.find(p => p.id === app.id);
-            return (
-              <button key={`strip-${app.id}`} onClick={() => { if (matchingProduct) setActiveProduct(matchingProduct); }}
-                className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium transition-all ${isActive ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
-              >
-                <DynamicIcon name={app.icon} className="w-3.5 h-3.5" />
-                {app.label}
-              </button>
-            );
-          })}
+        {/* Mobile product selector — visible below orbital on mobile */}
+        <div className="lg:hidden mt-4">
+          <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-2">Explore products</p>
+          <div ref={scrollContainerRef} className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+            {ORBIT_APPS.map((app) => {
+              const isActive = activeProduct.id === app.id;
+              const matchingProduct = products.find(p => p.id === app.id);
+              return (
+                <button key={`strip-${app.id}`} onClick={() => { if (matchingProduct) setActiveProduct(matchingProduct); }}
+                  className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all ${isActive ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600'}`}
+                >
+                  <DynamicIcon name={app.icon} className="w-3.5 h-3.5" />
+                  {app.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </main>
 
