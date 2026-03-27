@@ -321,32 +321,29 @@ const Landing: React.FC = () => {
   const secondaryColorHex = COLOR_TO_HEX_SECONDARY[activeProduct.color] ?? '#10b981';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-white selection:bg-teal-500/30 selection:text-white font-sans overflow-x-clip relative">
+    <div className="min-h-screen bg-white text-slate-900 selection:bg-teal-100 selection:text-teal-900 font-sans overflow-x-clip relative">
 
       {/* Ambient Background Effects */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden" style={{ contain: 'strict' }}>
-        {/* Subtle grid pattern overlay */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:64px_64px]" />
+        {/* Subtle dot grid pattern */}
+        <div className="absolute inset-0 bg-[radial-gradient(rgba(148,163,184,0.15)_1px,transparent_1px)] bg-[size:24px_24px]" />
 
-        {/* Subtle noise texture for premium depth */}
-        <div className="absolute inset-0 bg-noise opacity-[0.018]" />
+        {/* Soft watercolor wash — top right (teal-50) */}
+        <div className="absolute -top-40 -right-40 w-[800px] h-[800px] rounded-full bg-teal-50 blur-[120px]" />
 
-        {/* Radial teal glow blob — top right */}
-        <div className="absolute -top-40 -right-40 w-[800px] h-[800px] rounded-full bg-teal-500/10 blur-[120px]" />
-
-        {/* Radial emerald glow blob — bottom left */}
-        <div className="absolute -bottom-40 -left-40 w-[600px] h-[600px] rounded-full bg-emerald-500/[0.08] blur-[100px]" />
+        {/* Soft watercolor wash — bottom left (emerald-50) */}
+        <div className="absolute -bottom-40 -left-40 w-[600px] h-[600px] rounded-full bg-emerald-50 blur-[100px]" />
 
         {/* Dynamic color spotlight (reactive to active product) */}
         <div
           className="absolute top-[-20%] right-[-10%] w-[100vw] h-[100vh] blur-[100px] rounded-full transition-[background-color] duration-1000 ease-in-out will-change-transform"
-          style={{ backgroundColor: `${primaryColorHex}18` }}
+          style={{ backgroundColor: `${primaryColorHex}0a` }}
         />
 
         {/* Secondary spotlight — bottom left */}
         <div
           className="absolute bottom-[-10%] left-[-5%] w-[80vw] h-[70vh] blur-[120px] rounded-full transition-[background-color] duration-1000 ease-in-out will-change-transform"
-          style={{ backgroundColor: `${secondaryColorHex}10` }}
+          style={{ backgroundColor: `${secondaryColorHex}08` }}
         />
       </div>
 
@@ -355,7 +352,7 @@ const Landing: React.FC = () => {
         {/* Desktop Navigation */}
         <NavBody>
           <NavbarLogo />
-          <div className="flex-1 flex flex-row items-center justify-center space-x-1 text-sm font-medium text-slate-400 transition duration-200 px-4 min-w-0">
+          <div className="flex-1 flex flex-row items-center justify-center space-x-1 text-sm font-medium text-slate-600 transition duration-200 px-4 min-w-0">
             {/* Products Dropdown */}
             <div
               className="relative shrink-0"
@@ -363,18 +360,18 @@ const Landing: React.FC = () => {
               onMouseLeave={handleProductsMouseLeave}
             >
               <button
-                className="px-3 py-2 text-slate-400 hover:text-white font-medium flex items-center gap-1 whitespace-nowrap transition-colors"
+                className="px-3 py-2 text-slate-600 hover:text-slate-900 font-medium flex items-center gap-1 whitespace-nowrap transition-colors"
               >
                 Products
                 <ChevronRight size={16} className={`transition-transform ${showProductsDropdown ? 'rotate-90' : ''}`} />
               </button>
               {showProductsDropdown && (
-                <div className="absolute top-full left-0 mt-2 w-64 bg-slate-800/90 backdrop-blur-xl rounded-xl shadow-xl border border-white/10 py-2 z-50">
+                <div className="absolute top-full left-0 mt-2 w-64 bg-white backdrop-blur-xl rounded-xl shadow-xl border border-slate-200 py-2 z-50">
                   {allProducts.map((product) => (
                     <button
                       key={product.id}
                       onClick={() => navigate({ to: `/products/${product.id}` })}
-                      className="w-full text-left px-4 py-2.5 text-sm text-slate-300 hover:bg-white/10 hover:text-white transition-colors"
+                      className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors"
                     >
                       {product.name}
                     </button>
@@ -389,18 +386,18 @@ const Landing: React.FC = () => {
               onMouseLeave={handleIndustriesMouseLeave}
             >
               <button
-                className="px-3 py-2 text-slate-400 hover:text-white font-medium flex items-center gap-1 whitespace-nowrap transition-colors"
+                className="px-3 py-2 text-slate-600 hover:text-slate-900 font-medium flex items-center gap-1 whitespace-nowrap transition-colors"
               >
                 Industries
                 <ChevronRight size={16} className={`transition-transform ${showIndustriesDropdown ? 'rotate-90' : ''}`} />
               </button>
               {showIndustriesDropdown && (
-                <div className="absolute top-full left-0 mt-2 w-64 bg-slate-800/90 backdrop-blur-xl rounded-xl shadow-xl border border-white/10 py-2 z-50">
+                <div className="absolute top-full left-0 mt-2 w-64 bg-white backdrop-blur-xl rounded-xl shadow-xl border border-slate-200 py-2 z-50">
                   {allIndustries.map((industry) => (
                     <button
                       key={industry.slug}
                       onClick={() => navigate({ to: `/industries/${industry.slug}` })}
-                      className="w-full text-left px-4 py-2.5 text-sm text-slate-300 hover:bg-white/10 hover:text-white transition-colors"
+                      className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors"
                     >
                       {industry.name}
                     </button>
@@ -413,7 +410,7 @@ const Landing: React.FC = () => {
                 key={item.name}
                 href={item.link}
                 onClick={(e) => handleAnchorClick(e, item.link)}
-                className="px-3 py-2 text-slate-400 hover:text-white font-medium transition-colors cursor-pointer whitespace-nowrap shrink-0"
+                className="px-3 py-2 text-slate-600 hover:text-slate-900 font-medium transition-colors cursor-pointer whitespace-nowrap shrink-0"
               >
                 {item.name}
               </a>
@@ -421,7 +418,7 @@ const Landing: React.FC = () => {
           </div>
           <div className="flex items-center gap-3 shrink-0 ml-4">
             <NavbarButton
-              variant={hasAuthenticatedSession ? "gradient" : "outline"}
+              variant={hasAuthenticatedSession ? "gradient" : "primary"}
               onClick={primaryCta.action}
               disabled={primaryCta.disabled}
               as="button"
@@ -439,13 +436,13 @@ const Landing: React.FC = () => {
             <NavbarLogo />
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+              className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
               aria-label="Toggle menu"
             >
               {isMobileMenuOpen ? (
-                <X className="w-6 h-6 text-slate-300" />
+                <X className="w-6 h-6 text-slate-700" />
               ) : (
-                <Menu className="w-6 h-6 text-slate-300" />
+                <Menu className="w-6 h-6 text-slate-700" />
               )}
             </button>
           </MobileNavHeader>
@@ -488,7 +485,7 @@ const Landing: React.FC = () => {
                   setIsMobileMenuOpen(false);
                   handleAnchorClick(e, item.link);
                 }}
-                className="relative text-neutral-600 dark:text-neutral-300 cursor-pointer"
+                className="relative text-slate-600 hover:text-slate-900 cursor-pointer"
               >
                 <span className="block">{item.name}</span>
               </a>
@@ -499,7 +496,7 @@ const Landing: React.FC = () => {
                   setIsMobileMenuOpen(false);
                   primaryCta.action();
                 }}
-                variant={hasAuthenticatedSession ? "gradient" : "outline"}
+                variant={hasAuthenticatedSession ? "gradient" : "primary"}
                 className="w-full rounded-xl cursor-pointer"
                 as="button"
                 disabled={primaryCta.disabled}
@@ -520,13 +517,18 @@ const Landing: React.FC = () => {
           <div className="lg:col-span-5 flex flex-col gap-8 lg:pr-6 relative z-20">
 
             <div className="space-y-6 relative">
-              <div
-                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-teal-500/30 bg-teal-500/10 backdrop-blur-sm w-fit mb-6 animate-[fadeInUp_0.5s_ease-out]"
+              {/* Announcement Badge */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white border border-teal-200 shadow-sm w-fit"
               >
-                <span className="w-2 h-2 rounded-full bg-teal-400 animate-pulse"></span>
-                <span className="text-teal-300 text-xs font-semibold tracking-widest uppercase">Complete Business Operations Suite</span>
-              </div>
+                <span className="w-2 h-2 rounded-full bg-teal-500 animate-pulse"></span>
+                <span className="text-teal-700 text-xs font-semibold tracking-wide uppercase">Trusted by 500+ companies across 11 industries</span>
+              </motion.div>
 
+              {/* Hero Headline */}
               <div className="relative h-[160px] lg:h-[200px] w-full z-20">
                 <AnimatePresence mode="wait">
                   <motion.div
@@ -537,12 +539,12 @@ const Landing: React.FC = () => {
                     transition={{ duration: 0.4, ease: "easeOut" }}
                     className="absolute top-0 left-0 w-full"
                   >
-                    <h1 className="text-5xl md:text-6xl lg:text-7xl font-black tracking-tight leading-tight mb-5 text-white">
-                      <span className="bg-gradient-to-r from-teal-400 via-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+                    <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight leading-tight mb-5 text-slate-900">
+                      <span className="text-teal-600">
                         {activeProduct.name}
                       </span>
                     </h1>
-                    <p className="text-slate-400 text-lg md:text-xl leading-relaxed max-w-xl mt-4">
+                    <p className="text-slate-500 text-sm sm:text-base lg:text-xl leading-relaxed max-w-2xl mt-4">
                       {activeProduct.description}
                     </p>
                   </motion.div>
@@ -550,28 +552,54 @@ const Landing: React.FC = () => {
               </div>
             </div>
 
+            {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row items-center mt-24 gap-4 z-20">
-              <button
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
                 onClick={primaryCta.action}
                 disabled={primaryCta.disabled}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-white font-semibold text-base shadow-lg shadow-teal-500/25 hover:shadow-teal-500/40 transition-all duration-200 hover:-translate-y-0.5 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold text-base shadow-lg shadow-teal-600/20 transition-colors duration-200 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {hasAuthenticatedSession && onboardingCompleted ? <LayoutDashboard className="w-5 h-5" /> : null}
                 {hasAuthenticatedSession && !onboardingCompleted ? <Rocket className="w-5 h-5" /> : null}
                 {primaryCta.label}
                 <ArrowRight className="w-5 h-5" />
-              </button>
+              </motion.button>
 
-              <button
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-white font-semibold text-base backdrop-blur-sm transition-all duration-200"
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-300 text-slate-700 font-semibold text-base shadow-sm transition-colors duration-200"
               >
-                <Play className="w-4 h-4 fill-current" />
+                <Play className="w-4 h-4 fill-current text-slate-500" />
                 <span>Watch 2-Min Demo</span>
-              </button>
+              </motion.button>
             </div>
 
-            {/* Social Proof Stats Bar */}
-            <div className="flex items-center gap-6 mt-8 pt-8 border-t border-white/10">
+            {/* Floating Trust Badges */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-6">
+              {[
+                { label: "SOC 2 Compliant" },
+                { label: "99.9% Uptime" },
+                { label: "GDPR Ready" },
+              ].map((badge, i) => (
+                <motion.div
+                  key={badge.label}
+                  animate={{ y: [0, -6, 0] }}
+                  transition={{ duration: 3, repeat: Infinity, delay: i * 0.4, ease: "easeInOut" }}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white border border-slate-100 shadow-sm"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-teal-500 shrink-0" />
+                  <span className="text-xs font-medium text-slate-600">{badge.label}</span>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Stats Bar */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8 pt-8 border-t border-slate-100">
               {[
                 { value: "500+", label: "Companies" },
                 { value: "100M+", label: "Transactions" },
@@ -579,17 +607,17 @@ const Landing: React.FC = () => {
                 { value: "11", label: "Products" },
               ].map((stat) => (
                 <div key={stat.label} className="text-center">
-                  <div className="text-2xl font-black text-white">{stat.value}</div>
-                  <div className="text-xs text-slate-500 mt-0.5">{stat.label}</div>
+                  <div className="text-2xl font-black text-slate-900">{stat.value}</div>
+                  <div className="text-xs text-slate-400 mt-0.5">{stat.label}</div>
                 </div>
               ))}
             </div>
 
             {/* Product "Launchpad" Selector */}
-            <div className="mt-6 pt-8 border-t border-white/10">
+            <div className="mt-6 pt-8 border-t border-slate-100">
               <div className="flex justify-between items-center mb-4">
-                <p className="text-slate-500 text-xs font-semibold tracking-widest uppercase">Select Application</p>
-                <span className="text-xs text-slate-500">0{activeProduct.id} / {products.length}</span>
+                <p className="text-slate-400 text-xs font-semibold tracking-widest uppercase">Select Application</p>
+                <span className="text-xs text-slate-400">0{activeProduct.id} / {products.length}</span>
               </div>
 
               <div ref={scrollContainerRef} className="flex flex-row gap-3 overflow-x-auto gradient-scrollbar pb-4">
@@ -604,8 +632,8 @@ const Landing: React.FC = () => {
                     className={`
                         relative group flex flex-col items-start justify-between p-3 rounded-xl border transition-all duration-300 h-28 w-32 min-w-[128px] overflow-hidden text-left shrink-0
                         ${activeProduct.id === product.id
-                        ? 'bg-teal-500/20 border-teal-500/40 shadow-lg'
-                        : 'bg-slate-800/60 border-white/10 hover:bg-white/5 hover:border-white/20'}
+                        ? 'bg-teal-50 border-teal-200 shadow-md ring-1 ring-teal-200'
+                        : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-md'}
                       `}
                     title="Double-click to view details"
                   >
@@ -615,21 +643,21 @@ const Landing: React.FC = () => {
                     <div className="flex justify-between w-full items-start">
                       <div className={`
                            p-1.5 rounded-lg transition-colors duration-300
-                           ${activeProduct.id === product.id ? `bg-gradient-to-br ${product.gradient} text-white` : 'bg-white/10 text-slate-400 group-hover:text-slate-200 group-hover:bg-white/15'}
+                           ${activeProduct.id === product.id ? `bg-gradient-to-br ${product.gradient} text-white` : 'bg-slate-100 text-slate-500 group-hover:text-slate-700 group-hover:bg-slate-200'}
                          `}>
                         <DynamicIcon name={product.iconName} className="w-4 h-4" />
                       </div>
 
                       {activeProduct.id === product.id && (
-                        <motion.div layoutId="active-indicator" className="w-1.5 h-1.5 rounded-full bg-teal-400" />
+                        <motion.div layoutId="active-indicator" className="w-1.5 h-1.5 rounded-full bg-teal-500" />
                       )}
                     </div>
 
                     <div className="flex flex-col gap-1 mt-auto w-full">
-                      <span className={`text-[11px] font-semibold tracking-wide ${activeProduct.id === product.id ? 'text-teal-300' : 'text-slate-400 group-hover:text-slate-200'}`}>
+                      <span className={`text-[11px] font-semibold tracking-wide ${activeProduct.id === product.id ? 'text-teal-700' : 'text-slate-500 group-hover:text-slate-900'}`}>
                         {product.name}
                       </span>
-                      <span className="text-[9px] text-teal-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span className="text-[9px] text-teal-600 opacity-0 group-hover:opacity-100 transition-opacity">
                         Double-click for details →
                       </span>
                     </div>
@@ -641,7 +669,6 @@ const Landing: React.FC = () => {
 
           {/* Right Column: Visual Hub (Expanded to 7 cols and shifted left) */}
           <div className="lg:col-span-7 relative z-10 flex justify-center lg:justify-start items-center h-full min-h-[350px] sm:min-h-[500px]">
-            {/* The w-[90%] constrains the width, and lg:-ml-6 pulls the center point to the left */}
             <div className="w-full lg:w-[100%] flex justify-center lg:-ml-6">
               <Suspense fallback={<div className="min-h-[350px] sm:min-h-[500px]" />}>
                 <VisualHub product={activeProduct} />
