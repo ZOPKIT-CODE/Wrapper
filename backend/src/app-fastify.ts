@@ -350,7 +350,7 @@ async function registerPlugins() {
 
   // Stricter rate limiting for auth endpoints (50 req/15min)
   fastify.addHook('onRoute', (routeOptions) => {
-    if (routeOptions.url?.startsWith('/api/auth/')) {
+    if (routeOptions.url?.startsWith('/api/v1/auth/')) {
       routeOptions.config = {
         ...(routeOptions.config as Record<string, unknown>),
         rateLimit: { max: 50, timeWindow: 900000 },
