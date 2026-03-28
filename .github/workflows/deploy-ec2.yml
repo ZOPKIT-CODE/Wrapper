@@ -169,6 +169,8 @@ jobs:
     name: Deploy to EC2
     needs: [build, integration-test]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write                  # needed for git tag + gh release
     environment: production            # requires environment approval if configured
     steps:
       - uses: actions/checkout@v4
