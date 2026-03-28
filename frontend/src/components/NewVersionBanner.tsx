@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api';
 import { isVersionNewer } from '@/lib/utils';
 import { X } from 'lucide-react';
-import { useRegisterSW } from 'virtual:pwa-register/react';
 
 const VERSION_CHECK_INTERVAL = 5 * 60 * 1000; // 5 minutes
 const INITIAL_CHECK_DELAY = 10 * 1000; // 10 seconds after mount
@@ -12,18 +11,6 @@ const DISMISS_STORAGE_KEY = 'newVersionBannerDismissed';
 
 export function NewVersionBanner() {
   const [showBanner, setShowBanner] = useState(false);
-
-  const {
-    needRefresh: [needRefresh],
-    updateServiceWorker,
-  } = useRegisterSW({
-    onRegisteredSW(_swUrl, r) {
-      // Check for SW updates every 5 minutes
-      if (r) {
-        setInterval(() => { r.update(); }, 5 * 60 * 1000);
-      }
-    },
-  });
   const [serverVersion, setServerVersion] = useState<string | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const checkAbortControllerRef = useRef<AbortController | null>(null);
@@ -109,13 +96,13 @@ export function NewVersionBanner() {
     };
   }, []); // Empty deps - only run on mount/unmount
 
-  // Also trigger banner when service worker detects a new version
-  useEffect(() => {
-    if (needRefresh) setShowBanner(true);
-  }, [needRefresh]);
-
   const handleRefresh = () => {
-    updateServiceWorker(true); // skipWaiting + clientsClaim
+    // Clear service worker cache to ensure fresh assets
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(registrations => {
+        registrations.forEach(r => r.update());
+      });
+    }
     window.location.reload();
   };
 
