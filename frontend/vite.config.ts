@@ -5,9 +5,22 @@ import { visualizer } from 'rollup-plugin-visualizer'
 import path from 'path'
 import tailwindcss from "@tailwindcss/vite"
 
+// Unique build hash — changes on every build, used for version detection
+const BUILD_HASH = Date.now().toString(36);
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const plugins: any[] = [
+    // Inject build hash meta tag into index.html at build time
+    {
+      name: 'inject-build-hash',
+      transformIndexHtml(html: string) {
+        return html.replace(
+          '<meta charset="UTF-8" />',
+          `<meta charset="UTF-8" />\n    <meta name="app-version" content="${BUILD_HASH}" />`
+        );
+      },
+    },
     react(),
     tailwindcss(),
     VitePWA({
@@ -158,6 +171,7 @@ export default defineConfig(({ mode }) => {
     define: {
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
       __APP_VERSION__: JSON.stringify(process.env.npm_package_version),
+      __BUILD_HASH__: JSON.stringify(BUILD_HASH),
     },
   }
 }) 

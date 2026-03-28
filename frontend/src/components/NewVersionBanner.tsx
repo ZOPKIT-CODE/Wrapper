@@ -1,120 +1,71 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { api } from '@/lib/api';
-import { isVersionNewer } from '@/lib/utils';
 import { X } from 'lucide-react';
 
-const VERSION_CHECK_INTERVAL = 5 * 60 * 1000; // 5 minutes
-const INITIAL_CHECK_DELAY = 10 * 1000; // 10 seconds after mount
+const CHECK_INTERVAL = 60 * 1000; // 60 seconds
 const DISMISS_STORAGE_KEY = 'newVersionBannerDismissed';
 
+/**
+ * Detects new deployments by comparing the build hash in the current page's
+ * <meta name="app-version"> tag against a fresh fetch of /index.html.
+ * Zero backend API calls, zero service worker complexity.
+ */
 export function NewVersionBanner() {
   const [showBanner, setShowBanner] = useState(false);
-  const [serverVersion, setServerVersion] = useState<string | null>(null);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const checkAbortControllerRef = useRef<AbortController | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Get client version from build-time constant
-  const clientVersion = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.0.0';
+  // Read the build hash baked into the currently loaded page
+  const currentVersion = useRef(
+    document.querySelector<HTMLMetaElement>('meta[name="app-version"]')?.content ?? ''
+  );
 
-  const checkVersion = async () => {
-    // Skip check if document is hidden (tab in background)
-    if (document.hidden) {
-      return;
-    }
-
-    // Skip if already dismissed in this session
-    if (sessionStorage.getItem(DISMISS_STORAGE_KEY)) {
-      return;
-    }
+  const checkForUpdate = useCallback(async () => {
+    // Skip if tab is hidden or already dismissed this session
+    if (document.hidden) return;
+    if (sessionStorage.getItem(DISMISS_STORAGE_KEY)) return;
+    if (!currentVersion.current) return; // no meta tag in dev mode
 
     try {
-      // Cancel any pending request
-      if (checkAbortControllerRef.current) {
-        checkAbortControllerRef.current.abort();
-      }
+      const res = await fetch('/index.html', { cache: 'no-store' });
+      const html = await res.text();
+      const match = html.match(/<meta\s+name="app-version"\s+content="([^"]+)"/);
+      const remoteVersion = match?.[1] ?? '';
 
-      checkAbortControllerRef.current = new AbortController();
-      
-      const response = await api.get<{ version: string }>('/version', {
-        signal: checkAbortControllerRef.current.signal
-      });
-
-      const version = response.data?.version;
-      if (version) {
-        setServerVersion(version);
-        
-        // Compare versions - show banner if server version is newer
-        if (isVersionNewer(version, clientVersion)) {
-          setShowBanner(true);
-        } else {
-          setShowBanner(false);
-        }
+      if (remoteVersion && remoteVersion !== currentVersion.current) {
+        setShowBanner(true);
       }
-    } catch (error: any) {
-      // Silently fail - don't show banner on error
-      // Only log in development
-      if (import.meta.env.DEV && error.name !== 'AbortError') {
-        console.debug('Version check failed:', error);
-      }
-      setShowBanner(false);
-    } finally {
-      checkAbortControllerRef.current = null;
+    } catch {
+      // Silently fail — network error or offline
     }
-  };
+  }, []);
 
   useEffect(() => {
-    // Initial check after delay
-    const initialTimeout = setTimeout(() => {
-      checkVersion();
-    }, INITIAL_CHECK_DELAY);
-
-    // Set up polling interval
-    intervalRef.current = setInterval(() => {
-      checkVersion();
-    }, VERSION_CHECK_INTERVAL);
-
-    // Check when tab becomes visible again
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        checkVersion();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    // First check after 10 seconds
+    const timeout = setTimeout(checkForUpdate, 10_000);
+    // Then every 60 seconds
+    intervalRef.current = setInterval(checkForUpdate, CHECK_INTERVAL);
+    // Also check when tab regains focus
+    const onFocus = () => { checkForUpdate(); };
+    document.addEventListener('visibilitychange', onFocus);
 
     return () => {
-      clearTimeout(initialTimeout);
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-      if (checkAbortControllerRef.current) {
-        checkAbortControllerRef.current.abort();
-      }
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      clearTimeout(timeout);
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      document.removeEventListener('visibilitychange', onFocus);
     };
-  }, []); // Empty deps - only run on mount/unmount
+  }, [checkForUpdate]);
 
   const handleRefresh = () => {
-    // Clear service worker cache to ensure fresh assets
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(registrations => {
-        registrations.forEach(r => r.update());
-      });
-    }
     window.location.reload();
   };
 
   const handleDismiss = () => {
     setShowBanner(false);
-    // Store dismiss flag in sessionStorage (cleared when tab closes)
     sessionStorage.setItem(DISMISS_STORAGE_KEY, Date.now().toString());
   };
 
-  if (!showBanner) {
-    return null;
-  }
+  if (!showBanner) return null;
 
   return (
     <Alert
@@ -124,13 +75,8 @@ export function NewVersionBanner() {
     >
       <div className="container mx-auto px-4 py-2 flex items-center justify-between gap-4">
         <AlertDescription className="flex-1 text-sm text-blue-900 dark:text-blue-100 m-0">
-          <span className="font-medium">🚀 A new version is available.</span>
-          {serverVersion && (
-            <span className="ml-2 text-blue-700 dark:text-blue-300">
-              (v{serverVersion})
-            </span>
-          )}
-          {' '}Refresh to get the latest features and improvements.
+          <span className="font-medium">A new version is available.</span>
+          {' '}Click Update to get the latest features.
         </AlertDescription>
         <div className="flex items-center gap-2">
           <Button
@@ -138,7 +84,7 @@ export function NewVersionBanner() {
             size="sm"
             className="bg-[#1B2E5A] hover:bg-[#152449] text-white"
           >
-            Refresh
+            Update now
           </Button>
           <Button
             onClick={handleDismiss}
