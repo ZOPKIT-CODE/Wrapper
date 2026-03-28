@@ -15,10 +15,10 @@ const workflows = [
         title: 'Lead to Cash',
         description: 'Automate your revenue cycle from prospect to payment.',
         color: 'blue',
-        accent: 'from-blue-600 to-cyan-500',
+        accent: 'from-[#1B2E5A] to-cyan-500',
         border: 'border-blue-200',
-        text: 'text-blue-600',
-        bg: 'bg-blue-600',
+        text: 'text-[#1B2E5A]',
+        bg: 'bg-[#1B2E5A]',
         lightBg: 'bg-blue-50',
         steps: [
             { id: 'lead', title: 'Lead Captured', app: 'B2B CRM', icon: Briefcase, action: 'Syncing prospect data', status: 'Success' },
@@ -162,7 +162,7 @@ export const WorkflowVisualizer = () => {
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12 sm:mb-16">
                 <p className="text-sm font-semibold text-slate-400 tracking-wide mb-3">Workflow Engine</p>
-                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-[-0.025em] leading-tight">
+                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#1B2E5A] tracking-[-0.025em] leading-tight">
                     Intelligent Workflow<br className="hidden sm:block" /> Orchestration
                 </h2>
                 <p className="text-slate-500 text-base sm:text-lg max-w-xl mx-auto mt-4 leading-relaxed">
@@ -244,7 +244,7 @@ export const WorkflowVisualizer = () => {
                     {/* Header */}
                     <div className="relative z-10 h-12 sm:h-16 border-b border-slate-100 bg-white/80 flex items-center justify-between px-3 sm:px-8 shrink-0">
                         <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-                            <h2 className="text-sm sm:text-xl font-bold text-slate-900 truncate">
+                            <h2 className="text-sm sm:text-xl font-bold text-[#1B2E5A] truncate">
                                 {activeWorkflow.title}
                             </h2>
                             <div className="hidden sm:block px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-500 text-xs font-semibold border border-slate-200 shrink-0">

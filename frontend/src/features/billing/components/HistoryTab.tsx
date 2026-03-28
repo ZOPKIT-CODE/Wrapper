@@ -74,7 +74,7 @@ export function HistoryTab({
             <PaymentHistoryIcon className="w-6 h-6" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Payment History</h3>
+            <h3 className="text-lg font-bold text-[#1B2E5A] dark:text-white">Payment History</h3>
           </div>
         </div>
       </div>
@@ -91,7 +91,7 @@ export function HistoryTab({
           <div className="p-4 bg-gray-100 dark:bg-gray-700 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
             <ReceiptIcon className="h-8 w-8 text-gray-400" />
           </div>
-          <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+          <h4 className="text-lg font-semibold text-[#1B2E5A] dark:text-white mb-2">
             No payment history yet
           </h4>
           <p className="text-gray-600 dark:text-gray-400">
@@ -134,7 +134,7 @@ export function HistoryTab({
 
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
-                          <h4 className="font-semibold text-gray-900 dark:text-white text-lg">
+                          <h4 className="font-semibold text-[#1B2E5A] dark:text-white text-lg">
                             {isPlanUpgrade
                               ? payment.planDisplayName
                                 ? `Plan: ${payment.planDisplayName}`
@@ -331,11 +331,11 @@ export function HistoryTab({
                       </div>
 
                       {!isPlanUpgrade && payment.creditsPurchased && (
-                        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg px-4 py-2 border border-blue-200 dark:border-blue-800">
-                          <div className="text-sm font-semibold text-blue-700 dark:text-blue-400">
+                        <div className="bg-[#1B2E5A]/5 dark:bg-[#1B2E5A]/20 rounded-lg px-4 py-2 border border-[#1B2E5A]/20 dark:border-[#1B2E5A]/40">
+                          <div className="text-sm font-semibold text-[#1B2E5A] dark:text-[#4A6FA5]">
                             +{payment.creditsPurchased.toLocaleString()} credits
                           </div>
-                          <div className="text-xs text-blue-600 dark:text-blue-500">Credits Added</div>
+                          <div className="text-xs text-[#1B2E5A]/80 dark:text-[#4A6FA5]">Credits Added</div>
                         </div>
                       )}
 
@@ -367,7 +367,7 @@ export function HistoryTab({
                             variant="outline"
                             size="sm"
                             onClick={() => navigate({ to: `/dashboard/billing/payments/${payment.id}` })}
-                            className="border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700"
+                            className="border-[#1B2E5A]/20 hover:bg-[#1B2E5A]/5 hover:text-[#1B2E5A] cursor-pointer dark:border-gray-600 dark:hover:bg-gray-700"
                           >
                             <ExternalLink className="h-3 w-3 mr-1" />
                             Details
@@ -382,7 +382,7 @@ export function HistoryTab({
                               '_blank'
                             )
                           }
-                          className="border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700"
+                          className="border-[#1B2E5A]/20 hover:bg-[#1B2E5A]/5 hover:text-[#1B2E5A] cursor-pointer dark:border-gray-600 dark:hover:bg-gray-700"
                         >
                           <Download className="h-3 w-3 mr-1" />
                           Receipt
@@ -417,7 +417,7 @@ export function HistoryTab({
                     <X className="h-5 w-5 text-red-600 dark:text-red-400" />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-white">
+                    <h4 className="font-semibold text-[#1B2E5A] dark:text-white">
                       Cancel Subscription
                     </h4>
                     <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">

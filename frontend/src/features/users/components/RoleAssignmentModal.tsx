@@ -127,7 +127,7 @@ export function RoleAssignmentModal({
 
                   <div className="flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h4 className={`font-semibold ${isSelected ? 'text-violet-900 dark:text-violet-100' : 'text-slate-900 dark:text-slate-200'}`}>
+                      <h4 className={`font-semibold ${isSelected ? 'text-violet-900 dark:text-violet-100' : 'text-[#1B2E5A] dark:text-slate-200'}`}>
                         {role.roleName}
                       </h4>
                       {isSelected ? (

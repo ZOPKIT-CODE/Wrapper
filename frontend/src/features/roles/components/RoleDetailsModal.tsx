@@ -57,7 +57,7 @@ export function RoleDetailsModal({ role, isOpen, onClose }: RoleDetailsModalProp
         <div className="space-y-6">
           <div className="grid grid-cols-2 gap-6">
             <div>
-              <h4 className="font-semibold text-gray-900 mb-2">Basic Information</h4>
+              <h4 className="font-semibold text-[#1B2E5A] mb-2">Basic Information</h4>
               <div className="space-y-2 text-sm">
                 <div><span className="font-medium">Name:</span> {role.roleName}</div>
                 <div><span className="font-medium">Type:</span> {role.isSystemRole ? 'System' : 'Custom'}</div>
@@ -67,14 +67,14 @@ export function RoleDetailsModal({ role, isOpen, onClose }: RoleDetailsModalProp
               
               {role.description && (
                 <div className="mt-4">
-                  <h4 className="font-semibold text-gray-900 mb-2">Description</h4>
+                  <h4 className="font-semibold text-[#1B2E5A] mb-2">Description</h4>
                   <p className="text-sm text-gray-600">{role.description}</p>
                 </div>
               )}
             </div>
             
             <div>
-              <h4 className="font-semibold text-gray-900 mb-2">Permission Summary</h4>
+              <h4 className="font-semibold text-[#1B2E5A] mb-2">Permission Summary</h4>
               <div className="space-y-2 text-sm">
                 <div><span className="font-medium">Total Permissions:</span> {permissionSummary.total}</div>
                 <div><span className="font-medium">Applications:</span> {permissionSummary.applicationCount}</div>

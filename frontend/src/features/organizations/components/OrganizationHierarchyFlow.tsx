@@ -251,12 +251,12 @@ function convertHierarchyToFlow(
         type: 'smoothstep',
         animated: false,
         style: {
-          stroke: isLocation ? '#f59e0b' : '#3b82f6',
+          stroke: isLocation ? '#f59e0b' : '#1B2E5A',
           strokeWidth: 2,
         },
         markerEnd: {
           type: 'arrowclosed',
-          color: isLocation ? '#f59e0b' : '#3b82f6',
+          color: isLocation ? '#f59e0b' : '#1B2E5A',
         },
       });
     }
@@ -374,7 +374,7 @@ function OrganizationHierarchyFlowInner({
     return (
       <div className="w-full h-full flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-4" />
+          <Loader2 className="w-8 h-8 animate-spin text-[#1B2E5A] mx-auto mb-4" />
           <p className="text-gray-600">Loading organization hierarchy...</p>
         </div>
       </div>
@@ -386,7 +386,7 @@ function OrganizationHierarchyFlowInner({
       <div className="w-full h-full flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <Building className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">No Organizations Found</h3>
+          <h3 className="text-xl font-semibold text-[#1B2E5A] mb-2">No Organizations Found</h3>
           <p className="text-gray-600 mb-4">
             Create your first organization to get started.
           </p>
@@ -421,15 +421,15 @@ function OrganizationHierarchyFlowInner({
           nodeColor={(node) => {
             const entityType = node.data?.entityType;
             if (entityType === 'location') return '#f59e0b';
-            return node.data?.isActive ? '#3b82f6' : '#9ca3af';
+            return node.data?.isActive ? '#1B2E5A' : '#9ca3af';
           }}
           maskColor="rgba(0, 0, 0, 0.1)"
         />
-        <Panel position="top-left" className="rounded-2xl border border-sky-100 bg-gradient-to-r from-sky-50/50 to-white shadow-sm p-3">
+        <Panel position="top-left" className="rounded-2xl border border-[#1B2E5A]/20 bg-gradient-to-r from-[#1B2E5A]/5 to-white shadow-sm p-3">
           <div className="flex items-center gap-2">
-            <Building className="w-5 h-5 text-sky-600" />
+            <Building className="w-5 h-5 text-[#1B2E5A]" />
             <div>
-              <h3 className="font-black text-sm text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-sky-400">Organization Hierarchy</h3>
+              <h3 className="font-black text-sm text-[#1B2E5A]">Organization Hierarchy</h3>
               <p className="text-xs text-muted-foreground">
                 {hierarchy.totalOrganizations} {hierarchy.totalOrganizations === 1 ? 'organization' : 'organizations'}
               </p>
@@ -442,36 +442,36 @@ function OrganizationHierarchyFlowInner({
               variant="outline"
               size="sm"
               onClick={onRefresh}
-              className="bg-white border border-sky-200 shadow-sm hover:bg-sky-50"
+              className="bg-white border border-[#1B2E5A]/20 shadow-sm hover:bg-[#1B2E5A]/5"
             >
-              <RefreshCw className="w-4 h-4 mr-2 text-sky-600" />
-              <span className="text-sky-700 font-medium">Refresh</span>
+              <RefreshCw className="w-4 h-4 mr-2 text-[#1B2E5A]" />
+              <span className="text-[#1B2E5A] font-medium">Refresh</span>
             </Button>
           )}
           <Button
             variant="outline"
             size="sm"
             onClick={handleFitView}
-            className="bg-white border border-blue-200 shadow-sm hover:bg-blue-50"
+            className="bg-white border border-[#1B2E5A]/20 shadow-sm hover:bg-[#1B2E5A]/5"
           >
-            <Maximize2 className="w-4 h-4 mr-2 text-blue-600" />
-            <span className="text-blue-700 font-medium">Fit View</span>
+            <Maximize2 className="w-4 h-4 mr-2 text-[#1B2E5A]" />
+            <span className="text-[#1B2E5A] font-medium">Fit View</span>
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={() => zoomIn({ duration: 300 })}
-            className="bg-white border border-sky-200 shadow-sm hover:bg-sky-50"
+            className="bg-white border border-[#1B2E5A]/20 shadow-sm hover:bg-[#1B2E5A]/5"
           >
-            <ZoomIn className="w-4 h-4 text-sky-600" />
+            <ZoomIn className="w-4 h-4 text-[#1B2E5A]" />
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={() => zoomOut({ duration: 300 })}
-            className="bg-white border border-sky-200 shadow-sm hover:bg-sky-50"
+            className="bg-white border border-[#1B2E5A]/20 shadow-sm hover:bg-[#1B2E5A]/5"
           >
-            <ZoomOut className="w-4 h-4 text-sky-600" />
+            <ZoomOut className="w-4 h-4 text-[#1B2E5A]" />
           </Button>
         </Panel>
       </ReactFlow>

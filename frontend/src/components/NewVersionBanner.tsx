@@ -130,7 +130,7 @@ export function NewVersionBanner() {
           <Button
             onClick={handleRefresh}
             size="sm"
-            className="bg-blue-600 hover:bg-blue-700 text-white"
+            className="bg-[#1B2E5A] hover:bg-[#152449] text-white"
           >
             Refresh
           </Button>

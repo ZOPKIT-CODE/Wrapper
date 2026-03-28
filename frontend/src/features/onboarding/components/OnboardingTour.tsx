@@ -175,11 +175,11 @@ export const OnboardingTour = ({ onComplete, onSkip }: OnboardingTourProps) => {
           }}
         >
           <div className="flex items-start gap-3 mb-3">
-            <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0">
+            <div className="w-10 h-10 rounded-full bg-[#1B2E5A] flex items-center justify-center flex-shrink-0">
               <Sparkles className="w-5 h-5 text-white" />
             </div>
             <div className="flex-1">
-              <h3 className="font-bold text-slate-900 mb-1">{currentStepData.title}</h3>
+              <h3 className="font-bold text-[#1B2E5A] mb-1">{currentStepData.title}</h3>
               <p className="text-sm text-slate-600 leading-relaxed">{currentStepData.content}</p>
             </div>
             <Button
@@ -227,7 +227,7 @@ export const OnboardingTour = ({ onComplete, onSkip }: OnboardingTourProps) => {
                     setElementFound(false);
                     setCurrentStep(currentStep + 1);
                   }}
-                  className="text-xs bg-blue-600 hover:bg-blue-700"
+                  className="text-xs bg-[#1B2E5A] hover:bg-[#152449]"
                 >
                   Next <ArrowRight className="w-3 h-3 ml-1" />
                 </Button>
@@ -240,7 +240,7 @@ export const OnboardingTour = ({ onComplete, onSkip }: OnboardingTourProps) => {
                     e.stopPropagation();
                     handleComplete();
                   }}
-                  className="text-xs bg-blue-600 hover:bg-blue-700"
+                  className="text-xs bg-[#1B2E5A] hover:bg-[#152449]"
                 >
                   Got it!
                 </Button>
@@ -414,11 +414,11 @@ export const OnboardingTour = ({ onComplete, onSkip }: OnboardingTourProps) => {
         style={safeTooltipStyle}
       >
         <div className="flex items-start gap-3 mb-3">
-          <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0">
+          <div className="w-10 h-10 rounded-full bg-[#1B2E5A] flex items-center justify-center flex-shrink-0">
             <Sparkles className="w-5 h-5 text-white" />
           </div>
           <div className="flex-1">
-            <h3 className="font-bold text-slate-900 mb-1">{currentStepData.title}</h3>
+            <h3 className="font-bold text-[#1B2E5A] mb-1">{currentStepData.title}</h3>
             <p className="text-sm text-slate-600 leading-relaxed">{currentStepData.content}</p>
           </div>
           <Button
@@ -467,7 +467,7 @@ export const OnboardingTour = ({ onComplete, onSkip }: OnboardingTourProps) => {
                   setElementFound(false);
                   setCurrentStep(currentStep + 1);
                 }}
-                className="text-xs bg-blue-600 hover:bg-blue-700"
+                className="text-xs bg-[#1B2E5A] hover:bg-[#152449]"
               >
                 Next <ArrowRight className="w-3 h-3 ml-1" />
               </Button>
@@ -480,7 +480,7 @@ export const OnboardingTour = ({ onComplete, onSkip }: OnboardingTourProps) => {
                   e.stopPropagation();
                   handleComplete();
                 }}
-                className="text-xs bg-blue-600 hover:bg-blue-700"
+                className="text-xs bg-[#1B2E5A] hover:bg-[#152449]"
               >
                 Got it!
               </Button>

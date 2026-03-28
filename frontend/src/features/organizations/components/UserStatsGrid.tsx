@@ -22,7 +22,7 @@ export function UserStatsGrid({ employees }: UserStatsGridProps) {
         title: "Total Users",
         value: employees.length,
         icon: Users,
-        iconColor: "text-blue-600"
+        iconColor: "text-[#1B2E5A]"
       },
       {
         title: "Active Users",

@@ -45,8 +45,8 @@ export function TrialStatusWidget() {
       default:
         return {
           badgeVariant: 'secondary' as const,
-          iconColor: 'text-blue-600',
-          textColor: 'text-blue-700'
+          iconColor: 'text-[#1B2E5A]',
+          textColor: 'text-[#1B2E5A]'
         }
     }
   }

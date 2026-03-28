@@ -806,13 +806,13 @@ export const DashboardFeatureTour = ({ onComplete, onSkip, initialStep = 0, onDi
           style={{
             ...safeTooltipStyle,
             borderLeftWidth: '4px',
-            borderLeftColor: 'rgb(99, 102, 241)',
+            borderLeftColor: '#1B2E5A',
           }}
         >
           {/* Progress bar */}
           <div className="h-1 bg-slate-100 dark:bg-slate-700">
             <motion.div
-              className="h-full bg-gradient-to-r from-indigo-500 to-violet-500"
+              className="h-full bg-[#1B2E5A]"
               initial={{ width: 0 }}
               animate={{ width: `${((currentStep + 1) / tourSteps.length) * 100}%` }}
               transition={{ duration: 0.3, ease: 'easeOut' }}
@@ -841,14 +841,14 @@ export const DashboardFeatureTour = ({ onComplete, onSkip, initialStep = 0, onDi
             </div>
 
             <div className="flex items-start gap-3 mb-4">
-              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-indigo-500/25">
+              <div className="w-11 h-11 rounded-xl bg-[#1B2E5A] flex items-center justify-center flex-shrink-0 shadow-lg shadow-[#1B2E5A]/20">
                 <Icon className="w-5 h-5 text-white" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base">{currentStepData.title}</h3>
+                  <h3 className="font-semibold text-[#1B2E5A] dark:text-slate-100 text-base">{currentStepData.title}</h3>
                   {currentStepData.isNew && (
-                    <span className="px-2 py-0.5 text-xs font-medium bg-gradient-to-r from-indigo-500 to-violet-500 text-white rounded-full">
+                    <span className="px-2 py-0.5 text-xs font-medium bg-[#1B2E5A] text-white rounded-full">
                       New
                     </span>
                   )}
@@ -877,15 +877,15 @@ export const DashboardFeatureTour = ({ onComplete, onSkip, initialStep = 0, onDi
                   <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-2">{currentStepData.content}</p>
                 )}
                 {featurePhase === 'in-page' && currentFeatureIndex === 2 && currentStepData.tertiaryKeyAction ? (
-                  <div className="text-xs font-medium text-indigo-600 dark:text-indigo-400 mb-2">
+                  <div className="text-xs font-medium text-[#1B2E5A] dark:text-[#4A6FA5] mb-2">
                     You can: {currentStepData.tertiaryKeyAction}
                   </div>
                 ) : featurePhase === 'in-page' && currentFeatureIndex === 1 && currentStepData.secondaryKeyAction ? (
-                  <div className="text-xs font-medium text-indigo-600 dark:text-indigo-400 mb-2">
+                  <div className="text-xs font-medium text-[#1B2E5A] dark:text-[#4A6FA5] mb-2">
                     You can: {currentStepData.secondaryKeyAction}
                   </div>
                 ) : currentStepData.keyAction && (
-                  <div className="text-xs font-medium text-indigo-600 dark:text-indigo-400 mb-2">
+                  <div className="text-xs font-medium text-[#1B2E5A] dark:text-[#4A6FA5] mb-2">
                     You can: {currentStepData.keyAction}
                   </div>
                 )}
@@ -894,7 +894,7 @@ export const DashboardFeatureTour = ({ onComplete, onSkip, initialStep = 0, onDi
                     <ul className="text-xs text-slate-600 dark:text-slate-400 space-y-1">
                       {currentStepData.bullets.map((bullet, idx) => (
                         <li key={idx} className="flex items-center gap-1.5">
-                          <span className="text-indigo-500">•</span>
+                          <span className="text-[#1B2E5A]">•</span>
                           <span>{bullet}</span>
                         </li>
                       ))}
@@ -903,7 +903,7 @@ export const DashboardFeatureTour = ({ onComplete, onSkip, initialStep = 0, onDi
                 )}
                 {currentStepData.proTip && (
                   <div className="flex items-start gap-1.5 text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/50 rounded-lg p-2">
-                    <Lightbulb className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-indigo-500" />
+                    <Lightbulb className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-[#1B2E5A]" />
                     <span><strong>Pro tip:</strong> {currentStepData.proTip}</span>
                   </div>
                 )}
@@ -917,7 +917,7 @@ export const DashboardFeatureTour = ({ onComplete, onSkip, initialStep = 0, onDi
                 <div className="flex flex-wrap gap-2">
                   {tourSteps.map((step, i) => (
                     <div key={i} className="flex items-center gap-1 text-xs text-slate-600 dark:text-slate-400">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-indigo-500" />
+                      <CheckCircle2 className="w-3.5 h-3.5 text-[#1B2E5A]" />
                       <span>{step.title}</span>
                     </div>
                   ))}
@@ -931,7 +931,7 @@ export const DashboardFeatureTour = ({ onComplete, onSkip, initialStep = 0, onDi
                 <div
                   key={i}
                   className={`h-1.5 rounded-full transition-all duration-300 ${
-                    i <= currentStep ? 'bg-indigo-500 w-5' : 'bg-slate-200 dark:bg-slate-600 w-1.5'
+                    i <= currentStep ? 'bg-[#1B2E5A] w-5' : 'bg-slate-200 dark:bg-slate-600 w-1.5'
                   }`}
                 />
               ))}
@@ -1002,7 +1002,7 @@ export const DashboardFeatureTour = ({ onComplete, onSkip, initialStep = 0, onDi
                       e.stopPropagation();
                       handleTryIt();
                     }}
-                    className="text-xs bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 text-white shadow-md shadow-indigo-500/20"
+                    className="text-xs bg-[#1B2E5A] hover:bg-[#162447] text-white shadow-md shadow-[#1B2E5A]/20"
                   >
                     <Zap className="w-3.5 h-3.5 mr-1" />
                     Try it
@@ -1016,7 +1016,7 @@ export const DashboardFeatureTour = ({ onComplete, onSkip, initialStep = 0, onDi
                       e.stopPropagation();
                       goToNextStep();
                     }}
-                    className="text-xs bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 text-white shadow-md shadow-indigo-500/20"
+                    className="text-xs bg-[#1B2E5A] hover:bg-[#162447] text-white shadow-md shadow-[#1B2E5A]/20"
                   >
                     Continue tour <ArrowRight className="w-3.5 h-3.5 ml-1" />
                   </Button>
@@ -1029,7 +1029,7 @@ export const DashboardFeatureTour = ({ onComplete, onSkip, initialStep = 0, onDi
                       e.stopPropagation();
                       goToNextStep();
                     }}
-                    className="text-xs bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 text-white shadow-md shadow-indigo-500/20"
+                    className="text-xs bg-[#1B2E5A] hover:bg-[#162447] text-white shadow-md shadow-[#1B2E5A]/20"
                   >
                     Next <ArrowRight className="w-3.5 h-3.5 ml-1" />
                   </Button>
@@ -1042,7 +1042,7 @@ export const DashboardFeatureTour = ({ onComplete, onSkip, initialStep = 0, onDi
                       e.stopPropagation();
                       handleComplete();
                     }}
-                    className="text-xs bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 text-white shadow-md shadow-indigo-500/20"
+                    className="text-xs bg-[#1B2E5A] hover:bg-[#162447] text-white shadow-md shadow-[#1B2E5A]/20"
                   >
                     Done
                   </Button>
@@ -1076,8 +1076,8 @@ export const DashboardFeatureTour = ({ onComplete, onSkip, initialStep = 0, onDi
               className="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-2xl border border-slate-200 dark:border-slate-700"
             >
               <div className="flex flex-col items-center gap-4">
-                <CheckCircle2 className="w-16 h-16 text-indigo-500" />
-                <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100">You're all set!</h3>
+                <CheckCircle2 className="w-16 h-16 text-[#1B2E5A]" />
+                <h3 className="text-xl font-semibold text-[#1B2E5A] dark:text-slate-100">You're all set!</h3>
                 <p className="text-sm text-slate-600 dark:text-slate-400">You've completed the tour</p>
               </div>
             </motion.div>

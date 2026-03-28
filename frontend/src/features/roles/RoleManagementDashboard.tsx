@@ -69,7 +69,7 @@ const getPermissionSummary = (permissions: Record<string, any> | string[]) => {
 };
 
 export function RoleManagementDashboard() {
-  const { actualTheme, glassmorphismEnabled } = useTheme();
+  const { actualTheme } = useTheme();
   const queryClient = useQueryClient();
   const { triggerRefresh } = usePermissionRefreshTrigger();
   const navigate = useNavigate();
@@ -488,7 +488,7 @@ export function RoleManagementDashboard() {
             <div
               className={cn(
                 "w-11 h-11 rounded-xl flex items-center justify-center shrink-0 shadow-sm ring-1 ring-black/5",
-                !role.color && "bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400"
+                !role.color && "bg-[#1B2E5A]/10 text-[#1B2E5A] dark:bg-[#1B2E5A]/20 dark:text-[#4A6FA5]"
               )}
               style={role.color ? { backgroundColor: `${role.color}18`, color: role.color, border: `1px solid ${role.color}25` } : undefined}
             >
@@ -501,7 +501,7 @@ export function RoleManagementDashboard() {
             <div className="min-w-0 flex-1">
               <div className={cn(
                 "font-semibold truncate text-sm",
-                actualTheme === 'dark' ? "text-white" : actualTheme === 'monochrome' ? "text-gray-100" : "text-slate-900"
+                actualTheme === 'dark' ? "text-white" : actualTheme === 'monochrome' ? "text-gray-100" : "text-[#1B2E5A]"
               )} title={role.roleName}>
                 {role.roleName}
               </div>
@@ -576,7 +576,7 @@ export function RoleManagementDashboard() {
               className={cn(
                 "text-[10px] h-5 uppercase tracking-tighter font-medium",
                 actualTheme === 'dark'
-                  ? role.isSystemRole ? "bg-blue-600/30 text-blue-300 border-blue-500/40" : "bg-slate-700 text-slate-300 border-slate-600"
+                  ? role.isSystemRole ? "bg-[#1B2E5A]/30 text-blue-300 border-blue-500/40" : "bg-slate-700 text-slate-300 border-slate-600"
                   : "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600"
               )}
             >
@@ -636,7 +636,7 @@ export function RoleManagementDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-white text-gray-900">
+    <div className="min-h-screen bg-white text-[#1B2E5A]">
 
       <div className="relative z-10 max-w-7xl mx-auto p-4 md:p-6 space-y-6">
         {/* Header */}
@@ -647,7 +647,7 @@ export function RoleManagementDashboard() {
           className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
         >
           <div className="space-y-1">
-            <h1 className="text-4xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-sky-400">
+            <h1 className="text-4xl font-black tracking-tighter text-[#1B2E5A]">
               Role Management
             </h1>
             <p className="text-muted-foreground text-sm max-w-2xl">
@@ -665,7 +665,7 @@ export function RoleManagementDashboard() {
         </motion.div>
 
         {/* Enhanced Filters and Search */}
-        <Card className="rounded-2xl border border-sky-100 bg-gradient-to-r from-sky-50/50 to-white shadow-sm backdrop-blur-sm transition-all hover:shadow-md">
+        <Card className="rounded-2xl border border-[#1B2E5A]/10 bg-white shadow-sm backdrop-blur-sm transition-all hover:shadow-md">
           <CardContent className="p-6 space-y-6">
             {/* Search Bar */}
             <div className="flex flex-col lg:flex-row gap-4">
@@ -923,7 +923,7 @@ export function RoleManagementDashboard() {
         <Card className={cn(
           "overflow-hidden overflow-x-auto rounded-2xl border-0 shadow-lg",
           actualTheme === 'dark'
-            ? (glassmorphismEnabled ? 'bg-slate-900/95 border border-slate-700/50' : 'bg-slate-900 border-slate-700')
+            ? 'bg-slate-900 border-slate-700'
             : (actualTheme === 'monochrome' ? 'bg-gray-900 border-gray-500/30' : 'bg-white border-slate-200/80 shadow-slate-200/50')
         )}>
           {showRolesLoading ? (
@@ -990,7 +990,7 @@ export function RoleManagementDashboard() {
                   <tr>
                     <td colSpan={7} className="p-12 text-center">
                       <Shield className={cn("w-12 h-12 mx-auto text-gray-400", actualTheme === 'dark' && "text-white")} />
-                      <h3 className={cn("text-lg font-semibold mt-4", actualTheme === 'dark' ? "text-white" : actualTheme === 'monochrome' ? "text-gray-100" : "text-gray-900")}>No roles found</h3>
+                      <h3 className={cn("text-lg font-semibold mt-4", actualTheme === 'dark' ? "text-white" : actualTheme === 'monochrome' ? "text-gray-100" : "text-[#1B2E5A]")}>No roles found</h3>
                       <p className={cn("mt-2 text-gray-600", actualTheme === 'dark' ? "text-white" : actualTheme === 'monochrome' ? "text-gray-300" : "")}>
                         {searchQuery || typeFilter !== 'all' ? 'Try adjusting your filters.' : 'Get started by creating your first role.'}
                       </p>
@@ -1018,9 +1018,7 @@ export function RoleManagementDashboard() {
         <Dialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
           <DialogContent className={
             actualTheme === 'dark'
-              ? glassmorphismEnabled
-                ? 'bg-slate-900 border-purple-500/30 text-white'
-                : 'bg-slate-900 border-slate-700 text-white'
+              ? 'bg-slate-900 border-slate-700 text-white'
               : actualTheme === 'monochrome'
                 ? 'bg-gray-900 border-gray-500/30 text-gray-100'
                 : ''

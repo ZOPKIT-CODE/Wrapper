@@ -17,7 +17,7 @@ const getThemeVariantClasses = (variant: string, size: string, actualTheme: stri
       : "border-transparent bg-yellow-500 text-white shadow hover:bg-yellow-600",
     info: isMonochrome
       ? "border-transparent bg-gray-600 text-white shadow hover:bg-gray-700"
-      : "border-transparent bg-blue-500 text-white shadow hover:bg-blue-600",
+      : "border-transparent bg-[#1B2E5A] text-white shadow hover:bg-[#162447]",
     muted: "border-transparent bg-muted text-muted-foreground hover:bg-muted/80",
     ghost: "border-transparent hover:bg-accent hover:text-accent-foreground",
     dot: "border-transparent bg-dot bg-center bg-no-repeat bg-[length:8px_8px] text-foreground",
@@ -47,11 +47,11 @@ const getThemeVariantClasses = (variant: string, size: string, actualTheme: stri
       : "border-transparent bg-red-600 text-white shadow hover:bg-red-700",
     enhancement: isMonochrome
       ? "border-transparent bg-gray-600 text-white shadow hover:bg-gray-700"
-      : "border-transparent bg-blue-600 text-white shadow hover:bg-blue-700",
+      : "border-transparent bg-[#1B2E5A] text-white shadow hover:bg-[#162447]",
     // SaaS-specific variants
     trial: isMonochrome
       ? "border-transparent bg-gray-600 text-white shadow hover:bg-gray-700"
-      : "border-transparent bg-indigo-500 text-white shadow hover:bg-indigo-600",
+      : "border-transparent bg-[#1B2E5A] text-white shadow hover:bg-[#162447]",
     premium: isMonochrome
       ? "border-transparent bg-gray-700 text-white shadow hover:bg-gray-800"
       : "border-transparent bg-gradient-to-r from-yellow-400 to-yellow-600 text-black shadow hover:from-yellow-500 hover:to-yellow-700",
@@ -83,7 +83,7 @@ const getThemeVariantClasses = (variant: string, size: string, actualTheme: stri
       : "border-transparent bg-orange-500 text-white shadow hover:bg-orange-600",
     user: isMonochrome
       ? "border-transparent bg-gray-600 text-white shadow hover:bg-gray-700"
-      : "border-transparent bg-blue-500 text-white shadow hover:bg-blue-600",
+      : "border-transparent bg-[#1B2E5A] text-white shadow hover:bg-[#162447]",
     guest: isMonochrome
       ? "border-transparent bg-gray-400 text-white shadow hover:bg-gray-500"
       : "border-transparent bg-gray-400 text-white shadow hover:bg-gray-500",

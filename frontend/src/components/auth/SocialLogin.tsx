@@ -31,7 +31,7 @@ const providerConfig = {
   microsoft: {
     icon: '🪟',
     name: 'Microsoft',
-    className: 'bg-blue-600 hover:bg-blue-700 text-white'
+    className: 'bg-[#1B2E5A] hover:bg-[#152449] text-white'
   },
   apple: {
     icon: '🍎',
@@ -41,7 +41,7 @@ const providerConfig = {
   linkedin: {
     icon: '💼',
     name: 'LinkedIn',
-    className: 'bg-blue-700 hover:bg-blue-800 text-white'
+    className: 'bg-[#1B2E5A] hover:bg-[#152449] text-white'
   }
 };
 

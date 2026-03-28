@@ -176,8 +176,8 @@ export function ApplicationPermissionViewer({
   const getScopeColor = (scope: string) => {
     switch (scope) {
       case 'all': return 'text-purple-600 bg-purple-50 border-purple-200';
-      case 'zone': return 'text-blue-600 bg-blue-50 border-blue-200';
-      case 'department': return 'text-indigo-600 bg-indigo-50 border-indigo-200';
+      case 'zone': return 'text-[#1B2E5A] bg-[#1B2E5A]/5 border-[#1B2E5A]/20';
+      case 'department': return 'text-[#1B2E5A] bg-[#1B2E5A]/5 border-[#1B2E5A]/20';
       case 'team': return 'text-cyan-600 bg-cyan-50 border-cyan-200';
       default: return 'text-gray-600 bg-gray-50 border-gray-200';
     }
@@ -202,12 +202,12 @@ export function ApplicationPermissionViewer({
                 <span className="text-xl">{application.icon}</span>
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900">{application.name}</h3>
+                <h3 className="font-semibold text-[#1B2E5A]">{application.name}</h3>
                 <p className="text-sm text-gray-600">{application.description}</p>
               </div>
             </div>
             <div className="text-right">
-              <div className="text-sm font-medium text-gray-900">
+              <div className="text-sm font-medium text-[#1B2E5A]">
                 {application.moduleCount} modules • {application.operationCount} operations
               </div>
               <div className="text-xs text-gray-500">
@@ -236,7 +236,7 @@ export function ApplicationPermissionViewer({
                         <Shield className="w-4 h-4 text-gray-400" />
                       </div>
                       <div>
-                        <h4 className="font-medium text-gray-900">{module.name}</h4>
+                        <h4 className="font-medium text-[#1B2E5A]">{module.name}</h4>
                         <p className="text-xs text-gray-600">{module.description}</p>
                       </div>
                     </div>
@@ -276,7 +276,7 @@ export function ApplicationPermissionViewer({
                                   type="checkbox"
                                   checked={isOperationEnabled(module.key, operation.id)}
                                   onChange={(e) => onPermissionChange?.(module.key, operation.id, e.target.checked)}
-                                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                  className="w-4 h-4 text-[#1B2E5A] border-gray-300 rounded focus:ring-[#1B2E5A]/50"
                                 />
                               ) : (
                                 <div className="w-4 h-4 flex items-center justify-center">
@@ -287,7 +287,7 @@ export function ApplicationPermissionViewer({
                                 </div>
                               )}
                               <div>
-                                <span className="text-sm font-medium text-gray-900">{operation.name}</span>
+                                <span className="text-sm font-medium text-[#1B2E5A]">{operation.name}</span>
                                 <p className="text-xs text-gray-600">{operation.description}</p>
                               </div>
                             </div>
@@ -337,20 +337,20 @@ export function ApplicationPermissionViewer({
                       <div className="flex items-center gap-2">
                         <span className="text-lg">{application.icon}</span>
                         <div>
-                          <div className="font-medium text-gray-900">{application.name}</div>
+                          <div className="font-medium text-[#1B2E5A]">{application.name}</div>
                           <div className="text-xs text-gray-500">{application.key}</div>
                         </div>
                       </div>
                     </td>
                     <td className="px-4 py-3">
                       <div>
-                        <div className="font-medium text-gray-900">{module.name}</div>
+                        <div className="font-medium text-[#1B2E5A]">{module.name}</div>
                         <div className="text-xs text-gray-500">{module.key}</div>
                       </div>
                     </td>
                     <td className="px-4 py-3">
                       <div>
-                        <div className="font-medium text-gray-900">{operation.name}</div>
+                        <div className="font-medium text-[#1B2E5A]">{operation.name}</div>
                         <div className="text-xs text-gray-500">{operation.description}</div>
                       </div>
                     </td>
@@ -369,7 +369,7 @@ export function ApplicationPermissionViewer({
                           type="checkbox"
                           checked={isOperationEnabled(module.key, operation.id)}
                           onChange={(e) => onPermissionChange?.(module.key, operation.id, e.target.checked)}
-                          className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                          className="w-4 h-4 text-[#1B2E5A] border-gray-300 rounded focus:ring-[#1B2E5A]/50"
                         />
                       ) : (
                         <div className="flex items-center">
@@ -426,7 +426,7 @@ export function ApplicationPermissionViewer({
             <div className="flex items-center gap-3 mb-2">
               <span className="text-2xl">{application.icon}</span>
               <div>
-                <h3 className="font-semibold text-gray-900">{application.name}</h3>
+                <h3 className="font-semibold text-[#1B2E5A]">{application.name}</h3>
                 <p className="text-sm text-gray-600">{application.description}</p>
               </div>
             </div>
@@ -448,7 +448,7 @@ export function ApplicationPermissionViewer({
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <Shield className="w-4 h-4 text-gray-400" />
-                        <h4 className="font-medium text-gray-900">{module.name}</h4>
+                        <h4 className="font-medium text-[#1B2E5A]">{module.name}</h4>
                       </div>
                       <div className="flex items-center gap-1">
                         <span className={`px-2 py-1 text-xs border rounded ${getLevelColor(level)}`}>
@@ -530,16 +530,16 @@ export function ApplicationPermissionViewer({
       <div className="bg-white border border-gray-200 rounded-lg p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900">Application Permissions</h2>
+            <h2 className="text-xl font-semibold text-[#1B2E5A]">Application Permissions</h2>
             <p className="text-gray-600">Manage access to applications, modules, and operations</p>
           </div>
           <div className="flex items-center gap-4">
             <div className="text-right">
-              <div className="text-2xl font-bold text-gray-900">{permissionStructure.summary.operationCount}</div>
+              <div className="text-2xl font-bold text-[#1B2E5A]">{permissionStructure.summary.operationCount}</div>
               <div className="text-sm text-gray-600">Total Operations</div>
             </div>
             <div className="text-right">
-              <div className="text-2xl font-bold text-blue-600">{permissionStructure.summary.moduleCount}</div>
+              <div className="text-2xl font-bold text-[#1B2E5A]">{permissionStructure.summary.moduleCount}</div>
               <div className="text-sm text-gray-600">Modules</div>
             </div>
             <div className="text-right">
@@ -582,7 +582,7 @@ export function ApplicationPermissionViewer({
                 onClick={() => setViewMode('tree')}
                 className={`px-3 py-2 flex items-center gap-1 ${
                   viewMode === 'tree' 
-                    ? 'bg-blue-600 text-white' 
+                    ? 'bg-[#1B2E5A] text-white' 
                     : 'bg-white text-gray-700 hover:bg-gray-50'
                 }`}
               >
@@ -593,7 +593,7 @@ export function ApplicationPermissionViewer({
                 onClick={() => setViewMode('table')}
                 className={`px-3 py-2 flex items-center gap-1 border-l border-gray-300 ${
                   viewMode === 'table' 
-                    ? 'bg-blue-600 text-white' 
+                    ? 'bg-[#1B2E5A] text-white' 
                     : 'bg-white text-gray-700 hover:bg-gray-50'
                 }`}
               >
@@ -604,7 +604,7 @@ export function ApplicationPermissionViewer({
                 onClick={() => setViewMode('cards')}
                 className={`px-3 py-2 flex items-center gap-1 border-l border-gray-300 ${
                   viewMode === 'cards' 
-                    ? 'bg-blue-600 text-white' 
+                    ? 'bg-[#1B2E5A] text-white' 
                     : 'bg-white text-gray-700 hover:bg-gray-50'
                 }`}
               >

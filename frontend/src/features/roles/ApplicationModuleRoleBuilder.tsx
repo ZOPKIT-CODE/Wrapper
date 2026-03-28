@@ -89,7 +89,7 @@ export function ApplicationModuleRoleBuilder({
   onCancel,
   initialRole
 }: ApplicationModuleRoleBuilderProps) {
-  const { actualTheme, glassmorphismEnabled } = useTheme();
+  const { actualTheme } = useTheme();
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -396,12 +396,12 @@ export function ApplicationModuleRoleBuilder({
     const key = appKey.toLowerCase();
     const props = { className: "w-5 h-5" };
     if (key.includes('crm') || key.includes('sales')) return <Users {...props} className="w-5 h-5 text-blue-500" />;
-    if (key.includes('inventory') || key.includes('product')) return <Package {...props} className="w-5 h-5 text-indigo-500" />;
+    if (key.includes('inventory') || key.includes('product')) return <Package {...props} className="w-5 h-5 text-[#1B2E5A]" />;
     if (key.includes('admin') || key.includes('auth')) return <Shield {...props} className="w-5 h-5 text-rose-500" />;
     if (key.includes('hr') || key.includes('people')) return <Building {...props} className="w-5 h-5 text-emerald-500" />;
     if (key.includes('billing') || key.includes('finance') || key.includes('payments')) return <Coins {...props} className="w-5 h-5 text-amber-500" />;
     if (key.includes('analytics') || key.includes('reporting')) return <Activity {...props} className="w-5 h-5 text-violet-500" />;
-    if (key.includes('database') || key.includes('storage')) return <Database {...props} className="w-5 h-5 text-sky-500" />;
+    if (key.includes('database') || key.includes('storage')) return <Database {...props} className="w-5 h-5 text-[#1B2E5A]" />;
     if (key.includes('settings') || key.includes('config')) return <Settings {...props} className="w-5 h-5 text-slate-500" />;
     return <Grid {...props} className="w-5 h-5 text-slate-400" />;
   };
@@ -500,7 +500,6 @@ export function ApplicationModuleRoleBuilder({
 
   const isDark = actualTheme === 'dark';
   const isMono = actualTheme === 'monochrome';
-  const glass = glassmorphismEnabled;
 
   if (loading) {
     return (
@@ -520,7 +519,7 @@ export function ApplicationModuleRoleBuilder({
           <div className="mx-auto h-16 w-16 bg-red-50 dark:bg-red-900/20 rounded-full flex items-center justify-center mb-6">
             <AlertCircle className="w-8 h-8 text-red-500" />
           </div>
-          <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Connection Error</h3>
+          <h3 className="text-lg font-bold text-[#1B2E5A] dark:text-white mb-2">Connection Error</h3>
           <p className="text-slate-500 dark:text-slate-400 mb-6">{error}</p>
           <PearlButton onClick={() => window.location.reload()}>
             Retry Connection
@@ -533,7 +532,7 @@ export function ApplicationModuleRoleBuilder({
   return (
     <div className={cn(
       "h-full min-h-0 flex flex-col font-sans selection:bg-blue-500/30 overflow-hidden",
-      isDark ? 'bg-slate-950 text-white' : isMono ? 'bg-zinc-950 text-zinc-100' : 'bg-slate-50 text-slate-900'
+      isDark ? 'bg-slate-950 text-white' : isMono ? 'bg-zinc-950 text-zinc-100' : 'bg-slate-50 text-[#1B2E5A]'
     )}>
       <style>{`
         .no-scrollbar::-webkit-scrollbar {
@@ -555,7 +554,7 @@ export function ApplicationModuleRoleBuilder({
             "p-2.5 rounded-xl shadow-sm border",
             isDark ? "bg-slate-900 border-slate-700" : "bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-100"
           )}>
-            <Shield className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+            <Shield className="w-6 h-6 text-[#1B2E5A] dark:text-blue-400" />
           </div>
           <div>
             <h1 className="text-xl font-bold tracking-tight">
@@ -576,7 +575,7 @@ export function ApplicationModuleRoleBuilder({
             <div className="w-px h-8 bg-slate-200 dark:bg-slate-800 hidden md:block"></div>
             <div className="text-right hidden md:block">
               <span className="block text-[10px] uppercase tracking-wider text-slate-500 font-bold">Est. Cost</span>
-              <span className="block text-lg font-bold text-blue-600 dark:text-blue-400 leading-none">{summary.estimatedCredits.toFixed(0)}</span>
+              <span className="block text-lg font-bold text-[#1B2E5A] dark:text-blue-400 leading-none">{summary.estimatedCredits.toFixed(0)}</span>
             </div>
           </div>
         </div>
@@ -592,7 +591,7 @@ export function ApplicationModuleRoleBuilder({
               "w-full max-w-lg rounded-2xl border p-8 shadow-sm",
               isDark ? "bg-slate-900/50 border-slate-800" : "bg-white border-slate-200"
             )}>
-              <div className="flex items-center gap-2 text-slate-900 dark:text-white pb-6 border-b border-slate-100 dark:border-slate-800/50 mb-6">
+              <div className="flex items-center gap-2 text-[#1B2E5A] dark:text-white pb-6 border-b border-slate-100 dark:border-slate-800/50 mb-6">
                 <Settings className="w-5 h-5 opacity-70" />
                 <h3 className="font-black text-xs uppercase tracking-widest">Step 1 — Role Name & Purpose</h3>
               </div>
@@ -611,7 +610,7 @@ export function ApplicationModuleRoleBuilder({
                       "w-full px-4 py-3 rounded-lg text-sm font-medium transition-all outline-none border focus:ring-2",
                       isDark
                         ? "bg-slate-900 border-slate-800 text-white placeholder-slate-600 focus:border-blue-500"
-                        : "bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-blue-500"
+                        : "bg-slate-50 border-slate-200 text-[#1B2E5A] placeholder-slate-400 focus:bg-white focus:border-blue-500"
                     )}
                   />
                 </div>
@@ -629,7 +628,7 @@ export function ApplicationModuleRoleBuilder({
                       "w-full px-4 py-3 rounded-lg text-sm font-medium transition-all outline-none border focus:ring-2 resize-none",
                       isDark
                         ? "bg-slate-900 border-slate-800 text-white placeholder-slate-600 focus:border-blue-500"
-                        : "bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-blue-500"
+                        : "bg-slate-50 border-slate-200 text-[#1B2E5A] placeholder-slate-400 focus:bg-white focus:border-blue-500"
                     )}
                   />
                 </div>
@@ -638,7 +637,7 @@ export function ApplicationModuleRoleBuilder({
                   <PearlButton
                     variant="outline"
                     onClick={onCancel}
-                    className="text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                    className="text-slate-500 hover:text-[#1B2E5A] dark:text-slate-400 dark:hover:text-white"
                   >
                     Cancel
                   </PearlButton>
@@ -665,7 +664,7 @@ export function ApplicationModuleRoleBuilder({
           /* Step 2: Permission Matrix - Full width (name & purpose already filled in Step 1) */
         <div className={cn(
           "flex-1 flex flex-col min-w-0 bg-slate-50/50 dark:bg-slate-950",
-          glass ? "backdrop-blur-sm" : ""
+          ""
         )}>
           {/* Matrix Toolbar - Step 2 */}
           <div className={cn(
@@ -675,17 +674,17 @@ export function ApplicationModuleRoleBuilder({
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setCurrentStep(1)}
-                className="flex items-center gap-2 text-slate-500 hover:text-blue-600 dark:hover:text-slate-400 dark:hover:text-blue-400 text-xs font-medium"
+                className="flex items-center gap-2 text-slate-500 hover:text-[#1B2E5A] dark:hover:text-slate-400 dark:hover:text-blue-400 text-xs font-medium"
                 title="Edit role name and purpose"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
                 <span>Edit Step 1</span>
               </button>
               <div className="w-px h-5 bg-slate-200 dark:bg-slate-700" />
-              <div className="bg-blue-600 text-white p-1.5 rounded-md shadow-sm shadow-blue-500/30">
+              <div className="bg-[#1B2E5A] text-white p-1.5 rounded-md shadow-sm shadow-blue-500/30">
                 <Grid className="w-4 h-4" />
               </div>
-              <span className="font-semibold text-sm text-slate-900 dark:text-slate-100">Step 2 — Permission Matrix</span>
+              <span className="font-semibold text-sm text-[#1B2E5A] dark:text-slate-100">Step 2 — Permission Matrix</span>
             </div>
 
             <div className="relative w-full max-w-md">
@@ -699,7 +698,7 @@ export function ApplicationModuleRoleBuilder({
                   "w-full pl-9 pr-4 py-2 rounded-lg text-sm outline-none border transition-all",
                   isDark
                     ? "bg-slate-900 border-slate-800 text-white placeholder-slate-600 focus:border-blue-500"
-                    : "bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    : "bg-slate-50 border-slate-200 text-[#1B2E5A] placeholder-slate-400 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                 )}
               />
             </div>
@@ -726,25 +725,25 @@ export function ApplicationModuleRoleBuilder({
                           : "bg-white dark:bg-slate-900/30 border-slate-100 dark:border-slate-800"
                       )}
                     >
-                      <AccordionTrigger className="px-6 py-5 hover:no-underline hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all [&[data-state=open]]:bg-blue-600/5 group/trigger">
+                      <AccordionTrigger className="px-6 py-5 hover:no-underline hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all [&[data-state=open]]:bg-[#1B2E5A]/5 group/trigger">
                         <div className="flex items-center justify-between w-full pr-6 text-left">
                           <div className="flex items-center gap-5">
                             <div className={cn(
                               "w-12 h-12 rounded-2xl flex items-center justify-center transition-all border relative shadow-sm",
-                              isAppSelected ? "bg-blue-600 border-blue-500 text-white shadow-blue-500/20" : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400"
+                              isAppSelected ? "bg-[#1B2E5A] border-blue-500 text-white shadow-blue-500/20" : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400"
                             )}>
                               {getAppIcon(app.appCode)}
                               {isAppSelected && <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-blue-500 rounded-full animate-pulse border-2 border-white dark:border-slate-800" />}
                             </div>
                             <div>
-                              <div className="text-[14px] font-black text-slate-900 dark:text-white uppercase flex items-center gap-3 leading-none tracking-tight">
+                              <div className="text-[14px] font-black text-[#1B2E5A] dark:text-white uppercase flex items-center gap-3 leading-none tracking-tight">
                                 {app.appName}
                                 <Badge variant="outline" className="text-[9px] h-4.5 px-2 font-black border-slate-200 dark:border-slate-700 uppercase tracking-widest">{app.appCode}</Badge>
                               </div>
                               <div className="flex items-center gap-3 mt-1.5 opacity-60">
                                 <span className="text-[10px] text-slate-500 font-black uppercase tracking-widest">{app.modules.length} Modules</span>
                                 <div className="w-1 h-1 rounded-full bg-slate-300" />
-                                <span className="text-[10px] text-blue-600 dark:text-blue-400 font-black uppercase tracking-widest">{selectedAppPerms}/{totalAppPerms} ACQUISITIONS</span>
+                                <span className="text-[10px] text-[#1B2E5A] dark:text-blue-400 font-black uppercase tracking-widest">{selectedAppPerms}/{totalAppPerms} ACQUISITIONS</span>
                               </div>
                             </div>
                           </div>
@@ -756,8 +755,8 @@ export function ApplicationModuleRoleBuilder({
                                 className={cn(
                                   "px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border",
                                   isAllAppSelected
-                                    ? "bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/10"
-                                    : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 hover:border-blue-400 hover:text-blue-600"
+                                    ? "bg-[#1B2E5A] border-blue-500 text-white shadow-lg shadow-blue-500/10"
+                                    : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 hover:border-blue-400 hover:text-[#1B2E5A]"
                                 )}
                               >
                                 {isAllAppSelected ? 'All Domains Active' : 'Sync Full Domain'}
@@ -784,7 +783,7 @@ export function ApplicationModuleRoleBuilder({
                                   <div>
                                     <h4 className={cn(
                                       "text-[12px] font-black uppercase tracking-tight leading-4 mb-1",
-                                      isModuleActive ? "text-blue-600 dark:text-blue-400" : "text-slate-900 dark:text-slate-200"
+                                      isModuleActive ? "text-[#1B2E5A] dark:text-blue-400" : "text-[#1B2E5A] dark:text-slate-200"
                                     )}>
                                       {module.moduleName}
                                     </h4>
@@ -797,9 +796,9 @@ export function ApplicationModuleRoleBuilder({
                                       className={cn(
                                         "w-full py-1.5 px-3 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all border text-center",
                                         isAllModuleSelected
-                                          ? "bg-blue-600 border-blue-500 text-white"
+                                          ? "bg-[#1B2E5A] border-blue-500 text-white"
                                           : isModuleActive
-                                            ? "bg-blue-50 border-blue-200 text-blue-600"
+                                            ? "bg-blue-50 border-blue-200 text-[#1B2E5A]"
                                             : "bg-slate-50 border-slate-200 text-slate-400 hover:bg-white"
                                       )}
                                     >
@@ -840,7 +839,7 @@ export function ApplicationModuleRoleBuilder({
                                             </div>
                                             <Badge variant="outline" className={cn(
                                               "text-[7px] h-3.5 px-1 font-black leading-none uppercase border-none",
-                                              isPermSelected ? "text-blue-600" : "text-slate-300"
+                                              isPermSelected ? "text-[#1B2E5A]" : "text-slate-300"
                                             )}>
                                               {isPermSelected ? 'ACTIVE' : 'READY'}
                                             </Badge>
@@ -849,7 +848,7 @@ export function ApplicationModuleRoleBuilder({
                                           <div className="flex-1 min-w-0">
                                             <div className={cn(
                                               "text-[10px] font-black uppercase leading-tight line-clamp-2 tracking-tight mb-0.5 break-words",
-                                              isPermSelected ? "text-slate-900 dark:text-white" : "text-slate-500"
+                                              isPermSelected ? "text-[#1B2E5A] dark:text-white" : "text-slate-500"
                                             )}>
                                               {perm.name}
                                             </div>
@@ -863,7 +862,7 @@ export function ApplicationModuleRoleBuilder({
                                           )}
                                         </button>
                                           </TooltipTrigger>
-                                          <TooltipContent side="top" className="max-w-xs text-xs bg-blue-600 text-white border-blue-500">
+                                          <TooltipContent side="top" className="max-w-xs text-xs bg-[#1B2E5A] text-white border-blue-500">
                                             {tooltipText}
                                           </TooltipContent>
                                         </Tooltip>
@@ -884,7 +883,7 @@ export function ApplicationModuleRoleBuilder({
             ) : (
               <div className="h-full flex flex-col items-center justify-center p-12 text-center opacity-60">
                 <Filter className="w-16 h-16 text-slate-200 dark:text-slate-800 mb-6" />
-                <h4 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-widest">No Architecture Detected</h4>
+                <h4 className="text-xl font-black text-[#1B2E5A] dark:text-white uppercase tracking-widest">No Architecture Detected</h4>
                 <p className="text-sm font-bold text-slate-400 uppercase mt-2 tracking-widest opacity-60">Synchronize search query to re-initialize matrix</p>
               </div>
             )}
@@ -909,7 +908,7 @@ export function ApplicationModuleRoleBuilder({
               </div>
               {summary.totalPermissions > 0 && (
                 <span className="text-slate-500 hidden sm:inline">
-                  <strong className="text-slate-900 dark:text-white">{summary.totalPermissions}</strong> permissions selected
+                  <strong className="text-[#1B2E5A] dark:text-white">{summary.totalPermissions}</strong> permissions selected
                 </span>
               )}
             </div>
@@ -918,7 +917,7 @@ export function ApplicationModuleRoleBuilder({
               <PearlButton
                 variant="outline"
                 onClick={onCancel}
-                className="text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                className="text-slate-500 hover:text-[#1B2E5A] dark:text-slate-400 dark:hover:text-white"
               >
                 Cancel
               </PearlButton>

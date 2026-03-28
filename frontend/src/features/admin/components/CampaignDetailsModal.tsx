@@ -374,7 +374,7 @@ const CampaignDetailsModal: React.FC<CampaignDetailsModalProps> = ({
                           <div className="flex items-center gap-2">
                             <div className="w-24 bg-gray-200 rounded-full h-2">
                               <div
-                                className="bg-blue-600 h-2 rounded-full"
+                                className="bg-[#1B2E5A] h-2 rounded-full"
                                 style={{ width: `${(appUsage / campaign.tenantCount) * 100}%` }}
                               ></div>
                             </div>

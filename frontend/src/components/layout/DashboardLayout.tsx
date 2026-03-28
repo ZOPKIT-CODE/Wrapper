@@ -12,12 +12,11 @@ import {
 } from "@/components/ui/sidebar"
 import { BillingStatusNavbar } from "@/components/common/billing/BillingStatusNavbar"
 import { useSeasonalCreditsCongratulatory } from "@/hooks/useSeasonalCreditsCongratulatory"
-import { Home, Building2, Users, Crown, Shield, Activity, CreditCard, Clock, X, Zap, ChevronRight, Settings, BookOpen } from "lucide-react"
+import { Home, Building2, Users, Crown, Shield, Activity, CreditCard, X, ChevronRight, Settings, BookOpen } from "lucide-react"
 import { useNavigate, useLocation, useSearch, useParams, Outlet, Link } from "@tanstack/react-router"
 import { useOrganizationHierarchy } from "@/hooks/useOrganizationHierarchy"
 import { Button } from "@/components/ui/button"
 import { PearlButton } from "@/components/ui/pearl-button"
-import Pattern from "@/components/ui/pattern-background"
 import { cn } from "@/lib/utils"
 import { useTheme } from "@/components/theme/ThemeProvider"
 import { useUserContextSafe } from "@/contexts/UserContextProvider"
@@ -31,9 +30,6 @@ const NotificationManager = React.lazy(() =>
 )
 const SeasonalCreditsCongratulatoryModal = React.lazy(() =>
   import("@/features/notifications/SeasonalCreditsCongratulatoryModal").then(m => ({ default: m.SeasonalCreditsCongratulatoryModal }))
-)
-const FloatingDock = React.lazy(() =>
-  import("@/components/ui/floating-dock").then(m => ({ default: m.FloatingDock }))
 )
 
 interface TrialInfo {
@@ -200,42 +196,6 @@ const getOrganizationSidebarData = (
   };
 }
 
-const getFloatingDockNavigation = (isOrganizationRoute: boolean, orgCode?: string, onNavigate?: (href: string) => void) => {
-  const navItems: NavItem[] = isOrganizationRoute && orgCode
-    ? getOrganizationNavigation(orgCode)
-    : getDashboardNavigation()
-
-  // Flatten navigation items for FloatingDock (exclude nested children for simplicity)
-  const flattenedItems = navItems.flatMap((item: NavItem) => {
-    const baseItem = {
-      title: item.name,
-      icon: (
-        <item.icon className="h-full w-full text-neutral-500 dark:text-neutral-300" />
-      ),
-      href: item.href,
-      onClick: onNavigate ? () => onNavigate(item.href) : undefined,
-    }
-
-    // If item has children, include them as separate items
-    if (item.children && item.children.length > 0) {
-      return [
-        baseItem,
-        ...item.children.map((child: NavItem) => ({
-          title: child.name,
-          icon: (
-            <child.icon className="h-full w-full text-neutral-500 dark:text-neutral-300" />
-          ),
-          href: child.href,
-          onClick: onNavigate ? () => onNavigate(child.href) : undefined,
-        }))
-      ]
-    }
-
-    return [baseItem]
-  })
-
-  return flattenedItems
-}
 
 const defaultSidebarData = {
   navMain: [
@@ -291,10 +251,6 @@ export function DashboardLayout() {
   const [showTrialBanner, setShowTrialBanner] = useState(false)
   const [showTour, setShowTour] = useState(false)
   const [showResumePrompt, setShowResumePrompt] = useState(false)
-  const [navigationMode] = useState<'traditional' | 'dock'>(
-    (localStorage.getItem('navigation-mode') as 'traditional' | 'dock') || 'traditional'
-  )
-  const { glassmorphismEnabled } = useTheme()
   const navigate = useNavigate()
   const location = useLocation()
   const searchParams = useSearch({ strict: false }) as Record<string, string>
@@ -403,11 +359,6 @@ export function DashboardLayout() {
   };
 
   // Debug user context
-
-  // Handle navigation for dock/sidebar modes to avoid full page reloads
-  const handleDockNavigation = (href: string) => {
-    navigate({ to: href })
-  }
 
   // Determine which navigation to use based on current route
   const isOrganizationRoute = location.pathname.startsWith('/org/')
@@ -523,10 +474,10 @@ export function DashboardLayout() {
               active
                 ? actualTheme === 'monochrome'
                   ? 'bg-gray-200 text-gray-900'
-                  : 'bg-gradient-to-r from-violet-100 to-purple-100 text-purple-900 border border-purple-200/50'
+                  : 'bg-[#1B2E5A]/10 text-[#1B2E5A] border border-[#1B2E5A]/20'
                 : actualTheme === 'monochrome'
                   ? 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
-                  : 'text-slate-600 hover:bg-gradient-to-r hover:from-violet-50 hover:to-purple-50 hover:text-purple-900 hover:border hover:border-purple-200/30'
+                  : 'text-slate-600 hover:bg-[#1B2E5A]/5 hover:text-[#1B2E5A]'
             )}
           >
             <item.icon className="h-4 w-4 mr-3" />
@@ -555,139 +506,6 @@ export function DashboardLayout() {
       </div>
     )
   }
-  const floatingDockItems = getFloatingDockNavigation(isOrganizationRoute, orgCode, handleDockNavigation)
-
-  if (navigationMode !== 'traditional') {
-    return (
-      <div className="min-h-screen relative overflow-hidden">
-        {showTour && (
-          <Suspense fallback={null}>
-            <DashboardFeatureTour
-              onComplete={handleTourComplete}
-              onSkip={handleTourSkip}
-              onDismiss={handleTourDismiss}
-              initialStep={getInitialStep()}
-            />
-          </Suspense>
-        )}
-        {/* Beautiful gradient background for dock mode */}
-        <div className={`absolute inset-0 ${glassmorphismEnabled ? 'bg-gradient-to-br from-violet-100/30 via-purple-100/15 to-indigo-100/10 dark:from-slate-950/40 dark:via-slate-900/25 dark:to-slate-950/40 backdrop-blur-3xl' : 'bg-white dark:bg-black'}`}></div>
-
-        {/* Purple gradient glassy effect */}
-        {glassmorphismEnabled && (
-          <div className="absolute inset-0 bg-gradient-to-br from-purple-200/12 via-violet-200/8 to-indigo-200/10 dark:from-purple-500/10 dark:via-violet-500/6 dark:to-indigo-500/8 backdrop-blur-3xl"></div>
-        )}
-
-        {/* Dark mode pattern background for dock mode */}
-        <div className="absolute inset-0 dark:block hidden opacity-20">
-          <Pattern />
-        </div>
-
-        {/* Floating decorative elements for dock mode */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className={`absolute top-16 left-16 w-48 h-48 rounded-full blur-3xl animate-pulse ${glassmorphismEnabled ? 'bg-gradient-to-r from-purple-200/20 to-violet-200/20 dark:from-purple-400/12 dark:to-violet-400/12 backdrop-blur-3xl border border-purple-300/30 dark:border-purple-600/30' : 'hidden'}`}></div>
-          <div className={`absolute top-32 right-32 w-44 h-44 rounded-full blur-3xl animate-pulse ${glassmorphismEnabled ? 'bg-gradient-to-r from-violet-200/20 to-indigo-200/20 dark:from-violet-400/10 dark:to-indigo-400/10 backdrop-blur-3xl border border-violet-300/30 dark:border-violet-600/30' : 'hidden'}`} style={{ animationDelay: '1.5s' }}></div>
-          <div className={`absolute bottom-48 left-20 w-36 h-36 rounded-full blur-3xl animate-pulse ${glassmorphismEnabled ? 'bg-gradient-to-r from-indigo-200/20 to-purple-200/20 dark:from-indigo-400/8 dark:to-purple-400/8 backdrop-blur-3xl border border-indigo-300/30 dark:border-indigo-600/30' : 'hidden'}`} style={{ animationDelay: '3s' }}></div>
-          <div className={`absolute top-1/2 right-16 w-28 h-28 rounded-full blur-2xl animate-pulse ${glassmorphismEnabled ? 'bg-gradient-to-r from-pink-200/15 to-purple-200/15 dark:from-pink-400/6 dark:to-purple-400/6 backdrop-blur-3xl border border-pink-300/30 dark:border-pink-600/30' : 'hidden'}`} style={{ animationDelay: '4.5s' }}></div>
-
-          {/* Purple gradient glassy floating elements */}
-          {glassmorphismEnabled && (
-            <>
-              <div className="absolute top-1/4 left-1/3 w-32 h-32 rounded-full blur-2xl animate-pulse bg-gradient-to-r from-purple-200/12 to-violet-200/8 dark:from-purple-400/6 dark:to-violet-400/4 backdrop-blur-3xl border border-purple-300/40 dark:border-purple-600/25" style={{ animationDelay: '2s' }}></div>
-              <div className="absolute bottom-1/4 right-1/3 w-24 h-24 rounded-full blur-xl animate-pulse bg-gradient-to-r from-violet-200/10 to-indigo-200/6 dark:from-violet-400/5 dark:to-indigo-400/3 backdrop-blur-3xl border border-violet-300/35 dark:border-violet-600/20" style={{ animationDelay: '5.5s' }}></div>
-              <div className="absolute top-3/4 left-1/2 w-20 h-20 rounded-full blur-lg animate-pulse bg-gradient-to-r from-indigo-200/8 to-purple-200/6 dark:from-indigo-400/4 dark:to-purple-400/3 backdrop-blur-3xl border border-indigo-300/30 dark:border-indigo-600/15" style={{ animationDelay: '7s' }}></div>
-            </>
-          )}
-        </div>
-
-        {/* Trial Banner */}
-        {showTrialBanner && trialInfo && (
-          <div className={`${glassmorphismEnabled ? 'backdrop-blur-3xl bg-purple-100/4 dark:bg-purple-900/6 border-b border-purple-300/60 dark:border-purple-600/40 mt-16 shadow-2xl ring-1 ring-purple-300/25 dark:ring-purple-600/15' : 'bg-white dark:bg-black border-b border-gray-200 dark:border-gray-700 mt-16 shadow-lg'}`}>
-            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="flex-shrink-0">
-                    <div className="p-2 bg-gradient-to-r from-violet-500 to-purple-500 dark:from-violet-600 dark:to-purple-600 rounded-lg shadow-md">
-                      <Zap className="h-5 w-5 text-white" />
-                    </div>
-                  </div>
-                  <div>
-                    <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
-                      Free Trial Active
-                    </h3>
-                    <p className="text-sm text-slate-600 dark:text-slate-300">
-                      {trialInfo.daysRemaining > 0 ? (
-                        <>
-                          <Clock className="inline h-4 w-4 mr-1 text-emerald-500 dark:text-emerald-400" />
-                          {trialInfo.daysRemaining} days remaining on your {trialInfo.plan} trial
-                        </>
-                      ) : (
-                        <span className="text-orange-600 dark:text-orange-400 font-medium">
-                          Trial expired - upgrade to continue using all features
-                        </span>
-                      )}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <PearlButton onClick={handleUpgradeNow}>
-                    {trialInfo.daysRemaining > 0 ? 'Setup Payment' : 'Upgrade Now'}
-                  </PearlButton>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={dismissTrialBanner}
-                    className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Dock mode - floating navigation */}
-        <div className="flex flex-col min-h-screen relative z-10">
-          <div className="flex-1 pb-32 overflow-y-auto">
-            {/* Main content area with enhanced styling for dock mode */}
-            <div className="mx-auto max-w-7xl p-8 sm:p-10 lg:p-14 relative">
-              {/* Subtle pattern overlay */}
-              <div className="absolute inset-0 opacity-5">
-                <div className="absolute inset-0" style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%236366F1' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-                }}></div>
-              </div>
-
-              {/* Content with enhanced glassmorphism card effect */}
-              <div className="relative z-10">
-                {/* Purple gradient glassy effect */}
-                {glassmorphismEnabled && (
-                  <div className="absolute inset-0 backdrop-blur-3xl bg-gradient-to-br from-purple-200/8 via-violet-200/5 to-indigo-200/6 dark:from-purple-500/6 dark:via-violet-500/3 dark:to-indigo-500/4 rounded-3xl"></div>
-                )}
-                <div className={`${glassmorphismEnabled ? 'backdrop-blur-3xl bg-purple-100/4 dark:bg-purple-900/6 border border-purple-300/60 dark:border-purple-600/50 rounded-3xl shadow-2xl ring-1 ring-purple-300/35 dark:ring-purple-600/25' : 'bg-white dark:bg-black border border-gray-200 dark:border-gray-700 rounded-3xl shadow-lg'}`}>
-                  <div className="p-8 sm:p-10 lg:p-12">
-                    <Outlet key={location.pathname + location.searchStr} />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40">
-            <Suspense fallback={null}>
-              <FloatingDock
-                items={floatingDockItems}
-                mode="dock"
-                glassy={glassmorphismEnabled}
-                desktopClassName="mx-auto"
-              />
-            </Suspense>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   // Determine sidebar navigation data based on current route with Tour entry
   const sidebarNavData = useMemo(() => {
     const baseData = isOrganizationRoute && orgCode
@@ -709,7 +527,7 @@ export function DashboardLayout() {
   }, [isOrganizationRoute, orgCode, orgHierarchy, userData, tenantData, location.pathname]);
 
   return (
-    <SidebarProvider className="bg-[#2563EB]">
+    <SidebarProvider className="bg-[#1B2E5A]">
       {showTour && (
         <Suspense fallback={null}>
           <DashboardFeatureTour
@@ -725,9 +543,9 @@ export function DashboardLayout() {
       {showResumePrompt && (
         <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-[120] bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 p-4 max-w-md">
           <div className="flex items-start gap-3">
-            <BookOpen className="w-5 h-5 text-indigo-500 mt-0.5 flex-shrink-0" />
+            <BookOpen className="w-5 h-5 text-[#1B2E5A] mt-0.5 flex-shrink-0" />
             <div className="flex-1">
-              <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-1">
+              <h3 className="font-semibold text-[#1B2E5A] dark:text-slate-100 mb-1">
                 Resume your guide?
               </h3>
               <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
@@ -737,7 +555,7 @@ export function DashboardLayout() {
                 <Button
                   size="sm"
                   onClick={() => handleResumeChoice('resume')}
-                  className="text-xs bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 text-white"
+                  className="text-xs bg-[#1B2E5A] hover:bg-[#162447] text-white"
                 >
                   Resume
                 </Button>

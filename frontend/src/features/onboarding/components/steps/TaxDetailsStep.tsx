@@ -187,7 +187,7 @@ export const TaxDetailsStep = memo(({ form, userClassification }: TaxDetailsStep
             {COUNTRIES.find(c => c.id === country)?.name || country}
           </Badge>
         </div>
-        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 mb-3 drop-shadow-sm">
+        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-[#1B2E5A] mb-3 drop-shadow-sm">
           Tax & Compliance Details
         </h1>
         <p className="text-lg text-slate-500 leading-relaxed max-w-2xl font-light">
@@ -205,7 +205,7 @@ export const TaxDetailsStep = memo(({ form, userClassification }: TaxDetailsStep
             render={({ field }) => (
               <FormItem className="flex flex-row items-center justify-between rounded-lg border border-slate-200 p-4 bg-white/70 backdrop-blur-sm">
                 <div className="space-y-0.5 flex-1 pr-4">
-                    <FormLabel className="text-base font-semibold text-slate-900 flex items-center gap-2">
+                    <FormLabel className="text-base font-semibold text-[#1B2E5A] flex items-center gap-2">
                       VAT/GST Registered <span className="text-slate-400 font-normal">(Optional)</span>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -248,7 +248,7 @@ export const TaxDetailsStep = memo(({ form, userClassification }: TaxDetailsStep
         {/* Conditional GST/VAT Fields */}
         {vatGstRegistered && (
           <div className="glass-card p-8 rounded-xl bg-white/60 backdrop-blur-xl border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-slate-900/5 space-y-6">
-            <h3 className="text-lg font-semibold text-slate-900">Registration Numbers</h3>
+            <h3 className="text-lg font-semibold text-[#1B2E5A]">Registration Numbers</h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {country === 'IN' && (
@@ -367,7 +367,7 @@ export const TaxDetailsStep = memo(({ form, userClassification }: TaxDetailsStep
 
         {/* Address Section */}
         <div className="glass-card p-8 rounded-xl bg-white/60 backdrop-blur-xl border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-slate-900/5 space-y-6">
-          <h3 className="text-lg font-semibold text-slate-900">Billing Address</h3>
+          <h3 className="text-lg font-semibold text-[#1B2E5A]">Billing Address</h3>
 
           <FormField
             control={form.control}
@@ -523,7 +523,7 @@ export const TaxDetailsStep = memo(({ form, userClassification }: TaxDetailsStep
             render={({ field }) => (
               <FormItem className="flex flex-row items-center justify-between rounded-lg border border-slate-200 p-4 bg-white/70 backdrop-blur-sm">
                 <div className="space-y-0.5 flex-1 pr-4">
-                  <FormLabel className="text-base font-semibold text-slate-900 flex items-center gap-2">
+                  <FormLabel className="text-base font-semibold text-[#1B2E5A] flex items-center gap-2">
                     Mailing Address <span className="text-slate-400 font-normal">(Optional)</span>
                     <Tooltip>
                       <TooltipTrigger asChild>

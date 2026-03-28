@@ -59,9 +59,9 @@ export function TreeNode({
     const baseStyles = "flex items-center border rounded-lg mb-2 cursor-pointer transition-colors";
 
     // Tree view styling only
-    const levelStyles = level === 0 && !isLocation ? 'bg-blue-50 border-blue-200' : '';
-    const locationStyles = isLocation ? 'bg-gradient-to-r from-green-50 to-blue-50 border-green-200' : 'bg-white border-gray-200';
-    const selectionStyles = isSelected ? 'ring-2 ring-blue-400 bg-blue-50' : '';
+    const levelStyles = level === 0 && !isLocation ? 'bg-[#1B2E5A]/5 border-[#1B2E5A]/20' : '';
+    const locationStyles = isLocation ? 'bg-gradient-to-r from-green-50 to-white border-green-200' : 'bg-white border-gray-200';
+    const selectionStyles = isSelected ? 'ring-2 ring-[#1B2E5A]/40 bg-[#1B2E5A]/5' : '';
 
     return `${baseStyles} p-3 hover:bg-gray-50 ${levelStyles} ${locationStyles} ${selectionStyles}`;
   };
@@ -80,7 +80,7 @@ export function TreeNode({
             checked={isSelected}
             onChange={(e) => handleSelect(e.target.checked)}
             onClick={(e) => e.stopPropagation()}
-            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+            className="w-4 h-4 text-[#1B2E5A] border-gray-300 rounded focus:ring-[#1B2E5A]/50"
           />
         </div>
 
@@ -113,7 +113,7 @@ export function TreeNode({
         {/* Organization Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <span className="font-medium text-gray-900 truncate">{(org as any).entityName || 'Unknown'}</span>
+            <span className="font-medium text-[#1B2E5A] truncate">{(org as any).entityName || 'Unknown'}</span>
             <Badge variant={(org as any).isActive !== false ? "default" : "secondary"} className="text-xs">
               {(org as any).entityType || 'unknown'}
             </Badge>

@@ -268,15 +268,15 @@ export function EnhancedPermissionSummary({
         <CardHeader className="border-b border-slate-100 py-3 px-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
-              <div className="p-1.5 bg-blue-50 rounded-lg border border-blue-100 shadow-sm">
-                <Shield className="w-5 h-5 text-blue-600" />
+              <div className="p-1.5 bg-[#1B2E5A]/5 rounded-lg border border-[#1B2E5A]/20 shadow-sm">
+                <Shield className="w-5 h-5 text-[#1B2E5A]" />
               </div>
               <div>
-                <CardTitle className="text-lg font-bold text-slate-900 tracking-tight">
+                <CardTitle className="text-lg font-bold text-[#1B2E5A] tracking-tight">
                   Permission Matrix
                 </CardTitle>
                 <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium">
-                  Role: <span className="text-blue-600">{roleName}</span>
+                  Role: <span className="text-[#1B2E5A]">{roleName}</span>
                   {isSystemRole && <Lock className="w-2.5 h-2.5 ml-1 text-slate-400" />}
                 </div>
               </div>
@@ -292,7 +292,7 @@ export function EnhancedPermissionSummary({
                   {stat.count} {stat.label}
                 </div>
               ))}
-              <div className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-md text-[10px] font-bold text-slate-700">
+              <div className="px-2 py-1 bg-slate-50 border border-[#1B2E5A]/20 rounded-md text-[10px] font-bold text-slate-700">
                 Total: {analysis.totalPermissions}
               </div>
             </div>
@@ -318,14 +318,14 @@ export function EnhancedPermissionSummary({
               )}
             </div>
 
-            <div className="flex bg-slate-50 border border-slate-200 rounded-lg p-0.5 h-8">
+            <div className="flex bg-slate-50 border border-[#1B2E5A]/20 rounded-lg p-0.5 h-8">
               {(['all', 'admin', 'write', 'read'] as const).map((type) => (
                 <button
                   key={type}
                   onClick={() => setFilterType(type)}
                   className={cn(
                     "px-2.5 py-1 text-[10px] font-bold rounded-md transition-all capitalize",
-                    filterType === type ? "bg-white text-blue-600 shadow-sm border border-slate-200" : "text-slate-500 hover:text-slate-700"
+                    filterType === type ? "bg-white text-[#1B2E5A] shadow-sm border border-[#1B2E5A]/20" : "text-slate-500 hover:text-slate-700"
                   )}
                 >
                   {type}
@@ -349,11 +349,11 @@ export function EnhancedPermissionSummary({
                 {analysis.grouped.map((group: any, idx: number) => (
                   <tr
                     key={idx}
-                    className="group hover:bg-blue-50/10 transition-all duration-200"
+                    className="group hover:bg-[#1B2E5A]/5 transition-all duration-200"
                   >
                     <td className="p-0 border-r border-slate-100/50 w-[180px] align-middle bg-slate-50/20 group-hover:bg-slate-50/50 transition-colors">
                       <div className="flex flex-col items-center justify-center gap-3 p-4">
-                        <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 shadow-sm flex items-center justify-center text-slate-400 group-hover:text-blue-600 group-hover:border-blue-200 group-hover:shadow-md transition-all duration-300">
+                        <div className="w-10 h-10 rounded-xl bg-white border border-[#1B2E5A]/20 shadow-sm flex items-center justify-center text-slate-400 group-hover:text-[#1B2E5A] group-hover:border-[#1B2E5A]/20 group-hover:shadow-md transition-all duration-300">
                           {group.appIcon}
                         </div>
                         <span className="text-[13px] font-bold text-slate-800 tracking-tight leading-tight text-center">{group.app}</span>
@@ -361,7 +361,7 @@ export function EnhancedPermissionSummary({
                     </td>
                     <td className="p-0 border-r border-slate-100/50 w-[160px] align-middle bg-slate-50/10 group-hover:bg-slate-50/30 transition-colors">
                       <div className="p-4 flex flex-col items-center justify-center">
-                        <span className="inline-block font-bold text-[12px] text-slate-600 tracking-tight group-hover:text-slate-900 transition-colors text-center">
+                        <span className="inline-block font-bold text-[12px] text-slate-600 tracking-tight group-hover:text-[#1B2E5A] transition-colors text-center">
                           {group.module}
                         </span>
                       </div>

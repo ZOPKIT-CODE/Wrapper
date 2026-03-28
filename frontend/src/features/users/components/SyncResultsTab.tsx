@@ -94,7 +94,7 @@ export function SyncResultsTab({ syncResults, hasData }: SyncResultsTabProps) {
                 {result.applicationUrl && (
                   <div>
                     <span className="font-medium">App URL:</span>
-                    <span className="ml-2 text-blue-600">{result.applicationUrl}</span>
+                    <span className="ml-2 text-[#1B2E5A]">{result.applicationUrl}</span>
                   </div>
                 )}
               </div>

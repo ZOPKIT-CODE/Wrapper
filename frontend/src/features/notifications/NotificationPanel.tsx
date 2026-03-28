@@ -128,7 +128,7 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
                   <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-4">
                     <Settings className="w-6 h-6 text-gray-400" />
                   </div>
-                  <h3 className="text-sm font-medium text-gray-900 mb-1">
+                  <h3 className="text-sm font-medium text-[#1B2E5A] mb-1">
                     {activeFilter === 'unread' ? 'No unread notifications' : 'No notifications'}
                   </h3>
                   <p className="text-xs text-gray-500 mb-4">

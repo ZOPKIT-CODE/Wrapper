@@ -51,9 +51,8 @@ const CreditManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [matrixSearchQuery, setMatrixSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('global');
-  const { actualTheme, glassmorphismEnabled } = useTheme();
+  const { actualTheme } = useTheme();
   const isDark = actualTheme === 'dark';
-  const glass = glassmorphismEnabled;
 
   // Changes State
   const [costChanges, setCostChanges] = useState<CostChanges>({});
@@ -402,7 +401,7 @@ const CompactMatrix = ({ apps, activeTab, loading, isDark, glass, matrixSearchQu
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center text-primary shadow-inner"><Database className="w-4 h-4" /></div>
           <div>
-            <h2 className="text-[14px] font-black text-slate-900 dark:text-slate-100 tracking-tight">{activeTab === 'global' ? 'System Infrastructure' : `${tenantName}`}</h2>
+            <h2 className="text-[14px] font-black text-[#1B2E5A] dark:text-slate-100 tracking-tight">{activeTab === 'global' ? 'System Infrastructure' : `${tenantName}`}</h2>
             <div className="flex items-center gap-2 opacity-60">
               <span className="text-[9px] uppercase font-black text-slate-500">Architecture Matrix</span>
               <div className="w-1 h-1 rounded-full bg-slate-300" />
@@ -454,7 +453,7 @@ const CompactMatrix = ({ apps, activeTab, loading, isDark, glass, matrixSearchQu
                         {isAppChanged && <div className="absolute -top-1 -right-1 w-2 h-2 bg-orange-500 rounded-full animate-pulse border-2 border-white dark:border-slate-800" />}
                       </div>
                       <div>
-                        <div className="text-[13px] font-black text-slate-900 dark:text-white uppercase flex items-center gap-2 leading-none">
+                        <div className="text-[13px] font-black text-[#1B2E5A] dark:text-white uppercase flex items-center gap-2 leading-none">
                           {app.appName}
                           <Badge variant="outline" className="text-[8px] h-4 px-1.5 font-bold border-slate-300 dark:border-slate-700">{app.appCode}</Badge>
                         </div>

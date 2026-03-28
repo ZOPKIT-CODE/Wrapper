@@ -85,7 +85,7 @@ export const TeamStep = ({ form, onAddMember, onUpdateMember, onRemoveMember, us
               {userClassification.replace(/([A-Z])/g, ' $1').trim()}
             </Badge>
           )}
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+        <h1 className="text-3xl font-bold tracking-tight text-[#1B2E5A]">
           {personalizedContent.title}
         </h1>
         <p className="text-lg text-slate-500 leading-relaxed max-w-2xl">
@@ -102,7 +102,7 @@ export const TeamStep = ({ form, onAddMember, onUpdateMember, onRemoveMember, us
                   <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-bold shadow-sm ring-2 ring-blue-50">
                     {index + 1}
                   </div>
-                  <h3 className="font-semibold text-slate-900">Team Member</h3>
+                  <h3 className="font-semibold text-[#1B2E5A]">Team Member</h3>
                 </div>
                 <Button
                   type="button"

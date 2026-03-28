@@ -59,7 +59,7 @@ export function TrialExpiryModal({
           <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-4">
             <AlertTriangle className="h-8 w-8 text-red-600" />
           </div>
-          <CardTitle className="text-xl font-bold text-gray-900 mb-2">
+          <CardTitle className="text-xl font-bold text-[#1B2E5A] mb-2">
             Trial Period Expired
           </CardTitle>
           <div className="flex items-center justify-center gap-2">
@@ -94,7 +94,7 @@ export function TrialExpiryModal({
 
           {/* What's affected */}
           <div className="space-y-3">
-            <h4 className="font-medium text-gray-900">What's affected:</h4>
+            <h4 className="font-medium text-[#1B2E5A]">What's affected:</h4>
             <div className="grid grid-cols-1 gap-2">
               {[
                 'Dashboard and analytics',
@@ -113,7 +113,7 @@ export function TrialExpiryModal({
 
           {/* What you can still do */}
           <div className="space-y-3">
-            <h4 className="font-medium text-gray-900">You can still:</h4>
+            <h4 className="font-medium text-[#1B2E5A]">You can still:</h4>
             <div className="grid grid-cols-1 gap-2">
               {[
                 'Upgrade your subscription',
@@ -156,7 +156,7 @@ export function TrialExpiryModal({
               Need help? {' '}
               <a 
                 href="mailto:support@yourapp.com" 
-                className="text-blue-600 hover:text-blue-700 underline"
+                className="text-[#1B2E5A] hover:text-[#162447] underline"
               >
                 Contact Support
               </a>

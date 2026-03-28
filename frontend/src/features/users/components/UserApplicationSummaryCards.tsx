@@ -19,7 +19,7 @@ export function UserApplicationSummaryCards({
       title: 'Total Users',
       value: totalUsers,
       icon: Users,
-      color: 'text-blue-600',
+      color: 'text-[#1B2E5A]',
     },
     {
       title: 'Applications',

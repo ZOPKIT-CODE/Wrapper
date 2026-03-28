@@ -72,7 +72,7 @@ export const OnboardingLayoutOptimized = React.memo(({
     return (
       <div className="h-screen w-full flex items-center justify-center bg-white">
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="w-8 h-8 text-slate-900 animate-spin" />
+          <Loader2 className="w-8 h-8 text-[#1B2E5A] animate-spin" />
           <p className="text-slate-500 font-medium text-sm">Initializing...</p>
         </div>
       </div>
@@ -131,7 +131,7 @@ export const OnboardingLayoutOptimized = React.memo(({
 
   return (
     <div
-      className="h-screen w-full flex flex-col lg:flex-row overflow-hidden font-sans text-slate-900 selection:bg-slate-200 selection:text-slate-900 relative"
+      className="h-screen w-full flex flex-col lg:flex-row overflow-hidden font-sans text-[#1B2E5A] selection:bg-slate-200 selection:text-slate-900 relative"
       style={{
         // Prevent layout shifts that cause scroll glitches
         contain: 'layout style paint',
@@ -182,7 +182,7 @@ export const OnboardingLayoutOptimized = React.memo(({
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
-                      <h4 className="text-sm font-semibold text-slate-900">
+                      <h4 className="text-sm font-semibold text-[#1B2E5A]">
                         {footerContent.title}
                       </h4>
                       <span className="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded">
@@ -212,7 +212,7 @@ export const OnboardingLayoutOptimized = React.memo(({
                       className="w-full flex items-center justify-between p-3 rounded-lg bg-slate-50 hover:bg-slate-100 border border-slate-200 text-left cursor-pointer transition-colors duration-200"
                     >
                       <div>
-                        <div className="text-sm font-medium text-slate-900">Read Documentation</div>
+                        <div className="text-sm font-medium text-[#1B2E5A]">Read Documentation</div>
                         <div className="text-xs text-slate-500">View guide for Step {currentStep}</div>
                       </div>
                       <div className="h-6 w-6 rounded-full bg-slate-200 flex items-center justify-center">
@@ -266,13 +266,13 @@ export const OnboardingLayoutOptimized = React.memo(({
                className="h-8 w-auto object-contain"
              />
              <div>
-               <span className="block text-sm font-semibold text-slate-900">Step {currentStep}</span>
+               <span className="block text-sm font-semibold text-[#1B2E5A]">Step {currentStep}</span>
                <span className="text-xs text-slate-500 font-medium uppercase tracking-wide">
                  {stepsConfig.find(s => s.number === currentStep)?.title}
                </span>
              </div>
            </div>
-           <span className="text-sm font-semibold text-slate-900">{progressPercent}%</span>
+           <span className="text-sm font-semibold text-[#1B2E5A]">{progressPercent}%</span>
         </div>
         <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
           <div

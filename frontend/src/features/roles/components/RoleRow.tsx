@@ -76,7 +76,7 @@ export function RoleRow({
           {role.metadata?.icon || '👤'}
         </div>
         <div className="min-w-0 flex-1">
-          <div className="font-semibold text-gray-900 truncate">{role.roleName}</div>
+          <div className="font-semibold text-[#1B2E5A] truncate">{role.roleName}</div>
           <div className="text-sm text-gray-500 truncate">
             {role.description}
           </div>
@@ -94,7 +94,7 @@ export function RoleRow({
             </div>
             <div className="flex items-center gap-2">
               <Package className="w-4 h-4 text-blue-500" />
-              <span className="font-medium text-blue-600">{displayModules}</span>
+              <span className="font-medium text-[#1B2E5A]">{displayModules}</span>
               <span className="text-gray-500">modules</span>
               <span className="text-xs text-gray-400">({displayApps} apps)</span>
             </div>

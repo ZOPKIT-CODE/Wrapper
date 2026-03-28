@@ -53,7 +53,7 @@ export const columns: ColumnDef<User>[] = [
       {!user.avatar && (user.name?.charAt(0) || user.email?.charAt(0) || '?').toUpperCase()}
     </div>
     <div className="min-w-0 flex-1">
-      <div className="font-medium text-gray-900 truncate">
+      <div className="font-medium text-[#1B2E5A] truncate">
         {user.name || 'Unnamed User'}
       </div>
       <div className="text-sm text-gray-500 truncate">{user.email}</div>
@@ -128,7 +128,7 @@ export const columns: ColumnDef<User>[] = [
     cell: ({ row }) => {
       const user = row.original as User;
       return <div className="text-sm">
-        <div className="text-gray-900">
+        <div className="text-[#1B2E5A]">
           {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleDateString() : 'Never'}
         </div>
         {/* <div className="text-gray-500">
@@ -145,7 +145,7 @@ export const columns: ColumnDef<User>[] = [
     cell: ({ row }) => {
       const user = row.original as User;
       return <div className="text-sm">
-        <div className="text-gray-900">
+        <div className="text-[#1B2E5A]">
           {user.invitedAt ? new Date(user.invitedAt).toLocaleDateString() : 'N/A'}
         </div>
         <div className="text-gray-500">

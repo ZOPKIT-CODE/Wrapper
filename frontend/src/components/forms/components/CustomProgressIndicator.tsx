@@ -60,7 +60,7 @@ export const CustomProgressIndicator: React.FC<{ className?: string }> = ({ clas
             />
           </div>
           <div>
-            <span className="text-xl font-bold text-gray-800">Zopkit</span>
+            <span className="text-xl font-bold text-[#1B2E5A]">Zopkit</span>
             <p className="text-xs text-gray-500">Business Setup</p>
           </div>
         </div>
@@ -120,7 +120,7 @@ export const CustomProgressIndicator: React.FC<{ className?: string }> = ({ clas
                     className={cn(
                       'flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-200',
                       isCompleted && 'bg-green-500 border-green-500 text-white shadow-lg',
-                      isCurrent && !hasErrors && 'bg-blue-600 border-blue-600 text-white shadow-lg',
+                      isCurrent && !hasErrors && 'bg-[#1B2E5A] border-[#1B2E5A] text-white shadow-lg',
                       hasErrors && isCurrent && 'bg-red-500 border-red-500 text-white shadow-lg',
                       isUpcoming && 'bg-gray-200 border-gray-300 text-gray-500'
                     )}
@@ -225,7 +225,7 @@ export const CustomProgressIndicator: React.FC<{ className?: string }> = ({ clas
       {/* Enhanced Debug Information */}
       {debug && (
         <div className="mt-6 p-4 bg-gray-100 rounded-lg border">
-          <h4 className="text-sm font-semibold text-gray-800 mb-3 flex items-center">
+          <h4 className="text-sm font-semibold text-[#1B2E5A] mb-3 flex items-center">
             <BarChart3 className="w-4 h-4 mr-2" />
             Debug Information
           </h4>

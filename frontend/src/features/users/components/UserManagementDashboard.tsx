@@ -47,7 +47,7 @@ function UserManagementDashboardContent() {
       <Container className="h-full">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="space-y-1">
-            <h1 className="text-3xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-sky-400">
+            <h1 className="text-3xl font-black tracking-tighter text-[#1B2E5A]">
               User Management
             </h1>
             <p className="text-muted-foreground text-sm max-w-2xl">
@@ -56,7 +56,7 @@ function UserManagementDashboardContent() {
           </div>
           <PearlButton
             onClick={() => navigate({ to: '/dashboard/users/invite' })}
-            className="gap-2"
+            className="gap-2 !bg-[#1B2E5A] hover:!bg-[#152449]"
             data-tour-feature="invite-user"
           >
             <UserPlus className="h-4 w-4" />

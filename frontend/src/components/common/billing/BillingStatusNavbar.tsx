@@ -128,7 +128,7 @@ export function BillingStatusNavbar({ className }: BillingStatusNavbarProps) {
         </div>
         <div className="flex flex-col leading-none">
           <span className="text-[10px] uppercase tracking-wider font-semibold text-gray-500">Plan</span>
-          <span className="text-xs font-bold text-gray-900 capitalize">
+          <span className="text-xs font-bold text-[#1B2E5A] capitalize">
             {planName}
           </span>
         </div>
@@ -146,7 +146,7 @@ export function BillingStatusNavbar({ className }: BillingStatusNavbarProps) {
             </div>
             <div className="flex flex-col leading-none">
               <span className="text-[10px] uppercase tracking-wider font-semibold text-gray-500">Paid</span>
-              <span className="text-xs font-bold text-gray-900">
+              <span className="text-xs font-bold text-[#1B2E5A]">
                 {paidCredits.toLocaleString()}
               </span>
             </div>
@@ -160,7 +160,7 @@ export function BillingStatusNavbar({ className }: BillingStatusNavbarProps) {
           </div>
           <div className="flex flex-col leading-none">
             <span className="text-[10px] uppercase tracking-wider font-semibold text-gray-500">Free</span>
-            <span className="text-xs font-bold text-gray-900">
+            <span className="text-xs font-bold text-[#1B2E5A]">
               {freeCredits.toLocaleString()}
             </span>
           </div>
@@ -174,7 +174,7 @@ export function BillingStatusNavbar({ className }: BillingStatusNavbarProps) {
             </div>
             <div className="flex flex-col leading-none">
               <span className="text-[10px] uppercase tracking-wider font-semibold text-gray-500">Seasonal</span>
-              <span className="text-xs font-bold text-gray-900">
+              <span className="text-xs font-bold text-[#1B2E5A]">
                 {seasonalCredits.toLocaleString()}
               </span>
             </div>

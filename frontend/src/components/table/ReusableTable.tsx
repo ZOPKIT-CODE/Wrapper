@@ -285,7 +285,7 @@ export function ReusableTable<T = any>({
         <div className="p-4 border-b border-gray-200 dark:border-gray-700">
           {title && (
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{title}</h3>
+              <h3 className="text-lg font-semibold text-[#1B2E5A] dark:text-white">{title}</h3>
             </div>
           )}
 
@@ -378,13 +378,13 @@ export function ReusableTable<T = any>({
       {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-gradient-to-r from-sky-50 to-blue-50 border-b border-sky-100">
+          <thead className="bg-[#1B2E5A]/5 border-b border-[#1B2E5A]/10">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
-                    className="p-4 text-left font-black text-sky-900 uppercase tracking-wider text-[10px]"
+                    className="p-4 text-left font-black text-[#1B2E5A] uppercase tracking-wider text-[10px]"
                     style={{ width: header.getSize() }}
                   >
                     {header.isPlaceholder ? null : (

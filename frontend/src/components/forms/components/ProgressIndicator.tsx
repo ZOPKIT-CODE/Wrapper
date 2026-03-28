@@ -62,10 +62,10 @@ export const ProgressIndicator: React.FC<{ className?: string }> = ({ className 
       {/* Brand/Logo Section */}
       <div className="mb-12">
         <div className="flex items-center space-x-3 mb-2">
-          <div className="w-8 h-8 bg-blue-600 dark:bg-blue-500 rounded-lg flex items-center justify-center">
+          <div className="w-8 h-8 bg-[#1B2E5A] dark:bg-blue-500 rounded-lg flex items-center justify-center">
             <span className="text-white font-bold text-sm">G</span>
           </div>
-          <span className="text-xl font-semibold text-gray-800 dark:text-gray-100">Zopkit</span>
+          <span className="text-xl font-semibold text-[#1B2E5A] dark:text-gray-100">Zopkit</span>
         </div>
       </div>
 
@@ -97,7 +97,7 @@ export const ProgressIndicator: React.FC<{ className?: string }> = ({ className 
                   className={cn(
                     'flex items-center justify-center w-8 h-8 rounded-full border-2 transition-all duration-200',
                     isCompleted && 'bg-green-500 dark:bg-green-400 border-green-500 dark:border-green-400 text-white',
-                    isCurrent && 'bg-blue-600 dark:bg-blue-500 border-blue-600 dark:border-blue-500 text-white',
+                    isCurrent && 'bg-[#1B2E5A] dark:bg-blue-500 border-[#1B2E5A] dark:border-blue-500 text-white',
                     isUpcoming && 'bg-gray-200 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400'
                   )}
                 >

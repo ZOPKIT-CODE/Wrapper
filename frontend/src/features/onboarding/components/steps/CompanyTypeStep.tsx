@@ -52,7 +52,7 @@ export const CompanyTypeStep = ({ selectedType, onSelect, userClassification }: 
             </Badge>
           )}
         </div>
-        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 mb-3 drop-shadow-sm">
+        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-[#1B2E5A] mb-3 drop-shadow-sm">
           {content.title}
         </h1>
         <p className="text-lg text-slate-500 leading-relaxed max-w-2xl font-light">
@@ -89,7 +89,7 @@ export const CompanyTypeStep = ({ selectedType, onSelect, userClassification }: 
                 
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className={`text-lg font-bold ${isSelected ? 'text-slate-900' : 'text-slate-700 group-hover:text-slate-900'}`}>
+                    <h3 className={`text-lg font-bold ${isSelected ? 'text-[#1B2E5A]' : 'text-slate-700 group-hover:text-[#1B2E5A]'}`}>
                       {type.name}
                     </h3>
                     <div className="flex items-center gap-2">
@@ -99,7 +99,7 @@ export const CompanyTypeStep = ({ selectedType, onSelect, userClassification }: 
                         </span>
                       )}
                       {isSelected && (
-                         <CheckCircle2 className="w-6 h-6 text-slate-900 fill-white" />
+                         <CheckCircle2 className="w-6 h-6 text-[#1B2E5A] fill-white" />
                       )}
                     </div>
                   </div>

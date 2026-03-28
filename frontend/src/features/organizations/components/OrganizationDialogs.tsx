@@ -170,7 +170,7 @@ export function OrganizationDialogs({
                   {users.map(user => (
                     <SelectItem key={user.userId} value={user.userId}>
                       <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-semibold">
+                        <div className="w-6 h-6 rounded-full bg-[#1B2E5A] flex items-center justify-center text-white text-xs font-semibold">
                           {user.name?.charAt(0)?.toUpperCase() || user.email?.charAt(0)?.toUpperCase() || '?'}
                         </div>
                         <div className="flex flex-col">
@@ -360,7 +360,7 @@ export function OrganizationDialogs({
                   {users.map(user => (
                     <SelectItem key={user.userId} value={user.userId}>
                       <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-semibold">
+                        <div className="w-6 h-6 rounded-full bg-[#1B2E5A] flex items-center justify-center text-white text-xs font-semibold">
                           {user.name?.charAt(0)?.toUpperCase() || user.email?.charAt(0)?.toUpperCase() || '?'}
                         </div>
                         <div className="flex flex-col">
@@ -411,9 +411,9 @@ export function OrganizationDialogs({
           <div className="space-y-4">
             <div>
               <Label htmlFor="source-entity">From (Source)</Label>
-              <div className="p-3 border rounded-lg bg-blue-50 border-blue-200">
+              <div className="p-3 border rounded-lg bg-[#1B2E5A]/5 border-[#1B2E5A]/20">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold">
+                  <div className="w-8 h-8 rounded-full bg-[#1B2E5A] flex items-center justify-center text-white font-semibold">
                     {selectedOrg?.entityName?.charAt(0)?.toUpperCase() || 'O'}
                   </div>
                   <div>

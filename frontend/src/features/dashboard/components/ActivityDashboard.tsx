@@ -199,7 +199,7 @@ export function ActivityDashboard() {
   const getActivityColor = (action: string) => {
     if (action.includes('login')) return 'text-green-600 bg-green-50';
     if (action.includes('logout')) return 'text-gray-600 bg-gray-50';
-    if (action.includes('created') || action.includes('invited')) return 'text-blue-600 bg-blue-50';
+    if (action.includes('created') || action.includes('invited')) return 'text-[#1B2E5A] bg-[#1B2E5A]/10';
     if (action.includes('deleted') || action.includes('failed')) return 'text-red-600 bg-red-50';
     if (action.includes('updated') || action.includes('modified')) return 'text-orange-600 bg-orange-50';
     if (action.includes('role') || action.includes('permission')) return 'text-purple-600 bg-purple-50';
@@ -228,7 +228,7 @@ export function ActivityDashboard() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
+          <h1 className="text-3xl font-bold text-[#1B2E5A] flex items-center gap-2">
             <Activity className="w-8 h-8" />
             Activity & Audit Logs
           </h1>
@@ -532,10 +532,10 @@ export function ActivityDashboard() {
                           <div className={`p-2 rounded-lg ${getActivityColor(log.action)}`}>
                             {getActivityIcon(log.action)}
                           </div>
-                          
+
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1">
-                              <span className="font-medium text-gray-900">
+                              <span className="font-medium text-[#1B2E5A]">
                                 {formatActionName(log.action)}
                               </span>
                               <Badge variant="outline">{log.resourceType}</Badge>
@@ -655,10 +655,10 @@ export function ActivityDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    <div className="bg-blue-50 p-4 rounded-lg">
+                    <div className="bg-[#1B2E5A]/10 p-4 rounded-lg">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-blue-700">Active Users</span>
-                        <Users className="w-4 h-4 text-blue-600" />
+                        <span className="text-sm font-medium text-[#1B2E5A]">Active Users</span>
+                        <Users className="w-4 h-4 text-[#1B2E5A]" />
                       </div>
                       <div className="text-2xl font-bold text-blue-900 mt-1">
                         {activityStats?.data?.uniqueActiveUsers || 0}

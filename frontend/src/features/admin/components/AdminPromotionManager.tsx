@@ -205,7 +205,7 @@ export const AdminPromotionManager: React.FC = () => {
         <div className="flex items-center gap-3 mb-4">
           <Crown className="w-8 h-8 text-yellow-600" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">System Administrator Management</h1>
+            <h1 className="text-2xl font-bold text-[#1B2E5A]">System Administrator Management</h1>
             <p className="text-gray-600">Manage the single System Administrator role for your organization</p>
           </div>
         </div>
@@ -244,7 +244,7 @@ export const AdminPromotionManager: React.FC = () => {
           {adminStatus?.currentAdmin ? (
             <div className="flex items-center gap-4">
               <div className="flex-1">
-                <p className="font-medium text-gray-900">{adminStatus.currentAdmin.name}</p>
+                <p className="font-medium text-[#1B2E5A]">{adminStatus.currentAdmin.name}</p>
                 <p className="text-sm text-gray-600">{adminStatus.currentAdmin.email}</p>
                 <p className="text-xs text-gray-500 flex items-center gap-1">
                   <Clock className="w-3 h-3" />
@@ -317,7 +317,7 @@ export const AdminPromotionManager: React.FC = () => {
                     <div className="flex items-center gap-3">
                       <UserCheck className="w-5 h-5 text-gray-400" />
                       <div>
-                        <p className="font-medium text-gray-900">{user.name}</p>
+                        <p className="font-medium text-[#1B2E5A]">{user.name}</p>
                         <p className="text-sm text-gray-600">{user.email}</p>
                         <p className="text-xs text-gray-500">
                           Joined: {new Date(user.createdAt).toLocaleDateString()}
@@ -381,7 +381,7 @@ export const AdminPromotionManager: React.FC = () => {
             <div className="space-y-6">
               {/* Promotion Impact */}
               <div className="space-y-4">
-                <h3 className="font-semibold text-gray-900">Promotion Impact</h3>
+                <h3 className="font-semibold text-[#1B2E5A]">Promotion Impact</h3>
                 
                 {/* New Admin */}
                 <div className="flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-lg">

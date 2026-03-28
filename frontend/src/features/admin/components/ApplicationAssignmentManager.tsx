@@ -130,9 +130,8 @@ const ApplicationAssignmentManager: React.FC = () => {
   const [originalPermissions, setOriginalPermissions] = useState<Record<string, string[]>>({});
   const [originalModules, setOriginalModules] = useState<string[]>([]);
 
-  const { actualTheme, glassmorphismEnabled } = useTheme();
+  const { actualTheme } = useTheme();
   const isDark = actualTheme === 'dark';
-  const glass = glassmorphismEnabled;
 
   const analyzePermissionType = (permCode: string) => {
     const code = permCode.toLowerCase();
@@ -472,7 +471,7 @@ const ApplicationAssignmentManager: React.FC = () => {
     <div className={cn(
       "flex flex-col h-screen overflow-hidden relative",
       isDark ? "bg-slate-950 text-slate-200" : "bg-slate-50 text-slate-900",
-      glass && "backdrop-blur-xl"
+      
     )}>
       {/* Unified Executive Header - Ultra Slim & Integrated */}
       <header className={cn(
@@ -480,7 +479,7 @@ const ApplicationAssignmentManager: React.FC = () => {
         isDark ? "bg-slate-900/80 border-slate-800" : "bg-white/90 border-slate-200"
       )}>
         <div className="flex items-center gap-4">
-          <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+          <div className="w-8 h-8 rounded-lg bg-[#1B2E5A] flex items-center justify-center shadow-lg shadow-blue-500/20">
             <Shield className="w-4 h-4 text-white" />
           </div>
           <div>
@@ -531,7 +530,7 @@ const ApplicationAssignmentManager: React.FC = () => {
                 size="sm"
                 disabled={loading}
                 onClick={handleCommitChanges}
-                className="h-8 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-black text-[9px] uppercase tracking-widest shadow-lg shadow-blue-500/20 flex items-center gap-2 group/btn"
+                className="h-8 px-4 rounded-lg bg-[#1B2E5A] hover:bg-[#152449] text-white font-black text-[9px] uppercase tracking-widest shadow-lg shadow-blue-500/20 flex items-center gap-2 group/btn"
               >
                 {loading ? (
                   <Loader2 className="w-3 h-3 animate-spin" />
@@ -658,7 +657,7 @@ const ApplicationAssignmentManager: React.FC = () => {
                         {tenant.companyName.charAt(0)}
                       </div>
                       <div>
-                        <h3 className="font-black uppercase tracking-tight text-slate-900 dark:text-white leading-none mb-1">{tenant.companyName}</h3>
+                        <h3 className="font-black uppercase tracking-tight text-[#1B2E5A] dark:text-white leading-none mb-1">{tenant.companyName}</h3>
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{tenant.subdomain}.network</p>
                       </div>
                     </div>
@@ -676,7 +675,7 @@ const ApplicationAssignmentManager: React.FC = () => {
                     </div>
                     <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
                       <div
-                        className="bg-blue-600 h-full rounded-full transition-all duration-1000"
+                        className="bg-[#1B2E5A] h-full rounded-full transition-all duration-1000"
                         style={{ width: `${(tenant.enabledCount / (tenant.assignmentCount || 1)) * 100}%` }}
                       />
                     </div>
@@ -688,7 +687,7 @@ const ApplicationAssignmentManager: React.FC = () => {
                           </div>
                         ))}
                       </div>
-                      <Button variant="ghost" size="sm" className="h-8 rounded-lg text-xs font-black uppercase tracking-widest group-hover:bg-blue-600 group-hover:text-white transition-all">
+                      <Button variant="ghost" size="sm" className="h-8 rounded-lg text-xs font-black uppercase tracking-widest group-hover:bg-[#1B2E5A] group-hover:text-white transition-all">
                         Configure <ArrowRight className="w-3 h-3 ml-2" />
                       </Button>
                     </div>
@@ -758,7 +757,7 @@ const ApplicationAssignmentManager: React.FC = () => {
                             )}
                           >
                             <div className="flex items-center">
-                              <AccordionTrigger className="flex-1 px-8 py-6 hover:no-underline hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all [&[data-state=open]]:bg-blue-600/5 group/trigger text-left">
+                              <AccordionTrigger className="flex-1 px-8 py-6 hover:no-underline hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all [&[data-state=open]]:bg-[#1B2E5A]/5 group/trigger text-left">
                                 <div className="flex items-center gap-6">
                                   <div className={cn(
                                     "w-12 h-12 rounded-2xl flex items-center justify-center transition-all border relative shadow-sm",
@@ -768,7 +767,7 @@ const ApplicationAssignmentManager: React.FC = () => {
                                     {isAppAssigned && <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full border-2 border-white dark:border-slate-900 animate-pulse" />}
                                   </div>
                                   <div>
-                                    <div className="text-[14px] font-black text-slate-900 dark:text-white uppercase flex items-center gap-3 leading-none tracking-tight">
+                                    <div className="text-[14px] font-black text-[#1B2E5A] dark:text-white uppercase flex items-center gap-3 leading-none tracking-tight">
                                       {app.appName}
                                       {isAppAssigned && <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/20 text-[8px] font-black tracking-widest uppercase">Deployed</Badge>}
                                     </div>
@@ -787,7 +786,7 @@ const ApplicationAssignmentManager: React.FC = () => {
                                     variant="outline"
                                     disabled={loading}
                                     onClick={() => handleAssignApplicationDirectly(app)}
-                                    className="rounded-xl px-4 h-9 text-[9px] font-black uppercase tracking-widest border-blue-200 text-blue-600 hover:bg-blue-600 hover:text-white transition-all"
+                                    className="rounded-xl px-4 h-9 text-[9px] font-black uppercase tracking-widest border-blue-200 text-blue-600 hover:bg-[#1B2E5A] hover:text-white transition-all"
                                   >
                                     <Plus className="w-3.5 h-3.5 mr-2" /> Deploy Domain
                                   </Button>
@@ -823,7 +822,7 @@ const ApplicationAssignmentManager: React.FC = () => {
                                         <div>
                                           <h4 className={cn(
                                             "text-[13px] font-black uppercase tracking-tight leading-tight mb-1",
-                                            isModuleEnabled ? "text-slate-900 dark:text-white" : "text-slate-400"
+                                            isModuleEnabled ? "text-[#1B2E5A] dark:text-white" : "text-slate-400"
                                           )}>
                                             {module.moduleName}
                                           </h4>
@@ -860,7 +859,7 @@ const ApplicationAssignmentManager: React.FC = () => {
                                             className={cn(
                                               "w-full py-2 px-3 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all border text-center shadow-sm active:scale-95 disabled:opacity-50",
                                               isAllModuleSelected
-                                                ? "bg-blue-600 border-blue-500 text-white"
+                                                ? "bg-[#1B2E5A] border-blue-500 text-white"
                                                 : isModuleEnabled
                                                   ? "bg-blue-50 border-blue-200 text-blue-600 hover:bg-blue-100"
                                                   : "bg-slate-50 border-slate-200 text-slate-400"
@@ -973,7 +972,7 @@ const ApplicationAssignmentManager: React.FC = () => {
                   ) : (
                     <div className="flex flex-col items-center justify-center py-32 bg-slate-50/50 dark:bg-slate-900/10 rounded-[48px] border-2 border-dashed border-slate-200 dark:border-slate-800">
                       <Search className="w-16 h-16 text-slate-300 mb-6" />
-                      <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Deployment Not Found</h3>
+                      <h3 className="text-xl font-black text-[#1B2E5A] dark:text-white uppercase tracking-tight">Deployment Not Found</h3>
                     </div>
                   )}
                 </div>

@@ -36,7 +36,7 @@ export function UserActions({
           onClick={() => onResendInvite(employee.userId, employee.email)}
           title="Resend invitation"
         >
-          <ExternalLink className="h-4 w-4 text-blue-600" />
+          <ExternalLink className="h-4 w-4 text-[#1B2E5A]" />
         </Button>
       )}
       

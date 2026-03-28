@@ -161,7 +161,7 @@ export function ActivityDashboard() {
     const a = action.toLowerCase();
     if (a.includes('login')) return 'text-emerald-600 bg-emerald-50 border-emerald-100';
     if (a.includes('logout')) return 'text-slate-600 bg-slate-50 border-slate-100';
-    if (a.includes('created') || a.includes('invited')) return 'text-blue-600 bg-blue-50 border-blue-100';
+    if (a.includes('created') || a.includes('invited')) return 'text-[#1B2E5A] bg-[#1B2E5A]/10 border-[#1B2E5A]/15';
     if (a.includes('deleted') || a.includes('failed')) return 'text-rose-600 bg-rose-50 border-rose-100';
     if (a.includes('updated') || a.includes('modified')) return 'text-amber-600 bg-amber-50 border-amber-100';
     if (a.includes('role') || a.includes('permission')) return 'text-violet-600 bg-violet-50 border-violet-100';
@@ -189,8 +189,8 @@ export function ActivityDashboard() {
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-slate-900 flex items-center gap-3">
-            <div className="p-2 bg-blue-600 rounded-xl shadow-lg shadow-blue-200">
+          <h1 className="text-3xl font-black tracking-tight text-[#1B2E5A] flex items-center gap-3">
+            <div className="p-2 bg-[#1B2E5A] rounded-xl shadow-lg shadow-[#1B2E5A]/20">
               <Activity className="w-6 h-6 text-white" />
             </div>
             Activity Logs
@@ -211,7 +211,7 @@ export function ActivityDashboard() {
           <Button
             onClick={() => handleExport('json')}
             disabled={loading || activities.length === 0}
-            className="bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-100 font-semibold h-10"
+            className="bg-[#1B2E5A] hover:bg-[#152449] text-white shadow-md shadow-[#1B2E5A]/10 font-semibold h-10"
           >
             <Download className="w-4 h-4 mr-2" />
             Export Logs
@@ -259,7 +259,7 @@ export function ActivityDashboard() {
             placeholder="Search by action name..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 border-slate-200 focus:ring-blue-500 h-10 rounded-xl"
+            className="pl-10 border-slate-200 focus:ring-[#1B2E5A] h-10 rounded-xl"
           />
         </div>
         <div className="flex gap-2 w-full md:w-auto">
@@ -305,7 +305,7 @@ export function ActivityDashboard() {
           <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1">
             {activitiesLoading ? (
               <div className="flex flex-col items-center justify-center h-full py-12 space-y-4">
-                <RefreshCw className="w-8 h-8 animate-spin text-blue-500" />
+                <RefreshCw className="w-8 h-8 animate-spin text-[#1B2E5A]" />
                 <p className="text-slate-400 font-medium">Fetching activities...</p>
               </div>
             ) : activities.length > 0 ? (
@@ -316,7 +316,7 @@ export function ActivityDashboard() {
                   className={cn(
                     "w-full text-left p-3 rounded-2xl transition-all duration-200 flex items-center gap-3 group relative border",
                     selectedLogId === activity.logId 
-                      ? "bg-blue-50 border-blue-200 shadow-sm" 
+                      ? "bg-[#1B2E5A]/5 border-[#1B2E5A]/20 shadow-sm"
                       : "bg-transparent border-transparent hover:bg-slate-50 hover:border-slate-100"
                   )}
                 >
@@ -330,7 +330,7 @@ export function ActivityDashboard() {
                     <div className="flex items-center justify-between mb-0.5">
                       <p className={cn(
                         "text-sm font-bold truncate",
-                        selectedLogId === activity.logId ? "text-blue-900" : "text-slate-700"
+                        selectedLogId === activity.logId ? "text-[#1B2E5A]" : "text-slate-700"
                       )}>
                         {formatActionName(activity.action)}
                       </p>
@@ -346,13 +346,13 @@ export function ActivityDashboard() {
                       {activity.appName && (
                         <>
                           <span className="w-1 h-1 bg-slate-300 rounded-full" />
-                          <span className="text-blue-600/70">{activity.appName}</span>
+                          <span className="text-[#1B2E5A]/70">{activity.appName}</span>
                         </>
                       )}
                     </div>
                   </div>
                   {selectedLogId === activity.logId && (
-                    <div className="absolute right-3 w-1 h-6 bg-blue-500 rounded-full shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+                    <div className="absolute right-3 w-1 h-6 bg-[#1B2E5A] rounded-full shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
                   )}
                 </button>
               ))
@@ -361,9 +361,9 @@ export function ActivityDashboard() {
                 <div className="p-4 bg-slate-50 rounded-full mb-4">
                   <Activity className="w-8 h-8 text-slate-300" />
                 </div>
-                <h4 className="text-slate-900 font-bold mb-1">No Activities Found</h4>
+                <h4 className="text-[#1B2E5A] font-bold mb-1">No Activities Found</h4>
                 <p className="text-slate-500 text-sm">No activity matches your current filters.</p>
-                <Button variant="link" onClick={clearFilters} className="text-blue-600 mt-2 font-bold">
+                <Button variant="link" onClick={clearFilters} className="text-[#1B2E5A] mt-2 font-bold">
                   Clear All Filters
                 </Button>
               </div>
@@ -385,7 +385,7 @@ export function ActivityDashboard() {
                       {React.cloneElement(getActivityIcon(selectedLog.action) as React.ReactElement, { className: "w-6 h-6" })}
                     </div>
                     <div>
-                      <h2 className="text-xl font-black text-slate-900">{formatActionName(selectedLog.action)}</h2>
+                      <h2 className="text-xl font-black text-[#1B2E5A]">{formatActionName(selectedLog.action)}</h2>
                       <div className="flex items-center gap-3 mt-1 text-sm font-medium text-slate-500">
                         <span className="flex items-center gap-1.5">
                           <Calendar className="w-3.5 h-3.5" />
@@ -438,7 +438,7 @@ export function ActivityDashboard() {
                     <Button 
                       variant="ghost" 
                       size="sm" 
-                      className="h-8 text-[10px] font-black uppercase text-blue-600 hover:bg-blue-50"
+                      className="h-8 text-[10px] font-black uppercase text-[#1B2E5A] hover:bg-[#1B2E5A]/5"
                       onClick={() => {
                         navigator.clipboard.writeText(JSON.stringify(selectedLog.metadata, null, 2));
                         toast.success('Metadata copied to clipboard');
@@ -465,10 +465,10 @@ export function ActivityDashboard() {
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center text-center p-12 bg-slate-50/30">
               <div className="relative mb-6">
-                <div className="absolute -inset-4 bg-blue-100/50 rounded-full blur-xl animate-pulse"></div>
+                <div className="absolute -inset-4 bg-[#1B2E5A]/10 rounded-full blur-xl animate-pulse"></div>
                 <Eye className="w-16 h-16 text-blue-200 relative z-10" />
               </div>
-              <h3 className="text-xl font-black text-slate-900 mb-2">Select an Activity</h3>
+              <h3 className="text-xl font-black text-[#1B2E5A] mb-2">Select an Activity</h3>
               <p className="text-slate-500 max-w-xs mx-auto leading-relaxed">
                 Click on any event from the left panel to view detailed metadata and security information.
               </p>
@@ -489,7 +489,7 @@ function StatsCard({ title, value, icon, color, loading }: {
   loading?: boolean;
 }) {
   const colorMap = {
-    blue: 'text-blue-600 bg-blue-50 border-blue-100 shadow-blue-50',
+    blue: 'text-[#1B2E5A] bg-[#1B2E5A]/10 border-[#1B2E5A]/15 shadow-[#1B2E5A]/10',
     emerald: 'text-emerald-600 bg-emerald-50 border-emerald-100 shadow-emerald-50',
     violet: 'text-violet-600 bg-violet-50 border-violet-100 shadow-violet-50',
     amber: 'text-amber-600 bg-amber-50 border-amber-100 shadow-amber-50'
@@ -504,7 +504,7 @@ function StatsCard({ title, value, icon, color, loading }: {
             {loading ? (
               <div className="h-8 w-16 bg-slate-100 animate-pulse rounded-lg mt-1" />
             ) : (
-              <h3 className="text-3xl font-black text-slate-900 tracking-tight">{value}</h3>
+              <h3 className="text-3xl font-black text-[#1B2E5A] tracking-tight">{value}</h3>
             )}
           </div>
           <div className={cn("p-3 rounded-2xl border transition-transform group-hover:rotate-12", colorMap[color])}>

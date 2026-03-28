@@ -125,7 +125,7 @@ export const FlowSelector: React.FC<FlowSelectorProps> = ({
                   {flow.icon}
                 </div>
               )}
-              <h3 className="text-lg font-semibold text-gray-900 truncate">
+              <h3 className="text-lg font-semibold text-[#1B2E5A] truncate">
                 {flow.name}
               </h3>
             </div>
@@ -259,7 +259,7 @@ export const FlowSelector: React.FC<FlowSelectorProps> = ({
       {(title || description) && (
         <div className="mb-6">
           {title && (
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            <h2 className="text-2xl font-bold text-[#1B2E5A] mb-2">
               {title}
             </h2>
           )}

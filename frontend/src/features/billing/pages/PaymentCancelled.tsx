@@ -67,7 +67,7 @@ const PaymentCancelled: React.FC = () => {
             <div className="inline-flex items-center justify-center w-20 h-20 bg-red-100 rounded-full mb-6">
               <XCircle className="h-12 w-12 text-red-600" />
             </div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">
+            <h1 className="text-4xl font-bold text-[#1B2E5A] mb-4">
               Payment Cancelled
             </h1>
             <p className="text-xl text-gray-600 mb-8">
@@ -161,7 +161,7 @@ const PaymentCancelled: React.FC = () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button
                 onClick={() => navigate({ to: '/billing' })}
-                className="px-8 py-3 text-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                className="px-8 py-3 text-lg bg-[#1B2E5A] hover:bg-[#162447]"
               >
                 <RefreshCw className="h-5 w-5 mr-2" />
                 Try Again
@@ -181,7 +181,7 @@ const PaymentCancelled: React.FC = () => {
                 <MessageSquare className="h-5 w-5" />
                 <span className="font-medium">Need Help?</span>
               </div>
-              <p className="text-blue-600 text-center">
+              <p className="text-[#1B2E5A] text-center">
                 Contact our support team at{' '}
                 <a href="mailto:support@yourcompany.com" className="underline hover:text-blue-800">
                   support@yourcompany.com

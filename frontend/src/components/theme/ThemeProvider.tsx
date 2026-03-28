@@ -6,8 +6,6 @@ interface ThemeContextType {
   theme: Theme
   setTheme: (theme: Theme) => void
   actualTheme: 'light' | 'dark' | 'monochrome'
-  glassmorphismEnabled: boolean
-  setGlassmorphismEnabled: (enabled: boolean) => void
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
@@ -33,28 +31,12 @@ export function ThemeProvider({
 }: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>(defaultTheme)
   const [actualTheme, setActualTheme] = useState<'light' | 'dark' | 'monochrome'>('light')
-  const [glassmorphismEnabled, setGlassmorphismEnabled] = useState<boolean>(false)
 
   useEffect(() => {
     // Load theme from localStorage
     const storedTheme = localStorage.getItem(storageKey) as Theme
     if (storedTheme && ['light', 'dark', 'monochrome', 'system'].includes(storedTheme)) {
       setTheme(storedTheme)
-    }
-
-    // Load glassmorphism setting
-    const storedGlassmorphism = localStorage.getItem('glassmorphism-enabled')
-    if (storedGlassmorphism !== null) {
-      const enabled = storedGlassmorphism === 'true'
-      setGlassmorphismEnabled(enabled)
-
-      // Apply class immediately
-      const body = document.body
-      if (enabled) {
-        body.classList.add('glassmorphism-enabled')
-      } else {
-        body.classList.remove('glassmorphism-enabled')
-      }
     }
   }, [storageKey])
 
@@ -105,26 +87,11 @@ export function ThemeProvider({
     localStorage.setItem(storageKey, newTheme)
   }, [storageKey])
 
-  const setGlassmorphismEnabledCallback = useCallback((enabled: boolean) => {
-    setGlassmorphismEnabled(enabled)
-    localStorage.setItem('glassmorphism-enabled', enabled.toString())
-    const body = document.body
-    if (enabled) {
-      body.classList.add('glassmorphism-enabled')
-    } else {
-      body.classList.remove('glassmorphism-enabled')
-    }
-    body.style.transition = 'all 0.5s ease-in-out'
-    setTimeout(() => { body.style.transition = '' }, 500)
-  }, [])
-
   const value = useMemo(() => ({
     theme,
     setTheme: setThemeCallback,
     actualTheme,
-    glassmorphismEnabled,
-    setGlassmorphismEnabled: setGlassmorphismEnabledCallback,
-  }), [theme, actualTheme, glassmorphismEnabled, setThemeCallback, setGlassmorphismEnabledCallback])
+  }), [theme, actualTheme, setThemeCallback])
 
   return (
     <ThemeContext.Provider value={value}>

@@ -110,12 +110,12 @@ const PermissionMatrix: React.FC = () => {
 
   const getPermissionBadgeColor = (permissionName: string) => {
     const colorMap: Record<string, string> = {
-      'view': 'bg-blue-100 text-blue-800',
+      'view': 'bg-[#1B2E5A]/10 text-[#1B2E5A]',
       'create': 'bg-green-100 text-green-800',
       'edit': 'bg-yellow-100 text-yellow-800',
       'delete': 'bg-red-100 text-red-800',
       'approve': 'bg-purple-100 text-purple-800',
-      'export': 'bg-indigo-100 text-indigo-800',
+      'export': 'bg-[#1B2E5A]/10 text-[#1B2E5A]',
       'pay': 'bg-emerald-100 text-emerald-800',
       'process': 'bg-orange-100 text-orange-800',
       'salary': 'bg-pink-100 text-pink-800',
@@ -143,7 +143,7 @@ const PermissionMatrix: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Permission Management</h2>
+          <h2 className="text-2xl font-bold text-[#1B2E5A]">Permission Management</h2>
           <p className="text-gray-600">Manage user access across applications and modules</p>
         </div>
         <div className="flex gap-2">
@@ -159,7 +159,7 @@ const PermissionMatrix: React.FC = () => {
           <Button 
             onClick={handleSavePermissions} 
             disabled={saving || changesCount === 0}
-            className="bg-blue-600 hover:bg-blue-700"
+            className="bg-[#1B2E5A] hover:bg-[#152449]"
           >
             {saving ? (
               <>
@@ -287,11 +287,11 @@ const PermissionMatrix: React.FC = () => {
                                 </thead>
                                 <tbody>
                                   {filteredUsers.map(user => (
-                                    <tr key={user.userId} className={`border-b hover:bg-gray-50 ${userHasChanges(user.userId) ? 'bg-blue-50' : ''}`}>
+                                    <tr key={user.userId} className={`border-b hover:bg-gray-50 ${userHasChanges(user.userId) ? 'bg-[#1B2E5A]/5' : ''}`}>
                                       <td className="py-3 px-3">
                                         <div className="flex items-center gap-2">
-                                          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                                            <span className="text-sm font-medium text-blue-600">
+                                          <div className="w-8 h-8 bg-[#1B2E5A]/10 rounded-full flex items-center justify-center">
+                                            <span className="text-sm font-medium text-[#1B2E5A]">
                                               {user.name.charAt(0)}
                                             </span>
                                           </div>

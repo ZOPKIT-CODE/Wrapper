@@ -17,7 +17,7 @@ const THEMES: Record<string, any> = {
   blue: {
     bgLight: 'bg-blue-50',
     bgMedium: 'bg-blue-100',
-    bgDark: 'bg-blue-600',
+    bgDark: 'bg-[#1B2E5A]',
     textLight: 'text-blue-500',
     textDark: 'text-blue-700',
     border: 'border-blue-200',
@@ -57,7 +57,7 @@ const THEMES: Record<string, any> = {
   indigo: {
     bgLight: 'bg-indigo-50',
     bgMedium: 'bg-indigo-100',
-    bgDark: 'bg-indigo-600',
+    bgDark: 'bg-[#1B2E5A]',
     textLight: 'text-indigo-500',
     textDark: 'text-indigo-700',
     border: 'border-indigo-200',
@@ -655,7 +655,7 @@ const StackedCard: React.FC<CardProps> = React.memo(({
               </span>
             </div>
 
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 tracking-tight mb-2 leading-tight">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#1B2E5A] tracking-tight mb-2 leading-tight">
               {app.name}
             </h2>
 
@@ -701,7 +701,7 @@ const StackedCard: React.FC<CardProps> = React.memo(({
                   e.stopPropagation();
                   window.location.href = `/products/${app.id}`;
                 }}
-                className={`flex items-center justify-center px-5 py-2.5 rounded-xl bg-slate-900 text-white hover:bg-${app.color}-600 transition-colors font-semibold text-sm group`}
+                className={`flex items-center justify-center px-5 py-2.5 rounded-xl bg-[#1B2E5A] text-white hover:bg-[#162447] transition-colors font-semibold text-sm group`}
               >
                 Know More <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </button>

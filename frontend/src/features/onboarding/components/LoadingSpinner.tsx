@@ -171,13 +171,13 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
             {/* Company Name */}
             {companyName && (
               <div className="mb-4">
-                <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+                <h1 className="text-2xl font-bold text-[#1B2E5A] tracking-tight">
                   Welcome, {companyName}
                 </h1>
               </div>
             )}
 
-            <h2 className="text-3xl font-bold text-gray-900 mb-2 tracking-tight">
+            <h2 className="text-3xl font-bold text-[#1B2E5A] mb-2 tracking-tight">
               {status === LaunchStatus.COMPLETED ? `Welcome, ${userName}!` : (message || 'Setting up your organization...')}
             </h2>
             <p className="text-gray-500 text-base max-w-xs mx-auto font-medium">
