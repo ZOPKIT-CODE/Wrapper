@@ -89,7 +89,7 @@ export function ApplicationModuleRoleBuilder({
   onCancel,
   initialRole
 }: ApplicationModuleRoleBuilderProps) {
-  const { actualTheme, glassmorphismEnabled } = useTheme();
+  const { actualTheme } = useTheme();
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -500,7 +500,6 @@ export function ApplicationModuleRoleBuilder({
 
   const isDark = actualTheme === 'dark';
   const isMono = actualTheme === 'monochrome';
-  const glass = glassmorphismEnabled;
 
   if (loading) {
     return (
@@ -665,7 +664,7 @@ export function ApplicationModuleRoleBuilder({
           /* Step 2: Permission Matrix - Full width (name & purpose already filled in Step 1) */
         <div className={cn(
           "flex-1 flex flex-col min-w-0 bg-slate-50/50 dark:bg-slate-950",
-          glass ? "backdrop-blur-sm" : ""
+          ""
         )}>
           {/* Matrix Toolbar - Step 2 */}
           <div className={cn(

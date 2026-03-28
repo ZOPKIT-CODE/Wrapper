@@ -69,7 +69,7 @@ const getPermissionSummary = (permissions: Record<string, any> | string[]) => {
 };
 
 export function RoleManagementDashboard() {
-  const { actualTheme, glassmorphismEnabled } = useTheme();
+  const { actualTheme } = useTheme();
   const queryClient = useQueryClient();
   const { triggerRefresh } = usePermissionRefreshTrigger();
   const navigate = useNavigate();
@@ -923,7 +923,7 @@ export function RoleManagementDashboard() {
         <Card className={cn(
           "overflow-hidden overflow-x-auto rounded-2xl border-0 shadow-lg",
           actualTheme === 'dark'
-            ? (glassmorphismEnabled ? 'bg-slate-900/95 border border-slate-700/50' : 'bg-slate-900 border-slate-700')
+            ? 'bg-slate-900 border-slate-700'
             : (actualTheme === 'monochrome' ? 'bg-gray-900 border-gray-500/30' : 'bg-white border-slate-200/80 shadow-slate-200/50')
         )}>
           {showRolesLoading ? (
@@ -1018,9 +1018,7 @@ export function RoleManagementDashboard() {
         <Dialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
           <DialogContent className={
             actualTheme === 'dark'
-              ? glassmorphismEnabled
-                ? 'bg-slate-900 border-purple-500/30 text-white'
-                : 'bg-slate-900 border-slate-700 text-white'
+              ? 'bg-slate-900 border-slate-700 text-white'
               : actualTheme === 'monochrome'
                 ? 'bg-gray-900 border-gray-500/30 text-gray-100'
                 : ''
