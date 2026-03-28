@@ -142,7 +142,7 @@ const SuiteDashboard: React.FC = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8 text-center">
           <div className="mb-6">
-            <div className="mx-auto h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center">
+            <div className="mx-auto h-12 w-12 bg-[#1B2E5A]/10 rounded-full flex items-center justify-center">
               <span className="text-2xl">🚀</span>
             </div>
           </div>
@@ -161,7 +161,7 @@ const SuiteDashboard: React.FC = () => {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <span className="text-2xl font-bold text-blue-600">🚀 Business Suite</span>
+                <span className="text-2xl font-bold text-[#1B2E5A]">🚀 Business Suite</span>
               </div>
             </div>
             <div className="flex items-center space-x-4">
@@ -193,7 +193,7 @@ const SuiteDashboard: React.FC = () => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1B2E5A]"></div>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -225,7 +225,7 @@ const SuiteDashboard: React.FC = () => {
                             {getAppIcon(app.appCode, app.icon)}
                           </div>
                           <div>
-                            <h3 className="text-lg font-semibold text-[#1B2E5A] group-hover:text-blue-600">
+                            <h3 className="text-lg font-semibold text-[#1B2E5A] group-hover:text-[#1B2E5A]">
                               {app.appName}
                             </h3>
                             <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${getTierColor(app.subscriptionTier)}`}>
@@ -233,7 +233,7 @@ const SuiteDashboard: React.FC = () => {
                             </span>
                           </div>
                         </div>
-                        <div className="text-gray-400 group-hover:text-blue-500">
+                        <div className="text-gray-400 group-hover:text-[#1B2E5A]">
                           <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
                           </svg>
@@ -318,9 +318,9 @@ const SuiteDashboard: React.FC = () => {
               </div>
 
               {/* Support */}
-              <div className="bg-blue-50 rounded-lg border border-blue-200 p-6">
-                <h3 className="text-lg font-semibold text-blue-900 mb-2">Need Help?</h3>
-                <p className="text-blue-700 text-sm mb-4">
+              <div className="bg-[#1B2E5A]/5 rounded-lg border border-[#1B2E5A]/20 p-6">
+                <h3 className="text-lg font-semibold text-[#1B2E5A] mb-2">Need Help?</h3>
+                <p className="text-[#1B2E5A]/80 text-sm mb-4">
                   Get support or request new applications for your organization.
                 </p>
                 <button className="w-full bg-[#1B2E5A] text-white px-4 py-2 rounded-md hover:bg-[#152449] transition-colors text-sm font-medium">

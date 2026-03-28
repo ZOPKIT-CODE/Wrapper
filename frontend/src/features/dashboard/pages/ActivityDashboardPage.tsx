@@ -259,7 +259,7 @@ export function ActivityDashboard() {
             placeholder="Search by action name..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 border-slate-200 focus:ring-blue-500 h-10 rounded-xl"
+            className="pl-10 border-slate-200 focus:ring-[#1B2E5A] h-10 rounded-xl"
           />
         </div>
         <div className="flex gap-2 w-full md:w-auto">
@@ -305,7 +305,7 @@ export function ActivityDashboard() {
           <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1">
             {activitiesLoading ? (
               <div className="flex flex-col items-center justify-center h-full py-12 space-y-4">
-                <RefreshCw className="w-8 h-8 animate-spin text-blue-500" />
+                <RefreshCw className="w-8 h-8 animate-spin text-[#1B2E5A]" />
                 <p className="text-slate-400 font-medium">Fetching activities...</p>
               </div>
             ) : activities.length > 0 ? (
@@ -316,7 +316,7 @@ export function ActivityDashboard() {
                   className={cn(
                     "w-full text-left p-3 rounded-2xl transition-all duration-200 flex items-center gap-3 group relative border",
                     selectedLogId === activity.logId 
-                      ? "bg-blue-50 border-blue-200 shadow-sm" 
+                      ? "bg-[#1B2E5A]/5 border-[#1B2E5A]/20 shadow-sm"
                       : "bg-transparent border-transparent hover:bg-slate-50 hover:border-slate-100"
                   )}
                 >
@@ -330,7 +330,7 @@ export function ActivityDashboard() {
                     <div className="flex items-center justify-between mb-0.5">
                       <p className={cn(
                         "text-sm font-bold truncate",
-                        selectedLogId === activity.logId ? "text-blue-900" : "text-slate-700"
+                        selectedLogId === activity.logId ? "text-[#1B2E5A]" : "text-slate-700"
                       )}>
                         {formatActionName(activity.action)}
                       </p>
@@ -352,7 +352,7 @@ export function ActivityDashboard() {
                     </div>
                   </div>
                   {selectedLogId === activity.logId && (
-                    <div className="absolute right-3 w-1 h-6 bg-blue-500 rounded-full shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+                    <div className="absolute right-3 w-1 h-6 bg-[#1B2E5A] rounded-full shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
                   )}
                 </button>
               ))
@@ -363,7 +363,7 @@ export function ActivityDashboard() {
                 </div>
                 <h4 className="text-[#1B2E5A] font-bold mb-1">No Activities Found</h4>
                 <p className="text-slate-500 text-sm">No activity matches your current filters.</p>
-                <Button variant="link" onClick={clearFilters} className="text-blue-600 mt-2 font-bold">
+                <Button variant="link" onClick={clearFilters} className="text-[#1B2E5A] mt-2 font-bold">
                   Clear All Filters
                 </Button>
               </div>
@@ -438,7 +438,7 @@ export function ActivityDashboard() {
                     <Button 
                       variant="ghost" 
                       size="sm" 
-                      className="h-8 text-[10px] font-black uppercase text-blue-600 hover:bg-blue-50"
+                      className="h-8 text-[10px] font-black uppercase text-[#1B2E5A] hover:bg-[#1B2E5A]/5"
                       onClick={() => {
                         navigator.clipboard.writeText(JSON.stringify(selectedLog.metadata, null, 2));
                         toast.success('Metadata copied to clipboard');
