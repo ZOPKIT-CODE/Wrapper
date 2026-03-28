@@ -162,7 +162,7 @@ export const WorkflowVisualizer = () => {
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12 sm:mb-16">
                 <p className="text-sm font-semibold text-slate-400 tracking-wide mb-3">Workflow Engine</p>
-                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-[-0.025em] leading-tight">
+                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#1B2E5A] tracking-[-0.025em] leading-tight">
                     Intelligent Workflow<br className="hidden sm:block" /> Orchestration
                 </h2>
                 <p className="text-slate-500 text-base sm:text-lg max-w-xl mx-auto mt-4 leading-relaxed">

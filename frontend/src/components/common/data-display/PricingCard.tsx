@@ -51,7 +51,7 @@ const PricingCard: React.FC<PricingCardProps> = ({
           <div className="space-y-1.5 flex-shrink-0">
             <span className={cn(
               "text-lg font-extrabold tracking-tight block",
-              isPremium ? "text-blue-900" : "text-slate-900"
+              isPremium ? "text-blue-900" : "text-[#1B2E5A]"
             )}>
               {name}
             </span>

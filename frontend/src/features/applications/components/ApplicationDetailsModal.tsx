@@ -149,7 +149,7 @@ export function ApplicationDetailsModal({ application, isOpen, onClose }: Applic
 
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-2">
-                  <h1 className="text-2xl font-bold text-slate-900 dark:text-white drop-shadow-sm">
+                  <h1 className="text-2xl font-bold text-[#1B2E5A] dark:text-white drop-shadow-sm">
                     {appName || "Unknown Application"}
                   </h1>
                   <div className={cn(
@@ -299,7 +299,7 @@ export function ApplicationDetailsModal({ application, isOpen, onClose }: Applic
                   <div className="pt-8">
                     <div className="flex items-center justify-between mb-8">
                       <div>
-                        <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Application Modules</h2>
+                        <h2 className="text-2xl font-bold text-[#1B2E5A] dark:text-white">Application Modules</h2>
                         <p className="text-slate-600 dark:text-slate-400 mt-2">
                           Feature capabilities and system integrations
                         </p>

@@ -529,7 +529,7 @@ const ProductNode: React.FC<ProductNodeProps> = ({ product, navigate, priority, 
                     </div>
                     <h3 className={cn(
                         "text-sm font-bold mb-1.5 transition-colors group-hover:text-blue-600 antialiased",
-                        isCore ? "text-slate-900" : "text-slate-800"
+                        isCore ? "text-[#1B2E5A]" : "text-slate-800"
                     )}>
                         {product.name}
                     </h3>
@@ -778,7 +778,7 @@ const IndustryPage: React.FC = () => {
         return (
             <div className="min-h-screen flex items-center justify-center bg-slate-50">
                 <div className="text-center">
-                    <h1 className="text-2xl font-bold text-slate-900 mb-4">Industry Not Found</h1>
+                    <h1 className="text-2xl font-bold text-[#1B2E5A] mb-4">Industry Not Found</h1>
                     <button onClick={() => navigate({ to: '/' })} className="text-blue-600 hover:text-blue-700 font-medium">Return to Home</button>
                 </div>
             </div>
@@ -962,7 +962,7 @@ const IndustryPage: React.FC = () => {
                     >
                         <button
                             onClick={() => navigate({ to: '/onboarding' })}
-                            className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-lg transition shadow-xl shadow-blue-600/20 hover:shadow-blue-600/40 hover:-translate-y-1 flex items-center gap-2 group"
+                            className="px-8 py-4 bg-[#1B2E5A] hover:bg-[#162447] text-white rounded-xl font-semibold text-lg transition shadow-xl shadow-blue-600/20 hover:shadow-blue-600/40 hover:-translate-y-1 flex items-center gap-2 group"
                         >
                             {data.hero.primaryCTA} <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
                         </button>
@@ -996,7 +996,7 @@ const IndustryPage: React.FC = () => {
             <section id="challenges" className="py-24 px-4 sm:px-6 lg:px-8 bg-white relative">
                  <div className="max-w-6xl mx-auto">
                     <div className="text-center mb-16">
-                        <h2 className="text-4xl font-bold text-slate-900 mb-4">Common Challenges We Solve</h2>
+                        <h2 className="text-4xl font-bold text-[#1B2E5A] mb-4">Common Challenges We Solve</h2>
                         <p className="text-xl text-slate-600 max-w-2xl mx-auto">
                             Transforming obstacles into opportunities for {data.name} leaders.
                         </p>
@@ -1014,7 +1014,7 @@ const IndustryPage: React.FC = () => {
                                 <div className="w-12 h-12 rounded-xl bg-blue-100 group-hover:bg-blue-600 transition-colors flex items-center justify-center mb-6">
                                     <point.icon size={24} className="text-blue-600 group-hover:text-white transition-colors" />
                                 </div>
-                                <h3 className="text-lg font-bold text-slate-900 mb-2">{point.text}</h3>
+                                <h3 className="text-lg font-bold text-[#1B2E5A] mb-2">{point.text}</h3>
                                 <p className="text-slate-500 text-sm leading-relaxed">
                                     Our platform directly addresses this by streamlining operations and providing real-time visibility.
                                 </p>
@@ -1028,7 +1028,7 @@ const IndustryPage: React.FC = () => {
             <section id="integrated-solutions" className="pt-28 pb-24 px-4 sm:px-6 lg:px-8 bg-slate-50 border-y border-slate-200 scroll-mt-24">
                 <div className="max-w-5xl mx-auto">
                     <div className="text-center mb-16">
-                        <h2 className="text-4xl font-bold text-slate-900 mb-4">
+                        <h2 className="text-4xl font-bold text-[#1B2E5A] mb-4">
                             Integrated Solutions Ecosystem
                         </h2>
                         <p className="text-xl text-slate-600 max-w-2xl mx-auto">
@@ -1085,7 +1085,7 @@ const IndustryPage: React.FC = () => {
             <section id="roi" className="py-24 px-4 sm:px-6 lg:px-8 bg-white">
                 <div className="max-w-7xl mx-auto">
                     <div className="text-center mb-16">
-                        <h2 className="text-4xl font-bold text-slate-900 mb-4">Measurable Impact</h2>
+                        <h2 className="text-4xl font-bold text-[#1B2E5A] mb-4">Measurable Impact</h2>
                         <p className="text-xl text-slate-600 max-w-2xl mx-auto">
                             Real results from real companies in the {data.name} sector.
                         </p>
@@ -1144,14 +1144,14 @@ const IndustryPage: React.FC = () => {
                             <div className="p-10 md:p-14 flex flex-col justify-center">
                                 <div className="mb-8">
                                     <span className="text-blue-600 font-bold uppercase tracking-widest text-xs mb-2 block">Featured Success Story</span>
-                                    <h2 className="text-3xl font-bold text-slate-900 mb-2">{data.caseStudy.company}</h2>
+                                    <h2 className="text-3xl font-bold text-[#1B2E5A] mb-2">{data.caseStudy.company}</h2>
                                     <div className="text-slate-500 font-medium">{data.caseStudy.industry}</div>
                                 </div>
                                 <blockquote className="text-xl text-slate-700 italic leading-relaxed mb-8">
                                     "{data.caseStudy.quote}"
                                 </blockquote>
                                 <div className="mt-auto pt-6 border-t border-slate-100">
-                                    <h4 className="font-bold text-slate-900 mb-4 flex items-center gap-2">
+                                    <h4 className="font-bold text-[#1B2E5A] mb-4 flex items-center gap-2">
                                         <Award size={18} className="text-orange-500" /> Key Outcomes
                                     </h4>
                                     <ul className="space-y-3">
@@ -1211,7 +1211,7 @@ const IndustryPage: React.FC = () => {
                     <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
                         <button
                             onClick={() => navigate({ to: '/onboarding' })}
-                            className="px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-full font-semibold text-lg transition shadow-lg shadow-blue-500/25 hover:-translate-y-1 flex items-center gap-2 group"
+                            className="px-8 py-4 bg-[#1B2E5A] hover:bg-[#162447] text-white rounded-full font-semibold text-lg transition shadow-lg shadow-blue-500/25 hover:-translate-y-1 flex items-center gap-2 group"
                         >
                             {data.finalCTA.primaryCTA} <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
                         </button>

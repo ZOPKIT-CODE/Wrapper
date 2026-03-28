@@ -184,7 +184,7 @@ export function ApplicationDetailsPage() {
 
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-2xl font-bold text-slate-900 dark:text-white drop-shadow-sm">
+                <h1 className="text-2xl font-bold text-[#1B2E5A] dark:text-white drop-shadow-sm">
                   {appName || "Unknown Application"}
                 </h1>
                 <div className={cn(
@@ -226,7 +226,7 @@ export function ApplicationDetailsPage() {
               <Settings className="h-6 w-6 text-slate-700 dark:text-slate-300" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Application settings</h2>
+              <h2 className="text-lg font-semibold text-[#1B2E5A] dark:text-white">Application settings</h2>
               <p className="text-sm text-slate-600 dark:text-slate-400">
                 Launch the app or open in a new tab
               </p>
@@ -351,7 +351,7 @@ export function ApplicationDetailsPage() {
                 <div className="pt-8">
                   <div className="flex items-center justify-between mb-8">
                     <div>
-                      <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Application Modules</h2>
+                      <h2 className="text-2xl font-bold text-[#1B2E5A] dark:text-white">Application Modules</h2>
                       <p className="text-slate-600 dark:text-slate-400 mt-2">
                         Feature capabilities and system integrations
                       </p>

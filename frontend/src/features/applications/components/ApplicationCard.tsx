@@ -185,7 +185,7 @@ export const ApplicationCard = memo(function ApplicationCard({ application, onVi
             <h3 className={cn(
               "text-xl font-black tracking-tight leading-tight transition-all duration-500 uppercase text-center",
               "group-hover:scale-105",
-              isDark ? "text-white" : "text-slate-900"
+              isDark ? "text-white" : "text-[#1B2E5A]"
             )}>
               {application.appName}
             </h3>

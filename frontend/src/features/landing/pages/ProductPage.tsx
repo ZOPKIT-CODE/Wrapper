@@ -62,7 +62,7 @@ const FeatureCard: React.FC<FeatureCardProps> = ({ feature, i }) => {
                         <div className={`w-16 h-16 rounded-2xl ${accent} flex items-center justify-center mb-8 shadow-sm`}>
                             <feature.icon size={32} />
                         </div>
-                        <h3 className="text-3xl font-bold text-slate-900 mb-6">{feature.title}</h3>
+                        <h3 className="text-3xl font-bold text-[#1B2E5A] mb-6">{feature.title}</h3>
                         <p className="text-lg text-slate-700 leading-relaxed mb-8">
                             {feature.description}
                         </p>
@@ -250,11 +250,11 @@ const ProductPage: React.FC = () => {
         return (
             <div className="min-h-screen flex items-center justify-center bg-white">
                 <div className="text-center">
-                    <h1 className="text-4xl font-bold text-slate-900 mb-4">Product Not Found</h1>
+                    <h1 className="text-4xl font-bold text-[#1B2E5A] mb-4">Product Not Found</h1>
                     <p className="text-slate-600 mb-8">The product you're looking for doesn't exist or is not yet available.</p>
                     <button
                         onClick={() => navigate({ to: '/' })}
-                        className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                        className="px-6 py-3 bg-[#1B2E5A] text-white rounded-lg hover:bg-[#162447] transition"
                     >
                         Go to Homepage
                     </button>
@@ -488,7 +488,7 @@ const ProductPage: React.FC = () => {
                             </span>
                             New: AI-Powered Insights
                         </div>
-                        <h1 className="text-5xl lg:text-7xl font-extrabold tracking-tight mb-8 text-slate-900">
+                        <h1 className="text-5xl lg:text-7xl font-extrabold tracking-tight mb-8 text-[#1B2E5A]">
                             {data.hero.headline}
                         </h1>
                         <p className="text-xl text-slate-600 mb-10 max-w-3xl mx-auto leading-relaxed">
@@ -497,7 +497,7 @@ const ProductPage: React.FC = () => {
                         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
                             <button
                                 onClick={() => navigate({ to: '/onboarding' })}
-                                className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-full font-semibold text-lg transition shadow-xl shadow-blue-600/20 hover:shadow-blue-600/40 hover:-translate-y-1 flex items-center gap-2"
+                                className="px-8 py-4 bg-[#1B2E5A] hover:bg-[#162447] text-white rounded-full font-semibold text-lg transition shadow-xl shadow-blue-600/20 hover:shadow-blue-600/40 hover:-translate-y-1 flex items-center gap-2"
                             >
                                 {data.hero.primaryCTA} <ArrowRight size={20} />
                             </button>
@@ -607,7 +607,7 @@ const ProductPage: React.FC = () => {
                 <div className="container mx-auto px-4 relative z-10">
                     <div className="text-center max-w-3xl mx-auto mb-16">
                         <span className="text-blue-600 font-bold tracking-wider uppercase text-sm mb-4 block">The Evolution</span>
-                        <h2 className="text-3xl lg:text-4xl font-bold mb-6 text-slate-900 leading-tight">
+                        <h2 className="text-3xl lg:text-4xl font-bold mb-6 text-[#1B2E5A] leading-tight">
                             The Shift in Perspective
                         </h2>
                         <p className="text-lg text-slate-600">
@@ -763,7 +763,7 @@ const ProductPage: React.FC = () => {
             <section className="py-24 bg-white relative">
                 <div className="container mx-auto px-4 max-w-6xl">
                     <div className="text-center max-w-3xl mx-auto mb-24">
-                        <h2 className="text-4xl lg:text-5xl font-bold mb-6 text-slate-900 tracking-tight">
+                        <h2 className="text-4xl lg:text-5xl font-bold mb-6 text-[#1B2E5A] tracking-tight">
                             Everything you need to <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">scale</span>
                         </h2>
                         <p className="text-xl text-slate-600">
@@ -829,7 +829,7 @@ const ProductPage: React.FC = () => {
                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold uppercase tracking-wider mb-4 border border-blue-100">
                             <LayoutGrid size={12} /> Compare Plans
                         </div>
-                        <h2 className="text-3xl lg:text-4xl font-bold mb-6 text-slate-900">
+                        <h2 className="text-3xl lg:text-4xl font-bold mb-6 text-[#1B2E5A]">
                             Find the Perfect Fit
                         </h2>
                         <p className="text-lg text-slate-600">
@@ -947,7 +947,7 @@ const ProductPage: React.FC = () => {
                             <div className="flex text-yellow-400 gap-1 mb-2 justify-center">
                                 {[1, 2, 3, 4, 5].map(i => <Star key={i} className="fill-current" size={20} />)}
                             </div>
-                            <h3 className="text-2xl lg:text-3xl font-bold text-slate-900 mb-6 leading-snug px-4">
+                            <h3 className="text-2xl lg:text-3xl font-bold text-[#1B2E5A] mb-6 leading-snug px-4">
                                 "{data.socialProof.testimonial.quote}"
                             </h3>
                             <div className="flex items-center justify-center gap-4">

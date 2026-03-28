@@ -345,7 +345,7 @@ export function Login() {
           </div>
         </div>
         <div>
-          <h3 className="text-slate-900 font-semibold text-xl tracking-tight">{message}</h3>
+          <h3 className="text-[#1B2E5A] font-semibold text-xl tracking-tight">{message}</h3>
           <p className="text-slate-500 text-sm mt-2 font-medium">{subMessage}</p>
         </div>
       </motion.div>
@@ -396,7 +396,7 @@ export function Login() {
                 />
               </div>
               <div>
-                <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Zopkit</h2>
+                <h2 className="text-3xl font-bold text-[#1B2E5A] tracking-tight">Zopkit</h2>
                 <div className="flex items-center space-x-2 text-slate-500">
                   <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                   <span className="text-sm font-bold uppercase tracking-wider">Business OS</span>
@@ -411,7 +411,7 @@ export function Login() {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="space-y-6"
             >
-              <h1 className="text-5xl xl:text-7xl font-bold text-slate-900 leading-[1.1]">
+              <h1 className="text-5xl xl:text-7xl font-bold text-[#1B2E5A] leading-[1.1]">
                 One place to <br />
                 <RotatingText words={["Grow", "Scale", "Thrive"]} />
               </h1>
@@ -476,12 +476,12 @@ export function Login() {
                        <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-emerald-50 border border-emerald-100 mb-2">
                         <Globe className="w-6 h-6 text-emerald-600" />
                       </div>
-                      <CardTitle className="text-3xl font-bold text-slate-900 tracking-tight">CRM Access</CardTitle>
+                      <CardTitle className="text-3xl font-bold text-[#1B2E5A] tracking-tight">CRM Access</CardTitle>
                       <CardDescription className="text-slate-500 font-medium">Authenticate securely to access your workspace</CardDescription>
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      <CardTitle className="text-3xl font-bold text-slate-900 tracking-tight">Welcome Back</CardTitle>
+                      <CardTitle className="text-3xl font-bold text-[#1B2E5A] tracking-tight">Welcome Back</CardTitle>
                       <CardDescription className="text-slate-500 font-medium">Sign in to your Zopkit dashboard</CardDescription>
                     </div>
                   )}

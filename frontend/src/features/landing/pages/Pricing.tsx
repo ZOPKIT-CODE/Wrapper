@@ -95,7 +95,7 @@ const Pricing: React.FC = () => (
   <LegalPageLayout title="Pricing" wide contained={false}>
     {/* Hero */}
     <section className="text-center pt-4 pb-12 md:pb-16">
-      <h1 className="text-3xl md:text-5xl font-bold text-slate-900 tracking-tight mb-4">
+      <h1 className="text-3xl md:text-5xl font-bold text-[#1B2E5A] tracking-tight mb-4">
         Pay as you go.<br className="sm:hidden" /> Pay as you grow.
       </h1>
       <p className="text-lg md:text-xl text-slate-600 max-w-2xl mx-auto mb-6">
@@ -123,7 +123,7 @@ const Pricing: React.FC = () => (
     <section className="mb-12">
       <div className="rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h2 className="font-semibold text-slate-900">Free credits every month</h2>
+          <h2 className="font-semibold text-[#1B2E5A]">Free credits every month</h2>
           <p className="text-sm text-slate-600 mt-0.5">
             Every plan includes free credits each month on top of your package—so you can keep moving without worrying about expiry or lock-in.
           </p>
@@ -146,14 +146,14 @@ const Pricing: React.FC = () => (
             {pkg.badge && (
               <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                 <span className={`inline-block text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full ${
-                  pkg.recommended ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-700'
+                  pkg.recommended ? 'bg-[#1B2E5A] text-white' : 'bg-slate-200 text-slate-700'
                 }`}>
                   {pkg.badge}
                 </span>
               </div>
             )}
             <div className="mb-6">
-              <h2 className="text-xl font-bold text-slate-900">{pkg.name}</h2>
+              <h2 className="text-xl font-bold text-[#1B2E5A]">{pkg.name}</h2>
               <p className="text-slate-600 text-sm mt-1">{pkg.description}</p>
             </div>
             <div className="mb-2">
@@ -176,7 +176,7 @@ const Pricing: React.FC = () => (
               to="/landing#pricing"
               className={`mt-auto w-full inline-flex items-center justify-center gap-2 rounded-xl py-3.5 px-4 font-semibold text-sm transition-colors ${
                 pkg.recommended
-                  ? 'bg-blue-600 text-white hover:bg-blue-700'
+                  ? 'bg-[#1B2E5A] text-white hover:bg-[#162447]'
                   : 'bg-slate-100 text-slate-800 hover:bg-slate-200'
               }`}
             >
@@ -190,7 +190,7 @@ const Pricing: React.FC = () => (
 
     {/* How it works */}
     <section className="mb-20 py-12 px-6 rounded-2xl bg-slate-50 border border-slate-100">
-      <h2 className="text-2xl font-bold text-slate-900 mb-8 text-center">How it works</h2>
+      <h2 className="text-2xl font-bold text-[#1B2E5A] mb-8 text-center">How it works</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {HOW_IT_WORKS.map((item) => (
           <div key={item.step} className="flex gap-4 p-4 rounded-xl bg-white border border-slate-100 shadow-sm">
@@ -198,7 +198,7 @@ const Pricing: React.FC = () => (
               {item.step}
             </div>
             <div>
-              <h3 className="font-semibold text-slate-900">{item.title}</h3>
+              <h3 className="font-semibold text-[#1B2E5A]">{item.title}</h3>
               <p className="text-slate-600 text-sm mt-1">{item.desc}</p>
             </div>
           </div>
@@ -208,14 +208,14 @@ const Pricing: React.FC = () => (
 
     {/* Usage examples */}
     <section className="mb-20">
-      <h2 className="text-2xl font-bold text-slate-900 mb-4">What uses credits?</h2>
+      <h2 className="text-2xl font-bold text-[#1B2E5A] mb-4">What uses credits?</h2>
       <p className="text-slate-600 mb-6">
         Credits are deducted per action across the platform. The amount varies by operation type—simpler actions use fewer credits; heavier operations use more.
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {USAGE_EXAMPLES.map((ex) => (
           <div key={ex.type} className="p-4 rounded-xl bg-slate-50 border border-slate-100">
-            <h3 className="font-semibold text-slate-900 text-sm mb-1">{ex.type}</h3>
+            <h3 className="font-semibold text-[#1B2E5A] text-sm mb-1">{ex.type}</h3>
             <p className="text-slate-600 text-sm leading-relaxed">{ex.desc}</p>
           </div>
         ))}
@@ -240,11 +240,11 @@ const Pricing: React.FC = () => (
 
     {/* FAQ */}
     <section id="pricing-faq" className="mb-12">
-      <h2 className="text-2xl font-bold text-slate-900 mb-6">Frequently asked questions</h2>
+      <h2 className="text-2xl font-bold text-[#1B2E5A] mb-6">Frequently asked questions</h2>
       <div className="space-y-6">
         {FAQ_ITEMS.map((faq, i) => (
           <div key={i} className="border-b border-slate-200 pb-6 last:border-0">
-            <h3 className="font-semibold text-slate-900 mb-2">{faq.q}</h3>
+            <h3 className="font-semibold text-[#1B2E5A] mb-2">{faq.q}</h3>
             <p className="text-slate-600 text-sm leading-relaxed">{faq.a}</p>
           </div>
         ))}

@@ -655,7 +655,7 @@ const StackedCard: React.FC<CardProps> = React.memo(({
               </span>
             </div>
 
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 tracking-tight mb-2 leading-tight">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#1B2E5A] tracking-tight mb-2 leading-tight">
               {app.name}
             </h2>
 

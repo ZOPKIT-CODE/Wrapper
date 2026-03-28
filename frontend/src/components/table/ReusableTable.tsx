@@ -285,7 +285,7 @@ export function ReusableTable<T = any>({
         <div className="p-4 border-b border-gray-200 dark:border-gray-700">
           {title && (
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{title}</h3>
+              <h3 className="text-lg font-semibold text-[#1B2E5A] dark:text-white">{title}</h3>
             </div>
           )}
 

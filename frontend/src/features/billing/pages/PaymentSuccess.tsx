@@ -717,7 +717,7 @@ const PaymentSuccess: React.FC = () => {
                 >
                   <Button
                     onClick={() => navigate({ to: '/dashboard' })}
-                    className="w-full px-6 py-5 bg-gradient-to-r from-blue-600 via-blue-600 to-blue-700 hover:from-blue-700 hover:via-blue-700 hover:to-blue-800 text-white font-black rounded-xl transition-all shadow-2xl shadow-blue-200/50 flex items-center justify-center gap-2 text-base group relative overflow-hidden"
+                    className="w-full px-6 py-5 bg-[#1B2E5A] hover:bg-[#152449] text-white font-black rounded-xl transition-all shadow-2xl shadow-blue-200/50 flex items-center justify-center gap-2 text-base group relative overflow-hidden"
                   >
                     <Shimmer className="opacity-30" />
                     <motion.div

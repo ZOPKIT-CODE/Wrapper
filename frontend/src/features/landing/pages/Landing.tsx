@@ -787,7 +787,7 @@ const Landing: React.FC = () => {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12 sm:mb-16">
             <p className="text-sm font-semibold text-slate-400 tracking-wide mb-3">Industries</p>
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-[-0.025em]">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#1B2E5A] tracking-[-0.025em]">
               Built for how you work
             </h2>
             <p className="text-slate-500 text-base sm:text-lg max-w-lg mx-auto mt-4 leading-relaxed">
@@ -817,7 +817,7 @@ const Landing: React.FC = () => {
                   </div>
 
                   {/* Content */}
-                  <h3 className="text-lg font-bold text-slate-900 group-hover:text-white mb-2 tracking-tight transition-colors duration-300">
+                  <h3 className="text-lg font-bold text-[#1B2E5A] group-hover:text-white mb-2 tracking-tight transition-colors duration-300">
                     {industry.name}
                   </h3>
                   <p className="text-sm text-slate-500 group-hover:text-slate-400 leading-relaxed mb-6 transition-colors duration-300 flex-1">
@@ -850,7 +850,7 @@ const Landing: React.FC = () => {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12 sm:mb-16">
             <p className="text-sm font-semibold text-slate-400 tracking-wide mb-3">Contact</p>
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-[-0.025em]">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#1B2E5A] tracking-[-0.025em]">
               Talk to our team
             </h2>
             <p className="text-slate-500 text-base sm:text-lg max-w-lg mx-auto mt-4 leading-relaxed">
@@ -965,7 +965,7 @@ const Landing: React.FC = () => {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12 sm:mb-16">
             <p className="text-sm font-semibold text-slate-400 tracking-wide mb-3">Resources</p>
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-[-0.025em]">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#1B2E5A] tracking-[-0.025em]">
               Everything you need to succeed
             </h2>
           </div>
@@ -980,7 +980,7 @@ const Landing: React.FC = () => {
                 <div className="w-10 h-10 rounded-xl bg-white group-hover:bg-white/10 flex items-center justify-center mb-5 transition-colors duration-300">
                   <item.icon className="w-5 h-5 text-slate-600 group-hover:text-white transition-colors duration-300" />
                 </div>
-                <h3 className="text-base font-bold text-slate-900 group-hover:text-white mb-1.5 tracking-tight transition-colors duration-300">
+                <h3 className="text-base font-bold text-[#1B2E5A] group-hover:text-white mb-1.5 tracking-tight transition-colors duration-300">
                   {item.title}
                 </h3>
                 <p className="text-sm text-slate-500 group-hover:text-slate-400 leading-relaxed transition-colors duration-300">

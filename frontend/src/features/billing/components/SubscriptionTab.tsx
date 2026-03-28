@@ -326,7 +326,7 @@ export function SubscriptionTab({
                  {/* Action */}
                  <Button 
                     onClick={() => setActiveTab('plans')}
-                    className="w-full bg-blue-500 hover:bg-blue-400 text-white border-0 shadow-lg shadow-blue-900/20 h-12 rounded-xl font-semibold transition-all active:scale-95"
+                    className="w-full bg-[#1B2E5A] hover:bg-[#152449] text-white border-0 shadow-lg shadow-blue-900/20 h-12 rounded-xl font-semibold transition-all active:scale-95"
                   >
                     <Coins className="w-4 h-4 mr-2" />
                     Top Up Credits

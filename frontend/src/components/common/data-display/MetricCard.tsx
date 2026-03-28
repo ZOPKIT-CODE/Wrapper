@@ -47,7 +47,7 @@ export function MetricCard({
           <Flex align="center" justify="between" className="h-full">
             <div className="space-y-3 flex-1">
               <Typography variant='lead' className="text-sm font-medium text-gray-600">{title}</Typography>
-              <Typography variant='h3' className="text-2xl font-bold text-gray-900">{value}</Typography>
+              <Typography variant='h3' className="text-2xl font-bold text-[#1B2E5A]">{value}</Typography>
               <Typography variant='muted' className="text-xs text-gray-500">{trend} from last month</Typography>
             </div>
             <div className={`p-3 rounded-full ${colorClasses[color as keyof typeof colorClasses]} flex-shrink-0`}>

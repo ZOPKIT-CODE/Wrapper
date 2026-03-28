@@ -234,7 +234,7 @@ export function AuthCallback() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="text-center">
         <ZopkitRoundLoader size="xl" className="mx-auto mb-4" />
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">Completing authentication...</h2>
+        <h2 className="text-xl font-semibold text-[#1B2E5A] mb-2">Completing authentication...</h2>
         <p className="text-gray-600">Please wait while we log you in.</p>
       </div>
     </div>

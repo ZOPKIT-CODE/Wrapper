@@ -297,7 +297,7 @@ export function InviteAccept() {
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 mb-6">
               <AlertTriangle className="h-8 w-8 text-red-600" />
             </div>
-            <CardTitle className="text-2xl font-bold text-gray-900 mb-2">Invalid Invitation</CardTitle>
+            <CardTitle className="text-2xl font-bold text-[#1B2E5A] mb-2">Invalid Invitation</CardTitle>
             <CardDescription className="text-gray-600">{error}</CardDescription>
           </CardHeader>
           <CardContent className="px-10 pb-10">
@@ -322,7 +322,7 @@ export function InviteAccept() {
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg shadow-blue-500/20 mb-6">
               <Loader2 className="h-8 w-8 animate-spin text-white" />
             </div>
-            <CardTitle className="text-2xl font-bold text-gray-900 mb-2">Joining Organization</CardTitle>
+            <CardTitle className="text-2xl font-bold text-[#1B2E5A] mb-2">Joining Organization</CardTitle>
             <CardDescription className="text-gray-600">Please wait while we set up your access...</CardDescription>
           </CardHeader>
         </Card>
@@ -338,7 +338,7 @@ export function InviteAccept() {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg shadow-blue-500/20 mb-6">
             <Users className="h-8 w-8 text-white" />
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-3 tracking-tight">Join Your Team</h1>
+          <h1 className="text-4xl font-bold text-[#1B2E5A] mb-3 tracking-tight">Join Your Team</h1>
           <p className="text-lg text-gray-600 font-medium">Sign in to accept your invitation</p>
         </div>
 
@@ -367,7 +367,7 @@ export function InviteAccept() {
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 mb-6">
                 <CheckCircle className="h-8 w-8 text-green-600" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Welcome back!</h2>
+              <h2 className="text-2xl font-bold text-[#1B2E5A] mb-2">Welcome back!</h2>
               <p className="text-gray-600 mb-8">
                 You're signed in as <strong className="text-gray-900">{user?.email}</strong>
               </p>
