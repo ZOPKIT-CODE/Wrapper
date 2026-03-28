@@ -138,7 +138,7 @@ export function ModernUserDashboard() {
         title: "Total Users",
         value: totalUsers,
         icon: Users,
-        iconColor: "text-blue-600"
+        iconColor: "text-[#1B2E5A]"
       },
       {
         title: "Active Users",

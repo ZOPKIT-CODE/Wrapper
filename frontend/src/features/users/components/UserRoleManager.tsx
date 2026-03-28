@@ -217,8 +217,8 @@ export const UserRoleManager: React.FC<UserRoleManagerProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-100 rounded-lg">
-            <Users className="w-5 h-5 text-blue-600" />
+          <div className="p-2 bg-[#1B2E5A]/10 rounded-lg">
+            <Users className="w-5 h-5 text-[#1B2E5A]" />
           </div>
           <div>
             <h2 className="text-lg font-semibold text-[#1B2E5A]">User Role Management</h2>
@@ -248,7 +248,7 @@ export const UserRoleManager: React.FC<UserRoleManagerProps> = ({
           <div className="p-4">
             {loadingUsers ? (
               <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#1B2E5A] border-t-transparent mx-auto"></div>
                 <p className="text-gray-600 mt-2">Loading users...</p>
               </div>
             ) : users.length === 0 ? (
@@ -346,7 +346,7 @@ export const UserRoleManager: React.FC<UserRoleManagerProps> = ({
               <p className="text-xs text-gray-500 mb-4">These roles are currently active. Remove to revoke access.</p>
               {rolesLoading ? (
                 <div className="text-center py-4">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
+                  <div className="animate-spin rounded-full h-6 w-6 border-2 border-[#1B2E5A] border-t-transparent mx-auto"></div>
                 </div>
               ) : userRoles.length === 0 ? (
                 <div className="text-center py-6 bg-white rounded-lg border-2 border-dashed border-amber-300 bg-amber-50/50">
@@ -400,7 +400,7 @@ export const UserRoleManager: React.FC<UserRoleManagerProps> = ({
               <p className="text-xs text-gray-500 mb-4">Click “Assign role” to add one of these roles to this user.</p>
               {loadingRoles ? (
                 <div className="text-center py-6">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
+                  <div className="animate-spin rounded-full h-6 w-6 border-2 border-[#1B2E5A] border-t-transparent mx-auto"></div>
                   <p className="text-sm text-gray-500 mt-2">Loading available roles...</p>
                 </div>
               ) : availableRolesToAssign.length === 0 ? (
@@ -412,7 +412,7 @@ export const UserRoleManager: React.FC<UserRoleManagerProps> = ({
                   {availableRolesToAssign.map((role: any) => (
                     <div
                       key={role.roleId}
-                      className="p-3 border-2 border-dashed border-slate-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all bg-white"
+                      className="p-3 border-2 border-dashed border-slate-200 rounded-lg hover:border-[#1B2E5A]/40 hover:shadow-sm transition-all bg-white cursor-pointer"
                     >
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-2">
@@ -436,9 +436,9 @@ export const UserRoleManager: React.FC<UserRoleManagerProps> = ({
                       <button
                         onClick={() => handleAssignRole(role.roleId)}
                         disabled={saving}
-                        className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors"
+                        className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[#1B2E5A] bg-[#1B2E5A]/5 hover:bg-[#1B2E5A]/10 rounded-md transition-colors"
                       >
-                         {saving ? <div className="animate-spin w-3 h-3 border-b-2 border-blue-700 rounded-full" /> : <Plus className="w-3 h-3" />}
+                         {saving ? <div className="animate-spin w-3 h-3 border-2 border-[#1B2E5A] border-t-transparent rounded-full" /> : <Plus className="w-3 h-3" />}
                          Assign role
                       </button>
                     </div>

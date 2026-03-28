@@ -51,7 +51,7 @@ const EntityTreeNode: React.FC<{
       <div
         className={`flex items-center gap-2 p-2 rounded-lg border transition-colors ${
           isAssigned
-            ? 'bg-blue-50 border-blue-200'
+            ? 'bg-[#1B2E5A]/5 border-[#1B2E5A]/20'
             : 'bg-white border-gray-200 hover:bg-gray-50'
         }`}
         style={{ marginLeft: `${indent}px` }}
@@ -76,7 +76,7 @@ const EntityTreeNode: React.FC<{
         <div className={`p-1.5 rounded ${
           isLocation
             ? 'bg-green-100 text-green-600'
-            : 'bg-blue-100 text-blue-600'
+            : 'bg-[#1B2E5A]/10 text-[#1B2E5A]'
         }`}>
           {isLocation ? (
             <MapPin className="w-4 h-4" />
@@ -134,11 +134,11 @@ const EntityTreeNode: React.FC<{
             <button
               onClick={() => onAssign(entity.entityId)}
               disabled={assigning}
-              className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded transition-colors disabled:opacity-50"
+              className="p-1.5 bg-[#1B2E5A]/5 text-[#1B2E5A] hover:bg-[#1B2E5A]/10 rounded transition-colors disabled:opacity-50"
               title="Assign organization"
             >
               {assigning ? (
-                <div className="animate-spin w-3 h-3 border-b-2 border-blue-600 rounded-full"></div>
+                <div className="animate-spin w-3 h-3 border-2 border-[#1B2E5A] border-t-transparent rounded-full"></div>
               ) : (
                 <Plus className="w-4 h-4" />
               )}
@@ -288,7 +288,7 @@ export const UserOrganizationManager: React.FC<UserOrganizationManagerProps> = (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Building2 className="w-5 h-5 text-blue-600" />
+          <Building2 className="w-5 h-5 text-[#1B2E5A]" />
           <h3 className="font-semibold text-[#1B2E5A] dark:text-white">Organization & Location Access</h3>
         </div>
         <button
@@ -301,9 +301,9 @@ export const UserOrganizationManager: React.FC<UserOrganizationManagerProps> = (
       </div>
 
       {/* Summary */}
-      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+      <div className="bg-[#1B2E5A]/5 dark:bg-[#1B2E5A]/10 border border-[#1B2E5A]/20 dark:border-[#1B2E5A]/20 rounded-lg p-3">
         <div className="flex items-center gap-2 text-sm">
-          <Building2 className="w-4 h-4 text-blue-600" />
+          <Building2 className="w-4 h-4 text-[#1B2E5A]" />
           <span className="text-gray-700 dark:text-gray-300">
             <strong>{assignments.length}</strong> organization{assignments.length !== 1 ? 's' : ''} assigned
           </span>
@@ -317,7 +317,7 @@ export const UserOrganizationManager: React.FC<UserOrganizationManagerProps> = (
         </h4>
         {loadingHierarchy ? (
           <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#1B2E5A] border-t-transparent mx-auto"></div>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Loading hierarchy...</p>
           </div>
         ) : (
@@ -328,7 +328,7 @@ export const UserOrganizationManager: React.FC<UserOrganizationManagerProps> = (
       {/* Legend */}
       <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400 pt-2 border-t border-gray-200 dark:border-gray-700">
         <div className="flex items-center gap-1">
-          <Building className="w-3 h-3 text-blue-600" />
+          <Building className="w-3 h-3 text-[#1B2E5A]" />
           <span>Organization</span>
         </div>
         <div className="flex items-center gap-1">

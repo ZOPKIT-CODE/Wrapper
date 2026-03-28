@@ -53,14 +53,14 @@ export function EnhancedPermissionSummary({
         <CardContent className="p-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             <div className="flex flex-col items-start gap-3 min-w-0">
-              <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-2xl shrink-0">
-                <Shield className="w-6 h-6 text-blue-500" />
+              <div className="p-3 bg-[#1B2E5A]/10 dark:bg-[#1B2E5A]/30 rounded-2xl shrink-0">
+                <Shield className="w-6 h-6 text-[#1B2E5A]" />
               </div>
               <span className="text-4xl font-black tabular-nums text-[#1B2E5A] dark:text-white leading-none">{permissionSummary.total}</span>
               <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Total Permissions</span>
             </div>
             <div className="flex flex-col items-start gap-3 min-w-0">
-              <div className="p-3 bg-indigo-50 dark:bg-indigo-950/30 rounded-2xl shrink-0">
+              <div className="p-3 bg-[#1B2E5A]/10 dark:bg-[#1B2E5A]/30 rounded-2xl shrink-0">
                 <LayoutGrid className="w-6 h-6 text-[#1B2E5A]" />
               </div>
               <span className="text-4xl font-black tabular-nums text-[#1B2E5A] dark:text-white leading-none">{permissionSummary.applicationCount}</span>

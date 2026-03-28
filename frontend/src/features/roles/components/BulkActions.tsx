@@ -30,14 +30,14 @@ export function BulkActions({
   };
 
   return (
-    <Card className="border-blue-200 bg-blue-50">
+    <Card className="border-[#1B2E5A]/20 bg-[#1B2E5A]/5">
       <CardContent className="p-4">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-6">
-            <span className="text-sm font-medium text-blue-900">
+            <span className="text-sm font-medium text-[#1B2E5A]">
               {selectedCount} role{selectedCount !== 1 ? 's' : ''} selected
             </span>
-            <span className="text-sm text-blue-700">
+            <span className="text-sm text-[#1B2E5A]/70">
               from {totalCount} total roles
             </span>
           </div>
@@ -48,7 +48,7 @@ export function BulkActions({
               size="sm"
               onClick={() => handleAction('export')}
               disabled={isLoading}
-              className="border-blue-300 text-blue-700 hover:bg-blue-100"
+              className="border-[#1B2E5A]/30 text-[#1B2E5A] hover:bg-[#1B2E5A]/10"
             >
               <Download className="w-4 h-4 mr-2" />
               Export Selected

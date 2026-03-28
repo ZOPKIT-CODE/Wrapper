@@ -111,7 +111,7 @@ export const LoadingSpinnerOptimized: React.FC<LoadingSpinnerProps> = ({
 
   const getStepIcon = (index: number) => {
     if (index < currentStepIndex) return <CheckCircle2 className="w-5 h-5 text-emerald-500" />;
-    if (index === currentStepIndex) return <Loader2 className="w-5 h-5 text-indigo-600 animate-spin" />;
+    if (index === currentStepIndex) return <Loader2 className="w-5 h-5 text-[#1B2E5A] animate-spin" />;
     return <div className="w-5 h-5 rounded-full border-2 border-gray-200" />;
   };
 
@@ -134,7 +134,7 @@ export const LoadingSpinnerOptimized: React.FC<LoadingSpinnerProps> = ({
     };
     return (
       <div className="flex flex-col items-center justify-center p-8 bg-white rounded-xl shadow-lg border border-gray-100">
-        <Loader2 className={`animate-spin ${sizeClasses[size]} text-indigo-600 mb-4`} />
+        <Loader2 className={`animate-spin ${sizeClasses[size]} text-[#1B2E5A] mb-4`} />
         {message && <p className="text-gray-600 font-medium">{message}</p>}
       </div>
     );
@@ -144,7 +144,7 @@ export const LoadingSpinnerOptimized: React.FC<LoadingSpinnerProps> = ({
     <div className="relative flex flex-col items-center justify-center min-h-[500px] w-full max-w-2xl mx-auto p-4">
 
       {/* SIMPLIFIED: Single subtle background instead of multiple animated blobs */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-indigo-50/50 rounded-3xl pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-br from-[#1B2E5A]/5 to-[#1B2E5A]/10 rounded-3xl pointer-events-none" />
 
       {/* Main Card - Simplified, no glass effects */}
       <div className="relative w-full bg-white border border-slate-200 rounded-3xl shadow-xl overflow-hidden">
@@ -192,7 +192,7 @@ export const LoadingSpinnerOptimized: React.FC<LoadingSpinnerProps> = ({
                 <Cpu className="w-3.5 h-3.5" />
                 <span>System Status</span>
               </div>
-              <span className={`transition-colors duration-300 ${status === LaunchStatus.COMPLETED ? "text-emerald-600" : "text-indigo-600"}`}>
+              <span className={`transition-colors duration-300 ${status === LaunchStatus.COMPLETED ? "text-emerald-600" : "text-[#1B2E5A]"}`}>
                 {Math.round(progress)}%
               </span>
             </div>
@@ -201,7 +201,7 @@ export const LoadingSpinnerOptimized: React.FC<LoadingSpinnerProps> = ({
                 className={`h-full rounded-full transition-all duration-300 ease-out ${
                   status === LaunchStatus.COMPLETED
                     ? 'bg-emerald-500'
-                    : 'bg-indigo-500'
+                    : 'bg-[#1B2E5A]'
                 }`}
                 style={{ width: `${progress}%` }}
               />
@@ -219,7 +219,7 @@ export const LoadingSpinnerOptimized: React.FC<LoadingSpinnerProps> = ({
                   key={step.id}
                   className={`flex items-center p-4 rounded-xl border transition-all duration-300 ${
                     isActive
-                      ? 'bg-white border-indigo-200 shadow-md'
+                      ? 'bg-white border-[#1B2E5A]/20 shadow-md'
                       : 'bg-transparent border-transparent'
                   }`}
                 >
@@ -232,14 +232,14 @@ export const LoadingSpinnerOptimized: React.FC<LoadingSpinnerProps> = ({
                         {step.label}
                       </span>
                       {isActive && (
-                         <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full font-medium">
+                         <span className="text-xs bg-[#1B2E5A]/10 text-[#1B2E5A] px-2 py-1 rounded-full font-medium">
                            Processing
                          </span>
                       )}
                     </div>
                     <p className="text-xs text-gray-500 mt-1 flex items-center gap-1.5">
                       {isActive && (
-                        <span className="text-indigo-600">
+                        <span className="text-[#1B2E5A]">
                           {getSpecificIcon(step.id)}
                         </span>
                       )}

@@ -511,7 +511,7 @@ export const UserAccessContent: React.FC<UserAccessContentProps> = ({ user }) =>
                       className="group flex items-center justify-between p-3 bg-background rounded-xl border-2 border-emerald-200/60 dark:border-emerald-800/40 shadow-sm hover:shadow-md transition-all"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-900/40 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                        <div className="w-8 h-8 rounded-lg bg-[#1B2E5A]/10 dark:bg-[#1B2E5A]/40 flex items-center justify-center text-[#1B2E5A] dark:text-[#1B2E5A]/60">
                           <Shield className="w-4 h-4" />
                         </div>
                         <span className="text-sm font-medium text-foreground">{role.roleName}</span>

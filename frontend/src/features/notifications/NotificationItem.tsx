@@ -13,11 +13,11 @@ const getNotificationIndicator = (type: NotificationType) => {
     case 'credit_expiry_warning':
       return { color: 'bg-orange-500', label: 'EXPIRY' };
     case 'purchase_success':
-      return { color: 'bg-blue-500', label: 'PURCHASE' };
+      return { color: 'bg-[#1B2E5A]', label: 'PURCHASE' };
     case 'plan_upgrade':
       return { color: 'bg-purple-500', label: 'UPGRADE' };
     case 'system_update':
-      return { color: 'bg-indigo-500', label: 'UPDATE' };
+      return { color: 'bg-[#1B2E5A]', label: 'UPDATE' };
     case 'feature_announcement':
       return { color: 'bg-pink-500', label: 'FEATURE' };
     case 'maintenance_scheduled':
@@ -38,7 +38,7 @@ const getPriorityIcon = (priority: NotificationPriority) => {
     case 'high':
       return <Zap className="w-4 h-4 text-orange-500" />;
     case 'medium':
-      return <Info className="w-4 h-4 text-blue-500" />;
+      return <Info className="w-4 h-4 text-[#1B2E5A]" />;
     case 'low':
       return <CheckCircle className="w-4 h-4 text-green-500" />;
     default:
@@ -53,7 +53,7 @@ const getPriorityColor = (priority: NotificationPriority) => {
     case 'high':
       return 'border-orange-300 bg-orange-50/50';
     case 'medium':
-      return 'border-blue-300 bg-blue-50/50';
+      return 'border-[#1B2E5A]/30 bg-[#1B2E5A]/5';
     case 'low':
       return 'border-green-300 bg-green-50/50';
     default:

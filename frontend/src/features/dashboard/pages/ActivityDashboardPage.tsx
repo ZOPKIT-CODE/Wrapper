@@ -161,7 +161,7 @@ export function ActivityDashboard() {
     const a = action.toLowerCase();
     if (a.includes('login')) return 'text-emerald-600 bg-emerald-50 border-emerald-100';
     if (a.includes('logout')) return 'text-slate-600 bg-slate-50 border-slate-100';
-    if (a.includes('created') || a.includes('invited')) return 'text-blue-600 bg-blue-50 border-blue-100';
+    if (a.includes('created') || a.includes('invited')) return 'text-[#1B2E5A] bg-[#1B2E5A]/10 border-[#1B2E5A]/15';
     if (a.includes('deleted') || a.includes('failed')) return 'text-rose-600 bg-rose-50 border-rose-100';
     if (a.includes('updated') || a.includes('modified')) return 'text-amber-600 bg-amber-50 border-amber-100';
     if (a.includes('role') || a.includes('permission')) return 'text-violet-600 bg-violet-50 border-violet-100';
@@ -190,7 +190,7 @@ export function ActivityDashboard() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-black tracking-tight text-[#1B2E5A] flex items-center gap-3">
-            <div className="p-2 bg-[#1B2E5A] rounded-xl shadow-lg shadow-blue-200">
+            <div className="p-2 bg-[#1B2E5A] rounded-xl shadow-lg shadow-[#1B2E5A]/20">
               <Activity className="w-6 h-6 text-white" />
             </div>
             Activity Logs
@@ -211,7 +211,7 @@ export function ActivityDashboard() {
           <Button
             onClick={() => handleExport('json')}
             disabled={loading || activities.length === 0}
-            className="bg-[#1B2E5A] hover:bg-[#152449] text-white shadow-md shadow-blue-100 font-semibold h-10"
+            className="bg-[#1B2E5A] hover:bg-[#152449] text-white shadow-md shadow-[#1B2E5A]/10 font-semibold h-10"
           >
             <Download className="w-4 h-4 mr-2" />
             Export Logs
@@ -346,7 +346,7 @@ export function ActivityDashboard() {
                       {activity.appName && (
                         <>
                           <span className="w-1 h-1 bg-slate-300 rounded-full" />
-                          <span className="text-blue-600/70">{activity.appName}</span>
+                          <span className="text-[#1B2E5A]/70">{activity.appName}</span>
                         </>
                       )}
                     </div>
@@ -465,7 +465,7 @@ export function ActivityDashboard() {
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center text-center p-12 bg-slate-50/30">
               <div className="relative mb-6">
-                <div className="absolute -inset-4 bg-blue-100/50 rounded-full blur-xl animate-pulse"></div>
+                <div className="absolute -inset-4 bg-[#1B2E5A]/10 rounded-full blur-xl animate-pulse"></div>
                 <Eye className="w-16 h-16 text-blue-200 relative z-10" />
               </div>
               <h3 className="text-xl font-black text-[#1B2E5A] mb-2">Select an Activity</h3>
@@ -489,7 +489,7 @@ function StatsCard({ title, value, icon, color, loading }: {
   loading?: boolean;
 }) {
   const colorMap = {
-    blue: 'text-blue-600 bg-blue-50 border-blue-100 shadow-blue-50',
+    blue: 'text-[#1B2E5A] bg-[#1B2E5A]/10 border-[#1B2E5A]/15 shadow-[#1B2E5A]/10',
     emerald: 'text-emerald-600 bg-emerald-50 border-emerald-100 shadow-emerald-50',
     violet: 'text-violet-600 bg-violet-50 border-violet-100 shadow-violet-50',
     amber: 'text-amber-600 bg-amber-50 border-amber-100 shadow-amber-50'

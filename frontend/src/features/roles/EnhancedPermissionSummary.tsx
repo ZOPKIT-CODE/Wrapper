@@ -268,7 +268,7 @@ export function EnhancedPermissionSummary({
         <CardHeader className="border-b border-slate-100 py-3 px-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
-              <div className="p-1.5 bg-blue-50 rounded-lg border border-blue-100 shadow-sm">
+              <div className="p-1.5 bg-[#1B2E5A]/5 rounded-lg border border-[#1B2E5A]/20 shadow-sm">
                 <Shield className="w-5 h-5 text-[#1B2E5A]" />
               </div>
               <div>
@@ -349,7 +349,7 @@ export function EnhancedPermissionSummary({
                 {analysis.grouped.map((group: any, idx: number) => (
                   <tr
                     key={idx}
-                    className="group hover:bg-blue-50/10 transition-all duration-200"
+                    className="group hover:bg-[#1B2E5A]/5 transition-all duration-200"
                   >
                     <td className="p-0 border-r border-slate-100/50 w-[180px] align-middle bg-slate-50/20 group-hover:bg-slate-50/50 transition-colors">
                       <div className="flex flex-col items-center justify-center gap-3 p-4">

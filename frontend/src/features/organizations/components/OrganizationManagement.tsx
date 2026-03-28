@@ -997,7 +997,7 @@ export function OrganizationTreeManagement({
         <div
           className={`
             group flex items-center p-3 mb-2 rounded-xl border transition-all duration-200 relative
-            ${isSelected ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-900/20 shadow-md' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-sm'}
+            ${isSelected ? 'border-[#1B2E5A]/40 bg-[#1B2E5A]/5 dark:bg-[#1B2E5A]/10 shadow-md' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-sm'}
           `}
         >
           {/* Controls: Expand/Checkbox */}
@@ -1022,7 +1022,7 @@ export function OrganizationTreeManagement({
             w-10 h-10 rounded-lg flex items-center justify-center mr-4 shadow-sm border border-opacity-10
             ${isLocation
               ? 'bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-200 text-emerald-600 dark:from-emerald-900/30 dark:to-emerald-900/10 dark:border-emerald-800 dark:text-emerald-400'
-              : 'bg-gradient-to-br from-indigo-50 to-blue-100 border-blue-200 text-blue-600 dark:from-blue-900/30 dark:to-blue-900/10 dark:border-blue-800 dark:text-blue-400'
+              : 'bg-[#1B2E5A]/10 border-[#1B2E5A]/20 text-[#1B2E5A] dark:from-blue-900/30 dark:to-blue-900/10 dark:border-blue-800 dark:text-blue-400'
             }
           `}>
             {isLocation ? <MapPin className="w-5 h-5" /> : <Building className="w-5 h-5" />}
@@ -1050,7 +1050,7 @@ export function OrganizationTreeManagement({
               )}
               {/* Entity Level from DB - Only show if not null */}
               {(org as any).entityLevel !== null && (org as any).entityLevel !== undefined && (
-                <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800">
+                <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 bg-[#1B2E5A]/5 dark:bg-[#1B2E5A]/10 text-[#1B2E5A] dark:text-blue-400 border-[#1B2E5A]/20 dark:border-blue-800">
                   Level {(org as any).entityLevel}
                 </Badge>
               )}
@@ -1080,7 +1080,7 @@ export function OrganizationTreeManagement({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 text-slate-500 hover:text-blue-600"
+                  className="h-8 w-8 text-slate-500 hover:text-[#1B2E5A]"
                   onClick={() =>
                     navigate({
                       to: '/dashboard/organization/create',
@@ -1180,7 +1180,7 @@ export function OrganizationTreeManagement({
       <div className="flex flex-col xl:flex-row gap-4 justify-between items-start xl:items-center bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
 
         <div className="flex items-center gap-3 w-full xl:w-auto">
-          <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg text-blue-600 dark:text-blue-400">
+          <div className="p-2 bg-[#1B2E5A]/10 dark:bg-[#1B2E5A]/10 rounded-lg text-[#1B2E5A] dark:text-blue-400">
             <Network className="w-6 h-6" />
           </div>
           <div>
@@ -1271,7 +1271,7 @@ export function OrganizationTreeManagement({
         {/* Right: Quick Actions / Unassigned */}
         <div className="space-y-6">
           {parentOrg && (
-            <Card className="border-blue-100 dark:border-blue-900 bg-gradient-to-br from-white to-blue-50 dark:from-slate-900 dark:to-blue-950/20 shadow-sm">
+            <Card className="border-[#1B2E5A]/10 dark:border-[#1B2E5A]/20 bg-white dark:from-slate-900 dark:to-blue-950/20 shadow-sm">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base text-blue-900 dark:text-blue-100">Actions</CardTitle>
               </CardHeader>
@@ -1342,7 +1342,7 @@ export function OrganizationTreeManagement({
               <Input
                 value={editForm.name}
                 onChange={e => setEditForm({ ...editForm, name: e.target.value })}
-                className="focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                className="focus:ring-2 focus:ring-[#1B2E5A] focus:border-[#1B2E5A] transition-colors"
               />
             </div>
             <div className="grid gap-2">
@@ -1350,11 +1350,11 @@ export function OrganizationTreeManagement({
               <Textarea
                 value={editForm.description}
                 onChange={e => setEditForm({ ...editForm, description: e.target.value })}
-                className="focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                className="focus:ring-2 focus:ring-[#1B2E5A] focus:border-[#1B2E5A] transition-colors"
               />
             </div>
             <div className="flex items-center space-x-2">
-              <input type="checkbox" checked={editForm.isActive} onChange={e => setEditForm({ ...editForm, isActive: e.target.checked })} className="rounded border-gray-300 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0" />
+              <input type="checkbox" checked={editForm.isActive} onChange={e => setEditForm({ ...editForm, isActive: e.target.checked })} className="rounded border-gray-300 focus:ring-2 focus:ring-[#1B2E5A] focus:ring-offset-0" />
               <Label>Active</Label>
             </div>
           </div>
@@ -1382,7 +1382,7 @@ export function OrganizationTreeManagement({
           <DialogHeader>
             <DialogTitle>Create Entity</DialogTitle>
             <DialogDescription>
-              {selectedOrg ? <>Adding under: <span className="font-semibold text-blue-600">{selectedOrg.entityName}</span></> : 'Create a top-level entity'}
+              {selectedOrg ? <>Adding under: <span className="font-semibold text-[#1B2E5A]">{selectedOrg.entityName}</span></> : 'Create a top-level entity'}
             </DialogDescription>
           </DialogHeader>
 
@@ -1391,7 +1391,7 @@ export function OrganizationTreeManagement({
               <React.Fragment key={step}>
                 <div className="flex items-center gap-1.5">
                   <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold ${i === createFormStep ? 'bg-[#1B2E5A] text-white' : i < createFormStep ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-500'}`}>{i < createFormStep ? '✓' : i + 1}</div>
-                  <span className={`text-xs hidden sm:block ${i === createFormStep ? 'text-blue-600 font-medium' : 'text-gray-400'}`}>{step}</span>
+                  <span className={`text-xs hidden sm:block ${i === createFormStep ? 'text-[#1B2E5A] font-medium' : 'text-gray-400'}`}>{step}</span>
                 </div>
                 {i < currentCreateSteps.length - 1 && <div className={`flex-1 h-px ${i < createFormStep ? 'bg-green-400' : 'bg-gray-200'}`} />}
               </React.Fragment>
@@ -1596,9 +1596,9 @@ export function OrganizationTreeManagement({
             {/* Source display */}
             <div>
               <Label>From (Source)</Label>
-              <div className="p-3 border rounded-lg bg-blue-50 border-blue-200 mt-1">
+              <div className="p-3 border rounded-lg bg-[#1B2E5A]/5 border-[#1B2E5A]/20 mt-1">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold text-sm">
+                  <div className="w-8 h-8 rounded-full bg-[#1B2E5A] flex items-center justify-center text-white font-semibold text-sm">
                     {selectedOrg?.entityName?.charAt(0)?.toUpperCase() || 'O'}
                   </div>
                   <div>
@@ -1616,7 +1616,7 @@ export function OrganizationTreeManagement({
                 value={creditTransferForm.destinationEntityType}
                 onValueChange={(value) => setCreditTransferForm({ ...creditTransferForm, destinationEntityType: value, destinationEntityId: '' })}
               >
-                <SelectTrigger className="mt-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                <SelectTrigger className="mt-1 focus:ring-2 focus:ring-[#1B2E5A] focus:border-[#1B2E5A] transition-colors">
                   <SelectValue placeholder="Select destination type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1633,7 +1633,7 @@ export function OrganizationTreeManagement({
                 value={creditTransferForm.destinationEntityId}
                 onValueChange={(value) => setCreditTransferForm({ ...creditTransferForm, destinationEntityId: value })}
               >
-                <SelectTrigger className="mt-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                <SelectTrigger className="mt-1 focus:ring-2 focus:ring-[#1B2E5A] focus:border-[#1B2E5A] transition-colors">
                   <SelectValue placeholder="Select destination" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1704,7 +1704,7 @@ export function OrganizationTreeManagement({
                 placeholder="Enter credit amount"
                 min="1"
                 step="1"
-                className="mt-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                className="mt-1 focus:ring-2 focus:ring-[#1B2E5A] focus:border-[#1B2E5A] transition-colors"
               />
             </div>
 
@@ -1715,7 +1715,7 @@ export function OrganizationTreeManagement({
                 value={creditTransferForm.description}
                 onChange={e => setCreditTransferForm({ ...creditTransferForm, description: e.target.value })}
                 placeholder="Reason for transfer..."
-                className="mt-1 resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                className="mt-1 resize-none focus:ring-2 focus:ring-[#1B2E5A] focus:border-[#1B2E5A] transition-colors"
                 rows={2}
               />
             </div>
@@ -1760,7 +1760,7 @@ export function OrganizationTreeManagement({
                 value={allocationForm.targetApplication}
                 onValueChange={v => setAllocationForm({ ...allocationForm, targetApplication: v })}
               >
-                <SelectTrigger className="min-w-0 overflow-hidden [&>span]:min-w-0 [&>span]:block [&>span]:overflow-hidden [&>span]:text-ellipsis [&>span]:whitespace-nowrap focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"><SelectValue placeholder="Select App" /></SelectTrigger>
+                <SelectTrigger className="min-w-0 overflow-hidden [&>span]:min-w-0 [&>span]:block [&>span]:overflow-hidden [&>span]:text-ellipsis [&>span]:whitespace-nowrap focus:ring-2 focus:ring-[#1B2E5A] focus:border-[#1B2E5A] transition-colors"><SelectValue placeholder="Select App" /></SelectTrigger>
                 <SelectContent>
                   {effectiveApplications.length === 0 ? (
                     <SelectItem value="no-apps" disabled>No applications available</SelectItem>
@@ -1781,7 +1781,7 @@ export function OrganizationTreeManagement({
                 value={allocationForm.creditAmount || ''}
                 onChange={e => setAllocationForm({ ...allocationForm, creditAmount: parseFloat(e.target.value) || 0 })}
                 placeholder="Enter credit amount"
-                className="focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                className="focus:ring-2 focus:ring-[#1B2E5A] focus:border-[#1B2E5A] transition-colors"
               />
               {selectedEntity && (
                 <p className="text-xs text-slate-500">
@@ -1796,7 +1796,7 @@ export function OrganizationTreeManagement({
                 onChange={e => setAllocationForm({ ...allocationForm, allocationPurpose: e.target.value })}
                 placeholder="Describe the purpose of this allocation"
                 rows={3}
-                className="focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                className="focus:ring-2 focus:ring-[#1B2E5A] focus:border-[#1B2E5A] transition-colors"
               />
             </div>
             <div className="flex items-center space-x-2">
@@ -1805,7 +1805,7 @@ export function OrganizationTreeManagement({
                 id="autoReplenish"
                 checked={allocationForm.autoReplenish}
                 onChange={e => setAllocationForm({ ...allocationForm, autoReplenish: e.target.checked })}
-                className="w-4 h-4 rounded border-slate-300 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
+                className="w-4 h-4 rounded border-slate-300 focus:ring-2 focus:ring-[#1B2E5A] focus:ring-offset-0"
               />
               <Label htmlFor="autoReplenish" className="text-sm font-normal cursor-pointer">
                 Auto-replenish when credits run low

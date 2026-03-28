@@ -167,20 +167,20 @@ export function UserDetailsPage() {
                 <TabsContent value="profile" className="mt-0 space-y-8">
                   {/* Invitation URL Section */}
                   {user.invitationStatus === 'pending' && (
-                    <div className="rounded-xl border border-indigo-100 bg-indigo-50/60 p-5 space-y-4">
+                    <div className="rounded-xl border border-[#1B2E5A]/20 bg-[#1B2E5A]/5 p-5 space-y-4">
                       <div className="flex items-center justify-between">
                         <div className="space-y-1">
-                          <h3 className="font-semibold text-indigo-950 flex items-center gap-2">
-                            <Mail className="w-4 h-4 text-indigo-600" /> Pending Invitation
+                          <h3 className="font-semibold text-[#1B2E5A] flex items-center gap-2">
+                            <Mail className="w-4 h-4 text-[#1B2E5A]" /> Pending Invitation
                           </h3>
-                          <p className="text-sm text-indigo-600/90">
+                          <p className="text-sm text-[#1B2E5A]/90">
                             User has not accepted the invitation yet.
                           </p>
                         </div>
                         <PearlButton
                           size="sm"
                           variant="outline"
-                          className="text-indigo-700 hover:text-indigo-900"
+                          className="text-[#1B2E5A] hover:text-[#162447]"
                           onClick={() => copyInvitationUrl(user)}
                         >
                           Copy Link
@@ -190,7 +190,7 @@ export function UserDetailsPage() {
                         <Input
                           value={generateInvitationUrl(user) || 'No invitation URL available'}
                           readOnly
-                          className="font-mono text-xs bg-white/80 border-indigo-200 h-9"
+                          className="font-mono text-xs bg-white/80 border-[#1B2E5A]/20 h-9"
                         />
                       </div>
                     </div>

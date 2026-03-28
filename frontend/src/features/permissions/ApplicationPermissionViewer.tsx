@@ -176,8 +176,8 @@ export function ApplicationPermissionViewer({
   const getScopeColor = (scope: string) => {
     switch (scope) {
       case 'all': return 'text-purple-600 bg-purple-50 border-purple-200';
-      case 'zone': return 'text-blue-600 bg-blue-50 border-blue-200';
-      case 'department': return 'text-indigo-600 bg-indigo-50 border-indigo-200';
+      case 'zone': return 'text-[#1B2E5A] bg-[#1B2E5A]/5 border-[#1B2E5A]/20';
+      case 'department': return 'text-[#1B2E5A] bg-[#1B2E5A]/5 border-[#1B2E5A]/20';
       case 'team': return 'text-cyan-600 bg-cyan-50 border-cyan-200';
       default: return 'text-gray-600 bg-gray-50 border-gray-200';
     }
@@ -276,7 +276,7 @@ export function ApplicationPermissionViewer({
                                   type="checkbox"
                                   checked={isOperationEnabled(module.key, operation.id)}
                                   onChange={(e) => onPermissionChange?.(module.key, operation.id, e.target.checked)}
-                                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                  className="w-4 h-4 text-[#1B2E5A] border-gray-300 rounded focus:ring-[#1B2E5A]/50"
                                 />
                               ) : (
                                 <div className="w-4 h-4 flex items-center justify-center">
@@ -369,7 +369,7 @@ export function ApplicationPermissionViewer({
                           type="checkbox"
                           checked={isOperationEnabled(module.key, operation.id)}
                           onChange={(e) => onPermissionChange?.(module.key, operation.id, e.target.checked)}
-                          className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                          className="w-4 h-4 text-[#1B2E5A] border-gray-300 rounded focus:ring-[#1B2E5A]/50"
                         />
                       ) : (
                         <div className="flex items-center">
@@ -539,7 +539,7 @@ export function ApplicationPermissionViewer({
               <div className="text-sm text-gray-600">Total Operations</div>
             </div>
             <div className="text-right">
-              <div className="text-2xl font-bold text-blue-600">{permissionStructure.summary.moduleCount}</div>
+              <div className="text-2xl font-bold text-[#1B2E5A]">{permissionStructure.summary.moduleCount}</div>
               <div className="text-sm text-gray-600">Modules</div>
             </div>
             <div className="text-right">

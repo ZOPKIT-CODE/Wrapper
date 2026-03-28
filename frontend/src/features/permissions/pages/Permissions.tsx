@@ -142,7 +142,7 @@ function PermissionsContent() {
   const getSubscriptionColor = (subscription: string) => {
     switch (subscription) {
       case 'enterprise': return 'bg-purple-100 text-purple-800 border-purple-200'
-      case 'professional': return 'bg-blue-100 text-blue-800 border-blue-200'
+      case 'professional': return 'bg-[#1B2E5A]/10 text-[#1B2E5A] border-[#1B2E5A]/20'
       default: return 'bg-gray-100 text-gray-800 border-gray-200'
     }
   }
@@ -207,17 +207,17 @@ function PermissionsContent() {
   // Droppable User Card
   const DroppableUserCard = ({ user }: { user: EnhancedUser }) => (
     <Card
-      className="h-28 hover:shadow-lg transition-all cursor-pointer border-2 hover:border-blue-300 hover:bg-blue-50 mb-3"
+      className="h-28 hover:shadow-lg transition-all cursor-pointer border-2 hover:border-[#1B2E5A]/40 hover:bg-[#1B2E5A]/5 mb-3"
       onDragOver={(e) => {
         e.preventDefault()
-        e.currentTarget.classList.add('border-blue-500', 'bg-blue-100', 'scale-105')
+        e.currentTarget.classList.add('border-[#1B2E5A]', 'bg-[#1B2E5A]/10', 'scale-105')
       }}
       onDragLeave={(e) => {
-        e.currentTarget.classList.remove('border-blue-500', 'bg-blue-100', 'scale-105')
+        e.currentTarget.classList.remove('border-[#1B2E5A]', 'bg-[#1B2E5A]/10', 'scale-105')
       }}
       onDrop={(e) => {
         e.preventDefault()
-        e.currentTarget.classList.remove('border-blue-500', 'bg-blue-100', 'scale-105')
+        e.currentTarget.classList.remove('border-[#1B2E5A]', 'bg-[#1B2E5A]/10', 'scale-105')
         e.currentTarget.classList.add('border-green-500', 'bg-green-100')
 
         setTimeout(() => {
@@ -379,10 +379,10 @@ function PermissionsContent() {
   // Stats Overview Component
   const StatsOverview = () => (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-      <Card className="border-l-4 border-l-blue-500">
+      <Card className="border-l-4 border-l-[#1B2E5A]">
         <CardContent className="p-4">
           <div className="flex items-center gap-3">
-            <Users className="w-8 h-8 text-blue-500" />
+            <Users className="w-8 h-8 text-[#1B2E5A]" />
             <div>
               <p className="text-2xl font-bold">{filteredUsers.length}</p>
               <p className="text-sm text-gray-600">Active Users</p>
@@ -501,7 +501,7 @@ function PermissionsContent() {
                 key={key}
                 onClick={() => setViewMode(key as any)}
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${viewMode === key
-                    ? 'bg-white text-blue-600 shadow-sm'
+                    ? 'bg-white text-[#1B2E5A] shadow-sm'
                     : 'text-gray-600 hover:text-[#1B2E5A]'
                   }`}
               >
@@ -529,7 +529,7 @@ function PermissionsContent() {
             variant="outline"
             size="sm"
             onClick={() => setShowInactive(!showInactive)}
-            className={showInactive ? 'bg-blue-50 border-blue-200' : ''}
+            className={showInactive ? 'bg-[#1B2E5A]/5 border-[#1B2E5A]/20' : ''}
           >
             {showInactive ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
           </Button>
@@ -547,11 +547,11 @@ function PermissionsContent() {
             <Card className="professional-dropdown border-0 shadow-lg">
               <CardHeader className="pb-3 professional-dropdown-header rounded-t-lg">
                 <CardTitle className="text-lg flex items-center gap-3 font-semibold text-[#1B2E5A]">
-                  <div className="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-lg bg-[#1B2E5A] flex items-center justify-center">
                     <Users className="w-4 h-4 text-white" />
                   </div>
                   Recent Users
-                  <Badge className="bg-blue-100 text-blue-700 ml-auto">{filteredUsers.length}</Badge>
+                  <Badge className="bg-[#1B2E5A]/10 text-[#1B2E5A] ml-auto">{filteredUsers.length}</Badge>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2 max-h-96 overflow-y-auto hidden-scrollbar professional-dropdown-content p-6">

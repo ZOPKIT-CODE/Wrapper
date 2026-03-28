@@ -806,13 +806,13 @@ export const DashboardFeatureTour = ({ onComplete, onSkip, initialStep = 0, onDi
           style={{
             ...safeTooltipStyle,
             borderLeftWidth: '4px',
-            borderLeftColor: 'rgb(99, 102, 241)',
+            borderLeftColor: '#1B2E5A',
           }}
         >
           {/* Progress bar */}
           <div className="h-1 bg-slate-100 dark:bg-slate-700">
             <motion.div
-              className="h-full bg-gradient-to-r from-indigo-500 to-violet-500"
+              className="h-full bg-[#1B2E5A]"
               initial={{ width: 0 }}
               animate={{ width: `${((currentStep + 1) / tourSteps.length) * 100}%` }}
               transition={{ duration: 0.3, ease: 'easeOut' }}
@@ -841,14 +841,14 @@ export const DashboardFeatureTour = ({ onComplete, onSkip, initialStep = 0, onDi
             </div>
 
             <div className="flex items-start gap-3 mb-4">
-              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-indigo-500/25">
+              <div className="w-11 h-11 rounded-xl bg-[#1B2E5A] flex items-center justify-center flex-shrink-0 shadow-lg shadow-[#1B2E5A]/20">
                 <Icon className="w-5 h-5 text-white" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <h3 className="font-semibold text-[#1B2E5A] dark:text-slate-100 text-base">{currentStepData.title}</h3>
                   {currentStepData.isNew && (
-                    <span className="px-2 py-0.5 text-xs font-medium bg-gradient-to-r from-indigo-500 to-violet-500 text-white rounded-full">
+                    <span className="px-2 py-0.5 text-xs font-medium bg-[#1B2E5A] text-white rounded-full">
                       New
                     </span>
                   )}
@@ -1002,7 +1002,7 @@ export const DashboardFeatureTour = ({ onComplete, onSkip, initialStep = 0, onDi
                       e.stopPropagation();
                       handleTryIt();
                     }}
-                    className="text-xs bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 text-white shadow-md shadow-indigo-500/20"
+                    className="text-xs bg-[#1B2E5A] hover:bg-[#162447] text-white shadow-md shadow-[#1B2E5A]/20"
                   >
                     <Zap className="w-3.5 h-3.5 mr-1" />
                     Try it
@@ -1016,7 +1016,7 @@ export const DashboardFeatureTour = ({ onComplete, onSkip, initialStep = 0, onDi
                       e.stopPropagation();
                       goToNextStep();
                     }}
-                    className="text-xs bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 text-white shadow-md shadow-indigo-500/20"
+                    className="text-xs bg-[#1B2E5A] hover:bg-[#162447] text-white shadow-md shadow-[#1B2E5A]/20"
                   >
                     Continue tour <ArrowRight className="w-3.5 h-3.5 ml-1" />
                   </Button>
@@ -1029,7 +1029,7 @@ export const DashboardFeatureTour = ({ onComplete, onSkip, initialStep = 0, onDi
                       e.stopPropagation();
                       goToNextStep();
                     }}
-                    className="text-xs bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 text-white shadow-md shadow-indigo-500/20"
+                    className="text-xs bg-[#1B2E5A] hover:bg-[#162447] text-white shadow-md shadow-[#1B2E5A]/20"
                   >
                     Next <ArrowRight className="w-3.5 h-3.5 ml-1" />
                   </Button>
@@ -1042,7 +1042,7 @@ export const DashboardFeatureTour = ({ onComplete, onSkip, initialStep = 0, onDi
                       e.stopPropagation();
                       handleComplete();
                     }}
-                    className="text-xs bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 text-white shadow-md shadow-indigo-500/20"
+                    className="text-xs bg-[#1B2E5A] hover:bg-[#162447] text-white shadow-md shadow-[#1B2E5A]/20"
                   >
                     Done
                   </Button>

@@ -230,7 +230,7 @@ export function CreateOrganizationPage() {
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
             {parentName ? (
               <>
-                Adding under: <span className="font-medium text-blue-600">{parentName}</span>
+                Adding under: <span className="font-medium text-[#1B2E5A]">{parentName}</span>
               </>
             ) : (
               'Create a new top-level organization for this tenant.'
@@ -246,7 +246,7 @@ export function CreateOrganizationPage() {
       <Card className="border-slate-200/80 shadow-sm dark:border-slate-800">
         <CardHeader className="space-y-4 border-b border-slate-100 pb-5 dark:border-slate-800">
           <CardTitle className="flex items-center gap-2 text-lg font-semibold text-[#1B2E5A] dark:text-slate-100">
-            <Building className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            <Building className="h-5 w-5 text-[#1B2E5A] dark:text-[#1B2E5A]/60" />
             {steps[currentStep].title}
           </CardTitle>
           <CardDescription className="text-sm">{steps[currentStep].description}</CardDescription>
@@ -264,7 +264,7 @@ export function CreateOrganizationPage() {
                 >
                   {index < currentStep ? <Check className="h-3.5 w-3.5" /> : index + 1}
                 </div>
-                <span className={`hidden text-xs sm:block ${index === currentStep ? 'text-blue-600 dark:text-blue-400 font-medium' : 'text-slate-400'}`}>
+                <span className={`hidden text-xs sm:block ${index === currentStep ? 'text-[#1B2E5A] dark:text-[#1B2E5A]/60 font-medium' : 'text-slate-400'}`}>
                   {step.title}
                 </span>
               </div>

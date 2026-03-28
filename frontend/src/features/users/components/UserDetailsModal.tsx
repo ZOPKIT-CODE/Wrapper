@@ -120,20 +120,20 @@ export const UserDetailsModal = ({
 
                 {/* Invitation URL Section - Prominent if pending */}
                 {user.invitationStatus === 'pending' && (
-                  <div className="rounded-xl border border-indigo-100 bg-indigo-50/60 p-5 space-y-4">
+                  <div className="rounded-xl border border-[#1B2E5A]/15 bg-[#1B2E5A]/5 p-5 space-y-4">
                     <div className="flex items-center justify-between">
                       <div className="space-y-1">
-                        <h3 className="font-semibold text-indigo-950 flex items-center gap-2">
-                          <Mail className="w-4 h-4 text-indigo-600" /> Pending Invitation
+                        <h3 className="font-semibold text-[#1B2E5A] flex items-center gap-2">
+                          <Mail className="w-4 h-4 text-[#1B2E5A]" /> Pending Invitation
                         </h3>
-                        <p className="text-sm text-indigo-600/90">
+                        <p className="text-sm text-[#1B2E5A]/90">
                           User has not accepted the invitation yet.
                         </p>
                       </div>
                       <PearlButton
                         size="sm"
                         variant="outline"
-                        className="text-indigo-700 hover:text-indigo-900"
+                        className="text-[#1B2E5A] hover:text-[#162447]"
                         onClick={() => copyInvitationUrl(user)}
                       >
                         Copy Link
@@ -143,7 +143,7 @@ export const UserDetailsModal = ({
                       <Input
                         value={generateInvitationUrl(user) || 'No invitation URL available'}
                         readOnly
-                        className="font-mono text-xs bg-white/80 border-indigo-200 focus-visible:ring-indigo-500 h-9"
+                        className="font-mono text-xs bg-white/80 border-[#1B2E5A]/30 focus-visible:ring-[#1B2E5A] h-9"
                       />
                     </div>
                   </div>
