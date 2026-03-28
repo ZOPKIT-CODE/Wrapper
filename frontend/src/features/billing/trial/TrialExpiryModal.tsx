@@ -156,7 +156,7 @@ export function TrialExpiryModal({
               Need help? {' '}
               <a 
                 href="mailto:support@yourapp.com" 
-                className="text-blue-600 hover:text-blue-700 underline"
+                className="text-[#1B2E5A] hover:text-[#162447] underline"
               >
                 Contact Support
               </a>

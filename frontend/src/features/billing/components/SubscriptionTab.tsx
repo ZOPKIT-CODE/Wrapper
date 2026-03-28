@@ -92,7 +92,7 @@ export function SubscriptionTab({
     <div className="space-y-4 font-sans text-slate-900">
       
       {/* --- Current Plan Card --- */}
-      <Card className="group relative overflow-hidden rounded-3xl border border-blue-100 bg-white shadow-sm transition-all duration-300 hover:shadow-blue-100/50 hover:border-blue-200">
+      <Card className="group relative overflow-hidden rounded-3xl border border-[#1B2E5A]/10 bg-white shadow-sm transition-all duration-300 hover:shadow-[#1B2E5A]/10 hover:border-[#1B2E5A]/20">
         {/* Background Decor */}
         <div className="absolute top-0 right-0 -mt-16 -mr-16 h-48 w-48 rounded-full bg-gradient-to-br from-blue-50 to-sky-50 opacity-50 blur-3xl transition-transform duration-500 group-hover:scale-110" />
         
@@ -123,7 +123,7 @@ export function SubscriptionTab({
                {displaySubscription.plan !== 'free' ? (
                 <>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-bold text-blue-600">
+                    <span className="text-3xl font-bold text-[#1B2E5A]">
                       ${displaySubscription.yearlyPrice || displaySubscription.monthlyPrice || '0.00'}
                     </span>
                     <span className="text-sm font-medium text-slate-400 uppercase tracking-wide">
@@ -150,7 +150,7 @@ export function SubscriptionTab({
           <div className="mt-0 rounded-2xl bg-slate-50/50 p-4 border border-slate-100/50">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-3 gap-3">
               <h4 className="flex items-center gap-2 text-sm font-bold text-slate-800 uppercase tracking-wider">
-                <Sparkles className="w-4 h-4 text-blue-500" />
+                <Sparkles className="w-4 h-4 text-[#1B2E5A]" />
                 Current Features
               </h4>
               {isFree && (
@@ -192,8 +192,8 @@ export function SubscriptionTab({
            <Card className="h-full rounded-3xl border border-slate-100 bg-white shadow-sm overflow-hidden">
              <CardHeader className="pb-3 border-b border-slate-50 bg-slate-50/30">
                 <div className="flex items-center gap-3">
-                  <div className="p-2.5 bg-indigo-50 rounded-xl">
-                    <TrendingUp className="w-5 h-5 text-indigo-500" />
+                  <div className="p-2.5 bg-[#1B2E5A]/10 rounded-xl">
+                    <TrendingUp className="w-5 h-5 text-[#1B2E5A]" />
                   </div>
                   <div>
                     <CardTitle className="text-base font-bold text-[#1B2E5A]">Subscription Details</CardTitle>
@@ -203,16 +203,16 @@ export function SubscriptionTab({
              </CardHeader>
              <CardContent className="p-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                   <div className="group rounded-2xl border border-slate-100 bg-white p-3 transition-all hover:border-blue-100 hover:shadow-md hover:shadow-blue-50">
+                   <div className="group rounded-2xl border border-slate-100 bg-white p-3 transition-all hover:border-[#1B2E5A]/10 hover:shadow-md hover:shadow-[#1B2E5A]/5">
                       <div className="flex items-center gap-2 mb-1">
-                        <Crown className="w-4 h-4 text-blue-500" />
+                        <Crown className="w-4 h-4 text-[#1B2E5A]" />
                         <span className="text-xs font-semibold text-slate-400 uppercase">Tier</span>
                       </div>
                       <div className="text-lg font-bold text-slate-800">{getPlanDisplayName(planId)}</div>
                    </div>
-                   <div className="group rounded-2xl border border-slate-100 bg-white p-3 transition-all hover:border-blue-100 hover:shadow-md hover:shadow-blue-50">
+                   <div className="group rounded-2xl border border-slate-100 bg-white p-3 transition-all hover:border-[#1B2E5A]/10 hover:shadow-md hover:shadow-[#1B2E5A]/5">
                       <div className="flex items-center gap-2 mb-1">
-                        <CreditCardLucide className="w-4 h-4 text-blue-500" />
+                        <CreditCardLucide className="w-4 h-4 text-[#1B2E5A]" />
                         <span className="text-xs font-semibold text-slate-400 uppercase">Billing</span>
                       </div>
                       <div className="text-lg font-bold text-slate-800">
@@ -225,9 +225,9 @@ export function SubscriptionTab({
                       </div>
                    </div>
                    {displaySubscription.currentPeriodEnd && (
-                    <div className="group rounded-2xl border border-slate-100 bg-white p-3 transition-all hover:border-blue-100 hover:shadow-md hover:shadow-blue-50">
+                    <div className="group rounded-2xl border border-slate-100 bg-white p-3 transition-all hover:border-[#1B2E5A]/10 hover:shadow-md hover:shadow-[#1B2E5A]/5">
                         <div className="flex items-center gap-2 mb-1">
-                          <Calendar className="w-4 h-4 text-blue-500" />
+                          <Calendar className="w-4 h-4 text-[#1B2E5A]" />
                           <span className="text-xs font-semibold text-slate-400 uppercase">
                             {isFree ? 'Expiration' : 'Renewal'}
                           </span>
@@ -238,13 +238,13 @@ export function SubscriptionTab({
                     </div>
                    )}
                    {!isFree && (currentPlan?.freeCredits ?? 0) > 0 && (
-                     <div className="rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50/50 to-white p-3">
+                     <div className="rounded-2xl border border-[#1B2E5A]/10 bg-gradient-to-br from-[#1B2E5A]/5 to-white p-3">
                         <div className="flex items-center gap-2 mb-1">
-                          <Zap className="w-4 h-4 text-indigo-500" />
-                          <span className="text-xs font-semibold text-indigo-400 uppercase">Monthly Bonus</span>
+                          <Zap className="w-4 h-4 text-[#1B2E5A]" />
+                          <span className="text-xs font-semibold text-[#1B2E5A]/60 uppercase">Monthly Bonus</span>
                         </div>
-                        <div className="text-lg font-bold text-indigo-900">
-                          {(currentPlan?.freeCredits ?? 0).toLocaleString()} <span className="text-sm font-normal text-indigo-700">credits</span>
+                        <div className="text-lg font-bold text-[#1B2E5A]">
+                          {(currentPlan?.freeCredits ?? 0).toLocaleString()} <span className="text-sm font-normal text-[#1B2E5A]/70">credits</span>
                         </div>
                      </div>
                    )}
@@ -252,8 +252,8 @@ export function SubscriptionTab({
                 {/* Lifetime Credits & System Alerts inside same card - no empty space */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
                   <div className="rounded-2xl border border-slate-100 bg-white shadow-sm flex items-center p-3 gap-3">
-                    <div className="h-10 w-10 rounded-full bg-sky-50 flex items-center justify-center shrink-0">
-                      <StatsIcon className="w-5 h-5 text-sky-500" />
+                    <div className="h-10 w-10 rounded-full bg-[#1B2E5A]/10 flex items-center justify-center shrink-0">
+                      <StatsIcon className="w-5 h-5 text-[#1B2E5A]" />
                     </div>
                     <div>
                       <div className="text-xs font-medium text-slate-500">Lifetime Credits</div>
@@ -309,14 +309,14 @@ export function SubscriptionTab({
                  <div className="space-y-2 mb-4">
                     <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/5 border border-white/5 backdrop-blur-sm">
                        <div className="flex items-center gap-3">
-                          <div className="w-1.5 h-1.5 rounded-full bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.6)]" />
+                          <div className="w-1.5 h-1.5 rounded-full bg-[#1B2E5A] shadow-[0_0_8px_rgba(27,46,90,0.4)]" />
                           <span className="text-sm font-medium text-slate-200">Paid Credits</span>
                        </div>
                        <span className="font-bold text-white">{creditBalance?.paidCredits ?? 0}</span>
                     </div>
                     <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/5 border border-white/5 backdrop-blur-sm">
                        <div className="flex items-center gap-3">
-                          <div className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
+                          <div className="w-1.5 h-1.5 rounded-full bg-[#1B2E5A]" />
                           <span className="text-sm font-medium text-slate-200">Free Credits</span>
                        </div>
                        <span className="font-bold text-white">{creditBalance?.freeCredits ?? 0}</span>

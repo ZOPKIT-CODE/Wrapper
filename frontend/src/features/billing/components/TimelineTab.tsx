@@ -71,7 +71,7 @@ function getEventIcon(type: string) {
 function getEventStyles(type: string, isToday: boolean, isActivity: boolean) {
   if (isToday) return {
       container: 'bg-[#1B2E5A] ring-4 ring-indigo-50 text-white shadow-md shadow-indigo-200',
-      line: 'bg-indigo-200'
+      line: 'bg-[#1B2E5A]/30'
   }
   if (isActivity) return {
       container: 'bg-white border-2 border-slate-200 text-slate-400',
@@ -80,7 +80,7 @@ function getEventStyles(type: string, isToday: boolean, isActivity: boolean) {
   
   switch (type) {
     case 'account_created':
-      return { container: 'bg-blue-500 ring-4 ring-blue-50 text-white', line: 'bg-blue-100' }
+      return { container: 'bg-[#1B2E5A] ring-4 ring-[#1B2E5A]/10 text-white', line: 'bg-[#1B2E5A]/15' }
     case 'onboarding_completed':
       return { container: 'bg-emerald-500 ring-4 ring-emerald-50 text-white', line: 'bg-emerald-100' }
     case 'plan_started':
@@ -97,10 +97,10 @@ export function TimelineTab({ timelineData, timelineLoading, hasMore, isLoadingM
 
   return (
     <div className="font-sans text-slate-900">
-      <Card className="rounded-3xl border border-blue-100 bg-white shadow-sm overflow-hidden">
+      <Card className="rounded-3xl border border-[#1B2E5A]/15 bg-white shadow-sm overflow-hidden">
         <CardHeader className="pb-8 border-b border-slate-50 bg-slate-50/30">
           <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white border border-blue-100 shadow-sm text-blue-600">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white border border-[#1B2E5A]/15 shadow-sm text-[#1B2E5A]">
               <ListOrdered className="w-6 h-6" />
             </div>
             <div>
@@ -151,7 +151,7 @@ export function TimelineTab({ timelineData, timelineLoading, hasMore, isLoadingM
                       {/* Content Card */}
                       <div className="flex-1 min-w-0 pt-1">
                          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2">
-                            <h4 className={`text-sm font-bold ${isToday ? 'text-indigo-600' : 'text-[#1B2E5A]'}`}>
+                            <h4 className={`text-sm font-bold ${isToday ? 'text-[#1B2E5A]' : 'text-[#1B2E5A]'}`}>
                                 {event.label}
                             </h4>
                             <span className="text-xs font-medium text-slate-400 whitespace-nowrap">
@@ -161,8 +161,8 @@ export function TimelineTab({ timelineData, timelineLoading, hasMore, isLoadingM
                          
                          <div className={`rounded-2xl p-4 transition-all duration-300 ${
                             isToday 
-                              ? 'bg-indigo-50/50 border border-indigo-100' 
-                              : 'bg-white border border-slate-100 group-hover:border-blue-100 group-hover:shadow-md group-hover:shadow-blue-50/50'
+                              ? 'bg-[#1B2E5A]/5 border border-[#1B2E5A]/10'
+                              : 'bg-white border border-slate-100 group-hover:border-[#1B2E5A]/15 group-hover:shadow-md group-hover:shadow-[#1B2E5A]/5'
                          }`}>
                              {/* Metadata rendering logic */}
                              {(!event.metadata || Object.keys(event.metadata).length === 0) ? (

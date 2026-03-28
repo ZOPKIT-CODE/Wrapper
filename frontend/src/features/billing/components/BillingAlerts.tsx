@@ -27,7 +27,7 @@ export function BillingAlerts({
     <>
       <div className="flex items-center justify-end gap-2 mb-6">
         {upgradeMode && (
-          <Badge className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800">
+          <Badge className="bg-[#1B2E5A]/5 text-[#1B2E5A] border-[#1B2E5A]/20 dark:bg-[#1B2E5A]/20 dark:text-[#4A6FA5] dark:border-[#1B2E5A]/40">
             <Zap className="h-3 w-3 mr-1" />
             Upgrade Mode
           </Badge>

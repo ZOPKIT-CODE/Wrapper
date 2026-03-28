@@ -331,11 +331,11 @@ export function HistoryTab({
                       </div>
 
                       {!isPlanUpgrade && payment.creditsPurchased && (
-                        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg px-4 py-2 border border-blue-200 dark:border-blue-800">
-                          <div className="text-sm font-semibold text-blue-700 dark:text-blue-400">
+                        <div className="bg-[#1B2E5A]/5 dark:bg-[#1B2E5A]/20 rounded-lg px-4 py-2 border border-[#1B2E5A]/20 dark:border-[#1B2E5A]/40">
+                          <div className="text-sm font-semibold text-[#1B2E5A] dark:text-[#4A6FA5]">
                             +{payment.creditsPurchased.toLocaleString()} credits
                           </div>
-                          <div className="text-xs text-blue-600 dark:text-blue-500">Credits Added</div>
+                          <div className="text-xs text-[#1B2E5A]/80 dark:text-[#4A6FA5]">Credits Added</div>
                         </div>
                       )}
 
