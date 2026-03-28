@@ -395,7 +395,7 @@ const PaymentSuccess: React.FC = () => {
           >
             <div className="h-8 w-6 bg-gradient-to-b from-blue-700 to-blue-800 transform skew-y-12 translate-y-5 translate-x-2 rounded-l-sm shadow-lg" />
             <motion.div
-              className="bg-gradient-to-r from-blue-600 to-blue-700 text-white text-lg font-black py-2.5 px-8 rounded-xl relative flex items-center justify-center shadow-2xl"
+              className="bg-[#1B2E5A] text-white text-lg font-black py-2.5 px-8 rounded-xl relative flex items-center justify-center shadow-2xl"
               whileHover={{ scale: 1.05 }}
               animate={{ boxShadow: [
                 "0 20px 40px -12px rgba(59, 130, 246, 0.4)",
@@ -615,7 +615,7 @@ const PaymentSuccess: React.FC = () => {
                         >
                           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">New Total</p>
                           <motion.p
-                            className="text-2xl font-black bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent tracking-tighter"
+                            className="text-2xl font-black text-[#1B2E5A] tracking-tighter"
                             animate={{ scale: [1, 1.05, 1] }}
                             transition={{ duration: 2, repeat: Infinity }}
                           >
@@ -683,7 +683,7 @@ const PaymentSuccess: React.FC = () => {
                                   </motion.div>
                                 </div>
                                 <motion.span
-                                  className="text-xl font-black bg-gradient-to-r from-blue-700 to-blue-900 bg-clip-text text-transparent relative z-10 tabular-nums shrink-0"
+                                  className="text-xl font-black text-[#1B2E5A] relative z-10 tabular-nums shrink-0"
                                   animate={{ scale: [1, 1.1, 1] }}
                                   transition={{ duration: 2, repeat: Infinity }}
                                 >
@@ -785,7 +785,7 @@ const PaymentSuccess: React.FC = () => {
                       >
                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Total Paid</p>
                         <motion.p
-                          className="text-xl font-black bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent"
+                          className="text-xl font-black text-[#1B2E5A]"
                           animate={{ scale: [1, 1.05, 1] }}
                           transition={{ duration: 2, repeat: Infinity }}
                         >
@@ -797,7 +797,7 @@ const PaymentSuccess: React.FC = () => {
                         animate={{ scale: 1, rotate: 0 }}
                         transition={{ delay: 0.5, type: "spring" }}
                       >
-                        <Badge className="bg-gradient-to-r from-blue-600 to-blue-700 text-white border-0 font-black px-3 py-0.5 rounded-full text-[9px] tracking-widest mb-0.5 shadow-lg shadow-blue-100 relative overflow-hidden">
+                        <Badge className="bg-[#1B2E5A] text-white border-0 font-black px-3 py-0.5 rounded-full text-[9px] tracking-widest mb-0.5 shadow-lg shadow-blue-100 relative overflow-hidden">
                           <Shimmer className="opacity-50" />
                           <span className="relative z-10 flex items-center gap-1">
                             <CheckCircle2 className="w-2.5 h-2.5" />

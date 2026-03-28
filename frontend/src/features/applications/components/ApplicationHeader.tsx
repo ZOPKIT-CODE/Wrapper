@@ -24,7 +24,7 @@ export function ApplicationHeader({ applicationCount, isLoading, onRefresh }: Ap
         >
             <Flex align="center" justify="between" >
                 <Flex direction="col" className="space-y-1">
-                    <Typography variant="h2" className="text-3xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-sky-400">
+                    <Typography variant="h2" className="text-3xl font-black tracking-tighter text-[#1B2E5A]">
                         Applications
                     </Typography>
                     <p className="text-muted-foreground text-sm">

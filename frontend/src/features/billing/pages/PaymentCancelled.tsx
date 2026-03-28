@@ -161,7 +161,7 @@ const PaymentCancelled: React.FC = () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button
                 onClick={() => navigate({ to: '/billing' })}
-                className="px-8 py-3 text-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                className="px-8 py-3 text-lg bg-[#1B2E5A] hover:bg-[#162447]"
               >
                 <RefreshCw className="h-5 w-5 mr-2" />
                 Try Again

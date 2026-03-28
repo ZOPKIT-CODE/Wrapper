@@ -179,7 +179,7 @@ export function OrganizationManagementPage() {
             <div className="flex items-center">
               <Building className="w-8 h-8 text-blue-600 mr-3" />
               <div className="space-y-1">
-                <h1 className="text-4xl  font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-sky-400">
+                <h1 className="text-4xl font-black tracking-tighter text-[#1B2E5A]">
                   Organization Management
                 </h1>
                 {tenantInfo && (

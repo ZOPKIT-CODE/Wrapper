@@ -429,7 +429,7 @@ function OrganizationHierarchyFlowInner({
           <div className="flex items-center gap-2">
             <Building className="w-5 h-5 text-sky-600" />
             <div>
-              <h3 className="font-black text-sm text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-sky-400">Organization Hierarchy</h3>
+              <h3 className="font-black text-sm text-[#1B2E5A]">Organization Hierarchy</h3>
               <p className="text-xs text-muted-foreground">
                 {hierarchy.totalOrganizations} {hierarchy.totalOrganizations === 1 ? 'organization' : 'organizations'}
               </p>

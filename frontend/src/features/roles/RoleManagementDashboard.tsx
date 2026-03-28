@@ -647,7 +647,7 @@ export function RoleManagementDashboard() {
           className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
         >
           <div className="space-y-1">
-            <h1 className="text-4xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-sky-400">
+            <h1 className="text-4xl font-black tracking-tighter text-[#1B2E5A]">
               Role Management
             </h1>
             <p className="text-muted-foreground text-sm max-w-2xl">

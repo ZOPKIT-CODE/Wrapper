@@ -1184,7 +1184,7 @@ export function OrganizationTreeManagement({
             <Network className="w-6 h-6" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Hierarchy</h2>
+            <h2 className="text-lg font-semibold text-[#1B2E5A]">Hierarchy</h2>
             <div className="text-xs text-slate-500 flex gap-2">
               <span>{hierarchy?.totalOrganizations || 0} Organizations</span>
               <span>•</span>
@@ -1942,7 +1942,7 @@ export function OrganizationManagement({
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 bg-clip-text text-transparent animate-in fade-in slide-in-from-left-4 duration-700">Organization</h1>
+          <h1 className="text-3xl font-extrabold tracking-tight text-[#1B2E5A] animate-in fade-in slide-in-from-left-4 duration-700">Organization</h1>
           <p className="text-slate-500 dark:text-slate-400 mt-1">Manage structure, departments, locations, and resources.</p>
         </div>
         <Button onClick={() => window.location.reload()} variant="outline" className="gap-2">
