@@ -79,7 +79,7 @@ export function PaymentDetailsPage() {
       case 'disputed':
         return 'bg-purple-100 text-purple-800'
       default:
-        return 'bg-blue-100 text-blue-800'
+        return 'bg-[#1B2E5A]/10 text-[#1B2E5A]'
     }
   }
 

@@ -314,7 +314,7 @@ export function BillingUpgradePage() {
                       step.id < currentStep
                         ? 'bg-green-500 text-white'
                         : step.id === currentStep
-                        ? 'bg-blue-500 text-white'
+                        ? 'bg-[#1B2E5A] text-white'
                         : 'bg-gray-200 text-gray-600'
                     }`}>
                       {step.id < currentStep ? <CheckCircle className="h-4 w-4" /> : step.id}

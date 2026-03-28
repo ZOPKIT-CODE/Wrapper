@@ -367,7 +367,7 @@ export function HistoryTab({
                             variant="outline"
                             size="sm"
                             onClick={() => navigate({ to: `/dashboard/billing/payments/${payment.id}` })}
-                            className="border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700"
+                            className="border-[#1B2E5A]/20 hover:bg-[#1B2E5A]/5 hover:text-[#1B2E5A] cursor-pointer dark:border-gray-600 dark:hover:bg-gray-700"
                           >
                             <ExternalLink className="h-3 w-3 mr-1" />
                             Details
@@ -382,7 +382,7 @@ export function HistoryTab({
                               '_blank'
                             )
                           }
-                          className="border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700"
+                          className="border-[#1B2E5A]/20 hover:bg-[#1B2E5A]/5 hover:text-[#1B2E5A] cursor-pointer dark:border-gray-600 dark:hover:bg-gray-700"
                         >
                           <Download className="h-3 w-3 mr-1" />
                           Receipt
