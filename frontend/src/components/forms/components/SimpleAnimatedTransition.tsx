@@ -79,7 +79,7 @@ export const SimpleStepIndicator: React.FC<{
           className={cn(
             'w-8 h-8 rounded-full border-2 flex items-center justify-center text-sm font-medium transition-all duration-300',
             index <= currentStep
-              ? 'bg-blue-600 border-blue-600 text-white'
+              ? 'bg-[#1B2E5A] border-[#1B2E5A] text-white'
               : 'bg-gray-200 border-gray-300 text-gray-500'
           )}
         >

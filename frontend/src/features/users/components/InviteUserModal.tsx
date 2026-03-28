@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { X, Building, Check, Search, Shield, User, ChevronRight, MapPin, Loader2 } from 'lucide-react';
 import { PearlButton } from '@/components/ui/pearl-button';
-import { useTheme } from '@/components/theme/ThemeProvider';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -81,7 +80,6 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({
   entitiesLoading: entitiesLoadingProp,
   isLoading = false
 }) => {
-  const { glassmorphismEnabled } = useTheme();
   const { tenantId } = useOrganizationAuth();
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -399,9 +397,7 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({
 
   return (
     <div 
-      className={`fixed inset-0 z-50 flex items-center justify-center p-4 ${
-        glassmorphismEnabled ? 'bg-black/60 backdrop-blur-sm' : 'bg-black/50'
-      }`}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
       onClick={(e) => {
         // Close modal when clicking backdrop
         if (e.target === e.currentTarget) {
@@ -410,11 +406,7 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({
       }}
     >
       <Card 
-        className={`w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl pointer-events-auto ${
-          glassmorphismEnabled
-            ? 'backdrop-blur-3xl bg-white/90 dark:bg-slate-950/90 border-white/20'
-            : 'bg-white dark:bg-slate-950'
-        }`}
+        className="w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl pointer-events-auto bg-white dark:bg-slate-950"
         onClick={(e) => {
           // Prevent clicks inside the card from closing the modal
           e.stopPropagation();

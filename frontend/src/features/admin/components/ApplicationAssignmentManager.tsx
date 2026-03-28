@@ -130,9 +130,8 @@ const ApplicationAssignmentManager: React.FC = () => {
   const [originalPermissions, setOriginalPermissions] = useState<Record<string, string[]>>({});
   const [originalModules, setOriginalModules] = useState<string[]>([]);
 
-  const { actualTheme, glassmorphismEnabled } = useTheme();
+  const { actualTheme } = useTheme();
   const isDark = actualTheme === 'dark';
-  const glass = glassmorphismEnabled;
 
   const analyzePermissionType = (permCode: string) => {
     const code = permCode.toLowerCase();
@@ -472,7 +471,7 @@ const ApplicationAssignmentManager: React.FC = () => {
     <div className={cn(
       "flex flex-col h-screen overflow-hidden relative",
       isDark ? "bg-slate-950 text-slate-200" : "bg-slate-50 text-slate-900",
-      glass && "backdrop-blur-xl"
+      
     )}>
       {/* Unified Executive Header - Ultra Slim & Integrated */}
       <header className={cn(

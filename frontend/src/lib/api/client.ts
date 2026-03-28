@@ -63,7 +63,8 @@ function notifyForbidden() {
 
 const API_BASE_URL = config.API_URL
 const REQUEST_TIMEOUT_MS = 20_000
-const SLOW_REQUEST_THRESHOLD_MS = 4_000
+const SLOW_REQUEST_THRESHOLD_MS = 10_000  // only flag as slow after 10s
+const MIN_SLOW_REQUESTS_TO_SHOW_BANNER = 2 // need 2+ concurrent slow reqs
 const MAX_SAFE_RETRIES = 2
 const BASE_RETRY_DELAY_MS = 500
 
@@ -98,7 +99,10 @@ const markBackendUp = () => {
 const emitNetworkQuality = () => {
   if (typeof window === 'undefined') return
   window.dispatchEvent(new CustomEvent(NETWORK_QUALITY_EVENT, {
-    detail: { slowRequestCount: activeSlowRequests.size },
+    detail: {
+      slowRequestCount: activeSlowRequests.size,
+      showBanner: activeSlowRequests.size >= MIN_SLOW_REQUESTS_TO_SHOW_BANNER,
+    },
   }))
 }
 

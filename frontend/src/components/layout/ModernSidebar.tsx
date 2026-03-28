@@ -64,14 +64,14 @@ const NavItem = ({ item, isActive, isCollapsed }: { item: any; isActive: boolean
                         <div
                             className="absolute -top-5 right-0 w-5 h-5 bg-white pointer-events-none"
                         >
-                            <div className="w-full h-full bg-[#2563EB] rounded-br-[20px]" />
+                            <div className="w-full h-full bg-[#1B2E5A] rounded-br-[20px]" />
                         </div>
 
                         {/* Bottom Cutout Curve (Inverse Border Radius) */}
                         <div
                             className="absolute -bottom-5 right-0 w-5 h-5 bg-white pointer-events-none"
                         >
-                            <div className="w-full h-full bg-[#2563EB] rounded-tr-[20px]" />
+                            <div className="w-full h-full bg-[#1B2E5A] rounded-tr-[20px]" />
                         </div>
                     </motion.div>
                 </>
@@ -80,7 +80,7 @@ const NavItem = ({ item, isActive, isCollapsed }: { item: any; isActive: boolean
             {/* Icon */}
             <div className={cn(
                 "relative z-10 transition-all duration-500",
-                isActive ? "text-[#1E40AF]" : "text-white"
+                isActive ? "text-[#1B2E5A]" : "text-white"
             )}>
                 <item.icon className="size-5" />
             </div>
@@ -89,7 +89,7 @@ const NavItem = ({ item, isActive, isCollapsed }: { item: any; isActive: boolean
             {!isCollapsed && (
                 <span className={cn(
                     "relative z-10 font-black text-sm tracking-tight transition-all duration-500",
-                    isActive ? "text-[#1E40AF]" : "text-white"
+                    isActive ? "text-[#1B2E5A]" : "text-white"
                 )}>
                     {item.title}
                 </span>
@@ -168,7 +168,7 @@ export function ModernSidebar({
         <div
             className={cn(
                 "relative flex flex-col h-screen transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] z-40",
-                "bg-[#2563EB]",
+                "bg-[#1B2E5A]",
                 isCollapsed ? "w-[100px]" : "w-[280px]",
                 "rounded-tr-[40px] rounded-br-[40px]",
                 className

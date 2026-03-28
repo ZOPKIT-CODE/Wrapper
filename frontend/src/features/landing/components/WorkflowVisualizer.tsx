@@ -15,10 +15,10 @@ const workflows = [
         title: 'Lead to Cash',
         description: 'Automate your revenue cycle from prospect to payment.',
         color: 'blue',
-        accent: 'from-blue-600 to-cyan-500',
+        accent: 'from-[#1B2E5A] to-cyan-500',
         border: 'border-blue-200',
-        text: 'text-blue-600',
-        bg: 'bg-blue-600',
+        text: 'text-[#1B2E5A]',
+        bg: 'bg-[#1B2E5A]',
         lightBg: 'bg-blue-50',
         steps: [
             { id: 'lead', title: 'Lead Captured', app: 'B2B CRM', icon: Briefcase, action: 'Syncing prospect data', status: 'Success' },

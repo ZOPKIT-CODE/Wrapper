@@ -51,9 +51,8 @@ const CreditManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [matrixSearchQuery, setMatrixSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('global');
-  const { actualTheme, glassmorphismEnabled } = useTheme();
+  const { actualTheme } = useTheme();
   const isDark = actualTheme === 'dark';
-  const glass = glassmorphismEnabled;
 
   // Changes State
   const [costChanges, setCostChanges] = useState<CostChanges>({});

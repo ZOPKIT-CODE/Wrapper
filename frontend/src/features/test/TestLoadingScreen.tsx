@@ -38,7 +38,7 @@ const TestLoadingScreen: React.FC = () => {
           <div className="text-center bg-white/90 backdrop-blur-xl rounded-3xl p-8 shadow-2xl">
             <h2 className="text-2xl font-bold text-green-600 mb-4">✅ Setup Complete!</h2>
             <p className="text-gray-600 mb-6">Redirecting to welcome screen...</p>
-            <Button onClick={() => navigate({ to: '/test/welcome' })} className="bg-pink-600 hover:bg-pink-700">
+            <Button onClick={() => navigate({ to: '/test/welcome' })} className="bg-[#1B2E5A] hover:bg-[#162447]">
               Go to Welcome Screen
             </Button>
           </div>

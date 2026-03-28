@@ -103,7 +103,7 @@ export function UserTable({
   return (
     <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 border-none">
       <table className="w-full">
-        <thead className="bg-gradient-to-r from-sky-50 to-blue-50 border-b border-sky-100">
+        <thead className="bg-[#1B2E5A]/5 border-b border-[#1B2E5A]/10">
           <tr>
             <th className="p-4 text-left w-[40px]">
               <Checkbox
@@ -112,11 +112,11 @@ export function UserTable({
                 aria-label="Select all"
               />
             </th>
-            <th className="p-4 text-left font-black text-sky-900 uppercase tracking-wider text-[10px]" style={{ width: 240 }}>User</th>
-            <th className="p-4 text-left font-black text-sky-900 uppercase tracking-wider text-[10px]" style={{ width: 180 }}>Location</th>
-            <th className="p-4 text-left font-black text-sky-900 uppercase tracking-wider text-[10px]" style={{ width: 160 }}>Role</th>
-            <th className="p-4 text-left font-black text-sky-900 uppercase tracking-wider text-[10px]" style={{ width: 200 }}>Invite Link</th>
-            <th className="p-4 text-left font-black text-sky-900 uppercase tracking-wider text-[10px]" style={{ width: 120 }}>Status</th>
+            <th className="p-4 text-left font-black text-[#1B2E5A] uppercase tracking-wider text-[10px]" style={{ width: 240 }}>User</th>
+            <th className="p-4 text-left font-black text-[#1B2E5A] uppercase tracking-wider text-[10px]" style={{ width: 180 }}>Location</th>
+            <th className="p-4 text-left font-black text-[#1B2E5A] uppercase tracking-wider text-[10px]" style={{ width: 160 }}>Role</th>
+            <th className="p-4 text-left font-black text-[#1B2E5A] uppercase tracking-wider text-[10px]" style={{ width: 200 }}>Invite Link</th>
+            <th className="p-4 text-left font-black text-[#1B2E5A] uppercase tracking-wider text-[10px]" style={{ width: 120 }}>Status</th>
             <th className="p-4 text-left" style={{ width: 50 }}></th>
           </tr>
         </thead>
@@ -163,9 +163,9 @@ export function UserTable({
                     {/* User */}
                     <td className="p-4" style={{ width: 240 }}>
                       <div className="flex items-center gap-3.5">
-                        <Avatar className="h-9 w-9 border-2 border-white shadow-sm ring-1 ring-sky-100">
+                        <Avatar className="h-9 w-9 border-2 border-white shadow-sm ring-1 ring-[#1B2E5A]/10">
                           <AvatarImage src={user.avatar} alt={user.name || 'User'} />
-                          <AvatarFallback className="bg-gradient-to-br from-blue-500 to-sky-600 text-white font-black text-xs">
+                          <AvatarFallback className="bg-[#1B2E5A] text-white font-black text-xs">
                             {(user.name?.charAt(0) || user.email?.charAt(0) || '?').toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
@@ -200,7 +200,7 @@ export function UserTable({
                     <td className="p-4" style={{ width: 160 }}>
                       {firstRole ? (
                         <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="font-bold bg-sky-50 text-sky-700 border-sky-200 hover:bg-sky-100 px-2 py-0.5 rounded-md">
+                          <Badge variant="outline" className="font-bold bg-[#1B2E5A]/10 text-[#1B2E5A] border-[#1B2E5A]/20 hover:bg-[#1B2E5A]/15 px-2 py-0.5 rounded-md">
                             {firstRole.roleName}
                           </Badge>
                           {extraRoleCount > 0 && (
@@ -245,8 +245,8 @@ export function UserTable({
                         </div>
                       ) : user.isActive ? (
                         <div className="flex items-center gap-2">
-                          <span className="h-2 w-2 rounded-full bg-blue-500 shadow-[0_0_8px_-2px_rgba(59,130,246,0.5)]"></span>
-                          <span className="text-sm font-black text-blue-700">Active</span>
+                          <span className="h-2 w-2 rounded-full bg-[#1B2E5A] shadow-[0_0_8px_-2px_rgba(27,46,90,0.4)]"></span>
+                          <span className="text-sm font-black text-[#1B2E5A]">Active</span>
                         </div>
                       ) : (
                         <div className="flex items-center gap-2">

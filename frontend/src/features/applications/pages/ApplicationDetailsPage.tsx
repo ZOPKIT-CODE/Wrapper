@@ -4,7 +4,6 @@ import { ArrowLeft } from 'lucide-react';
 import { Badge } from "@/components/ui";
 import { Application } from "@/types/application";
 import { getApplicationIcon } from "@/features/applications/components/applicationUtils";
-import { useTheme } from "@/components/theme/ThemeProvider";
 import { cn } from "@/lib/utils";
 import {
   Crown,
@@ -31,7 +30,6 @@ import { config } from '@/lib/config';
 export function ApplicationDetailsPage() {
   const { appId } = useParams({ strict: false });
   const navigate = useNavigate();
-  const { glassmorphismEnabled } = useTheme();
   const { applications, isLoading } = useApplications();
   const { setLastSegmentLabel } = useBreadcrumbLabel();
 
@@ -104,38 +102,11 @@ export function ApplicationDetailsPage() {
   const applicationUrl = getApplicationUrl();
 
   const getMetricCardClasses = () => {
-    return glassmorphismEnabled
-      ? "relative group"
-      : "bg-white dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm";
+    return "bg-white dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm";
   };
 
-  const getMetricCardBackgroundClasses = () => {
-    return glassmorphismEnabled
-      ? "absolute inset-0 backdrop-blur-3xl bg-gradient-to-br from-purple-200/8 via-violet-200/5 to-indigo-200/6 dark:from-purple-500/6 dark:via-violet-500/3 dark:to-indigo-500/4 rounded-2xl"
-      : "";
-  };
-
-  const getMetricCardContentClasses = () => {
-    return glassmorphismEnabled
-      ? "relative p-8 rounded-2xl"
-      : "";
-  };
-
-  const getIconContainerClasses = (type: string) => {
-    if (!glassmorphismEnabled) {
-      return "p-3 bg-slate-100 dark:bg-slate-700 rounded-lg";
-    }
-
-    switch (type) {
-      case 'code':
-        return "p-4 bg-gradient-to-br from-white/60 to-white/40 dark:from-white/30 dark:to-white/20 backdrop-blur-md rounded-xl border border-white/30 dark:border-white/20 shadow-lg";
-      case 'crown':
-        return "p-4 bg-gradient-to-br from-purple-500/15 to-pink-500/15 backdrop-blur-md rounded-xl border border-purple-300/20 shadow-lg";
-      case 'link':
-        return "p-4 bg-gradient-to-br from-cyan-500/15 to-blue-500/15 backdrop-blur-md rounded-xl border border-cyan-300/20 shadow-lg";
-      default:
-        return "p-4 bg-gradient-to-br from-white/60 to-white/40 dark:from-white/30 dark:to-white/20 backdrop-blur-md rounded-xl border border-white/30 dark:border-white/20 shadow-lg";
-    }
+  const getIconContainerClasses = () => {
+    return "p-3 bg-slate-100 dark:bg-slate-700 rounded-lg";
   };
 
   return (
@@ -157,26 +128,15 @@ export function ApplicationDetailsPage() {
         {/* Header Section */}
         <div className={cn(
           "relative overflow-hidden rounded-2xl",
-          glassmorphismEnabled
-            ? "bg-gradient-to-br from-violet-100/30 via-purple-100/15 to-indigo-100/10 dark:from-slate-950/40 dark:via-slate-900/25 dark:to-slate-950/40 backdrop-blur-3xl p-8"
-            : "bg-slate-50 dark:bg-slate-800 px-8 py-6 border border-slate-200 dark:border-slate-700"
+          "bg-slate-50 dark:bg-slate-800 px-8 py-6 border border-slate-200 dark:border-slate-700"
         )}>
-          {glassmorphismEnabled && (
-            <>
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-200/12 via-violet-200/8 to-indigo-200/10 dark:from-purple-500/10 dark:via-violet-500/6 dark:to-indigo-500/8 backdrop-blur-3xl"></div>
-              <div className="absolute inset-0 bg-gradient-to-t from-transparent via-purple-100/8 to-indigo-100/12 dark:via-slate-900/15 dark:to-slate-950/20"></div>
-            </>
-          )}
-
           <div className="relative flex items-center gap-4">
             <div className="relative">
               <div className={cn(
                 "p-4 rounded-xl",
-                glassmorphismEnabled
-                  ? "bg-gradient-to-br from-white/80 to-white/60 dark:from-white/30 dark:to-white/20 backdrop-blur-md shadow-xl border border-white/40 dark:border-white/30"
-                  : "bg-slate-100 dark:bg-slate-700"
+                "bg-slate-100 dark:bg-slate-700"
               )}>
-                <div className={cn("text-2xl", glassmorphismEnabled ? "text-slate-800 dark:text-slate-200" : "text-slate-600 dark:text-slate-400")}>
+                <div className={cn("text-2xl", "text-slate-600 dark:text-slate-400")}>
                   {getApplicationIcon(appCode)}
                 </div>
               </div>
@@ -189,17 +149,11 @@ export function ApplicationDetailsPage() {
                 </h1>
                 <div className={cn(
                   "relative px-3 py-1 rounded-full text-xs font-semibold",
-                  glassmorphismEnabled
-                    ? `backdrop-blur-sm border shadow-lg ${
-                        isEnabled
-                          ? 'bg-emerald-500/20 text-emerald-200 border-emerald-400/30'
-                          : 'bg-red-500/20 text-red-200 border-red-400/30'
-                      }`
-                    : `border ${
-                        isEnabled
-                          ? 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-700'
-                          : 'bg-red-100 text-red-800 border-red-300 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700'
-                      }`
+                  `border ${
+                      isEnabled
+                        ? 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-700'
+                        : 'bg-red-100 text-red-800 border-red-300 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700'
+                    }`
                 )}>
                   <span className="relative">{isEnabled ? "Active" : "Inactive"}</span>
                 </div>
@@ -214,14 +168,12 @@ export function ApplicationDetailsPage() {
         {/* Application settings */}
         <div className={cn(
           "relative rounded-2xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-6",
-          glassmorphismEnabled
-            ? "bg-gradient-to-br from-violet-100/20 via-purple-100/10 to-indigo-100/10 dark:from-slate-900/40 dark:via-slate-800/30 dark:to-slate-900/40 backdrop-blur-2xl border border-white/20 dark:border-white/10"
-            : "bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700"
+          "bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700"
         )}>
           <div className="flex items-center gap-3">
             <div className={cn(
               "p-2.5 rounded-xl",
-              glassmorphismEnabled ? "bg-white/60 dark:bg-white/20 backdrop-blur-md" : "bg-slate-200/80 dark:bg-slate-700"
+              "bg-slate-200/80 dark:bg-slate-700"
             )}>
               <Settings className="h-6 w-6 text-slate-700 dark:text-slate-300" />
             </div>
@@ -254,29 +206,20 @@ export function ApplicationDetailsPage() {
         {/* Content Area */}
         <div className={cn(
           "relative space-y-10",
-          glassmorphismEnabled ? "p-10" : "p-8"
+          "p-8"
         )}>
           {/* Key Metrics */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Application Code Card */}
             <div className={getMetricCardClasses()}>
-              {glassmorphismEnabled && (
-                <>
-                  <div className={getMetricCardBackgroundClasses()}></div>
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500/6 via-transparent to-purple-500/6 rounded-2xl"></div>
-                  <div className="absolute inset-0 bg-gradient-to-t from-transparent via-white/15 to-white/25 dark:via-white/10 dark:to-white/20 rounded-2xl"></div>
-                </>
-              )}
-              <div className={getMetricCardContentClasses()}>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide">Application Code</p>
-                    <p className="text-2xl font-bold text-[#1B2E5A] dark:text-white mt-2">{appCode}</p>
-                  </div>
-                  <div className="relative">
-                    <div className={getIconContainerClasses('code')}>
-                      <span className="text-slate-800 dark:text-slate-200 font-mono text-sm">{appCode.substring(0, 3)}</span>
-                    </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide">Application Code</p>
+                  <p className="text-2xl font-bold text-[#1B2E5A] dark:text-white mt-2">{appCode}</p>
+                </div>
+                <div className="relative">
+                  <div className={getIconContainerClasses()}>
+                    <span className="text-slate-800 dark:text-slate-200 font-mono text-sm">{appCode.substring(0, 3)}</span>
                   </div>
                 </div>
               </div>
@@ -284,25 +227,16 @@ export function ApplicationDetailsPage() {
 
             {/* Subscription Plan Card */}
             <div className={getMetricCardClasses()}>
-              {glassmorphismEnabled && (
-                <>
-                  <div className={getMetricCardBackgroundClasses()}></div>
-                  <div className="absolute inset-0 bg-gradient-to-br from-purple-500/6 via-transparent to-pink-500/6 rounded-2xl"></div>
-                  <div className="absolute inset-0 bg-gradient-to-t from-transparent via-white/15 to-white/25 dark:via-white/10 dark:to-white/20 rounded-2xl"></div>
-                </>
-              )}
-              <div className={getMetricCardContentClasses()}>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide">Subscription Plan</p>
-                    <p className="text-xl font-semibold text-[#1B2E5A] dark:text-white mt-2">
-                      {typeof subscriptionTier === "object" ? "Enterprise" : subscriptionTier || "Basic"}
-                    </p>
-                  </div>
-                  <div className="relative">
-                    <div className={getIconContainerClasses('crown')}>
-                      <Crown className="text-purple-700 dark:text-purple-300 w-6 h-6" />
-                    </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide">Subscription Plan</p>
+                  <p className="text-xl font-semibold text-[#1B2E5A] dark:text-white mt-2">
+                    {typeof subscriptionTier === "object" ? "Enterprise" : subscriptionTier || "Basic"}
+                  </p>
+                </div>
+                <div className="relative">
+                  <div className={getIconContainerClasses()}>
+                    <Crown className="text-purple-700 dark:text-purple-300 w-6 h-6" />
                   </div>
                 </div>
               </div>
@@ -311,31 +245,22 @@ export function ApplicationDetailsPage() {
             {/* Access URL Card */}
             {baseUrl && (
               <div className={getMetricCardClasses()}>
-                {glassmorphismEnabled && (
-                  <>
-                    <div className={getMetricCardBackgroundClasses()}></div>
-                    <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/6 via-transparent to-blue-500/6 rounded-2xl"></div>
-                    <div className="absolute inset-0 bg-gradient-to-t from-transparent via-white/15 to-white/25 dark:via-white/10 dark:to-white/20 rounded-2xl"></div>
-                  </>
-                )}
-                <div className={getMetricCardContentClasses()}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide">Access URL</p>
-                      <a
-                        href={baseUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-lg font-medium text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300 truncate block mt-2 transition-colors"
-                        title={baseUrl}
-                      >
-                        {new URL(baseUrl).hostname}
-                      </a>
-                    </div>
-                    <div className="relative ml-4">
-                      <div className={getIconContainerClasses('link')}>
-                        <ExternalLink className="text-cyan-700 dark:text-cyan-300 w-6 h-6" />
-                      </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide">Access URL</p>
+                    <a
+                      href={baseUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-lg font-medium text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300 truncate block mt-2 transition-colors"
+                      title={baseUrl}
+                    >
+                      {new URL(baseUrl).hostname}
+                    </a>
+                  </div>
+                  <div className="relative ml-4">
+                    <div className={getIconContainerClasses()}>
+                      <ExternalLink className="text-cyan-700 dark:text-cyan-300 w-6 h-6" />
                     </div>
                   </div>
                 </div>
@@ -414,7 +339,6 @@ interface ModuleCardProps {
 }
 
 function ModuleCard({ module, isEnabled, modulePermissions, customPermissions }: ModuleCardProps) {
-  const { glassmorphismEnabled } = useTheme();
   const { moduleName, description, isCore, permissions } = module;
 
   const permissionCodes = Array.isArray(modulePermissions)
@@ -423,24 +347,8 @@ function ModuleCard({ module, isEnabled, modulePermissions, customPermissions }:
   const customCodes = Array.isArray(customPermissions) ? customPermissions : [];
 
   return (
-    <div className={cn(
-      glassmorphismEnabled
-        ? "relative group overflow-hidden"
-        : "bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden"
-    )}>
-      {glassmorphismEnabled && (
-        <>
-          <div className="absolute inset-0 backdrop-blur-3xl bg-gradient-to-br from-purple-200/10 via-violet-200/6 to-indigo-200/8 dark:from-purple-500/8 dark:via-violet-500/4 dark:to-indigo-500/6 rounded-2xl" />
-          <div className={`absolute inset-0 rounded-2xl ${
-            isEnabled
-              ? 'bg-gradient-to-br from-emerald-500/8 via-transparent to-teal-500/8'
-              : 'bg-gradient-to-br from-slate-500/8 via-transparent to-gray-500/8'
-          }`} />
-          <div className="absolute inset-0 bg-gradient-to-t from-transparent via-purple-100/8 to-indigo-100/12 dark:via-slate-900/15 dark:to-slate-950/20 rounded-2xl" />
-        </>
-      )}
-
-      <div className={glassmorphismEnabled ? "relative p-8 rounded-2xl" : "p-6"}>
+    <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+      <div className="p-6">
         <div className="flex items-start justify-between gap-4 mb-4">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-4">

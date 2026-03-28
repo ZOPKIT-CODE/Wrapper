@@ -17,7 +17,7 @@ const THEMES: Record<string, any> = {
   blue: {
     bgLight: 'bg-blue-50',
     bgMedium: 'bg-blue-100',
-    bgDark: 'bg-blue-600',
+    bgDark: 'bg-[#1B2E5A]',
     textLight: 'text-blue-500',
     textDark: 'text-blue-700',
     border: 'border-blue-200',
@@ -57,7 +57,7 @@ const THEMES: Record<string, any> = {
   indigo: {
     bgLight: 'bg-indigo-50',
     bgMedium: 'bg-indigo-100',
-    bgDark: 'bg-indigo-600',
+    bgDark: 'bg-[#1B2E5A]',
     textLight: 'text-indigo-500',
     textDark: 'text-indigo-700',
     border: 'border-indigo-200',
