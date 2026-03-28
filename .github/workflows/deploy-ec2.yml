@@ -371,6 +371,22 @@ jobs:
           echo "❌ Deploy failed and was rolled back. Commit: ${{ github.sha }}"
           exit 1
 
+      - name: Create GitHub release
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(node -p "require('./frontend/package.json').version")
+          git tag -f "v${VERSION}" && git push origin "v${VERSION}" --force
+          gh release create "v${VERSION}" \
+            --title "v${VERSION}" \
+            --notes "Deployed $(date -u '+%Y-%m-%d %H:%M UTC')" \
+            --latest 2>/dev/null \
+          || gh release edit "v${VERSION}" \
+            --title "v${VERSION}" \
+            --notes "Deployed $(date -u '+%Y-%m-%d %H:%M UTC')" \
+            --latest
+
       - name: Deployment summary
         if: success()
         run: |

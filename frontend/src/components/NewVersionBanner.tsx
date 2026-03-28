@@ -1,4 +1,3 @@
-// banner-test-v2
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -7,6 +6,12 @@ import { X } from 'lucide-react';
 const CHECK_INTERVAL = 60 * 1000; // 60 seconds
 const DISMISS_STORAGE_KEY = 'newVersionBannerDismissed';
 
+/** Extract the semver part before the "+" separator, e.g. "1.0.1+abc" → "1.0.1" */
+function parseSemver(versionString: string): string | null {
+  const semver = versionString.split('+')[0];
+  return semver && /^\d+\.\d+\.\d+/.test(semver) ? semver : null;
+}
+
 /**
  * Detects new deployments by comparing the build hash in the current page's
  * <meta name="app-version"> tag against a fresh fetch of /index.html.
@@ -14,6 +19,7 @@ const DISMISS_STORAGE_KEY = 'newVersionBannerDismissed';
  */
 export function NewVersionBanner() {
   const [showBanner, setShowBanner] = useState(false);
+  const [newVersion, setNewVersion] = useState<string | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Read the build hash baked into the currently loaded page
@@ -22,10 +28,9 @@ export function NewVersionBanner() {
   );
 
   const checkForUpdate = useCallback(async () => {
-    // Skip if tab is hidden or already dismissed this session
     if (document.hidden) return;
     if (sessionStorage.getItem(DISMISS_STORAGE_KEY)) return;
-    if (!currentVersion.current) return; // no meta tag in dev mode
+    if (!currentVersion.current) return;
 
     try {
       const res = await fetch('/index.html', { cache: 'no-store' });
@@ -34,6 +39,7 @@ export function NewVersionBanner() {
       const remoteVersion = match?.[1] ?? '';
 
       if (remoteVersion && remoteVersion !== currentVersion.current) {
+        setNewVersion(parseSemver(remoteVersion));
         setShowBanner(true);
       }
     } catch {
@@ -42,29 +48,17 @@ export function NewVersionBanner() {
   }, []);
 
   useEffect(() => {
-    // First check after 10 seconds
     const timeout = setTimeout(checkForUpdate, 10_000);
-    // Then every 60 seconds
     intervalRef.current = setInterval(checkForUpdate, CHECK_INTERVAL);
-    // Also check when tab regains focus
-    const onFocus = () => { checkForUpdate(); };
-    document.addEventListener('visibilitychange', onFocus);
+    const onVisibility = () => { if (!document.hidden) checkForUpdate(); };
+    document.addEventListener('visibilitychange', onVisibility);
 
     return () => {
       clearTimeout(timeout);
       if (intervalRef.current) clearInterval(intervalRef.current);
-      document.removeEventListener('visibilitychange', onFocus);
+      document.removeEventListener('visibilitychange', onVisibility);
     };
   }, [checkForUpdate]);
-
-  const handleRefresh = () => {
-    window.location.reload();
-  };
-
-  const handleDismiss = () => {
-    setShowBanner(false);
-    sessionStorage.setItem(DISMISS_STORAGE_KEY, Date.now().toString());
-  };
 
   if (!showBanner) return null;
 
@@ -72,23 +66,30 @@ export function NewVersionBanner() {
     <Alert
       role="status"
       aria-live="polite"
-      className="fixed top-0 left-0 right-0 z-[40] rounded-none border-b shadow-sm bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800"
+      className="fixed top-0 left-0 right-0 z-[9999] rounded-none border-b shadow-sm bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800"
     >
       <div className="container mx-auto px-4 py-2 flex items-center justify-between gap-4">
         <AlertDescription className="flex-1 text-sm text-blue-900 dark:text-blue-100 m-0">
-          <span className="font-medium">A new version is available.</span>
-          {' '}Click Update to get the latest features.
+          <span className="font-medium">
+            {newVersion
+              ? `Version ${newVersion} is ready`
+              : 'A new version is available'}
+          </span>
+          {' '}&mdash; update to get the latest features.
         </AlertDescription>
         <div className="flex items-center gap-2">
           <Button
-            onClick={handleRefresh}
+            onClick={() => window.location.reload()}
             size="sm"
             className="bg-[#1B2E5A] hover:bg-[#152449] text-white"
           >
             Update now
           </Button>
           <Button
-            onClick={handleDismiss}
+            onClick={() => {
+              setShowBanner(false);
+              sessionStorage.setItem(DISMISS_STORAGE_KEY, Date.now().toString());
+            }}
             size="sm"
             variant="ghost"
             className="text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900"

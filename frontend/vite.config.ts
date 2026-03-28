@@ -5,8 +5,10 @@ import { visualizer } from 'rollup-plugin-visualizer'
 import path from 'path'
 import tailwindcss from "@tailwindcss/vite"
 
-// Unique build hash — changes on every build, used for version detection
-const BUILD_HASH = Date.now().toString(36);
+// Read version from package.json + unique build timestamp for version detection
+import { readFileSync } from 'fs';
+const PKG_VERSION = JSON.parse(readFileSync('./package.json', 'utf-8')).version;
+const BUILD_HASH = `${PKG_VERSION}+${Date.now()}`;
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
