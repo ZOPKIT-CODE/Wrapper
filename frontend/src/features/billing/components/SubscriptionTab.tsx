@@ -278,8 +278,8 @@ export function SubscriptionTab({
         <div className="lg:col-span-1">
            <Card className="h-full rounded-3xl border-0 bg-gradient-to-br from-slate-900 to-slate-800 text-white shadow-xl shadow-slate-200 overflow-hidden relative flex flex-col justify-between">
               {/* Abstract shapes */}
-              <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500 rounded-full mix-blend-overlay filter blur-3xl opacity-20 -translate-y-1/2 translate-x-1/2" />
-              <div className="absolute bottom-0 left-0 w-48 h-48 bg-indigo-500 rounded-full mix-blend-overlay filter blur-3xl opacity-20 translate-y-1/2 -translate-x-1/2" />
+              <div className="absolute top-0 right-0 w-64 h-64 bg-[#1B2E5A] rounded-full mix-blend-overlay filter blur-3xl opacity-20 -translate-y-1/2 translate-x-1/2" />
+              <div className="absolute bottom-0 left-0 w-48 h-48 bg-[#1B2E5A] rounded-full mix-blend-overlay filter blur-3xl opacity-20 translate-y-1/2 -translate-x-1/2" />
 
               <CardHeader className="relative z-10 pb-0">
                  <div className="flex items-center justify-between mb-2">

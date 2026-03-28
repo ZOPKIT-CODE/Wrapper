@@ -220,7 +220,7 @@ export function TimelineTab({ timelineData, timelineLoading, hasMore, isLoadingM
                     type="button"
                     onClick={onLoadMore}
                     disabled={isLoadingMore}
-                    className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold transition-all duration-200 bg-slate-100 text-slate-700 hover:bg-blue-50 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed border border-slate-200 hover:border-blue-200"
+                    className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold transition-all duration-200 bg-slate-100 text-slate-700 hover:bg-[#1B2E5A]/5 hover:text-[#1B2E5A] disabled:opacity-50 disabled:cursor-not-allowed border border-slate-200 hover:border-[#1B2E5A]/20"
                   >
                     {isLoadingMore ? (
                       <>

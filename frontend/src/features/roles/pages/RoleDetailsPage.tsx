@@ -99,7 +99,7 @@ const getAppIcon = (appCode: string) => {
   const key = appCode.toLowerCase();
   const props = { className: "w-5 h-5" };
   if (key.includes('crm') || key.includes('sales')) return <Users {...props} className="text-blue-500" />;
-  if (key.includes('inventory') || key.includes('product')) return <Package {...props} className="text-indigo-500" />;
+  if (key.includes('inventory') || key.includes('product')) return <Package {...props} className="text-[#1B2E5A]" />;
   if (key.includes('admin') || key.includes('auth')) return <Shield {...props} className="text-rose-500" />;
   if (key.includes('hr') || key.includes('people')) return <Building2 {...props} className="text-emerald-500" />;
   if (key.includes('billing') || key.includes('finance')) return <Coins {...props} className="text-amber-500" />;
@@ -322,7 +322,7 @@ export function RoleDetailsPage() {
             <div className="flex flex-col">
               <span className="text-[7px] font-black uppercase text-slate-400 tracking-widest leading-none mb-1">Applications</span>
               <div className="flex items-center gap-2">
-                <LayoutGrid className="w-3 h-3 text-indigo-500" />
+                <LayoutGrid className="w-3 h-3 text-[#1B2E5A]" />
                 <span className="text-[10px] font-black text-[#1B2E5A] dark:text-white tabular-nums">{permissionSummary.applicationCount}</span>
               </div>
             </div>
@@ -382,7 +382,7 @@ export function RoleDetailsPage() {
                           <div>
                             <div className="text-[13px] font-black text-[#1B2E5A] dark:text-white uppercase flex items-center gap-2 leading-none tracking-tight">
                               {app.appName}
-                              <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/20 text-[8px] font-black tracking-widest uppercase px-1.5 py-0.5">Active</Badge>
+                              <Badge className="bg-[#1B2E5A]/10 text-[#1B2E5A] border-[#1B2E5A]/20 text-[8px] font-black tracking-widest uppercase px-1.5 py-0.5">Active</Badge>
                             </div>
                             <div className="flex items-center gap-2 mt-1 opacity-60">
                               <span className="text-[9px] text-slate-500 font-black uppercase tracking-widest">{app.modules?.length || 0} Modules</span>

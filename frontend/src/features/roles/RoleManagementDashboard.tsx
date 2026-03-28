@@ -488,7 +488,7 @@ export function RoleManagementDashboard() {
             <div
               className={cn(
                 "w-11 h-11 rounded-xl flex items-center justify-center shrink-0 shadow-sm ring-1 ring-black/5",
-                !role.color && "bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400"
+                !role.color && "bg-[#1B2E5A]/10 text-[#1B2E5A] dark:bg-[#1B2E5A]/20 dark:text-[#4A6FA5]"
               )}
               style={role.color ? { backgroundColor: `${role.color}18`, color: role.color, border: `1px solid ${role.color}25` } : undefined}
             >
@@ -665,7 +665,7 @@ export function RoleManagementDashboard() {
         </motion.div>
 
         {/* Enhanced Filters and Search */}
-        <Card className="rounded-2xl border border-sky-100 bg-gradient-to-r from-sky-50/50 to-white shadow-sm backdrop-blur-sm transition-all hover:shadow-md">
+        <Card className="rounded-2xl border border-[#1B2E5A]/10 bg-white shadow-sm backdrop-blur-sm transition-all hover:shadow-md">
           <CardContent className="p-6 space-y-6">
             {/* Search Bar */}
             <div className="flex flex-col lg:flex-row gap-4">

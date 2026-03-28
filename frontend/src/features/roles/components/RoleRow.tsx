@@ -94,7 +94,7 @@ export function RoleRow({
             </div>
             <div className="flex items-center gap-2">
               <Package className="w-4 h-4 text-blue-500" />
-              <span className="font-medium text-blue-600">{displayModules}</span>
+              <span className="font-medium text-[#1B2E5A]">{displayModules}</span>
               <span className="text-gray-500">modules</span>
               <span className="text-xs text-gray-400">({displayApps} apps)</span>
             </div>

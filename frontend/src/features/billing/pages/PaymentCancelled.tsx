@@ -181,7 +181,7 @@ const PaymentCancelled: React.FC = () => {
                 <MessageSquare className="h-5 w-5" />
                 <span className="font-medium">Need Help?</span>
               </div>
-              <p className="text-blue-600 text-center">
+              <p className="text-[#1B2E5A] text-center">
                 Contact our support team at{' '}
                 <a href="mailto:support@yourcompany.com" className="underline hover:text-blue-800">
                   support@yourcompany.com

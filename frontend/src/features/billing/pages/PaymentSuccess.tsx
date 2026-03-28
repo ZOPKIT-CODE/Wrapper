@@ -344,7 +344,7 @@ const PaymentSuccess: React.FC = () => {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#1B2E5A] border-t-transparent mx-auto mb-4"></div>
           <p className="text-slate-600 font-bold">Confirming payment...</p>
         </div>
       </div>
@@ -363,7 +363,7 @@ const PaymentSuccess: React.FC = () => {
             <CardDescription>{paymentError instanceof Error ? paymentError.message : 'Missing session information'}</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={() => navigate({ to: '/dashboard/billing' })} className="w-full bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl py-6">
+            <Button onClick={() => navigate({ to: '/dashboard/billing' })} className="w-full bg-[#1B2E5A] hover:bg-[#162447] text-white font-bold rounded-xl py-6">
               Return to Billing
             </Button>
           </CardContent>
@@ -380,7 +380,7 @@ const PaymentSuccess: React.FC = () => {
           animate={{ scale: 1, opacity: 1, rotateX: 0 }}
           transition={{ type: 'spring', stiffness: 260, damping: 20 }}
           style={{ x, y }}
-          className="bg-gradient-to-br from-blue-50 via-blue-50/80 to-white rounded-[2.5rem] pt-10 pb-6 px-6 text-center shadow-[0_40px_80px_-15px_rgba(59,130,246,0.2)] border-b-4 border-r-4 border-blue-200 relative z-10 overflow-visible group"
+          className="bg-[#1B2E5A]/5 rounded-[2.5rem] pt-10 pb-6 px-6 text-center shadow-[0_40px_80px_-15px_rgba(59,130,246,0.2)] border-b-4 border-r-4 border-[#1B2E5A]/20 relative z-10 overflow-visible group"
         >
           {/* Animated Background Gradient */}
           <div className="absolute inset-0 bg-gradient-to-br from-blue-100/50 via-transparent to-blue-50/30 rounded-[2.5rem] opacity-50 group-hover:opacity-75 transition-opacity duration-500" />
@@ -419,7 +419,7 @@ const PaymentSuccess: React.FC = () => {
 
           <div className="mt-2 relative z-10">
             <motion.p
-              className="text-blue-600 font-black text-base uppercase tracking-[0.15em] mb-1"
+              className="text-[#1B2E5A] font-black text-base uppercase tracking-[0.15em] mb-1"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
@@ -472,7 +472,7 @@ const PaymentSuccess: React.FC = () => {
                 animate={{ scale: 1, rotate: 0 }}
                 whileHover={{ scale: 1.1, rotate: 360 }}
                 transition={{ delay: 0.5, type: 'spring', stiffness: 200, duration: 0.5 }}
-                className="absolute bottom-1 right-1 bg-gradient-to-br from-blue-600 to-blue-700 text-white font-black text-xl w-10 h-10 rounded-full flex items-center justify-center border-4 border-white shadow-2xl"
+                className="absolute bottom-1 right-1 bg-[#1B2E5A] text-white font-black text-xl w-10 h-10 rounded-full flex items-center justify-center border-4 border-white shadow-2xl"
               >
                 $
               </motion.div>
@@ -659,7 +659,7 @@ const PaymentSuccess: React.FC = () => {
                           {currentState && (
                             <>
                               <motion.div 
-                                className="p-3 bg-gradient-to-br from-blue-50 to-blue-100/50 border-2 border-blue-200 rounded-xl flex justify-between items-center gap-3 relative overflow-hidden group shadow-lg shadow-blue-100/50"
+                                className="p-3 bg-[#1B2E5A]/5 border-2 border-[#1B2E5A]/20 rounded-xl flex justify-between items-center gap-3 relative overflow-hidden group shadow-lg shadow-blue-100/50"
                                 whileHover={{ scale: 1.02, borderColor: "rgb(59 130 246)" }}
                                 initial={{ x: 20, opacity: 0 }}
                                 animate={{ x: 0, opacity: 1 }}
@@ -677,7 +677,7 @@ const PaymentSuccess: React.FC = () => {
                                     animate={{ scale: 1 }}
                                     transition={{ delay: 0.5, type: "spring" }}
                                   >
-                                    <span className="text-[10px] font-black text-blue-600 bg-white/90 px-1.5 py-0.5 rounded-full shadow-sm border border-blue-200">
+                                    <span className="text-[10px] font-black text-[#1B2E5A] bg-white/90 px-1.5 py-0.5 rounded-full shadow-sm border border-[#1B2E5A]/20">
                                       +{(currentState.credits - (previousState?.credits || 0)).toLocaleString()}
                                     </span>
                                   </motion.div>
@@ -695,7 +695,7 @@ const PaymentSuccess: React.FC = () => {
                                   transition={{ duration: 3, repeat: Infinity }}
                                 />
                               </motion.div>
-                              <div className="p-3 bg-blue-50 border border-blue-100 rounded-xl flex justify-between items-center gap-3">
+                              <div className="p-3 bg-[#1B2E5A]/5 border border-[#1B2E5A]/10 rounded-xl flex justify-between items-center gap-3">
                                 <span className="text-xs font-bold text-blue-700 shrink-0">Current Plan</span>
                                 <span className="text-xs font-black text-blue-900 uppercase bg-white/80 px-2 py-0.5 rounded-full shadow-sm">{currentState.plan}</span>
                               </div>
@@ -739,7 +739,7 @@ const PaymentSuccess: React.FC = () => {
                   <Button
                     onClick={() => navigate({ to: '/dashboard/billing' })}
                     variant="outline"
-                    className="px-6 py-5 border-2 border-slate-200 hover:border-blue-200 hover:bg-blue-50/50 text-slate-600 hover:text-blue-700 font-black rounded-xl transition-all flex items-center justify-center gap-2 text-sm group"
+                    className="px-6 py-5 border-2 border-slate-200 hover:border-[#1B2E5A]/20 hover:bg-blue-50/50 text-slate-600 hover:text-blue-700 font-black rounded-xl transition-all flex items-center justify-center gap-2 text-sm group"
                   >
                     <CreditCard className="w-5 h-5 group-hover:scale-110 transition-transform" />
                     View Billing
@@ -762,14 +762,14 @@ const PaymentSuccess: React.FC = () => {
                         whileHover={{ rotate: [0, -10, 10, -10, 0] }}
                         transition={{ duration: 0.5 }}
                       >
-                        <FileText className="w-4 h-4 text-slate-400 group-hover:text-blue-600 transition-colors" />
+                        <FileText className="w-4 h-4 text-slate-400 group-hover:text-[#1B2E5A] transition-colors" />
                       </motion.div>
                       Receipt
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3 px-4 pb-4 relative z-10">
                     <motion.div
-                      className="p-3 bg-slate-50 rounded-xl border border-slate-100 group-hover:border-blue-200 transition-colors"
+                      className="p-3 bg-slate-50 rounded-xl border border-slate-100 group-hover:border-[#1B2E5A]/20 transition-colors"
                       whileHover={{ scale: 1.02 }}
                     >
                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Transaction ID</p>
@@ -813,7 +813,7 @@ const PaymentSuccess: React.FC = () => {
               {/* Help Card */}
               <motion.div variants={itemVariants}>
                 <motion.div
-                  className="bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 rounded-[2rem] p-4 lg:p-5 text-white relative overflow-hidden group shadow-2xl shadow-blue-200"
+                  className="bg-[#1B2E5A] rounded-[2rem] p-4 lg:p-5 text-white relative overflow-hidden group shadow-2xl shadow-blue-200"
                   whileHover={{ scale: 1.02 }}
                   transition={{ type: "spring", stiffness: 300 }}
                 >

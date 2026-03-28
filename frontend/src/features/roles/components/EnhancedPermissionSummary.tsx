@@ -61,7 +61,7 @@ export function EnhancedPermissionSummary({
             </div>
             <div className="flex flex-col items-start gap-3 min-w-0">
               <div className="p-3 bg-indigo-50 dark:bg-indigo-950/30 rounded-2xl shrink-0">
-                <LayoutGrid className="w-6 h-6 text-indigo-500" />
+                <LayoutGrid className="w-6 h-6 text-[#1B2E5A]" />
               </div>
               <span className="text-4xl font-black tabular-nums text-[#1B2E5A] dark:text-white leading-none">{permissionSummary.applicationCount}</span>
               <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Applications</span>

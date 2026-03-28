@@ -396,12 +396,12 @@ export function ApplicationModuleRoleBuilder({
     const key = appKey.toLowerCase();
     const props = { className: "w-5 h-5" };
     if (key.includes('crm') || key.includes('sales')) return <Users {...props} className="w-5 h-5 text-blue-500" />;
-    if (key.includes('inventory') || key.includes('product')) return <Package {...props} className="w-5 h-5 text-indigo-500" />;
+    if (key.includes('inventory') || key.includes('product')) return <Package {...props} className="w-5 h-5 text-[#1B2E5A]" />;
     if (key.includes('admin') || key.includes('auth')) return <Shield {...props} className="w-5 h-5 text-rose-500" />;
     if (key.includes('hr') || key.includes('people')) return <Building {...props} className="w-5 h-5 text-emerald-500" />;
     if (key.includes('billing') || key.includes('finance') || key.includes('payments')) return <Coins {...props} className="w-5 h-5 text-amber-500" />;
     if (key.includes('analytics') || key.includes('reporting')) return <Activity {...props} className="w-5 h-5 text-violet-500" />;
-    if (key.includes('database') || key.includes('storage')) return <Database {...props} className="w-5 h-5 text-sky-500" />;
+    if (key.includes('database') || key.includes('storage')) return <Database {...props} className="w-5 h-5 text-[#1B2E5A]" />;
     if (key.includes('settings') || key.includes('config')) return <Settings {...props} className="w-5 h-5 text-slate-500" />;
     return <Grid {...props} className="w-5 h-5 text-slate-400" />;
   };
@@ -555,7 +555,7 @@ export function ApplicationModuleRoleBuilder({
             "p-2.5 rounded-xl shadow-sm border",
             isDark ? "bg-slate-900 border-slate-700" : "bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-100"
           )}>
-            <Shield className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+            <Shield className="w-6 h-6 text-[#1B2E5A] dark:text-blue-400" />
           </div>
           <div>
             <h1 className="text-xl font-bold tracking-tight">
@@ -576,7 +576,7 @@ export function ApplicationModuleRoleBuilder({
             <div className="w-px h-8 bg-slate-200 dark:bg-slate-800 hidden md:block"></div>
             <div className="text-right hidden md:block">
               <span className="block text-[10px] uppercase tracking-wider text-slate-500 font-bold">Est. Cost</span>
-              <span className="block text-lg font-bold text-blue-600 dark:text-blue-400 leading-none">{summary.estimatedCredits.toFixed(0)}</span>
+              <span className="block text-lg font-bold text-[#1B2E5A] dark:text-blue-400 leading-none">{summary.estimatedCredits.toFixed(0)}</span>
             </div>
           </div>
         </div>
@@ -675,7 +675,7 @@ export function ApplicationModuleRoleBuilder({
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setCurrentStep(1)}
-                className="flex items-center gap-2 text-slate-500 hover:text-blue-600 dark:hover:text-slate-400 dark:hover:text-blue-400 text-xs font-medium"
+                className="flex items-center gap-2 text-slate-500 hover:text-[#1B2E5A] dark:hover:text-slate-400 dark:hover:text-blue-400 text-xs font-medium"
                 title="Edit role name and purpose"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
@@ -744,7 +744,7 @@ export function ApplicationModuleRoleBuilder({
                               <div className="flex items-center gap-3 mt-1.5 opacity-60">
                                 <span className="text-[10px] text-slate-500 font-black uppercase tracking-widest">{app.modules.length} Modules</span>
                                 <div className="w-1 h-1 rounded-full bg-slate-300" />
-                                <span className="text-[10px] text-blue-600 dark:text-blue-400 font-black uppercase tracking-widest">{selectedAppPerms}/{totalAppPerms} ACQUISITIONS</span>
+                                <span className="text-[10px] text-[#1B2E5A] dark:text-blue-400 font-black uppercase tracking-widest">{selectedAppPerms}/{totalAppPerms} ACQUISITIONS</span>
                               </div>
                             </div>
                           </div>
@@ -757,7 +757,7 @@ export function ApplicationModuleRoleBuilder({
                                   "px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border",
                                   isAllAppSelected
                                     ? "bg-[#1B2E5A] border-blue-500 text-white shadow-lg shadow-blue-500/10"
-                                    : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 hover:border-blue-400 hover:text-blue-600"
+                                    : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 hover:border-blue-400 hover:text-[#1B2E5A]"
                                 )}
                               >
                                 {isAllAppSelected ? 'All Domains Active' : 'Sync Full Domain'}
@@ -784,7 +784,7 @@ export function ApplicationModuleRoleBuilder({
                                   <div>
                                     <h4 className={cn(
                                       "text-[12px] font-black uppercase tracking-tight leading-4 mb-1",
-                                      isModuleActive ? "text-blue-600 dark:text-blue-400" : "text-[#1B2E5A] dark:text-slate-200"
+                                      isModuleActive ? "text-[#1B2E5A] dark:text-blue-400" : "text-[#1B2E5A] dark:text-slate-200"
                                     )}>
                                       {module.moduleName}
                                     </h4>
@@ -799,7 +799,7 @@ export function ApplicationModuleRoleBuilder({
                                         isAllModuleSelected
                                           ? "bg-[#1B2E5A] border-blue-500 text-white"
                                           : isModuleActive
-                                            ? "bg-blue-50 border-blue-200 text-blue-600"
+                                            ? "bg-blue-50 border-blue-200 text-[#1B2E5A]"
                                             : "bg-slate-50 border-slate-200 text-slate-400 hover:bg-white"
                                       )}
                                     >
@@ -840,7 +840,7 @@ export function ApplicationModuleRoleBuilder({
                                             </div>
                                             <Badge variant="outline" className={cn(
                                               "text-[7px] h-3.5 px-1 font-black leading-none uppercase border-none",
-                                              isPermSelected ? "text-blue-600" : "text-slate-300"
+                                              isPermSelected ? "text-[#1B2E5A]" : "text-slate-300"
                                             )}>
                                               {isPermSelected ? 'ACTIVE' : 'READY'}
                                             </Badge>
