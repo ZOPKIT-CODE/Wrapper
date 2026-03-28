@@ -940,7 +940,7 @@ const IndustryPage: React.FC = () => {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5, delay: 0.1 }}
-                        className="text-5xl lg:text-7xl font-extrabold tracking-tight mb-8 text-slate-900 bg-clip-text text-transparent bg-gradient-to-r from-slate-900 via-slate-800 to-slate-600"
+                        className="text-5xl lg:text-7xl font-extrabold tracking-tight mb-8 text-[#1B2E5A] bg-clip-text text-transparent bg-gradient-to-r from-[#1B2E5A] via-[#2D4A7B] to-[#4A6FA5]"
                     >
                         {data.hero.headline}
                     </motion.h1>
@@ -1011,7 +1011,7 @@ const IndustryPage: React.FC = () => {
                                 transition={{ delay: i * 0.1 }}
                                 className="group bg-slate-50 hover:bg-white p-8 rounded-2xl border border-slate-200 hover:border-blue-200 transition-all duration-300 hover:shadow-xl hover:shadow-blue-900/5 hover:-translate-y-1"
                             >
-                                <div className="w-12 h-12 rounded-xl bg-blue-100 group-hover:bg-blue-600 transition-colors flex items-center justify-center mb-6">
+                                <div className="w-12 h-12 rounded-xl bg-blue-100 group-hover:bg-[#1B2E5A] transition-colors flex items-center justify-center mb-6">
                                     <point.icon size={24} className="text-blue-600 group-hover:text-white transition-colors" />
                                 </div>
                                 <h3 className="text-lg font-bold text-[#1B2E5A] mb-2">{point.text}</h3>

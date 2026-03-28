@@ -828,7 +828,7 @@ const Landing: React.FC = () => {
                   <div className="flex items-center gap-4 mb-6 pt-5 border-t border-slate-200/60 group-hover:border-white/10 transition-colors duration-300">
                     {topStats.map((stat, i) => (
                       <div key={i}>
-                        <p className="text-lg font-extrabold text-slate-900 group-hover:text-white tracking-tight transition-colors duration-300">{stat.value}</p>
+                        <p className="text-lg font-extrabold text-[#1B2E5A] group-hover:text-white tracking-tight transition-colors duration-300">{stat.value}</p>
                         <p className="text-[11px] text-slate-400 group-hover:text-slate-500 transition-colors duration-300">{stat.label}</p>
                       </div>
                     ))}

@@ -120,7 +120,7 @@ export const CustomProgressIndicator: React.FC<{ className?: string }> = ({ clas
                     className={cn(
                       'flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-200',
                       isCompleted && 'bg-green-500 border-green-500 text-white shadow-lg',
-                      isCurrent && !hasErrors && 'bg-blue-600 border-blue-600 text-white shadow-lg',
+                      isCurrent && !hasErrors && 'bg-[#1B2E5A] border-[#1B2E5A] text-white shadow-lg',
                       hasErrors && isCurrent && 'bg-red-500 border-red-500 text-white shadow-lg',
                       isUpcoming && 'bg-gray-200 border-gray-300 text-gray-500'
                     )}

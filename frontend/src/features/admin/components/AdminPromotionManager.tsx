@@ -317,7 +317,7 @@ export const AdminPromotionManager: React.FC = () => {
                     <div className="flex items-center gap-3">
                       <UserCheck className="w-5 h-5 text-gray-400" />
                       <div>
-                        <p className="font-medium text-gray-900">{user.name}</p>
+                        <p className="font-medium text-[#1B2E5A]">{user.name}</p>
                         <p className="text-sm text-gray-600">{user.email}</p>
                         <p className="text-xs text-gray-500">
                           Joined: {new Date(user.createdAt).toLocaleDateString()}

@@ -60,7 +60,7 @@ export const AdvancedProgressIndicator: React.FC<{ className?: string }> = ({ cl
       {/* Brand/Logo Section */}
       <div className="mb-8">
         <div className="flex items-center space-x-3 mb-4">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+          <div className="w-8 h-8 bg-[#1B2E5A] rounded-lg flex items-center justify-center">
             <span className="text-white font-bold text-sm">G</span>
           </div>
           <span className="text-xl font-semibold text-[#1B2E5A]">Zopkit</span>
@@ -73,8 +73,8 @@ export const AdvancedProgressIndicator: React.FC<{ className?: string }> = ({ cl
             <span>{Math.round(completionPercentage)}% complete</span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
-            <div 
-              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+            <div
+              className="bg-[#1B2E5A] h-2 rounded-full transition-all duration-300"
               style={{ width: `${completionPercentage}%` }}
             />
           </div>
@@ -112,7 +112,7 @@ export const AdvancedProgressIndicator: React.FC<{ className?: string }> = ({ cl
                   className={cn(
                     'flex items-center justify-center w-8 h-8 rounded-full border-2 transition-all duration-200',
                     isCompleted && 'bg-green-500 border-green-500 text-white',
-                    isCurrent && !isError && 'bg-blue-600 border-blue-600 text-white',
+                    isCurrent && !isError && 'bg-[#1B2E5A] border-[#1B2E5A] text-white',
                     isError && 'bg-red-500 border-red-500 text-white',
                     isUpcoming && 'bg-gray-200 border-gray-300 text-gray-500'
                   )}
