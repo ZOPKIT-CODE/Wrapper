@@ -823,7 +823,7 @@ const ApplicationAssignmentManager: React.FC = () => {
                                         <div>
                                           <h4 className={cn(
                                             "text-[13px] font-black uppercase tracking-tight leading-tight mb-1",
-                                            isModuleEnabled ? "text-slate-900 dark:text-white" : "text-slate-400"
+                                            isModuleEnabled ? "text-[#1B2E5A] dark:text-white" : "text-slate-400"
                                           )}>
                                             {module.moduleName}
                                           </h4>

@@ -244,7 +244,7 @@ export const WorkflowVisualizer = () => {
                     {/* Header */}
                     <div className="relative z-10 h-12 sm:h-16 border-b border-slate-100 bg-white/80 flex items-center justify-between px-3 sm:px-8 shrink-0">
                         <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-                            <h2 className="text-sm sm:text-xl font-bold text-slate-900 truncate">
+                            <h2 className="text-sm sm:text-xl font-bold text-[#1B2E5A] truncate">
                                 {activeWorkflow.title}
                             </h2>
                             <div className="hidden sm:block px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-500 text-xs font-semibold border border-slate-200 shrink-0">

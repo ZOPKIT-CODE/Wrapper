@@ -701,7 +701,7 @@ const StackedCard: React.FC<CardProps> = React.memo(({
                   e.stopPropagation();
                   window.location.href = `/products/${app.id}`;
                 }}
-                className={`flex items-center justify-center px-5 py-2.5 rounded-xl bg-slate-900 text-white hover:bg-${app.color}-600 transition-colors font-semibold text-sm group`}
+                className={`flex items-center justify-center px-5 py-2.5 rounded-xl bg-[#1B2E5A] text-white hover:bg-[#162447] transition-colors font-semibold text-sm group`}
               >
                 Know More <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </button>

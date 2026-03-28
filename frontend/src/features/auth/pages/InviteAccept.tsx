@@ -301,9 +301,9 @@ export function InviteAccept() {
             <CardDescription className="text-gray-600">{error}</CardDescription>
           </CardHeader>
           <CardContent className="px-10 pb-10">
-            <Button 
-              onClick={() => navigate({ to: '/landing' })} 
-              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-6 rounded-xl shadow-lg shadow-blue-500/30"
+            <Button
+              onClick={() => navigate({ to: '/landing' })}
+              className="w-full bg-gradient-to-r from-[#1B2E5A] to-[#2D4A7B] hover:from-[#162447] hover:to-[#234063] text-white font-semibold py-6 rounded-xl shadow-lg shadow-blue-500/30"
               variant="default"
             >
               Go to Homepage
@@ -373,7 +373,7 @@ export function InviteAccept() {
               </p>
               <Button
                 onClick={handleAcceptInvitation}
-                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-6 rounded-xl shadow-lg shadow-blue-500/30 transition-all duration-200"
+                className="w-full bg-gradient-to-r from-[#1B2E5A] to-[#2D4A7B] hover:from-[#162447] hover:to-[#234063] text-white font-semibold py-6 rounded-xl shadow-lg shadow-blue-500/30 transition-all duration-200"
                 disabled={accepting}
                 size="lg"
               >
@@ -396,7 +396,7 @@ export function InviteAccept() {
             <div className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-50 rounded-full">
               <Building2 className="h-4 w-4 text-blue-600" />
               <span className="text-sm text-blue-700 font-medium">
-                Organization: <strong className="text-blue-900">{invitation.orgCode}</strong>
+                Organization: <strong className="text-[#1B2E5A]">{invitation.orgCode}</strong>
               </span>
             </div>
           </div>

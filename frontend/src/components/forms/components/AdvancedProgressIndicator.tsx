@@ -63,7 +63,7 @@ export const AdvancedProgressIndicator: React.FC<{ className?: string }> = ({ cl
           <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
             <span className="text-white font-bold text-sm">G</span>
           </div>
-          <span className="text-xl font-semibold text-gray-800">Zopkit</span>
+          <span className="text-xl font-semibold text-[#1B2E5A]">Zopkit</span>
         </div>
         
         {/* Progress Bar */}

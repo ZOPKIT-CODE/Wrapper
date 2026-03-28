@@ -218,12 +218,12 @@ const IndustryWorkflowVisualizer: React.FC<IndustryWorkflowVisualizerProps> = ({
                     <Workflow size={14} />
                     Live Demonstration
                 </motion.div>
-                <motion.h2 
+                <motion.h2
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ delay: 0.1 }}
-                    className="text-4xl md:text-5xl font-bold text-slate-900 mb-4 tracking-tight"
+                    className="text-4xl md:text-5xl font-bold text-[#1B2E5A] mb-4 tracking-tight"
                 >
                     Intelligent Workflow Automation
                 </motion.h2>
@@ -982,7 +982,7 @@ const IndustryPage: React.FC = () => {
                                 whileHover={{ y: -5 }}
                                 className="bg-white/60 backdrop-blur-sm p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-lg hover:border-blue-200 transition-all duration-300"
                             >
-                                <div className="text-3xl font-bold text-slate-900 mb-1">
+                                <div className="text-3xl font-bold text-[#1B2E5A] mb-1">
                                     <CountUpAnimation value={stat.value} />
                                 </div>
                                 <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">{stat.label}</div>
@@ -1107,7 +1107,7 @@ const IndustryPage: React.FC = () => {
                                     <div className="text-5xl font-extrabold text-blue-600 mb-2 tracking-tight">
                                         <CountUpAnimation value={metric.value} />
                                     </div>
-                                    <div className="text-lg font-bold text-slate-900 mb-3">{metric.label}</div>
+                                    <div className="text-lg font-bold text-[#1B2E5A] mb-3">{metric.label}</div>
                                     <p className="text-slate-500 text-sm leading-relaxed mb-6">{metric.description || "Consistent improvement observed across all client deployments within the first quarter."}</p>
                                     
                                     {/* Mini Visualization */}

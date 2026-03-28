@@ -244,7 +244,7 @@ export const AdminPromotionManager: React.FC = () => {
           {adminStatus?.currentAdmin ? (
             <div className="flex items-center gap-4">
               <div className="flex-1">
-                <p className="font-medium text-gray-900">{adminStatus.currentAdmin.name}</p>
+                <p className="font-medium text-[#1B2E5A]">{adminStatus.currentAdmin.name}</p>
                 <p className="text-sm text-gray-600">{adminStatus.currentAdmin.email}</p>
                 <p className="text-xs text-gray-500 flex items-center gap-1">
                   <Clock className="w-3 h-3" />

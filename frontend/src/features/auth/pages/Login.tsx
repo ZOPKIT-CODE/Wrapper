@@ -59,7 +59,7 @@ const FeatureCard = ({ icon: Icon, title, desc, delay }: { icon: any, title: str
         <Icon className="w-6 h-6 text-indigo-600 transition-colors" />
       </div>
       <div>
-        <h3 className="text-slate-800 font-bold mb-1 group-hover:text-indigo-700 transition-colors">{title}</h3>
+        <h3 className="text-[#1B2E5A] font-bold mb-1 group-hover:text-indigo-700 transition-colors">{title}</h3>
         <p className="text-sm text-slate-500 leading-tight font-medium">{desc}</p>
       </div>
     </div>
@@ -493,8 +493,8 @@ export function Login() {
                       onClick={handleLogin}
                       disabled={isLoggingIn}
                       className={`w-full h-14 font-semibold text-lg rounded-xl transition-all relative overflow-hidden group shadow-sm ${
-                        isCrmRequest 
-                          ? 'bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white border-0' 
+                        isCrmRequest
+                          ? 'bg-[#1B2E5A] hover:bg-[#162447] text-white border-0'
                           : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 hover:border-slate-300'
                       }`}
                     >

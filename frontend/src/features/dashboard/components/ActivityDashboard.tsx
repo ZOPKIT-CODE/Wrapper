@@ -532,10 +532,10 @@ export function ActivityDashboard() {
                           <div className={`p-2 rounded-lg ${getActivityColor(log.action)}`}>
                             {getActivityIcon(log.action)}
                           </div>
-                          
+
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1">
-                              <span className="font-medium text-gray-900">
+                              <span className="font-medium text-[#1B2E5A]">
                                 {formatActionName(log.action)}
                               </span>
                               <Badge variant="outline">{log.resourceType}</Badge>

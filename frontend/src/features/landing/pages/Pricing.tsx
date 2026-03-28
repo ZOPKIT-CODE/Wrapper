@@ -157,7 +157,7 @@ const Pricing: React.FC = () => (
               <p className="text-slate-600 text-sm mt-1">{pkg.description}</p>
             </div>
             <div className="mb-2">
-              <span className="text-4xl font-bold text-slate-900">{pkg.credits.toLocaleString()}</span>
+              <span className="text-4xl font-bold text-[#1B2E5A]">{pkg.credits.toLocaleString()}</span>
               <span className="text-slate-600 ml-1">credits</span>
             </div>
             <div className="flex items-center gap-1.5 text-sm text-green-700 font-medium mb-6">

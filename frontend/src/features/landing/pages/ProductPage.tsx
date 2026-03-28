@@ -526,7 +526,7 @@ const ProductPage: React.FC = () => {
                                         {data.hero.stats.map((stat, i) => (
                                             <div key={i} className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm">
                                                 <div className="text-slate-500 text-sm font-medium mb-2">{stat.label}</div>
-                                                <div className="text-2xl font-bold text-slate-900">{stat.value}</div>
+                                                <div className="text-2xl font-bold text-[#1B2E5A]">{stat.value}</div>
                                             </div>
                                         ))}
                                     </div>
@@ -849,7 +849,7 @@ const ProductPage: React.FC = () => {
                                             </th>
                                             {data.pricing.tiers.map((tier, idx) => (
                                                 <th key={idx} className={`p-6 text-center w-1/5 border-b border-slate-100 ${tier.popular ? 'bg-blue-50/30' : 'bg-white'}`}>
-                                                    <div className="font-bold text-xl text-slate-900 mb-1">{tier.name}</div>
+                                                    <div className="font-bold text-xl text-[#1B2E5A] mb-1">{tier.name}</div>
                                                     <div className="text-blue-600 font-semibold text-sm">Contact Us</div>
                                                 </th>
                                             ))}
@@ -901,7 +901,7 @@ const ProductPage: React.FC = () => {
                                                     <button
                                                         onClick={() => navigate({ to: '/onboarding' })}
                                                         className={`w-full py-3 rounded-lg font-bold text-sm transition-all ${tier.popular
-                                                            ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20'
+                                                            ? 'bg-[#1B2E5A] text-white hover:bg-[#162447] shadow-lg shadow-blue-600/20'
                                                             : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                                                             }`}>
                                                         {tier.cta}
@@ -955,7 +955,7 @@ const ProductPage: React.FC = () => {
                                     {data.socialProof.testimonial.author.charAt(0)}
                                 </div>
                                 <div className="text-left">
-                                    <div className="font-bold text-slate-900">{data.socialProof.testimonial.author}</div>
+                                    <div className="font-bold text-[#1B2E5A]">{data.socialProof.testimonial.author}</div>
                                     <div className="text-sm text-slate-500">{data.socialProof.testimonial.title}, {data.socialProof.testimonial.company}</div>
                                 </div>
                             </div>
@@ -964,7 +964,7 @@ const ProductPage: React.FC = () => {
                         <div className="grid grid-cols-3 gap-8 border-t border-slate-200 pt-12">
                             {data.socialProof.stats.map((stat, i) => (
                                 <div key={i}>
-                                    <div className="text-3xl lg:text-4xl font-bold text-slate-900 mb-1">{stat.value}</div>
+                                    <div className="text-3xl lg:text-4xl font-bold text-[#1B2E5A] mb-1">{stat.value}</div>
                                     <div className="text-sm text-slate-500 uppercase tracking-wide">{stat.label}</div>
                                 </div>
                             ))}

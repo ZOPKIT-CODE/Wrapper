@@ -321,7 +321,7 @@ export function BillingUpgradePage() {
                     </div>
                     <div className="ml-3">
                       <p className={`text-sm font-medium ${
-                        step.id <= currentStep ? 'text-gray-900' : 'text-gray-500'
+                        step.id <= currentStep ? 'text-[#1B2E5A]' : 'text-gray-500'
                       }`}>
                         {step.title}
                       </p>

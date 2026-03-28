@@ -216,7 +216,7 @@ export function ApplicationDetailsModal({ application, isOpen, onClose }: Applic
                   <div className="flex items-center justify-between">
               <div>
                       <p className="text-sm font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide">Application Code</p>
-                      <p className="text-2xl font-bold text-slate-900 dark:text-white mt-2">{appCode}</p>
+                      <p className="text-2xl font-bold text-[#1B2E5A] dark:text-white mt-2">{appCode}</p>
                     </div>
                     <div className="relative">
                       <div className={getIconContainerClasses('code')}>
@@ -240,7 +240,7 @@ export function ApplicationDetailsModal({ application, isOpen, onClose }: Applic
                   <div className="flex items-center justify-between">
               <div>
                       <p className="text-sm font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide">Subscription Plan</p>
-                      <p className="text-xl font-semibold text-slate-900 dark:text-white mt-2">
+                      <p className="text-xl font-semibold text-[#1B2E5A] dark:text-white mt-2">
                         {typeof subscriptionTier === "object" ? "Enterprise" : subscriptionTier || "Basic"}
                       </p>
                     </div>
@@ -400,7 +400,7 @@ function ModuleCard({ module, isEnabled, modulePermissions, customPermissions }:
                   <div className={`absolute inset-0 w-4 h-4 rounded-full blur-sm ${isEnabled ? 'bg-emerald-400/60' : 'bg-slate-400/60'}`} />
                 )}
               </div>
-              <h4 className="font-semibold text-slate-900 dark:text-white text-lg">
+              <h4 className="font-semibold text-[#1B2E5A] dark:text-white text-lg">
                 {moduleName || "Unknown Module"}
               </h4>
             </div>
@@ -435,7 +435,7 @@ function ModuleCard({ module, isEnabled, modulePermissions, customPermissions }:
           <div className="relative pt-4">
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/70 dark:via-white/50 to-transparent" />
             <div className="flex items-center justify-between mb-4">
-              <h5 className="font-medium text-slate-900 dark:text-white text-sm">
+              <h5 className="font-medium text-[#1B2E5A] dark:text-white text-sm">
                 Permissions
               </h5>
               <div className="text-xs text-slate-700 dark:text-slate-300 bg-white/60 dark:bg-white/20 backdrop-blur-md px-3 py-1 rounded-full border border-white/40 dark:border-white/30 shadow-sm">

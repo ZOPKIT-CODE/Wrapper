@@ -65,7 +65,7 @@ export const ProgressIndicator: React.FC<{ className?: string }> = ({ className 
           <div className="w-8 h-8 bg-blue-600 dark:bg-blue-500 rounded-lg flex items-center justify-center">
             <span className="text-white font-bold text-sm">G</span>
           </div>
-          <span className="text-xl font-semibold text-gray-800 dark:text-gray-100">Zopkit</span>
+          <span className="text-xl font-semibold text-[#1B2E5A] dark:text-gray-100">Zopkit</span>
         </div>
       </div>
 

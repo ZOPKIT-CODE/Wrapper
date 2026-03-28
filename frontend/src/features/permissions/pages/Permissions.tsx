@@ -294,7 +294,7 @@ function PermissionsContent() {
     return (
       <Card className="h-[600px] overflow-hidden professional-dropdown shadow-lg border-0">
         <CardHeader className="pb-3 professional-dropdown-header">
-          <CardTitle className="text-xl flex items-center gap-3 font-bold text-gray-800">
+          <CardTitle className="text-xl flex items-center gap-3 font-bold text-[#1B2E5A]">
             <div className="w-8 h-8 rounded-lg bg-gray-700 flex items-center justify-center">
               <Grid className="w-4 h-4 text-white" />
             </div>
@@ -546,7 +546,7 @@ function PermissionsContent() {
             {/* Recent Users */}
             <Card className="professional-dropdown border-0 shadow-lg">
               <CardHeader className="pb-3 professional-dropdown-header rounded-t-lg">
-                <CardTitle className="text-lg flex items-center gap-3 font-semibold text-gray-800">
+                <CardTitle className="text-lg flex items-center gap-3 font-semibold text-[#1B2E5A]">
                   <div className="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center">
                     <Users className="w-4 h-4 text-white" />
                   </div>
@@ -564,7 +564,7 @@ function PermissionsContent() {
             {/* Active Roles */}
             <Card className="professional-dropdown border-0 shadow-lg">
               <CardHeader className="pb-3 professional-dropdown-header rounded-t-lg">
-                <CardTitle className="text-lg flex items-center gap-3 font-semibold text-gray-800">
+                <CardTitle className="text-lg flex items-center gap-3 font-semibold text-[#1B2E5A]">
                   <div className="w-8 h-8 rounded-lg bg-purple-500 flex items-center justify-center">
                     <Crown className="w-4 h-4 text-white" />
                   </div>
@@ -582,7 +582,7 @@ function PermissionsContent() {
             {/* Key Permissions */}
             <Card className="professional-dropdown border-0 shadow-lg">
               <CardHeader className="pb-3 professional-dropdown-header rounded-t-lg">
-                <CardTitle className="text-lg flex items-center gap-3 font-semibold text-gray-800">
+                <CardTitle className="text-lg flex items-center gap-3 font-semibold text-[#1B2E5A]">
                   <div className="w-8 h-8 rounded-lg bg-green-500 flex items-center justify-center">
                     <Key className="w-4 h-4 text-white" />
                   </div>
