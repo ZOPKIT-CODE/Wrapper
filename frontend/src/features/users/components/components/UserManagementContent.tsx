@@ -58,7 +58,7 @@ export function UserManagementContent() {
       {/* Controls & Data Section */}
       <div className="space-y-4">
         {/* Filters Bar */}
-        <div className="rounded-2xl border border-sky-100 bg-gradient-to-r from-sky-50/50 to-white p-4 shadow-sm backdrop-blur-sm transition-all hover:shadow-md">
+        <div className="rounded-2xl border border-[#1B2E5A]/10 bg-gradient-to-r from-[#1B2E5A]/5 to-white p-4 shadow-sm backdrop-blur-sm transition-all hover:shadow-md">
           <UserFilters
             searchQuery={state.searchQuery}
             setSearchQuery={(query) => actions.setFilters({ searchQuery: query })}
@@ -78,7 +78,7 @@ export function UserManagementContent() {
         {/* Bulk Actions */}
         {state.selectedUsers.size > 0 && (
           <div className="animate-in slide-in-from-top-2 fade-in duration-300">
-            <div className="rounded-2xl border border-blue-200 bg-gradient-to-r from-blue-600 to-sky-500 p-4 shadow-lg text-white">
+            <div className="rounded-2xl border border-[#1B2E5A]/30 bg-[#1B2E5A] p-4 shadow-lg text-white">
               <BulkActions
                 selectedCount={state.selectedUsers.size}
                 onClearSelection={actions.clearSelection}

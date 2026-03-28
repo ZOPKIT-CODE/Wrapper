@@ -18,7 +18,8 @@ export function MetricCard({
     isLoading: boolean
   }) {
     const colorClasses = {
-      blue: 'text-blue-600 bg-blue-100',
+      blue: 'text-[#1B2E5A] bg-[#1B2E5A]/10',
+      sky: 'text-[#1B2E5A] bg-[#1B2E5A]/10',
       green: 'text-green-600 bg-green-100',
       purple: 'text-purple-600 bg-purple-100',
       yellow: 'text-yellow-600 bg-yellow-100'

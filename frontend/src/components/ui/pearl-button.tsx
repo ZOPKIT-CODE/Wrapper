@@ -23,7 +23,7 @@ export const PearlButton = forwardRef<HTMLButtonElement, PearlButtonProps>(({
 
   const getVariantStyles = () => {
     const colorClassMap: Record<string, string> = {
-      blue: 'blue-600',
+      blue: '[#1B2E5A]',
       sky: 'sky-500',
       indigo: 'indigo-600',
       cyan: 'cyan-500',
@@ -64,7 +64,7 @@ export const PearlButton = forwardRef<HTMLButtonElement, PearlButtonProps>(({
         },
         outline: {
           background: 'bg-transparent border border-slate-200',
-          text: `text-${themeColorClass.split('-')[0]}-600`,
+          text: themeColorClass.startsWith('[') ? `text-${themeColorClass}` : `text-${themeColorClass.split('-')[0]}-600`,
           shadow: 'shadow-none',
           hoverShadow: 'hover:bg-slate-50',
           activeShadow: 'active:bg-slate-100',
