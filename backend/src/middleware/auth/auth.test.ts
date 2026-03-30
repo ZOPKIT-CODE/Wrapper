@@ -18,20 +18,22 @@ const {
   const getSystemConnectionMock = vi.fn(() => systemSql);
   const getAppConnectionMock = vi.fn(() => appSql);
 
-  const validateTokenMock = vi.fn(async () => null);
+  // Use `any` here to avoid Vitest inferring overly-narrow `null` / `never` types,
+  // which then breaks `tsc --noEmit` when we override implementations per-test.
+  const validateTokenMock: any = vi.fn(async () => null);
   const refreshTokenMock = vi.fn(async () => ({
     access_token: 'new-access',
     refresh_token: 'new-refresh',
     expires_in: 3600,
   }));
 
-  const jwtVerifyMock = vi.fn(() => {
+  const jwtVerifyMock: any = vi.fn(() => {
     throw new Error('jwt verify not configured in test');
   });
 
   // Minimal Drizzle-like chain stubs used by the operations-JWT path.
-  const dbSelectTenantUserMock = vi.fn(async () => []);
-  const dbSelectMock = vi.fn(() => ({
+  const dbSelectTenantUserMock: any = vi.fn(async () => []);
+  const dbSelectMock: any = vi.fn(() => ({
     from: vi.fn(() => ({
       where: vi.fn(() => ({
         limit: vi.fn(async () => []),
