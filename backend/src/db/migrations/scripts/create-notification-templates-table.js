@@ -1,15 +1,15 @@
 #!/usr/bin/env node
 
 /**
- * 🔄 **CREATE EXTERNAL APPLICATIONS TABLE MIGRATION SCRIPT**
- * Creates the external_applications table
- * 
- * This script creates the external_applications table that stores registered
- * external applications that can send notifications.
- * 
+ * 🔄 **CREATE NOTIFICATION TEMPLATES TABLE MIGRATION SCRIPT**
+ * Creates the notification_templates table
+ *
+ * This script creates the notification_templates table that stores reusable
+ * notification templates for admin use.
+ *
  * Usage:
- *   node src/scripts/create-external-applications-table.js
- *   npm run migrate:create-external-applications
+ *   node src/db/migrations/scripts/create-notification-templates-table.js
+ *   pnpm run db:migrate:create-notification-templates
  */
 
 import postgres from 'postgres';
@@ -21,8 +21,8 @@ import { dirname, join } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-async function createExternalApplicationsTable() {
-  console.log('🚀 Starting External Applications Table Migration');
+async function createNotificationTemplatesTable() {
+  console.log('🚀 Starting Notification Templates Table Migration');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
   if (!process.env.DATABASE_URL) {
@@ -33,42 +33,42 @@ async function createExternalApplicationsTable() {
   const sql = postgres(process.env.DATABASE_URL, {
     prepare: false,
     connection: {
-      search_path: 'public'
-    }
+      search_path: 'public',
+    },
   });
 
   try {
     // Check if table already exists
-    console.log('🔍 Checking if external_applications table exists...\n');
+    console.log('🔍 Checking if notification_templates table exists...\n');
 
     const checkTable = await sql`
       SELECT EXISTS (
-        SELECT FROM information_schema.tables 
-        WHERE table_schema = 'public' 
-        AND table_name = 'external_applications'
+        SELECT FROM information_schema.tables
+        WHERE table_schema = 'public'
+        AND table_name = 'notification_templates'
       ) as exists;
     `;
 
     if (checkTable[0]?.exists) {
-      console.log('⚠️  Table external_applications already exists');
+      console.log('⚠️  Table notification_templates already exists');
       console.log('   Skipping migration (table already created)\n');
-      
+
       // Verify indexes exist
       console.log('🔍 Verifying indexes...\n');
       const indexes = await sql`
-        SELECT indexname 
-        FROM pg_indexes 
-        WHERE tablename = 'external_applications'
+        SELECT indexname
+        FROM pg_indexes
+        WHERE tablename = 'notification_templates'
         AND schemaname = 'public';
       `;
-      
+
       if (indexes.length > 0) {
-        console.log(`✅ Found ${indexes.length} indexes on external_applications table`);
-        indexes.forEach(idx => console.log(`   - ${idx.indexname}`));
+        console.log(`✅ Found ${indexes.length} indexes on notification_templates table`);
+        indexes.forEach((idx) => console.log(`   - ${idx.indexname}`));
       } else {
         console.log('⚠️  No indexes found, but table exists');
       }
-      
+
       await sql.end();
       console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       console.log('✅ Migration check completed');
@@ -79,9 +79,9 @@ async function createExternalApplicationsTable() {
     console.log('✅ Table does not exist, proceeding with migration...\n');
 
     // Read migration file
-    const migrationPath = join(__dirname, '../db/migrations/create_external_applications_table.sql');
+    const migrationPath = join(__dirname, '..', 'create_notification_templates_table.sql');
     let migrationSQL;
-    
+
     try {
       migrationSQL = readFileSync(migrationPath, 'utf8');
       console.log('📄 Read migration file:', migrationPath);
@@ -89,67 +89,59 @@ async function createExternalApplicationsTable() {
       console.error('❌ Failed to read migration file:', fileError.message);
       console.log('📝 Using inline SQL instead...\n');
       migrationSQL = `
--- Create external_applications table
-CREATE TABLE IF NOT EXISTS "external_applications" (
-	"app_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"app_name" text NOT NULL,
-	"app_description" text,
-	"api_key" text NOT NULL UNIQUE,
-	"api_secret" text,
-	"webhook_url" text,
-	"webhook_secret" text,
-	"rate_limit" integer DEFAULT 100 NOT NULL,
-	"allowed_tenants" jsonb,
-	"permissions" jsonb DEFAULT '[]' NOT NULL,
-	"is_active" boolean DEFAULT true NOT NULL,
-	"created_by" uuid REFERENCES "tenant_users"("user_id"),
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL,
-	"last_used_at" timestamp,
-	"request_count" integer DEFAULT 0 NOT NULL,
-	"last_request_at" timestamp,
-	"metadata" jsonb DEFAULT '{}'
+-- Create notification_templates table
+CREATE TABLE IF NOT EXISTS "notification_templates" (
+\t"template_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+\t"name" text NOT NULL,
+\t"category" text DEFAULT 'custom' NOT NULL,
+\t"description" text,
+\t"type" text NOT NULL,
+\t"priority" text DEFAULT 'medium' NOT NULL,
+\t"title" text NOT NULL,
+\t"message" text NOT NULL,
+\t"action_url" text,
+\t"action_label" text,
+\t"variables" jsonb DEFAULT '{}',
+\t"metadata" jsonb DEFAULT '{}',
+\t"is_active" boolean DEFAULT true NOT NULL,
+\t"is_system" boolean DEFAULT false NOT NULL,
+\t"version" text DEFAULT '1.0.0',
+\t"created_by" uuid REFERENCES "tenant_users"("user_id"),
+\t"created_at" timestamp DEFAULT now() NOT NULL,
+\t"updated_at" timestamp DEFAULT now() NOT NULL,
+\t"last_used_at" timestamp
 );
 
 -- Create indexes
-CREATE INDEX IF NOT EXISTS idx_external_applications_api_key 
-ON external_applications(api_key);
+CREATE INDEX IF NOT EXISTS idx_notification_templates_category_active
+ON notification_templates(category, is_active, created_at DESC);
 
-CREATE INDEX IF NOT EXISTS idx_external_applications_is_active 
-ON external_applications(is_active);
+CREATE INDEX IF NOT EXISTS idx_notification_templates_type_active
+ON notification_templates(type, is_active, created_at DESC);
 
-CREATE INDEX IF NOT EXISTS idx_external_applications_created_by 
-ON external_applications(created_by);
+CREATE INDEX IF NOT EXISTS idx_notification_templates_is_active
+ON notification_templates(is_active);
 
-CREATE INDEX IF NOT EXISTS idx_external_applications_last_used_at 
-ON external_applications(last_used_at DESC);
+CREATE INDEX IF NOT EXISTS idx_notification_templates_created_by
+ON notification_templates(created_by);
+
+CREATE INDEX IF NOT EXISTS idx_notification_templates_created_at
+ON notification_templates(created_at DESC);
       `.trim();
     }
 
     // Execute migration
     console.log('\n🔄 Executing migration...\n');
 
-    // Better SQL splitting: split by semicolon, but preserve multi-line statements
-    // Remove comments first
-    let cleanSQL = migrationSQL
-      .split('\n')
-      .filter(line => !line.trim().startsWith('--'))
-      .join('\n');
-
-    // Split by semicolon, but keep statements that span multiple lines
-    const statements = cleanSQL
-      .split(';')
-      .map(stmt => stmt.trim())
-      .filter(stmt => stmt.length > 0);
+    // Split SQL into statements (handle both ; and statement-breakpoint)
+    const statements = migrationSQL
+      .split(/--> statement-breakpoint|;/)
+      .map((stmt) => stmt.trim())
+      .filter((stmt) => stmt.length > 0 && !stmt.startsWith('--'));
 
     for (let i = 0; i < statements.length; i++) {
-      let statement = statements[i];
+      const statement = statements[i];
       if (statement.length === 0) continue;
-
-      // Add semicolon back if not present (for execution)
-      if (!statement.endsWith(';')) {
-        statement += ';';
-      }
 
       try {
         const preview = statement.substring(0, 80).replace(/\s+/g, ' ');
@@ -158,10 +150,14 @@ ON external_applications(last_used_at DESC);
         console.log(`   ✅ Statement ${i + 1} executed successfully\n`);
       } catch (stmtError) {
         // If table/index already exists, that's okay (IF NOT EXISTS handles it)
-        if (stmtError.message?.includes('already exists') || 
-            stmtError.code === '42P07' || // duplicate table
-            stmtError.code === '42710') { // duplicate object
-          console.log(`   ⚠️  Object already exists (non-critical): ${stmtError.message.split('\n')[0]}\n`);
+        if (
+          stmtError.message?.includes('already exists') ||
+          stmtError.code === '42P07' || // duplicate table
+          stmtError.code === '42710' // duplicate object
+        ) {
+          console.log(
+            `   ⚠️  Object already exists (non-critical): ${stmtError.message.split('\n')[0]}\n`
+          );
         } else {
           console.error(`   ❌ Failed to execute statement ${i + 1}:`, stmtError.message);
           throw stmtError;
@@ -174,14 +170,14 @@ ON external_applications(last_used_at DESC);
 
     const verifyTable = await sql`
       SELECT EXISTS (
-        SELECT FROM information_schema.tables 
-        WHERE table_schema = 'public' 
-        AND table_name = 'external_applications'
+        SELECT FROM information_schema.tables
+        WHERE table_schema = 'public'
+        AND table_name = 'notification_templates'
       ) as exists;
     `;
 
     if (verifyTable[0]?.exists) {
-      console.log('✅ Table external_applications created successfully\n');
+      console.log('✅ Table notification_templates created successfully\n');
     } else {
       console.error('❌ Table was not created\n');
       throw new Error('Table creation verification failed');
@@ -189,14 +185,14 @@ ON external_applications(last_used_at DESC);
 
     // Verify indexes
     const indexes = await sql`
-      SELECT indexname 
-      FROM pg_indexes 
-      WHERE tablename = 'external_applications'
+      SELECT indexname
+      FROM pg_indexes
+      WHERE tablename = 'notification_templates'
       AND schemaname = 'public';
     `;
 
-    console.log(`✅ Found ${indexes.length} indexes on external_applications table`);
-    indexes.forEach(idx => console.log(`   - ${idx.indexname}`));
+    console.log(`✅ Found ${indexes.length} indexes on notification_templates table`);
+    indexes.forEach((idx) => console.log(`   - ${idx.indexname}`));
 
     await sql.end();
 
@@ -204,13 +200,12 @@ ON external_applications(last_used_at DESC);
     console.log('✅ Migration completed successfully');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
     console.log('📋 Changes Applied:');
-    console.log('   • Created external_applications table');
+    console.log('   • Created notification_templates table');
     console.log('   • Created indexes for efficient querying');
     console.log('\n📝 Next Steps:');
-    console.log('   • The external applications feature should now work');
-    console.log('   • You can register external applications via the admin dashboard');
+    console.log('   • The notification templates feature should now work');
+    console.log('   • You can create templates via the admin dashboard');
     console.log('');
-
   } catch (error) {
     console.error('\n❌ Migration failed:', error.message);
     console.error(error);
@@ -220,7 +215,7 @@ ON external_applications(last_used_at DESC);
 }
 
 // Run migration
-createExternalApplicationsTable().catch((error) => {
+createNotificationTemplatesTable().catch((error) => {
   console.error('❌ Unhandled error:', error);
   process.exit(1);
 });

@@ -3,10 +3,10 @@
 /**
  * 🔄 **ADD UI CUSTOMIZATION FIELDS MIGRATION SCRIPT**
  * Adds UI customization support to notification templates
- * 
+ *
  * Usage:
- *   node src/scripts/add-ui-customization-fields.js
- *   npm run migrate:add-ui-customization
+ *   node src/db/migrations/scripts/add-ui-customization-fields.js
+ *   pnpm run db:migrate:add-ui-customization
  */
 
 import postgres from 'postgres';
@@ -30,13 +30,13 @@ async function addUICustomizationFields() {
   const sql = postgres(process.env.DATABASE_URL, {
     prepare: false,
     connection: {
-      search_path: 'public'
-    }
+      search_path: 'public',
+    },
   });
 
   try {
     // Read migration file
-    const migrationPath = join(__dirname, '../db/migrations/add_ui_customization_fields.sql');
+    const migrationPath = join(__dirname, '..', 'add_ui_customization_fields.sql');
     const migrationSQL = readFileSync(migrationPath, 'utf8');
     console.log('📄 Read migration file:', migrationPath);
 
@@ -48,7 +48,7 @@ async function addUICustomizationFields() {
 
     // Verify changes
     console.log('🔍 Verifying changes...\n');
-    
+
     const hasUIConfig = await sql`
       SELECT EXISTS (
         SELECT FROM information_schema.columns
@@ -78,7 +78,6 @@ async function addUICustomizationFields() {
     console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('✅ Migration completed successfully');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-
   } catch (error) {
     console.error('\n❌ Migration failed:', error.message);
     console.error(error);
@@ -91,14 +90,4 @@ addUICustomizationFields().catch((error) => {
   console.error('❌ Unhandled error:', error);
   process.exit(1);
 });
-
-
-
-
-
-
-
-
-
-
 

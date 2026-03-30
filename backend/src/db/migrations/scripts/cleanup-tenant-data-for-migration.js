@@ -3,13 +3,13 @@
 /**
  * 🧹 **CLEANUP TENANT DATA FOR MIGRATION**
  * Cleans up any orphaned data related to credit allocation tables before migration
- * 
+ *
  * This script should be run BEFORE dropping the credit allocation tables
  * to ensure there's no orphaned data that could cause issues.
- * 
+ *
  * Usage:
- *   node src/scripts/cleanup-tenant-data-for-migration.js
- *   npm run migrate:cleanup-tenant-data
+ *   node src/db/migrations/scripts/cleanup-tenant-data-for-migration.js
+ *   pnpm run db:migrate:cleanup-tenant-data
  */
 
 import postgres from 'postgres';
@@ -27,24 +27,24 @@ async function cleanupTenantDataForMigration() {
   const sql = postgres(process.env.DATABASE_URL, {
     prepare: false,
     connection: {
-      search_path: 'public'
-    }
+      search_path: 'public',
+    },
   });
 
   try {
     // Check if credit allocation tables exist
     const allocationsExists = await sql`
       SELECT EXISTS (
-        SELECT FROM information_schema.tables 
-        WHERE table_schema = 'public' 
+        SELECT FROM information_schema.tables
+        WHERE table_schema = 'public'
         AND table_name = 'credit_allocations'
       ) as exists;
     `;
 
     const transactionsExists = await sql`
       SELECT EXISTS (
-        SELECT FROM information_schema.tables 
-        WHERE table_schema = 'public' 
+        SELECT FROM information_schema.tables
+        WHERE table_schema = 'public'
         AND table_name = 'credit_allocation_transactions'
       ) as exists;
     `;
@@ -93,7 +93,7 @@ async function cleanupTenantDataForMigration() {
         AND ccu.table_schema = tc.table_schema
       WHERE tc.constraint_type = 'FOREIGN KEY'
         AND (
-          ccu.table_name = 'credit_allocations' 
+          ccu.table_name = 'credit_allocations'
           OR ccu.table_name = 'credit_allocation_transactions'
         )
       ORDER BY tc.table_name, kcu.column_name;
@@ -101,8 +101,10 @@ async function cleanupTenantDataForMigration() {
 
     if (foreignKeys.length > 0) {
       console.log('⚠️  Found tables referencing credit allocation tables:');
-      foreignKeys.forEach(fk => {
-        console.log(`   ${fk.table_name}.${fk.column_name} → ${fk.foreign_table_name}.${fk.foreign_column_name}`);
+      foreignKeys.forEach((fk) => {
+        console.log(
+          `   ${fk.table_name}.${fk.column_name} → ${fk.foreign_table_name}.${fk.foreign_column_name}`
+        );
       });
       console.log('\n   Note: CASCADE will automatically handle these references\n');
     } else {
@@ -116,7 +118,6 @@ async function cleanupTenantDataForMigration() {
     console.log('   • Foreign key references will be automatically removed');
     console.log('   • Safe to proceed with migration');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-
   } catch (error) {
     console.error('\n❌ Cleanup check failed:', error.message);
     console.error('   Error details:', error);
@@ -136,20 +137,4 @@ cleanupTenantDataForMigration()
     console.error('❌ Cleanup check failed:', error);
     process.exit(1);
   });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

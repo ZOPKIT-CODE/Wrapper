@@ -2,14 +2,14 @@
 
 # 🔄 **RUN ALL ONBOARDING MIGRATIONS**
 # This script runs all necessary migrations for the onboarding flow changes
-# 
+#
 # Usage:
-#   chmod +x src/scripts/run-all-migrations.sh
-#   ./src/scripts/run-all-migrations.sh
+#   chmod +x src/db/migrations/scripts/run-all-migrations.sh
+#   ./src/db/migrations/scripts/run-all-migrations.sh
 #   OR
-#   npm run migrate:all
+#   pnpm run db:migrate:all
 
-set -e  # Exit on error
+set -e # Exit on error
 
 echo "🚀 Starting All Onboarding Migrations"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -23,9 +23,9 @@ NC='\033[0m' # No Color
 
 # Check if DATABASE_URL is set
 if [ -z "$DATABASE_URL" ]; then
-    echo -e "${RED}❌ DATABASE_URL environment variable is required${NC}"
-    echo "   Please set it in your .env file or export it"
-    exit 1
+  echo -e "${RED}❌ DATABASE_URL environment variable is required${NC}"
+  echo "   Please set it in your .env file or export it"
+  exit 1
 fi
 
 echo -e "${GREEN}✅ DATABASE_URL found${NC}"
@@ -35,13 +35,13 @@ echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "Step 1: Dropping Credit Allocation Tables"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-node src/scripts/run-credit-allocation-migration.js
+node src/db/migrations/scripts/run-credit-allocation-migration.js
 
 if [ $? -eq 0 ]; then
-    echo -e "${GREEN}✅ Step 1 completed successfully${NC}\n"
+  echo -e "${GREEN}✅ Step 1 completed successfully${NC}\n"
 else
-    echo -e "${RED}❌ Step 1 failed${NC}"
-    exit 1
+  echo -e "${RED}❌ Step 1 failed${NC}"
+  exit 1
 fi
 
 # Step 2: Verify schema changes
@@ -59,7 +59,7 @@ const sql = postgres(process.env.DATABASE_URL);
 async function verify() {
     const allocations = await sql\`SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'credit_allocations') as exists;\`;
     const transactions = await sql\`SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'credit_allocation_transactions') as exists;\`;
-    
+
     if (!allocations[0]?.exists && !transactions[0]?.exists) {
         console.log('✅ Credit allocation tables successfully removed');
         process.exit(0);
@@ -75,9 +75,9 @@ verify().finally(() => sql.end());
 "
 
 if [ $? -eq 0 ]; then
-    echo -e "${GREEN}✅ Step 2 completed successfully${NC}\n"
+  echo -e "${GREEN}✅ Step 2 completed successfully${NC}\n"
 else
-    echo -e "${YELLOW}⚠️  Step 2 completed with warnings${NC}\n"
+  echo -e "${YELLOW}⚠️  Step 2 completed with warnings${NC}\n"
 fi
 
 # Summary
@@ -94,20 +94,4 @@ echo "   • Verify your application code doesn't reference these tables"
 echo "   • Test onboarding flow to ensure everything works"
 echo "   • Applications should now manage their own credit consumption"
 echo ""
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
