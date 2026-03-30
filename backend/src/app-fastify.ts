@@ -69,49 +69,54 @@ if (!DISABLE_ALL_LOGGING) {
     const originalLog = fastify.log;
     const logger = enhancedLogger;
 
+    // Fire-and-forget ES logging — never block the request pipeline.
+    // When ES is unreachable, Winston's ES transport can stall; wrapping
+    // in try/catch prevents that from adding latency to every request.
     fastify.addHook('onRequest', async (request, reply) => {
-      // Log incoming requests to Elasticsearch
-      logger!.winstonLogger.info('Incoming request', {
-        method: request.method,
-        url: request.url,
-        hostname: request.hostname,
-        remoteAddress: request.ip,
-        requestId: request.id,
-        service: process.env.SERVICE_NAME || 'wrapper-backend',
-        env: process.env.NODE_ENV || 'development'
-      });
+      try {
+        logger!.winstonLogger.info('Incoming request', {
+          method: request.method,
+          url: request.url,
+          hostname: request.hostname,
+          remoteAddress: request.ip,
+          requestId: request.id,
+          service: process.env.SERVICE_NAME || 'wrapper-backend',
+          env: process.env.NODE_ENV || 'development'
+        });
+      } catch { /* ES logging must never block requests */ }
     });
 
     fastify.addHook('onResponse', async (request, reply) => {
-      // Log completed requests to Elasticsearch
-      logger!.winstonLogger.info('Request completed', {
-        method: request.method,
-        url: request.url,
-        statusCode: reply.statusCode,
-        responseTime: reply.getResponseTime(),
-        requestId: request.id,
-        service: process.env.SERVICE_NAME || 'wrapper-backend',
-        env: process.env.NODE_ENV || 'development'
-      });
+      try {
+        logger!.winstonLogger.info('Request completed', {
+          method: request.method,
+          url: request.url,
+          statusCode: reply.statusCode,
+          responseTime: reply.getResponseTime(),
+          requestId: request.id,
+          service: process.env.SERVICE_NAME || 'wrapper-backend',
+          env: process.env.NODE_ENV || 'development'
+        });
+      } catch { /* ES logging must never block requests */ }
     });
 
-    // Hook into Fastify's error logging
     fastify.addHook('onError', async (request, reply, err: unknown) => {
-      const error = err as Error & { code?: string };
-      // Log errors to Elasticsearch
-      enhancedLogger!.winstonLogger.error('Request error', {
-        method: request.method,
-        url: request.url,
-        statusCode: reply.statusCode || 500,
-        error: {
-          message: error.message,
-          stack: error.stack,
-          code: error.code
-        },
-        requestId: request.id,
-        service: process.env.SERVICE_NAME || 'wrapper-backend',
-        env: process.env.NODE_ENV || 'development'
-      });
+      try {
+        const error = err as Error & { code?: string };
+        enhancedLogger!.winstonLogger.error('Request error', {
+          method: request.method,
+          url: request.url,
+          statusCode: reply.statusCode || 500,
+          error: {
+            message: error.message,
+            stack: error.stack,
+            code: error.code
+          },
+          requestId: request.id,
+          service: process.env.SERVICE_NAME || 'wrapper-backend',
+          env: process.env.NODE_ENV || 'development'
+        });
+      } catch { /* ES logging must never block requests */ }
     });
 
     console.log('✅ Fastify logs will be sent to Elasticsearch');
@@ -127,26 +132,28 @@ global.logToES = (level, message, data = {}) => {
 
   console.log(`[${level.toUpperCase()}] ${message}`, data);
   if (enhancedLogger && enhancedLogger.winstonLogger) {
-    const logData = {
-      message,
-      ...data,
-      service: process.env.SERVICE_NAME || 'wrapper-backend',
-      env: process.env.NODE_ENV || 'development'
-    };
+    try {
+      const logData = {
+        message,
+        ...data,
+        service: process.env.SERVICE_NAME || 'wrapper-backend',
+        env: process.env.NODE_ENV || 'development'
+      };
 
-    switch (level.toLowerCase()) {
-      case 'error':
-        enhancedLogger.winstonLogger.error(message, logData);
-        break;
-      case 'warn':
-        enhancedLogger.winstonLogger.warn(message, logData);
-        break;
-      case 'debug':
-        enhancedLogger.winstonLogger.debug(message, logData);
-        break;
-      default:
-        enhancedLogger.winstonLogger.info(message, logData);
-    }
+      switch (level.toLowerCase()) {
+        case 'error':
+          enhancedLogger.winstonLogger.error(message, logData);
+          break;
+        case 'warn':
+          enhancedLogger.winstonLogger.warn(message, logData);
+          break;
+        case 'debug':
+          enhancedLogger.winstonLogger.debug(message, logData);
+          break;
+        default:
+          enhancedLogger.winstonLogger.info(message, logData);
+      }
+    } catch { /* ES logging must never block callers */ }
   }
 };
 
@@ -472,10 +479,17 @@ async function start() {
     console.log(`📚 API Documentation: http://${host}:${port}/docs`);
     console.log(`🏥 Health Check: http://${host}:${port}/health`);
 
-    // Initialize Amazon MQ publisher so connection issues surface immediately
+    // Pre-warm Amazon MQ connection BEFORE accepting traffic to avoid cold-start
+    // latency on the first publish (e.g., during tenant onboarding).
     try {
       const { amazonMQPublisher } = await import('./features/messaging/utils/amazon-mq-publisher.js');
-      await amazonMQPublisher.initializeAtStartup();
+      const mqReady = amazonMQPublisher.initializeAtStartup();
+      // Race against a 10s timeout so a slow broker never blocks startup
+      const timeout = new Promise<false>(resolve => setTimeout(() => resolve(false), 10_000));
+      const connected = await Promise.race([mqReady, timeout]);
+      if (connected === false) {
+        console.warn('⚠️ Amazon MQ warm-up timed out after 10s — will retry lazily on first publish');
+      }
       const { startOutboxReplayWorker } = await import('./features/messaging/services/outbox-replay-worker.js');
       startOutboxReplayWorker();
     } catch (err: unknown) {
@@ -666,14 +680,15 @@ export async function initializeCreditExpirySystem() {
 //   }, 2000);
 // }
 
-// Call credit expiry initialization after database connection is established
+// Call credit expiry initialization well after database connection is established.
+// Deferred to 30s (was 3s) so expiry cron queries don't compete with the DB pool
+// during the critical first few seconds when onboarding/auth requests arrive.
 if (process.env.NODE_ENV !== 'test') {
-  // Delay initialization to ensure database is ready
   setTimeout(() => {
     initializeCreditExpirySystem().catch(error => {
       console.error('Failed to initialize credit expiry system:', error);
     });
-  }, 3000);
+  }, 30_000);
 }
 
 export default fastify;

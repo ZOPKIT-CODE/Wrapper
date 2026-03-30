@@ -2,6 +2,8 @@
  * Entry point: logs immediately, then loads app.js.
  * If you see ECANCELED after "Loading app", nodemon restarted during load — run once: npm start
  */
+import './instrument.js';
+
 process.stdout.write('🚀 Backend starting...\n');
 await new Promise((r) => setImmediate(r));
 process.stdout.write('📦 Loading app...\n');

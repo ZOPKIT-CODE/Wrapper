@@ -1,4 +1,5 @@
 import amqp from 'amqplib';
+import * as Sentry from '@sentry/node';
 import { CircuitBreaker } from '../../../utils/circuit-breaker.js';
 
 /** Minimal type for amqplib connection (library types can vary) */
@@ -34,7 +35,10 @@ class AmazonMQPublisher {
   private readonly baseReconnectDelay = 1000; // 1 second
   private readonly maxReconnectDelay = 60000; // 60 seconds
   private readonly businessSuiteApps: string[];
-  private readonly circuitBreaker = new CircuitBreaker('amazon-mq', 3, 30000);
+  // Relaxed thresholds: 5 failures before opening (was 3), 10s cooldown (was 30s).
+  // The old 3/30s config meant a single transient blip during onboarding could
+  // block all MQ publishes for 30 seconds — the biggest contributor to the ~1min lag.
+  private readonly circuitBreaker = new CircuitBreaker('amazon-mq', 5, 10000);
 
   constructor() {
     const suiteAppsEnv = process.env.BUSINESS_SUITE_TARGET_APPS;
@@ -185,6 +189,7 @@ class AmazonMQPublisher {
 
     } catch (error) {
       console.error('❌ Failed to connect to Amazon MQ:', error);
+      Sentry.captureException(error, { tags: { 'messaging.operation': 'connect' } });
       this.isConnected = false;
       throw error;
     }
@@ -265,11 +270,14 @@ class AmazonMQPublisher {
       await this.connect();
     }
 
+    const t0 = Date.now();
+    console.log(`[MQ→] tenant=${tenantId} event=${eventType} → ${targetApplication} payload=${JSON.stringify(eventData)}`);
+
     return this.circuitBreaker.execute(async () => {
     try {
       const routingKey = this.generateRoutingKey(targetApplication, eventType);
       const resolvedEventId = eventId || `inter_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
+
       const message = {
         eventId: resolvedEventId,
         eventType,
@@ -349,8 +357,8 @@ class AmazonMQPublisher {
 
       await doPublish();
 
-      console.log(`📤 Published to Amazon MQ: ${sourceApplication} → ${targetApplication} (${routingKey})`);
-      
+      console.log(`[MQ→OK] tenant=${tenantId} event=${eventType} → ${targetApplication} (${Date.now() - t0}ms)`);
+
       return {
         success: true,
         eventId: message.eventId,
@@ -359,7 +367,22 @@ class AmazonMQPublisher {
       };
 
     } catch (error) {
-      console.error('❌ Failed to publish to Amazon MQ:', error);
+      const errMsg = error instanceof Error ? error.message : String(error);
+      console.error(`[MQ→ERR] tenant=${tenantId} event=${eventType} → ${targetApplication} ✗ ${errMsg}`);
+
+      Sentry.withScope((scope) => {
+        scope.setTag('messaging.exchange', this.exchange);
+        scope.setTag('messaging.target_app', targetApplication);
+        scope.setTag('messaging.event_type', eventType);
+        scope.setContext('event_publish', {
+          sourceApplication,
+          targetApplication,
+          tenantId,
+          entityId,
+          eventType,
+        });
+        Sentry.captureException(error);
+      });
 
       // Try to reconnect if connection lost
       if (!this.isConnected) {
@@ -631,6 +654,9 @@ class AmazonMQPublisher {
       await this.connect();
     }
 
+    const t0 = Date.now();
+    console.log(`[MQ→] event=${eventType} → broadcast payload=${JSON.stringify(eventData)}`);
+
     try {
       const message = {
         eventType,
@@ -681,15 +707,24 @@ class AmazonMQPublisher {
         }
       });
 
-      console.log(`📢 Published broadcast to Amazon MQ: ${eventType}`);
-      
+      console.log(`[MQ→OK] event=${eventType} → broadcast (${Date.now() - t0}ms)`);
+
       return {
         success: true,
         eventType
       };
 
     } catch (error) {
-      console.error('❌ Failed to publish broadcast:', error);
+      const errMsg = error instanceof Error ? error.message : String(error);
+      console.error(`[MQ→ERR] event=${eventType} → broadcast ✗ ${errMsg}`);
+
+      Sentry.withScope((scope) => {
+        scope.setTag('messaging.exchange', this.broadcastExchange);
+        scope.setTag('messaging.event_type', eventType);
+        scope.setContext('broadcast_publish', { eventType });
+        Sentry.captureException(error);
+      });
+
       throw error;
     }
   }
