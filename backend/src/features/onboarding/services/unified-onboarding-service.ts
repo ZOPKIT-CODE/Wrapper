@@ -920,7 +920,10 @@ export class UnifiedOnboardingService {
           if (addResult?.success) {
             console.log('✅ User successfully added to Kinde organization');
           } else {
-            console.warn('⚠️ [Kinde] addUserToOrganization returned non-success (non-fatal, onboarding continues)');
+            console.warn('⚠️ [Kinde] addUserToOrganization returned non-success (non-fatal, onboarding continues)', {
+              error: addResult?.error,
+              details: addResult?.details,
+            });
           }
         } else {
           console.log('ℹ️ Skipping Kinde user addition (organization created with fallback)');

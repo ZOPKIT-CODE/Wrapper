@@ -639,7 +639,8 @@ class KindeService {
       // without assigning any Kinde role (POST /organizations/{org_code}/users).
       if (options.skipRoleAssignment) {
         const membershipEndpoint = `${this.baseURL}/api/v1/organizations/${orgCode}/users`;
-        await axios.post(membershipEndpoint, { id: kindeUserId }, {
+        // Kinde Management API requires the body as { users: [{ id }] }
+        await axios.post(membershipEndpoint, { users: [{ id: kindeUserId }] }, {
           headers: { 'Authorization': `Bearer ${m2mToken}`, 'Content-Type': 'application/json' },
           timeout: 10000
         });
