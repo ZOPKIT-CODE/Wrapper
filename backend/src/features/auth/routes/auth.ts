@@ -533,7 +533,7 @@ export default async function authRoutes(
                 const enabledApps = await fetchEnabledApps(tenant.tenantId);
                 const res = {
                   success: true,
-                  user: { id: u.userId, email: u.email, firstName: u.firstName ?? undefined, lastName: u.lastName ?? undefined, name: u.name, kindeId: u.kindeUserId },
+                  user: { id: u.userId, email: u.email, firstName: u.firstName ?? undefined, lastName: u.lastName ?? undefined, name: [u.firstName, u.lastName].filter(Boolean).join(' ') || u.email || '', kindeId: u.kindeUserId },
                   tenant: { id: tenant.tenantId, name: tenant.companyName, kindeOrgId: tenant.kindeOrgId },
                   enabledApps,
                 };
@@ -566,7 +566,7 @@ export default async function authRoutes(
           .select({
             tenantId: tenants.tenantId, companyName: tenants.companyName, kindeOrgId: tenants.kindeOrgId,
             userId: tenantUsers.userId, userEmail: tenantUsers.email, firstName: tenantUsers.firstName,
-            lastName: tenantUsers.lastName, userName: tenantUsers.name, kindeUserId: tenantUsers.kindeUserId,
+            lastName: tenantUsers.lastName, kindeUserId: tenantUsers.kindeUserId,
           })
           .from(tenantUsers)
           .innerJoin(tenants, eq(tenants.tenantId, tenantUsers.tenantId))
@@ -583,7 +583,7 @@ export default async function authRoutes(
         const enabledApps = await fetchEnabledApps(row.tenantId);
         const res = {
           success: true,
-          user: { id: row.userId, email: row.userEmail, firstName: row.firstName ?? undefined, lastName: row.lastName ?? undefined, name: row.userName, kindeId: row.kindeUserId },
+          user: { id: row.userId, email: row.userEmail, firstName: row.firstName ?? undefined, lastName: row.lastName ?? undefined, name: [row.firstName, row.lastName].filter(Boolean).join(' '), kindeId: row.kindeUserId },
           tenant: { id: row.tenantId, name: row.companyName, kindeOrgId: row.kindeOrgId },
           enabledApps,
         };
@@ -604,7 +604,6 @@ export default async function authRoutes(
             userEmail: tenantUsers.email,
             firstName: tenantUsers.firstName,
             lastName: tenantUsers.lastName,
-            userName: tenantUsers.name,
             kindeUserId: tenantUsers.kindeUserId,
           })
           .from(tenantUsers)
@@ -622,7 +621,7 @@ export default async function authRoutes(
               email: row.userEmail,
               firstName: row.firstName ?? undefined,
               lastName: row.lastName ?? undefined,
-              name: row.userName,
+              name: [row.firstName, row.lastName].filter(Boolean).join(' '),
               kindeId: row.kindeUserId,
             },
             tenant: {
@@ -649,7 +648,7 @@ export default async function authRoutes(
       const enabledApps = await fetchEnabledApps(tenant.tenantId);
       const res = {
         success: true,
-        user: { id: u.userId, email: u.email, firstName: u.firstName ?? undefined, lastName: u.lastName ?? undefined, name: u.name, kindeId: u.kindeUserId },
+        user: { id: u.userId, email: u.email, firstName: u.firstName ?? undefined, lastName: u.lastName ?? undefined, name: [u.firstName, u.lastName].filter(Boolean).join(' ') || u.email || '', kindeId: u.kindeUserId },
         tenant: { id: tenant.tenantId, name: tenant.companyName, kindeOrgId: tenant.kindeOrgId },
         enabledApps,
       };

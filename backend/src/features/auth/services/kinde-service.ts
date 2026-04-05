@@ -4,10 +4,38 @@ import { shouldLogVerbose } from '../../../utils/verbose-log.js';
 
 const isProduction = process.env.NODE_ENV === 'production';
 
+// ── User-profile HTTP cache ───────────────────────────────────────────────
+// Cache key: the JWT signature segment (last part after the final '.').
+// We cannot use accessToken.slice(0, N) because JWT headers are identical
+// for all tokens from the same Kinde tenant (same alg + kid), causing
+// different users to collide on the same cache key and receive each other's
+// profile data — a critical cross-session data leak.
+// The RS256 signature is cryptographically unique per token issuance, so
+// using the last 40 chars of the signature segment is both safe and collision-free.
+const USER_PROFILE_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+interface UserProfileCacheEntry { value: Record<string, unknown>; expiresAt: number }
+const userProfileCache = new Map<string, UserProfileCacheEntry>();
+
+function tokenCacheKey(accessToken: string): string {
+  const dotIndex = accessToken.lastIndexOf('.');
+  // Use the last 40 chars of the signature segment (unique per token, per user).
+  // Fallback to the last 40 chars of the full token if it's not a 3-part JWT.
+  const sig = dotIndex !== -1 ? accessToken.slice(dotIndex + 1) : accessToken;
+  return sig.length >= 40 ? sig.slice(-40) : sig;
+}
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of userProfileCache) {
+    if (now >= entry.expiresAt) userProfileCache.delete(key);
+  }
+}, USER_PROFILE_CACHE_TTL_MS).unref();
+// ─────────────────────────────────────────────────────────────────────────
+
 export interface AddUserToOrgOptions {
   exclusive?: boolean;
   role_code?: string;
   is_admin?: boolean;
+  skipRoleAssignment?: boolean;
 }
 
 type ApiErrorShape = {
@@ -71,6 +99,7 @@ class KindeService {
   m2mClientId: string | undefined;
   m2mClientSecret: string | undefined;
   private jwks: ReturnType<typeof createRemoteJWKSet> | null = null;
+  private m2mTokenCache: { token: string; expiresAt: number } | null = null;
 
   constructor() {
     this.baseURL = process.env.KINDE_DOMAIN || 'https://auth.zopkit.com';
@@ -81,9 +110,10 @@ class KindeService {
 
     try {
       this.jwks = createRemoteJWKSet(
-        new URL(`${this.baseURL}/.well-known/jwks.json`)
+        new URL(`${this.baseURL}/.well-known/jwks.json`),
+        { cacheMaxAge: 6 * 60 * 60 * 1000 } // 6 hours — avoids re-fetching on every cold miss
       );
-    } catch (err) {
+    } catch (_err) {
       console.warn('⚠️ Failed to initialize JWKS, will fall back to API-based validation');
     }
     
@@ -178,9 +208,14 @@ class KindeService {
   }
 
   /**
-   * Get M2M access token for API calls
+   * Get M2M access token for API calls — cached for token lifetime minus 60s buffer.
    */
   async getM2MToken() {
+    const now = Date.now();
+    if (this.m2mTokenCache && this.m2mTokenCache.expiresAt > now + 60_000) {
+      return this.m2mTokenCache.token;
+    }
+
     try {
       if (!this.m2mClientId || !this.m2mClientSecret) {
         throw new Error('M2M credentials not configured');
@@ -217,7 +252,9 @@ class KindeService {
       );
 
       if (response.data.access_token) {
-        if (shouldLogVerbose()) console.log('✅ M2M token obtained successfully');
+        const expiresIn: number = typeof response.data.expires_in === 'number' ? response.data.expires_in : 3600;
+        this.m2mTokenCache = { token: response.data.access_token, expiresAt: now + expiresIn * 1000 };
+        if (shouldLogVerbose()) console.log('✅ M2M token obtained and cached');
         return response.data.access_token;
       } else {
         throw new Error('No access token in response');
@@ -261,8 +298,22 @@ class KindeService {
    * Insecure local JWT decode is only allowed in non-production environments.
    */
   async getUserInfo(accessToken: string): Promise<Record<string, unknown>> {
+    // Fast path: return cached profile if still valid.
+    const cacheKey = tokenCacheKey(accessToken);
+    const cached = userProfileCache.get(cacheKey);
+    if (cached && Date.now() < cached.expiresAt) {
+      if (shouldLogVerbose()) console.log('getUserInfo: cache HIT');
+      return cached.value;
+    }
+
     try {
-      
+
+
+      // Helper: cache a resolved profile and return it.
+      const cacheAndReturn = (profile: Record<string, unknown>): Record<string, unknown> => {
+        userProfileCache.set(cacheKey, { value: profile, expiresAt: Date.now() + USER_PROFILE_CACHE_TTL_MS });
+        return profile;
+      };
 
       // Strategy 0 (preferred): Verify JWT signature via JWKS and extract claims
       try {
@@ -270,19 +321,27 @@ class KindeService {
         if (payload) {
           if (shouldLogVerbose()) console.log('getUserInfo: JWKS verified');
           const normalized = normalizeKindePayload(payload as unknown as Record<string, unknown>);
-          // Kinde access tokens often lack email claims — fetch from userinfo endpoint
+          // Kinde access tokens often lack email claims — fetch from userinfo endpoint.
+          // Only do this if the result won't already be in cache (avoids extra round-trip
+          // on repeated validations within the 5-min TTL).
           if (!normalized.email) {
-            try {
-              const profileResponse = await axios.get(`${this.baseURL}/oauth2/v2/user_profile`, {
-                headers: { Authorization: `Bearer ${accessToken}` },
-                timeout: 3000
-              });
-              if (profileResponse.data?.email) {
-                normalized.email = profileResponse.data.email;
-              }
-            } catch { /* email enrichment is best-effort */ }
+            const cachedEntry = userProfileCache.get(cacheKey);
+            if (cachedEntry?.value?.email) {
+              // Cache already has email from a previous enrichment — reuse it
+              normalized.email = cachedEntry.value.email;
+            } else {
+              try {
+                const profileResponse = await axios.get(`${this.baseURL}/oauth2/v2/user_profile`, {
+                  headers: { Authorization: `Bearer ${accessToken}` },
+                  timeout: 3000
+                });
+                if (profileResponse.data?.email) {
+                  normalized.email = profileResponse.data.email;
+                }
+              } catch { /* email enrichment is best-effort */ }
+            }
           }
-          return normalized;
+          return cacheAndReturn(normalized);
         }
       } catch (jwksErr: unknown) {
         if (shouldLogVerbose()) console.log('⚠️ getUserInfo - JWKS verification failed, trying API endpoints...');
@@ -299,7 +358,7 @@ class KindeService {
         });
 
         if (shouldLogVerbose()) console.log('getUserInfo: user_profile OK');
-        return response.data as Record<string, unknown>;
+        return cacheAndReturn(response.data as Record<string, unknown>);
       } catch (profileErr: unknown) {
         const profileError = profileErr as Error & { response?: { status?: number; statusText?: string; data?: unknown } };
         if (shouldLogVerbose()) {
@@ -311,23 +370,23 @@ class KindeService {
       try {
         const introspectParams = new URLSearchParams();
         introspectParams.append('token', accessToken);
-        
+
         if (this.oauthClientId && this.oauthClientSecret) {
           introspectParams.append('client_id', this.oauthClientId);
           introspectParams.append('client_secret', this.oauthClientSecret);
         }
-        
-        const introspectResponse = await axios.post(`${this.baseURL}/oauth2/introspect`, 
-          introspectParams.toString(), 
+
+        const introspectResponse = await axios.post(`${this.baseURL}/oauth2/introspect`,
+          introspectParams.toString(),
           {
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             timeout: 5000
           }
         );
-        
+
         if (introspectResponse.data.active) {
           if (shouldLogVerbose()) console.log('✅ getUserInfo - Success via introspect endpoint');
-          return normalizeKindePayload(introspectResponse.data as Record<string, unknown>);
+          return cacheAndReturn(normalizeKindePayload(introspectResponse.data as Record<string, unknown>));
         } else {
           if (shouldLogVerbose()) console.log('⚠️ getUserInfo - Token is not active according to introspect');
         }
@@ -350,7 +409,7 @@ class KindeService {
             }
 
             console.warn('⚠️ getUserInfo - Using INSECURE JWT decode (development only)');
-            return normalizeKindePayload(decoded);
+            return cacheAndReturn(normalizeKindePayload(decoded));
           }
         } catch (decodeErr: unknown) {
           const decodeError = decodeErr as Error;
@@ -359,7 +418,7 @@ class KindeService {
       }
 
       throw new Error('All authentication strategies failed');
-      
+
     } catch (err: unknown) {
       const error = err as Error;
       if (shouldLogVerbose()) console.error('❌ getUserInfo - All strategies failed:', error.message);
@@ -576,6 +635,24 @@ class KindeService {
       const m2mToken = await this.getM2MToken();
       if (shouldLogVerbose()) console.log(`🔑 M2M token obtained: ${m2mToken ? 'Yes' : 'No'}`);
 
+      // When skipRoleAssignment is set, just add the user to the org membership
+      // without assigning any Kinde role (POST /organizations/{org_code}/users).
+      if (options.skipRoleAssignment) {
+        const membershipEndpoint = `${this.baseURL}/api/v1/organizations/${orgCode}/users`;
+        await axios.post(membershipEndpoint, { id: kindeUserId }, {
+          headers: { 'Authorization': `Bearer ${m2mToken}`, 'Content-Type': 'application/json' },
+          timeout: 10000
+        });
+        if (shouldLogVerbose()) console.log(`✅ addUserToOrganization - User added to org (no role assigned)`);
+        return {
+          success: true,
+          userId: kindeUserId,
+          organizationCode: orgCode,
+          method: 'membership_only',
+          message: 'User added to organization successfully (no role assigned)'
+        };
+      }
+
       if (options.exclusive) {
         if (shouldLogVerbose()) {
           console.warn('⚠️ addUserToOrganization - Exclusive cleanup skipped to avoid removing user from unrelated orgs.');
@@ -761,20 +838,27 @@ class KindeService {
       }
 
       const m2mToken = await this.getM2MToken();
-      
+
+      // Support two calling conventions:
+      //  A) Nested Kinde-API shape: { profile: { given_name, family_name }, identities: [...], organization_code }
+      //  B) Flat shape:             { given_name, family_name, email, organization_code }
+      const nested = userData.profile as { given_name?: string; family_name?: string } | undefined;
+      const nestedIdentities = userData.identities as Array<{ type: string; details: { email?: string } }> | undefined;
+
+      const givenName = nested?.given_name ?? (userData.givenName as string) ?? (userData.given_name as string) ?? '';
+      const familyName = nested?.family_name ?? (userData.familyName as string) ?? (userData.family_name as string) ?? '';
+      const email = nestedIdentities?.[0]?.details?.email ?? (userData.email as string);
+      const orgCode = (userData.organizationCode as string) ?? (userData.organization_code as string);
+
+      if (!email) {
+        throw new Error('createUser requires an email address');
+      }
+
       // Create user via Kinde API
       const response = await axios.post(`${this.baseURL}/api/v1/users`, {
-        profile: {
-          given_name: userData.givenName || userData.given_name,
-          family_name: userData.familyName || userData.family_name
-        },
-        identities: [{
-          type: 'email',
-          details: {
-            email: userData.email
-          }
-        }],
-        organization_code: userData.organizationCode || userData.organization_code
+        profile: { given_name: givenName, family_name: familyName },
+        identities: [{ type: 'email', details: { email } }],
+        organization_code: orgCode,
       }, {
         headers: {
           'Authorization': `Bearer ${m2mToken}`,
