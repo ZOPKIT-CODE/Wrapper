@@ -18,6 +18,7 @@ import OnboardingValidationService from './onboarding-validation-service.js';
 import { OnboardingFileLogger } from '../../../utils/onboarding-file-logger.js';
 import { InterAppEventService } from '../../../features/messaging/index.js';
 import { BootstrapService } from '../../../features/app-sync/services/bootstrap-service.js';
+import { invalidateTenantLookupCache, invalidateUserCache } from '../../../middleware/auth/auth.js';
 
 /** Validation result with optional errors and data */
 interface ValidationResult {
@@ -419,6 +420,12 @@ export class UnifiedOnboardingService {
         
         throw transactionError;
       }
+
+      // Bust auth middleware caches so the very next /admin/auth-status request
+      // hits the DB and finds the newly created tenant + user, rather than
+      // returning the null that was cached during the pre-onboarding page loads.
+      invalidateTenantLookupCache(kindeResult.orgCode as string);
+      invalidateUserCache(kindeResult.userId as string);
 
       // 6+7. MARK ONBOARDING COMPLETE + DELETE STORED FORM DATA (parallel — independent ops)
       logger.onboarding.step(6, 'MARKING_COMPLETE', 'Marking onboarding as complete + cleaning form data in parallel');

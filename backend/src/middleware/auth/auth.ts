@@ -155,6 +155,16 @@ const roleCacheByUserId = new Map<string, RoleCacheEntry>();
 export function invalidateRoleCache(internalUserId: string): void {
   roleCacheByUserId.delete(internalUserId);
 }
+
+/**
+ * Bust the tenant-lookup cache for a given Kinde org code.
+ * Call this immediately after onboarding creates a new tenant so the next
+ * auth middleware run hits the DB and finds the new tenant, rather than
+ * returning the cached null from before onboarding completed.
+ */
+export function invalidateTenantLookupCache(orgCode: string): void {
+  tenantLookupCache.delete(orgCode);
+}
 // ─────────────────────────────────────────────────────────────────────────
 
 // ── Tenant-exists cache ───────────────────────────────────────────────────
