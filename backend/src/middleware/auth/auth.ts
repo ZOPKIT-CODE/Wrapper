@@ -39,6 +39,7 @@ const PUBLIC_ROUTES: string[] = [
   'POST /api/onboarding/get-data',
   '/api/contact',
   '/api/demo',
+  '/api/email-preview',
   '/docs',
 ];
 
