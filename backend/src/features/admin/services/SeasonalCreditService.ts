@@ -170,7 +170,7 @@ export class SeasonalCreditService {
         eq(entities.entityType, 'organization'),
         eq(entities.isActive, true)
       ))
-      .orderBy(desc(entities.isDefault));
+      .orderBy(entities.createdAt);
     
     return entityList.length > 0 ? entityList[0] : null;
   }

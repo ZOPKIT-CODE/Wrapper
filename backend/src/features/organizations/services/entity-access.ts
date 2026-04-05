@@ -232,7 +232,6 @@ export class DataIsolationService {
               entityId: entities.entityId,
               entityName: entities.entityName,
               entityType: entities.entityType,
-              organizationType: entities.organizationType,
             })
             .from(entities)
             .where(inArray(entities.entityId, allEntityIds));
@@ -242,7 +241,7 @@ export class DataIsolationService {
             .map((e) => ({
               organizationId: e.entityId,
               organizationName: e.entityName,
-              organizationType: e.organizationType,
+              organizationType: e.entityType,
             }));
 
           locationDetails = entityDetails

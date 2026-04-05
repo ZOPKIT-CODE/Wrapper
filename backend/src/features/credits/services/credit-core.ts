@@ -97,8 +97,7 @@ export async function findRootOrganization(tenantId: string): Promise<string | n
         eq(entities.tenantId, tenantId),
         eq(entities.entityType, 'organization'),
         isNull(entities.parentEntityId),
-        eq(entities.isActive, true),
-        eq(entities.isDefault, true)
+        eq(entities.isActive, true)
       ))
       .limit(1);
     if (defaultOrg) return defaultOrg.entityId;

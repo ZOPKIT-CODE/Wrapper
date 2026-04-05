@@ -303,7 +303,7 @@ export default async function adminOrgRoutes(fastify: FastifyInstance): Promise<
           hierarchyPath: entities.hierarchyPath,
           fullHierarchyPath: entities.fullHierarchyPath,
           parentEntityId: entities.parentEntityId,
-          organizationType: entities.organizationType,
+          organizationType: entities.entityType,
           description: entities.description,
           isActive: entities.isActive,
           createdAt: entities.createdAt,

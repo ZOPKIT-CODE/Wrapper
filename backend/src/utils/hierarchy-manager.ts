@@ -219,7 +219,6 @@ export class HierarchyManager {
           hierarchyPath: entities.hierarchyPath,
           fullHierarchyPath: entities.fullHierarchyPath,
           parentEntityId: entities.parentEntityId,
-          organizationType: entities.organizationType,
           locationType: entities.locationType,
           address: entities.address,
           description: entities.description,

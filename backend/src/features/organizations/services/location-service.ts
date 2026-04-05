@@ -55,7 +55,6 @@ export class LocationService {
       entityType: 'location',
       parentEntityId: organizationId, // Link to parent organization
       entityName: name,
-      entityCode: `LOC_${entityId.substring(0, 8)}`, // Generate code for locations
       locationType: 'office', // Default location type
       address: addressData,
       responsiblePersonId: responsiblePersonId || null,

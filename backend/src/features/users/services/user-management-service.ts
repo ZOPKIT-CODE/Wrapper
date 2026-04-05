@@ -355,9 +355,6 @@ export class UserManagementService {
           membershipStatus: organizationMemberships.membershipStatus,
           accessLevel: organizationMemberships.accessLevel,
           isPrimary: organizationMemberships.isPrimary,
-          department: organizationMemberships.department,
-          team: organizationMemberships.team,
-          jobTitle: organizationMemberships.jobTitle,
           createdAt: organizationMemberships.createdAt,
           entityName: entities.entityName,
         })

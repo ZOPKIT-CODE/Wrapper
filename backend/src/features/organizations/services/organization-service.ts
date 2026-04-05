@@ -47,7 +47,6 @@ export class OrganizationService {
       .where(and(
         eq(entities.tenantId, parentTenantId),
         eq(entities.entityType, 'organization'),
-        eq(entities.organizationType, 'business_unit'), // Parent org
         eq(entities.isActive, true)
       ))
       .limit(1);
@@ -66,12 +65,10 @@ export class OrganizationService {
       entityName: name,
 
       description,
-      organizationType: 'business_unit', // Parent organization
       entityLevel: 1,
       hierarchyPath: name, // Will be updated by trigger
       responsiblePersonId: createdBy,
       isActive: true,
-      isDefault: true,
       createdBy,
       createdAt: new Date()
     }).returning();
@@ -132,9 +129,7 @@ export class OrganizationService {
       .where(and(
         eq(entities.tenantId, tenantId),
         eq(entities.entityType, 'organization'),
-        eq(entities.organizationType, 'business_unit'), // Parent org
-        eq(entities.isActive, true),
-        eq(entities.isDefault, true)
+        eq(entities.isActive, true)
       ))
       .limit(1);
 
@@ -212,7 +207,6 @@ export class OrganizationService {
       entityName: name,
 
       description,
-      organizationType: organizationType || 'department',
       responsiblePersonId: createdBy,
       isActive: true,
       createdBy,
@@ -229,8 +223,8 @@ export class OrganizationService {
         entityCode: entityCode ?? organization[0].entityId,
         entityName: organization[0].entityName,
         entityType: organization[0].entityType,
-        subType: organization[0].organizationType,
-        organizationType: organization[0].organizationType,
+        subType: organizationType ?? null,
+        organizationType: organizationType ?? null,
         description: organization[0].description,
         parentId: organization[0].parentEntityId,
         entityLevel: organization[0].entityLevel,
@@ -259,7 +253,7 @@ export class OrganizationService {
         tenantId: tenantIdToUse,
         entityId: organization[0].entityId,
         entityType: organization[0].entityType,
-        subType: organization[0].organizationType ?? null,
+        subType: organizationType ?? null,
         entityCode: entityCode ?? organization[0].entityId,
         entityName: organization[0].entityName,
         parentId: organization[0].parentEntityId ?? null,
@@ -374,7 +368,7 @@ export class OrganizationService {
         organizationId: entities.entityId,
         organizationName: entities.entityName,
         description: entities.description,
-        organizationType: entities.organizationType,
+        organizationType: entities.entityType,
         organizationLevel: entities.entityLevel,
         isActive: entities.isActive,
         createdAt: entities.createdAt
@@ -413,7 +407,6 @@ export class OrganizationService {
           hierarchyPath: entities.hierarchyPath,
           fullHierarchyPath: entities.fullHierarchyPath,
           parentEntityId: entities.parentEntityId,
-          organizationType: entities.organizationType,
           locationType: entities.locationType,
           address: entities.address,
           description: entities.description,
@@ -543,7 +536,7 @@ export class OrganizationService {
           organizationId: entities.entityId,
           parentOrganizationId: entities.parentEntityId,
           organizationName: entities.entityName,
-          organizationType: entities.organizationType,
+          organizationType: entities.entityType,
           organizationLevel: entities.entityLevel,
           hierarchyPath: entities.hierarchyPath,
           description: entities.description,

@@ -118,7 +118,6 @@ async function applyProfileCompletion(
       .set({ updatedBy: userContext?.userId ?? '', updatedAt: new Date() })
       .where(and(
         eq(entities.tenantId, tenantId),
-        eq(entities.organizationType, 'parent'),
         eq(entities.entityType, 'organization')
       ))
       .returning();
@@ -355,7 +354,6 @@ export default async function paymentUpgradeRoutes(
         .from(entities)
         .where(and(
           eq(entities.tenantId, tenantId),
-          eq(entities.organizationType, 'parent'),
           eq(entities.entityType, 'organization')
         ))
         .limit(1);

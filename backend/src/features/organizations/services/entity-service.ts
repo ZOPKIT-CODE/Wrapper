@@ -83,7 +83,6 @@ class EntityService {
         parentEntityId,
         entityName: data.entityName.trim(),
         description: data.description || null,
-        organizationType: data.entityType === 'organization' ? data.subType ?? null : null,
         locationType: data.entityType === 'location' ? data.subType ?? null : null,
         address: data.entityType === 'location' ? (data.address as any) ?? null : null,
         responsiblePersonId: data.responsiblePersonId || createdBy || null,
