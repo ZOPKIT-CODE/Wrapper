@@ -14,12 +14,7 @@ export const ApplicationGrid = memo(function ApplicationGrid({ applications, onV
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
         {applications.length > 0 ? (
           applications.map((app, index) => (
-            <div
-              key={app.appId}
-              className="animate-in fade-in slide-in-from-bottom-16 duration-1000 fill-mode-backwards"
-              style={{ animationDelay: `${index * 80}ms` }}
-              {...(index === 0 ? { 'data-tour-feature': 'launch-app' } : {})}
-            >
+            <div key={app.appId}>
               <ApplicationCard
                 application={app}
                 onView={onViewApplication}
@@ -28,7 +23,7 @@ export const ApplicationGrid = memo(function ApplicationGrid({ applications, onV
             </div>
           ))
         ) : (
-          <div className="col-span-full py-40 text-center space-y-8 animate-in fade-in zoom-in-95 duration-700">
+          <div className="col-span-full py-40 text-center space-y-8">
             <div className="space-y-2 text-slate-500">
               <h3 className="text-2xl font-black uppercase tracking-tighter">No Applications Available</h3>
               <p className="font-medium max-w-md mx-auto">

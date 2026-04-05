@@ -1,21 +1,17 @@
 import React, { useState } from 'react';
-import { useParams, useNavigate, useLocation } from '@tanstack/react-router';
+import { useParams, useNavigate } from '@tanstack/react-router';
 import { useKindeAuth } from '@kinde-oss/kinde-auth-react';
 import { ProductData } from '@/types/products';
-import { Check, ArrowRight, PlayCircle, ChevronRight, Star, X, Zap, XCircle, CheckCircle, Minus, AlertCircle, Sparkles, LayoutGrid, Menu } from 'lucide-react';
-import { PieChart, Pie, Cell, ResponsiveContainer, AreaChart, Area, XAxis, Tooltip as RechartsTooltip } from 'recharts';
-
-import { productPagesData } from '@/data/productPages';
+import { Check, ArrowRight, PlayCircle, Star, X, Zap, XCircle, CheckCircle, Minus, AlertCircle, Sparkles, LayoutGrid, ChevronRight } from 'lucide-react';
+import { MiniSparkline } from '@/components/common/MiniSparkline';
+import { productPagesData, productInfo } from '@/data/productPages';
 import {
-    Navbar,
-    NavBody,
-    MobileNav,
-    NavbarLogo,
-    NavbarButton,
-    MobileNavHeader,
-    MobileNavMenu,
-} from "@/components/ui/resizable-navbar";
+    getPricingAppIdForProductSlug,
+    getProductModuleMatrixRows,
+} from '@/data/productPricingModuleBridge';
+import { NavbarButton } from "@/components/ui/resizable-navbar";
 import { LandingFooter } from '@/components/layout/LandingFooter';
+import { MarketingNavbar } from '@/components/layout/MarketingNavbar';
 
 interface FeatureCardProps {
     feature: {
@@ -106,16 +102,10 @@ const FeatureCard: React.FC<FeatureCardProps> = ({ feature, i }) => {
 const ProductPage: React.FC = () => {
     const { productId } = useParams({ strict: false });
     const navigate = useNavigate();
-    const location = useLocation();
     const { login } = useKindeAuth();
 
     // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
     const [isLoading, setIsLoading] = useState(false);
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const [showProductsDropdown, setShowProductsDropdown] = useState(false);
-    const [showIndustriesDropdown, setShowIndustriesDropdown] = useState(false);
-    const productsDropdownTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
-    const industriesDropdownTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
     // Scroll progress for stacking cards
     const container = React.useRef(null);
@@ -124,44 +114,6 @@ const ProductPage: React.FC = () => {
     React.useEffect(() => {
         window.scrollTo({ top: 0, behavior: 'instant' });
     }, [productId]);
-
-    // Close mobile menu when route changes
-    React.useEffect(() => {
-        setIsMobileMenuOpen(false);
-    }, [location.pathname]);
-
-    const handleProductsMouseEnter = () => {
-        if (productsDropdownTimeoutRef.current) {
-            clearTimeout(productsDropdownTimeoutRef.current);
-        }
-        setShowProductsDropdown(true);
-    };
-
-    const handleProductsMouseLeave = () => {
-        productsDropdownTimeoutRef.current = setTimeout(() => {
-            setShowProductsDropdown(false);
-        }, 300);
-    };
-
-    const allIndustries = [
-        { slug: 'e-commerce', name: 'E-Commerce & Retail' },
-        { slug: 'saas', name: 'SaaS & Technology' },
-        { slug: 'manufacturing', name: 'Manufacturing' },
-        { slug: 'professional-services', name: 'Professional Services' },
-    ];
-
-    const handleIndustriesMouseEnter = () => {
-        if (industriesDropdownTimeoutRef.current) {
-            clearTimeout(industriesDropdownTimeoutRef.current);
-        }
-        setShowIndustriesDropdown(true);
-    };
-
-    const handleIndustriesMouseLeave = () => {
-        industriesDropdownTimeoutRef.current = setTimeout(() => {
-            setShowIndustriesDropdown(false);
-        }, 300);
-    };
 
     const handleLogin = async () => {
         setIsLoading(true);
@@ -181,36 +133,53 @@ const ProductPage: React.FC = () => {
         }
     };
 
-    // Path links use React Router; hash links scroll in-page
-    const handleAnchorClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-        if (href.startsWith('/')) {
-            e.preventDefault();
-            navigate({ to: href });
-            return;
-        }
-        e.preventDefault();
-        const targetId = href.replace('#', '');
-        const targetElement = document.getElementById(targetId);
-        if (targetElement) {
-            const navbarOffset = 100;
-            const elementPosition = targetElement.getBoundingClientRect().top;
-            const offsetPosition = elementPosition + window.pageYOffset - navbarOffset;
-            window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
-        }
-    };
-
     // Get product data
     const data: ProductData | undefined = productId ? productPagesData[productId] : undefined;
 
+    const pricingAppId = productId ? getPricingAppIdForProductSlug(productId) : undefined;
+    const moduleMatrixRows = pricingAppId ? getProductModuleMatrixRows(pricingAppId) : [];
+    const usePricingModules = moduleMatrixRows.length > 0;
+
+    /** Legacy marketing comparison when this product is not mapped to `pricingPlanMatrix` apps */
+    const legacyComparisonRows =
+        data && !usePricingModules
+            ? [
+                  ...Array.from(new Set(data.pricing.tiers.flatMap((tier) => tier.features))).map((f) => ({
+                      name: f,
+                      isDynamic: true as const,
+                  })),
+                  {
+                      name: 'Dedicated Support',
+                      isDynamic: false as const,
+                      values: [false, 'Priority', '24/7 Dedicated'] as const,
+                  },
+                  {
+                      name: 'API Access',
+                      isDynamic: false as const,
+                      values: [true, true, true] as const,
+                  },
+                  {
+                      name: 'Custom Integrations',
+                      isDynamic: false as const,
+                      values: [false, true, true] as const,
+                  },
+                  {
+                      name: 'SLA Guarantee',
+                      isDynamic: false as const,
+                      values: [false, false, '99.9%'] as const,
+                  },
+              ]
+            : [];
+
     // Dummy data for dashboards
     const lineData = [
-        { name: 'Mon', value: 400, uv: 240 },
-        { name: 'Tue', value: 300, uv: 139 },
-        { name: 'Wed', value: 600, uv: 980 },
-        { name: 'Thu', value: 800, uv: 390 },
-        { name: 'Fri', value: 500, uv: 480 },
-        { name: 'Sat', value: 900, uv: 380 },
-        { name: 'Sun', value: 700, uv: 430 },
+        { name: 'Mon', value: 400 },
+        { name: 'Tue', value: 300 },
+        { name: 'Wed', value: 600 },
+        { name: 'Thu', value: 800 },
+        { name: 'Fri', value: 500 },
+        { name: 'Sat', value: 900 },
+        { name: 'Sun', value: 700 },
     ];
 
     const pieData = [
@@ -220,29 +189,9 @@ const ProductPage: React.FC = () => {
         { name: 'Group D', value: 200 },
     ];
     const COLORS = ['#3b82f6', '#8b5cf6', '#06b6d4', '#10b981'];
+    const pieTotal = pieData.reduce((s, d) => s + d.value, 0);
 
-    const navItems = [
-        { name: "Pricing", link: "/pricing" },
-        { name: "Workflows", link: "#workflows" },
-        { name: "Contact Us", link: "/landing#pricing" },
-    ];
-
-    const allProducts = [
-        { id: 'affiliate-connect', name: 'Affiliate Connect' },
-        { id: 'b2b-crm', name: 'B2B CRM' },
-        { id: 'b2c-crm', name: 'B2C CRM' },
-        { id: 'operations-management', name: 'Operations Management' },
-        { id: 'project-management', name: 'Project Management' },
-        { id: 'financial-accounting', name: 'Financial Accounting' },
-        { id: 'hrms', name: 'HRMS' },
-        { id: 'esop-system', name: 'ESOP System' },
-        { id: 'flowtilla', name: 'Flowtilla' },
-        { id: 'zopkit-academy', name: 'Zopkit Academy' },
-        { id: 'zopkit-itsm', name: 'Zopkit ITSM' },
-    ];
-
-    const currentProductInfo = allProducts.find(p => p.id === productId);
-    const productName = currentProductInfo?.name || 'Zopkit';
+    const productName = productInfo.find((p) => p.id === productId)?.name ?? 'Zopkit';
 
     // If product not found or incomplete, show 404
     // This MUST come after all hooks
@@ -263,19 +212,6 @@ const ProductPage: React.FC = () => {
         );
     }
 
-    // --- Helpers for Comparison Table ---
-    // Extract unique features from pricing tiers to build a comparison table
-    const allTierFeatures = Array.from(new Set(data.pricing.tiers.flatMap(tier => tier.features)));
-
-    // Add some generic features if the list is short
-    const comparisonRows = [
-        ...allTierFeatures.map(f => ({ name: f, isDynamic: true })),
-        { name: "Dedicated Support", isDynamic: false, values: [false, "Priority", "24/7 Dedicated"] },
-        { name: "API Access", isDynamic: false, values: [true, true, true] },
-        { name: "Custom Integrations", isDynamic: false, values: [false, true, true] },
-        { name: "SLA Guarantee", isDynamic: false, values: [false, false, "99.9%"] },
-    ];
-
     return (
         <div className="w-full bg-white text-slate-900 font-sans selection:bg-blue-100 selection:text-blue-900">
             <style>{`
@@ -294,181 +230,30 @@ const ProductPage: React.FC = () => {
                 }
             `}</style>
 
-            {/* Navbar */}
-            <Navbar>
-                <NavBody>
-                    <NavbarLogo />
-                    <div className="flex-1 flex flex-row items-center justify-center space-x-1 text-sm font-medium text-slate-700 transition duration-200 px-4 min-w-0">
-                        {/* Products Dropdown */}
-                        <div
-                            className="relative shrink-0"
-                            onMouseEnter={handleProductsMouseEnter}
-                            onMouseLeave={handleProductsMouseLeave}
-                        >
-                            <button
-                                className="px-3 py-2 text-slate-700 hover:text-slate-900 font-medium flex items-center gap-1 whitespace-nowrap"
-                            >
-                                Products
-                                <ChevronRight size={16} className={`transition-transform ${showProductsDropdown ? 'rotate-90' : ''}`} />
-                            </button>
-                            {showProductsDropdown && (
-                                <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-slate-200 py-2 z-50">
-                                    {allProducts.map((product) => (
-                                        <button
-                                            key={product.id}
-                                            onClick={() => navigate({ to: `/products/${product.id}` })}
-                                            className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
-                                        >
-                                            {product.name}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                        {/* Industries Dropdown */}
-                        <div
-                            className="relative shrink-0"
-                            onMouseEnter={handleIndustriesMouseEnter}
-                            onMouseLeave={handleIndustriesMouseLeave}
-                        >
-                            <button
-                                className="px-3 py-2 text-slate-700 hover:text-slate-900 font-medium flex items-center gap-1 whitespace-nowrap"
-                            >
-                                Industries
-                                <ChevronRight size={16} className={`transition-transform ${showIndustriesDropdown ? 'rotate-90' : ''}`} />
-                            </button>
-                            {showIndustriesDropdown && (
-                                <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-slate-200 py-2 z-50">
-                                    {allIndustries.map((industry) => (
-                                        <button
-                                            key={industry.slug}
-                                            onClick={() => navigate({ to: `/industries/${industry.slug}` })}
-                                            className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
-                                        >
-                                            {industry.name}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                        {navItems.map((item) => (
-                            <a
-                                key={item.name}
-                                href={item.link}
-                                onClick={(e) => handleAnchorClick(e, item.link)}
-                                className="px-3 py-2 text-slate-700 hover:text-slate-900 font-medium transition cursor-pointer whitespace-nowrap shrink-0"
-                            >
-                                {item.name}
-                            </a>
-                        ))}
-                    </div>
-                    <div className="flex items-center gap-3 shrink-0 ml-4">
-                        <NavbarButton
-                            variant="outline"
-                            onClick={handleLogin}
-                            disabled={isLoading}
-                            as="button"
-                            className="rounded-xl px-6 py-2.5"
-                        >
-                            {isLoading ? 'Loading...' : 'Sign In'}
-                        </NavbarButton>
-                        <NavbarButton
-                            variant="gradient"
-                            onClick={() => navigate({ to: '/onboarding' })}
-                            as="button"
-                            className="rounded-xl px-6 py-2.5"
-                        >
-                            Start Free Trial
-                        </NavbarButton>
-                    </div>
-                </NavBody>
-
-                <MobileNav>
-                    <MobileNavHeader>
-                        <NavbarLogo />
-                        <button
-                            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                            className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
-                            aria-label="Toggle menu"
-                        >
-                            {isMobileMenuOpen ? (
-                                <X className="w-6 h-6 text-slate-700" />
-                            ) : (
-                                <Menu className="w-6 h-6 text-slate-700" />
-                            )}
-                        </button>
-                    </MobileNavHeader>
-
-                    <MobileNavMenu
-                        isOpen={isMobileMenuOpen}
-                        onClose={() => setIsMobileMenuOpen(false)}
+            <MarketingNavbar
+                desktopRight={
+                    <NavbarButton
+                        variant="outline"
+                        onClick={handleLogin}
+                        disabled={isLoading}
+                        as="button"
+                        className="rounded-xl px-6 py-2.5"
                     >
-                        <div className="mb-4">
-                            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 px-4">Products</div>
-                            {allProducts.map((product) => (
-                                <a
-                                    key={product.id}
-                                    href={`/products/${product.id}`}
-                                    onClick={() => setIsMobileMenuOpen(false)}
-                                    className="block px-4 py-2 text-slate-700 hover:bg-slate-50 rounded-lg transition"
-                                >
-                                    {product.name}
-                                </a>
-                            ))}
-                        </div>
-                        <div className="mb-4">
-                            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 px-4">Industries</div>
-                            {allIndustries.map((industry) => (
-                                <a
-                                    key={industry.slug}
-                                    href={`/industries/${industry.slug}`}
-                                    onClick={() => setIsMobileMenuOpen(false)}
-                                    className="block px-4 py-2 text-slate-700 hover:bg-slate-50 rounded-lg transition"
-                                >
-                                    {industry.name}
-                                </a>
-                            ))}
-                        </div>
-                        {navItems.map((item, idx) => (
-                            <a
-                                key={`mobile-link-${idx}`}
-                                href={item.link}
-                                onClick={(e) => {
-                                    setIsMobileMenuOpen(false);
-                                    handleAnchorClick(e, item.link);
-                                }}
-                                className="relative text-neutral-600 dark:text-neutral-300 cursor-pointer"
-                            >
-                                <span className="block">{item.name}</span>
-                            </a>
-                        ))}
-                        <div className="flex w-full flex-col gap-3">
-                            <NavbarButton
-                                onClick={() => {
-                                    setIsMobileMenuOpen(false);
-                                    navigate({ to: '/' });
-                                }}
-                                variant="ghost"
-                                className="w-full rounded-xl"
-                                as="button"
-                            >
-                                Home
-                            </NavbarButton>
-                            <NavbarButton
-                                onClick={() => {
-                                    setIsMobileMenuOpen(false);
-                                    navigate({ to: '/onboarding' });
-                                }}
-                                variant="gradient"
-                                className="w-full rounded-xl"
-                                as="button"
-                            >
-                                Start Free Trial
-                            </NavbarButton>
-                        </div>
-                    </MobileNavMenu>
-                </MobileNav>
-            </Navbar>
+                        {isLoading ? 'Loading...' : 'Sign In'}
+                    </NavbarButton>
+                }
+                mobileFooter={
+                    <NavbarButton
+                        variant="outline"
+                        onClick={handleLogin}
+                        disabled={isLoading}
+                        as="button"
+                        className="w-full justify-center rounded-xl"
+                    >
+                        {isLoading ? 'Loading...' : 'Sign In'}
+                    </NavbarButton>
+                }
+            />
 
             {/* 1. HERO SECTION */}
             <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden bg-white">
@@ -539,42 +324,33 @@ const ProductPage: React.FC = () => {
                                                     <span className="text-xs text-slate-500">Revenue</span>
                                                 </div>
                                             </div>
-                                            <div className="flex-1">
-                                                <ResponsiveContainer width="100%" height="100%">
-                                                    <AreaChart data={lineData}>
-                                                        <defs>
-                                                            <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                                                                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1} />
-                                                                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                                                            </linearGradient>
-                                                        </defs>
-                                                        <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
-                                                        <RechartsTooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                                                        <Area type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#colorValue)" />
-                                                        <Area type="monotone" dataKey="uv" stroke="#8b5cf6" strokeWidth={2} fillOpacity={0} />
-                                                    </AreaChart>
-                                                </ResponsiveContainer>
+                                            <div className="flex-1 min-h-[180px]">
+                                                <MiniSparkline
+                                                    data={lineData.map((d) => ({ value: d.value }))}
+                                                    color="#3b82f6"
+                                                    height={180}
+                                                />
                                             </div>
                                         </div>
                                         <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6 flex flex-col">
                                             <h4 className="font-bold text-slate-700 mb-6">Distribution</h4>
-                                            <div className="flex-1">
-                                                <ResponsiveContainer width="100%" height="100%">
-                                                    <PieChart>
-                                                        <Pie
-                                                            data={pieData}
-                                                            innerRadius={60}
-                                                            outerRadius={80}
-                                                            paddingAngle={5}
-                                                            dataKey="value"
-                                                            stroke="none"
-                                                        >
-                                                            {pieData.map((_, index) => (
-                                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                                            ))}
-                                                        </Pie>
-                                                    </PieChart>
-                                                </ResponsiveContainer>
+                                            <div className="flex-1 flex flex-col gap-3 justify-center min-h-[180px]">
+                                                {pieData.map((segment, index) => (
+                                                    <div key={segment.name} className="flex items-center gap-3">
+                                                        <div className="h-3 flex-1 rounded-full bg-slate-100 overflow-hidden">
+                                                            <div
+                                                                className="h-full rounded-full transition-none"
+                                                                style={{
+                                                                    width: `${(segment.value / pieTotal) * 100}%`,
+                                                                    backgroundColor: COLORS[index % COLORS.length],
+                                                                }}
+                                                            />
+                                                        </div>
+                                                        <span className="text-xs text-slate-600 w-20 text-right shrink-0">
+                                                            {segment.name}
+                                                        </span>
+                                                    </div>
+                                                ))}
                                             </div>
                                         </div>
                                     </div>
@@ -584,20 +360,6 @@ const ProductPage: React.FC = () => {
                     </div>
                 </div>
             </section>
-
-            {/* 2. STATS BAR */}
-            <div className="border-y border-slate-100 bg-white py-12">
-                <div className="container mx-auto px-4">
-                    <div className="flex flex-wrap justify-center gap-12 lg:gap-24 opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
-                        {['Acme Corp', 'GlobalTech', 'Nebula', 'FoxRun', 'Circle'].map((logo, i) => (
-                            <div key={i} className="text-xl font-bold font-serif text-slate-400 flex items-center gap-2">
-                                <div className="w-8 h-8 bg-slate-200 rounded-full"></div>
-                                {logo}
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
 
             {/* 3. PROBLEM / SOLUTION - COMPACT WINDOW LAYOUT */}
             <section className="py-24 bg-slate-50 relative overflow-hidden" id="perspective">
@@ -759,7 +521,7 @@ const ProductPage: React.FC = () => {
                 </div>
             </section>
 
-            {/* 4. FEATURES - STACKING CARDS LAYOUT */}
+            {/* 4. Marketing features */}
             <section className="py-24 bg-white relative">
                 <div className="container mx-auto px-4 max-w-6xl">
                     <div className="text-center max-w-3xl mx-auto mb-24">
@@ -822,7 +584,7 @@ const ProductPage: React.FC = () => {
                 </div>
             </section>
 
-            {/* 6. FEATURE COMPARISON TABLE (REPLACES PRICING) */}
+            {/* 6. PLAN COMPARISON — pricing matrix modules or legacy marketing table */}
             <section className="py-24 bg-white" id="comparison">
                 <div className="container mx-auto px-4">
                     <div className="text-center max-w-3xl mx-auto mb-16">
@@ -830,111 +592,192 @@ const ProductPage: React.FC = () => {
                             <LayoutGrid size={12} /> Compare Plans
                         </div>
                         <h2 className="text-3xl lg:text-4xl font-bold mb-6 text-[#1B2E5A]">
-                            Find the Perfect Fit
+                            {usePricingModules ? 'Modules by plan' : 'Find the Perfect Fit'}
                         </h2>
-                        <p className="text-lg text-slate-600">
-                            Detailed breakdown of features across all plans.
-                        </p>
+                        {!usePricingModules && (
+                            <p className="text-lg text-slate-600">
+                                Detailed breakdown of features across all plans.
+                            </p>
+                        )}
                     </div>
 
                     <div className="max-w-6xl mx-auto">
-                        {/* Comparison Table Container */}
                         <div className="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden mb-20">
                             <div className="overflow-x-auto">
                                 <table className="w-full min-w-[800px] border-collapse">
                                     <thead>
                                         <tr>
                                             <th className="p-6 text-left w-1/3 bg-slate-50/50 border-b border-r border-slate-100 sticky left-0 backdrop-blur-sm z-10">
-                                                <span className="text-slate-400 text-sm font-semibold uppercase tracking-wider">Features</span>
+                                                <span className="text-slate-400 text-sm font-semibold uppercase tracking-wider">
+                                                    {usePricingModules ? 'Modules' : 'Features'}
+                                                </span>
                                             </th>
-                                            {data.pricing.tiers.map((tier, idx) => (
-                                                <th key={idx} className={`p-6 text-center w-1/5 border-b border-slate-100 ${tier.popular ? 'bg-blue-50/30' : 'bg-white'}`}>
-                                                    <div className="font-bold text-xl text-[#1B2E5A] mb-1">{tier.name}</div>
-                                                    <div className="text-blue-600 font-semibold text-sm">Contact Us</div>
-                                                </th>
-                                            ))}
+                                            {usePricingModules
+                                                ? (['Starter', 'Professional', 'Enterprise'] as const).map((name, idx) => (
+                                                      <th
+                                                          key={name}
+                                                          className={`p-6 text-center w-1/5 border-b border-slate-100 ${idx === 1 ? 'bg-blue-50/30' : 'bg-white'}`}
+                                                      >
+                                                          <div className="font-bold text-xl text-[#1B2E5A] mb-1">{name}</div>
+                                                          <div className="text-slate-500 font-medium text-xs">Annual plans</div>
+                                                      </th>
+                                                  ))
+                                                : data.pricing.tiers.map((tier, idx) => (
+                                                      <th key={idx} className={`p-6 text-center w-1/5 border-b border-slate-100 ${tier.popular ? 'bg-blue-50/30' : 'bg-white'}`}>
+                                                          <div className="font-bold text-xl text-[#1B2E5A] mb-1">{tier.name}</div>
+                                                          <div className="text-blue-600 font-semibold text-sm">Contact Us</div>
+                                                      </th>
+                                                  ))}
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {comparisonRows.map((row, rowIdx) => (
-                                            <tr key={rowIdx} className="hover:bg-slate-50 transition-colors group">
-                                                <td className="p-5 border-b border-r border-slate-100 text-slate-700 font-medium sticky left-0 bg-white group-hover:bg-slate-50 z-10 flex items-center gap-2">
-                                                    {row.name}
-                                                    <div className="text-slate-300 hover:text-blue-500 cursor-help transition-colors">
-                                                        <AlertCircle size={14} />
-                                                    </div>
-                                                </td>
-                                                {data.pricing.tiers.map((tier, colIdx) => {
-                                                    let cellContent;
+                                        {usePricingModules
+                                            ? moduleMatrixRows.map((row) => (
+                                                  <tr key={row.code} className="hover:bg-slate-50 transition-colors group">
+                                                      <td className="p-5 border-b border-r border-slate-100 text-slate-700 font-medium sticky left-0 bg-white group-hover:bg-slate-50 z-10">
+                                                          {row.label}
+                                                      </td>
+                                                      {[row.starter, row.professional, row.enterprise].map((included, colIdx) => (
+                                                          <td
+                                                              key={colIdx}
+                                                              className={`p-5 border-b border-slate-100 ${colIdx === 1 ? 'bg-blue-50/10' : ''}`}
+                                                          >
+                                                              {included ? (
+                                                                  <div className="flex justify-center">
+                                                                      <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
+                                                                          <Check size={16} strokeWidth={3} />
+                                                                      </div>
+                                                                  </div>
+                                                              ) : (
+                                                                  <div className="flex justify-center">
+                                                                      <Minus size={16} className="text-slate-300" />
+                                                                  </div>
+                                                              )}
+                                                          </td>
+                                                      ))}
+                                                  </tr>
+                                              ))
+                                            : legacyComparisonRows.map((row, rowIdx) => (
+                                                  <tr key={rowIdx} className="hover:bg-slate-50 transition-colors group">
+                                                      <td className="p-5 border-b border-r border-slate-100 text-slate-700 font-medium sticky left-0 bg-white group-hover:bg-slate-50 z-10 flex items-center gap-2">
+                                                          {row.name}
+                                                          <div className="text-slate-300 hover:text-blue-500 cursor-help transition-colors">
+                                                              <AlertCircle size={14} />
+                                                          </div>
+                                                      </td>
+                                                      {data.pricing.tiers.map((tier, colIdx) => {
+                                                          let cellContent;
 
-                                                    if (row.isDynamic) {
-                                                        // Check if this tier has the feature string
-                                                        const hasFeature = tier.features.includes(row.name);
-                                                        cellContent = hasFeature
-                                                            ? <div className="flex justify-center"><div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center"><Check size={16} strokeWidth={3} /></div></div>
-                                                            : <div className="flex justify-center"><Minus size={16} className="text-slate-300" /></div>;
-                                                    } else {
-                                                        // Use manual values
-                                                        const val = 'values' in row && row.values ? row.values[colIdx] : false;
-                                                        if (typeof val === 'boolean') {
-                                                            cellContent = val
-                                                                ? <div className="flex justify-center"><div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center"><Check size={16} strokeWidth={3} /></div></div>
-                                                                : <div className="flex justify-center"><Minus size={16} className="text-slate-300" /></div>;
-                                                        } else {
-                                                            cellContent = <div className="text-center font-semibold text-slate-700">{val}</div>;
-                                                        }
-                                                    }
+                                                          if (row.isDynamic) {
+                                                              const hasFeature = tier.features.includes(row.name);
+                                                              cellContent = hasFeature ? (
+                                                                  <div className="flex justify-center">
+                                                                      <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
+                                                                          <Check size={16} strokeWidth={3} />
+                                                                      </div>
+                                                                  </div>
+                                                              ) : (
+                                                                  <div className="flex justify-center">
+                                                                      <Minus size={16} className="text-slate-300" />
+                                                                  </div>
+                                                              );
+                                                          } else {
+                                                              const val = 'values' in row && row.values ? row.values[colIdx] : false;
+                                                              if (typeof val === 'boolean') {
+                                                                  cellContent = val ? (
+                                                                      <div className="flex justify-center">
+                                                                          <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
+                                                                              <Check size={16} strokeWidth={3} />
+                                                                          </div>
+                                                                      </div>
+                                                                  ) : (
+                                                                      <div className="flex justify-center">
+                                                                          <Minus size={16} className="text-slate-300" />
+                                                                      </div>
+                                                                  );
+                                                              } else {
+                                                                  cellContent = <div className="text-center font-semibold text-slate-700">{val}</div>;
+                                                              }
+                                                          }
 
-                                                    return (
-                                                        <td key={colIdx} className={`p-5 border-b border-slate-100 ${tier.popular ? 'bg-blue-50/10' : ''}`}>
-                                                            {cellContent}
-                                                        </td>
-                                                    );
-                                                })}
-                                            </tr>
-                                        ))}
-                                        {/* Action Row */}
+                                                          return (
+                                                              <td key={colIdx} className={`p-5 border-b border-slate-100 ${tier.popular ? 'bg-blue-50/10' : ''}`}>
+                                                                  {cellContent}
+                                                              </td>
+                                                          );
+                                                      })}
+                                                  </tr>
+                                              ))}
                                         <tr>
                                             <td className="p-6 border-r border-slate-100 sticky left-0 bg-white z-10"></td>
-                                            {data.pricing.tiers.map((tier, idx) => (
-                                                <td key={idx} className={`p-6 text-center ${tier.popular ? 'bg-blue-50/10' : ''}`}>
-                                                    <button
-                                                        onClick={() => navigate({ to: '/onboarding' })}
-                                                        className={`w-full py-3 rounded-lg font-bold text-sm transition-all ${tier.popular
-                                                            ? 'bg-[#1B2E5A] text-white hover:bg-[#162447] shadow-lg shadow-blue-600/20'
-                                                            : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                                                            }`}>
-                                                        {tier.cta}
-                                                    </button>
-                                                </td>
-                                            ))}
+                                            {usePricingModules
+                                                ? (['Starter', 'Professional', 'Enterprise'] as const).map((_, idx) => (
+                                                      <td key={idx} className={`p-6 text-center ${idx === 1 ? 'bg-blue-50/10' : ''}`}>
+                                                          <button
+                                                              type="button"
+                                                              onClick={() => navigate({ to: '/onboarding' })}
+                                                              className={`w-full py-3 rounded-lg font-bold text-sm transition-all ${
+                                                                  idx === 1
+                                                                      ? 'bg-[#1B2E5A] text-white hover:bg-[#162447] shadow-lg shadow-blue-600/20'
+                                                                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                                                              }`}
+                                                          >
+                                                              Start free trial
+                                                          </button>
+                                                      </td>
+                                                  ))
+                                                : data.pricing.tiers.map((tier, idx) => (
+                                                      <td key={idx} className={`p-6 text-center ${tier.popular ? 'bg-blue-50/10' : ''}`}>
+                                                          <button
+                                                              type="button"
+                                                              onClick={() => navigate({ to: '/onboarding' })}
+                                                              className={`w-full py-3 rounded-lg font-bold text-sm transition-all ${
+                                                                  tier.popular
+                                                                      ? 'bg-[#1B2E5A] text-white hover:bg-[#162447] shadow-lg shadow-blue-600/20'
+                                                                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                                                              }`}
+                                                          >
+                                                              {tier.cta}
+                                                          </button>
+                                                      </td>
+                                                  ))}
                                         </tr>
                                     </tbody>
                                 </table>
                             </div>
                         </div>
 
-                        {/* Additional Features Grid */}
-                        <div className="bg-slate-50 rounded-3xl p-8 lg:p-12 border border-slate-200">
-                            <h3 className="text-2xl font-bold mb-8 text-center text-slate-800 flex items-center justify-center gap-3">
-                                <Sparkles className="text-amber-400 fill-amber-400" />
-                                Included in All Plans
-                            </h3>
-                            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-y-6 gap-x-8">
-                                {[
-                                    "SSO & 2FA Security", "99.9% Uptime SLA", "GDPR Compliance", "Daily Backups",
-                                    "Mobile App Access", "Custom Branding", "API Documentation", "Community Access",
-                                    "Email Support", "Video Tutorials", "Data Export", "Audit Logs"
-                                ].map((feature, i) => (
-                                    <div key={i} className="flex items-center gap-3 text-slate-700">
-                                        <div className="w-5 h-5 rounded-full bg-green-100 text-green-600 flex items-center justify-center shrink-0">
-                                            <Check size={12} strokeWidth={3} />
+                        {!usePricingModules && (
+                            <div className="bg-slate-50 rounded-3xl p-8 lg:p-12 border border-slate-200">
+                                <h3 className="text-2xl font-bold mb-8 text-center text-slate-800 flex items-center justify-center gap-3">
+                                    <Sparkles className="text-amber-400 fill-amber-400" />
+                                    Included in All Plans
+                                </h3>
+                                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-y-6 gap-x-8">
+                                    {[
+                                        'SSO & 2FA Security',
+                                        '99.9% Uptime SLA',
+                                        'GDPR Compliance',
+                                        'Daily Backups',
+                                        'Mobile App Access',
+                                        'Custom Branding',
+                                        'API Documentation',
+                                        'Community Access',
+                                        'Email Support',
+                                        'Video Tutorials',
+                                        'Data Export',
+                                        'Audit Logs',
+                                    ].map((feature, i) => (
+                                        <div key={i} className="flex items-center gap-3 text-slate-700">
+                                            <div className="w-5 h-5 rounded-full bg-green-100 text-green-600 flex items-center justify-center shrink-0">
+                                                <Check size={12} strokeWidth={3} />
+                                            </div>
+                                            <span className="font-medium text-sm">{feature}</span>
                                         </div>
-                                        <span className="font-medium text-sm">{feature}</span>
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </div>
                 </div>
             </section>

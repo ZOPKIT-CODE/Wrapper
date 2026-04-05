@@ -100,7 +100,7 @@ export function AuthCallback() {
         if (onboardingParam === 'complete' && refreshParam === 'true') {
           hasNavigatedRef.current = true
           setTimeout(() => {
-            window.location.href = '/dashboard?onboarding=complete'
+            window.location.href = '/dashboard/applications?onboarding=complete'
           }, 1000)
           return
         }
@@ -114,9 +114,9 @@ export function AuthCallback() {
 
         hasNavigatedRef.current = true
         if (onboardingParam === 'complete') {
-          navigate({ to: '/dashboard?onboarding=complete', replace: true })
+          navigate({ to: '/dashboard/applications?onboarding=complete', replace: true })
         } else {
-          navigate({ to: '/dashboard', replace: true })
+          navigate({ to: '/dashboard/applications', replace: true })
         }
 
       } catch (err) {

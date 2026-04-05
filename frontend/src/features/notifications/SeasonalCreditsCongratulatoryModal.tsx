@@ -136,7 +136,7 @@ export const SeasonalCreditsCongratulatoryModal: React.FC<SeasonalCreditsCongrat
               <Button
                 onClick={() => {
                   onClose();
-                  window.location.href = '/dashboard?tab=credits';
+                  window.location.href = '/dashboard/billing';
                 }}
                 className="flex-1 bg-slate-900 hover:bg-slate-800 text-white font-medium"
               >

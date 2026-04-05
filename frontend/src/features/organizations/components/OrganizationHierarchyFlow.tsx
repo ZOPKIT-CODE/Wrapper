@@ -476,7 +476,7 @@ function OrganizationHierarchyFlowInner({
         </Panel>
       </ReactFlow>
 
-      {/* Credit Allocation Modal */}
+      {/* Allocate credits (drawer — same pattern as list view) */}
       {selectedEntityForAllocation && (
         <CreditAllocationModal
           isOpen={showCreditAllocationModal}
@@ -502,7 +502,6 @@ export function OrganizationHierarchyFlow(props: OrganizationHierarchyFlowProps)
 
   return (
     <div
-      data-tour-feature="organization-hierarchy"
       className="w-full h-full min-h-[400px]"
       style={{ width: '100%', height: '100%' }}
     >

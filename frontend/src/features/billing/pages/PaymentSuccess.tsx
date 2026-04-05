@@ -13,7 +13,9 @@ import {
   Sparkles,
   TrendingUp,
   Shield,
-  Star
+  Star,
+  Download,
+  Loader2
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,6 +23,7 @@ import { Badge } from '@/components/ui/badge';
 import { subscriptionAPI, creditAPI } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 import { useUserContext } from '@/contexts/UserContextProvider';
+import { generateInvoicePDF } from '@/lib/invoiceGenerator';
 // @ts-ignore - canvas-confetti doesn't have types
 import confetti from 'canvas-confetti';
 
@@ -141,9 +144,19 @@ const CountUp: React.FC<{ end: number; prefix?: string; suffix?: string }> = ({ 
 const PaymentSuccess: React.FC = () => {
   const navigate = useNavigate();
   const search = useSearch({ strict: false }) as Record<string, string>;
-  const { tenant } = useUserContext();
+  const { tenant, user } = useUserContext();
   const confettiFiredRef = useRef(false);
   const cardRef = useRef<HTMLDivElement>(null);
+
+  // Safety timeout: if the payment details API keeps failing (e.g. DB migration
+  // not run, webhook hasn't fired yet), show the success page anyway after 8s.
+  // The payment DID succeed at Stripe — this page only fetches receipt details.
+  const [timedOut, setTimedOut] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setTimedOut(true), 8000);
+    return () => clearTimeout(t);
+  }, []);
 
   // Mouse position tracking for parallax effect (must be at top level for consistent hook order)
   const mouseX = useMotionValue(0);
@@ -221,7 +234,8 @@ const PaymentSuccess: React.FC = () => {
 
   const paymentType = determinePaymentType();
 
-  // Fetch payment details
+  // Fetch payment details — retry aggressively because the webhook may not have
+  // created the payment record yet when we first land on this page.
   const { data: paymentData, isLoading: paymentLoading, error: paymentError } = useQuery({
     queryKey: ['payment', sessionId, paymentType],
     queryFn: async () => {
@@ -232,8 +246,9 @@ const PaymentSuccess: React.FC = () => {
         return await creditAPI.getPaymentDetails(sessionId);
       }
     },
-    enabled: !!sessionId,
-    retry: 3
+    enabled: !!sessionId && !timedOut,
+    retry: 5,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
   });
 
   const { data: subscriptionData, isLoading: subscriptionLoading } = useQuery({
@@ -326,7 +341,53 @@ const PaymentSuccess: React.FC = () => {
 
   const companyName = tenant?.companyName || 'your organization';
 
-  const isSuccessView = !paymentLoading && !subscriptionLoading && !(paymentType === 'credit_purchase' && creditLoading) && !!sessionId && !paymentError && !!paymentData;
+  const handleDownloadInvoice = async () => {
+    if (!paymentInfo) return;
+    setIsDownloading(true);
+    await new Promise<void>(resolve =>
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+    );
+    try {
+      generateInvoicePDF(
+        {
+          id: paymentInfo.stripePaymentIntentId || paymentInfo.transactionId || sessionId || '',
+          type: paymentInfo.paymentType || (paymentType === 'credit_purchase' ? 'credit_purchase' : 'subscription'),
+          status: paymentInfo.status,
+          description: paymentInfo.description,
+          amount: paymentInfo.amount ?? 0,
+          paidAt: paymentInfo.paidAt || paymentInfo.processedAt || paymentInfo.createdAt,
+          createdAt: paymentInfo.createdAt,
+          invoiceNumber: paymentInfo.invoiceNumber,
+          paymentMethod: paymentInfo.paymentMethod,
+          paymentMethodDetails: paymentInfo.paymentMethodDetails,
+          taxAmount: paymentInfo.taxAmount,
+          planDisplayName: paymentInfo.planName || paymentInfo.planId,
+          billingCycle: paymentInfo.billingCycle,
+          currency: paymentInfo.currency,
+          stripePaymentIntentId: paymentInfo.stripePaymentIntentId,
+          stripeInvoiceId: paymentInfo.stripeInvoiceId,
+        } as any,
+        {
+          name: user?.name || user?.email || '',
+          email: user?.email || '',
+          companyName: tenant?.companyName || '',
+        }
+      );
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  // Show success if we have payment data OR if we timed out waiting for it.
+  // The payment succeeded at Stripe regardless — this page is just a receipt.
+  const isSuccessView = (
+    !!sessionId && (
+      // Normal path: all data loaded
+      (!paymentLoading && !subscriptionLoading && !(paymentType === 'credit_purchase' && creditLoading) && !paymentError && !!paymentData) ||
+      // Timeout path: show success anyway (receipt details may be missing)
+      timedOut
+    )
+  );
 
   // Fire confetti once when success content is shown (must be before any return to keep hook order consistent)
   useEffect(() => {
@@ -340,7 +401,7 @@ const PaymentSuccess: React.FC = () => {
     }
   }, [isSuccessView]);
 
-  if (paymentLoading || subscriptionLoading || (paymentType === 'credit_purchase' && creditLoading)) {
+  if (!isSuccessView && !timedOut && (paymentLoading || subscriptionLoading || (paymentType === 'credit_purchase' && creditLoading))) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
@@ -351,7 +412,7 @@ const PaymentSuccess: React.FC = () => {
     );
   }
 
-  if (paymentError || !sessionId) {
+  if (!isSuccessView && (paymentError || !sessionId)) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
         <Card className="max-w-md w-full border-red-100 shadow-xl">
@@ -671,16 +732,18 @@ const PaymentSuccess: React.FC = () => {
                                     <Shield className="w-2.5 h-2.5 shrink-0" />
                                     Total Credits
                                   </span>
-                                  <motion.div
-                                    className="flex items-center gap-1.5 mt-0.5"
-                                    initial={{ scale: 0 }}
-                                    animate={{ scale: 1 }}
-                                    transition={{ delay: 0.5, type: "spring" }}
-                                  >
-                                    <span className="text-[10px] font-black text-[#1B2E5A] bg-white/90 px-1.5 py-0.5 rounded-full shadow-sm border border-[#1B2E5A]/20">
-                                      +{(currentState.credits - (previousState?.credits || 0)).toLocaleString()}
-                                    </span>
-                                  </motion.div>
+                                  {(currentState.credits - (previousState?.credits || 0)) > 0 && (
+                                    <motion.div
+                                      className="flex items-center gap-1.5 mt-0.5"
+                                      initial={{ scale: 0 }}
+                                      animate={{ scale: 1 }}
+                                      transition={{ delay: 0.5, type: "spring" }}
+                                    >
+                                      <span className="text-[10px] font-black text-[#1B2E5A] bg-white/90 px-1.5 py-0.5 rounded-full shadow-sm border border-[#1B2E5A]/20">
+                                        +{(currentState.credits - (previousState?.credits || 0)).toLocaleString()}
+                                      </span>
+                                    </motion.div>
+                                  )}
                                 </div>
                                 <motion.span
                                   className="text-xl font-black text-[#1B2E5A] relative z-10 tabular-nums shrink-0"
@@ -716,7 +779,7 @@ const PaymentSuccess: React.FC = () => {
                   className="flex-1"
                 >
                   <Button
-                    onClick={() => navigate({ to: '/dashboard' })}
+                    onClick={() => navigate({ to: '/dashboard/applications' })}
                     className="w-full px-6 py-5 bg-[#1B2E5A] hover:bg-[#152449] text-white font-black rounded-xl transition-all shadow-2xl shadow-blue-200/50 flex items-center justify-center gap-2 text-base group relative overflow-hidden"
                   >
                     <Shimmer className="opacity-30" />
@@ -767,17 +830,72 @@ const PaymentSuccess: React.FC = () => {
                       Receipt
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-3 px-4 pb-4 relative z-10">
+                  <CardContent className="space-y-2.5 px-4 pb-4 relative z-10">
+
+                    {/* Primary transaction reference */}
                     <motion.div
                       className="p-3 bg-slate-50 rounded-xl border border-slate-100 group-hover:border-[#1B2E5A]/20 transition-colors"
-                      whileHover={{ scale: 1.02 }}
+                      whileHover={{ scale: 1.01 }}
                     >
                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Transaction ID</p>
                       <p className="font-mono text-[9px] text-slate-600 break-all leading-tight group-hover:text-blue-700 transition-colors">
-                        {paymentInfo?.transactionId || sessionId}
+                        {paymentInfo?.stripePaymentIntentId || paymentInfo?.transactionId || sessionId}
                       </p>
                     </motion.div>
-                    <div className="flex justify-between items-end border-t border-slate-100 pt-3">
+
+                    {/* Detail rows */}
+                    <div className="space-y-2">
+                      {/* Date */}
+                      {(paymentInfo?.paidAt || paymentInfo?.processedAt) && (
+                        <div className="flex justify-between items-center">
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Payment Date</p>
+                          <p className="text-[10px] font-bold text-[#1B2E5A]">
+                            {new Date(paymentInfo.paidAt || paymentInfo.processedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Card */}
+                      {paymentInfo?.paymentMethodDetails?.card && (
+                        <div className="flex justify-between items-center">
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Card</p>
+                          <p className="text-[10px] font-bold text-[#1B2E5A]">
+                            {paymentInfo.paymentMethodDetails.card.brand?.toUpperCase()} •••• {paymentInfo.paymentMethodDetails.card.last4}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Plan + billing cycle */}
+                      {planDetails?.name && (
+                        <div className="flex justify-between items-center">
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Plan</p>
+                          <p className="text-[10px] font-bold text-[#1B2E5A] capitalize">
+                            {planDetails.name} · Annual billing
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Renewal date */}
+                      {paymentInfo?.subscription?.renewalDate && (
+                        <div className="flex justify-between items-center">
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Renews</p>
+                          <p className="text-[10px] font-bold text-[#1B2E5A]">
+                            {new Date(paymentInfo.subscription.renewalDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Invoice number */}
+                      {paymentInfo?.invoiceNumber && (
+                        <div className="flex justify-between items-center">
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Invoice #</p>
+                          <p className="text-[10px] font-bold text-[#1B2E5A]">{paymentInfo.invoiceNumber}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Total + Status */}
+                    <div className="flex justify-between items-end border-t border-slate-100 pt-3 mt-1">
                       <motion.div
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
@@ -806,6 +924,28 @@ const PaymentSuccess: React.FC = () => {
                         </Badge>
                       </motion.div>
                     </div>
+
+                    {/* Download Invoice button */}
+                    {paymentInfo && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.6 }}
+                        className="pt-2"
+                      >
+                        <Button
+                          onClick={handleDownloadInvoice}
+                          disabled={isDownloading}
+                          variant="outline"
+                          className="w-full border border-[#1B2E5A]/20 hover:border-[#1B2E5A]/40 hover:bg-[#1B2E5A]/5 text-[#1B2E5A] font-black rounded-xl py-4 text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                        >
+                          {isDownloading
+                            ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />Generating PDF...</>
+                            : <><Download className="w-3.5 h-3.5" />Download Invoice</>
+                          }
+                        </Button>
+                      </motion.div>
+                    )}
                   </CardContent>
                 </Card>
               </motion.div>

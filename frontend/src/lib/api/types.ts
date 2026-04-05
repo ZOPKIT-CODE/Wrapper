@@ -54,8 +54,6 @@ export interface Subscription {
 }
 
 export interface UsageMetrics {
-  apiCalls: number
-  storage: number
   users: number
   bandwidth: number
 }
@@ -100,8 +98,6 @@ export interface Role {
     planType?: string
     maxUsers?: number
     maxRoles?: number
-    storageLimit?: string
-    apiCallLimit?: number
   }
   isSystemRole: boolean
   isDefault: boolean

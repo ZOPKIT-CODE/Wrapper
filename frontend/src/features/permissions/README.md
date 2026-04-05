@@ -39,8 +39,6 @@ This feature currently uses **mock data only** and does not make direct backend 
 
 ## Dependencies
 
-- `framer-motion` — Animations
 - `lucide-react` — Icons
-- `@/components/dnd/EnhancedDragDropProvider` — Drag-and-drop support
 - `@/data/mockPermissions`, `@/data/kindeIntegratedData` — Mock data sources
 - `@/components/ui/*` — shadcn/ui components

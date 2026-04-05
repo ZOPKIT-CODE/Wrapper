@@ -1,12 +1,11 @@
-import React, { useState, useMemo } from 'react'
-import { motion } from 'framer-motion'
+import { useState, useMemo } from 'react'
+import { DashboardPageHeader } from '@/components/dashboard/DashboardPageHeader'
 import { ChevronDown, ChevronRight, Users, Shield, Search, Plus, Settings, Filter, Grid, List, UserCheck, Crown, Key, Eye, EyeOff, ToggleLeft, ToggleRight } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
-import { EnhancedDragDropProvider, useEnhancedDragDrop } from '@/components/dnd/EnhancedDragDropProvider'
 import {
   mockPermissions,
   mockUsers,
@@ -38,11 +37,7 @@ const enhancedUsers: EnhancedUser[] = mockUsers.map(user => ({
 }))
 
 export function Permissions() {
-  return (
-    <EnhancedDragDropProvider>
-      <PermissionsContent />
-    </EnhancedDragDropProvider>
-  )
+  return <PermissionsContent />
 }
 
 function PermissionsContent() {
@@ -66,9 +61,6 @@ function PermissionsContent() {
     })
     return initial
   })
-
-  // Get drag drop functionality but we don't need the selections for this component
-  useEnhancedDragDrop()
 
   // Filter functions
   const filteredUsers = useMemo(() => {
@@ -465,27 +457,22 @@ function PermissionsContent() {
       }} />
 
       {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
-        className="flex items-center justify-between"
-      >
-        <div>
-          <h1 className="text-3xl font-bold">Permissions Management</h1>
-          <p className="text-gray-600">Drag & drop permissions • Matrix toggles • Role management</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm">
-            <Plus className="w-4 h-4 mr-2" />
-            Quick Role
-          </Button>
-          <Button size="sm">
-            <Settings className="w-4 h-4 mr-2" />
-            Settings
-          </Button>
-        </div>
-      </motion.div>
+      <DashboardPageHeader
+        title="Permissions Management"
+        description="Drag & drop permissions • Matrix toggles • Role management"
+        actions={(
+          <>
+            <Button variant="outline" size="sm">
+              <Plus className="w-4 h-4 mr-2" />
+              Quick Role
+            </Button>
+            <Button size="sm">
+              <Settings className="w-4 h-4 mr-2" />
+              Settings
+            </Button>
+          </>
+        )}
+      />
 
       {/* Controls */}
       <div className="flex items-center justify-between gap-4">

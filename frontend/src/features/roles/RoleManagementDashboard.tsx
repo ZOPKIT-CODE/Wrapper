@@ -8,7 +8,6 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { motion } from 'framer-motion';
 import {
   Dialog,
   DialogContent,
@@ -43,6 +42,7 @@ import { useRoles, useInvalidateQueries } from '@/hooks/useSharedQueries';
 import { getPermissionSummary as getPermissionSummaryUtil } from './utils/permissionUtils';
 import { cn } from '@/lib/utils';
 import { ZopkitRoundLoader } from '@/components/common/feedback/ZopkitRoundLoader';
+import { DashboardPageHeader } from '@/components/dashboard/DashboardPageHeader';
 
 // Use the enhanced Role interface from api.ts - no need for separate DashboardRole
 type DashboardRole = Role;
@@ -636,36 +636,22 @@ export function RoleManagementDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-white text-[#1B2E5A]">
-
-      <div className="relative z-10 max-w-7xl mx-auto p-4 md:p-6 space-y-6">
+    <div className="space-y-8 text-[#1B2E5A]">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: "easeOut" }}
-          className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
-        >
-          <div className="space-y-1">
-            <h1 className="text-4xl font-black tracking-tighter text-[#1B2E5A]">
-              Role Management
-            </h1>
-            <p className="text-muted-foreground text-sm max-w-2xl">
-              Manage roles, permissions, and access control
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <PearlButton onClick={handleCreateRole} className="gap-2" data-tour-feature="create-role">
+        <DashboardPageHeader
+          title="Role Management"
+          description="Manage roles, permissions, and access control"
+          actions={(
+            <PearlButton onClick={handleCreateRole} className="gap-2">
               <ShieldPlus className="w-4 h-4" />
               <span className="hidden sm:inline">Build Role</span>
               <span className="sm:hidden">New Role</span>
             </PearlButton>
-          </div>
-        </motion.div>
+          )}
+        />
 
         {/* Enhanced Filters and Search */}
-        <Card className="rounded-2xl border border-[#1B2E5A]/10 bg-white shadow-sm backdrop-blur-sm transition-all hover:shadow-md">
+        <Card className="rounded-2xl border border-[#1B2E5A]/10 bg-white shadow-sm">
           <CardContent className="p-6 space-y-6">
             {/* Search Bar */}
             <div className="flex flex-col lg:flex-row gap-4">
@@ -1065,7 +1051,6 @@ export function RoleManagementDashboard() {
           </DialogContent>
         </Dialog>
 
-      </div>
     </div>
   );
 }

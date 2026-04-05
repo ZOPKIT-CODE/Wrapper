@@ -71,6 +71,14 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        /** Zopkit deep blue — use with opacity: text-zopkit/70, border-zopkit/15 */
+        zopkit: {
+          DEFAULT: "#1B2E5A",
+          hover: "#162447",
+          /** Light surfaces tinted to match brand (not neutral gray) */
+          surface: "#f4f7fb",
+          "surface-strong": "#e8ecf4",
+        },
         chart: {
           "1": "hsl(var(--chart-1))",
           "2": "hsl(var(--chart-2))",

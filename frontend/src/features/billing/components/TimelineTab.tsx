@@ -2,7 +2,6 @@
  * Timeline tab: user journey and activity events.
  */
 
-import React from 'react'
 import {
   ListOrdered,
   Clock,
@@ -16,7 +15,11 @@ import {
 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { formatDate } from '@/lib/utils'
+import { cn, formatDate } from '@/lib/utils'
+import {
+  DASHBOARD_PAGE_DESCRIPTION_CLASS,
+  DASHBOARD_SECTION_TITLE_CLASS,
+} from '@/components/dashboard/DashboardPageHeader'
 import { ZopkitRoundLoader } from '@/components/common/feedback/ZopkitRoundLoader'
 
 export interface TimelineEvent {
@@ -104,8 +107,8 @@ export function TimelineTab({ timelineData, timelineLoading, hasMore, isLoadingM
               <ListOrdered className="w-6 h-6" />
             </div>
             <div>
-              <CardTitle className="text-xl font-bold text-[#1B2E5A]">Complete Timeline</CardTitle>
-              <CardDescription className="text-slate-500 mt-1">
+              <CardTitle className={DASHBOARD_SECTION_TITLE_CLASS}>Complete Timeline</CardTitle>
+              <CardDescription className={cn(DASHBOARD_PAGE_DESCRIPTION_CLASS, 'mt-1')}>
                 Your entire history of activities and transactions
               </CardDescription>
             </div>

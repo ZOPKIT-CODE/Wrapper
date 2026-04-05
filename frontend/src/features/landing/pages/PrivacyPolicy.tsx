@@ -1,87 +1,166 @@
 import React from 'react';
+import { Link } from '@tanstack/react-router';
 import { LegalPageLayout } from '@/components/layout/LegalPageLayout';
+import { LegalSection } from '@/components/legal/LegalSection';
+import { LEGAL_CONTACT } from '@/lib/legal-contact';
+
+const privacyToc = [
+  { id: 'who-we-are', label: 'Who we are & scope' },
+  { id: 'information-we-collect', label: 'Information we collect' },
+  { id: 'how-we-use', label: 'How we use information' },
+  { id: 'legal-bases', label: 'Legal bases (where applicable)' },
+  { id: 'sharing', label: 'Sharing & processors' },
+  { id: 'international', label: 'International transfers' },
+  { id: 'retention', label: 'Retention' },
+  { id: 'security', label: 'Security' },
+  { id: 'your-rights', label: 'Your rights & how to exercise them' },
+  { id: 'children', label: 'Children' },
+  { id: 'changes', label: 'Changes to this policy' },
+  { id: 'contact', label: 'Contact' },
+] as const;
 
 const PrivacyPolicy: React.FC = () => (
-  <LegalPageLayout title="Privacy Policy" lastUpdated="January 2026">
-    <section id="introduction">
-      <h2 className="text-xl font-bold text-[#1B2E5A] mb-4">1. Introduction</h2>
-      <p className="text-slate-600 leading-relaxed">
-        This Privacy Policy describes how Zopkit Inc. (&quot;we,&quot; &quot;us,&quot; or &quot;our&quot;) collects, uses, and protects your information when you use our website and services. This policy applies to our platform and related offerings. If you have questions about this policy, please contact us at{' '}
-        <a href="mailto:hr@zopkit.com" className="text-blue-600 hover:underline">hr@zopkit.com</a>.
+  <LegalPageLayout
+    title="Privacy Policy"
+    lastUpdated="January 2026"
+    docIntro={
+      <>
+        This policy explains how {LEGAL_CONTACT.companyLegalName} (&quot;Zopkit,&quot; &quot;we,&quot; &quot;us,&quot; or &quot;our&quot;) handles personal information when you visit our website, use our cloud software, or interact with us. It should be read together with our{' '}
+        <Link to="/cookies" className="text-blue-600 hover:underline">
+          Cookie Policy
+        </Link>
+        . For subscription and payment rules, see our{' '}
+        <Link to="/terms" className="text-blue-600 hover:underline">
+          Terms of Service
+        </Link>{' '}
+        and{' '}
+        <Link to="/refund-policy" className="text-blue-600 hover:underline">
+          Cancellation &amp; Refund Policy
+        </Link>
+        .
+      </>
+    }
+    tableOfContents={[...privacyToc]}
+  >
+    <LegalSection id="who-we-are" title="1. Who we are & scope">
+      <p>
+        <strong>Data controller:</strong> {LEGAL_CONTACT.companyLegalName}, operating the Zopkit platform and related services.
       </p>
-    </section>
+      <p>
+        This policy applies to personal information we process about visitors, trial users, paying customers, and authorized users of customer organizations (&quot;you&quot;). It covers data we process as a service provider to your employer or organization when they use Zopkit on your behalf—in those cases, your organization may also have policies that apply to you.
+      </p>
+    </LegalSection>
 
-    <section id="information-we-collect">
-      <h2 className="text-xl font-bold text-[#1B2E5A] mb-4">2. Information We Collect</h2>
-      <p className="text-slate-600 leading-relaxed mb-3">We may collect the following categories of information:</p>
-      <ul className="list-disc pl-6 text-slate-600 space-y-2">
-        <li><strong>Information you provide:</strong> Account and sign-up details, information you submit through contact or demo request forms, support requests, and billing-related information.</li>
-        <li><strong>Information from your use of our services:</strong> Usage data, device information, and log data when you access our platform.</li>
-        <li><strong>Cookies and similar technologies:</strong> We use cookies and similar technologies for essential operation of our services. Where we use non-essential cookies (e.g. for analytics), we do so in line with applicable law.</li>
+    <LegalSection id="information-we-collect" title="2. Information we collect">
+      <p>We may collect the following categories of information:</p>
+      <ul>
+        <li>
+          <strong>Information you provide:</strong> Name, email, company, role, account credentials (managed via our identity provider where applicable), information you submit through contact or demo forms, support tickets, billing and tax details, and other content you choose to provide.
+        </li>
+        <li>
+          <strong>Information from your use of our services:</strong> Usage data, feature interactions, approximate location derived from IP address, device and browser type, diagnostics, and log data needed to operate and secure the service.
+        </li>
+        <li>
+          <strong>Cookies and similar technologies:</strong> As described in our{' '}
+          <Link to="/cookies" className="text-blue-600 hover:underline">
+            Cookie Policy
+          </Link>
+          .
+        </li>
       </ul>
-    </section>
+    </LegalSection>
 
-    <section id="how-we-use">
-      <h2 className="text-xl font-bold text-[#1B2E5A] mb-4">3. How We Use Your Information</h2>
-      <p className="text-slate-600 leading-relaxed mb-3">We use the information we collect to:</p>
-      <ul className="list-disc pl-6 text-slate-600 space-y-2">
-        <li>Provide, operate, and improve our services</li>
-        <li>Process payments and manage your account</li>
-        <li>Communicate with you about our services and, where permitted, marketing</li>
-        <li>Ensure security, prevent fraud, and comply with legal obligations</li>
+    <LegalSection id="how-we-use" title="3. How we use information">
+      <p>We use personal information to:</p>
+      <ul>
+        <li>Provide, operate, maintain, and improve our services</li>
+        <li>Authenticate users, enforce security, and prevent fraud and abuse</li>
+        <li>Process payments, invoices, and subscriptions</li>
+        <li>Communicate with you about the service, security, and (where permitted) relevant product information</li>
+        <li>Meet legal, regulatory, and tax obligations</li>
+        <li>Analyze aggregated or de-identified usage to improve our products</li>
       </ul>
-    </section>
+    </LegalSection>
 
-    <section id="sharing">
-      <h2 className="text-xl font-bold text-[#1B2E5A] mb-4">4. Sharing of Information</h2>
-      <p className="text-slate-600 leading-relaxed">
-        We may share your information with service providers that assist us in operating our business (such as hosting, payments, and support). We may also disclose information when required by law or to protect our rights and safety. We do not sell your personal information.
+    <LegalSection id="legal-bases" title="4. Legal bases (where applicable)">
+      <p>
+        Depending on your jurisdiction, we rely on one or more of: <strong>performance of a contract</strong> (providing the services you or your organization requested); <strong>legitimate interests</strong> (such as securing our platform and improving our products), balanced against your rights; <strong>legal obligation</strong>; and, where required, <strong>your consent</strong> (for example, certain marketing cookies or communications where consent is the appropriate basis).
       </p>
-    </section>
+    </LegalSection>
 
-    <section id="retention">
-      <h2 className="text-xl font-bold text-[#1B2E5A] mb-4">5. Data Retention</h2>
-      <p className="text-slate-600 leading-relaxed">
-        We retain your information for as long as your account is active or as needed to provide our services. We may retain certain information for a reasonable period thereafter and as required by law (for example, for tax or legal compliance).
+    <LegalSection id="sharing" title="5. Sharing & processors">
+      <p>
+        We may share information with subprocessors and service providers who help us run our business—such as cloud hosting, authentication, payment processing, email delivery, analytics (where used), and customer support—under contracts that require them to protect the data and use it only for the purposes we specify.
       </p>
-    </section>
+      <p>
+        We may disclose information if required by law, regulation, legal process, or governmental request, or to protect the rights, safety, and security of Zopkit, our users, or others. We do not sell your personal information as a product.
+      </p>
+    </LegalSection>
 
-    <section id="security">
-      <h2 className="text-xl font-bold text-[#1B2E5A] mb-4">6. Security</h2>
-      <p className="text-slate-600 leading-relaxed">
-        We take reasonable measures to protect your personal information against unauthorized access, alteration, disclosure, or destruction.
+    <LegalSection id="international" title="6. International transfers">
+      <p>
+        Your information may be processed in India and in other countries where we or our subprocessors operate. Where we transfer personal data across borders, we use appropriate safeguards as required by applicable law (such as contractual clauses or other approved mechanisms).
       </p>
-    </section>
+    </LegalSection>
 
-    <section id="your-rights">
-      <h2 className="text-xl font-bold text-[#1B2E5A] mb-4">7. Your Rights</h2>
-      <p className="text-slate-600 leading-relaxed">
-        Depending on your location, you may have rights to access, correct, delete, or restrict the use of your data, and to object to certain processing or withdraw consent where it applies. You may also have the right to lodge a complaint with a data protection authority. To exercise your rights, please contact us at{' '}
-        <a href="mailto:hr@zopkit.com" className="text-blue-600 hover:underline">hr@zopkit.com</a>.
+    <LegalSection id="retention" title="7. Retention">
+      <p>
+        We retain personal information for as long as your account is active or as needed to provide the services. We may retain certain records after closure of an account where necessary for legal, tax, accounting, or security purposes, or as required by law. Retention periods vary by data category and context.
       </p>
-    </section>
+    </LegalSection>
 
-    <section id="children">
-      <h2 className="text-xl font-bold text-[#1B2E5A] mb-4">8. Children</h2>
-      <p className="text-slate-600 leading-relaxed">
-        Our services are not directed to children. We do not knowingly collect personal information from children.
+    <LegalSection id="security" title="8. Security">
+      <p>
+        We implement technical and organizational measures designed to protect personal information against unauthorized access, loss, or misuse. See our{' '}
+        <Link to="/security" className="text-blue-600 hover:underline">
+          Security
+        </Link>{' '}
+        page for a high-level overview. No method of transmission over the Internet is completely secure; we encourage you to use strong passwords and protect your credentials.
       </p>
-    </section>
+    </LegalSection>
 
-    <section id="changes">
-      <h2 className="text-xl font-bold text-[#1B2E5A] mb-4">9. Changes to This Policy</h2>
-      <p className="text-slate-600 leading-relaxed">
-        We may update this Privacy Policy from time to time. We will post the updated policy on this page and indicate the effective date. Your continued use of our services after changes are posted constitutes your acceptance of the updated policy.
+    <LegalSection id="your-rights" title="9. Your rights & how to exercise them">
+      <p>
+        Depending on where you live, you may have rights to access, correct, delete, or export your personal information; restrict or object to certain processing; withdraw consent where processing is consent-based; and lodge a complaint with a supervisory or data protection authority.
       </p>
-    </section>
+      <p>
+        <strong>To submit a request:</strong>
+      </p>
+      <ol>
+        <li>Email us at{' '}
+          <a href={`mailto:${LEGAL_CONTACT.privacyEmail}`}>{LEGAL_CONTACT.privacyEmail}</a> from the email address associated with your account (or describe your relationship to the data if you have no account).
+        </li>
+        <li>Include your full name, organization (if any), and a clear description of your request (e.g. access, correction, deletion).</li>
+        <li>We may need to verify your identity before fulfilling certain requests. We will respond within the timeframe required by applicable law or, where no specific deadline applies, within a reasonable period.</li>
+      </ol>
+    </LegalSection>
 
-    <section id="contact">
-      <h2 className="text-xl font-bold text-[#1B2E5A] mb-4">10. Contact</h2>
-      <p className="text-slate-600 leading-relaxed">
-        For privacy-related questions or requests, please contact us at{' '}
-        <a href="mailto:hr@zopkit.com" className="text-blue-600 hover:underline">hr@zopkit.com</a>. You may also reach us at Hi-Tech City, Hyderabad.
+    <LegalSection id="children" title="10. Children">
+      <p>
+        Our services are not directed at children under 16 (or the age required in your jurisdiction). We do not knowingly collect personal information from children. If you believe we have collected information from a child, please contact us and we will take appropriate steps to delete it.
       </p>
-    </section>
+    </LegalSection>
+
+    <LegalSection id="changes" title="11. Changes to this policy">
+      <p>
+        We may update this Privacy Policy from time to time. We will post the revised policy on this page and update the &quot;Last updated&quot; date. Where required by law, we will provide additional notice. Your continued use of the services after the effective date of changes may constitute acceptance of the updated policy, to the extent permitted by law.
+      </p>
+    </LegalSection>
+
+    <LegalSection id="contact" title="12. Contact">
+      <p>
+        For privacy-related questions or requests, contact {LEGAL_CONTACT.companyLegalName}:
+      </p>
+      <ul>
+        <li>
+          Email:{' '}
+          <a href={`mailto:${LEGAL_CONTACT.privacyEmail}`}>{LEGAL_CONTACT.privacyEmail}</a>
+        </li>
+        <li>
+          Address: {LEGAL_CONTACT.addressLine}
+        </li>
+      </ul>
+    </LegalSection>
   </LegalPageLayout>
 );
 

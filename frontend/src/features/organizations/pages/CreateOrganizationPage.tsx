@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Building, Check, ChevronLeft, ChevronRight, Loader2, Save } from 'lucide-react'
+import { ArrowLeft, Building, ChevronLeft, ChevronRight, Loader2, Save } from 'lucide-react'
 
 import { useDashboardData } from '@/hooks/useDashboardData'
 import { useOrganizationAuth } from '@/hooks/useOrganizationAuth'
@@ -14,18 +14,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import toast from 'react-hot-toast'
+import { DashboardPageHeader } from '@/components/dashboard/DashboardPageHeader'
+import {
+  ORGANIZATION_CREATE_STEPS,
+  OrganizationCreateStepper,
+} from '@/features/organizations/components/OrganizationCreateStepper'
 
 type CreateSearch = {
   parentId?: string
   parentName?: string
 }
 
-const steps = [
-  { title: 'Basic Information', description: 'Name and type' },
-  { title: 'Location & Currency', description: 'Country, currency, and fiscal year' },
-  { title: 'Legal & Compliance', description: 'Tax ID and registration details' },
-  { title: 'Contact & Additional', description: 'Contact details and notes' },
-]
+const steps = ORGANIZATION_CREATE_STEPS
 
 const COUNTRY_CURRENCY_MAP: Record<string, string> = {
   US: 'USD',
@@ -222,26 +222,24 @@ export function CreateOrganizationPage() {
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-[#1B2E5A] dark:text-slate-100">
-            Create Organization
-          </h1>
-          <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-            {parentName ? (
-              <>
-                Adding under: <span className="font-medium text-[#1B2E5A]">{parentName}</span>
-              </>
-            ) : (
-              'Create a new top-level organization for this tenant.'
-            )}
-          </p>
-        </div>
-        <Button variant="outline" onClick={handleCancel} className="h-10 gap-2 self-start font-medium">
-          <ArrowLeft className="h-4 w-4" />
-          Back
-        </Button>
-      </div>
+      <DashboardPageHeader
+        title="Create Organization"
+        description={
+          parentName ? (
+            <>
+              Adding under: <span className="font-medium text-[#1B2E5A]">{parentName}</span>
+            </>
+          ) : (
+            'Create a new top-level organization for this tenant.'
+          )
+        }
+        actions={(
+          <Button variant="outline" onClick={handleCancel} className="h-10 gap-2 self-start font-medium">
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
+        )}
+      />
 
       <Card className="border-slate-200/80 shadow-sm dark:border-slate-800">
         <CardHeader className="space-y-4 border-b border-slate-100 pb-5 dark:border-slate-800">
@@ -250,26 +248,7 @@ export function CreateOrganizationPage() {
             {steps[currentStep].title}
           </CardTitle>
           <CardDescription className="text-sm">{steps[currentStep].description}</CardDescription>
-          <div className="grid grid-cols-4 items-center gap-2 pt-1">
-            {steps.map((step, index) => (
-              <div key={step.title} className="flex items-center gap-2">
-                <div
-                  className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-semibold transition-colors ${
-                    index === currentStep
-                      ? 'bg-[#1B2E5A] text-white shadow-sm'
-                      : index < currentStep
-                        ? 'bg-green-500 text-white'
-                        : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
-                  }`}
-                >
-                  {index < currentStep ? <Check className="h-3.5 w-3.5" /> : index + 1}
-                </div>
-                <span className={`hidden text-xs sm:block ${index === currentStep ? 'text-[#1B2E5A] dark:text-[#1B2E5A]/60 font-medium' : 'text-slate-400'}`}>
-                  {step.title}
-                </span>
-              </div>
-            ))}
-          </div>
+          <OrganizationCreateStepper currentStep={currentStep} />
         </CardHeader>
 
         <CardContent className="space-y-6 p-6">

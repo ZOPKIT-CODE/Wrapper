@@ -1,9 +1,16 @@
-import React, { Suspense, useState, useEffect, useRef, useCallback } from 'react'
-import { useNavigate, useLocation } from '@tanstack/react-router'
+import React, { Suspense, useState, useEffect } from 'react'
+import { useNavigate } from '@tanstack/react-router'
 import { useKindeAuth } from '@kinde-oss/kinde-auth-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { DynamicIcon } from '@/features/landing/components/Icons'
-import { ArrowRight, Play, ChevronRight, FileText, GraduationCap, Users, Zap, Mail, Phone, MapPin, Menu, X, LayoutDashboard, Rocket, Workflow } from 'lucide-react'
+import {
+  OrbitalEcosystem,
+  ORBIT_APPS,
+  DEPENDENCIES,
+  HUB_PRODUCT_LABELS,
+  WORKFLOW_ORBIT_APP_IDS,
+} from '@/features/landing/components/OrbitalEcosystem'
+import { ArrowRight, Play, ChevronRight, FileText, GraduationCap, Users, Zap, Mail, Phone, MapPin, LayoutDashboard, Rocket, Workflow } from 'lucide-react'
 import api, { createCancelableRequest } from '@/lib/api'
 import { Product } from '@/types'
 import toast from 'react-hot-toast'
@@ -16,126 +23,18 @@ const WorkflowVisualizer = React.lazy(() =>
 import { products } from '@/data/content'
 import { getAllIndustries } from '@/data/industryPages'
 
-// Import the new resizable navbar components
-import {
-  Navbar,
-  NavBody,
-  MobileNav,
-  NavbarLogo,
-  NavbarButton,
-  MobileNavHeader,
-  MobileNavMenu,
-} from "@/components/ui/resizable-navbar"
+import { NavbarButton } from "@/components/ui/resizable-navbar"
 import { LandingFooter } from "@/components/layout/LandingFooter"
-
-const ALL_PRODUCTS = [
-  { id: 'operations-management', name: 'Operations Management' },
-  { id: 'b2b-crm', name: 'B2B CRM' },
-  { id: 'financial-accounting', name: 'Financial Accounting' },
-  { id: 'project-management', name: 'Project Management' },
-  { id: 'hrms', name: 'HRMS' },
-  { id: 'esop-system', name: 'ESOP System' },
-  { id: 'affiliate-connect', name: 'Affiliate Connect' },
-  { id: 'flowtilla', name: 'Flowtilla' },
-  { id: 'zopkit-academy', name: 'Zopkit Academy' },
-  { id: 'zopkit-itsm', name: 'Zopkit ITSM' },
-  { id: 'b2c-crm', name: 'B2C CRM' },
-] as const;
-
-const ALL_INDUSTRIES = [
-  { slug: 'e-commerce', name: 'E-Commerce & Retail' },
-  { slug: 'saas', name: 'SaaS & Technology' },
-  { slug: 'manufacturing', name: 'Manufacturing' },
-  { slug: 'professional-services', name: 'Professional Services' },
-] as const;
-
-const NAV_ITEMS = [
-  { name: "Pricing", link: "/pricing" },
-  { name: "Workflows", link: "#workflows" },
-  { name: "Contact Us", link: "#contact" },
-] as const;
-
-// Orbital ecosystem — clockwise from B2B CRM at top
-const ORBITAL_R = 36;
-const ORBIT_APPS = [
-  { id: 'b2b-crm',            label: 'B2B CRM',     short: 'CRM',   icon: 'Briefcase' },
-  { id: 'b2c-crm',            label: 'B2C CRM',     short: 'B2C',   icon: 'ShoppingCart' },
-  { id: 'finance',            label: 'Finance',      short: 'Fin',   icon: 'Landmark' },
-  { id: 'operations',         label: 'Operations',   short: 'Ops',   icon: 'Box' },
-  { id: 'project-management', label: 'Projects',     short: 'PM',    icon: 'ClipboardList' },
-  { id: 'hrms',               label: 'HRMS',         short: 'HR',    icon: 'UserCheck' },
-  { id: 'esop-system',        label: 'ESOP',         short: 'ESOP',  icon: 'Award' },
-  { id: 'affiliate-connect',  label: 'Affiliates',   short: 'Aff',   icon: 'Link' },
-  { id: 'flowtilla',          label: 'Flowtilla',    short: 'Flow',  icon: 'GitBranch' },
-  { id: 'zopkit-academy',     label: 'Academy',      short: 'Acad',  icon: 'GraduationCap' },
-  { id: 'zopkit-itsm',        label: 'ITSM',         short: 'ITSM',  icon: 'Wrench' },
-].map((app, i, arr) => {
-  const angle = (360 / arr.length) * i - 90;
-  const rad = (angle * Math.PI) / 180;
-  return { ...app, x: 50 + ORBITAL_R * Math.cos(rad), y: 50 + ORBITAL_R * Math.sin(rad) };
-});
-
-// Cross-product dependencies — indices match ORBIT_APPS order above
-// 0:B2B CRM  1:B2C CRM  2:Finance  3:Operations  4:Projects  5:HRMS
-// 6:ESOP(hub) 7:Affiliates 8:Flowtilla 9:Academy(hub) 10:ITSM
-const DEPENDENCIES: [number, number, string][] = [
-  [0, 2, 'Invoices'],    // B2B CRM → Finance
-  [0, 3, 'Orders'],      // B2B CRM → Operations
-  [1, 0, 'Contacts'],    // B2C CRM → B2B CRM
-  [2, 5, 'Payroll'],     // Finance → HRMS
-  [2, 3, 'Costs'],       // Finance → Operations
-  [4, 5, 'Resources'],   // Projects → HRMS
-  [4, 2, 'Budgets'],     // Projects → Finance
-  [7, 0, 'Referrals'],   // Affiliates → B2B CRM
-  [8, 4, 'Workflows'],   // Flowtilla → Projects
-  [10, 4, 'Tickets'],    // ITSM → Projects
-];
-
-// Products that connect to hub (Zopkit) instead of to another product
-// Their spoke lights up ONLY when selected — same behavior as other deps
-const HUB_PRODUCT_LABELS: Record<string, string> = {
-  'esop-system': 'Equity Plans',
-  'zopkit-academy': 'Learning',
-};
-
-// Smooth bezier path curving inward
-function depPath(fromIdx: number, toIdx: number): string {
-  const a = ORBIT_APPS[fromIdx];
-  const b = ORBIT_APPS[toIdx];
-  const mx = (a.x + b.x) / 2;
-  const my = (a.y + b.y) / 2;
-  const cx = mx + (50 - mx) * 0.45;
-  const cy = my + (50 - my) * 0.45;
-  return `M ${a.x} ${a.y} Q ${cx} ${cy} ${b.x} ${b.y}`;
-}
-
-// Label position: pushed OUTWARD from center so it doesn't overlap nodes
-function depLabelPos(fromIdx: number, toIdx: number): { x: number; y: number } {
-  const a = ORBIT_APPS[fromIdx];
-  const b = ORBIT_APPS[toIdx];
-  const mx = (a.x + b.x) / 2;
-  const my = (a.y + b.y) / 2;
-  // Push outward from center by 8 units
-  const dx = mx - 50;
-  const dy = my - 50;
-  const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-  return { x: mx + (dx / dist) * 6, y: my + (dy / dist) * 6 };
-}
+import { MarketingNavbar } from "@/components/layout/MarketingNavbar"
 
 const Landing: React.FC = () => {
   const navigate = useNavigate()
-  const location = useLocation()
   const { login, isAuthenticated } = useKindeAuth()
   const [isLoading, setIsLoading] = useState(false)
   const [activeProduct, setActiveProduct] = useState<Product>(products[0])
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [onboardingCompleted, setOnboardingCompleted] = useState(false)
   const [backendAuthenticated, setBackendAuthenticated] = useState<boolean | null>(null)
   const [authChecked, setAuthChecked] = useState(false)
-  const [showProductsDropdown, setShowProductsDropdown] = useState(false)
-  const [showIndustriesDropdown, setShowIndustriesDropdown] = useState(false)
-  const productsDropdownTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const industriesDropdownTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   
   // Contact form state
   const [contactForm, setContactForm] = useState({
@@ -149,10 +48,6 @@ const Landing: React.FC = () => {
     comments: ''
   })
   const [isSubmittingContact, setIsSubmittingContact] = useState(false)
-
-  // Refs for auto-scrolling
-  const scrollContainerRef = useRef<HTMLDivElement>(null)
-  const productRefs = useRef<Map<string | number, HTMLButtonElement>>(new Map())
 
   // Scroll to top when landing page loads
   useEffect(() => {
@@ -169,11 +64,6 @@ const Landing: React.FC = () => {
       })
     }
   }, [])
-
-  // Close mobile menu when route changes
-  useEffect(() => {
-    setIsMobileMenuOpen(false);
-  }, [location.pathname]);
 
   // Check authentication and onboarding status in background
   useEffect(() => {
@@ -210,40 +100,6 @@ const Landing: React.FC = () => {
     }
   }, [isAuthenticated])
 
-  // Auto-rotate products every 4 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setActiveProduct((prev) => {
-        const currentIndex = products.findIndex((p) => p.id === prev.id);
-        const nextIndex = (currentIndex + 1) % products.length;
-        return products[nextIndex];
-      });
-    }, 4000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  // Auto-scroll to active product
-  useEffect(() => {
-    const activeButton = productRefs.current.get(activeProduct.id);
-    const scrollContainer = scrollContainerRef.current;
-
-    if (activeButton && scrollContainer) {
-      // Calculate the position to scroll to center the active button
-      const containerWidth = scrollContainer.offsetWidth;
-      const buttonLeft = activeButton.offsetLeft;
-      const buttonWidth = activeButton.offsetWidth;
-
-      // Center the button in the container
-      const scrollPosition = buttonLeft - (containerWidth / 2) + (buttonWidth / 2);
-
-      scrollContainer.scrollTo({
-        left: scrollPosition,
-        behavior: 'smooth'
-      });
-    }
-  }, [activeProduct]);
-
   const handleLogin = async () => {
     setIsLoading(true)
     try {
@@ -264,56 +120,6 @@ const Landing: React.FC = () => {
       setIsLoading(false)
     }
   }
-
-  const allProducts = ALL_PRODUCTS;
-
-  const handleProductsMouseEnter = useCallback(() => {
-    if (productsDropdownTimeoutRef.current) {
-      clearTimeout(productsDropdownTimeoutRef.current);
-    }
-    setShowProductsDropdown(true);
-  }, []);
-
-  const handleProductsMouseLeave = useCallback(() => {
-    productsDropdownTimeoutRef.current = setTimeout(() => {
-      setShowProductsDropdown(false);
-    }, 300);
-  }, []);
-
-  const allIndustries = ALL_INDUSTRIES;
-
-  const handleIndustriesMouseEnter = useCallback(() => {
-    if (industriesDropdownTimeoutRef.current) {
-      clearTimeout(industriesDropdownTimeoutRef.current);
-    }
-    setShowIndustriesDropdown(true);
-  }, []);
-
-  const handleIndustriesMouseLeave = useCallback(() => {
-    industriesDropdownTimeoutRef.current = setTimeout(() => {
-      setShowIndustriesDropdown(false);
-    }, 300);
-  }, []);
-
-  // Handle nav links: path links use React Router; hash links scroll in-page
-  const handleAnchorClick = useCallback((e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-    if (href.startsWith('/')) {
-      e.preventDefault();
-      navigate({ to: href });
-      return;
-    }
-    e.preventDefault();
-    const targetId = href.replace('#', '');
-    const targetElement = document.getElementById(targetId);
-    if (targetElement) {
-      const navbarOffset = 100;
-      const elementPosition = targetElement.getBoundingClientRect().top;
-      const offsetPosition = elementPosition + window.pageYOffset - navbarOffset;
-      window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
-    }
-  }, [navigate]);
-
-  const navItems = NAV_ITEMS;
 
   const hasAuthenticatedSession = authChecked && (backendAuthenticated ?? isAuthenticated)
 
@@ -340,7 +146,7 @@ const Landing: React.FC = () => {
       return {
         label: 'Go to Workspace',
         icon: <LayoutDashboard className="w-4 h-4 mr-2 inline" />,
-        action: () => navigate({ to: '/dashboard' }),
+        action: () => navigate({ to: '/dashboard/applications' }),
         disabled: false,
       }
     }
@@ -356,214 +162,46 @@ const Landing: React.FC = () => {
   const primaryCta = getPrimaryCtaConfig()
 
   return (
-    <div className="min-h-screen bg-white text-slate-900 selection:bg-teal-100 selection:text-teal-900 font-sans overflow-x-clip relative">
+    <div className="min-h-screen bg-white text-slate-900 selection:bg-teal-100 selection:text-teal-900 font-sans overflow-x-clip lg:overflow-x-visible relative">
 
       {/* Gradient top band — fades from slate-100 to transparent */}
       <div className="absolute top-0 left-0 right-0 h-[500px] z-0 pointer-events-none bg-gradient-to-b from-slate-100/80 via-slate-50/40 to-transparent" />
 
-      {/* Navbar */}
-      <Navbar>
-        {/* Desktop */}
-        <NavBody>
-          <NavbarLogo />
-          <div className="flex-1 flex flex-row items-center justify-center gap-0.5 text-[13px] font-medium px-6 min-w-0">
-            {/* Products */}
-            <div
-              className="relative shrink-0"
-              onMouseEnter={handleProductsMouseEnter}
-              onMouseLeave={handleProductsMouseLeave}
-            >
-              <button className="px-3 py-2 text-slate-500 hover:text-[#1B2E5A] font-medium flex items-center gap-1 whitespace-nowrap transition-colors duration-150 cursor-pointer">
-                Products
-                <ChevronRight size={14} className={`transition-transform duration-200 ${showProductsDropdown ? 'rotate-90' : ''}`} />
-              </button>
-              <AnimatePresence>
-                {showProductsDropdown && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 4 }}
-                    transition={{ duration: 0.15, ease: "easeOut" }}
-                    className="absolute top-full left-0 mt-2 w-[280px] z-50"
-                  >
-                    <div className="bg-white rounded-xl border border-slate-200 shadow-[0_12px_40px_-8px_rgba(0,0,0,0.12)] overflow-hidden">
-                      <div className="px-3 pt-3 pb-1.5">
-                        <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Products</p>
-                      </div>
-                      <div className="px-1.5 pb-1.5 max-h-[400px] overflow-y-auto">
-                        {allProducts.map((product) => (
-                          <button
-                            key={product.id}
-                            onClick={() => navigate({ to: `/products/${product.id}` })}
-                            className="w-full text-left px-3 py-2 text-[13px] text-slate-600 hover:text-[#1B2E5A] hover:bg-slate-50 transition-colors duration-100 flex items-center gap-2.5 rounded-lg cursor-pointer"
-                          >
-                            <span className="w-7 h-7 rounded-md bg-slate-100 flex items-center justify-center shrink-0">
-                              <DynamicIcon name={ORBIT_APPS.find(a => a.id === product.id)?.icon ?? 'Box'} className="w-3.5 h-3.5 text-slate-500" />
-                            </span>
-                            <span className="font-medium">{product.name}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {/* Industries */}
-            <div
-              className="relative shrink-0"
-              onMouseEnter={handleIndustriesMouseEnter}
-              onMouseLeave={handleIndustriesMouseLeave}
-            >
-              <button className="px-3 py-2 text-slate-500 hover:text-[#1B2E5A] font-medium flex items-center gap-1 whitespace-nowrap transition-colors duration-150 cursor-pointer">
-                Industries
-                <ChevronRight size={14} className={`transition-transform duration-200 ${showIndustriesDropdown ? 'rotate-90' : ''}`} />
-              </button>
-              <AnimatePresence>
-                {showIndustriesDropdown && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 4 }}
-                    transition={{ duration: 0.15, ease: "easeOut" }}
-                    className="absolute top-full left-0 mt-2 w-[240px] z-50"
-                  >
-                    <div className="bg-white rounded-xl border border-slate-200 shadow-[0_12px_40px_-8px_rgba(0,0,0,0.12)] overflow-hidden">
-                      <div className="px-3 pt-3 pb-1.5">
-                        <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Industries</p>
-                      </div>
-                      <div className="px-1.5 pb-1.5">
-                        {allIndustries.map((industry) => (
-                          <button
-                            key={industry.slug}
-                            onClick={() => navigate({ to: `/industries/${industry.slug}` })}
-                            className="w-full text-left px-3 py-2 text-[13px] text-slate-600 hover:text-[#1B2E5A] hover:bg-slate-50 font-medium transition-colors duration-100 rounded-lg cursor-pointer"
-                          >
-                            {industry.name}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {navItems.map((item) => (
-              <a
-                key={item.name}
-                href={item.link}
-                onClick={(e) => handleAnchorClick(e, item.link)}
-                className="px-3 py-2 text-slate-500 hover:text-[#1B2E5A] font-medium transition-colors duration-150 cursor-pointer whitespace-nowrap shrink-0"
-              >
-                {item.name}
-              </a>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0 ml-4">
-            <NavbarButton
-              variant={hasAuthenticatedSession ? "gradient" : "primary"}
-              onClick={primaryCta.action}
-              disabled={primaryCta.disabled}
-              as="button"
-              className="text-[13px]"
-            >
-              {primaryCta.icon}
-              {primaryCta.label}
-            </NavbarButton>
-          </div>
-        </NavBody>
-
-        {/* Mobile */}
-        <MobileNav>
-          <MobileNavHeader>
-            <NavbarLogo />
-            <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2 rounded-lg hover:bg-slate-100 transition-colors duration-150 cursor-pointer"
-              aria-label="Toggle menu"
-            >
-              {isMobileMenuOpen ? (
-                <X className="w-5 h-5 text-slate-700" />
-              ) : (
-                <Menu className="w-5 h-5 text-slate-700" />
-              )}
-            </button>
-          </MobileNavHeader>
-
-          <MobileNavMenu
-            isOpen={isMobileMenuOpen}
-            onClose={() => setIsMobileMenuOpen(false)}
+      <MarketingNavbar
+        desktopRight={
+          <NavbarButton
+            variant={hasAuthenticatedSession ? 'gradient' : 'primary'}
+            onClick={primaryCta.action}
+            disabled={primaryCta.disabled}
+            as="button"
+            className="text-[13px]"
           >
-            <div className="border-b border-slate-100 pb-3 mb-3">
-              <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider px-3 mb-1.5">Products</p>
-              {allProducts.map((product) => (
-                <a
-                  key={product.id}
-                  href={`/products/${product.id}`}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="block px-3 py-1.5 text-[13px] text-slate-600 hover:text-[#1B2E5A] hover:bg-slate-50 rounded-lg transition-colors duration-100 font-medium"
-                >
-                  {product.name}
-                </a>
-              ))}
-            </div>
-
-            <div className="border-b border-slate-100 pb-3 mb-3">
-              <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider px-3 mb-1.5">Industries</p>
-              {allIndustries.map((industry) => (
-                <a
-                  key={industry.slug}
-                  href={`/industries/${industry.slug}`}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="block px-3 py-1.5 text-[13px] text-slate-600 hover:text-[#1B2E5A] hover:bg-slate-50 rounded-lg transition-colors duration-100 font-medium"
-                >
-                  {industry.name}
-                </a>
-              ))}
-            </div>
-
-            {navItems.map((item, idx) => (
-              <a
-                key={`mobile-link-${idx}`}
-                href={item.link}
-                onClick={(e) => {
-                  setIsMobileMenuOpen(false);
-                  handleAnchorClick(e, item.link);
-                }}
-                className="block px-3 py-1.5 text-[13px] text-slate-600 hover:text-[#1B2E5A] hover:bg-slate-50 rounded-lg transition-colors duration-100 font-medium cursor-pointer"
-              >
-                {item.name}
-              </a>
-            ))}
-
-            <div className="pt-3 mt-1">
-              <NavbarButton
-                onClick={() => {
-                  setIsMobileMenuOpen(false);
-                  primaryCta.action();
-                }}
-                variant={hasAuthenticatedSession ? "gradient" : "primary"}
-                className="w-full justify-center"
-                as="button"
-                disabled={primaryCta.disabled}
-              >
-                {primaryCta.icon}
-                {primaryCta.label}
-              </NavbarButton>
-            </div>
-          </MobileNavMenu>
-        </MobileNav>
-      </Navbar>
+            {primaryCta.icon}
+            {primaryCta.label}
+          </NavbarButton>
+        }
+        mobileFooter={
+          <NavbarButton
+            onClick={() => {
+              primaryCta.action();
+            }}
+            variant={hasAuthenticatedSession ? 'gradient' : 'primary'}
+            className="w-full justify-center"
+            as="button"
+            disabled={primaryCta.disabled}
+          >
+            {primaryCta.icon}
+            {primaryCta.label}
+          </NavbarButton>
+        }
+      />
 
       {/* Hero */}
-      <main className="relative pt-24 sm:pt-28 lg:pt-40 pb-12 sm:pb-16 lg:pb-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+      <main className="relative pt-24 sm:pt-28 lg:pt-40 pb-16 sm:pb-20 lg:pb-28 max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 z-10">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 xl:gap-16 items-center">
 
-          {/* ── Left column (7 cols) ── */}
-          <div className="lg:col-span-7 flex flex-col order-1 lg:order-1 lg:pt-6">
+          {/* ── Left column (6 cols) ── */}
+          <div className="lg:col-span-6 flex flex-col order-1 lg:order-1 lg:pt-4">
 
             {/* Headline block */}
             <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
@@ -595,7 +233,7 @@ const Landing: React.FC = () => {
                 {primaryCta.label}
                 <ArrowRight className="w-4 h-4" />
               </button>
-              <button className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-full text-slate-500 hover:text-[#1B2E5A] font-medium text-[15px] transition-colors active:scale-[0.97]">
+              <button type="button" className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-full text-slate-500 hover:text-[#1B2E5A] font-medium text-[15px] transition-colors active:scale-[0.97] cursor-pointer">
                 <Play className="w-4 h-4 fill-current" />
                 Watch demo
               </button>
@@ -648,131 +286,15 @@ const Landing: React.FC = () => {
             </motion.div>
           </div>
 
-          {/* ── Right column: orbital (5 cols) ── */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.97 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, delay: 0.06 }}
-            className="lg:col-span-5 order-2 lg:order-2 mx-auto lg:mx-0 w-full"
-          >
-            <div className="relative aspect-square w-full max-w-[260px] sm:max-w-[360px] lg:max-w-none mx-auto overflow-visible">
-            <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" aria-hidden="true">
-              <defs>
-                <style>{`
-                  @keyframes flowDash { to { stroke-dashoffset: -12; } }
-                  .dep-flow { animation: flowDash 1.5s linear infinite; }
-                `}</style>
-              </defs>
-
-              {/* Orbit track */}
-              <circle cx="50" cy="50" r={ORBITAL_R} fill="none" stroke="#e2e8f0" strokeWidth="0.25" />
-
-              {/* Spokes — all identical, only active product's spoke lights up */}
-              {ORBIT_APPS.map((app) => {
-                const isActive = activeProduct.id === app.id;
-                return (
-                  <line key={`spoke-${app.id}`} x1="50" y1="50" x2={app.x} y2={app.y}
-                    stroke={isActive ? '#0f172a' : '#f1f5f9'}
-                    strokeWidth={isActive ? 0.5 : 0.1}
-                    className="transition-all duration-300"
-                  />
-                );
-              })}
-
-              {/* Dependency flow paths with outward-positioned labels */}
-              {DEPENDENCIES.map(([from, to, label], i) => {
-                const fromApp = ORBIT_APPS[from];
-                const toApp = ORBIT_APPS[to];
-                const isActive = activeProduct.id === fromApp.id || activeProduct.id === toApp.id;
-                if (!isActive) return null;
-                const d = depPath(from, to);
-                const lbl = depLabelPos(from, to);
-                return (
-                  <g key={`dep-${i}`}>
-                    <path d={d} fill="none" stroke="#1B2E5A" strokeWidth="0.5" strokeLinecap="round" opacity="0.06" />
-                    <path d={d} fill="none" stroke="#1B2E5A" strokeWidth="0.3" strokeDasharray="2 2.5" strokeLinecap="round" className="dep-flow" />
-                    <text x={lbl.x} y={lbl.y} textAnchor="middle" dominantBaseline="central" fill="#94a3b8" fontSize="2.2" fontWeight="600" fontFamily="system-ui, sans-serif" className="hidden sm:block">{label}</text>
-                  </g>
-                );
-              })}
-
-              {/* Hub-connected products (ESOP, Academy) — show flow on spoke when active */}
-              {ORBIT_APPS.map((app) => {
-                const hubLabel = HUB_PRODUCT_LABELS[app.id];
-                if (!hubLabel || activeProduct.id !== app.id) return null;
-                // Flow animation on the spoke itself
-                const lx = 50 + (app.x - 50) * 0.55;
-                const ly = 50 + (app.y - 50) * 0.55;
-                return (
-                  <g key={`hub-flow-${app.id}`}>
-                    <line x1="50" y1="50" x2={app.x} y2={app.y} stroke="#1B2E5A" strokeWidth="0.3" strokeDasharray="2 2.5" strokeLinecap="round" className="dep-flow" />
-                    <text x={lx} y={ly - 1.5} textAnchor="middle" fill="#94a3b8" fontSize="2.2" fontWeight="600" fontFamily="system-ui, sans-serif" className="hidden sm:block">{hubLabel}</text>
-                  </g>
-                );
-              })}
-            </svg>
-
-            {/* Center hub */}
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 text-center">
-              <div className="w-11 h-11 sm:w-16 sm:h-16 lg:w-20 lg:h-20 rounded-full bg-[#1B2E5A] flex items-center justify-center mx-auto overflow-hidden ring-2 sm:ring-4 ring-white">
-                <img
-                  src="https://res.cloudinary.com/dr9vzaa7u/image/upload/v1765126845/Zopkit_Simple_Logo_glohfr.jpg"
-                  alt="Zopkit"
-                  className="w-full h-full rounded-full object-cover"
-                  loading="eager"
-                />
-              </div>
-            </div>
-
-            {/* Product nodes */}
-            {ORBIT_APPS.map((app) => {
-              const isActive = activeProduct.id === app.id;
-              const matchingProduct = products.find(p => p.id === app.id);
-              return (
-                <button
-                  key={app.id}
-                  ref={(el) => { if (el) productRefs.current.set(app.id, el); }}
-                  onClick={() => { if (matchingProduct) setActiveProduct(matchingProduct); }}
-                  className="absolute z-10 -translate-x-1/2 -translate-y-1/2 group focus:outline-none"
-                  style={{ left: `${app.x}%`, top: `${app.y}%` }}
-                  aria-label={app.label}
-                >
-                  <div className={`
-                    w-8 h-8 sm:w-11 sm:h-11 lg:w-[52px] lg:h-[52px] rounded-lg sm:rounded-xl flex items-center justify-center transition-all duration-200
-                    ${isActive
-                      ? 'bg-[#1B2E5A] ring-1 sm:ring-2 ring-[#1B2E5A] ring-offset-1 sm:ring-offset-2 ring-offset-white scale-110'
-                      : 'bg-white border border-slate-200 group-hover:border-slate-300 group-hover:shadow-md group-hover:scale-105'}
-                  `}>
-                    <DynamicIcon name={app.icon} className={`w-3.5 h-3.5 sm:w-[18px] sm:h-[18px] lg:w-5 lg:h-5 transition-colors duration-200 ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-slate-700'}`} />
-                  </div>
-                  <p className={`text-center text-[6px] sm:text-[9px] lg:text-[11px] font-semibold mt-0.5 sm:mt-1 transition-colors duration-200 whitespace-nowrap ${isActive ? 'text-slate-900' : 'text-slate-400 group-hover:text-slate-600'}`}>
-                    <span className="sm:hidden">{app.short}</span>
-                    <span className="hidden sm:inline">{app.label}</span>
-                  </p>
-                </button>
-              );
-            })}
-            </div>
-          </motion.div>
-        </div>
-
-        {/* Mobile product selector — below orbital on small screens */}
-        <div className="lg:hidden mt-4">
-          <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-2">Explore the ecosystem</p>
-          <div ref={scrollContainerRef} className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-            {ORBIT_APPS.map((app) => {
-              const isActive = activeProduct.id === app.id;
-              const matchingProduct = products.find(p => p.id === app.id);
-              return (
-                <button key={`strip-${app.id}`} onClick={() => { if (matchingProduct) setActiveProduct(matchingProduct); }}
-                  className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all ${isActive ? 'bg-[#1B2E5A] text-white' : 'bg-slate-100 text-slate-600'}`}
-                >
-                  <DynamicIcon name={app.icon} className="w-3.5 h-3.5" />
-                  {app.label}
-                </button>
-              );
-            })}
-          </div>
+          {/* ── Right column: orbital (6 cols) + mobile strip — hero variant is larger & clearer ── */}
+          <OrbitalEcosystem
+            layout="grid"
+            variant="hero"
+            appIds={WORKFLOW_ORBIT_APP_IDS}
+            activeProduct={activeProduct}
+            onActiveProductChange={setActiveProduct}
+            motionClassName="lg:col-span-6 order-2 lg:order-2 w-full max-w-[640px] mx-auto lg:mx-0 lg:justify-self-end xl:pr-2"
+          />
         </div>
       </main>
 
@@ -845,7 +367,7 @@ const Landing: React.FC = () => {
         </div>
       </section>
 
-            {/* Contact Section */}
+      {/* Contact Section */}
       <section id="contact" className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6 lg:px-8 bg-white border-t border-slate-100" style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 700px' }}>
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12 sm:mb-16">
@@ -873,7 +395,7 @@ const Landing: React.FC = () => {
                   <div>
                     <p className="text-[11px] text-slate-400 font-medium">{item.label}</p>
                     {item.href ? (
-                      <a href={item.href} className="text-sm font-semibold text-slate-900 hover:text-slate-600 transition-colors">{item.value}</a>
+                      <a href={item.href} className="text-sm font-semibold text-slate-900 hover:text-slate-600 transition-colors cursor-pointer">{item.value}</a>
                     ) : (
                       <p className="text-sm font-semibold text-slate-900">{item.value}</p>
                     )}
@@ -950,7 +472,7 @@ const Landing: React.FC = () => {
                 <button
                   type="submit"
                   disabled={isSubmittingContact}
-                  className="w-full sm:w-auto px-7 py-3 rounded-full bg-[#1B2E5A] hover:bg-[#243B6E] text-white font-semibold text-[15px] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full sm:w-auto px-7 py-3 rounded-full bg-[#1B2E5A] hover:bg-[#243B6E] text-white font-semibold text-[15px] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSubmittingContact ? 'Sending...' : 'Send message'}
                 </button>

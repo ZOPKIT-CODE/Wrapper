@@ -1,8 +1,0 @@
-export { default as Landing } from './Landing'
-export { default as ProductPage } from './ProductPage'
-export { default as IndustryPage } from './IndustryPage'
-export { default as PrivacyPolicy } from './PrivacyPolicy'
-export { default as TermsOfService } from './TermsOfService'
-export { default as CookiePolicy } from './CookiePolicy'
-export { default as Security } from './Security'
-export { default as Pricing } from './Pricing'

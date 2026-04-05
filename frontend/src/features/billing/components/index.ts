@@ -4,7 +4,8 @@
 
 export { BillingAlerts } from './BillingAlerts'
 export { SubscriptionTab } from './SubscriptionTab'
-export { PlansTab } from './PlansTab'
+export { CreditTopupsTab } from './CreditTopupsTab'
+export { ApplicationPlansTab } from './ApplicationPlansTab'
 export { HistoryTab } from './HistoryTab'
 export { TimelineTab } from './TimelineTab'
 export { CancelSubscriptionDialog } from './CancelSubscriptionDialog'

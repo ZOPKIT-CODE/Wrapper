@@ -58,6 +58,10 @@ export const LOCALES = [
   { id: 'en-US', name: 'English (US)' },
   { id: 'en-IN', name: 'English (India)' },
   { id: 'en-GB', name: 'English (UK)' },
+  { id: 'en-CA', name: 'English (Canada)' },
+  { id: 'en-AU', name: 'English (Australia)' },
+  { id: 'en-SG', name: 'English (Singapore)' },
+  { id: 'en-AE', name: 'English (UAE)' },
   { id: 'hi-IN', name: 'Hindi (India)' },
   { id: 'es-ES', name: 'Spanish (Spain)' },
   { id: 'fr-FR', name: 'French (France)' },
@@ -71,6 +75,8 @@ export const CURRENCIES = [
   { id: 'EUR', name: 'Euro (€)' },
   { id: 'CAD', name: 'Canadian Dollar (C$)' },
   { id: 'AUD', name: 'Australian Dollar (A$)' },
+  { id: 'SGD', name: 'Singapore Dollar (S$)' },
+  { id: 'AED', name: 'UAE Dirham (د.إ)' },
 ];
 
 // Timezones (common ones)
@@ -79,23 +85,27 @@ export const TIMEZONES = [
   { id: 'America/Chicago', name: 'Central Time (CT)' },
   { id: 'America/Denver', name: 'Mountain Time (MT)' },
   { id: 'America/Los_Angeles', name: 'Pacific Time (PT)' },
+  { id: 'America/Toronto', name: 'Canada Eastern Time (ET)' },
+  { id: 'America/Vancouver', name: 'Canada Pacific Time (PT)' },
   { id: 'Asia/Kolkata', name: 'India Standard Time (IST)' },
+  { id: 'Asia/Dubai', name: 'Gulf Standard Time (GST)' },
+  { id: 'Asia/Singapore', name: 'Singapore Time (SGT)' },
   { id: 'Europe/London', name: 'Greenwich Mean Time (GMT)' },
   { id: 'Europe/Paris', name: 'Central European Time (CET)' },
-  { id: 'Asia/Singapore', name: 'Singapore Time (SGT)' },
   { id: 'Australia/Sydney', name: 'Australian Eastern Time (AET)' },
+  { id: 'Australia/Perth', name: 'Australian Western Time (AWT)' },
 ];
 
 // Countries (Top markets)
 export const COUNTRIES = [
-  { id: 'IN', name: 'India' },
-  { id: 'US', name: 'United States' },
-  { id: 'UK', name: 'United Kingdom' },
-  { id: 'CA', name: 'Canada' },
-  { id: 'AU', name: 'Australia' },
-  { id: 'SG', name: 'Singapore' },
-  { id: 'AE', name: 'United Arab Emirates' },
-  { id: 'OTHER', name: 'Other' },
+  { id: 'IN', name: 'India', flag: '🇮🇳' },
+  { id: 'US', name: 'United States', flag: '🇺🇸' },
+  { id: 'UK', name: 'United Kingdom', flag: '🇬🇧' },
+  { id: 'CA', name: 'Canada', flag: '🇨🇦' },
+  { id: 'AU', name: 'Australia', flag: '🇦🇺' },
+  { id: 'SG', name: 'Singapore', flag: '🇸🇬' },
+  { id: 'AE', name: 'United Arab Emirates', flag: '🇦🇪' },
+  { id: 'OTHER', name: 'Other', flag: '🌐' },
 ];
 
 // Indian States

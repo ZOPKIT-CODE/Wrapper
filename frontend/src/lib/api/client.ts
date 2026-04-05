@@ -147,6 +147,20 @@ const isValidJWT = (token: string): boolean => {
   }
 };
 
+/** Returns true if the JWT is expired or expires within the next 30 seconds. */
+const isTokenExpired = (token: string): boolean => {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return true;
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+    const exp = payload?.exp as number | undefined;
+    if (!exp) return false;
+    return (exp - 30) < (Date.now() / 1000);
+  } catch {
+    return true;
+  }
+};
+
 /**
  * Get authentication token from the Kinde SDK only.
  * Tokens are never read from localStorage/sessionStorage/cookies by JS — cookies
@@ -157,8 +171,11 @@ export const getKindeToken = async (): Promise<string | null> => {
   if (kindeTokenGetter) {
     try {
       const token = await kindeTokenGetter();
-      if (token && isValidJWT(token)) {
+      if (token && isValidJWT(token) && !isTokenExpired(token)) {
         return token;
+      }
+      if (token && isTokenExpired(token)) {
+        logger.debug('🔑 getKindeToken: Token is expired, skipping to avoid 401 spam');
       }
     } catch (error) {
       logger.debug('Kinde SDK getToken() failed:', error);

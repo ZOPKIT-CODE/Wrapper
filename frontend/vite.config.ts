@@ -104,6 +104,14 @@ export default defineConfig(({ mode }) => {
       open: true,
       host: true, // Allow external connections
       cors: true,
+      // Proxy API requests to the backend dev server — eliminates cross-origin issues in dev
+      proxy: {
+        '/api': {
+          target: 'http://127.0.0.1:3000',
+          changeOrigin: true,
+          secure: false,
+        },
+      },
       // Enable HMR for better DX
       hmr: {
         overlay: true,
@@ -144,9 +152,7 @@ export default defineConfig(({ mode }) => {
             'radix-ui': ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-select', '@radix-ui/react-tabs'],
             auth: ['@kinde-oss/kinde-auth-react'],
             forms: ['react-hook-form', '@hookform/resolvers', 'zod'],
-            recharts: ['recharts'],
             motion: ['framer-motion'],
-            tsparticles: ['@tsparticles/engine', '@tsparticles/react', '@tsparticles/slim'],
             reactflow: ['reactflow'],
           },
         },
@@ -162,7 +168,6 @@ export default defineConfig(({ mode }) => {
         'react-dom',
         '@tanstack/react-query',
         '@tanstack/react-router',
-        'zustand',
         'zod',
         'react-hook-form',
         '@kinde-oss/kinde-auth-react',

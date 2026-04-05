@@ -22,28 +22,45 @@ export const PearlButton = forwardRef<HTMLButtonElement, PearlButtonProps>(({
   const { actualTheme } = useTheme();
 
   const getVariantStyles = () => {
-    const colorClassMap: Record<string, string> = {
-      blue: '[#1B2E5A]',
-      sky: 'sky-500',
-      indigo: 'indigo-600',
-      cyan: 'cyan-500',
-      emerald: 'emerald-600',
-      rose: 'rose-500',
-      amber: 'amber-500',
-      violet: 'violet-600',
-      purple: 'purple-600',
-      orange: 'orange-500',
-      red: 'red-600',
-      yellow: 'yellow-500'
+    // Full literal class strings — dynamic `bg-${x}` / `text-${x}` would be excluded by Tailwind JIT in production builds
+    const bgClassMap: Record<string, string> = {
+      blue:    'bg-[#1D2B4D]',
+      sky:     'bg-sky-500',
+      indigo:  'bg-indigo-600',
+      cyan:    'bg-cyan-500',
+      emerald: 'bg-emerald-600',
+      rose:    'bg-rose-500',
+      amber:   'bg-amber-500',
+      violet:  'bg-violet-600',
+      purple:  'bg-purple-600',
+      orange:  'bg-orange-500',
+      red:     'bg-red-600',
+      yellow:  'bg-yellow-500',
     };
 
-    const themeColorClass = colorClassMap[color] || 'blue-600';
+    const outlineTextClassMap: Record<string, string> = {
+      blue:    'text-[#1D2B4D]',
+      sky:     'text-sky-600',
+      indigo:  'text-indigo-600',
+      cyan:    'text-cyan-600',
+      emerald: 'text-emerald-600',
+      rose:    'text-rose-600',
+      amber:   'text-amber-600',
+      violet:  'text-violet-600',
+      purple:  'text-purple-600',
+      orange:  'text-orange-600',
+      red:     'text-red-600',
+      yellow:  'text-yellow-600',
+    };
+
+    const backgroundClass = bgClassMap[color] ?? 'bg-[#1D2B4D]';
+    const outlineTextClass = outlineTextClassMap[color] ?? 'text-[#1D2B4D]';
     const isLightColor = color === 'yellow' || color === 'amber' || color === 'sky' || color === 'cyan';
 
     const baseStyles = {
       light: {
         primary: {
-          background: `bg-${themeColorClass}`,
+          background: backgroundClass,
           text: isLightColor ? 'text-slate-900 font-black tracking-tight' : 'text-white font-bold tracking-tight',
           shadow: `shadow-[inset_0_2px_4px_rgba(255,255,255,0.4),0_10px_20px_rgba(0,0,0,0.1)]`,
           hoverShadow: `hover:shadow-[inset_0_2px_4px_rgba(255,255,255,0.5),0_15px_30px_rgba(0,0,0,0.15)]`,
@@ -64,7 +81,7 @@ export const PearlButton = forwardRef<HTMLButtonElement, PearlButtonProps>(({
         },
         outline: {
           background: 'bg-transparent border border-slate-200',
-          text: themeColorClass.startsWith('[') ? `text-${themeColorClass}` : `text-${themeColorClass.split('-')[0]}-600`,
+          text: outlineTextClass,
           shadow: 'shadow-none',
           hoverShadow: 'hover:bg-slate-50',
           activeShadow: 'active:bg-slate-100',
@@ -107,7 +124,7 @@ export const PearlButton = forwardRef<HTMLButtonElement, PearlButtonProps>(({
       },
       dark: {
         primary: {
-          background: `bg-${themeColorClass}`,
+          background: backgroundClass,
           text: isLightColor ? 'text-slate-900 font-black' : 'text-white font-bold',
           shadow: 'shadow-[inset_0_2px_4px_rgba(255,255,255,0.2),0_10px_30px_rgba(0,0,0,0.5)]',
           hoverShadow: 'hover:shadow-[inset_0_2px_4px_rgba(255,255,255,0.3),0_15px_40px_rgba(0,0,0,0.6)]',

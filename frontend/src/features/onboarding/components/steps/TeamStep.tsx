@@ -80,7 +80,7 @@ export const TeamStep = ({ form, onAddMember, onUpdateMember, onRemoveMember, us
   return (
     <div className="space-y-8">
       <div className="space-y-2">
-        {userClassification && (
+        {userClassification && userClassification !== 'aspiringFounder' && (
             <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-100 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide mb-2">
               {userClassification.replace(/([A-Z])/g, ' $1').trim()}
             </Badge>

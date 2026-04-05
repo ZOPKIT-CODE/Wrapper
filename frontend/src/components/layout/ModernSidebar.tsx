@@ -2,7 +2,6 @@ import { cn } from "@/lib/utils"
 import { Link, useLocation } from "@tanstack/react-router"
 import { useSidebar } from "@/components/ui/sidebar"
 import { useKindeAuth } from "@kinde-oss/kinde-auth-react"
-import { motion } from "framer-motion"
 import { useEffect, useState } from "react"
 import {
     LayoutDashboard,
@@ -12,7 +11,7 @@ import {
     CreditCard,
     Settings,
     LogOut,
-    Activity
+    Activity,
 } from "lucide-react"
 import {
     Avatar,
@@ -20,44 +19,23 @@ import {
     AvatarImage,
 } from "@/components/ui/avatar"
 
-// Map sidebar URLs to tour step IDs so DashboardFeatureTour can highlight nav items
-const getTourStepId = (url: string): string | undefined => {
-    if (url.includes('/dashboard/applications') || url === '/dashboard') return 'applications'
-    if (url.includes('/dashboard/users')) return 'users'
-    if (url.includes('/dashboard/organization')) return 'organization'
-    if (url.includes('/dashboard/roles')) return 'roles'
-    if (url.includes('/dashboard/billing')) return 'credits'
-    if (url.includes('/dashboard/settings')) return 'settings'
-    return undefined
-}
-
 // Extract NavItem component OUTSIDE of ModernSidebar to prevent re-mounting
 const NavItem = ({ item, isActive, isCollapsed }: { item: any; isActive: boolean; isCollapsed: boolean }) => {
-    const tourStepId = getTourStepId(item.url)
     return (
         <Link
             to={item.url}
-            {...(tourStepId ? { 'data-tour-step': tourStepId } : {})}
             className={cn(
-                "relative flex items-center gap-4 px-8 py-4 transition-all duration-500 overflow-visible group"
+                "relative flex items-center gap-4 px-8 py-4 overflow-visible group"
             )}
         >
             {/* Active Background with cutout effect */}
             {isActive && (
                 <>
                     {/* Main white background tab */}
-                    <motion.div
-                        layoutId="active-tab-bg"
+                    <div
                         className="absolute inset-0 bg-white rounded-l-[32px]"
                         style={{
                             right: '-16px', // Extend to perfectly reach the sidebar edge (compensating for px-4 on parent)
-                        }}
-                        initial={false}
-                        transition={{
-                            type: "spring",
-                            stiffness: 500,
-                            damping: 35,
-                            mass: 0.8
                         }}
                     >
                         {/* Top Cutout Curve (Inverse Border Radius) */}
@@ -73,13 +51,13 @@ const NavItem = ({ item, isActive, isCollapsed }: { item: any; isActive: boolean
                         >
                             <div className="w-full h-full bg-[#1B2E5A] rounded-tr-[20px]" />
                         </div>
-                    </motion.div>
+                    </div>
                 </>
             )}
 
             {/* Icon */}
             <div className={cn(
-                "relative z-10 transition-all duration-500",
+                "relative z-10",
                 isActive ? "text-[#1B2E5A]" : "text-white"
             )}>
                 <item.icon className="size-5" />
@@ -88,7 +66,7 @@ const NavItem = ({ item, isActive, isCollapsed }: { item: any; isActive: boolean
             {/* Label */}
             {!isCollapsed && (
                 <span className={cn(
-                    "relative z-10 font-black text-sm tracking-tight transition-all duration-500",
+                    "relative z-10 font-black text-sm tracking-tight",
                     isActive ? "text-[#1B2E5A]" : "text-white"
                 )}>
                     {item.title}
@@ -99,7 +77,6 @@ const NavItem = ({ item, isActive, isCollapsed }: { item: any; isActive: boolean
 }
 
 const ADMIN_ONLY_URLS = [
-    '/dashboard/users',
     '/dashboard/organization',
     '/dashboard/roles',
     '/dashboard/activity',
@@ -125,7 +102,6 @@ export function ModernSidebar({
 
     const allMainNavItems = navData?.navMain || [
         { title: "Applications", url: "/dashboard/applications", icon: LayoutDashboard },
-        { title: "Team", url: "/dashboard/users", icon: Users },
         { title: "Organization", url: "/dashboard/organization", icon: Building2 },
         { title: "Roles", url: "/dashboard/roles", icon: Shield },
         { title: "Activity", url: "/dashboard/activity", icon: Activity },
@@ -167,7 +143,7 @@ export function ModernSidebar({
     return (
         <div
             className={cn(
-                "relative flex flex-col h-screen transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] z-40",
+                "relative flex flex-col h-screen transition-[width] duration-100 ease-out z-40 will-change-[width]",
                 "bg-[#1B2E5A]",
                 isCollapsed ? "w-[100px]" : "w-[280px]",
                 "rounded-tr-[40px] rounded-br-[40px]",
@@ -176,17 +152,13 @@ export function ModernSidebar({
         >
             {/* Branding Section */}
             <div className="pt-12 pb-10 px-8 flex items-center gap-4 relative z-10 shrink-0">
-                <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-xl border border-white/20">
+                <div className="w-12 h-12 rounded-2xl bg-white/25 flex items-center justify-center shadow-xl border border-white/20">
                     <span className="text-white font-black text-2xl">Z</span>
                 </div>
                 {!isCollapsed && (
-                    <motion.h1
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        className="text-white text-2xl font-black tracking-tight"
-                    >
+                    <h1 className="text-white text-2xl font-black tracking-tight">
                         Zopkit
-                    </motion.h1>
+                    </h1>
                 )}
             </div>
 
@@ -210,9 +182,9 @@ export function ModernSidebar({
             </div>
 
             {/* Profile Section */}
-            <div className="p-4 bg-black/10 backdrop-blur-sm border-t border-white/5 relative z-10 shrink-0">
+            <div className="p-4 bg-black/15 border-t border-white/5 relative z-10 shrink-0">
                 <div className={cn(
-                    "flex items-center gap-3 p-2 rounded-2xl transition-all duration-500",
+                    "flex items-center gap-3 p-2 rounded-2xl",
                     isCollapsed ? "justify-center" : "justify-start"
                 )}>
                     <Avatar className="h-10 w-10 border-2 border-white/20 shadow-lg">
@@ -236,7 +208,7 @@ export function ModernSidebar({
                     {!isCollapsed && (
                         <button
                             onClick={() => logout()}
-                            className="p-2 text-white/40 hover:text-white transition-colors"
+                            className="p-2 text-white/40 hover:text-white"
                         >
                             <LogOut className="size-4" />
                         </button>

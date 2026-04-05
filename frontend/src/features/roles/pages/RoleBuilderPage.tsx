@@ -1,15 +1,17 @@
 import React from 'react';
-import { useParams, useNavigate } from '@tanstack/react-router';
+import { useNavigate } from '@tanstack/react-router';
 import { ArrowLeft } from 'lucide-react';
 import { Container } from '@/components/common/Page';
 import { Button } from '@/components/ui/button';
 import { ApplicationModuleRoleBuilder } from '@/features/roles/ApplicationModuleRoleBuilder';
 import { useRoles, useInvalidateQueries } from '@/hooks/useSharedQueries';
 import AnimatedLoader from '@/components/common/feedback/AnimatedLoader';
+import { DASHBOARD_PAGE_TITLE_CLASS } from '@/components/dashboard/DashboardPageHeader';
 import { AlertCircle } from 'lucide-react';
+import { useRoleIdParam } from '@/hooks/useRoleRouteParams';
 
 export function RoleBuilderPage() {
-  const { roleId } = useParams({ strict: false });
+  const roleId = useRoleIdParam();
   const navigate = useNavigate();
   const isEditMode = !!roleId;
   
@@ -71,7 +73,7 @@ export function RoleBuilderPage() {
           Back to Roles
         </Button>
         <div className="flex-1">
-          <h1 className="text-2xl font-semibold">
+          <h1 className={DASHBOARD_PAGE_TITLE_CLASS}>
             {isEditMode ? 'Edit Role' : 'Create New Role'}
           </h1>
         </div>

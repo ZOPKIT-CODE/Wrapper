@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Check, AlertCircle, ChevronRight, BarChart3, Layout, FileText, Users, ShieldCheck, User } from 'lucide-react';
+import { Check, AlertCircle, ChevronRight } from 'lucide-react';
 import { StepConfig } from '../config/flowConfigs';
 
 interface StepIndicatorProps {
@@ -8,6 +8,8 @@ interface StepIndicatorProps {
   getStepStatus: (stepNumber: number) => 'completed' | 'active' | 'error' | 'upcoming';
   onStepClick?: (stepNumber: number) => void;
   className?: string;
+  /** Deep blue sidebar: light text / frosted chips */
+  darkSidebar?: boolean;
 }
 
 export const StepIndicator: React.FC<StepIndicatorProps> = ({
@@ -16,6 +18,7 @@ export const StepIndicator: React.FC<StepIndicatorProps> = ({
   getStepStatus,
   onStepClick,
   className = '',
+  darkSidebar = false,
 }) => {
   const [hoveredStep, setHoveredStep] = useState<number | null>(null);
 
@@ -40,7 +43,7 @@ export const StepIndicator: React.FC<StepIndicatorProps> = ({
   const hasError = stepsConfig.some(s => getStepStatus(s.number) === 'error');
 
   return (
-    <div className={`flex flex-col gap-2 font-sans ${className}`}>
+    <div className={`flex flex-col font-sans ${darkSidebar ? 'gap-2' : 'gap-1.5'} ${className}`}>
       {stepsConfig.map((step) => {
         const status = getStepStatus(step.number);
         const isActive = status === 'active';
@@ -55,49 +58,84 @@ export const StepIndicator: React.FC<StepIndicatorProps> = ({
         const { current, total } = getStepStats(step, status);
         const progressPercent = (current / total) * 100;
 
-        // --- DYNAMIC STYLING CONFIGURATION ---
         let styles = {
-          card: "bg-transparent border-transparent opacity-60 opacity-100",
-          iconBg: "bg-slate-100 text-slate-400",
-          title: "text-slate-500",
-          subtext: "text-slate-400",
-          barBg: "bg-slate-100",
-          barFill: "bg-slate-300",
-          shadow: ""
+          card: darkSidebar
+            ? 'border-white/[0.14] bg-white/[0.08] opacity-95 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.12)] backdrop-blur-sm'
+            : 'border-slate-200/80 bg-white/70 opacity-80',
+          iconBg: darkSidebar
+            ? 'border border-white/30 bg-white/[0.12] text-blue-50 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.18)]'
+            : 'border border-slate-200 bg-white text-slate-500',
+          title: darkSidebar ? 'text-white' : 'text-slate-500',
+          subtext: darkSidebar ? 'text-blue-100/55' : 'text-slate-400',
+          barBg: darkSidebar ? 'bg-white/15' : 'bg-slate-100',
+          barFill: darkSidebar ? 'bg-white/45' : 'bg-slate-300',
+          shadow: '',
         };
 
         if (isCompleted) {
-          styles = {
-            card: "bg-white border-transparent hover:border-emerald-100 opacity-100",
-            iconBg: "bg-emerald-500 text-white shadow-md shadow-emerald-200",
-            title: "text-slate-800",
-            subtext: "text-slate-500",
-            barBg: "bg-emerald-100",
-            barFill: "bg-emerald-500",
-            shadow: "shadow-sm hover:shadow-md"
-          };
+          styles = darkSidebar
+            ? {
+                card: 'border-white/25 bg-gradient-to-br from-white/[0.16] to-white/[0.06] hover:from-white/[0.2] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.2)]',
+                iconBg: 'border-0 bg-white text-blue-950 shadow-md shadow-black/25',
+                title: 'text-white',
+                subtext: 'text-blue-100/75',
+                barBg: 'bg-white/25',
+                barFill: 'bg-white',
+                shadow: '',
+              }
+            : {
+                card: 'border-blue-100 bg-white hover:bg-blue-50/50',
+                iconBg: 'border-0 bg-blue-950 text-white',
+                title: 'text-blue-950',
+                subtext: 'text-slate-500',
+                barBg: 'bg-blue-100',
+                barFill: 'bg-blue-700',
+                shadow: '',
+              };
         } else if (isError) {
-          styles = {
-            card: "bg-red-50 border-red-100 opacity-100 ring-1 ring-red-100",
-            iconBg: "bg-red-500 text-white shadow-md shadow-red-200",
-            title: "text-red-900",
-            subtext: "text-red-700",
-            barBg: "bg-red-200",
-            barFill: "bg-red-500",
-            shadow: "shadow-md"
-          };
+          styles = darkSidebar
+            ? {
+                card: 'border-red-400/40 bg-red-950/40',
+                iconBg: 'border-0 bg-red-500 text-white',
+                title: 'text-red-100',
+                subtext: 'text-red-200/90',
+                barBg: 'bg-red-950/50',
+                barFill: 'bg-red-400',
+                shadow: '',
+              }
+            : {
+                card: 'border-red-200 bg-red-50/80',
+                iconBg: 'border-0 bg-red-600 text-white',
+                title: 'text-red-900',
+                subtext: 'text-red-700',
+                barBg: 'bg-red-100',
+                barFill: 'bg-red-600',
+                shadow: '',
+              };
         } else if (isActive) {
-          styles = {
-            card: "bg-white/50 border-pink-100 opacity-100 ring-1 ring-pink-200 backdrop-blur-sm",
-            iconBg: "bg-pink-500 text-white shadow-md shadow-pink-300",
-            title: "text-pink-900",
-            subtext: "text-pink-700",
-            barBg: "bg-pink-100",
-            barFill: "bg-pink-500",
-            shadow: "shadow-lg shadow-pink-100/50"
-          };
+          styles = darkSidebar
+            ? {
+                card: 'border-white/35 bg-gradient-to-br from-white/20 via-white/[0.12] to-blue-950/50 shadow-[0_8px_28px_-6px_rgba(0,0,0,0.45)] ring-1 ring-white/30',
+                iconBg: 'border-0 bg-white text-blue-950 shadow-md shadow-black/25',
+                title: 'text-white',
+                subtext: 'text-blue-100/80',
+                barBg: 'bg-white/25',
+                barFill: 'bg-gradient-to-r from-white to-blue-100',
+                shadow: '',
+              }
+            : {
+                card: 'border-blue-200 bg-white shadow-sm ring-1 ring-blue-100/60',
+                iconBg: 'border-0 bg-blue-950 text-white',
+                title: 'text-blue-950',
+                subtext: 'text-slate-500',
+                barBg: 'bg-blue-100',
+                barFill: 'bg-blue-800',
+                shadow: '',
+              };
         } else if (isUpcoming) {
-             styles.card = "bg-white border-transparent border border-slate-100 opacity-60 grayscale hover:grayscale-0 hover:opacity-100 hover:border-slate-200 hover:shadow-sm";
+          styles.card = darkSidebar
+            ? 'border-white/[0.08] bg-blue-950/50 opacity-75 hover:border-white/15 hover:opacity-100'
+            : 'border-slate-100 bg-slate-50/50 opacity-75 hover:opacity-100';
         }
 
         return (
@@ -107,52 +145,54 @@ export const StepIndicator: React.FC<StepIndicatorProps> = ({
             onMouseEnter={() => setHoveredStep(step.number)}
             onMouseLeave={() => setHoveredStep(null)}
             className={`
-              relative flex items-center gap-3 p-2 rounded-xl border
+              relative flex items-center gap-3 border p-2.5 transition-all duration-200 ease-out
+              ${darkSidebar ? 'rounded-xl' : 'rounded-lg'}
               ${styles.card} ${styles.shadow}
-              ${isClickable ? 'cursor-pointer scale-[1.01]' : 'cursor-default'}
-              ${isActive ? 'scale-[1.02]' : ''}
+              ${isClickable ? 'cursor-pointer' : 'cursor-default'}
             `}
           >
-            {/* LEFT ICON CIRCLE */}
-            <div className={`
-              flex items-center justify-center w-10 h-10 rounded-full shrink-0
+            <div
+              className={`
+              flex h-9 w-9 shrink-0 items-center justify-center text-xs font-semibold tabular-nums
+              ${darkSidebar ? 'rounded-lg' : 'rounded-md'}
               ${styles.iconBg}
-              ${isActive || isHovered ? 'scale-110' : 'scale-100'}
-            `}>
+            `}
+            >
               {isCompleted ? (
-                <Check className="w-5 h-5" strokeWidth={3} />
+                <Check className="h-4 w-4" strokeWidth={2.5} />
               ) : isError ? (
-                <AlertCircle className="w-5 h-5" strokeWidth={2.5} />
+                <AlertCircle className="h-4 w-4" strokeWidth={2.5} />
               ) : (
-                <span className="text-sm font-bold font-mono">{step.number}</span>
+                <span>{step.number}</span>
               )}
             </div>
 
-            {/* MIDDLE CONTENT */}
-            <div className="flex-1 min-w-0 flex flex-col gap-1.5">
-              <div className="flex items-center justify-between">
-                <h4 className={`text-xs font-bold uppercase tracking-wider truncate pr-2 ${styles.title}`}>
+            <div className="flex min-w-0 flex-1 flex-col gap-1">
+              <div className="flex items-center justify-between gap-2">
+                <h4 className={`truncate text-[11px] font-semibold uppercase tracking-wide ${styles.title}`}>
                   {step.title}
                 </h4>
-                {/* Status Indicator Icon next to title */}
-                {isCompleted && <Check className="w-3 h-3 text-emerald-500 shrink-0" strokeWidth={4} />}
-                {isError && <AlertCircle className="w-3 h-3 text-red-500 shrink-0" />}
+                {isCompleted && (
+                  <Check
+                    className={`h-3 w-3 shrink-0 ${darkSidebar ? 'text-white' : 'text-blue-800'}`}
+                    strokeWidth={2.5}
+                  />
+                )}
+                {isError && (
+                  <AlertCircle className={`h-3 w-3 shrink-0 ${darkSidebar ? 'text-red-300' : 'text-red-600'}`} />
+                )}
               </div>
 
-              {/* Progress Stats */}
-              <div className="flex items-center gap-3">
-                 <div className={`flex items-center gap-1 text-[10px] font-semibold ${styles.subtext}`}>
-                    <BarChart3 className="w-3 h-3 opacity-70" />
-                    <span>{current}/{total} fields</span>
-                 </div>
-                 
-                 {/* Mini Progress Bar */}
-                 <div className={`flex-1 h-1.5 rounded-full overflow-hidden max-w-[80px] ${styles.barBg}`}>
-                   <div 
-                     className={`h-full rounded-full ${styles.barFill}`}
-                     style={{ width: `${progressPercent}%` }}
-                   />
-                 </div>
+              <div className="flex items-center gap-2">
+                <span className={`text-[10px] font-medium tabular-nums ${styles.subtext}`}>
+                  {current}/{total} fields
+                </span>
+                <div className={`h-1 max-w-[72px] flex-1 overflow-hidden rounded-full ${styles.barBg} shadow-inner`}>
+                  <div
+                    className={`h-full rounded-full ${styles.barFill}`}
+                    style={{ width: `${progressPercent}%` }}
+                  />
+                </div>
               </div>
             </div>
 
@@ -169,7 +209,9 @@ export const StepIndicator: React.FC<StepIndicatorProps> = ({
             
             {/* Active Indicator Line (Left Edge) */}
             {isActive && (
-              <div className="absolute left-0 top-3 bottom-3 w-1 bg-white/50 rounded-r-full" />
+              <div
+                className={`absolute bottom-2 left-0 top-2 w-0.5 rounded-full ${darkSidebar ? 'bg-white' : 'bg-blue-800'}`}
+              />
             )}
           </div>
         );
@@ -177,14 +219,28 @@ export const StepIndicator: React.FC<StepIndicatorProps> = ({
 
       {/* ERROR BANNER - Matches the reference image's "Please fix errors" block */}
       {hasError && (
-        <div className="mt-2 mx-1 p-3 rounded-xl bg-red-50 border border-red-100 flex items-center gap-3 shadow-sm">
-           <div className="w-8 h-8 rounded-full bg-white border border-red-100 flex items-center justify-center shrink-0 shadow-sm">
-              <AlertCircle className="w-4 h-4 text-red-500" />
-           </div>
-           <div>
-              <p className="text-xs font-bold text-red-900">Action Required</p>
-              <p className="text-[10px] text-red-600 font-medium">Please fix errors to continue</p>
-           </div>
+        <div
+          className={`mx-1 mt-2 flex items-center gap-3 rounded-lg border p-3 ${
+            darkSidebar
+              ? 'border-red-400/35 bg-red-950/50'
+              : 'border-red-200 bg-red-50/90'
+          }`}
+        >
+          <div
+            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md border ${
+              darkSidebar ? 'border-red-400/30 bg-red-950/60' : 'border-red-100 bg-white'
+            }`}
+          >
+            <AlertCircle className={`h-4 w-4 ${darkSidebar ? 'text-red-300' : 'text-red-600'}`} />
+          </div>
+          <div>
+            <p className={`text-xs font-semibold ${darkSidebar ? 'text-red-100' : 'text-red-900'}`}>
+              Action required
+            </p>
+            <p className={`text-[10px] font-medium ${darkSidebar ? 'text-red-200/90' : 'text-red-700'}`}>
+              Resolve the highlighted fields to continue.
+            </p>
+          </div>
         </div>
       )}
     </div>

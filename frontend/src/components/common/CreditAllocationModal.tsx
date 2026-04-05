@@ -1,23 +1,31 @@
-import  { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { CreditCard, Loader2 } from 'lucide-react';
-import { toast } from 'sonner';
-import { api } from '@/lib/api';
-import { useQueryClient } from '@tanstack/react-query';
-import { useTenantApplications } from '@/hooks/useSharedQueries';
+import { useState, useEffect } from 'react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Badge } from '@/components/ui/badge'
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet'
+import { CreditCard, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
+import { api } from '@/lib/api'
+import { useQueryClient } from '@tanstack/react-query'
+import { useTenantApplications } from '@/hooks/useSharedQueries'
 
 interface CreditAllocationModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSuccess?: () => void;
-  entityId: string;
-  entityName: string;
-  entityType: 'organization' | 'location';
-  availableCredits?: number;
+  isOpen: boolean
+  onClose: () => void
+  onSuccess?: () => void
+  entityId: string
+  entityName: string
+  entityType: 'organization' | 'location'
+  availableCredits?: number
 }
 
 export function CreditAllocationModal({
@@ -27,132 +35,146 @@ export function CreditAllocationModal({
   entityId,
   entityName,
   entityType: _entityType,
-  availableCredits = 0
+  availableCredits = 0,
 }: CreditAllocationModalProps) {
-  const queryClient = useQueryClient();
-  const [loading, setLoading] = useState(false);
+  const queryClient = useQueryClient()
+  const [loading, setLoading] = useState(false)
   const [allocationForm, setAllocationForm] = useState({
     targetApplication: '',
     creditAmount: 0,
     allocationPurpose: '',
-    autoReplenish: false
-  });
+    autoReplenish: false,
+  })
 
-  // Fetch organization applications instead of using hardcoded list
-  const { data: organizationApplications = [], isLoading: isLoadingApplications } = useTenantApplications();
+  const { data: organizationApplications = [], isLoading: isLoadingApplications } = useTenantApplications()
 
-  // Reset form when modal opens
   useEffect(() => {
     if (isOpen) {
       setAllocationForm({
         targetApplication: '',
         creditAmount: 0,
         allocationPurpose: '',
-        autoReplenish: false
-      });
+        autoReplenish: false,
+      })
     }
-  }, [isOpen]);
+  }, [isOpen])
 
   const handleAllocateCredits = async () => {
-    if (loading) return;
+    if (loading) return
 
     if (!allocationForm.targetApplication || !allocationForm.creditAmount) {
-      toast.error('Please fill in all required fields');
-      return;
+      toast.error('Please fill in all required fields')
+      return
     }
 
     if (allocationForm.creditAmount > availableCredits) {
-      toast.error('Cannot allocate more credits than are available');
-      return;
+      toast.error('Cannot allocate more credits than are available')
+      return
     }
 
-    let loadingToastId: string | number | undefined;
+    let loadingToastId: string | number | undefined
     try {
-      setLoading(true);
-      loadingToastId = toast.loading('Allocating credits...');
-      const idempotencyKey = `credit-allocation:${entityId}:${allocationForm.targetApplication}:${Date.now()}:${Math.random().toString(36).slice(2, 10)}`;
+      setLoading(true)
+      loadingToastId = toast.loading('Allocating credits...')
+      const idempotencyKey = `credit-allocation:${entityId}:${allocationForm.targetApplication}:${Date.now()}:${Math.random().toString(36).slice(2, 10)}`
 
-      const response = await api.post('/credits/allocate/application', {
-        sourceEntityId: entityId,
-        targetApplication: allocationForm.targetApplication,
-        creditAmount: allocationForm.creditAmount,
-        allocationPurpose: allocationForm.allocationPurpose,
-        autoReplenish: allocationForm.autoReplenish
-      }, {
-        headers: {
-          'X-Idempotency-Key': idempotencyKey
-        }
-      });
+      const response = await api.post(
+        '/credits/allocate/application',
+        {
+          sourceEntityId: entityId,
+          targetApplication: allocationForm.targetApplication,
+          creditAmount: allocationForm.creditAmount,
+          allocationPurpose: allocationForm.allocationPurpose,
+          autoReplenish: allocationForm.autoReplenish,
+        },
+        {
+          headers: {
+            'X-Idempotency-Key': idempotencyKey,
+          },
+        },
+      )
 
       if (response.data.success) {
-        toast.success(`Successfully allocated ${allocationForm.creditAmount} credits to ${allocationForm.targetApplication}`);
+        toast.success(`Successfully allocated ${allocationForm.creditAmount} credits to ${allocationForm.targetApplication}`)
 
-        // Invalidate credit queries to update the UI immediately
         try {
-          queryClient.invalidateQueries({ queryKey: ['credit'] });
-          queryClient.invalidateQueries({ queryKey: ['creditStatus'], exact: false });
-          queryClient.invalidateQueries({ queryKey: ['admin', 'entities'] });
-          queryClient.invalidateQueries({ queryKey: ['organizations', 'hierarchy'] });
-          queryClient.refetchQueries({ queryKey: ['organizations', 'hierarchy'], type: 'active' });
+          queryClient.invalidateQueries({ queryKey: ['credit'] })
+          queryClient.invalidateQueries({ queryKey: ['creditStatus'], exact: false })
+          queryClient.invalidateQueries({ queryKey: ['admin', 'entities'] })
+          queryClient.invalidateQueries({ queryKey: ['organizations', 'hierarchy'] })
+          queryClient.refetchQueries({ queryKey: ['organizations', 'hierarchy'], type: 'active' })
         } catch (invalidateError) {
-          console.warn('Failed to invalidate queries:', invalidateError);
+          console.warn('Failed to invalidate queries:', invalidateError)
         }
 
         setAllocationForm({
           targetApplication: '',
           creditAmount: 0,
           allocationPurpose: '',
-          autoReplenish: false
-        });
-        onSuccess?.();
-        onClose();
+          autoReplenish: false,
+        })
+        onSuccess?.()
+        onClose()
       } else {
-        toast.error(response.data?.message || 'Failed to allocate credits');
+        toast.error(response.data?.message || 'Failed to allocate credits')
       }
     } catch (error: unknown) {
-      console.error('Failed to allocate credits:', error);
-      const errorWithResponse = error as { response?: { data?: { message?: string } } };
-      const errorMessage = errorWithResponse.response?.data?.message || 'Failed to allocate credits';
-      toast.error(errorMessage);
+      console.error('Failed to allocate credits:', error)
+      const errorWithResponse = error as { response?: { data?: { message?: string } } }
+      const errorMessage = errorWithResponse.response?.data?.message || 'Failed to allocate credits'
+      toast.error(errorMessage)
     } finally {
       if (loadingToastId !== undefined) {
-        toast.dismiss(loadingToastId);
+        toast.dismiss(loadingToastId)
       }
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <CreditCard className="w-5 h-5" />
+    <Sheet
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose()
+      }}
+    >
+      <SheetContent
+        side="right"
+        className="flex h-full min-h-0 w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-lg [&>button]:text-white [&>button]:hover:bg-white/15"
+      >
+        <SheetHeader className="shrink-0 space-y-2 border-b border-white/10 bg-[#1B2E5A] px-6 pb-5 pt-8 text-white">
+          <SheetTitle className="flex items-center gap-2 text-lg font-semibold text-white">
+            <CreditCard className="h-5 w-5 shrink-0" aria-hidden />
             Allocate Credits to Application
-          </DialogTitle>
-          <div className="text-sm text-muted-foreground">
-            Allocate credits from <Badge variant="outline" className="inline-flex">{entityName}</Badge> to a specific application
-          </div>
-        </DialogHeader>
+          </SheetTitle>
+          <SheetDescription className="text-sm text-white/85">
+            Allocate credits from <Badge className="border-white/30 bg-white/15 text-white">{entityName}</Badge> to a
+            specific application. Available:{' '}
+            <span className="font-semibold text-white">{availableCredits.toLocaleString()}</span> credits.
+          </SheetDescription>
+        </SheetHeader>
 
-        <div className="space-y-4">
-          {/* Available Credits Info */}
-          <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
-            <div className="text-sm text-gray-600 dark:text-gray-300">
-              Available Credits: <span className="font-semibold text-green-600">{availableCredits.toLocaleString()}</span>
-            </div>
+        <div className="flex-1 space-y-4 overflow-y-auto px-6 py-5">
+          <div className="rounded-lg border border-[#1B2E5A]/20 bg-[#1B2E5A]/5 p-3 dark:bg-[#1B2E5A]/10">
+            <p className="text-sm text-slate-700 dark:text-slate-200">
+              Available credits:{' '}
+              <span className="font-semibold text-[#1B2E5A] dark:text-[#E8EDF6]">
+                {availableCredits.toLocaleString()}
+              </span>
+            </p>
           </div>
 
-          {/* Application Selection - show short name, full text on hover */}
-          <div>
-            <label className="text-sm font-medium">Application</label>
+          <div className="space-y-2">
+            <Label className="text-[13px] font-medium">
+              Application <span className="text-red-500">*</span>
+            </Label>
             <Select
               value={allocationForm.targetApplication}
-              onValueChange={(value) => setAllocationForm({...allocationForm, targetApplication: value})}
+              onValueChange={(value) => setAllocationForm({ ...allocationForm, targetApplication: value })}
               disabled={isLoadingApplications}
             >
-              <SelectTrigger className="min-w-0 [&>span]:min-w-0 [&>span]:block [&>span]:overflow-hidden [&>span]:text-ellipsis [&>span]:whitespace-nowrap [&>span]:truncate">
-                <SelectValue placeholder={isLoadingApplications ? "Loading applications..." : "Select application"} />
+              <SelectTrigger className="min-w-0 focus:border-[#1B2E5A] focus:ring-2 focus:ring-[#1B2E5A] [&>span]:min-w-0 [&>span]:block [&>span]:truncate [&>span]:overflow-hidden [&>span]:text-ellipsis [&>span]:whitespace-nowrap">
+                <SelectValue placeholder={isLoadingApplications ? 'Loading applications...' : 'Select application'} />
               </SelectTrigger>
               <SelectContent className="max-h-[min(16rem,70vh)]">
                 {isLoadingApplications ? (
@@ -161,82 +183,95 @@ export function CreditAllocationModal({
                   <div className="p-2 text-sm text-muted-foreground">No applications available</div>
                 ) : (
                   organizationApplications
-                    .filter((app: any) => app.isEnabled !== false) // Only show enabled applications
-                    .map((app: any) => {
-                      const displayName = app.appName || app.name || app.appCode || 'Application';
-                      const fullLabel = app.description ? `${displayName} – ${app.description}` : displayName;
+                    .filter((app: { isEnabled?: boolean }) => app.isEnabled !== false)
+                    .map((app: { appId?: string; appCode?: string; appName?: string; name?: string; description?: string }) => {
+                      const displayName = app.appName || app.name || app.appCode || 'Application'
+                      const fullLabel = app.description ? `${displayName} – ${app.description}` : displayName
                       return (
-                        <SelectItem
-                          key={app.appId || app.appCode}
-                          value={app.appCode || app.appId}
-                          title={fullLabel}
-                        >
+                        <SelectItem key={app.appId || app.appCode} value={app.appCode || app.appId || ''} title={fullLabel}>
                           {displayName}
                         </SelectItem>
-                      );
+                      )
                     })
                 )}
               </SelectContent>
             </Select>
             {organizationApplications.length === 0 && !isLoadingApplications && (
-              <p className="text-xs text-muted-foreground mt-1">
-                No applications are available for this organization.
-              </p>
+              <p className="mt-1 text-xs text-muted-foreground">No applications are available for this organization.</p>
             )}
           </div>
 
-          {/* Credit Amount */}
-          <div>
-            <label className="text-sm font-medium">Credit Amount</label>
+          <div className="space-y-2">
+            <Label className="text-[13px] font-medium">
+              Credit amount <span className="text-red-500">*</span>
+            </Label>
             <Input
               type="number"
               min="0.01"
               step="0.01"
               max={availableCredits}
               value={allocationForm.creditAmount || ''}
-              onChange={(e) => setAllocationForm({...allocationForm, creditAmount: parseFloat(e.target.value) || 0})}
+              onChange={(e) => setAllocationForm({ ...allocationForm, creditAmount: parseFloat(e.target.value) || 0 })}
               placeholder="Enter credit amount"
+              className="focus:border-[#1B2E5A] focus:ring-2 focus:ring-[#1B2E5A]"
             />
             {allocationForm.creditAmount > availableCredits && (
-              <p className="text-sm text-red-600 mt-1">Cannot allocate more than available credits</p>
+              <p className="mt-1 text-sm text-red-600">Cannot allocate more than available credits</p>
             )}
           </div>
 
-          {/* Purpose */}
-          <div>
-            <label className="text-sm font-medium">Purpose (Optional)</label>
+          <div className="space-y-2">
+            <Label className="text-[13px] font-medium">Purpose (optional)</Label>
             <Input
               value={allocationForm.allocationPurpose}
-              onChange={(e) => setAllocationForm({...allocationForm, allocationPurpose: e.target.value})}
+              onChange={(e) => setAllocationForm({ ...allocationForm, allocationPurpose: e.target.value })}
               placeholder="Describe the purpose of this allocation"
+              className="focus:border-[#1B2E5A] focus:ring-2 focus:ring-[#1B2E5A]"
             />
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-2 pt-4">
-            <Button
-              onClick={handleAllocateCredits}
-              disabled={loading || !allocationForm.targetApplication || !allocationForm.creditAmount || allocationForm.creditAmount > availableCredits}
-              className="flex-1"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Allocating...
-                </>
-              ) : (
-                <>
-                  <CreditCard className="w-4 h-4 mr-2" />
-                  Allocate Credits
-                </>
-              )}
-            </Button>
-            <Button variant="outline" onClick={onClose} disabled={loading}>
-              Cancel
-            </Button>
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="credit-alloc-auto-replenish"
+              checked={allocationForm.autoReplenish}
+              onChange={(e) => setAllocationForm({ ...allocationForm, autoReplenish: e.target.checked })}
+              className="h-4 w-4 rounded border-slate-300 focus:ring-2 focus:ring-[#1B2E5A] focus:ring-offset-0"
+            />
+            <Label htmlFor="credit-alloc-auto-replenish" className="cursor-pointer text-sm font-normal">
+              Auto-replenish when credits run low
+            </Label>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
-  );
+
+        <SheetFooter className="mt-0 shrink-0 flex-row justify-end gap-2 border-t border-[#1B2E5A]/10 bg-[#F0F4FA] px-6 py-4 dark:border-slate-700 dark:bg-slate-900/80">
+          <Button variant="outline" onClick={onClose} disabled={loading}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleAllocateCredits}
+            disabled={
+              loading ||
+              !allocationForm.targetApplication ||
+              !allocationForm.creditAmount ||
+              allocationForm.creditAmount > availableCredits
+            }
+            className="bg-[#1B2E5A] text-white hover:bg-[#243A6C]"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Allocating...
+              </>
+            ) : (
+              <>
+                <CreditCard className="mr-2 h-4 w-4" />
+                Allocate Credits
+              </>
+            )}
+          </Button>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
+  )
 }

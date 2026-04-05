@@ -107,12 +107,6 @@ export interface Employee {
     errors?: string[];
   }
   
-  export interface DragDropState {
-    draggedItem: Organization | null;
-    dragOverItem: Organization | null;
-    isDragging: boolean;
-  }
-  
   export interface QuickAction {
     id: string;
     label: string;

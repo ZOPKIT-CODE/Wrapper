@@ -75,7 +75,7 @@ export function CampaignDetailsPage() {
 
   if (isLoading) {
     return (
-      <Container>
+      <Container className="dashboard-actionable-cursors">
         <div className="flex items-center justify-center min-h-[400px]">
           <AnimatedLoader size="md" />
         </div>
@@ -85,7 +85,7 @@ export function CampaignDetailsPage() {
 
   if (!details) {
     return (
-      <Container>
+      <Container className="dashboard-actionable-cursors">
         <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
           <AlertCircle className="h-12 w-12 text-gray-400" />
           <h2 className="text-xl font-semibold">Campaign Not Found</h2>
@@ -102,7 +102,7 @@ export function CampaignDetailsPage() {
   const { campaign, tenantBreakdown } = details;
 
   return (
-    <Container>
+    <Container className="dashboard-actionable-cursors">
       <div className="space-y-6">
         {/* Header with Back Button */}
         <div className="flex items-center gap-4">

@@ -168,7 +168,7 @@ const PaymentCancelled: React.FC = () => {
               </Button>
               <Button
                 variant="outline"
-                onClick={() => navigate({ to: '/dashboard' })}
+                onClick={() => navigate({ to: '/dashboard/applications' })}
                 className="px-8 py-3 text-lg border-2"
               >
                 <ArrowLeft className="h-5 w-5 mr-2" />

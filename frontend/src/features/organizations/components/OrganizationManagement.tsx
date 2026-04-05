@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo, Suspense } from 'react'
+import React, { useState, useEffect, useMemo, useCallback, Suspense } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { useNavigate } from '@tanstack/react-router'
+import { useNavigate, useLocation, useSearch } from '@tanstack/react-router'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { PearlButton } from '@/components/ui/pearl-button'
@@ -11,15 +11,31 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 const OrganizationHierarchyFlow = React.lazy(() => import('@/features/organizations/components/OrganizationHierarchyFlow').then(m => ({ default: m.OrganizationHierarchyFlow })))
 import { EditResponsiblePersonModal } from './modals/EditResponsiblePersonModal'
+import {
+  ORGANIZATION_CREATE_STEPS,
+  OrganizationCreateStepper,
+} from '@/features/organizations/components/OrganizationCreateStepper'
 import { Application } from '@/hooks/useDashboardData'
 import { useTenantApplications } from '@/hooks/useSharedQueries'
 import { Container } from '@/components/common/Page'
 import { useDashboardData } from '@/hooks/useDashboardData'
 import { useOrganizationAuth } from '@/hooks/useOrganizationAuth'
 import api from '@/lib/api'
+import {
+  DashboardPageHeader,
+  DASHBOARD_TABS_LIST_CLASS,
+} from '@/components/dashboard/DashboardPageHeader'
 
 import {
   Users,
@@ -29,6 +45,7 @@ import {
   MapPin,
   Network,
   ChevronRight,
+  ChevronLeft,
   ChevronDown,
   TreePine,
   AlertTriangle,
@@ -252,6 +269,31 @@ export function OrganizationTreeManagement({
   loadResponsiblePersonNames: (entities: (Entity | Organization)[]) => Promise<void>;
 }) {
   const navigate = useNavigate()
+  const location = useLocation()
+  const urlSearch = useSearch({ strict: false }) as Record<string, string | undefined>
+  /** Persisted via `?view=map` — full-screen React Flow hierarchy */
+  const showHierarchyChart = urlSearch.view === 'map'
+
+  const openHierarchyMap = useCallback(() => {
+    navigate({
+      to: location.pathname,
+      search: (prev: Record<string, unknown>) => ({ ...(prev ?? {}), view: 'map' }),
+      replace: true,
+    })
+  }, [navigate, location.pathname])
+
+  const closeHierarchyMap = useCallback(() => {
+    navigate({
+      to: location.pathname,
+      search: (prev: Record<string, unknown>) => {
+        const p = { ...(prev ?? {}) }
+        delete p.view
+        return p
+      },
+      replace: true,
+    })
+  }, [navigate, location.pathname])
+
   const { data: cachedApplications = [] } = useTenantApplications(tenantId);
 
   const effectiveApplications = useMemo(() => {
@@ -281,7 +323,6 @@ export function OrganizationTreeManagement({
   const [showEdit, setShowEdit] = useState(false);
   const [showCreditTransfer, setShowCreditTransfer] = useState(false);
   const [showAllocationDialog, setShowAllocationDialog] = useState(false);
-  const [showHierarchyChart, setShowHierarchyChart] = useState(false);
   const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
   const [selectedEntity, setSelectedEntity] = useState<Entity | null>(null);
   const [allocating, setAllocating] = useState(false);
@@ -342,8 +383,6 @@ export function OrganizationTreeManagement({
       email: e.email ?? ''
     }));
   }, [managerUsers, employees]);
-
-  const currentCreateSteps = ['Basic Information', 'Location & Currency', 'Legal & Compliance', 'Contact & Additional'];
 
   const loadData = async () => {
     try {
@@ -633,12 +672,12 @@ export function OrganizationTreeManagement({
   const handleCreateNext = () => {
     const err = validateCreateStep(createFormStep);
     if (err) return toast.error(err);
-    setCreateFormStep(s => Math.min(s + 1, currentCreateSteps.length - 1));
+    setCreateFormStep(s => Math.min(s + 1, ORGANIZATION_CREATE_STEPS.length - 1));
   };
 
   const createEntity = async () => {
     if (isCreatingEntity) return;
-    for (let step = 0; step < currentCreateSteps.length; step += 1) {
+    for (let step = 0; step < ORGANIZATION_CREATE_STEPS.length; step += 1) {
       const err = validateCreateStep(step);
       if (err) {
         setCreateFormStep(step);
@@ -1174,7 +1213,7 @@ export function OrganizationTreeManagement({
   // --- Render ---
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
+    <div className="space-y-6">
 
       {/* Header Stats & Tools */}
       <div className="flex flex-col xl:flex-row gap-4 justify-between items-start xl:items-center bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
@@ -1224,8 +1263,7 @@ export function OrganizationTreeManagement({
               variant="secondary"
               size="sm"
               className="h-9"
-              onClick={() => setShowHierarchyChart(true)}
-              data-tour-feature="visual-map"
+              onClick={openHierarchyMap}
             >
               <List className="w-3.5 h-3.5 mr-2" />
               Visual Map
@@ -1386,16 +1424,15 @@ export function OrganizationTreeManagement({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex items-center gap-1 py-2">
-            {currentCreateSteps.map((step, i) => (
-              <React.Fragment key={step}>
-                <div className="flex items-center gap-1.5">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold ${i === createFormStep ? 'bg-[#1B2E5A] text-white' : i < createFormStep ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-500'}`}>{i < createFormStep ? '✓' : i + 1}</div>
-                  <span className={`text-xs hidden sm:block ${i === createFormStep ? 'text-[#1B2E5A] font-medium' : 'text-gray-400'}`}>{step}</span>
-                </div>
-                {i < currentCreateSteps.length - 1 && <div className={`flex-1 h-px ${i < createFormStep ? 'bg-green-400' : 'bg-gray-200'}`} />}
-              </React.Fragment>
-            ))}
+          <div className="space-y-3 border-b border-slate-100 pb-5 dark:border-slate-800">
+            <div className="flex items-center gap-2 text-lg font-semibold text-[#1B2E5A] dark:text-slate-100">
+              <Building className="h-5 w-5 shrink-0 text-[#1B2E5A] dark:text-[#1B2E5A]/60" aria-hidden />
+              {ORGANIZATION_CREATE_STEPS[createFormStep].title}
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {ORGANIZATION_CREATE_STEPS[createFormStep].description}
+            </p>
+            <OrganizationCreateStepper currentStep={createFormStep} />
           </div>
 
           <div className="grid gap-4 py-2 min-h-[240px]">
@@ -1568,11 +1605,24 @@ export function OrganizationTreeManagement({
 
           <DialogFooter className="gap-2">
             <PearlButton variant="outline" onClick={() => { setShowCreateSub(false); setCreateFormStep(0); }} disabled={isCreatingEntity}>Cancel</PearlButton>
-            {createFormStep > 0 && <PearlButton variant="outline" onClick={() => setCreateFormStep(s => s - 1)} disabled={isCreatingEntity}>Back</PearlButton>}
-            {createFormStep < currentCreateSteps.length - 1 ? (
-              <PearlButton onClick={handleCreateNext}>Next</PearlButton>
+            {createFormStep > 0 && (
+              <PearlButton
+                variant="outline"
+                onClick={() => setCreateFormStep(s => s - 1)}
+                disabled={isCreatingEntity}
+                className="gap-1"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Back
+              </PearlButton>
+            )}
+            {createFormStep < ORGANIZATION_CREATE_STEPS.length - 1 ? (
+              <PearlButton onClick={handleCreateNext} color="blue" className="gap-1">
+                Next
+                <ChevronRight className="h-4 w-4" />
+              </PearlButton>
             ) : (
-              <PearlButton onClick={createEntity} disabled={isCreatingEntity}>
+              <PearlButton onClick={createEntity} disabled={isCreatingEntity} color="blue">
                 {isCreatingEntity ? <><ZopkitRoundLoader size="xs" className="mr-2" />Creating...</> : 'Create Entity'}
               </PearlButton>
             )}
@@ -1580,19 +1630,22 @@ export function OrganizationTreeManagement({
         </DialogContent>
       </Dialog>
 
-      {/* Credit Transfer Dialog */}
-      <Dialog open={showCreditTransfer} onOpenChange={setShowCreditTransfer}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <CreditCard className="w-5 h-5" />
+      {/* Credit Transfer — drawer */}
+      <Sheet open={showCreditTransfer} onOpenChange={setShowCreditTransfer}>
+        <SheetContent
+          side="right"
+          className="flex h-full min-h-0 w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-lg [&>button]:text-white [&>button]:hover:bg-white/15"
+        >
+          <SheetHeader className="shrink-0 space-y-2 border-b border-white/10 bg-[#1B2E5A] px-6 pb-5 pt-8 text-white">
+            <SheetTitle className="flex items-center gap-2 text-lg font-semibold text-white">
+              <CreditCard className="h-5 w-5 shrink-0" aria-hidden />
               Transfer Credits
-            </DialogTitle>
-            <DialogDescription>
+            </SheetTitle>
+            <SheetDescription className="text-sm text-white/85">
               Transfer credits from {selectedOrg?.entityName} to its child organizations or locations.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-2">
+            </SheetDescription>
+          </SheetHeader>
+          <div className="grid flex-1 gap-4 overflow-y-auto px-6 py-5">
             {/* Source display */}
             <div>
               <Label>From (Source)</Label>
@@ -1720,12 +1773,14 @@ export function OrganizationTreeManagement({
               />
             </div>
           </div>
-          <DialogFooter>
-            <PearlButton variant="outline" onClick={() => setShowCreditTransfer(false)} disabled={isTransferringCredits}>Cancel</PearlButton>
+          <SheetFooter className="mt-0 shrink-0 flex-row justify-end gap-2 border-t border-[#1B2E5A]/10 bg-[#F0F4FA] px-6 py-4 dark:border-slate-700 dark:bg-slate-900/80">
+            <PearlButton variant="outline" onClick={() => setShowCreditTransfer(false)} disabled={isTransferringCredits}>
+              Cancel
+            </PearlButton>
             <PearlButton
               onClick={handleTransferCredits}
               disabled={isTransferringCredits || !creditTransferForm.destinationEntityId || !creditTransferForm.amount || creditTransferForm.destinationEntityId === 'no-orgs' || creditTransferForm.destinationEntityId === 'no-locations'}
-              className="bg-green-600 hover:bg-green-700"
+              className="bg-[#1B2E5A] text-white hover:bg-[#243A6C]"
             >
               {isTransferringCredits ? (
                 <>
@@ -1734,26 +1789,33 @@ export function OrganizationTreeManagement({
                 </>
               ) : (
                 <>
-                  <ArrowRightLeft className="w-4 h-4 mr-2" />
+                  <ArrowRightLeft className="mr-2 h-4 w-4" />
                   Transfer Credits
                 </>
               )}
             </PearlButton>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
 
-      <Dialog open={showAllocationDialog} onOpenChange={setShowAllocationDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Allocate Credits to Application</DialogTitle>
-            <DialogDescription>
+      {/* Allocate credits — drawer */}
+      <Sheet open={showAllocationDialog} onOpenChange={setShowAllocationDialog}>
+        <SheetContent
+          side="right"
+          className="flex h-full min-h-0 w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-lg [&>button]:text-white [&>button]:hover:bg-white/15"
+        >
+          <SheetHeader className="shrink-0 space-y-2 border-b border-white/10 bg-[#1B2E5A] px-6 pb-5 pt-8 text-white">
+            <SheetTitle className="text-lg font-semibold text-white">Allocate Credits to Application</SheetTitle>
+            <SheetDescription className="text-sm text-white/85">
               {selectedEntity && (
-                <>Allocating from: <strong>{selectedEntity.entityName}</strong> (Available: {(selectedEntity.availableCredits || 0).toLocaleString()} credits)</>
+                <>
+                  Allocating from: <strong className="text-white">{selectedEntity.entityName}</strong> (Available:{' '}
+                  {(selectedEntity.availableCredits || 0).toLocaleString()} credits)
+                </>
               )}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-2">
+            </SheetDescription>
+          </SheetHeader>
+          <div className="grid flex-1 gap-4 overflow-y-auto px-6 py-5">
             <div className="space-y-2">
               <Label>Application <span className="text-red-500">*</span></Label>
               <Select
@@ -1812,24 +1874,33 @@ export function OrganizationTreeManagement({
               </Label>
             </div>
           </div>
-          <DialogFooter>
-            <PearlButton variant="outline" onClick={() => setShowAllocationDialog(false)}>Cancel</PearlButton>
+          <SheetFooter className="mt-0 shrink-0 flex-row justify-end gap-2 border-t border-[#1B2E5A]/10 bg-[#F0F4FA] px-6 py-4 dark:border-slate-700 dark:bg-slate-900/80">
+            <PearlButton variant="outline" onClick={() => setShowAllocationDialog(false)}>
+              Cancel
+            </PearlButton>
             <PearlButton
               onClick={handleAllocateCredits}
               disabled={allocating || !allocationForm.targetApplication || !allocationForm.creditAmount || allocationForm.creditAmount <= 0}
+              className="bg-[#1B2E5A] text-white hover:bg-[#243A6C]"
             >
-              {allocating ? <><ZopkitRoundLoader size="xs" className="mr-2" /> Allocating...</> : 'Allocate Credits'}
+              {allocating ? (
+                <>
+                  <ZopkitRoundLoader size="xs" className="mr-2" /> Allocating...
+                </>
+              ) : (
+                'Allocate Credits'
+              )}
             </PearlButton>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
 
       {/* Chart Modal */}
       {showHierarchyChart && (
         <div className="fixed inset-0 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm flex flex-col">
           <div className="p-4 border-b flex justify-between items-center bg-white dark:bg-slate-900 shrink-0">
             <h2 className="text-xl font-bold">Visual Hierarchy</h2>
-            <Button variant="ghost" onClick={() => setShowHierarchyChart(false)}>Close</Button>
+            <Button variant="ghost" onClick={closeHierarchyMap}>Close</Button>
           </div>
           <div className="flex-1 min-h-0 overflow-hidden relative" style={{ minHeight: '400px' }}>
             <div className="absolute inset-0 w-full h-full">
@@ -1939,20 +2010,25 @@ export function OrganizationManagement({
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-[#1B2E5A] animate-in fade-in slide-in-from-left-4 duration-700">Organization</h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-1">Manage structure, departments, locations, and resources.</p>
-        </div>
-        <Button onClick={() => window.location.reload()} variant="outline" className="gap-2">
-          <RefreshCw className="h-4 w-4" /> Refresh
-        </Button>
-      </div>
+    <div className="space-y-8">
+      <DashboardPageHeader
+        title="Organization"
+        description="Manage structure, departments, locations, and resources."
+        actions={(
+          <Button onClick={() => window.location.reload()} variant="outline" className="gap-2">
+            <RefreshCw className="h-4 w-4" /> Refresh
+          </Button>
+        )}
+      />
 
       <Tabs defaultValue="hierarchy" className="w-full">
-        <TabsList className="bg-slate-100 dark:bg-slate-800 p-1">
-          <TabsTrigger value="hierarchy" className="data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700">Hierarchy & Locations</TabsTrigger>
+        <TabsList className={DASHBOARD_TABS_LIST_CLASS}>
+          <TabsTrigger
+            value="hierarchy"
+            className="gap-1.5 data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-slate-700"
+          >
+            Hierarchy & Locations
+          </TabsTrigger>
           {/* Add more tabs here if needed */}
         </TabsList>
         <TabsContent value="hierarchy" className="mt-6">
@@ -1976,6 +2052,7 @@ export function OrganizationManagement({
         isOpen={showEditResponsiblePerson}
         onClose={() => setShowEditResponsiblePerson(false)}
         entity={editingEntity}
+        employees={employees ?? []}
         onSuccess={async () => {
           queryClient.invalidateQueries({ queryKey: ['entities', 'hierarchy', tenantId] });
           queryClient.invalidateQueries({ queryKey: ['entities', 'available'] });

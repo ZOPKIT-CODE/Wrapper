@@ -1,26 +1,30 @@
 import React from 'react';
-import { PricingCardProps } from '@/types/pricing';
+import type { PricingCardProps } from '@/types/pricing';
 import { PearlButton } from '@/components/ui/pearl-button';
 import { cn } from '@/lib/utils';
+import { formatMonthlyInrDisplay, formatMonthlyUsdDisplay } from '@/features/billing/utils/planPriceDisplay';
 
 const PricingCard: React.FC<PricingCardProps> = ({
   name,
   description,
   credits,
   price,
-  currency,
+  currency: _currency,
   features,
-  validityMonths,
+  validityMonths: _validityMonths,
   recommended = false,
   onPurchase,
   isLoading = false,
-  monthlyPrice,
-  annualPrice,
+  annualPriceUsd,
+  annualPriceInr,
+  applicationDisplayCurrency = 'usd',
   freeCredits,
   type = 'topup',
   isPremium = false
 }) => {
   const isTopupCard = type === 'topup';
+  const showInr =
+    applicationDisplayCurrency === 'inr' && (annualPriceInr ?? 0) > 0;
 
   return (
     <div className="relative flex justify-center items-center">
@@ -33,7 +37,7 @@ const PricingCard: React.FC<PricingCardProps> = ({
       )}
 
       <div className={cn(
-        "relative flex flex-col gap-5 justify-between py-9 px-6 w-full max-w-[380px] h-[580px] mx-auto rounded-[2rem] transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] z-10 overflow-hidden cursor-pointer",
+        "relative flex flex-col gap-5 justify-between py-9 px-6 w-full max-w-[380px] min-h-[580px] mx-auto rounded-[2rem] transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] z-10 overflow-hidden cursor-pointer",
         isPremium
           ? "bg-[#1B2E5A]/5 border border-[#1B2E5A]/30 shadow-[0_20px_50px_-20px_rgba(27,46,90,0.2)] hover:scale-[1.03] hover:shadow-[0_40px_80px_-30px_rgba(27,46,90,0.3)]"
           : "bg-white border border-slate-200/60 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.05)] hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] hover:-translate-y-1"
@@ -68,30 +72,36 @@ const PricingCard: React.FC<PricingCardProps> = ({
             isPremium ? "bg-[#1B2E5A]/15" : "bg-slate-100"
           )} />
 
-          <div className="text-center py-2 space-y-1 flex-shrink-0">
+          <div className="text-center py-2 space-y-2 flex-shrink-0">
             {type === 'application' ? (
               <>
-                <div className="flex items-baseline justify-center gap-1">
+                <div className="flex flex-col items-center gap-0.5">
                   <span className={cn(
-                    "text-4xl font-black tracking-tight",
+                    "text-3xl font-black tracking-tight",
                     isPremium ? "text-[#1B2E5A]" : "text-slate-900"
-                  )}>${monthlyPrice}</span>
+                  )}>
+                    {showInr
+                      ? formatMonthlyInrDisplay(annualPriceInr ?? 0)
+                      : formatMonthlyUsdDisplay(annualPriceUsd ?? 0)}
+                  </span>
                   <span className={cn(
-                    "text-sm font-semibold",
+                    "text-xs font-semibold uppercase tracking-wide",
                     isPremium ? "text-[#1B2E5A]/60" : "text-slate-400"
-                  )}>/month</span>
+                  )}>
+                    {showInr ? 'per month (INR)' : 'per month (USD)'}
+                  </span>
                 </div>
                 <div className={cn(
-                  "text-[0.875rem] font-bold",
+                  "text-[0.875rem] font-bold pt-1",
                   isPremium ? "text-[#1B2E5A]" : "text-slate-700"
                 )}>
-                  {freeCredits?.toLocaleString()} Free Credits/month
+                  {freeCredits?.toLocaleString()} credits / year included
                 </div>
                 <div className={cn(
                   "text-[0.7rem] font-medium",
                   isPremium ? "text-[#1B2E5A]/50" : "text-slate-400"
                 )}>
-                  Annual billing available
+                  Billed annually
                 </div>
               </>
             ) : (
@@ -172,6 +182,6 @@ const PricingCard: React.FC<PricingCardProps> = ({
       </div>
     </div>
   );
-}
+};
 
 export default PricingCard;

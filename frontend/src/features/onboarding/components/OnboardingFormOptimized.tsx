@@ -141,7 +141,7 @@ export const OnboardingFormOptimized = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [redirectUrl, setRedirectUrl] = useState('/dashboard');
+  const [redirectUrl, setRedirectUrl] = useState('/dashboard/applications');
   const [companyName, setCompanyName] = useState<string | undefined>();
 
   const [userClassification] = useState<UserClassification | undefined>(() => {
@@ -391,10 +391,10 @@ export const OnboardingFormOptimized = () => {
         billingCountry: sanitizedData.billingCountry || businessDetails.country || sanitizedData.country,
         
         // Localization
-        timezone: sanitizedData.defaultTimeZone || 'America/New_York',
-        currency: sanitizedData.defaultCurrency || 'USD',
+        timezone: sanitizedData.defaultTimeZone || 'Asia/Kolkata',
+        currency: sanitizedData.defaultCurrency || 'INR',
         defaultLanguage: sanitizedData.defaultLanguage || 'en',
-        defaultLocale: sanitizedData.defaultLocale || 'en-US',
+        defaultLocale: sanitizedData.defaultLocale || 'en-IN',
         
         // Terms
         termsAccepted: sanitizedData.termsAccepted || false
@@ -406,7 +406,7 @@ export const OnboardingFormOptimized = () => {
         clearFormData();
         // Invalidate auth-status so dashboard gets fresh isTenantAdmin and permissions
         queryClient.invalidateQueries({ queryKey: queryKeys.authStatus });
-        const baseUrl = response.data?.data?.redirectUrl || '/dashboard';
+        const baseUrl = response.data?.data?.redirectUrl || '/dashboard/applications';
         const url = baseUrl.startsWith('/dashboard') && !baseUrl.includes('onboarding=complete')
           ? (baseUrl.includes('?') ? `${baseUrl}&onboarding=complete` : `${baseUrl}?onboarding=complete`)
           : baseUrl;

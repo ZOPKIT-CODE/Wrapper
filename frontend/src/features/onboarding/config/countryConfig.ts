@@ -188,6 +188,34 @@ export function autoPopulateLocalization(countryCode: string): LocalizationSetti
   };
 }
 
+/** Uppercase ISO country code, or `fallback` when missing/blank (default India). */
+export function resolveCountryCode(raw: unknown, fallback = 'IN'): string {
+  const s = raw != null ? String(raw).trim() : '';
+  if (!s) return fallback;
+  return s.toUpperCase();
+}
+
+/**
+ * When registration country is India, fills empty regional fields from Indian defaults
+ * (currency, locale, timezone, language, billing country).
+ */
+export function applyIndiaRegionalDefaultsIfMissing(values: Record<string, any>): void {
+  const country = resolveCountryCode(values.country ?? values.businessDetails?.country);
+  if (country !== 'IN') return;
+  const loc = autoPopulateLocalization('IN');
+  const setIfEmpty = (key: string, value: string) => {
+    const cur = values[key];
+    if (cur === undefined || cur === null || String(cur).trim() === '') {
+      values[key] = value;
+    }
+  };
+  setIfEmpty('defaultCurrency', loc.currency);
+  setIfEmpty('defaultLanguage', loc.language);
+  setIfEmpty('defaultLocale', loc.locale);
+  setIfEmpty('defaultTimeZone', loc.timezone);
+  setIfEmpty('billingCountry', 'IN');
+}
+
 /**
  * Get state field configuration based on country
  */

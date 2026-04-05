@@ -136,8 +136,6 @@ export const CACHE_KEYS = {
   APPLICATIONS: 'applications',
   MODULES: 'modules',
   DASHBOARD_METRICS: 'dashboard_metrics',
-  ACTIVITY_LOGS: 'activity_logs',
-  AUDIT_LOGS: 'audit_logs'
 } as const;
 
 // Helper functions for common cache operations
@@ -167,13 +165,6 @@ export const cacheHelpers = {
     cache.invalidatePattern('dashboard');
   },
 
-  // Invalidate activity-related cache
-  invalidateActivity: () => {
-    cache.invalidate(CACHE_KEYS.ACTIVITY_LOGS);
-    cache.invalidate(CACHE_KEYS.AUDIT_LOGS);
-    cache.invalidatePattern('activity');
-    cache.invalidatePattern('audit');
-  },
 
   // Clear all cache
   clearAll: () => {

@@ -1,7 +1,15 @@
 import React from 'react';
 import { Link } from '@tanstack/react-router';
-import { Twitter, Linkedin, Mail, MapPin, Phone, MessageSquare } from 'lucide-react';
+import { Linkedin, Facebook, Instagram, AtSign, Mail, MapPin, Phone } from 'lucide-react';
 import { config } from '@/lib/config';
+
+const footerPolicyLinks = [
+  { to: '/privacy', label: 'Privacy Policy' },
+  { to: '/terms', label: 'Terms of Service' },
+  { to: '/refund-policy', label: 'Cancellation & Refund Policy' },
+  { to: '/cookies', label: 'Cookie Policy' },
+  { to: '/security', label: 'Security' },
+] as const;
 
 export function LandingFooter() {
   return (
@@ -11,7 +19,7 @@ export function LandingFooter() {
           
           {/* Brand Column */}
           <div className="space-y-6">
-            <Link to="/" className="flex items-center space-x-2 block w-fit">
+            <Link to="/" className="flex items-center space-x-2 block w-fit cursor-pointer">
               <img
                 src={config.FULL_LOGO_URL}
                 alt="Zopkit"
@@ -21,11 +29,36 @@ export function LandingFooter() {
             <p className="text-slate-600 leading-relaxed">
               The complete business operating system for modern companies. Streamline operations, boost productivity, and scale faster.
             </p>
-            <div className="flex space-x-4">
-              <SocialLink href="https://x.com/zopkit" icon={<Twitter size={20} />} label="X (Twitter)" target="_blank" rel="noopener noreferrer" />
-              <SocialLink href="https://www.linkedin.com/company/zopkit/" icon={<Linkedin size={20} />} label="LinkedIn" target="_blank" rel="noopener noreferrer" />
-              <SocialLink href="https://www.reddit.com/r/zopkit/" icon={<MessageSquare size={20} />} label="Reddit" target="_blank" rel="noopener noreferrer" />
-            </div>
+            <nav className="flex flex-wrap gap-3" aria-label="Zopkit on social media">
+              <SocialLink
+                href="https://www.linkedin.com/company/zopkit/posts/?feedView=all"
+                icon={<Linkedin size={20} />}
+                label="Zopkit on LinkedIn"
+                target="_blank"
+                rel="noopener noreferrer"
+              />
+              <SocialLink
+                href="https://www.facebook.com/Zopkit/photos/"
+                icon={<Facebook size={20} />}
+                label="Zopkit on Facebook"
+                target="_blank"
+                rel="noopener noreferrer"
+              />
+              <SocialLink
+                href="https://www.instagram.com/iamzopkit/"
+                icon={<Instagram size={20} />}
+                label="Zopkit on Instagram"
+                target="_blank"
+                rel="noopener noreferrer"
+              />
+              <SocialLink
+                href="https://www.threads.com/@iamzopkit"
+                icon={<AtSign size={20} />}
+                label="Zopkit on Threads"
+                target="_blank"
+                rel="noopener noreferrer"
+              />
+            </nav>
           </div>
 
           {/* Product Column */}
@@ -67,7 +100,7 @@ export function LandingFooter() {
               <FooterLink to="/help">Help Center</FooterLink>
               <FooterLink to="/community">Community</FooterLink>
               <FooterLink to="/roadmap">Product Roadmap</FooterLink>
-              <FooterLink to="#pricing">Pricing</FooterLink>
+              <FooterLink to="/pricing">Pricing</FooterLink>
             </ul>
           </div>
 
@@ -97,7 +130,7 @@ export function LandingFooter() {
                   placeholder="Enter your email" 
                   className="bg-white border border-slate-300 text-[#1B2E5A] rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-[#1B2E5A]/20 focus:border-[#1B2E5A]/40 transition-all"
                 />
-                <button className="bg-[#1B2E5A] hover:bg-[#243B6E] text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                <button type="button" className="bg-[#1B2E5A] hover:bg-[#243B6E] text-white px-4 py-2 rounded-lg font-medium transition-colors cursor-pointer">
                   Go
                 </button>
               </div>
@@ -105,16 +138,45 @@ export function LandingFooter() {
           </div>
         </div>
 
-        <div className="pt-8 border-t border-slate-200 flex flex-col md:flex-row justify-between items-center gap-4">
+        {/* Legal & policies — centered; policy URLs for compliance (e.g. payments onboarding) */}
+        <div className="border-t border-slate-200 pt-10 sm:pt-12 pb-2">
+          <div className="mx-auto text-center px-2 max-w-7xl">
+            <h2 className="text-sm font-semibold text-[#1B2E5A] tracking-wide uppercase mb-4">
+              Legal &amp; policies
+            </h2>
+            <p className="text-slate-600 text-sm mb-6 leading-relaxed max-w-2xl mx-auto">
+              Our privacy, terms, cancellation &amp; refund, and security policies describe how we handle your data,
+              subscriptions, and payments.
+            </p>
+            <div className="flex justify-center overflow-x-auto pb-1 [scrollbar-width:thin]">
+              <nav
+                className="inline-flex flex-nowrap items-center justify-center text-xs sm:text-sm text-[#1B2E5A]"
+                aria-label="Legal and policy documents"
+              >
+                {footerPolicyLinks.map((item, i) => (
+                  <React.Fragment key={item.to}>
+                    {i > 0 && (
+                      <span className="text-slate-300 px-2 sm:px-2.5 shrink-0 select-none" aria-hidden>
+                        |
+                      </span>
+                    )}
+                    <Link
+                      to={item.to}
+                      className="font-medium hover:underline underline-offset-2 whitespace-nowrap shrink-0 cursor-pointer"
+                    >
+                      {item.label}
+                    </Link>
+                  </React.Fragment>
+                ))}
+              </nav>
+            </div>
+          </div>
+        </div>
+
+        <div className="pt-8 border-t border-slate-200 text-center">
           <p className="text-slate-500 text-sm">
             © {new Date().getFullYear()} Zopkit Inc. All rights reserved.
           </p>
-          <div className="flex flex-wrap gap-6 text-sm text-slate-500">
-            <Link to="/privacy" className="hover:text-[#1B2E5A] transition-colors">Privacy Policy</Link>
-            <Link to="/terms" className="hover:text-[#1B2E5A] transition-colors">Terms of Service</Link>
-            <Link to="/cookies" className="hover:text-[#1B2E5A] transition-colors">Cookie Policy</Link>
-            <Link to="/security" className="hover:text-[#1B2E5A] transition-colors">Security</Link>
-          </div>
         </div>
       </div>
     </footer>
@@ -127,7 +189,7 @@ function SocialLink({ href, icon, label, target, rel }: { href: string; icon: Re
       href={href}
       target={target}
       rel={rel}
-      className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-[#1B2E5A]/5 hover:text-[#1B2E5A] hover:border-[#1B2E5A]/20 transition-all duration-300 shadow-sm hover:shadow"
+      className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-[#1B2E5A]/5 hover:text-[#1B2E5A] hover:border-[#1B2E5A]/20 transition-all duration-300 shadow-sm hover:shadow cursor-pointer"
       aria-label={label}
     >
       {icon}
@@ -140,7 +202,7 @@ function FooterLink({ to, children }: { to: string; children: React.ReactNode })
     <li>
       <Link 
         to={to} 
-        className="text-slate-600 hover:text-[#1B2E5A] transition-colors flex items-center gap-1 group"
+        className="text-slate-600 hover:text-[#1B2E5A] transition-colors flex items-center gap-1 group cursor-pointer"
       >
         <span className="w-1 h-1 rounded-full bg-slate-300 group-hover:bg-[#1B2E5A] transition-colors mr-2"></span>
         {children}

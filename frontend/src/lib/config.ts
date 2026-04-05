@@ -19,6 +19,8 @@ interface Config {
   // Assets
   LOGO_URL: string;
   FULL_LOGO_URL: string;
+  /** Full Zopkit wordmark for onboarding (defaults to Cloudinary full logo). */
+  ONBOARDING_LOGO_URL: string;
 }
 
 const getEnvVar = (key: string, fallback: string): string => {
@@ -56,6 +58,10 @@ export const config: Config = {
     'VITE_FULL_LOGO_URL',
     'https://res.cloudinary.com/dr9vzaa7u/image/upload/v1771698937/Zopkit-full_n7lm0f.png',
   ),
+  ONBOARDING_LOGO_URL: getEnvVar(
+    'VITE_ONBOARDING_LOGO_URL',
+    'https://res.cloudinary.com/dr9vzaa7u/image/upload/v1765126845/Zopkit_Simple_Logo_glohfr.jpg',
+  ),
 };
 
 export const {
@@ -71,6 +77,7 @@ export const {
   AFFILIATE_APP_URL,
   LOGO_URL,
   FULL_LOGO_URL,
+  ONBOARDING_LOGO_URL,
 } = config;
 
 export const isDevelopment = () => NODE_ENV === 'development';

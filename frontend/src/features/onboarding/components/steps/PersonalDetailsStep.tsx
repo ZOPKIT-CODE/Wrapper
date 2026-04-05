@@ -67,7 +67,7 @@ export const PersonalDetailsStep = ({ form, userClassification }: PersonalDetail
     <div className="space-y-8">
       <div className="space-y-2">
         <div className="flex items-center gap-2 mb-4">
-          {userClassification && (
+          {userClassification && userClassification !== 'aspiringFounder' && (
             <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-100 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide">
               {userClassification.replace(/([A-Z])/g, ' $1').trim()}
             </Badge>

@@ -91,10 +91,12 @@ export function BillingStatusNavbar({ className }: BillingStatusNavbarProps) {
 
   // Get categorized expiry dates - prioritize subscription expiry for consistency
   // Use subscription.currentPeriodEnd as the primary source (same as billing page)
-  const subscriptionExpiryDate = subscription?.currentPeriodEnd || subscription?.subscriptionExpiry;
-  const freeCreditsExpiry = creditData?.freeCreditsExpiry || subscriptionExpiryDate || subscription?.freeCreditsExpiry;
-  const paidCreditsExpiry = creditData?.paidCreditsExpiry || subscription?.paidCreditsExpiry; // null = never expires
-  const seasonalCreditsExpiry = creditData?.seasonalCreditsExpiry || subscription?.seasonalCreditsExpiry;
+  const subscriptionExpiryDate = subscription?.currentPeriodEnd;
+  // Credit expiry fields come exclusively from creditData (useCreditStatusQuery).
+  // subscription no longer carries credit data.
+  const freeCreditsExpiry = creditData?.freeCreditsExpiry || subscriptionExpiryDate;
+  const paidCreditsExpiry = creditData?.paidCreditsExpiry ?? null;
+  const seasonalCreditsExpiry = creditData?.seasonalCreditsExpiry ?? null;
   
   // Format date consistently with billing page (includes year)
   const formatExpiryDate = (date: string | null | undefined) => {

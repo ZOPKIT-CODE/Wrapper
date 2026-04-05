@@ -2,7 +2,7 @@
  * Navigation Buttons Component
  */
 
-import React, { useMemo } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { StepConfig } from '../config/flowConfigs';
 
@@ -39,46 +39,54 @@ export const NavigationButtons: React.FC<NavigationButtonsProps> = ({
   const canProceedNow = canProceed();
   const canSubmitNow = canSubmit() && !isSubmitting;
 
+  const pct = Math.round((currentStep / (stepsConfig.length || 1)) * 100);
+
   return (
-    <div className={`flex justify-between items-center gap-4 ${className}`}>
+    <div className={`flex items-center justify-between gap-4 ${className}`}>
       <Button
         type="button"
         variant="outline"
         onClick={onPrev}
         disabled={isFirstStep}
-        className="px-6 py-2.5 min-w-[100px] disabled:opacity-50 disabled:cursor-not-allowed"
+        className="h-11 min-w-[100px] rounded-lg border-slate-200/90 bg-white px-5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:border-blue-200 hover:bg-slate-50 hover:text-blue-950 disabled:cursor-not-allowed disabled:opacity-35"
       >
         <span className="flex items-center gap-2">
-          <span>←</span> Previous
+          <span className="text-base leading-none opacity-70">←</span> Previous
         </span>
       </Button>
-      
-      <div className="flex flex-col items-center">
-        <div className="text-sm font-semibold text-slate-700">
+
+      <div className="flex flex-col items-center gap-1 rounded-full bg-slate-100/90 px-5 py-2 ring-1 ring-slate-200/70">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
           Step {currentStep} of {stepsConfig.length || 0}
-        </div>
-        <div className="text-xs text-slate-500 mt-0.5 font-medium">
-          {Math.round((currentStep / (stepsConfig.length || 1)) * 100)}% Complete
+        </p>
+        <div className="flex items-center gap-2">
+          <div className="h-1 w-16 overflow-hidden rounded-full bg-slate-200/90">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-blue-700 to-blue-950 transition-[width] duration-300 ease-out"
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+          <p className="text-xs font-semibold tabular-nums text-slate-600">{pct}%</p>
         </div>
       </div>
-      
+
       {isLastStep ? (
         <Button
           type="submit"
           onClick={onSubmit}
           disabled={!canSubmitNow}
-          className="px-8 py-3 min-w-[180px] bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white font-bold text-lg shadow-lg shadow-pink-500/30 rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed transform hover:-translate-y-1 transition-all duration-300"
+          className="h-11 min-w-[180px] rounded-lg bg-gradient-to-b from-blue-800 to-blue-950 px-6 text-sm font-semibold text-white shadow-lg shadow-blue-950/25 transition-[transform,box-shadow] hover:from-blue-700 hover:to-blue-900 hover:shadow-blue-950/35 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100"
         >
           <span className="flex items-center gap-2">
             {isSubmitting ? (
               <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                <span>Submitting...</span>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Submitting…</span>
               </>
             ) : (
               <>
-                <span>Launch Workspace</span>
-                <Rocket className="w-5 h-5" />
+                <span>Launch workspace</span>
+                <Rocket className="h-4 w-4" />
               </>
             )}
           </span>
@@ -88,11 +96,11 @@ export const NavigationButtons: React.FC<NavigationButtonsProps> = ({
           type="button"
           onClick={onNext}
           disabled={!canProceedNow}
-          className="px-8 py-3 min-w-[140px] bg-slate-900 hover:bg-slate-800 text-white font-semibold shadow-lg rounded-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-slate-900"
+          className="h-11 min-w-[124px] rounded-lg bg-gradient-to-b from-blue-800 to-blue-950 px-6 text-sm font-semibold text-white shadow-lg shadow-blue-950/25 transition-[transform,box-shadow] hover:from-blue-700 hover:to-blue-900 hover:shadow-blue-950/35 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100"
         >
           <span className="flex items-center gap-2">
             <span>Next</span>
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
             </svg>
           </span>

@@ -1,6 +1,5 @@
 export { MetricCard } from './MetricCard'
 export { default as PricingCard } from './PricingCard'
 export { default as GreetingCard } from './GreetingCard'
-export { default as ActivityFeed } from './ActivityFeed'
 export { ThemeBadge } from './ThemeBadge'
 export { default as ActionableAlert } from './ActionableAlert'

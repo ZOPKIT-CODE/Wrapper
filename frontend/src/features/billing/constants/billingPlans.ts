@@ -1,18 +1,18 @@
 /**
  * Billing plans and credit top-up constants.
- * Fallback data when API is unavailable; must match backend IDs: starter, professional, enterprise.
+ * Fallback when API is unavailable; must match backend plan ids: starter, professional, enterprise.
+ * Subscription billing is annual only (Stripe/API). UI may show monthly equivalent.
  */
 
 import type { ApplicationPlan, CreditTopup } from '@/types/pricing'
 
-/** Fallback application plans (when API fails or mock mode) */
 export const applicationPlansFallback: ApplicationPlan[] = [
   {
     id: 'starter',
     name: 'Starter',
     description: 'Essential tools for small teams',
-    monthlyPrice: 10,
-    annualPrice: 120,
+    annualPriceUsd: 120,
+    annualPriceInr: 9999,
     currency: 'USD',
     freeCredits: 60000,
     features: ['CRM tools', 'User Management', 'Basic permissions', 'Email support']
@@ -21,8 +21,8 @@ export const applicationPlansFallback: ApplicationPlan[] = [
     id: 'professional',
     name: 'Professional',
     description: 'Comprehensive tools for growing businesses',
-    monthlyPrice: 20,
-    annualPrice: 240,
+    annualPriceUsd: 240,
+    annualPriceInr: 19999,
     currency: 'USD',
     freeCredits: 300000,
     features: [
@@ -38,8 +38,8 @@ export const applicationPlansFallback: ApplicationPlan[] = [
     id: 'enterprise',
     name: 'Enterprise',
     description: 'Complete solution with all features',
-    monthlyPrice: 30,
-    annualPrice: 360,
+    annualPriceUsd: 360,
+    annualPriceInr: 29999,
     currency: 'USD',
     freeCredits: 1200000,
     features: [
@@ -52,7 +52,6 @@ export const applicationPlansFallback: ApplicationPlan[] = [
   }
 ]
 
-/** Credit top-up plans (one-time purchases) */
 export const creditTopups: CreditTopup[] = [
   {
     id: 'credits_5000',

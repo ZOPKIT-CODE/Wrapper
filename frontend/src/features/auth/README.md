@@ -28,7 +28,7 @@ Login page with Google social sign-in:
 - Integrates with Kinde SDK for authentication
 - Supports CRM entry points (`returnTo`, `source`, `crmRedirect` query params)
 - Checks onboarding status post-login and redirects accordingly
-- Uses `crmAuthService` for CRM-specific redirect logic
+- CRM redirect / `returnTo` validation lives in `Login.tsx` (same module as the page)
 
 ### InviteAccept
 
@@ -49,5 +49,4 @@ Invitation acceptance flow:
 
 - `@kinde-oss/kinde-auth-react` — Authentication SDK (`useKindeAuth`, `getToken`, `login`)
 - `@/lib/config` — `WRAPPER_DOMAIN`, `LOGO_URL`, `CRM_DOMAIN`
-- `@/services/crmAuthService` — CRM redirect logic (Login page)
 - `framer-motion` — Login page animations

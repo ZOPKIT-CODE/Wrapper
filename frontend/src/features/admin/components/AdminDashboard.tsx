@@ -99,7 +99,7 @@ const AdminDashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <Container className="min-h-[400px] flex items-center justify-center">
+      <Container className="min-h-[400px] flex items-center justify-center dashboard-actionable-cursors">
         <Loader2 className="h-8 w-8 animate-spin" />
         <span className="ml-2">Loading dashboard...</span>
       </Container>
@@ -108,7 +108,7 @@ const AdminDashboard: React.FC = () => {
 
   if (error) {
     return (
-      <Container>
+      <Container className="dashboard-actionable-cursors">
         <Alert>
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>{error}</AlertDescription>
@@ -124,7 +124,7 @@ const AdminDashboard: React.FC = () => {
   }
 
   return (
-    <Container wide className="bg-transparent">
+    <Container wide className="bg-transparent dashboard-actionable-cursors">
       <div className="mb-6">
 
         <div className="flex items-center justify-between">

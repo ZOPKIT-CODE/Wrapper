@@ -175,7 +175,7 @@ export const TaxDetailsStep = memo(({ form, userClassification }: TaxDetailsStep
       {/* Header */}
       <div className="relative">
         <div className="flex items-center gap-2 mb-3">
-          {userClassification && (
+          {userClassification && userClassification !== 'aspiringFounder' && (
             <Badge
               variant="outline"
               className="bg-white/50 text-slate-600 border-slate-200 px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase shadow-sm"
@@ -198,7 +198,7 @@ export const TaxDetailsStep = memo(({ form, userClassification }: TaxDetailsStep
       <div className="space-y-8">
         
         {/* Registration Status Switch */}
-        <div className="glass-card p-8 rounded-xl bg-white/60 backdrop-blur-xl border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-slate-900/5 space-y-6">
+        <div className="space-y-6 rounded-lg border border-blue-100 bg-white p-8 shadow-sm ring-1 ring-blue-950/[0.04]">
           <FormField
             control={form.control}
             name="vatGstRegistered"
@@ -211,7 +211,7 @@ export const TaxDetailsStep = memo(({ form, userClassification }: TaxDetailsStep
                         <TooltipTrigger asChild>
                           <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-help" />
                         </TooltipTrigger>
-                        <TooltipContent className="max-w-xs bg-slate-900 text-white">
+                        <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                           <p className="font-semibold mb-1">Optional Field</p>
                           <p>Indicates if you have a VAT (Value Added Tax), GST (Goods & Services Tax), or Sales Tax registration number. When enabled, the corresponding tax ID field becomes mandatory for compliance and tax-compliant invoicing.</p>
                         </TooltipContent>
@@ -247,7 +247,7 @@ export const TaxDetailsStep = memo(({ form, userClassification }: TaxDetailsStep
 
         {/* Conditional GST/VAT Fields */}
         {vatGstRegistered && (
-          <div className="glass-card p-8 rounded-xl bg-white/60 backdrop-blur-xl border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-slate-900/5 space-y-6">
+          <div className="space-y-6 rounded-lg border border-blue-100 bg-white p-8 shadow-sm ring-1 ring-blue-950/[0.04]">
             <h3 className="text-lg font-semibold text-[#1B2E5A]">Registration Numbers</h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -263,7 +263,7 @@ export const TaxDetailsStep = memo(({ form, userClassification }: TaxDetailsStep
                               <TooltipTrigger asChild>
                                 <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-help" />
                               </TooltipTrigger>
-                              <TooltipContent className="max-w-xs bg-slate-900 text-white">
+                              <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                                 <p className="font-semibold mb-1">{vatGstRegistered ? 'Mandatory Field' : 'Optional Field'}</p>
                                 <p>GST Identification Number (GSTIN) is a 15-character alphanumeric code for businesses registered under GST in India. {vatGstRegistered ? 'Required when VAT/GST Registered toggle is enabled. ' : ''}Used for GST-compliant invoicing, tax filing, and inter-state transactions.</p>
                               </TooltipContent>
@@ -343,7 +343,7 @@ export const TaxDetailsStep = memo(({ form, userClassification }: TaxDetailsStep
                               <TooltipTrigger asChild>
                                 <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-help" />
                               </TooltipTrigger>
-                              <TooltipContent className="max-w-xs bg-slate-900 text-white">
+                              <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                                 <p className="font-semibold mb-1">Optional Field</p>
                                 <p>VAT registration number issued by your country's tax authority. Required for VAT-compliant invoicing and tax reporting in countries with VAT systems.</p>
                               </TooltipContent>
@@ -366,7 +366,7 @@ export const TaxDetailsStep = memo(({ form, userClassification }: TaxDetailsStep
         )}
 
         {/* Address Section */}
-        <div className="glass-card p-8 rounded-xl bg-white/60 backdrop-blur-xl border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-slate-900/5 space-y-6">
+        <div className="space-y-6 rounded-lg border border-blue-100 bg-white p-8 shadow-sm ring-1 ring-blue-950/[0.04]">
           <h3 className="text-lg font-semibold text-[#1B2E5A]">Billing Address</h3>
 
           <FormField
@@ -380,7 +380,7 @@ export const TaxDetailsStep = memo(({ form, userClassification }: TaxDetailsStep
                     <TooltipTrigger asChild>
                       <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-help" />
                     </TooltipTrigger>
-                    <TooltipContent className="max-w-xs bg-slate-900 text-white">
+                    <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                       <p className="font-semibold mb-1">Mandatory Field</p>
                       <p>The registered business address used for legal documents, invoices, and tax compliance. Must match your business registration address.</p>
                     </TooltipContent>
@@ -424,7 +424,7 @@ export const TaxDetailsStep = memo(({ form, userClassification }: TaxDetailsStep
                       <TooltipTrigger asChild>
                         <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-help" />
                       </TooltipTrigger>
-                      <TooltipContent className="max-w-xs bg-slate-900 text-white">
+                      <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                         <p className="font-semibold mb-1">Mandatory Field</p>
                         <p>The city where your business is registered. Required for address validation, tax jurisdiction determination, and compliance.</p>
                       </TooltipContent>
@@ -452,7 +452,7 @@ export const TaxDetailsStep = memo(({ form, userClassification }: TaxDetailsStep
                       <TooltipTrigger asChild>
                         <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-help" />
                       </TooltipTrigger>
-                      <TooltipContent className="max-w-xs bg-slate-900 text-white">
+                      <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                         <p className="font-semibold mb-1">Mandatory Field</p>
                         <p>Postal or ZIP code for your registered business address. Required for accurate address validation, shipping, and tax calculations.</p>
                       </TooltipContent>
@@ -485,7 +485,7 @@ export const TaxDetailsStep = memo(({ form, userClassification }: TaxDetailsStep
                       <TooltipTrigger asChild>
                         <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-help" />
                       </TooltipTrigger>
-                      <TooltipContent className="max-w-xs bg-slate-900 text-white">
+                      <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                         <p className="font-semibold mb-1">{stateFieldConfig.required ? 'Mandatory' : 'Optional'} Field</p>
                         <p>State or province where your business is registered. Required for tax jurisdiction, compliance, and regional regulations in countries with state-level taxation.</p>
                       </TooltipContent>
@@ -529,7 +529,7 @@ export const TaxDetailsStep = memo(({ form, userClassification }: TaxDetailsStep
                       <TooltipTrigger asChild>
                         <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-help" />
                       </TooltipTrigger>
-                      <TooltipContent className="max-w-xs bg-slate-900 text-white">
+                      <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                         <p className="font-semibold mb-1">Optional Field</p>
                         <p>If your mailing address differs from your registered business address, enable this to enter a separate mailing address for correspondence and document delivery.</p>
                       </TooltipContent>

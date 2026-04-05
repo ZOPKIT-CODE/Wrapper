@@ -1,0 +1,28 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": [
+    "src/AppRoot.tsx",
+    "src/routes/router.tsx",
+    "src/routes/lazyPages.ts"
+  ],
+  "ignore": [
+    "postcss.config.cjs",
+    "scripts/**",
+    "src/App.tsx",
+    "src/components/forms/index.ts",
+    "src/features/admin/index.ts",
+    "src/features/admin/components/credit-configuration/index.ts"
+  ],
+  "ignoreDependencies": [
+    "@tailwindcss/postcss",
+    "autoprefixer",
+    "@typescript-eslint/eslint-plugin",
+    "@vitest/coverage-v8"
+  ],
+  "vite": {
+    "config": ["vite.config.ts"]
+  },
+  "eslint": {
+    "config": [".eslintrc.cjs"]
+  }
+}

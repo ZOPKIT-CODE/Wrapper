@@ -7,19 +7,21 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
+import { config } from '@/lib/config';
+import { ONBOARDING_CONFETTI_COLORS } from '../constants';
 import { CheckCircle2, Users, DollarSign, Shield, Zap } from 'lucide-react';
 // @ts-ignore - canvas-confetti doesn't have types
 import confetti from 'canvas-confetti';
 
 interface OnboardingWelcomeSuccessProps {
-  /** Redirect URL when user clicks "Go to Dashboard" (default: /dashboard?onboarding=complete so dashboard tour shows) */
+  /** Redirect URL when user clicks "Go to Dashboard" (default: applications hub with onboarding sync param) */
   redirectUrl?: string;
   /** Company name to display in welcome message */
   companyName?: string;
 }
 
 export const OnboardingWelcomeSuccess: React.FC<OnboardingWelcomeSuccessProps> = ({
-  redirectUrl = '/dashboard?onboarding=complete',
+  redirectUrl = '/dashboard/applications?onboarding=complete',
   companyName,
 }) => {
   const navigate = useNavigate();
@@ -31,11 +33,11 @@ export const OnboardingWelcomeSuccess: React.FC<OnboardingWelcomeSuccessProps> =
     if (redirectUrl.startsWith('http')) {
       window.location.href = redirectUrl;
     } else {
-      // Ensure dashboard tour (user guide) shows after onboarding - Dashboard checks for ?onboarding=complete
+      // OnboardingGuard uses ?onboarding=complete for post-onboarding auth sync
       const path = redirectUrl.split('?')[0];
       const search = redirectUrl.includes('?') ? redirectUrl.slice(redirectUrl.indexOf('?') + 1) : '';
       const params = new URLSearchParams(search);
-      if (path === '/dashboard' && !params.has('onboarding')) {
+      if ((path === '/dashboard' || path === '/dashboard/applications') && !params.has('onboarding')) {
         params.set('onboarding', 'complete');
       }
       const url = params.toString() ? `${path}?${params.toString()}` : path;
@@ -74,11 +76,12 @@ export const OnboardingWelcomeSuccess: React.FC<OnboardingWelcomeSuccessProps> =
           }
         }
 
-        fire(0.25, { spread: 26, startVelocity: 55, colors: ['#ec4899', '#f43f5e'] });
-        fire(0.2, { spread: 60, colors: ['#FFD700', '#FFA500'] });
-        fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8, colors: ['#ec4899', '#d946ef'] });
-        fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2, colors: ['#FFD700'] });
-        fire(0.1, { spread: 120, startVelocity: 45, colors: ['#ec4899', '#f43f5e'] });
+        const blues = [...ONBOARDING_CONFETTI_COLORS];
+        fire(0.25, { spread: 26, startVelocity: 55, colors: blues });
+        fire(0.2, { spread: 60, colors: blues });
+        fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8, colors: blues });
+        fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2, colors: blues });
+        fire(0.1, { spread: 120, startVelocity: 45, colors: blues });
       };
 
       fireConfetti();
@@ -86,11 +89,11 @@ export const OnboardingWelcomeSuccess: React.FC<OnboardingWelcomeSuccessProps> =
   }, [currentStep, steps.length]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-blue-50/30 to-white p-4 relative overflow-hidden">
-      {/* Background decorative elements */}
+    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-[#1B2E5A]/[0.06] to-slate-50 p-4 relative overflow-hidden">
+      {/* Background decorative elements — deep blue wash (tenant dashboard) */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-10 w-72 h-72 bg-pink-200/20 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-20 right-10 w-96 h-96 bg-blue-200/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-20 left-10 h-72 w-72 rounded-full bg-[#1B2E5A]/10 blur-3xl" />
+        <div className="absolute bottom-20 right-10 h-96 w-96 rounded-full bg-blue-300/15 blur-3xl" />
       </div>
 
       <div className="relative max-w-6xl mx-auto pt-6 pb-6">
@@ -101,26 +104,34 @@ export const OnboardingWelcomeSuccess: React.FC<OnboardingWelcomeSuccessProps> =
           initial={{ scale: 0.9, opacity: 0, y: 30 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           transition={{ type: 'spring', stiffness: 100, damping: 15 }}
-          className="bg-[#fffcf5] rounded-2xl pt-10 pb-8 px-6 text-center shadow-[0_30px_60px_-12px_rgba(0,0,0,0.15),0_10px_20px_-5px_rgba(0,0,0,0.1)] border-b-8 border-r-4 border-pink-100 relative"
+          className="relative rounded-2xl border-b-8 border-r-4 border-blue-200/60 bg-white px-6 pb-8 pt-10 text-center shadow-[0_30px_60px_-12px_rgba(27,46,90,0.12),0_10px_20px_-5px_rgba(27,46,90,0.08)]"
         >
-          {/* Ribbon Header */}
-          <div className="absolute -top-5 left-1/2 -translate-x-1/2 w-[115%] flex justify-center items-center z-20 filter drop-shadow-xl">
-            {/* Left Fold */}
-            <div className="h-8 w-6 bg-[#be185d] transform skew-y-12 translate-y-5 translate-x-1.5 rounded-l-sm" />
-            
-            {/* Main Ribbon */}
-            <div className="bg-[#db2777] text-white text-xl font-black py-3 px-10 rounded-lg relative flex items-center justify-center transform hover:scale-105 transition-transform duration-300 cursor-default shadow-lg">
-              <span className="drop-shadow-md">Welcome to Zopkit!</span>
-              {/* Stitching effect */}
-              <div className="absolute top-1 left-2 right-2 bottom-1 border-2 border-dashed border-white/30 rounded-md"></div>
+          <div className="mb-5 flex justify-center px-1">
+            <div className="flex aspect-square w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/80 bg-white p-2 shadow-md ring-1 ring-slate-200/60 sm:w-20">
+              <img
+                src={config.ONBOARDING_LOGO_URL}
+                alt="Zopkit"
+                className="h-full w-full object-contain object-center"
+              />
             </div>
-            
+          </div>
+          {/* Ribbon Header */}
+          <div className="absolute -top-5 left-1/2 z-20 flex w-[115%] -translate-x-1/2 items-center justify-center filter drop-shadow-xl">
+            {/* Left Fold */}
+            <div className="h-8 w-6 translate-x-1.5 translate-y-5 skew-y-12 rounded-l-sm bg-[#152247] transform" />
+
+            {/* Main Ribbon — deep blue (#1B2E5A) */}
+            <div className="relative flex transform cursor-default items-center justify-center rounded-lg bg-gradient-to-b from-[#243A6C] to-[#1B2E5A] px-10 py-3 text-xl font-black text-white shadow-lg transition-transform duration-300 hover:scale-[1.02]">
+              <span className="drop-shadow-md">Welcome to Zopkit!</span>
+              <div className="absolute bottom-1 left-2 right-2 top-1 rounded-md border-2 border-dashed border-white/25" />
+            </div>
+
             {/* Right Fold */}
-            <div className="h-8 w-6 bg-[#be185d] transform -skew-y-12 translate-y-5 -translate-x-1.5 rounded-r-sm" />
+            <div className="h-8 w-6 -translate-x-1.5 translate-y-5 -skew-y-12 rounded-r-sm bg-[#152247] transform" />
           </div>
 
-          <p className="text-[#be185d] font-bold text-sm tracking-wide">
-                Grow · Scale · Thrive
+          <p className="text-sm font-bold tracking-wide text-[#1B2E5A] dark:text-blue-200">
+            Grow · Scale · Thrive
           </p>
 
           {/* Content */}
@@ -130,7 +141,7 @@ export const OnboardingWelcomeSuccess: React.FC<OnboardingWelcomeSuccessProps> =
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2 }}
-              className="text-orange-400 font-bold text-base uppercase tracking-wider mb-3 animate-pulse"
+              className="mb-3 animate-pulse text-base font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400"
             >
               You've Unlocked 1000 Free Credits
             </motion.p>
@@ -172,7 +183,7 @@ export const OnboardingWelcomeSuccess: React.FC<OnboardingWelcomeSuccessProps> =
               transition={{ delay: 0.5 }}
               className="mb-3"
             >
-              <h2 className="text-lg font-bold text-slate-800 mb-1.5 leading-tight">
+              <h2 className="mb-1.5 text-lg font-bold leading-tight text-[#1B2E5A] dark:text-slate-100">
                 The All-in-One Platform
               </h2>
               <p className="text-slate-500 text-xs leading-relaxed max-w-xs mx-auto mb-3">
@@ -194,7 +205,7 @@ export const OnboardingWelcomeSuccess: React.FC<OnboardingWelcomeSuccessProps> =
               <Button
                 onClick={handleGoToDashboard}
                 disabled={isNavigating || currentStep < steps.length}
-                className="w-full max-w-xs mx-auto bg-[#db2777] hover:bg-[#be185d] text-white font-bold py-5 rounded-xl shadow-lg hover:shadow-xl transition-all text-sm relative group disabled:opacity-60 disabled:pointer-events-none disabled:cursor-not-allowed"
+                className="group relative mx-auto w-full max-w-xs rounded-xl bg-[#1B2E5A] py-5 text-sm font-bold text-white shadow-lg transition-all hover:bg-[#243A6C] hover:shadow-xl disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isNavigating ? 'Taking you there...' : currentStep < steps.length ? 'Complete setup to continue...' : 'Go to Dashboard'}
                 {currentStep >= steps.length && !isNavigating && (
@@ -223,9 +234,9 @@ export const OnboardingWelcomeSuccess: React.FC<OnboardingWelcomeSuccessProps> =
           transition={{ delay: 0.8 }}
           className="mb-2 flex justify-center"
         >
-          <div className="bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-xl w-full max-w-6xl">
+          <div className="w-full max-w-6xl overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900">
             {/* Header */}
-            <div className="h-12 border-b border-slate-100 bg-white/80 backdrop-blur-md flex items-center justify-between px-4 sm:px-6">
+            <div className="flex h-12 items-center justify-between border-b border-slate-100 bg-slate-50/90 px-4 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/80 sm:px-6">
               <h3 className="text-lg font-bold text-[#1B2E5A]">Setting Up Your Workspace</h3>
               <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
                 <span>Progress: {Math.round((currentStep / steps.length) * 100)}%</span>
@@ -245,16 +256,17 @@ export const OnboardingWelcomeSuccess: React.FC<OnboardingWelcomeSuccessProps> =
 
                 {/* Active Progress Line - fills from first circle center to current step circle center */}
                 <motion.div
-                  className="absolute top-8 left-[12.5%] h-2 rounded-full z-0 shadow-lg shadow-pink-200"
+                  className="absolute left-[12.5%] top-8 z-0 h-2 rounded-full shadow-lg shadow-blue-900/20"
                   initial={{ width: '0%' }}
-                  animate={{ 
-                    width: currentStep > 0 
-                      ? `${(75 * (currentStep - 1) / (steps.length - 1)).toFixed(2)}%`
-                      : '0%'
+                  animate={{
+                    width:
+                      currentStep > 0
+                        ? `${(75 * (currentStep - 1) / (steps.length - 1)).toFixed(2)}%`
+                        : '0%',
                   }}
                   transition={{ duration: 0.5, ease: 'easeInOut' }}
                   style={{
-                    background: 'linear-gradient(to right, #ec4899, #f43f5e)'
+                    background: 'linear-gradient(to right, #1B2E5A, #3b82f6)',
                   }}
                 />
 
@@ -268,24 +280,26 @@ export const OnboardingWelcomeSuccess: React.FC<OnboardingWelcomeSuccessProps> =
                     return (
                       <div key={step.title} className="flex flex-col items-center group relative">
                         {/* Node Circle */}
-                        <div className={`
-                          w-16 h-16 rounded-full flex items-center justify-center border-[3px] transition-all duration-500 relative bg-white z-10 mx-auto
-                          ${isActive
-                            ? 'border-white shadow-xl scale-110 ring-4 ring-offset-2 ring-pink-200 ring-opacity-50'
-                            : isCompleted
-                            ? 'border-white shadow-md text-white scale-100 bg-gradient-to-br from-pink-500 to-rose-500'
-                            : 'border-slate-100 text-slate-300 shadow-sm'
+                        <div
+                          className={`
+                          relative z-10 mx-auto flex h-16 w-16 scale-100 items-center justify-center rounded-full border-[3px] bg-white transition-all duration-500
+                          ${
+                            isActive
+                              ? 'scale-110 border-white shadow-xl ring-4 ring-[#1B2E5A]/25 ring-offset-2'
+                              : isCompleted
+                                ? 'scale-100 border-white bg-gradient-to-br from-[#1B2E5A] to-[#243A6C] text-white shadow-md'
+                                : 'border-slate-100 text-slate-300 shadow-sm'
                           }
-                        `}>
-                          {/* Pulse effect for active */}
+                        `}
+                        >
                           {isActive && (
-                            <div className="absolute inset-0 rounded-full animate-ping opacity-20 bg-pink-500"></div>
+                            <div className="absolute inset-0 animate-ping rounded-full bg-[#1B2E5A]/20 opacity-30" />
                           )}
 
                           {isCompleted ? (
-                            <CheckCircle2 className="w-6 h-6 transition-all duration-300" />
+                            <CheckCircle2 className="h-6 w-6 text-white transition-all duration-300" />
                           ) : (
-                            <Icon className={`w-6 h-6 transition-all duration-300 ${isActive && 'scale-110'}`} />
+                            <Icon className={`h-6 w-6 transition-all duration-300 ${isActive ? 'scale-110 text-[#1B2E5A]' : ''}`} />
                           )}
 
                           {/* Checkmark badge */}
@@ -330,10 +344,12 @@ export const OnboardingWelcomeSuccess: React.FC<OnboardingWelcomeSuccessProps> =
           transition={{ delay: 1.4 }}
           className="mt-4 text-center"
         >
-          <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm px-6 py-3 rounded-full shadow-lg border border-white/50">
-            <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-            <span className="text-sm font-semibold text-gray-700">
-              Your organization is ready! <span className="text-pink-600">1000 free credits</span> have been added to your account.
+          <div className="inline-flex items-center gap-2 rounded-full border border-[#1B2E5A]/15 bg-white/90 px-6 py-3 shadow-lg backdrop-blur-sm dark:border-slate-700 dark:bg-slate-900/90">
+            <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600" />
+            <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+              Your organization is ready!{' '}
+              <span className="font-bold text-[#1B2E5A] dark:text-blue-300">1000 free credits</span> have been
+              added to your account.
             </span>
           </div>
         </motion.div>

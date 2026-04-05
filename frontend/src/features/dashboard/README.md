@@ -1,6 +1,6 @@
 # Dashboard Feature
 
-Main dashboard views including activity logs, the business suite launcher, and a guided product tour.
+Main dashboard views including activity logs and the business suite launcher.
 
 ## Directory Structure
 
@@ -11,7 +11,6 @@ dashboard/
 ├── pages/
 │   ├── ActivityDashboardPage.tsx      # Split-pane activity log page
 │   └── SuiteDashboard.tsx            # Business Suite app launcher dashboard
-└── DashboardFeatureTour.tsx           # Guided product tour with step highlights
 ```
 
 ## Pages & Components
@@ -38,14 +37,6 @@ Tabbed activity & audit viewer with three tabs:
 - **Audit Logs** — System-wide audit entries (filter by action, resource type, user)
 - **Statistics** — Active users, activity/audit breakdown by period
 
-### DashboardFeatureTour
-
-Interactive product tour that highlights key features:
-- Steps: Applications, Team, Organization, Roles, Billing & Credits, Settings
-- Highlights sidebar nav items and in-page targets
-- Progress tracking with skip/complete; persists state in localStorage
-- Confetti celebration on completion
-
 ## Key APIs
 
 | Component | Endpoints |
@@ -58,6 +49,4 @@ Interactive product tour that highlights key features:
 - `@tanstack/react-query` — Data fetching
 - `@kinde-oss/kinde-auth-react` — Auth (SuiteDashboard)
 - `date-fns` — Date formatting
-- `canvas-confetti` — Tour completion celebration
-- `framer-motion` — Animations
 - `lucide-react` — Icons

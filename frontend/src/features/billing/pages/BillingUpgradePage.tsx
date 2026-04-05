@@ -10,6 +10,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { Container } from '@/components/common/Page';
+import {
+  DASHBOARD_PAGE_DESCRIPTION_CLASS,
+  DASHBOARD_PAGE_TITLE_CLASS,
+} from '@/components/dashboard/DashboardPageHeader';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
 import { useMutation } from '@tanstack/react-query';
@@ -98,7 +102,7 @@ export function BillingUpgradePage() {
   const navigate = useNavigate();
   const search = useSearch({ strict: false }) as Record<string, string>;
   const planId = search['plan'] || '';
-  const billingCycle = search['cycle'] || 'monthly';
+  const checkoutCurrency = (search['currency'] === 'inr' ? 'inr' : 'usd') as 'usd' | 'inr';
 
   const [formData, setFormData] = useState<UpgradeFormData>({
     ...initialFormData,
@@ -111,10 +115,10 @@ export function BillingUpgradePage() {
 
   // Create checkout mutation — uses same API as Billing page (subscriptionAPI.createCheckout)
   const createCheckoutMutation = useMutation({
-    mutationFn: async ({ planId, billingCycle }: { planId: string; billingCycle: string }) => {
+    mutationFn: async ({ planId, currency }: { planId: string; currency: 'usd' | 'inr' }) => {
       const response = await subscriptionAPI.createCheckout({
         planId,
-        billingCycle: billingCycle as 'monthly' | 'yearly',
+        currency,
         successUrl: `${window.location.origin}/payment-success?type=subscription&session_id={CHECKOUT_SESSION_ID}`,
         cancelUrl: `${window.location.origin}/payment-cancelled?type=subscription`
       });
@@ -229,7 +233,7 @@ export function BillingUpgradePage() {
         // Step 2: Now proceed to payment
         await createCheckoutMutation.mutateAsync({
           planId,
-          billingCycle
+          currency: checkoutCurrency
         });
       } else {
         console.error('❌ Profile completion failed:', profileResponse.data.message);
@@ -285,19 +289,19 @@ export function BillingUpgradePage() {
     <Container>
       <div className="space-y-6">
         {/* Header with Back Button */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-start gap-4">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => navigate({ to: '/dashboard/billing' })}
-            className="gap-2"
+            className="gap-2 shrink-0"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Billing
           </Button>
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold">Complete Your Upgrade</h1>
-            <p className="text-gray-600 mt-1">
+          <div className="min-w-0 flex-1 space-y-1">
+            <h1 className={DASHBOARD_PAGE_TITLE_CLASS}>Complete Your Upgrade</h1>
+            <p className={DASHBOARD_PAGE_DESCRIPTION_CLASS}>
               We need some additional information to set up your {planId} plan
             </p>
           </div>

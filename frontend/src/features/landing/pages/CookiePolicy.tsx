@@ -1,63 +1,110 @@
 import React from 'react';
+import { Link } from '@tanstack/react-router';
 import { LegalPageLayout } from '@/components/layout/LegalPageLayout';
+import { LegalSection } from '@/components/legal/LegalSection';
+import { LEGAL_CONTACT } from '@/lib/legal-contact';
+
+const cookieToc = [
+  { id: 'introduction', label: 'Introduction' },
+  { id: 'what-are-cookies', label: 'What are cookies?' },
+  { id: 'how-we-use', label: 'How we use cookies' },
+  { id: 'types', label: 'Types & duration' },
+  { id: 'third-party', label: 'Third-party technologies' },
+  { id: 'managing', label: 'How to manage or disable cookies' },
+  { id: 'changes', label: 'Changes' },
+  { id: 'contact', label: 'Contact' },
+] as const;
 
 const CookiePolicy: React.FC = () => (
-  <LegalPageLayout title="Cookie Policy" lastUpdated="January 2026">
-    <section id="introduction">
-      <h2 className="text-xl font-bold text-[#1B2E5A] mb-4">1. Introduction</h2>
-      <p className="text-slate-600 leading-relaxed">
-        This Cookie Policy explains how Zopkit Inc. (&quot;we,&quot; &quot;us,&quot; or &quot;our&quot;) uses cookies and similar technologies when you use our website and services. For more information about how we handle your personal data, please see our{' '}
-        <a href="/privacy" className="text-blue-600 hover:underline">Privacy Policy</a>.
+  <LegalPageLayout
+    title="Cookie Policy"
+    lastUpdated="January 2026"
+    docIntro={
+      <>
+        This policy describes how {LEGAL_CONTACT.companyLegalName} uses cookies and similar technologies on our websites and services. For how we process personal data more broadly, read our{' '}
+        <Link to="/privacy" className="text-blue-600 hover:underline">
+          Privacy Policy
+        </Link>
+        .
+      </>
+    }
+    tableOfContents={[...cookieToc]}
+  >
+    <LegalSection id="introduction" title="1. Introduction">
+      <p>
+        When we say &quot;cookies,&quot; we also mean similar technologies such as local storage, pixels, and SDK features that store or read information on your device, where applicable.
       </p>
-    </section>
+    </LegalSection>
 
-    <section id="what-are-cookies">
-      <h2 className="text-xl font-bold text-[#1B2E5A] mb-4">2. What Are Cookies</h2>
-      <p className="text-slate-600 leading-relaxed">
-        Cookies are small text files that are stored on your device when you visit a website. They are widely used to make websites work more efficiently, to remember your preferences, and to provide information to the site owners.
+    <LegalSection id="what-are-cookies" title="2. What are cookies?">
+      <p>
+        Cookies are small text files stored on your device when you visit a site. They are commonly used to keep you signed in, remember preferences, measure performance, and protect against fraud.
       </p>
-    </section>
+    </LegalSection>
 
-    <section id="how-we-use">
-      <h2 className="text-xl font-bold text-[#1B2E5A] mb-4">3. How We Use Cookies</h2>
-      <p className="text-slate-600 leading-relaxed mb-3">
-        We use cookies and similar technologies for the following purposes:
-      </p>
-      <ul className="list-disc pl-6 text-slate-600 space-y-2">
-        <li><strong>Essential:</strong> Required for the operation of our website and services (e.g. authentication, security).</li>
-        <li><strong>Functionality:</strong> To remember your preferences and settings.</li>
-        <li><strong>Analytics:</strong> To understand how visitors use our website and to improve our services (where we use such cookies, we do so in line with applicable law).</li>
+    <LegalSection id="how-we-use" title="3. How we use cookies">
+      <p>We use cookies for purposes such as:</p>
+      <ul>
+        <li>
+          <strong>Strictly necessary:</strong> Authentication, session management, load balancing, and security (these are typically required for the service to function).
+        </li>
+        <li>
+          <strong>Functional:</strong> Remembering preferences (such as language or UI settings) where we offer those features.
+        </li>
+        <li>
+          <strong>Analytics &amp; performance:</strong> Understanding how our sites and products are used so we can improve them. Where we use non-essential analytics cookies, we do so in line with applicable law and your choices.
+        </li>
       </ul>
-    </section>
+    </LegalSection>
 
-    <section id="types">
-      <h2 className="text-xl font-bold text-[#1B2E5A] mb-4">4. Types of Cookies We Use</h2>
-      <p className="text-slate-600 leading-relaxed mb-3">
-        We may use session cookies (which expire when you close your browser) and persistent cookies (which remain on your device for a set period or until you delete them). We may also use first-party cookies (set by us) and third-party cookies (set by service providers that assist us).
+    <LegalSection id="types" title="4. Types & duration">
+      <p>
+        We may use <strong>session</strong> cookies (removed when you close your browser) and <strong>persistent</strong> cookies (which remain for a defined period or until you delete them). We use both <strong>first-party</strong> cookies (set by us) and, where applicable, <strong>third-party</strong> cookies (set by partners who provide services to us).
       </p>
-    </section>
+    </LegalSection>
 
-    <section id="managing">
-      <h2 className="text-xl font-bold text-[#1B2E5A] mb-4">5. Managing Cookies</h2>
-      <p className="text-slate-600 leading-relaxed">
-        Most browsers allow you to refuse or accept cookies, and to delete existing cookies. You can usually adjust your cookie settings in your browser&apos;s preferences or settings. Please note that disabling certain cookies may affect the functionality of our website.
+    <LegalSection id="third-party" title="5. Third-party technologies">
+      <p>
+        Some cookies or trackers are placed by third parties—for example, our authentication provider, hosting or analytics vendors, or embedded content. Those providers have their own privacy notices. We encourage you to review their policies and your account settings with them where relevant.
       </p>
-    </section>
+    </LegalSection>
 
-    <section id="changes">
-      <h2 className="text-xl font-bold text-[#1B2E5A] mb-4">6. Changes to This Policy</h2>
-      <p className="text-slate-600 leading-relaxed">
-        We may update this Cookie Policy from time to time to reflect changes in our practices or for other operational, legal, or regulatory reasons. We will post the updated policy on this page and indicate the effective date.
+    <LegalSection id="managing" title="6. How to manage or disable cookies">
+      <p>
+        <strong>Browser settings:</strong> Most browsers let you block or delete cookies. The exact steps depend on your browser and version. General instructions:
       </p>
-    </section>
+      <ol>
+        <li>Open your browser&apos;s <strong>Settings</strong> or <strong>Preferences</strong>.</li>
+        <li>Find the <strong>Privacy</strong>, <strong>Security</strong>, or <strong>Cookies</strong> section.</li>
+        <li>Choose whether to block third-party cookies, block all cookies, or delete existing cookies.</li>
+        <li>Save your settings and, if needed, restart the browser.</li>
+      </ol>
+      <p>
+        Blocking or deleting <strong>strictly necessary</strong> cookies may prevent sign-in or core features from working correctly.
+      </p>
+      <p>
+        <strong>Industry opt-outs:</strong> Where applicable, you may use tools such as the Digital Advertising Alliance or similar regional programs to manage interest-based advertising—availability varies by region.
+      </p>
+    </LegalSection>
 
-    <section id="contact">
-      <h2 className="text-xl font-bold text-[#1B2E5A] mb-4">7. Contact</h2>
-      <p className="text-slate-600 leading-relaxed">
-        If you have questions about our use of cookies, please contact us at{' '}
-        <a href="mailto:hr@zopkit.com" className="text-blue-600 hover:underline">hr@zopkit.com</a> or at Hi-Tech City, Hyderabad.
+    <LegalSection id="changes" title="7. Changes">
+      <p>
+        We may update this Cookie Policy to reflect changes in our practices or for legal, operational, or regulatory reasons. We will post the updated policy on this page and revise the &quot;Last updated&quot; date.
       </p>
-    </section>
+    </LegalSection>
+
+    <LegalSection id="contact" title="8. Contact">
+      <p>Questions about cookies or this policy:</p>
+      <ul>
+        <li>
+          Email:{' '}
+          <a href={`mailto:${LEGAL_CONTACT.privacyEmail}`}>{LEGAL_CONTACT.privacyEmail}</a>
+        </li>
+        <li>
+          Address: {LEGAL_CONTACT.addressLine}
+        </li>
+      </ul>
+    </LegalSection>
   </LegalPageLayout>
 );
 

@@ -52,7 +52,7 @@ export const OnboardingPageGuard = ({ children }: OnboardingPageGuardProps) => {
 
   // If onboarding is completed, redirect to dashboard
   if (isOnboarded) {
-    return <Navigate to="/dashboard" replace />
+    return <Navigate to="/dashboard/applications" replace />
   }
 
   // If onboarding is not completed, allow access to onboarding page

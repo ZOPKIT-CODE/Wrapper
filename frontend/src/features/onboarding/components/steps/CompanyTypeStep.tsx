@@ -43,24 +43,24 @@ export const CompanyTypeStep = ({ selectedType, onSelect, userClassification }: 
   };
 
   return (
-    <div className="space-y-8">
-      <div>
-        <div className="mb-4">
-          {userClassification && (
-            <Badge variant="outline" className="bg-white/50 text-slate-600 border-slate-200 px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase shadow-sm">
+    <div className="space-y-6">
+      <div className="border-b border-blue-100 pb-6">
+        <div className="mb-2">
+          {userClassification && userClassification !== 'aspiringFounder' && (
+            <Badge variant="outline" className="rounded border border-blue-200/90 bg-blue-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-blue-900">
               {userClassification.replace(/([A-Z])/g, ' $1').trim()}
             </Badge>
           )}
         </div>
-        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-[#1B2E5A] mb-3 drop-shadow-sm">
+        <h1 className="mb-1.5 text-2xl font-semibold tracking-tight text-blue-950 md:text-[1.65rem]">
           {content.title}
         </h1>
-        <p className="text-lg text-slate-500 leading-relaxed max-w-2xl font-light">
+        <p className="max-w-xl text-sm leading-relaxed text-slate-600">
           {content.description}
         </p>
       </div>
       
-      <div className="grid grid-cols-1 gap-5 max-w-2xl">
+      <div className="grid max-w-2xl grid-cols-1 gap-3">
         {COMPANY_TYPES.map((type) => {
           const isRecommended = type.id === content.recommended;
           const isSelected = selectedType === type.id;
@@ -69,27 +69,26 @@ export const CompanyTypeStep = ({ selectedType, onSelect, userClassification }: 
             <div
               key={type.id}
               onClick={() => onSelect(type.id)}
-              className={`group relative p-6 rounded-2xl border transition-all duration-300 cursor-pointer overflow-hidden ${
+              className={`group relative cursor-pointer overflow-hidden rounded-lg border p-5 transition-colors ${
                 isSelected
-                  ? 'glass-card border-slate-400 shadow-glow scale-[1.01]'
-                  : 'glass-card border-slate-100/50 shadow-soft hover:border-slate-300 hover:shadow-glow'
+                  ? 'border-blue-300 bg-blue-50/50 shadow-sm ring-1 ring-blue-100'
+                  : 'border-blue-100 bg-white hover:border-blue-200 hover:bg-blue-50/30'
               }`}
             >
-              {/* Subtle background gradient on hover/select */}
-              <div className={`absolute inset-0 bg-gradient-to-r from-slate-50 to-transparent opacity-0 transition-opacity duration-500 ${isSelected ? 'opacity-100' : 'group-hover:opacity-50'}`} />
-
-              <div className="relative flex items-start gap-5 z-10">
-                <div className={`shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 ${
-                  isSelected 
-                    ? 'bg-slate-900 text-white shadow-lg rotate-3' 
-                    : 'bg-slate-50 text-slate-400 group-hover:bg-white group-hover:text-slate-700 group-hover:shadow-sm'
-                }`}>
+              <div className="relative z-10 flex items-start gap-4">
+                <div
+                  className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-md transition-colors ${
+                    isSelected
+                      ? 'bg-blue-950 text-white shadow-sm'
+                      : 'bg-slate-100 text-slate-500 group-hover:bg-blue-100 group-hover:text-blue-900'
+                  }`}
+                >
                   {getIcon(type.id)}
                 </div>
                 
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className={`text-lg font-bold ${isSelected ? 'text-[#1B2E5A]' : 'text-slate-700 group-hover:text-[#1B2E5A]'}`}>
+                    <h3 className={`text-base font-semibold ${isSelected ? 'text-blue-950' : 'text-slate-800 group-hover:text-blue-950'}`}>
                       {type.name}
                     </h3>
                     <div className="flex items-center gap-2">
@@ -99,7 +98,7 @@ export const CompanyTypeStep = ({ selectedType, onSelect, userClassification }: 
                         </span>
                       )}
                       {isSelected && (
-                         <CheckCircle2 className="w-6 h-6 text-[#1B2E5A] fill-white" />
+                         <CheckCircle2 className="h-6 w-6 text-blue-800" />
                       )}
                     </div>
                   </div>

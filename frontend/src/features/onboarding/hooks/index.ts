@@ -28,19 +28,20 @@ export const useOnboardingForm = (
     shouldUnregister: false,
     shouldFocusError: true,
     defaultValues: {
-      teamMembers: [], // Initialize teamMembers as empty array
+      teamMembers: [],
       taxRegistered: false,
       vatGstRegistered: false,
       mailingAddressSameAsRegistered: true,
       termsAccepted: false,
-      country: 'IN', // Default to India
+      country: 'IN',
       businessDetails: {
-        country: 'IN', // Default to India
+        country: 'IN',
       },
+      billingCountry: 'IN',
       defaultLanguage: 'en',
-      defaultLocale: 'en-IN', // Default to India locale
-      defaultCurrency: 'INR', // Default to Indian Rupee
-      defaultTimeZone: 'Asia/Kolkata', // Default to India timezone
+      defaultLocale: 'en-IN',
+      defaultCurrency: 'INR',
+      defaultTimeZone: 'Asia/Kolkata',
     },
   });
 };

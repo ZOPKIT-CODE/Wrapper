@@ -31,20 +31,6 @@ body {
   background: transparent;
 }
 
-/* Tour pulse animation */
-@keyframes tour-pulse {
-  0%, 100% {
-    box-shadow: 0 0 0 3px rgb(255, 255, 255), 0 0 20px rgba(99, 102, 241, 0.15);
-  }
-  50% {
-    box-shadow: 0 0 0 3px rgb(255, 255, 255), 0 0 30px rgba(99, 102, 241, 0.4);
-  }
-}
-
-.tour-pulse {
-  animation: tour-pulse 2s ease-in-out infinite;
-}
-
 ::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 10px;
@@ -239,6 +225,10 @@ body {
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-zopkit: #1b2e5a;
+  --color-zopkit-hover: #162447;
+  --color-zopkit-surface: #f4f7fb;
+  --color-zopkit-surface-strong: #e8ecf4;
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
   --animate-aurora: aurora 60s linear infinite;
@@ -422,6 +412,40 @@ body {
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Pointer cursor for standard interactive elements inside dashboard shells */
+@layer components {
+  .dashboard-actionable-cursors :where(
+    button:not(:disabled),
+    a[href],
+    [role="button"],
+    [role="tab"],
+    [role="menuitem"],
+    [role="option"],
+    [role="switch"],
+    [role="link"],
+    [role="checkbox"]:not([data-disabled]),
+    summary,
+    label[for],
+    input[type="checkbox"]:not(:disabled),
+    input[type="radio"]:not(:disabled),
+    input[type="file"],
+    select:not(:disabled),
+    [data-slot="sidebar-trigger"],
+    [data-slot="sidebar-group-action"],
+    [data-slot="sidebar-menu-button"],
+    [data-slot="sidebar-menu-action"],
+    [data-slot="sidebar-menu-sub-button"],
+    [data-slot="sheet-trigger"]
+  ) {
+    cursor: pointer;
+  }
+}
+
+/* Tenant dashboard: instant scroll (no smooth-scroll delay from global html) */
+html:has(.dashboard-instant-scroll) {
+  scroll-behavior: auto;
 }
 
 /* Stats Card Styles - From Uiverse.io by LilaRest */

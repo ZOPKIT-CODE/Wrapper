@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback, Suspense } from "react"
+import React, { useState, useEffect, useMemo, Suspense } from "react"
 import { ModernSidebar } from "@/components/layout/ModernSidebar"
 import { RouteBreadcrumb } from "@/components/route-breadcrumb"
 import { Separator } from "@/components/ui/separator"
@@ -12,19 +12,15 @@ import {
 } from "@/components/ui/sidebar"
 import { BillingStatusNavbar } from "@/components/common/billing/BillingStatusNavbar"
 import { useSeasonalCreditsCongratulatory } from "@/hooks/useSeasonalCreditsCongratulatory"
-import { Home, Building2, Users, Crown, Shield, Activity, CreditCard, X, ChevronRight, Settings, BookOpen } from "lucide-react"
+import { Home, Building2, Users, Crown, Shield, Activity, CreditCard, ChevronRight, Settings } from "lucide-react"
 import { useNavigate, useLocation, useSearch, useParams, Outlet, Link } from "@tanstack/react-router"
 import { useOrganizationHierarchy } from "@/hooks/useOrganizationHierarchy"
 import { Button } from "@/components/ui/button"
-import { PearlButton } from "@/components/ui/pearl-button"
 import { cn } from "@/lib/utils"
 import { useTheme } from "@/components/theme/ThemeProvider"
 import { useUserContextSafe } from "@/contexts/UserContextProvider"
 import { useKindeAuth } from "@kinde-oss/kinde-auth-react"
 
-const DashboardFeatureTour = React.lazy(() =>
-  import("@/features/dashboard/DashboardFeatureTour").then(m => ({ default: m.DashboardFeatureTour }))
-)
 const NotificationManager = React.lazy(() =>
   import("@/features/notifications/NotificationManager").then(m => ({ default: m.NotificationManager }))
 )
@@ -49,15 +45,11 @@ interface NavItem {
 const getDashboardNavigation = (): NavItem[] => [
   {
     name: 'Dashboard',
-    href: '/dashboard',
+    href: '/dashboard/applications',
     icon: Home,
     children: [
       { name: 'Applications', href: '/dashboard/applications', icon: Building2 },
-      { name: 'Team', href: '/dashboard/users', icon: Users },
       { name: 'Roles', href: '/dashboard/roles', icon: Crown },
-
-      { name: 'App Management', href: '/dashboard/user-application-management', icon: Shield },
-
       { name: 'Analytics', href: '/dashboard/analytics', icon: Activity },
     ]
   },
@@ -73,9 +65,7 @@ const getOrganizationNavigation = (orgCode: string): NavItem[] => [
     icon: Home,
     children: [
       { name: 'Analytics', href: `/org/${orgCode}/analytics`, icon: Activity },
-      { name: 'Users', href: `/org/${orgCode}/users`, icon: Users },
       { name: 'Roles', href: `/org/${orgCode}/permissions`, icon: Crown },
-      { name: 'App Management', href: `/org/${orgCode}/user-application-management`, icon: Shield },
     ]
   },
   { name: 'Billing', href: `/org/${orgCode}/billing`, icon: CreditCard },
@@ -160,19 +150,9 @@ const getOrganizationSidebarData = (
         icon: Activity,
       },
       {
-        title: "Team",
-        url: `/org/${orgCode}/users`,
-        icon: Users,
-      },
-      {
         title: "Roles",
         url: `/org/${orgCode}/permissions`,
         icon: Crown,
-      },
-      {
-        title: "App Management",
-        url: `/org/${orgCode}/user-application-management`,
-        icon: Shield,
       },
     ],
     projects: [],
@@ -205,14 +185,14 @@ const defaultSidebarData = {
       icon: Building2,
     },
     {
-      title: "Team",
-      url: "/dashboard/users",
-      icon: Users,
-    },
-    {
       title: "Organization",
       url: "/dashboard/organization",
       icon: Building2,
+    },
+    {
+      title: "Team",
+      url: "/dashboard/users",
+      icon: Users,
     },
     {
       title: "Roles",
@@ -232,11 +212,6 @@ const defaultSidebarData = {
       icon: CreditCard,
     },
     {
-      name: "Tour",
-      url: "", // Will be set dynamically
-      icon: BookOpen,
-    },
-    {
       name: "Settings",
       url: "/dashboard/settings",
       icon: Settings,
@@ -249,95 +224,10 @@ export function DashboardLayout() {
   const [expandedItems, setExpandedItems] = useState<string[]>(['Dashboard'])
   const [trialInfo, setTrialInfo] = useState<TrialInfo | null>(null)
   const [showTrialBanner, setShowTrialBanner] = useState(false)
-  const [showTour, setShowTour] = useState(false)
-  const [showResumePrompt, setShowResumePrompt] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
   const searchParams = useSearch({ strict: false }) as Record<string, string>
   const params = useParams({ strict: false })
-
-  // Compute initial step from pathname for contextual start
-  const getInitialStep = useCallback(() => {
-    const path = location.pathname;
-    if (path.includes('/dashboard/billing')) return 3; // Billing & Credits
-    if (path.includes('/dashboard/users')) return 1; // Team
-    if (path.includes('/dashboard/roles')) return 2; // Roles & Permissions
-    return 0; // Applications (default)
-  }, [location.pathname]);
-
-  // Show dashboard feature tour after onboarding (user guide) or replay
-  useEffect(() => {
-    const tourCompleted = localStorage.getItem('dashboard-tour-completed');
-    const onboardingComplete = searchParams['onboarding'] === 'complete';
-    const tourReplay = searchParams['tour'] === 'replay';
-    
-    if (tourReplay) {
-      // Clear completion flag and show tour
-      localStorage.removeItem('dashboard-tour-completed');
-      localStorage.removeItem('dashboard-tour-dismissed');
-      localStorage.removeItem('dashboard-tour-step');
-      setShowTour(true);
-      // Remove tour param from URL
-      const prev = (location.search || {}) as Record<string, string>;
-      const next = { ...prev };
-      delete next.tour;
-      navigate({ to: location.pathname, search: next, replace: true });
-    } else if (!tourCompleted && onboardingComplete) {
-      setShowTour(true);
-    }
-  }, [searchParams, location, navigate]);
-
-  // Check for resume prompt
-  useEffect(() => {
-    const tourCompleted = localStorage.getItem('dashboard-tour-completed');
-    const tourDismissed = localStorage.getItem('dashboard-tour-dismissed');
-    const onboardingComplete = searchParams['onboarding'] === 'complete';
-    const tourReplay = searchParams['tour'] === 'replay';
-    
-    if (!tourCompleted && tourDismissed && !onboardingComplete && !tourReplay && !showTour) {
-      setShowResumePrompt(true);
-    }
-  }, [searchParams, showTour]);
-
-  const handleTourComplete = useCallback(() => {
-    setShowTour(false);
-    const prev = (location.search || {}) as Record<string, string>;
-    const next = { ...prev };
-    delete next.onboarding;
-    navigate({ to: location.pathname, search: next, replace: true });
-  }, [location, navigate]);
-
-  const handleTourSkip = useCallback(() => {
-    setShowTour(false);
-    const prev = (location.search || {}) as Record<string, string>;
-    const next = { ...prev };
-    delete next.onboarding;
-    navigate({ to: location.pathname, search: next, replace: true });
-  }, [location, navigate]);
-
-  const handleTourDismiss = useCallback((stepIndex: number) => {
-    // Already handled in DashboardFeatureTour (saves to localStorage)
-    setShowTour(false);
-    handleTourSkip();
-  }, [handleTourSkip]);
-
-  const handleResumeChoice = useCallback((action: 'resume' | 'restart' | 'dismiss') => {
-    setShowResumePrompt(false);
-    
-    if (action === 'resume') {
-      // Keep saved step, tour will read it
-      localStorage.removeItem('dashboard-tour-dismissed');
-      setShowTour(true);
-    } else if (action === 'restart') {
-      localStorage.removeItem('dashboard-tour-step');
-      localStorage.removeItem('dashboard-tour-dismissed');
-      setShowTour(true);
-    } else if (action === 'dismiss') {
-      localStorage.setItem('dashboard-tour-completed', 'true');
-      localStorage.removeItem('dashboard-tour-step');
-      localStorage.removeItem('dashboard-tour-dismissed');
-    }
-  }, []);
 
   // Fetch user and tenant data from context (safe: returns null during HMR/init)
   const ctx = useUserContextSafe()
@@ -416,18 +306,6 @@ export function DashboardLayout() {
     }
   }, [searchParams])
 
-  // Force component re-mounting when navigation changes to prevent stale state
-  const navigationKey = useRef(0)
-  useEffect(() => {
-    // Increment key to force re-mounting of child components
-    navigationKey.current += 1
-
-    // Clear any potential stale state by triggering garbage collection hint
-    if (window.gc && typeof window.gc === 'function') {
-      window.gc()
-    }
-  }, [location.pathname, location.searchStr])
-
   const handleUpgradeNow = () => {
     const checkoutUrl = localStorage.getItem('pendingCheckoutUrl')
     if (checkoutUrl) {
@@ -469,7 +347,7 @@ export function DashboardLayout() {
           <Link
             to={item.href}
             className={cn(
-              'group flex items-center flex-1 text-sm font-medium rounded-md transition-colors',
+              'group flex items-center flex-1 text-sm font-medium rounded-md',
               isChild ? 'pl-8 py-1.5' : 'px-2 py-2',
               active
                 ? actualTheme === 'monochrome'
@@ -491,7 +369,7 @@ export function DashboardLayout() {
               onClick={() => toggleExpanded(item.name)}
             >
               {isExpanded ? (
-                <ChevronRight className="h-3 w-3 rotate-90 transition-transform" />
+                <ChevronRight className="h-3 w-3 rotate-90" />
               ) : (
                 <ChevronRight className="h-3 w-3" />
               )}
@@ -506,89 +384,14 @@ export function DashboardLayout() {
       </div>
     )
   }
-  // Determine sidebar navigation data based on current route with Tour entry
   const sidebarNavData = useMemo(() => {
-    const baseData = isOrganizationRoute && orgCode
+    return isOrganizationRoute && orgCode
       ? getOrganizationSidebarData(orgCode, orgHierarchy || [], userData, tenantData)
       : defaultSidebarData;
-    
-    // Add Tour entry to bottomNav with dynamic URL
-    const tourUrl = `${location.pathname}?tour=replay`;
-    const bottomNavWithTour = [
-      ...(baseData.bottomNav || []).slice(0, -1), // All except last (Settings)
-      { name: "Tour", url: tourUrl, icon: BookOpen },
-      ...(baseData.bottomNav || []).slice(-1) // Settings as last
-    ];
-    
-    return {
-      ...baseData,
-      bottomNav: bottomNavWithTour
-    };
-  }, [isOrganizationRoute, orgCode, orgHierarchy, userData, tenantData, location.pathname]);
+  }, [isOrganizationRoute, orgCode, orgHierarchy, userData, tenantData]);
 
   return (
-    <SidebarProvider className="bg-[#1B2E5A]">
-      {showTour && (
-        <Suspense fallback={null}>
-          <DashboardFeatureTour
-            onComplete={handleTourComplete}
-            onSkip={handleTourSkip}
-            onDismiss={handleTourDismiss}
-            initialStep={getInitialStep()}
-          />
-        </Suspense>
-      )}
-
-      {/* Resume prompt */}
-      {showResumePrompt && (
-        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-[120] bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 p-4 max-w-md">
-          <div className="flex items-start gap-3">
-            <BookOpen className="w-5 h-5 text-[#1B2E5A] mt-0.5 flex-shrink-0" />
-            <div className="flex-1">
-              <h3 className="font-semibold text-[#1B2E5A] dark:text-slate-100 mb-1">
-                Resume your guide?
-              </h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
-                You were on step {parseInt(localStorage.getItem('dashboard-tour-step') || '0', 10) + 1}. Would you like to continue?
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  onClick={() => handleResumeChoice('resume')}
-                  className="text-xs bg-[#1B2E5A] hover:bg-[#162447] text-white"
-                >
-                  Resume
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleResumeChoice('restart')}
-                  className="text-xs"
-                >
-                  Start from beginning
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => handleResumeChoice('dismiss')}
-                  className="text-xs text-slate-500"
-                >
-                  Don't show again
-                </Button>
-              </div>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleResumeChoice('dismiss')}
-              className="h-6 w-6 p-0"
-            >
-              <X className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      )}
-
+    <SidebarProvider className="bg-[#1B2E5A] dashboard-actionable-cursors dashboard-instant-scroll">
       <ModernSidebar
         navData={sidebarNavData}
         userData={userData}
@@ -598,7 +401,7 @@ export function DashboardLayout() {
       />
       <BreadcrumbLabelProvider>
         <SidebarInset className="md:peer-data-[variant=inset]:m-0 md:peer-data-[variant=inset]:rounded-none md:peer-data-[variant=inset]:shadow-none bg-white dark:bg-slate-950 rounded-tl-[30px] rounded-bl-[30px] flex flex-col h-screen overflow-hidden">
-          <header className="flex h-16 shrink-0 items-center gap-2 px-4 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800">
+          <header className="flex h-16 shrink-0 items-center gap-2 px-4 group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800">
             <div className="flex items-center gap-2">
               <SidebarTrigger className="-ml-1 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800" />
               <Separator
@@ -617,7 +420,8 @@ export function DashboardLayout() {
           </header>
           <main className="flex-1 relative overflow-y-auto bg-slate-50 dark:bg-slate-900 p-6 min-h-0">
             <ErrorBoundary>
-              <Outlet key={location.pathname + location.searchStr} />
+              {/* pathname only: ?tab= and other search updates must not remount the route (e.g. Account Settings tabs). */}
+              <Outlet key={location.pathname} />
             </ErrorBoundary>
           </main>
         </SidebarInset>

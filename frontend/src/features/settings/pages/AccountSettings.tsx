@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useDashboardTabParam } from '@/hooks/useDashboardTabParam';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -23,7 +24,21 @@ import { TaxComplianceTab } from '../components/TaxComplianceTab';
 import { LocalizationTab } from '../components/LocalizationTab';
 import { BrandingTab } from '../components/BrandingTab';
 
+const ACCOUNT_SETTINGS_TABS = [
+  'company',
+  'contact',
+  'mailing',
+  'banking',
+  'tax',
+  'localization',
+  'branding',
+] as const;
+
 export const AccountSettings: React.FC = () => {
+  const [activeTab, setActiveTab] = useDashboardTabParam({
+    allowed: ACCOUNT_SETTINGS_TABS,
+    defaultTab: 'company',
+  });
   const { addToast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -226,16 +241,9 @@ export const AccountSettings: React.FC = () => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-6">
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold text-foreground">Account Settings</h1>
-        <p className="text-muted-foreground">
-          Manage your company details, contact information, and branding
-        </p>
-      </div>
-
+    <div className="space-y-6">
       <form onSubmit={form.handleSubmit(handleSubmit)}>
-        <Tabs defaultValue="company" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="company">
               <Building2 className="h-4 w-4 mr-2" />

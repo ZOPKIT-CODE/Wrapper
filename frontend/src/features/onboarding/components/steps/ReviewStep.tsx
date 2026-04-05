@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { newBusinessData, existingBusinessData, COUNTRIES, ORGANIZATION_SIZES, COMPANY_TYPES } from '../../schemas';
 import { UserClassification } from '../FlowSelector';
+import { ONBOARDING_CONFETTI_COLORS } from '../../constants';
 // Note: Make sure canvas-confetti is installed: npm install canvas-confetti
 import confetti from 'canvas-confetti';
 
@@ -44,8 +45,12 @@ const fadeIn: Variants = {
 };
 
 const DetailRow = ({ label, value, icon: Icon }: { label: string; value: string | React.ReactNode; icon?: React.ComponentType<any> }) => (
-  <div className="flex items-start gap-3 group/row p-2 rounded-lg hover:bg-pink-50/50 transition-colors">
-    {Icon && <div className="p-1.5 bg-pink-50 text-pink-500 rounded-md group-hover/row:bg-pink-100 group-hover/row:text-pink-600 transition-colors"><Icon className="w-3.5 h-3.5" /></div>}
+  <div className="flex items-start gap-3 group/row p-2 rounded-lg hover:bg-blue-50/60 transition-colors">
+    {Icon && (
+      <div className="rounded-md bg-blue-50 p-1.5 text-blue-950 transition-colors group-hover/row:bg-blue-100 group-hover/row:text-blue-950">
+        <Icon className="h-3.5 w-3.5" />
+      </div>
+    )}
     <div className="flex-1">
       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">{label}</p>
       <div className="text-sm font-semibold text-slate-800 break-words">{value}</div>
@@ -68,12 +73,12 @@ const SectionCard = ({ title, icon: Icon, children, stepNumber, index, onEditSte
     initial="hidden"
     animate="visible"
     variants={fadeIn}
-    className="bg-white/80 backdrop-blur-xl rounded-3xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden hover:shadow-[0_8px_30px_rgb(236,72,153,0.1)] hover:-translate-y-1 transition-all duration-300 group"
+    className="group overflow-hidden rounded-3xl border border-slate-200/80 bg-white/90 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_40px_-8px_rgba(30,58,138,0.12)]"
   >
-    <div className="px-6 py-4 border-b border-pink-50/50 flex items-center justify-between bg-white/50">
+    <div className="flex items-center justify-between border-b border-blue-100/60 bg-white/80 px-6 py-4">
       <div className="flex items-center gap-3">
-        <div className={`w-10 h-10 rounded-2xl bg-pink-50 flex items-center justify-center text-pink-500 group-hover:bg-pink-100 group-hover:text-pink-600 transition-colors duration-300`}>
-          <Icon className="w-5 h-5" />
+        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-50 text-blue-950 transition-colors duration-300 group-hover:bg-blue-100 group-hover:text-blue-950">
+          <Icon className="h-5 w-5" />
         </div>
         <h3 className="font-bold text-slate-800 text-lg">{title}</h3>
       </div>
@@ -82,7 +87,7 @@ const SectionCard = ({ title, icon: Icon, children, stepNumber, index, onEditSte
           variant="ghost"
           size="sm"
           onClick={() => onEditStep(stepNumber)}
-          className="text-slate-400 hover:text-pink-600 hover:bg-pink-50 transition-all opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0"
+          className="translate-x-2 opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100 hover:bg-blue-50 hover:text-blue-950 text-slate-400"
         >
           <Edit2 className="w-4 h-4 mr-2" />
           <span className="text-xs font-semibold">Edit</span>
@@ -130,14 +135,9 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({ form, onEditStep, userCl
       }, delay);
     };
 
-    // Blast 1: Pink/Purple theme
-    fireConfetti(['#ec4899', '#d946ef', '#a855f7', '#fb7185'], 500);
-    
-    // Blast 2: Yellow/Gold theme
-    fireConfetti(['#FFD700', '#FFA500', '#FFC107', '#FFEB3B'], 1500);
-    
-    // Blast 3: Blue/Cyan theme
-    fireConfetti(['#3b82f6', '#06b6d4', '#8b5cf6', '#6366f1'], 2500);
+    fireConfetti([...ONBOARDING_CONFETTI_COLORS], 500);
+    fireConfetti([...ONBOARDING_CONFETTI_COLORS], 1500);
+    fireConfetti([...ONBOARDING_CONFETTI_COLORS], 2500);
   }, []);
 
   // Fire confetti when terms are accepted (only once - single blast)
@@ -148,7 +148,7 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({ form, onEditStep, userCl
         const defaults = {
           origin: { y: 0.7 },
           zIndex: 9999,
-          colors: ['#ec4899', '#d946ef', '#a855f7', '#fb7185'] // Pink/Purple theme colors
+          colors: [...ONBOARDING_CONFETTI_COLORS]
         };
 
         function fire(particleRatio: number, opts: any) {
@@ -219,7 +219,7 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({ form, onEditStep, userCl
                  <DetailRow 
                   label="Tax Status" 
                   value={
-                    <span className={`inline-flex items-center gap-1.5 ${values.taxRegistered ? 'text-emerald-600' : 'text-slate-500'}`}>
+                    <span className={`inline-flex items-center gap-1.5 ${values.taxRegistered ? 'text-blue-800' : 'text-slate-500'}`}>
                        {values.taxRegistered ? <CheckCircle className="w-3.5 h-3.5" /> : null}
                        {values.taxRegistered ? 'Registered' : 'Not Registered'}
                     </span>
@@ -234,7 +234,7 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({ form, onEditStep, userCl
                 
                 <div className="sm:col-span-2 pt-4 border-t border-slate-100">
                   <div className="flex items-center gap-2 mb-3">
-                    <MapPin className="w-4 h-4 text-pink-500" />
+                    <MapPin className="h-4 w-4 text-blue-950" />
                     <span className="text-sm font-semibold text-[#1B2E5A]">Billing Address</span>
                   </div>
                   <p className="text-sm text-slate-600 pl-6 leading-relaxed">
@@ -258,8 +258,8 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({ form, onEditStep, userCl
             onEditStep={onEditStep}
           >
              <div className="space-y-6">
-               <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-pink-50 to-white rounded-2xl border border-pink-50 mb-6">
-                  <div className="w-14 h-14 rounded-full bg-white border-4 border-pink-50 flex items-center justify-center text-pink-600 text-xl font-bold shadow-sm">
+               <div className="mb-6 flex items-center gap-4 rounded-2xl border border-blue-100/80 bg-gradient-to-r from-blue-50/80 to-white p-4">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full border-4 border-blue-100 bg-white text-xl font-bold text-blue-950 shadow-sm">
                     {(values.firstName?.[0] || 'A')}{(values.lastName?.[0] || '')}
                   </div>
                   <div>
@@ -310,9 +310,9 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({ form, onEditStep, userCl
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.8 }}
-          className="mt-12 mb-10"
+          className="mb-10 mt-12"
         >
-          <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl shadow-pink-100/50 p-8 border border-white max-w-3xl mx-auto">
+          <div className="mx-auto max-w-3xl rounded-3xl border border-slate-200/80 bg-white/90 p-8 shadow-xl shadow-blue-950/[0.06] backdrop-blur-xl">
             <FormField
               control={form.control}
               name={"termsAccepted" as any}
@@ -322,25 +322,41 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({ form, onEditStep, userCl
                     <Checkbox
                       checked={Boolean(field.value)}
                       onCheckedChange={(checked) => field.onChange(Boolean(checked))}
-                      className="mt-1 w-6 h-6 border-2 border-pink-200 data-[state=checked]:bg-pink-600 data-[state=checked]:border-pink-600 rounded-lg transition-all duration-200"
+                      className="mt-1 h-6 w-6 rounded-lg border-2 border-blue-200 transition-all duration-200 data-[state=checked]:border-blue-950 data-[state=checked]:bg-blue-950"
                     />
                   </FormControl>
                   <div className="space-y-2 leading-none flex-1">
-                    <FormLabel className="text-base font-bold text-[#1B2E5A] cursor-pointer hover:text-pink-700 transition-colors">
+                    <FormLabel className="cursor-pointer text-base font-bold text-[#1B2E5A] transition-colors hover:text-blue-950">
                       I accept the Terms and Conditions
                     </FormLabel>
                     <p className="text-sm text-slate-500 leading-relaxed">
                       By checking this box, you confirm that all provided information is accurate and you agree to our{' '}
-                      <Link to="/terms" target="_blank" rel="noopener noreferrer" className="text-pink-600 font-semibold hover:underline decoration-2 underline-offset-2 transition-all">
+                      <Link
+                        to="/terms"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-semibold text-blue-900 underline-offset-2 decoration-2 transition-all hover:text-blue-950 hover:underline"
+                      >
                         Terms and Conditions
                       </Link>
                       {' '}and{' '}
-                      <Link to="/privacy" target="_blank" rel="noopener noreferrer" className="text-pink-600 font-semibold hover:underline decoration-2 underline-offset-2 transition-all">
+                      <Link
+                        to="/privacy"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-semibold text-blue-900 underline-offset-2 decoration-2 transition-all hover:text-blue-950 hover:underline"
+                      >
                         Privacy Policy
-                      </Link>.
+                      </Link>
+                      .
                     </p>
                     <p className="text-sm text-slate-500 mt-1">
-                      <Link to="/terms" target="_blank" rel="noopener noreferrer" className="text-pink-600 font-medium hover:underline decoration-2 underline-offset-2 inline-flex items-center gap-1">
+                      <Link
+                        to="/terms"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 font-medium text-blue-900 underline-offset-2 decoration-2 transition-all hover:text-blue-950 hover:underline"
+                      >
                         Read our full Terms and Conditions
                       </Link>
                     </p>
@@ -352,7 +368,7 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({ form, onEditStep, userCl
 
             <div className="mt-8 pt-8 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-6">
               <div className="flex items-center gap-2 text-xs font-semibold text-slate-400 uppercase tracking-wide bg-slate-50 px-3 py-1.5 rounded-full">
-                <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                <ShieldCheck className="h-4 w-4 text-blue-800" />
                 Secure 256-bit SSL Encrypted
               </div>
             </div>

@@ -3,24 +3,25 @@
  * Centralizes subscription, credit, billing history, timeline, and mutations.
  */
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useSearch } from '@tanstack/react-router'
-import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query'
+import { useDashboardTabParam } from '@/hooks/useDashboardTabParam'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useKindeAuth } from '@kinde-oss/kinde-auth-react'
 import toast from 'react-hot-toast'
 
 import {
   subscriptionAPI,
   creditAPI,
-  tenantAPI,
   setKindeTokenGetter,
   api
 } from '@/lib/api'
 import { useSubscriptionCurrent } from '@/hooks/useSharedQueries'
 import { applicationPlansFallback, creditTopups } from '../constants/billingPlans'
-import type { ApplicationPlan, CreditTopup } from '@/types/pricing'
+import { mapSubscriptionPlansResponse } from '../utils/mapSubscriptionPlansResponse'
+import type { ApplicationPlan, CreditTopup, CheckoutCurrency } from '@/types/pricing'
 
-/** Display subscription shape (subscription + optional credit/usage fields) */
+/** Display subscription shape — subscription table fields only. Credit data comes from useCreditStatusQuery. */
 export interface DisplaySubscription {
   plan: string
   status: string
@@ -30,11 +31,6 @@ export interface DisplaySubscription {
   billingCycle?: string
   monthlyPrice?: number
   yearlyPrice?: number
-  availableCredits?: number
-  totalCredits?: number
-  usageThisPeriod?: number
-  freeCreditsExpiry?: string
-  alerts?: string[]
   [key: string]: unknown
 }
 
@@ -55,14 +51,43 @@ const defaultDisplaySubscription: DisplaySubscription = {
   currency: 'USD'
 }
 
+const BILLING_PRICE_CURRENCY_KEY = 'wrapper.billing.price-currency'
+
+const BILLING_PAGE_TABS = ['subscription', 'topups', 'plans', 'history'] as const
+
+function readStoredCheckoutCurrency(): CheckoutCurrency {
+  try {
+    if (typeof window === 'undefined') return 'usd'
+    const v = localStorage.getItem(BILLING_PRICE_CURRENCY_KEY)
+    if (v === 'inr' || v === 'usd') return v
+  } catch {
+    /* ignore */
+  }
+  return 'usd'
+}
+
 export function useBilling() {
   const navigate = useNavigate()
   const search = useSearch({ strict: false }) as Record<string, string>
   const queryClient = useQueryClient()
 
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState('subscription')
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly')
+  const [activeTab, setActiveTab] = useDashboardTabParam({
+    allowed: BILLING_PAGE_TABS,
+    defaultTab: 'subscription',
+  })
+  const [checkoutCurrency, setCheckoutCurrencyState] = useState<CheckoutCurrency>(() =>
+    readStoredCheckoutCurrency()
+  )
+
+  const setCheckoutCurrency = useCallback((c: CheckoutCurrency) => {
+    setCheckoutCurrencyState(c)
+    try {
+      localStorage.setItem(BILLING_PRICE_CURRENCY_KEY, c)
+    } catch {
+      /* ignore */
+    }
+  }, [])
   const [isUpgrading, setIsUpgrading] = useState(false)
   const [needsOnboarding, setNeedsOnboarding] = useState(false)
   const [showCancelDialog, setShowCancelDialog] = useState(false)
@@ -114,7 +139,9 @@ export function useBilling() {
 
   useEffect(() => {
     if (paymentSuccess) {
-      queryClient.invalidateQueries()
+      queryClient.invalidateQueries({ queryKey: ['subscription'] })
+      queryClient.invalidateQueries({ queryKey: ['credit'] })
+      queryClient.invalidateQueries({ queryKey: ['payments'] })
       localStorage.removeItem('trialExpired')
       window.dispatchEvent(new CustomEvent('paymentSuccess'))
       window.dispatchEvent(new CustomEvent('subscriptionUpgraded'))
@@ -135,18 +162,7 @@ export function useBilling() {
     queryFn: async () => {
       const response = await subscriptionAPI.getAvailablePlans()
       const raw = response.data?.data ?? response.data
-      const list = Array.isArray(raw) ? raw : []
-      return list.map((p: { id: string; name: string; description?: string; monthlyPrice?: number; yearlyPrice?: number; price?: number; credits?: number; features?: string[]; popular?: boolean }) => ({
-        id: p.id,
-        name: p.name,
-        description: p.description ?? '',
-        monthlyPrice: Number(p.monthlyPrice) ?? 0,
-        annualPrice: Number(p.yearlyPrice ?? p.price) ?? 0,
-        currency: 'USD',
-        freeCredits: Number(p.credits) ?? 0,
-        features: Array.isArray(p.features) ? p.features : [],
-        popular: !!p.popular
-      })) as ApplicationPlan[]
+      return mapSubscriptionPlansResponse(raw)
     },
     enabled: isAuthenticated && !mockMode,
     retry: 1
@@ -195,84 +211,20 @@ export function useBilling() {
     retry: 1
   })
 
-  const TIMELINE_PAGE_SIZE = 20
-
-  const {
-    data: timelinePages,
-    isLoading: timelineLoading,
-    isFetchingNextPage: isLoadingMoreTimeline,
-    hasNextPage: hasMoreTimeline,
-    fetchNextPage: loadMoreTimeline
-  } = useInfiniteQuery({
-    queryKey: ['tenant', 'timeline'],
-    queryFn: async ({ pageParam = 0 }) => {
-      try {
-        const response = await tenantAPI.getTimeline({
-          includeActivity: true,
-          limit: TIMELINE_PAGE_SIZE,
-          offset: pageParam
-        })
-        return response.data.data ?? { events: [], pagination: { offset: pageParam, limit: TIMELINE_PAGE_SIZE, activityTotal: 0, hasMore: false } }
-      } catch (error: unknown) {
-        console.warn('Failed to fetch timeline:', error)
-        return { events: [], pagination: { offset: pageParam, limit: TIMELINE_PAGE_SIZE, activityTotal: 0, hasMore: false } }
-      }
-    },
-    initialPageParam: 0,
-    getNextPageParam: (lastPage) => {
-      const pagination = lastPage?.pagination
-      if (pagination?.hasMore) {
-        return (pagination.offset ?? 0) + (pagination.limit ?? TIMELINE_PAGE_SIZE)
-      }
-      return undefined
-    },
-    enabled: isAuthenticated && !mockMode,
-    retry: 1
-  })
-
-  const timelineData = useMemo(() => {
-    if (!timelinePages?.pages?.length) return { events: [] }
-
-    const fixedEvents: Array<{ type: string; label: string; date: string; metadata?: Record<string, unknown> }> = []
-    const activityEvents: Array<{ type: string; label: string; date: string; metadata?: Record<string, unknown> }> = []
-    const seenActivityKeys = new Set<string>()
-
-    for (const page of timelinePages.pages) {
-      for (const event of (page.events ?? [])) {
-        if (event.type === 'today') continue
-        if (event.type === 'activity') {
-          const key = `${event.date}|${event.label}`
-          if (!seenActivityKeys.has(key)) {
-            seenActivityKeys.add(key)
-            activityEvents.push(event)
-          }
-        } else if (fixedEvents.every(e => e.type !== event.type || e.date !== event.date)) {
-          fixedEvents.push(event)
-        }
-      }
-    }
-
-    const allEvents = [...fixedEvents, ...activityEvents]
-    allEvents.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-    allEvents.push({ type: 'today', label: 'Today', date: new Date().toISOString(), metadata: {} })
-
-    return { events: allEvents }
-  }, [timelinePages])
-
   const displaySubscription: DisplaySubscription =
     ensureValidSubscription(subscription as DisplaySubscription) ?? defaultDisplaySubscription
   const displayBillingHistory = billingHistory ?? []
   const displayCreditTopups: CreditTopup[] = packagesData ?? creditTopups
 
   const createCheckoutMutation = useMutation({
-    mutationFn: async ({ planId, billingCycle: cycle }: { planId: string; billingCycle: 'monthly' | 'yearly' }) => {
+    mutationFn: async ({ planId, currency }: { planId: string; currency: CheckoutCurrency }) => {
       if (mockMode) {
         await new Promise((r) => setTimeout(r, 2000))
-        return { checkoutUrl: `https://checkout.stripe.com/pay/mock-${planId}-${cycle}#test` }
+        return { checkoutUrl: `https://checkout.stripe.com/pay/mock-${planId}-${currency}#test` }
       }
       const response = await subscriptionAPI.createCheckout({
         planId,
-        billingCycle: cycle,
+        currency,
         successUrl: `${window.location.origin}/payment-success?type=credit_purchase&session_id={CHECKOUT_SESSION_ID}`,
         cancelUrl: `${window.location.origin}/billing?payment=cancelled`
       })
@@ -302,8 +254,8 @@ export function useBilling() {
   })
 
   const changePlanMutation = useMutation({
-    mutationFn: async ({ planId, billingCycle: cycle }: { planId: string; billingCycle: 'monthly' | 'yearly' }) => {
-      const response = await subscriptionAPI.changePlan({ planId, billingCycle: cycle })
+    mutationFn: async ({ planId, currency }: { planId: string; currency: CheckoutCurrency }) => {
+      const response = await subscriptionAPI.changePlan({ planId, currency, billingCycle: 'yearly' })
       return response.data
     },
     onSuccess: (data) => {
@@ -401,7 +353,11 @@ export function useBilling() {
       const hasActiveSubscription = displaySubscription?.status === 'active' && displaySubscription?.plan !== 'free'
       if (hasActiveSubscription) {
         try {
-          const response = await subscriptionAPI.changePlan({ planId, billingCycle: 'yearly' })
+          const response = await subscriptionAPI.changePlan({
+            planId,
+            billingCycle: 'yearly',
+            currency: checkoutCurrency
+          })
           if (response.data.data?.checkoutUrl) {
             window.location.href = response.data.data.checkoutUrl
           } else {
@@ -412,7 +368,7 @@ export function useBilling() {
         } catch {
           const response = await subscriptionAPI.createCheckout({
             planId,
-            billingCycle: 'yearly',
+            currency: checkoutCurrency,
             successUrl: `${window.location.origin}/payment-success?type=subscription&session_id={CHECKOUT_SESSION_ID}`,
             cancelUrl: `${window.location.origin}/billing?payment=cancelled&type=subscription`
           })
@@ -427,7 +383,7 @@ export function useBilling() {
       } else {
         const response = await subscriptionAPI.createCheckout({
           planId,
-          billingCycle: 'yearly',
+          currency: checkoutCurrency,
           successUrl: `${window.location.origin}/payment-success?type=subscription&session_id={CHECKOUT_SESSION_ID}`,
           cancelUrl: `${window.location.origin}/billing?payment=cancelled&type=subscription`
         })
@@ -458,13 +414,13 @@ export function useBilling() {
       setIsUpgrading(true)
       toast.loading(`Setting up your ${planId} plan upgrade...`, { duration: 2000 })
       try {
-        await createCheckoutMutation.mutateAsync({ planId, billingCycle })
+        await createCheckoutMutation.mutateAsync({ planId, currency: checkoutCurrency })
       } catch {
         setIsUpgrading(false)
         toast.error('Payment failed. Please try again.')
       }
     } else {
-      navigate({ to: `/dashboard/billing/upgrade?plan=${planId}&cycle=${billingCycle}` })
+      navigate({ to: `/dashboard/billing/upgrade?plan=${planId}&currency=${checkoutCurrency}` })
     }
   }
 
@@ -472,8 +428,8 @@ export function useBilling() {
     // UI state
     activeTab,
     setActiveTab,
-    billingCycle,
-    setBillingCycle,
+    checkoutCurrency,
+    setCheckoutCurrency,
     selectedPlan,
     isUpgrading,
     showCancelDialog,
@@ -494,15 +450,9 @@ export function useBilling() {
     displayCreditTopups,
     applicationPlans,
     creditBalance,
-    timelineData,
     // Loading
     subscriptionLoading,
     billingHistoryLoading,
-    timelineLoading,
-    // Timeline pagination
-    hasMoreTimeline: hasMoreTimeline ?? false,
-    isLoadingMoreTimeline,
-    loadMoreTimeline,
     // Mutations
     createCheckoutMutation,
     changePlanMutation,

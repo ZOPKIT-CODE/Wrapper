@@ -1,4 +1,3 @@
-import React from 'react'
 import {
   Crown,
   CheckCircle,
@@ -22,7 +21,9 @@ import {
   StatsIcon
 } from '@/components/common/billing/BillingIcons'
 import type { DisplaySubscription } from '../hooks/useBilling'
-import type { ApplicationPlan } from '@/types/pricing'
+import type { ApplicationPlan, CheckoutCurrency } from '@/types/pricing'
+import { formatMonthlyInrDisplay, formatMonthlyUsdDisplay } from '../utils/planPriceDisplay'
+import { DASHBOARD_SECTION_TITLE_CLASS } from '@/components/dashboard/DashboardPageHeader'
 
 // ----------------------------------------------------------------------
 // Interfaces & Types
@@ -42,6 +43,8 @@ export interface SubscriptionTabProps {
   applicationPlans: ApplicationPlan[]
   creditBalance: CreditBalanceData | null | undefined
   setActiveTab: (tab: string) => void
+  /** Matches Plans tab / checkout so amounts are shown in one currency at a time. */
+  planPriceCurrency?: CheckoutCurrency
 }
 
 const PLAN_NAME_MAP: Record<string, string> = {
@@ -70,18 +73,25 @@ export function SubscriptionTab({
   displaySubscription,
   applicationPlans,
   creditBalance,
-  setActiveTab
+  setActiveTab,
+  planPriceCurrency = 'usd'
 }: SubscriptionTabProps) {
   const planId = displaySubscription.plan || 'free'
   const currentPlan = applicationPlans.find((p) => p.id === planId)
+  const showInr =
+    planPriceCurrency === 'inr' && (currentPlan?.annualPriceInr ?? 0) > 0
+  const annualUsdForDisplay = Number(
+    displaySubscription.yearlyPrice ?? currentPlan?.annualPriceUsd ?? 0
+  )
+  const annualInrForDisplay = currentPlan?.annualPriceInr ?? 0
   
-  const availableCredits =
-    displaySubscription.availableCredits ?? creditBalance?.availableCredits ?? 0
-  const totalCredits = displaySubscription.totalCredits ?? creditBalance?.totalCredits ?? 0
-  
+  // Credit fields now come exclusively from creditBalance (useCreditStatusQuery).
+  // displaySubscription no longer carries credit data — subscription endpoint is subscription-only.
+  const availableCredits = creditBalance?.availableCredits ?? 0
+  const totalCredits = creditBalance?.totalCredits ?? 0
+
   // Expiry Logic
   const freeCreditsExpiry =
-    displaySubscription.freeCreditsExpiry ??
     creditBalance?.freeCreditsExpiry ??
     displaySubscription.currentPeriodEnd
 
@@ -109,7 +119,7 @@ export function SubscriptionTab({
                 <Crown className="h-7 w-7" />
               </div>
               <div>
-                <CardTitle className="text-xl font-bold tracking-tight text-[#1B2E5A]">
+                <CardTitle className={DASHBOARD_SECTION_TITLE_CLASS}>
                   {getPlanDisplayName(planId)} Plan
                 </CardTitle>
                 <CardDescription className="flex items-center gap-2 text-slate-500 mt-1">
@@ -122,13 +132,17 @@ export function SubscriptionTab({
             <div className="flex items-end flex-col">
                {displaySubscription.plan !== 'free' ? (
                 <>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-bold text-[#1B2E5A]">
-                      ${displaySubscription.yearlyPrice || displaySubscription.monthlyPrice || '0.00'}
-                    </span>
-                    <span className="text-sm font-medium text-slate-400 uppercase tracking-wide">
-                      / {displaySubscription.billingCycle || 'year'}
-                    </span>
+                  <div className="flex flex-col items-end gap-0.5">
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-2xl font-bold text-[#1B2E5A]">
+                        {showInr
+                          ? formatMonthlyInrDisplay(annualInrForDisplay)
+                          : formatMonthlyUsdDisplay(annualUsdForDisplay)}
+                      </span>
+                      <span className="text-xs font-medium text-slate-400 uppercase tracking-wide">
+                        {showInr ? '/ mo INR' : '/ mo USD'}
+                      </span>
+                    </div>
                   </div>
                   {displaySubscription.currentPeriodEnd && (
                      <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
@@ -158,7 +172,6 @@ export function SubscriptionTab({
                   onClick={() => setActiveTab('plans')}
                   size="sm"
                   className="bg-[#1B2E5A] hover:bg-[#152449] text-white shadow-md shadow-blue-500/20 rounded-full px-6 transition-all hover:scale-105"
-                  data-tour-feature="upgrade-plans"
                 >
                   Upgrade Now <ArrowRight className="w-4 h-4 ml-1" />
                 </Button>
@@ -217,11 +230,28 @@ export function SubscriptionTab({
                       </div>
                       <div className="text-lg font-bold text-slate-800">
                         {displaySubscription.plan !== 'free' && displaySubscription.plan !== 'credit_based' ? (
-                          <span>${(displaySubscription.billingCycle === 'monthly'
-                            ? displaySubscription.monthlyPrice ?? currentPlan?.monthlyPrice ?? 0
-                            : displaySubscription.yearlyPrice ?? displaySubscription.monthlyPrice ?? currentPlan?.annualPrice ?? 0
-                          ).toFixed(2)} <span className="text-sm font-medium text-slate-400">/ {displaySubscription.billingCycle}</span></span>
-                        ) : 'Free'}
+                          <span>
+                            {showInr ? (
+                              <>
+                                {formatMonthlyInrDisplay(annualInrForDisplay)}{' '}
+                                <span className="text-sm font-medium text-slate-400">/ month (INR)</span>
+                                <span className="block text-xs font-normal text-slate-400 mt-0.5">
+                                  Billed annually
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                {formatMonthlyUsdDisplay(annualUsdForDisplay)}{' '}
+                                <span className="text-sm font-medium text-slate-400">/ month (USD)</span>
+                                <span className="block text-xs font-normal text-slate-400 mt-0.5">
+                                  Billed annually
+                                </span>
+                              </>
+                            )}
+                          </span>
+                        ) : (
+                          'Free'
+                        )}
                       </div>
                    </div>
                    {displaySubscription.currentPeriodEnd && (
@@ -241,7 +271,7 @@ export function SubscriptionTab({
                      <div className="rounded-2xl border border-[#1B2E5A]/10 bg-gradient-to-br from-[#1B2E5A]/5 to-white p-3">
                         <div className="flex items-center gap-2 mb-1">
                           <Zap className="w-4 h-4 text-[#1B2E5A]" />
-                          <span className="text-xs font-semibold text-[#1B2E5A]/60 uppercase">Monthly Bonus</span>
+                          <span className="text-xs font-semibold text-[#1B2E5A]/60 uppercase">Plan credits</span>
                         </div>
                         <div className="text-lg font-bold text-[#1B2E5A]">
                           {(currentPlan?.freeCredits ?? 0).toLocaleString()} <span className="text-sm font-normal text-[#1B2E5A]/70">credits</span>
@@ -302,7 +332,7 @@ export function SubscriptionTab({
                     </div>
                     <div className="flex items-center gap-2 text-sm text-slate-400">
                        <Activity className="w-4 h-4 text-emerald-400" />
-                       <span>Total usage: {displaySubscription.usageThisPeriod ?? 0}</span>
+                       <span>Total usage: {(creditBalance as any)?.usageThisPeriod ?? 0}</span>
                     </div>
                  </div>
                  {/* Breakdown Mini-Cards */}

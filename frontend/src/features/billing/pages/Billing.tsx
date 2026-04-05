@@ -3,34 +3,29 @@
  * Composes useBilling hook and feature components.
  */
 
-import { motion } from 'framer-motion'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   CreditBalanceIcon,
   CreditPackagesIcon,
   PaymentHistoryIcon
 } from '@/components/common/billing/BillingIcons'
-import { ListOrdered } from 'lucide-react'
+import { Crown } from 'lucide-react'
 import { useBilling } from '../hooks/useBilling'
 import {
   BillingAlerts,
   SubscriptionTab,
-  PlansTab,
+  CreditTopupsTab,
+  ApplicationPlansTab,
   HistoryTab,
-  TimelineTab,
   CancelSubscriptionDialog,
   RefundDialog
 } from '../components'
 
 export function Billing() {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: 'easeOut' }}
-    >
+    <div>
       <BillingContent />
-    </motion.div>
+    </div>
   )
 }
 
@@ -43,13 +38,8 @@ function BillingContent() {
     displayCreditTopups,
     applicationPlans,
     creditBalance,
-    timelineData,
     subscriptionLoading,
     billingHistoryLoading,
-    timelineLoading,
-    hasMoreTimeline,
-    isLoadingMoreTimeline,
-    loadMoreTimeline,
     upgradeMode,
     needsOnboarding,
     mockMode,
@@ -65,6 +55,8 @@ function BillingContent() {
     refundMutation,
     handleCreditPurchase,
     handlePlanPurchase,
+    checkoutCurrency,
+    setCheckoutCurrency,
     setActiveTab: setTab
   } = useBilling()
 
@@ -96,40 +88,38 @@ function BillingContent() {
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4 bg-gray-100 p-1 h-12 dark:bg-gray-800">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 gap-1 bg-gray-100 p-1 min-h-12 h-auto sm:h-12 dark:bg-gray-800">
           <TabsTrigger
             value="subscription"
-            className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:dark:bg-gray-700 transition-all"
-            data-tour-feature="purchase-credits"
+            className="flex items-center justify-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:dark:bg-gray-700 transition-all text-xs sm:text-sm px-2"
           >
-            <CreditBalanceIcon className="w-4 h-4" />
+            <CreditBalanceIcon className="w-4 h-4 shrink-0" />
             <span className="hidden sm:inline">Credit Balance</span>
             <span className="sm:hidden">Balance</span>
           </TabsTrigger>
           <TabsTrigger
-            value="plans"
-            className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:dark:bg-gray-700 transition-all"
-            data-tour-feature="credit-packages"
+            value="topups"
+            className="flex items-center justify-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:dark:bg-gray-700 transition-all text-xs sm:text-sm px-2"
           >
-            <CreditPackagesIcon className="w-4 h-4" />
-            <span className="hidden sm:inline">Credit Packages</span>
-            <span className="sm:hidden">Packages</span>
+            <CreditPackagesIcon className="w-4 h-4 shrink-0" />
+            <span className="hidden sm:inline">Credit Top-ups</span>
+            <span className="sm:hidden">Top-ups</span>
+          </TabsTrigger>
+          <TabsTrigger
+            value="plans"
+            className="flex items-center justify-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:dark:bg-gray-700 transition-all text-xs sm:text-sm px-2"
+          >
+            <Crown className="w-4 h-4 shrink-0" />
+            <span className="hidden sm:inline">Application Plans</span>
+            <span className="sm:hidden">Plans</span>
           </TabsTrigger>
           <TabsTrigger
             value="history"
-            className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:dark:bg-gray-700 transition-all"
+            className="flex items-center justify-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:dark:bg-gray-700 transition-all text-xs sm:text-sm px-2"
           >
-            <PaymentHistoryIcon className="w-4 h-4" />
+            <PaymentHistoryIcon className="w-4 h-4 shrink-0" />
             <span className="hidden sm:inline">Purchase History</span>
             <span className="sm:hidden">History</span>
-          </TabsTrigger>
-          <TabsTrigger
-            value="timeline"
-            className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:dark:bg-gray-700 transition-all"
-          >
-            <ListOrdered className="w-4 h-4" />
-            <span className="hidden sm:inline">Timeline</span>
-            <span className="sm:hidden">Time</span>
           </TabsTrigger>
         </TabsList>
 
@@ -139,17 +129,27 @@ function BillingContent() {
             applicationPlans={applicationPlans}
             creditBalance={creditBalance}
             setActiveTab={setTab}
+            planPriceCurrency={checkoutCurrency}
+          />
+        </TabsContent>
+
+        <TabsContent value="topups" className="space-y-12">
+          <CreditTopupsTab
+            creditTopups={displayCreditTopups}
+            onCreditPurchase={handleCreditPurchase}
+            isUpgrading={isUpgrading}
+            selectedPlan={selectedPlan}
           />
         </TabsContent>
 
         <TabsContent value="plans" className="space-y-12">
-          <PlansTab
-            creditTopups={displayCreditTopups}
+          <ApplicationPlansTab
             applicationPlans={applicationPlans}
-            onCreditPurchase={handleCreditPurchase}
             onPlanPurchase={handlePlanPurchase}
             isUpgrading={isUpgrading}
             selectedPlan={selectedPlan}
+            checkoutCurrency={checkoutCurrency}
+            onCheckoutCurrencyChange={setCheckoutCurrency}
           />
         </TabsContent>
 
@@ -162,15 +162,6 @@ function BillingContent() {
           />
         </TabsContent>
 
-        <TabsContent value="timeline" className="space-y-6">
-          <TimelineTab
-            timelineData={timelineData ?? undefined}
-            timelineLoading={timelineLoading}
-            hasMore={hasMoreTimeline}
-            isLoadingMore={isLoadingMoreTimeline}
-            onLoadMore={() => loadMoreTimeline()}
-          />
-        </TabsContent>
       </Tabs>
 
       <CancelSubscriptionDialog

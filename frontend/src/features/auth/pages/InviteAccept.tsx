@@ -207,7 +207,7 @@ export function InviteAccept() {
           await queryClient.refetchQueries({ queryKey: queryKeys.onboardingStatus })
           logger.debug('🎉 Invitation accepted successfully, redirecting to dashboard...')
           setTimeout(() => {
-            navigate({ to: '/dashboard?welcome=true&invited=true' })
+            navigate({ to: '/dashboard/applications?welcome=true&invited=true' })
           }, 800)
         } else {
           throw new Error(response.data.message || 'Failed to accept invitation')
@@ -237,7 +237,7 @@ export function InviteAccept() {
           await queryClient.refetchQueries({ queryKey: queryKeys.onboardingStatus })
           logger.debug('🎉 Invitation accepted successfully, redirecting to dashboard...')
           setTimeout(() => {
-            navigate({ to: '/dashboard?welcome=true&invited=true' })
+            navigate({ to: '/dashboard/applications?welcome=true&invited=true' })
           }, 800)
         } else {
           throw new Error(response.data.message || 'Failed to accept invitation')
@@ -248,7 +248,7 @@ export function InviteAccept() {
       if (err.response?.status === 409) {
         toast.error('This invitation has already been accepted')
         setTimeout(() => {
-          navigate({ to: '/dashboard' })
+          navigate({ to: '/dashboard/applications' })
         }, 1500)
       } else if (err.response?.status === 410) {
         toast.error('This invitation has expired')

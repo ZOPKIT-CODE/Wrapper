@@ -9,7 +9,6 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import ProtectedRoute from '@/components/auth/ProtectedRoute'
 import { PermissionGuard } from '@/components/auth/PermissionGuard'
 import { OnboardingGuard, OnboardingPageGuard } from '@/features/onboarding/indexOptimized'
-import { UserManagementProvider } from '@/features/users/components/context/UserManagementContext'
 import { ErrorBoundary } from '@/errors/ErrorBoundary'
 import SilentAuthGuard from '@/components/auth/SilentAuthGuard'
 import { UserContextProvider } from '@/contexts/UserContextProvider'
@@ -18,12 +17,11 @@ import { EntityScopeProvider } from '@/contexts/EntityScopeContext'
 import { RootRedirect } from './RootRedirect'
 import {
   Landing, ProductPage, IndustryPage, PrivacyPolicy, TermsOfService,
-  CookiePolicy, Security, Pricing, Login, AuthCallback, InviteAccept,
+  CookiePolicy, RefundPolicy, Security, Pricing, Login, AuthCallback, InviteAccept,
   OnboardingPage, PaymentSuccess, PaymentCancelled, PaymentDetailsPage,
-  BillingUpgradePage, Billing, SuiteDashboard, ActivityDashboard,
-  ApplicationPage, ApplicationDetailsPage, UserManagementDashboard,
-  InviteUserPage, UserDetailsPage, UserApplicationAccessPage,
-  RolesPage, RoleDetailsPage, RoleBuilderPage, OrganizationPage, OrganizationCreatePage,
+  BillingUpgradePage, Billing, SuiteDashboard, ActivityPage,
+  ApplicationPage, ApplicationDetailsPage,
+  RolesPage, RoleDetailsPage, RoleBuilderPage, UserManagementPage, OrganizationPage, OrganizationCreatePage,
   Permissions, Settings, AdminDashboardPage, TenantDetailsPage,
   CampaignDetailsPage, NotFound,
 } from './lazyPages'
@@ -82,6 +80,11 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
+/** `/dashboard` should land on the applications hub (same as `/dashboard/applications`). */
+function DashboardIndexRedirect() {
+  return <Navigate to="/dashboard/applications" replace />
+}
+
 function RootLayout() {
   const { isAuthenticated, isLoading } = useKindeAuth()
 
@@ -132,6 +135,7 @@ const industryRoute = createRoute({ getParentRoute: () => rootRoute, path: '/ind
 const privacyRoute = createRoute({ getParentRoute: () => rootRoute, path: '/privacy', component: PrivacyPolicy })
 const termsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/terms', component: TermsOfService })
 const cookiesRoute = createRoute({ getParentRoute: () => rootRoute, path: '/cookies', component: CookiePolicy })
+const refundPolicyRoute = createRoute({ getParentRoute: () => rootRoute, path: '/refund-policy', component: RefundPolicy })
 const securityRoute = createRoute({ getParentRoute: () => rootRoute, path: '/security', component: Security })
 const pricingRoute = createRoute({ getParentRoute: () => rootRoute, path: '/pricing', component: Pricing })
 
@@ -196,29 +200,22 @@ const dashboardLayoutRoute = createRoute({
   ),
 })
 
-const dashboardIndexRoute = createRoute({ getParentRoute: () => dashboardLayoutRoute, path: '/', component: ApplicationPage })
+const dashboardIndexRoute = createRoute({ getParentRoute: () => dashboardLayoutRoute, path: '/', component: DashboardIndexRedirect })
 const dashboardApplicationsRoute = createRoute({ getParentRoute: () => dashboardLayoutRoute, path: '/applications', component: ApplicationPage })
 const dashboardAppDetailRoute = createRoute({ getParentRoute: () => dashboardLayoutRoute, path: '/applications/$appId', component: ApplicationDetailsPage })
-const dashboardUsersInviteRoute = createRoute({
-  getParentRoute: () => dashboardLayoutRoute,
-  path: '/users/invite',
-  component: () => <AdminRoute><UserManagementProvider><InviteUserPage /></UserManagementProvider></AdminRoute>,
-})
-const dashboardUserDetailRoute = createRoute({ getParentRoute: () => dashboardLayoutRoute, path: '/users/$userId', component: () => <AdminRoute><UserDetailsPage /></AdminRoute> })
-const dashboardUsersRoute = createRoute({ getParentRoute: () => dashboardLayoutRoute, path: '/users', component: () => <AdminRoute><UserManagementDashboard /></AdminRoute> })
 const dashboardOrganizationRoute = createRoute({ getParentRoute: () => dashboardLayoutRoute, path: '/organization', component: () => <AdminRoute><OrganizationPage /></AdminRoute> })
 const dashboardOrganizationCreateRoute = createRoute({ getParentRoute: () => dashboardLayoutRoute, path: '/organization/create', component: () => <AdminRoute><OrganizationCreatePage /></AdminRoute> })
 const dashboardRolesNewRoute = createRoute({ getParentRoute: () => dashboardLayoutRoute, path: '/roles/new', component: () => <AdminRoute><RoleBuilderPage /></AdminRoute> })
 const dashboardRolesEditRoute = createRoute({ getParentRoute: () => dashboardLayoutRoute, path: '/roles/$roleId/edit', component: () => <AdminRoute><RoleBuilderPage /></AdminRoute> })
 const dashboardRoleDetailRoute = createRoute({ getParentRoute: () => dashboardLayoutRoute, path: '/roles/$roleId', component: () => <AdminRoute><RoleDetailsPage /></AdminRoute> })
 const dashboardRolesRoute = createRoute({ getParentRoute: () => dashboardLayoutRoute, path: '/roles', component: () => <AdminRoute><RolesPage /></AdminRoute> })
-const dashboardUserAppsRoute = createRoute({ getParentRoute: () => dashboardLayoutRoute, path: '/user-apps', component: UserApplicationAccessPage })
 const dashboardBillingPaymentRoute = createRoute({ getParentRoute: () => dashboardLayoutRoute, path: '/billing/payments/$paymentId', component: () => <AdminRoute><PaymentDetailsPage /></AdminRoute> })
 const dashboardBillingUpgradeRoute = createRoute({ getParentRoute: () => dashboardLayoutRoute, path: '/billing/upgrade', component: () => <AdminRoute><BillingUpgradePage /></AdminRoute> })
 const dashboardBillingRoute = createRoute({ getParentRoute: () => dashboardLayoutRoute, path: '/billing', component: () => <AdminRoute><Billing /></AdminRoute> })
 const dashboardPermissionsRoute = createRoute({ getParentRoute: () => dashboardLayoutRoute, path: '/permissions', component: () => <AdminRoute><Permissions /></AdminRoute> })
 const dashboardSettingsRoute = createRoute({ getParentRoute: () => dashboardLayoutRoute, path: '/settings', component: () => <AdminRoute><Settings /></AdminRoute> })
-const dashboardActivityRoute = createRoute({ getParentRoute: () => dashboardLayoutRoute, path: '/activity', component: () => <AdminRoute><ActivityDashboard /></AdminRoute> })
+const dashboardUsersRoute = createRoute({ getParentRoute: () => dashboardLayoutRoute, path: '/users', component: () => <AdminRoute><UserManagementPage /></AdminRoute> })
+const dashboardActivityRoute = createRoute({ getParentRoute: () => dashboardLayoutRoute, path: '/activity', component: () => <AdminRoute><ActivityPage /></AdminRoute> })
 
 // Company Admin
 const companyAdminTenantRoute = createRoute({
@@ -267,6 +264,7 @@ const routeTree = rootRoute.addChildren([
   privacyRoute,
   termsRoute,
   cookiesRoute,
+  refundPolicyRoute,
   securityRoute,
   pricingRoute,
   loginRoute,
@@ -280,21 +278,18 @@ const routeTree = rootRoute.addChildren([
     dashboardIndexRoute,
     dashboardApplicationsRoute,
     dashboardAppDetailRoute,
-    dashboardUsersInviteRoute,
-    dashboardUserDetailRoute,
-    dashboardUsersRoute,
     dashboardOrganizationRoute,
     dashboardOrganizationCreateRoute,
     dashboardRolesNewRoute,
     dashboardRolesEditRoute,
     dashboardRoleDetailRoute,
     dashboardRolesRoute,
-    dashboardUserAppsRoute,
     dashboardBillingPaymentRoute,
     dashboardBillingUpgradeRoute,
     dashboardBillingRoute,
     dashboardPermissionsRoute,
     dashboardSettingsRoute,
+    dashboardUsersRoute,
     dashboardActivityRoute,
   ]),
   companyAdminTenantRoute,

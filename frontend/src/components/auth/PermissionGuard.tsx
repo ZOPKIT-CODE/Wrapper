@@ -27,7 +27,7 @@ interface PermissionGuardProps {
 export function PermissionGuard({
     children,
     requiredPermission,
-    fallbackPath = '/dashboard'
+    fallbackPath = '/dashboard/applications'
 }: PermissionGuardProps) {
     const { isLoading, isAuthenticated, getPermission, getPermissions } = useKindeAuth();
     const [permissionChecked, setPermissionChecked] = useState(false);
@@ -137,7 +137,7 @@ interface MultiPermissionGuardProps {
 export function MultiPermissionGuard({
     children,
     requiredPermissions,
-    fallbackPath = '/dashboard'
+    fallbackPath = '/dashboard/applications'
 }: MultiPermissionGuardProps) {
     const { isLoading, isAuthenticated, getPermissions } = useKindeAuth();
 
@@ -184,7 +184,7 @@ interface AnyPermissionGuardProps {
 export function AnyPermissionGuard({
     children,
     requiredPermissions,
-    fallbackPath = '/dashboard'
+    fallbackPath = '/dashboard/applications'
 }: AnyPermissionGuardProps) {
     const { isLoading, isAuthenticated, getPermissions } = useKindeAuth();
 

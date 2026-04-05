@@ -137,10 +137,10 @@ function formatActionLabel(action: string): string {
     .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-const PLAN_PRICES: Record<string, { monthly: number; yearly: number }> = {
-  starter: { monthly: 10, yearly: 120 },
-  professional: { monthly: 20, yearly: 240 },
-  enterprise: { monthly: 30, yearly: 360 },
+const PLAN_PRICES: Record<string, { yearlyUsd: number; yearlyInr: number }> = {
+  starter: { yearlyUsd: 120, yearlyInr: 9999 },
+  professional: { yearlyUsd: 240, yearlyInr: 19999 },
+  enterprise: { yearlyUsd: 360, yearlyInr: 29999 },
 };
 
 export function TenantDetailsPage() {
@@ -158,7 +158,7 @@ export function TenantDetailsPage() {
 
   if (isLoading) {
     return (
-      <Container>
+      <Container className="dashboard-actionable-cursors">
         <div className="flex items-center justify-center min-h-[400px]">
           <AnimatedLoader size="md" />
         </div>
@@ -168,7 +168,7 @@ export function TenantDetailsPage() {
 
   if (!tenantData) {
     return (
-      <Container>
+      <Container className="dashboard-actionable-cursors">
         <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
           <AlertCircle className="h-12 w-12 text-gray-400" />
           <h2 className="text-xl font-semibold">Tenant Not Found</h2>
@@ -214,9 +214,7 @@ export function TenantDetailsPage() {
   const billingCycle = subscription?.billingCycle || 'N/A';
   const planPrices = PLAN_PRICES[planName.toLowerCase()];
   const currentPrice = planPrices
-    ? billingCycle === 'yearly'
-      ? `$${planPrices.yearly}/yr`
-      : `$${planPrices.monthly}/mo`
+    ? `$${planPrices.yearlyUsd}/yr USD · ₹${planPrices.yearlyInr.toLocaleString('en-IN')}/yr INR`
     : 'Free';
   const periodEnd = subscription?.currentPeriodEnd;
   const renewalDays = daysFromNow(periodEnd ?? null);
@@ -258,7 +256,7 @@ export function TenantDetailsPage() {
   };
 
   return (
-    <Container>
+    <Container className="dashboard-actionable-cursors">
       <div className="space-y-6 pb-8">
         {/* ── Section 1: Header ── */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">

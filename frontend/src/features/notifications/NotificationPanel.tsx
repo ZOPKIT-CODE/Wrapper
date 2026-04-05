@@ -1,14 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { X, Check, Settings, Loader2, TestTube } from 'lucide-react';
+import React, { useState } from 'react';
+import { Bell, Check, Settings, Loader2, TestTube } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 import { NotificationItem } from './NotificationItem';
 import { NotificationPanelProps } from './types';
 import { NotificationService } from '@/services/notificationService';
-import { useNotifications } from '@/hooks/useNotifications';
+import { useInvalidateQueries } from '@/hooks/useSharedQueries';
 
 export const NotificationPanel: React.FC<NotificationPanelProps> = ({
   isOpen,
@@ -21,7 +28,7 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
 }) => {
   const [activeFilter, setActiveFilter] = useState<'all' | 'unread'>('all');
   const [creatingSamples, setCreatingSamples] = useState(false);
-  const { loadNotifications } = useNotifications();
+  const { invalidateNotifications: loadNotifications } = useInvalidateQueries();
 
   const filteredNotifications = notifications.filter(notification => {
     if (activeFilter === 'unread') {
@@ -55,112 +62,119 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm">
-      <div className="fixed right-0 top-0 h-full w-full max-w-md bg-white shadow-xl">
-        <Card className="h-full rounded-none border-0 border-l">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-            <CardTitle className="text-lg font-semibold">Notifications</CardTitle>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onClose}
-              className="h-8 w-8"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </CardHeader>
+    <Sheet
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <SheetContent
+        side="right"
+        className="flex h-full min-h-0 w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-lg [&>button]:text-white [&>button]:hover:bg-white/15"
+      >
+        <SheetHeader className="shrink-0 space-y-2 border-b border-white/10 bg-[#1B2E5A] px-6 pb-5 pt-8 text-white">
+          <SheetTitle className="flex items-center gap-2 text-lg font-semibold text-white">
+            <Bell className="h-5 w-5 shrink-0" aria-hidden />
+            Notifications
+          </SheetTitle>
+          <SheetDescription className="text-sm text-white/85">
+            Stay updated on activity and updates across your workspace.
+          </SheetDescription>
+        </SheetHeader>
 
-          <CardContent className="p-0">
-            {/* Filter Tabs */}
-            <div className="px-6 pb-4">
-              <div className="flex items-center gap-2">
-                <Button
-                  variant={activeFilter === 'all' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setActiveFilter('all')}
-                  className="text-xs"
-                >
-                  All ({notifications.filter(n => !n.isDismissed).length})
-                </Button>
-                <Button
-                  variant={activeFilter === 'unread' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setActiveFilter('unread')}
-                  className="text-xs"
-                >
-                  Unread
-                  {unreadCount > 0 && (
-                    <Badge variant="destructive" className="ml-1 h-4 w-4 p-0 flex items-center justify-center text-xs">
-                      {unreadCount}
-                    </Badge>
-                  )}
-                </Button>
-              </div>
-
-              {/* Mark All as Read Button */}
-              {unreadCount > 0 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleMarkAllAsRead}
-                  className="w-full mt-2 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                >
-                  <Check className="w-3 h-3 mr-1" />
-                  Mark all as read
-                </Button>
-              )}
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background">
+          <div className="shrink-0 space-y-3 border-b border-[#1B2E5A]/10 px-6 py-4 dark:border-slate-700">
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                variant={activeFilter === 'all' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setActiveFilter('all')}
+                className={cn(
+                  'text-xs',
+                  activeFilter === 'all' && 'bg-[#1B2E5A] text-white hover:bg-[#243A6C]',
+                )}
+              >
+                All ({notifications.filter((n) => !n.isDismissed).length})
+              </Button>
+              <Button
+                type="button"
+                variant={activeFilter === 'unread' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setActiveFilter('unread')}
+                className={cn(
+                  'text-xs',
+                  activeFilter === 'unread' && 'bg-[#1B2E5A] text-white hover:bg-[#243A6C]',
+                )}
+              >
+                Unread
+                {unreadCount > 0 && (
+                  <Badge variant="destructive" className="ml-1 flex h-4 w-4 items-center justify-center p-0 text-xs">
+                    {unreadCount}
+                  </Badge>
+                )}
+              </Button>
             </div>
+            {unreadCount > 0 && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleMarkAllAsRead}
+                className="w-full border-[#1B2E5A]/25 text-xs text-[#1B2E5A] hover:bg-[#1B2E5A]/5 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
+              >
+                <Check className="mr-1 h-3 w-3" />
+                Mark all as read
+              </Button>
+            )}
+          </div>
 
-            <Separator />
-
-            {/* Notifications List */}
-            <ScrollArea className="flex-1 px-6">
+          <ScrollArea className="h-full min-h-0 flex-1 px-6">
+            <div className="py-4">
               {loading ? (
                 <div className="flex items-center justify-center py-8">
-                  <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
-                  <span className="ml-2 text-sm text-gray-500">Loading notifications...</span>
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  <span className="ml-2 text-sm text-muted-foreground">Loading notifications...</span>
                 </div>
               ) : filteredNotifications.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                    <Settings className="w-6 h-6 text-gray-400" />
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#1B2E5A]/10 dark:bg-slate-800">
+                    <Settings className="h-6 w-6 text-[#1B2E5A]/60 dark:text-slate-400" />
                   </div>
-                  <h3 className="text-sm font-medium text-[#1B2E5A] mb-1">
+                  <h3 className="mb-1 text-sm font-medium text-[#1B2E5A] dark:text-slate-100">
                     {activeFilter === 'unread' ? 'No unread notifications' : 'No notifications'}
                   </h3>
-                  <p className="text-xs text-gray-500 mb-4">
+                  <p className="mb-4 text-xs text-muted-foreground">
                     {activeFilter === 'unread'
-                      ? 'You\'re all caught up!'
-                      : 'Notifications will appear here when you have updates.'
-                    }
+                      ? "You're all caught up!"
+                      : 'Notifications will appear here when you have updates.'}
                   </p>
                   {activeFilter === 'all' && (
                     <Button
+                      type="button"
                       variant="outline"
                       size="sm"
                       onClick={handleCreateSampleNotifications}
                       disabled={creatingSamples}
-                      className="text-xs"
+                      className="border-[#1B2E5A]/25 text-xs text-[#1B2E5A] hover:bg-[#1B2E5A]/5 dark:border-slate-600 dark:text-slate-200"
                     >
                       {creatingSamples ? (
                         <>
-                          <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                          <Loader2 className="mr-1 h-3 w-3 animate-spin" />
                           Creating...
                         </>
                       ) : (
                         <>
-                          <TestTube className="w-3 h-3 mr-1" />
-                          Create Sample Notifications
+                          <TestTube className="mr-1 h-3 w-3" />
+                          Create sample notifications
                         </>
                       )}
                     </Button>
                   )}
                 </div>
               ) : (
-                <div className="space-y-3 py-4">
+                <div className="space-y-3">
                   {filteredNotifications.map((notification) => (
                     <NotificationItem
                       key={notification.notificationId}
@@ -172,10 +186,21 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
                   ))}
                 </div>
               )}
-            </ScrollArea>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+            </div>
+          </ScrollArea>
+        </div>
+
+        <SheetFooter className="mt-0 shrink-0 flex-row justify-end gap-2 border-t border-[#1B2E5A]/10 bg-[#F0F4FA] px-6 py-4 dark:border-slate-700 dark:bg-slate-900/80">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            className="border-[#1B2E5A]/25 text-[#1B2E5A] hover:bg-[#1B2E5A]/5 dark:border-slate-600 dark:text-slate-200"
+          >
+            Close
+          </Button>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   );
 };

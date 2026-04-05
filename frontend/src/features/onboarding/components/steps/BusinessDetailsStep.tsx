@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { UserClassification } from '../FlowSelector';
 import { Building2, Globe, Users2, FileText, CheckCircle2, Briefcase, Settings2, ChevronDown, ChevronUp, DollarSign, Clock, Calendar, Info } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { autoPopulateLocalization } from '../../config/countryConfig';
+import { autoPopulateLocalization, resolveCountryCode } from '../../config/countryConfig';
 import React, { useEffect, useState, memo, useMemo } from 'react';
 import { useWatch } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
@@ -24,27 +24,28 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(({ f
     switch (userClassification) {
       case 'aspiringFounder':
         return {
-          title: 'Company Details',
-          description: 'Define your company\'s identity and core operations. Provide accurate information for compliance and account setup.',
-          placeholder: 'E.g. Building an AI-first CRM for small businesses...'
+          title: 'Company details',
+          description: 'Legal name, country, and basics—used for compliance and your workspace.',
+          placeholder: 'Short description of what your company does…'
         };
       case 'enterprise':
         return {
-          title: 'Company Details',
-          description: 'Configure your organization\'s operational details. Ensure all mandatory fields are completed for enterprise-level compliance.',
-          placeholder: 'E.g. Multinational logistics and supply chain management...'
+          title: 'Company details',
+          description: 'Organization profile for billing, tax, and access. Required fields are marked *.',
+          placeholder: 'Short description of what your company does…'
         };
       default:
         return {
-          title: 'Company Details',
-          description: 'Tell us about your organization to setup your workspace. Complete all mandatory fields marked with an asterisk (*).',
-          placeholder: 'Describe your primary business activities...'
+          title: 'Company details',
+          description: 'Complete the fields below. Required items are marked *.',
+          placeholder: 'Short description of what your company does…'
         };
     }
   };
   const content = getPersonalizedContent();
   const showGSTField = userClassification === 'withGST';
   const [isRegionalSettingsOpen, setIsRegionalSettingsOpen] = useState(true);
+  const [regionalFlash, setRegionalFlash] = useState(false);
   
   // Use useWatch to reactively get country without causing re-renders on other field changes
   const businessDetailsCountry = useWatch({ control: form.control, name: 'businessDetails.country' as any });
@@ -65,12 +66,14 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(({ f
     return null;
   }, [selectedCountry]);
 
-  // Ensure India is selected by default when Business Details step loads with no country set
+  // Default registration country to India and keep root `country` in sync (incl. blank restored drafts)
   useEffect(() => {
-    const current = form.getValues('businessDetails.country' as any) || form.getValues('country');
-    if (!current || current === '') {
-      form.setValue('businessDetails.country' as any, 'IN', { shouldValidate: false, shouldDirty: false });
-      form.setValue('country' as any, 'IN', { shouldValidate: false, shouldDirty: false });
+    const bd = form.getValues('businessDetails.country' as any);
+    const root = form.getValues('country');
+    const merged = resolveCountryCode(bd ?? root);
+    if ((bd ?? '') !== merged || (root ?? '') !== merged) {
+      form.setValue('businessDetails.country' as any, merged, { shouldValidate: false, shouldDirty: false });
+      form.setValue('country' as any, merged, { shouldValidate: false, shouldDirty: false });
     }
   }, [form]);
 
@@ -112,43 +115,51 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(({ f
 
     if (countryCode !== previousCountryRef.current) {
       previousCountryRef.current = countryCode;
-      const rafId = requestAnimationFrame(applyRegionalSettingsFromCountry);
+      const rafId = requestAnimationFrame(() => {
+        applyRegionalSettingsFromCountry();
+        // Brief highlight so users notice the fields updated
+        setRegionalFlash(true);
+        setTimeout(() => setRegionalFlash(false), 1200);
+      });
       setIsRegionalSettingsOpen(true);
       return () => cancelAnimationFrame(rafId);
     }
   }, [localizationConfig, selectedCountry, applyRegionalSettingsFromCountry]);
 
-  // Enhanced "Stripe-like" Enterprise Theme Styles
-  const cardClasses = "glass-card p-10 rounded-xl bg-white/60 backdrop-blur-xl border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-slate-900/5";
-  const labelClasses = "block text-sm font-semibold text-slate-700 mb-1.5 flex items-center gap-2";
-  const inputContainerClasses = "relative group";
-  const inputClasses = "w-full h-11 pl-4 pr-4 bg-white/50 border border-slate-200 rounded-lg text-[#1B2E5A] placeholder:text-slate-400 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none hover:border-slate-300 shadow-sm";
-  const iconClasses = "absolute left-4 top-3 h-5 w-5 text-slate-400 group-focus-within:text-indigo-500";
+  const cardClasses =
+    'rounded-xl border border-slate-200/70 bg-white p-6 shadow-[0_4px_32px_-8px_rgba(15,23,42,0.08)] ring-1 ring-slate-900/[0.04] sm:p-8 md:p-10';
+  const labelClasses =
+    'mb-1.5 flex items-center gap-2 text-sm font-medium text-slate-700';
+  const inputContainerClasses = 'relative group';
+  const inputClasses =
+    'h-10 w-full rounded-md border border-slate-300 bg-white pl-4 pr-4 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm outline-none transition-colors hover:border-blue-200 focus:border-blue-700 focus:ring-2 focus:ring-blue-600/20';
+  const iconClasses =
+    'absolute left-3 top-2.5 h-4 w-4 text-slate-400 group-focus-within:text-blue-700';
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="space-y-8">
-        {/* Header */}
-        <div className="relative">
-          <div className="flex items-center gap-2 mb-3">
-            {userClassification && (
-              <Badge variant="outline" className="bg-white/50 text-slate-600 border-slate-200 px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase shadow-sm">
+      <div className="space-y-6">
+        <div className="relative border-b border-blue-100 pb-6">
+          <div className="mb-2 flex items-center gap-2">
+            {userClassification && userClassification !== 'aspiringFounder' && (
+              <Badge
+                variant="outline"
+                className="rounded border border-blue-200/90 bg-blue-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-blue-900"
+              >
                 {userClassification.replace(/([A-Z])/g, ' $1').trim()}
               </Badge>
             )}
           </div>
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-[#1B2E5A] mb-3 drop-shadow-sm">
+          <h1 className="mb-1.5 text-2xl font-semibold tracking-tight text-blue-950 md:text-[1.65rem]">
             {content.title}
           </h1>
-          <p className="text-lg text-slate-500 leading-relaxed max-w-2xl font-light">
+          <p className="max-w-xl text-sm leading-relaxed text-slate-600">
             {content.description}
           </p>
         </div>
 
         <div className={cardClasses}>
-
-          
-          <div className="space-y-8 relative z-10">
+          <div className="relative z-10 space-y-6">
             
             {/* Country Field - MOVED TO TOP */}
             <FormField
@@ -162,7 +173,7 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(({ f
                       <TooltipTrigger asChild>
                         <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-help" />
                       </TooltipTrigger>
-                      <TooltipContent className="max-w-xs bg-slate-900 text-white">
+                      <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                         <p className="font-semibold mb-1">Mandatory Field</p>
                         <p>The country where your business is legally registered. This determines tax rules, compliance requirements, currency defaults, regional settings, and available tax ID fields. Selecting a country automatically configures regional settings.</p>
                       </TooltipContent>
@@ -171,62 +182,43 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(({ f
                   <Select onValueChange={(value) => {
                     const countryCode = value?.toUpperCase();
                     field.onChange(countryCode);
-                    // Also set root country field for easier access
                     form.setValue('country' as any, countryCode, { shouldValidate: false });
-                    // Auto-populate regional settings immediately
-                    if (countryCode && countryCode !== 'OTHER' && countryCode !== '') {
-                      try {
-                        const localization = autoPopulateLocalization(countryCode);
-                        if (localization.currency) {
-                      form.setValue('defaultCurrency', localization.currency, { shouldValidate: false });
-                        }
-                        if (localization.language) {
-                      form.setValue('defaultLanguage', localization.language, { shouldValidate: false });
-                        }
-                        if (localization.locale) {
-                      form.setValue('defaultLocale', localization.locale, { shouldValidate: false });
-                        }
-                        if (localization.timezone) {
-                      form.setValue('defaultTimeZone', localization.timezone, { shouldValidate: false });
-                        }
-                        // Open regional settings to show auto-populated values
-                        setIsRegionalSettingsOpen(true);
-                      } catch (error) {
-                        console.warn('Error populating localization for country:', countryCode, error);
-                      }
-                    }
                   }} value={field.value || 'IN'}>
                     <FormControl>
-                      <SelectTrigger className={`${inputClasses} hover:border-indigo-300 focus:border-indigo-500 focus:ring-indigo-500/10`}>
-                         <div className="flex items-center gap-2">
-                             <Globe className="w-4 h-4 text-slate-400" />
-                             <SelectValue placeholder="Select country" />
-                          </div>
+                      <SelectTrigger className={`${inputClasses}`}>
+                        <div className="flex items-center gap-2">
+                          <Globe className="w-4 h-4 text-slate-400" />
+                          <SelectValue placeholder="Select country" />
+                        </div>
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent className="rounded-lg border-slate-200 shadow-xl bg-white/95 backdrop-blur-xl">
                       {COUNTRIES.map((country) => (
-                        <SelectItem 
-                          key={country.id} 
-                          value={country.id} 
-                          className={`py-2.5 cursor-pointer focus:bg-slate-50 hover:bg-slate-50  ${
-                            country.id === 'IN' ? 'font-medium bg-slate-50/50' : ''
-                          }`}
+                        <SelectItem
+                          key={country.id}
+                          value={country.id}
+                          className="py-2.5 cursor-pointer focus:bg-slate-50 hover:bg-slate-50"
                         >
-                          {country.name} {country.id === 'IN' && '🇮🇳'}
+                          <span className="flex items-center gap-2">
+                            <span className="text-base leading-none">{country.flag}</span>
+                            {country.name}
+                          </span>
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                   <FormMessage />
-                  {selectedCountry && selectedCountry !== 'OTHER' && (
-                    <div className="mt-2 p-2.5 rounded-lg bg-indigo-50/50 border border-indigo-100/50">
-                      <p className="text-xs text-indigo-700 flex items-center gap-2 font-medium">
-                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
-                        <span>Regional settings configured for {COUNTRIES.find(c => c.id === selectedCountry)?.name}</span>
-                      </p>
-                    </div>
-                  )}
+                  {selectedCountry && selectedCountry !== 'OTHER' && (() => {
+                    const c = COUNTRIES.find(c => c.id === selectedCountry);
+                    return (
+                      <div className="mt-2 rounded-md border border-blue-100 bg-blue-50/60 p-2.5">
+                        <p className="flex items-center gap-2 text-xs font-medium text-slate-700">
+                          <span className="text-base leading-none">{c?.flag}</span>
+                          <span>Currency, timezone &amp; locale auto-configured for {c?.name}</span>
+                        </p>
+                      </div>
+                    );
+                  })()}
                 </FormItem>
               )}
             />
@@ -243,7 +235,7 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(({ f
                       <TooltipTrigger asChild>
                         <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-help" />
                       </TooltipTrigger>
-                      <TooltipContent className="max-w-xs bg-slate-900 text-white">
+                      <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                         <p className="font-semibold mb-1">Mandatory Field</p>
                         <p>The legal or trading name of your business as registered with the authorities. This name appears on official documents, invoices, tax filings, and legal contracts. Must exactly match your business registration certificate or incorporation documents.</p>
                       </TooltipContent>
@@ -277,7 +269,7 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(({ f
                       <TooltipTrigger asChild>
                         <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-help" />
                       </TooltipTrigger>
-                      <TooltipContent className="max-w-xs bg-slate-900 text-white">
+                      <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                         <p>Your company website URL helps establish credibility and provides a reference for your business.</p>
                       </TooltipContent>
                     </Tooltip>
@@ -312,7 +304,7 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(({ f
                       <TooltipTrigger asChild>
                         <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-help" />
                       </TooltipTrigger>
-                      <TooltipContent className="max-w-xs bg-slate-900 text-white">
+                      <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                         <p className="font-semibold mb-1">Mandatory Field</p>
                         <p>The legal structure of your business (e.g., Private Limited, LLP, Sole Proprietorship). This determines tax obligations, liability, and compliance requirements.</p>
                       </TooltipContent>
@@ -320,7 +312,7 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(({ f
                   </FormLabel>
                   <Select onValueChange={field.onChange} value={field.value || ''}>
                     <FormControl>
-                      <SelectTrigger className={`${inputClasses} hover:border-indigo-300 focus:border-indigo-500 focus:ring-indigo-500/10`}>
+                      <SelectTrigger className={`${inputClasses}`}>
                         <div className="flex items-center gap-2">
                           <Briefcase className="w-4 h-4 text-slate-400" />
                           <SelectValue placeholder="Select company type" />
@@ -350,7 +342,7 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(({ f
                       <TooltipTrigger asChild>
                         <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-help" />
                       </TooltipTrigger>
-                      <TooltipContent className="max-w-xs bg-slate-900 text-white">
+                      <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                         <p className="font-semibold mb-1">Mandatory Field</p>
                         <p>The primary industry or sector your business operates in (e.g., Technology, Healthcare, Retail). Used for compliance, reporting, and feature recommendations.</p>
                       </TooltipContent>
@@ -387,7 +379,7 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(({ f
                       <TooltipTrigger asChild>
                         <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-help" />
                       </TooltipTrigger>
-                      <TooltipContent className="max-w-xs bg-slate-900 text-white">
+                      <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                         <p className="font-semibold mb-1">Optional Field</p>
                         <p>Number of employees helps us customize features, pricing tiers, and provide relevant recommendations for your organization size.</p>
                       </TooltipContent>
@@ -425,7 +417,7 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(({ f
                     <TooltipTrigger asChild>
                       <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-help" />
                     </TooltipTrigger>
-                    <TooltipContent className="max-w-xs bg-slate-900 text-white">
+                    <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                       <p className="font-semibold mb-1">Optional Field</p>
                       <p>A brief overview of your business activities, products, or services. Helps with account setup, support, and understanding your business needs.</p>
                     </TooltipContent>
@@ -449,7 +441,11 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(({ f
           <Collapsible
             open={isRegionalSettingsOpen}
             onOpenChange={setIsRegionalSettingsOpen}
-            className="border border-slate-200/80 rounded-lg bg-slate-50/30 overflow-hidden"
+            className={`border rounded-lg overflow-hidden transition-colors duration-700 ${
+              regionalFlash
+                ? 'border-blue-300 bg-blue-50/90'
+                : 'border-blue-100 bg-slate-50/60'
+            }`}
           >
             <CollapsibleTrigger asChild>
               <Button
@@ -466,7 +462,7 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(({ f
                     <Settings2 className="w-4 h-4" />
                   </div>
                   <div className="text-left">
-                    <h4 className="font-semibold text-[#1B2E5A] text-sm flex items-center gap-2">
+                    <h4 className="flex items-center gap-2 text-sm font-semibold tracking-tight text-blue-950">
                       Regional Settings
                       {selectedCountry && selectedCountry !== 'OTHER' && (
                         <span className="px-2 py-0.5 text-[10px] font-medium bg-slate-100 text-slate-600 rounded-full border border-slate-200">
@@ -503,7 +499,7 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(({ f
                           <TooltipTrigger asChild>
                             <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-help" />
                           </TooltipTrigger>
-                          <TooltipContent className="max-w-xs bg-slate-900 text-white">
+                          <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                             <p className="font-semibold mb-1">Auto-configured</p>
                             <p>Default currency for invoices, payments, and financial reports. Automatically set based on your country selection but can be customized.</p>
                           </TooltipContent>
@@ -513,7 +509,7 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(({ f
                         field.onChange(value);
                       }} value={field.value || ''}>
                         <FormControl>
-                          <SelectTrigger className={`${inputClasses} bg-white hover:border-indigo-300 focus:border-indigo-500 focus:ring-indigo-500/10`} onClick={(e) => e.stopPropagation()}>
+                          <SelectTrigger className={`${inputClasses} bg-white`} onClick={(e) => e.stopPropagation()}>
                             <SelectValue placeholder="Select currency" />
                           </SelectTrigger>
                         </FormControl>
@@ -546,7 +542,7 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(({ f
                           <TooltipTrigger asChild>
                             <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-help" />
                           </TooltipTrigger>
-                          <TooltipContent className="max-w-xs bg-slate-900 text-white">
+                          <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                             <p className="font-semibold mb-1">Auto-configured</p>
                             <p>Default language for the interface, reports, and communications. Automatically set based on your country selection.</p>
                           </TooltipContent>
@@ -556,7 +552,7 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(({ f
                         field.onChange(value);
                       }} value={field.value || ''}>
                         <FormControl>
-                          <SelectTrigger className={`${inputClasses} bg-white hover:border-indigo-300 focus:border-indigo-500 focus:ring-indigo-500/10`} onClick={(e) => e.stopPropagation()}>
+                          <SelectTrigger className={`${inputClasses} bg-white`} onClick={(e) => e.stopPropagation()}>
                             <SelectValue placeholder="Select language" />
                           </SelectTrigger>
                         </FormControl>
@@ -589,7 +585,7 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(({ f
                           <TooltipTrigger asChild>
                             <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-help" />
                           </TooltipTrigger>
-                          <TooltipContent className="max-w-xs bg-slate-900 text-white">
+                          <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                             <p className="font-semibold mb-1">Auto-configured</p>
                             <p>Default timezone for scheduling, reports, and timestamps. Automatically set based on your country selection.</p>
                           </TooltipContent>
@@ -599,7 +595,7 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(({ f
                         field.onChange(value);
                       }} value={field.value || ''}>
                         <FormControl>
-                          <SelectTrigger className={`${inputClasses} bg-white hover:border-indigo-300 focus:border-indigo-500 focus:ring-indigo-500/10`} onClick={(e) => e.stopPropagation()}>
+                          <SelectTrigger className={`${inputClasses} bg-white`} onClick={(e) => e.stopPropagation()}>
                             <SelectValue placeholder="Select timezone" />
                           </SelectTrigger>
                         </FormControl>
@@ -632,7 +628,7 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(({ f
                           <TooltipTrigger asChild>
                             <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-help" />
                           </TooltipTrigger>
-                          <TooltipContent className="max-w-xs bg-slate-900 text-white">
+                          <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                             <p className="font-semibold mb-1">Auto-configured</p>
                             <p>Regional format for dates, numbers, and addresses (e.g., en-US, en-IN). Automatically set based on your country selection.</p>
                           </TooltipContent>
@@ -642,7 +638,7 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(({ f
                         field.onChange(value);
                       }} value={field.value || ''}>
                         <FormControl>
-                          <SelectTrigger className={`${inputClasses} bg-white hover:border-indigo-300 focus:border-indigo-500 focus:ring-indigo-500/10`} onClick={(e) => e.stopPropagation()}>
+                          <SelectTrigger className={`${inputClasses} bg-white`} onClick={(e) => e.stopPropagation()}>
                             <SelectValue placeholder="Select locale" />
                           </SelectTrigger>
                         </FormControl>
@@ -670,7 +666,7 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(({ f
             <div>
               <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 flex flex-col gap-4 relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-4 opacity-10">
-                   <CheckCircle2 className="w-24 h-24 text-[#1B2E5A]" />
+                   <CheckCircle2 className="h-24 w-24 text-blue-900/10" />
                 </div>
                 <FormField
                   control={form.control}

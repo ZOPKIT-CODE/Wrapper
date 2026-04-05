@@ -6,6 +6,10 @@ import { Application } from "@/types/application";
 import { getApplicationIcon } from "@/features/applications/components/applicationUtils";
 import { cn } from "@/lib/utils";
 import {
+  DASHBOARD_PAGE_DESCRIPTION_CLASS,
+  DASHBOARD_PAGE_TITLE_CLASS,
+} from '@/components/dashboard/DashboardPageHeader';
+import {
   Crown,
   CheckCircle,
   XCircle,
@@ -144,7 +148,7 @@ export function ApplicationDetailsPage() {
 
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-2xl font-bold text-[#1B2E5A] dark:text-white drop-shadow-sm">
+                <h1 className={cn(DASHBOARD_PAGE_TITLE_CLASS, 'drop-shadow-sm')}>
                   {appName || "Unknown Application"}
                 </h1>
                 <div className={cn(
@@ -158,7 +162,7 @@ export function ApplicationDetailsPage() {
                   <span className="relative">{isEnabled ? "Active" : "Inactive"}</span>
                 </div>
               </div>
-              <p className="text-slate-600 dark:text-slate-400 leading-relaxed max-w-2xl text-sm">
+              <p className={cn(DASHBOARD_PAGE_DESCRIPTION_CLASS, 'text-sm leading-relaxed max-w-2xl')}>
                 {description || "No description available for this application."}
               </p>
             </div>
@@ -452,7 +456,7 @@ function ModuleCard({ module, isEnabled, modulePermissions, customPermissions }:
                             </div>
                           </div>
                           {isActive && (
-                            <div className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                            <div className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-blue-500" />
                           )}
                         </div>
                       </TooltipTrigger>

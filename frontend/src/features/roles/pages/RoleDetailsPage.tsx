@@ -1,6 +1,22 @@
-import React, { useMemo, useState, useEffect } from 'react';
-import { useParams, useNavigate } from '@tanstack/react-router';
-import { ArrowLeft, Shield, LayoutGrid, Layers, Users, Search, Lock, Edit, Eye, Grid, Package, Building2, Coins, Activity } from 'lucide-react';
+import { useMemo, useState, useEffect, type ElementType } from 'react';
+import { useNavigate } from '@tanstack/react-router';
+import {
+  ArrowLeft,
+  Shield,
+  LayoutGrid,
+  Layers,
+  Users,
+  Search,
+  Lock,
+  Edit,
+  Eye,
+  Grid,
+  Package,
+  Building2,
+  Coins,
+  Activity,
+  Hash,
+} from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,8 +28,9 @@ import { getPermissionSummary } from '@/features/roles/utils/permissionUtils';
 import AnimatedLoader from '@/components/common/feedback/AnimatedLoader';
 import { AlertCircle, Mail, User as UserIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useTheme } from '@/components/theme/ThemeProvider';
+import { DashboardPageHeader, DASHBOARD_PAGE_TITLE_CLASS } from '@/components/dashboard/DashboardPageHeader';
 import { useBreadcrumbLabel } from '@/contexts/BreadcrumbLabelContext';
+import { useRoleIdParam } from '@/hooks/useRoleRouteParams';
 import {
   Accordion,
   AccordionContent,
@@ -72,26 +89,140 @@ const parseRolePermissions = (permissions: Record<string, any> | string[]): Reco
   return result;
 };
 
+/** Case-insensitive lookup: role JSON keys may not match `/applications` appCode casing. */
+function getRolePermCodes(
+  rolePermissions: Record<string, Record<string, string[]>>,
+  appCode: string,
+  moduleCode: string
+): string[] {
+  const appKey = Object.keys(rolePermissions).find(
+    (k) => k.toLowerCase() === appCode.toLowerCase()
+  );
+  if (!appKey) return [];
+  const modMap = rolePermissions[appKey];
+  if (!modMap) return [];
+  const modKey = Object.keys(modMap).find(
+    (k) => k.toLowerCase() === moduleCode.toLowerCase()
+  );
+  return modKey ? modMap[modKey] ?? [] : [];
+}
+
+function humanizePermCode(code: string): string {
+  return code
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function formatAppModuleTitle(code: string): string {
+  return code.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+/**
+ * Tenant `/applications` often returns enabledModules + enabledModulesPermissions only (no full `modules` + permission matrix).
+ * Build module rows so we can still match role permissions to UI.
+ */
+function modulesFromEnabledFallback(app: any): any[] {
+  const emp = app.enabledModulesPermissions;
+  if (!emp || typeof emp !== 'object') return [];
+  return Object.entries(emp).map(([moduleCode, raw]) => {
+    const codes = Array.isArray(raw)
+      ? raw.map((p: any) => (typeof p === 'string' ? p : p?.code || p?.name || '')).filter(Boolean)
+      : [];
+    return {
+      moduleId: `${app.appCode}-${moduleCode}`,
+      moduleName: formatAppModuleTitle(moduleCode),
+      moduleCode,
+      permissions: codes.map((code: string) => ({ code, name: humanizePermCode(code) })),
+    };
+  });
+}
+
+/**
+ * When API apps have no matching module matrix, render directly from parsed role.permissions.
+ */
+function buildAppsFromRolePermissionsOnly(
+  rolePermissions: Record<string, Record<string, string[]>>,
+  applications: any[]
+): any[] {
+  const out: any[] = [];
+  for (const [appCodeRaw, moduleMap] of Object.entries(rolePermissions)) {
+    if (!moduleMap || typeof moduleMap !== 'object') continue;
+    const appMeta = applications.find(
+      (a: any) => (a.appCode || '').toLowerCase() === appCodeRaw.toLowerCase()
+    );
+    const appName = appMeta?.appName || formatAppModuleTitle(appCodeRaw);
+    const modules = Object.entries(moduleMap)
+      .filter(([, codes]) => Array.isArray(codes) && codes.length > 0)
+      .map(([moduleCode, permCodes]) => {
+        const perms = permCodes.map((code) => ({
+          code,
+          name: humanizePermCode(code),
+        }));
+        return {
+          moduleId: `${appCodeRaw}-${moduleCode}`,
+          moduleName: formatAppModuleTitle(moduleCode),
+          moduleCode,
+          permissions: perms,
+          rolePermissions: perms,
+          permissionCodes: permCodes,
+        };
+      });
+    if (modules.length === 0) continue;
+    out.push({
+      appId: appMeta?.appId || appCodeRaw,
+      appCode: appCodeRaw,
+      appName,
+      modules,
+    });
+  }
+  return out;
+}
+
+/**
+ * Permission chip styling — mirrors ApplicationModuleRoleBuilder `analyzePermissionType`
+ * (card surface + risk tint when granted).
+ */
 const analyzePermissionType = (permCode: string) => {
   const code = permCode.toLowerCase();
-  if (code.includes('admin') || code.includes('manage') || code.includes('delete') || code.includes('approve') || code.includes('assign')) {
+  if (
+    code.includes('admin') ||
+    code.includes('manage') ||
+    code.includes('delete') ||
+    code.includes('approve') ||
+    code.includes('assign')
+  ) {
     return {
       risk: 'high' as const,
-      color: 'bg-rose-50 border-rose-200 text-rose-900 shadow-sm ring-1 ring-rose-300 dark:bg-rose-900/60 dark:border-rose-500 dark:text-rose-100 dark:ring-rose-700',
-      icon: <Lock className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+      color:
+        'border-rose-100 bg-white text-rose-700/70 dark:border-rose-900/30 dark:bg-slate-900 dark:text-rose-400/70',
+      selectedColor:
+        'border-rose-200 bg-gradient-to-br from-rose-50 via-rose-100 to-red-100 text-rose-900 shadow-sm dark:from-rose-900/40 dark:to-rose-800/20 dark:border-rose-700 dark:text-rose-100',
+      icon: <Lock className="h-3.5 w-3.5" aria-hidden />,
     };
   }
-  if (code.includes('write') || code.includes('edit') || code.includes('create') || code.includes('update') || code.includes('import')) {
+  if (
+    code.includes('write') ||
+    code.includes('edit') ||
+    code.includes('create') ||
+    code.includes('update') ||
+    code.includes('import')
+  ) {
     return {
       risk: 'medium' as const,
-      color: 'bg-amber-50 border-amber-200 text-amber-900 shadow-sm ring-1 ring-amber-300 dark:bg-amber-900/60 dark:border-amber-500 dark:text-amber-100 dark:ring-amber-700',
-      icon: <Edit className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+      color:
+        'border-amber-100 bg-white text-amber-700/70 dark:border-amber-900/30 dark:bg-slate-900 dark:text-amber-400/70',
+      selectedColor:
+        'border-amber-200 bg-gradient-to-br from-amber-50 via-orange-100 to-amber-100 text-amber-900 shadow-sm dark:from-amber-900/40 dark:to-amber-800/20 dark:border-amber-700 dark:text-amber-100',
+      icon: <Edit className="h-3.5 w-3.5" aria-hidden />,
     };
   }
   return {
     risk: 'low' as const,
-    color: 'bg-emerald-50 border-emerald-200 text-emerald-900 shadow-sm ring-1 ring-emerald-300 dark:bg-emerald-900/60 dark:border-emerald-500 dark:text-emerald-100 dark:ring-emerald-700',
-    icon: <Eye className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+    color:
+      'border-slate-100 bg-white text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400',
+    selectedColor:
+      'border-blue-200 bg-gradient-to-br from-blue-50 via-slate-50 to-blue-100 text-[#1B2E5A] shadow-md shadow-blue-500/15 dark:from-blue-950/50 dark:to-slate-900 dark:border-blue-700 dark:text-slate-100',
+    icon: <Eye className="h-3.5 w-3.5" aria-hidden />,
   };
 };
 
@@ -107,10 +238,45 @@ const getAppIcon = (appCode: string) => {
   return <Grid {...props} className="text-slate-400" />;
 };
 
+/** Same metric tiles as Team Members (`UserManagementPage` StatCard). */
+const ROLE_BLUE = { 900: '#1B2E5A', 700: '#2D4780' } as const;
+
+function RoleStatCard({
+  label,
+  value,
+  icon: Icon,
+  color,
+}: {
+  label: string;
+  value: number;
+  icon: ElementType;
+  color: string;
+}) {
+  return (
+    <Card
+      className={cn(
+        'flex items-center gap-4 p-5 shadow-sm',
+        'border border-[#1B2E5A]/12 bg-[#F4F7FC] dark:border-[#1B2E5A]/25 dark:bg-[#121a2e]',
+      )}
+    >
+      <div className={cn('flex h-11 w-11 shrink-0 items-center justify-center rounded-xl shadow-inner', color)}>
+        <Icon className="h-5 w-5 text-white" />
+      </div>
+      <div>
+        <p className="text-[13px] font-medium" style={{ color: `${ROLE_BLUE[700]}CC` }}>
+          {label}
+        </p>
+        <p className="text-2xl font-bold tracking-tight" style={{ color: ROLE_BLUE[900] }}>
+          {value}
+        </p>
+      </div>
+    </Card>
+  );
+}
+
 export function RoleDetailsPage() {
-  const { roleId } = useParams({ strict: false });
+  const roleId = useRoleIdParam();
   const navigate = useNavigate();
-  const { actualTheme } = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const { setLastSegmentLabel } = useBreadcrumbLabel();
   
@@ -146,43 +312,64 @@ export function RoleDetailsPage() {
     return parseRolePermissions(role.permissions);
   }, [role]);
 
-  // Filter applications that have permissions in this role
+  // Filter applications that have permissions in this role (API matrix, enabledModulesPermissions, or role-only fallback)
   const applicationsWithPermissions = useMemo(() => {
     if (!applications || !rolePermissions) return [];
-    
-    return applications
-      .filter((app: any) => {
-        // Show app if it has any modules with permissions in the role
-        return app.modules?.some((module: any) => {
-          const rolePerms = rolePermissions[app.appCode]?.[module.moduleCode] || [];
-          return rolePerms.length > 0;
-        });
-      })
+
+    const fromApi = applications
       .map((app: any) => {
-        // Filter modules to only those with permissions
-        const modulesWithPerms = app.modules?.filter((module: any) => {
-          const rolePerms = rolePermissions[app.appCode]?.[module.moduleCode] || [];
+        const moduleRows =
+          Array.isArray(app.modules) && app.modules.length > 0
+            ? app.modules
+            : modulesFromEnabledFallback(app);
+        return { ...app, modules: moduleRows };
+      })
+      .filter((app: any) =>
+        app.modules?.some((module: any) => {
+          const rolePerms = getRolePermCodes(rolePermissions, app.appCode, module.moduleCode);
           return rolePerms.length > 0;
-        }).map((module: any) => {
-          const rolePerms = rolePermissions[app.appCode]?.[module.moduleCode] || [];
-          // Match role permissions with module permissions to get full permission objects
-          const matchedPermissions = module.permissions?.filter((perm: any) => {
-            const permCode = typeof perm === 'string' ? perm : perm.code;
-            return rolePerms.includes(permCode);
-          }) || [];
-          
-          return {
-            ...module,
-            rolePermissions: matchedPermissions,
-            permissionCodes: rolePerms
-          };
-        }) || [];
-        
+        })
+      )
+      .map((app: any) => {
+        const modulesWithPerms =
+          app.modules
+            ?.filter((module: any) => {
+              const rolePerms = getRolePermCodes(rolePermissions, app.appCode, module.moduleCode);
+              return rolePerms.length > 0;
+            })
+            .map((module: any) => {
+              const rolePerms = getRolePermCodes(rolePermissions, app.appCode, module.moduleCode);
+              let matrix =
+                module.permissions?.length > 0
+                  ? module.permissions
+                  : rolePerms.map((code) => ({ code, name: humanizePermCode(code) }));
+              let matchedPermissions =
+                matrix?.filter((perm: any) => {
+                  const permCode = typeof perm === 'string' ? perm : perm.code;
+                  return rolePerms.includes(permCode);
+                }) || [];
+              if (matchedPermissions.length === 0 && rolePerms.length > 0) {
+                matrix = rolePerms.map((code) => ({ code, name: humanizePermCode(code) }));
+                matchedPermissions = matrix;
+              }
+
+              return {
+                ...module,
+                permissions: matrix,
+                rolePermissions: matchedPermissions,
+                permissionCodes: rolePerms,
+              };
+            }) || [];
+
         return {
           ...app,
-          modules: modulesWithPerms
+          modules: modulesWithPerms,
         };
       });
+
+    if (fromApi.length > 0) return fromApi;
+
+    return buildAppsFromRolePermissionsOnly(rolePermissions, applications);
   }, [applications, rolePermissions]);
 
   // Filter by search query
@@ -197,6 +384,19 @@ export function RoleDetailsPage() {
       return appMatches || moduleMatches;
     });
   }, [applicationsWithPermissions, searchQuery]);
+
+  /** Match ApplicationModuleRoleBuilder: single open panel; default to first app (and reset when filter changes). */
+  const [openAccordionApp, setOpenAccordionApp] = useState<string | undefined>(undefined);
+  useEffect(() => {
+    if (filteredApplications.length === 0) {
+      setOpenAccordionApp(undefined);
+      return;
+    }
+    setOpenAccordionApp((prev) => {
+      if (prev && filteredApplications.some((a: any) => a.appCode === prev)) return prev;
+      return filteredApplications[0].appCode;
+    });
+  }, [filteredApplications]);
 
   const permissionSummary = useMemo(() => {
     if (!role) return { total: 0, applicationCount: 0, moduleCount: 0 };
@@ -245,7 +445,6 @@ export function RoleDetailsPage() {
   }, [usersData, role]);
 
   const isLoading = rolesLoading || appsLoading || usersLoading;
-  const isDark = actualTheme === 'dark';
 
   if (isLoading) {
     return (
@@ -274,91 +473,66 @@ export function RoleDetailsPage() {
   }
 
   return (
-    <Container className="space-y-0">
-      <div className="flex flex-col min-h-0 bg-white dark:bg-slate-950 relative">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate({ to: '/dashboard/roles' })}
-            className="gap-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Roles
-          </Button>
-          <div className="flex-1">
-            <div className="flex items-center gap-3">
-              <div
-                className="w-10 h-10 rounded-2xl flex items-center justify-center text-sm font-semibold border border-slate-100 dark:border-slate-800 shadow-sm"
-                style={{ backgroundColor: `${role.color}20`, color: role.color }}
-              >
-                {role.metadata?.icon || '👤'}
-              </div>
-              <h1 className="text-2xl font-black uppercase tracking-tight text-[#1B2E5A] dark:text-white">
-                {role.roleName}
-              </h1>
+    <Container>
+      <div className="mb-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate({ to: '/dashboard/roles' })}
+          className="gap-2 -ml-2 text-muted-foreground hover:text-[#1B2E5A]"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Roles
+        </Button>
+      </div>
+
+      <DashboardPageHeader
+        title={
+          <span className="flex flex-wrap items-center gap-3">
+            <div
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[#1B2E5A]/10 text-sm font-semibold shadow-sm dark:border-slate-700"
+              style={{ backgroundColor: `${role.color}20`, color: role.color }}
+            >
+              {role.metadata?.icon || '👤'}
             </div>
-            <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase mt-1">
-              View detailed information about this role and its permissions
-            </p>
-          </div>
+            <span className={DASHBOARD_PAGE_TITLE_CLASS}>{role.roleName}</span>
+          </span>
+        }
+        description="View detailed information about this role and its permissions."
+      />
+
+      {/* Stats — same grid + cards as Team Members */}
+      <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <RoleStatCard label="Total permissions" value={permissionSummary.total} icon={Shield} color="bg-[#1B2E5A]" />
+        <RoleStatCard label="Applications" value={permissionSummary.applicationCount} icon={LayoutGrid} color="bg-[#243A6C]" />
+        <RoleStatCard label="Modules" value={permissionSummary.moduleCount} icon={Layers} color="bg-[#2D4780]" />
+        <RoleStatCard label="Users" value={usersWithRole.length} icon={Users} color="bg-[#3B5998]" />
+      </div>
+
+      {/* Search — same pattern as Team Members tab filters */}
+      <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="relative flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search apps and modules"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="h-10 rounded-lg border pl-9 text-sm placeholder:text-muted-foreground"
+          />
         </div>
+      </div>
 
-        {/* Executive KPI Bar */}
-        <div className={cn(
-          "flex-none px-8 py-2 border-b flex items-center justify-between transition-all",
-          isDark ? "bg-slate-900/40 border-slate-800" : "bg-slate-50/30 border-slate-100"
-        )}>
-          <div className="flex items-center gap-8">
-            <div className="flex flex-col">
-              <span className="text-[7px] font-black uppercase text-slate-400 tracking-widest leading-none mb-1">Total Permissions</span>
-              <div className="flex items-center gap-2">
-                <Shield className="w-3 h-3 text-blue-500" />
-                <span className="text-[10px] font-black text-[#1B2E5A] dark:text-white tabular-nums">{permissionSummary.total}</span>
-              </div>
-            </div>
-            <div className="w-px h-6 bg-slate-200 dark:bg-slate-800" />
-            <div className="flex flex-col">
-              <span className="text-[7px] font-black uppercase text-slate-400 tracking-widest leading-none mb-1">Applications</span>
-              <div className="flex items-center gap-2">
-                <LayoutGrid className="w-3 h-3 text-[#1B2E5A]" />
-                <span className="text-[10px] font-black text-[#1B2E5A] dark:text-white tabular-nums">{permissionSummary.applicationCount}</span>
-              </div>
-            </div>
-            <div className="w-px h-6 bg-slate-200 dark:border-slate-800" />
-            <div className="flex flex-col">
-              <span className="text-[7px] font-black uppercase text-slate-400 tracking-widest leading-none mb-1">Modules</span>
-              <div className="flex items-center gap-2">
-                <Layers className="w-3 h-3 text-purple-500" />
-                <span className="text-[10px] font-black text-[#1B2E5A] dark:text-white tabular-nums">{permissionSummary.moduleCount}</span>
-              </div>
-            </div>
-            <div className="w-px h-6 bg-slate-200 dark:bg-slate-800" />
-            <div className="flex flex-col">
-              <span className="text-[7px] font-black uppercase text-slate-400 tracking-widest leading-none mb-1">Users</span>
-              <div className="flex items-center gap-2">
-                <Users className="w-3 h-3 text-emerald-500" />
-                <span className="text-[10px] font-black text-[#1B2E5A] dark:text-white tabular-nums">{usersWithRole.length}</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="relative w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400" />
-            <Input
-              placeholder="Search applications and modules..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8 h-8 text-[9px] rounded-lg border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-bold placeholder:text-slate-400"
-            />
-          </div>
-        </div>
-
-        {/* Applications Accordion */}
-        <div className="flex-1 overflow-y-auto p-4 custom-scrollbar relative bg-slate-50/20 dark:bg-slate-950/40 min-h-0">
+      {/* Main content — rounded card shell like Team table / dashboard modules */}
+      <div className="mt-6 rounded-xl border border-gray-100 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-slate-950 sm:p-6">
+        <div className="custom-scrollbar">
           {filteredApplications.length > 0 ? (
-            <Accordion type="multiple" defaultValue={filteredApplications.map((app: any) => app.appCode)} className="space-y-3">
+            <Accordion
+              type="single"
+              collapsible
+              value={openAccordionApp ?? ''}
+              onValueChange={(v) => setOpenAccordionApp(v || undefined)}
+              className="space-y-4"
+            >
               {filteredApplications.map((app: any) => {
                 const totalAppPerms = app.modules?.reduce((sum: number, m: any) => sum + (m.rolePermissions?.length || 0), 0) || 0;
                 const totalModulePerms = app.modules?.reduce((sum: number, m: any) => sum + (m.permissions?.length || 0), 0) || 0;
@@ -368,32 +542,53 @@ export function RoleDetailsPage() {
                     key={app.appCode}
                     value={app.appCode}
                     className={cn(
-                      "border rounded-[32px] overflow-hidden transition-all shadow-sm",
-                      "border-blue-200/50 bg-blue-50/5 dark:border-blue-900/20 dark:bg-blue-900/5"
+                      'overflow-hidden rounded-xl border border-b-0 border-[#1B2E5A]/12 bg-white shadow-sm transition-all dark:border-[#1B2E5A]/25 dark:bg-slate-900/50',
                     )}
                   >
-                    <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all [&[data-state=open]]:bg-[#1B2E5A]/5 group/trigger">
-                      <div className="flex items-center justify-between w-full pr-6 text-left">
+                    <AccordionTrigger className="px-5 py-4 hover:no-underline hover:bg-slate-50/80 dark:hover:bg-slate-800/40 [&[data-state=open]]:bg-[#1B2E5A]/[0.04]">
+                      <div className="flex w-full items-center justify-between pr-4 text-left">
                         <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-xl flex items-center justify-center transition-all border relative shadow-sm bg-white dark:bg-slate-800 border-blue-500 text-white shadow-blue-500/10">
+                          <div
+                            className={cn(
+                              'relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#1B2E5A]/15 bg-[#1B2E5A] text-white shadow-sm [&_svg]:!text-white',
+                            )}
+                          >
                             {getAppIcon(app.appCode)}
-                            <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-blue-500 rounded-full border-2 border-white dark:border-slate-900 animate-pulse" />
                           </div>
                           <div>
-                            <div className="text-[13px] font-black text-[#1B2E5A] dark:text-white uppercase flex items-center gap-2 leading-none tracking-tight">
-                              {app.appName}
-                              <Badge className="bg-[#1B2E5A]/10 text-[#1B2E5A] border-[#1B2E5A]/20 text-[8px] font-black tracking-widest uppercase px-1.5 py-0.5">Active</Badge>
+                            <div className="flex flex-wrap items-center gap-2 leading-tight sm:gap-3">
+                              <span className="text-sm font-bold uppercase tracking-wide text-[#1B2E5A] dark:text-slate-100">
+                                {app.appName}
+                              </span>
+                              <Badge
+                                variant="outline"
+                                className="h-4.5 border-slate-200 px-2 text-[9px] font-black uppercase tracking-widest dark:border-slate-700"
+                              >
+                                {app.appCode}
+                              </Badge>
+                              <Badge
+                                variant="secondary"
+                                className="border-blue-200/60 bg-blue-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-[#1B2E5A] dark:border-blue-900 dark:bg-blue-950/50 dark:text-blue-200"
+                              >
+                                Active
+                              </Badge>
                             </div>
-                            <div className="flex items-center gap-2 mt-1 opacity-60">
-                              <span className="text-[9px] text-slate-500 font-black uppercase tracking-widest">{app.modules?.length || 0} Modules</span>
-                              <div className="w-1 h-1 rounded-full bg-slate-300" />
-                              <span className="text-[9px] text-blue-600 dark:text-blue-400 font-black uppercase tracking-widest">{totalAppPerms}/{totalModulePerms} Permissions</span>
+                            <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                              <span className="font-medium uppercase tracking-wide">
+                                {app.modules?.length || 0} modules
+                              </span>
+                              <span aria-hidden className="text-slate-300 dark:text-slate-600">
+                                ·
+                              </span>
+                              <span className="font-medium tabular-nums">
+                                {totalAppPerms}/{totalModulePerms} permissions
+                              </span>
                             </div>
                           </div>
                         </div>
                       </div>
                     </AccordionTrigger>
-                    <AccordionContent className="p-0 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950/20">
+                    <AccordionContent className="border-t border-gray-100 bg-white p-0 dark:border-gray-800 dark:bg-slate-950/30">
                       <div className="divide-y divide-slate-100 dark:divide-slate-800/50">
                         {app.modules?.map((module: any) => {
                           const rolePerms = module.rolePermissions || [];
@@ -402,89 +597,99 @@ export function RoleDetailsPage() {
 
                           return (
                             <div key={module.moduleCode} className={cn(
-                              "p-4 grid grid-cols-12 gap-6 items-start transition-all",
-                              isModuleActive ? "bg-blue-50/[0.03] dark:bg-blue-900/[0.02]" : "opacity-60 grayscale-[0.5] hover:bg-slate-50/50"
+                              "grid grid-cols-12 items-start gap-6 p-6 transition-all",
+                              isModuleActive ? "bg-blue-50/20 dark:bg-blue-900/5" : "opacity-70 grayscale-[0.2] hover:bg-slate-50/50 dark:hover:bg-slate-800/30"
                             )}>
-                              {/* Module Identity Column */}
-                              <div className="col-span-2 border-r border-slate-100 dark:border-slate-800 pr-4 pt-1 space-y-2">
-                                <div>
-                                  <h4 className={cn(
-                                    "text-[13px] font-black uppercase tracking-tight leading-tight mb-1",
-                                    isModuleActive ? "text-[#1B2E5A] dark:text-white" : "text-slate-400"
-                                  )}>
+                              {/* Module header — left rail like Role builder / reference */}
+                              <div className="col-span-12 space-y-4 border-b border-slate-200 pb-5 pr-0 dark:border-slate-800 sm:col-span-2 sm:border-b-0 sm:border-r sm:pb-0 sm:pr-5">
+                                <div className="space-y-2">
+                                  <h4
+                                    className={cn(
+                                      'text-[11px] font-black uppercase leading-tight tracking-wide text-[#1B2E5A] dark:text-slate-100',
+                                      !isModuleActive && 'opacity-80',
+                                    )}
+                                  >
                                     {module.moduleName}
                                   </h4>
-                                  <div className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">{module.moduleCode}</div>
+                                  <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+                                    {module.moduleCode}
+                                  </p>
                                 </div>
 
-                                <div className="space-y-2 pt-1">
-                                  <div className={cn(
-                                    "w-full py-1.5 px-2 rounded-xl text-[8px] font-black uppercase tracking-widest text-center shadow-sm border",
+                                <div
+                                  className={cn(
+                                    'w-full rounded-lg border px-3 py-2 text-center text-[8px] font-black uppercase tracking-widest transition-colors',
                                     isAllModuleSelected
-                                      ? "bg-[#1B2E5A] border-blue-500 text-white"
+                                      ? 'border-blue-500 bg-[#1B2E5A] text-white'
                                       : isModuleActive
-                                        ? "bg-blue-50 border-blue-200 text-blue-600"
-                                        : "bg-slate-50 border-slate-200 text-slate-400"
-                                  )}>
-                                    {isAllModuleSelected ? 'FULL ACCESS' : isModuleActive ? 'PARTIAL' : 'INACTIVE'}
-                                  </div>
-
-                                  <div className="flex justify-between items-center px-1 opacity-60">
-                                    <span className="text-[8px] font-black uppercase text-slate-400">Permissions</span>
-                                    <span className="text-[9px] font-black text-slate-700 dark:text-slate-300">{rolePerms.length}</span>
-                                  </div>
+                                        ? 'border-blue-200 bg-blue-50 text-[#1B2E5A] dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-200'
+                                        : 'border-slate-200 bg-slate-50 text-slate-400 dark:border-slate-700 dark:bg-slate-900',
+                                  )}
+                                >
+                                  {isAllModuleSelected ? 'FULL ACCESS' : isModuleActive ? 'PARTIAL' : 'NOT ACTIVE'}
                                 </div>
                               </div>
 
-                              {/* Permission Matrix Column */}
-                              <div className="col-span-10">
-                                <div className="grid grid-cols-6 gap-2.5">
+                              {/* Permission cards — Role builder matrix (square tiles, READY / ACTIVE) */}
+                              <div className="col-span-12 min-w-0 sm:col-span-10">
+                                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7">
                                   {module.permissions?.map((perm: any) => {
                                     const permCode = typeof perm === 'string' ? perm : perm.code;
                                     const permName = typeof perm === 'string' ? perm : perm.name || perm.code;
                                     const isSelected = module.permissionCodes?.includes(permCode) || false;
                                     const permUI = analyzePermissionType(permCode);
+                                    const title = permName.trim();
 
                                     return (
                                       <div
                                         key={permCode}
                                         className={cn(
-                                          "group/chip relative flex flex-col gap-2 p-3 rounded-xl border transition-all text-left h-full select-none",
-                                          isSelected
-                                            ? permUI.risk === 'high' 
-                                              ? "bg-rose-50 border-rose-200 dark:bg-rose-900/20 dark:border-rose-900/40 shadow-inner ring-1 ring-rose-200/50"
-                                              : permUI.risk === 'medium' 
-                                                ? "bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-900/40 shadow-inner ring-1 ring-amber-200/50"
-                                                : "bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-900/40 shadow-inner ring-1 ring-emerald-200/50"
-                                            : "bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800"
+                                          'group/chip relative flex min-h-[118px] select-none flex-col gap-2 rounded-2xl border p-3 text-left transition-all',
+                                          isSelected ? permUI.selectedColor : permUI.color,
                                         )}
                                       >
-                                        <div className="flex items-start justify-between">
-                                          <div className={cn(
-                                            "p-1 rounded-lg transition-colors",
-                                            isSelected ? "bg-white dark:bg-slate-950 shadow-sm" : "opacity-30 group-hover/chip:opacity-60"
-                                          )}>
+                                        <div className="flex items-start justify-between gap-2">
+                                          <div
+                                            className={cn(
+                                              'rounded-lg p-1',
+                                              isSelected
+                                                ? 'bg-white/60 shadow-sm dark:bg-slate-950/50'
+                                                : 'opacity-40',
+                                            )}
+                                          >
                                             {permUI.icon}
                                           </div>
-                                          <Badge variant="outline" className={cn(
-                                            "text-[7px] h-3.5 px-1 font-black leading-none uppercase border-none transition-all",
-                                            isSelected ? "text-blue-600 dark:text-blue-400" : "text-slate-300"
-                                          )}>
+                                          <Badge
+                                            variant="outline"
+                                            className={cn(
+                                              'h-3.5 border-0 px-1 text-[7px] font-black uppercase leading-none',
+                                              isSelected
+                                                ? 'text-[#1B2E5A] dark:text-blue-300'
+                                                : 'text-slate-300 dark:text-slate-600',
+                                            )}
+                                          >
                                             {isSelected ? 'ACTIVE' : 'READY'}
                                           </Badge>
                                         </div>
 
-                                        <div className="flex-1">
-                                          <div className={cn(
-                                            "text-[10px] font-black uppercase leading-tight tracking-tight mb-0.5",
-                                            isSelected ? "text-[#1B2E5A] dark:text-white" : "text-slate-400"
-                                          )}>
-                                            {permName}
-                                          </div>
-                                          <div className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter line-clamp-2 opacity-60">
-                                            {permCode}
-                                          </div>
+                                        <div className="flex flex-1 flex-col items-center justify-center px-0.5 text-center">
+                                          <p
+                                            className={cn(
+                                              'line-clamp-3 break-words text-[10px] font-black uppercase leading-tight tracking-tight',
+                                              isSelected
+                                                ? 'text-[#1B2E5A] dark:text-white'
+                                                : 'text-slate-500 dark:text-slate-400',
+                                            )}
+                                          >
+                                            {title}
+                                          </p>
                                         </div>
+
+                                        <div className="flex items-center justify-center gap-1 text-[8px] font-bold uppercase tracking-tighter text-slate-400">
+                                          <Hash className="h-2 w-2 shrink-0" aria-hidden />
+                                          <span className="truncate">{permCode}</span>
+                                        </div>
+
                                       </div>
                                     );
                                   })}
@@ -500,7 +705,7 @@ export function RoleDetailsPage() {
               })}
             </Accordion>
           ) : (
-            <div className="flex flex-col items-center justify-center py-12 bg-slate-50/50 dark:bg-slate-900/10 rounded-[24px] border-2 border-dashed border-slate-200 dark:border-slate-800">
+            <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 bg-slate-50/50 py-12 dark:border-gray-800 dark:bg-slate-900/20">
               <Search className="w-10 h-10 text-slate-300 mb-3" />
               <h3 className="text-base font-black text-[#1B2E5A] dark:text-white uppercase tracking-tight">
                 {searchQuery ? 'No matching applications found' : 'No permissions assigned'}
@@ -508,15 +713,16 @@ export function RoleDetailsPage() {
             </div>
           )}
         </div>
+      </div>
 
         {/* Users with this Role */}
         {usersWithRole.length > 0 && (
-          <div className="mt-4">
-            <Card className="rounded-[24px] overflow-hidden border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
-              <CardHeader className="p-4 pb-3">
-                <CardTitle className="text-[13px] font-black uppercase tracking-tight text-[#1B2E5A] dark:text-white flex items-center gap-2">
-                  <Users className="w-4 h-4 text-emerald-500" />
-                  Users with this Role ({usersWithRole.length})
+          <div className="mt-6">
+            <Card className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm dark:border-gray-800 dark:bg-slate-950">
+              <CardHeader className="p-5 pb-3">
+                <CardTitle className="flex items-center gap-2 text-[13px] font-semibold" style={{ color: ROLE_BLUE[900] }}>
+                  <Users className="h-4 w-4 text-emerald-600" />
+                  Users with this role ({usersWithRole.length})
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-4 pt-0">
@@ -569,7 +775,7 @@ export function RoleDetailsPage() {
         
         {/* No Users Message */}
         {usersWithRole.length === 0 && !usersLoading && (
-          <div className="mt-4 p-4 rounded-[20px] border-2 border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/10">
+          <div className="mt-6 rounded-xl border-2 border-dashed border-gray-200 bg-slate-50/50 p-4 dark:border-gray-800 dark:bg-slate-900/20">
             <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
               <UserIcon className="w-4 h-4" />
               <span className="text-sm font-medium">No users assigned to this role</span>
@@ -579,10 +785,10 @@ export function RoleDetailsPage() {
 
         {/* System Role Notice */}
         {role.isSystemRole && (
-          <div className="mt-3 p-3 rounded-[20px] border-blue-200 dark:border-blue-900/30 bg-blue-50 dark:bg-blue-950/30">
+          <div className="mt-6 rounded-xl border border-blue-200 bg-blue-50/80 p-4 dark:border-blue-900/40 dark:bg-blue-950/40">
             <div className="flex items-center gap-2">
-              <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></div>
-              <span className="text-xs font-black uppercase tracking-tight text-blue-900 dark:text-blue-100">
+              <div className="h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500" />
+              <span className="text-xs font-semibold uppercase tracking-wide text-blue-900 dark:text-blue-100">
                 This is a system role with predefined permissions
               </span>
             </div>
@@ -596,7 +802,6 @@ export function RoleDetailsPage() {
           .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
           .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.05); }
         `}} />
-      </div>
     </Container>
   );
 }

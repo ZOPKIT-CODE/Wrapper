@@ -9,7 +9,6 @@ import { useTenantApplications } from './useSharedQueries';
 
 export interface DashboardMetrics {
   totalUsers: number;
-  apiCalls: number;
   revenue: number;
   growth: number;
   activeUsers: number;
@@ -167,7 +166,6 @@ export function useDashboardData() {
 
     return {
       totalUsers: safeUsers.length,
-      apiCalls: 0, // This would come from usage API
       revenue: paymentStats.totalRevenue || 0,
       growth: paymentStats.growth?.revenue || 0,
       activeUsers,
@@ -375,35 +373,3 @@ export function useUserData(filters?: {
   });
 }
 
-// Hook for activity data with automatic refresh
-export function useActivityData(filters?: {
-  period?: string;
-  type?: string;
-}) {
-  const {
-    period = '24h',
-    type = 'all'
-  } = filters || {};
-
-  return useOptimizedQuery({
-    queryKey: [CACHE_KEYS.ACTIVITY_LOGS, period, type],
-    queryFn: async () => {
-      const response = await api.get('/activity/user', {
-        params: {
-          period,
-          type: type !== 'all' ? type : undefined,
-          limit: 50
-        }
-      });
-      
-      return response.data.data || [];
-    },
-    cacheTime: 2 * 60 * 1000, // 2 minutes for activity data
-    staleTime: 30 * 1000, // 30 seconds stale time for fresher activity data
-    refetchOnMount: true, // Always fetch fresh activity data
-    onError: (error) => {
-      // Don't show toast for activity errors (might be permission-related)
-      console.error('❌ Failed to load activity:', error);
-    }
-  });
-} 

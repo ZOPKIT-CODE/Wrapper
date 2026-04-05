@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useKindeAuth } from '@kinde-oss/kinde-auth-react';
+import type { AxiosRequestConfig } from 'axios';
 import api from '@/lib/api';
-import { config } from '@/lib/config';
 
 interface Application {
   appId: string;
@@ -24,36 +24,26 @@ interface ActivityLog {
 }
 
 const SuiteDashboard: React.FC = () => {
-  const { user, isAuthenticated, getToken } = useKindeAuth();
+  const { user, isAuthenticated } = useKindeAuth();
   const [applications, setApplications] = useState<Application[]>([]);
   const [activities, setActivities] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // API helper function using enhanced token retrieval
-  const makeRequest = async (endpoint: string, options: RequestInit = {}) => {
-    try {
-      // Create a custom axios instance for the external API
-      const customApi = api.create({
-        baseURL: config.WRAPPER_DOMAIN,
-        withCredentials: true,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const response = await customApi(endpoint, options);
-      return response.data;
-    } catch (err: any) {
-      throw err;
-    }
+  /** Uses shared `api` client (auth interceptors + `/api` base URL). */
+  const makeRequest = async <T,>(endpoint: string, config: AxiosRequestConfig = {}): Promise<T> => {
+    const response = await api.request<T>({
+      url: endpoint,
+      ...config,
+    });
+    return response.data;
   };
 
   // Load user's available applications
   const loadApplications = async () => {
     try {
       setLoading(true);
-      const data = await makeRequest('/suite/applications');
+      const data = await makeRequest<{ applications: Application[] }>('/suite/applications');
       setApplications(data.applications);
     } catch (err: any) {
       setError(`Failed to load applications: ${err.message}`);
@@ -65,7 +55,7 @@ const SuiteDashboard: React.FC = () => {
   // Load user activity
   const loadActivity = async () => {
     try {
-      const data = await makeRequest('/suite/activity');
+      const data = await makeRequest<{ activities: ActivityLog[] }>('/suite/activity');
       setActivities(data.activities);
     } catch (err: any) {
       console.error('Failed to load activity:', err);
@@ -78,12 +68,12 @@ const SuiteDashboard: React.FC = () => {
       setLoading(true);
       
       // Request SSO token for the application
-      const data = await makeRequest('/suite/sso/redirect', {
+      const data = await makeRequest<{ redirectUrl: string }>('/suite/sso/redirect', {
         method: 'POST',
-        body: JSON.stringify({ 
+        data: {
           appCode,
-          returnTo: '/' // Default landing page for the app
-        })
+          returnTo: '/',
+        },
       });
 
       // Redirect to the application with SSO token
@@ -139,7 +129,7 @@ const SuiteDashboard: React.FC = () => {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center dashboard-actionable-cursors">
         <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8 text-center">
           <div className="mb-6">
             <div className="mx-auto h-12 w-12 bg-[#1B2E5A]/10 rounded-full flex items-center justify-center">
@@ -154,7 +144,7 @@ const SuiteDashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dashboard-actionable-cursors">
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -166,13 +156,13 @@ const SuiteDashboard: React.FC = () => {
             </div>
             <div className="flex items-center space-x-4">
               <div className="text-sm text-gray-500">
-                Welcome, <span className="font-medium text-gray-900">{user?.given_name || user?.email}</span>
+                Welcome, <span className="font-medium text-gray-900">{user?.givenName || user?.email}</span>
               </div>
               <div className="h-8 w-8 bg-gray-300 rounded-full flex items-center justify-center">
                 {user?.picture ? (
                   <img src={user.picture} alt="Profile" className="h-8 w-8 rounded-full" />
                 ) : (
-                  <span className="text-sm font-medium">{(user?.given_name || user?.email || 'U')[0].toUpperCase()}</span>
+                  <span className="text-sm font-medium">{(user?.givenName || user?.email || 'U')[0].toUpperCase()}</span>
                 )}
               </div>
             </div>

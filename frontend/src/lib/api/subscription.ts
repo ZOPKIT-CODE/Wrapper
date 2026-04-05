@@ -9,14 +9,17 @@ export const subscriptionAPI = {
   getConfigStatus: () => api.get('/subscriptions/config-status'),
   createCheckout: (data: {
     planId: string;
-    billingCycle: 'monthly' | 'yearly';
     successUrl: string;
     cancelUrl: string;
+    currency?: 'usd' | 'inr';
+    /** @deprecated Annual-only; omit or use yearly */
+    billingCycle?: 'yearly';
   }) => api.post('/subscriptions/checkout', data),
   checkProfileStatus: () => api.get('/payment-upgrade/profile-status'),
   changePlan: (data: {
     planId: string;
-    billingCycle?: 'monthly' | 'yearly';
+    currency?: 'usd' | 'inr';
+    billingCycle?: 'yearly';
   }) => api.post('/subscriptions/change-plan', data),
   cancelSubscription: () => api.post('/subscriptions/cancel'),
   updatePaymentMethod: () => api.post('/subscriptions/update-payment-method'),

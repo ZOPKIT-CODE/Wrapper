@@ -43,6 +43,7 @@ export const SilentAuthGuard: React.FC<SilentAuthGuardProps> = ({ children }) =>
     '/pricing',
     '/privacy',
     '/terms',
+    '/refund-policy',
     '/cookies',
     '/security',
     '/products',

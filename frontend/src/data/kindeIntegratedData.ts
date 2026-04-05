@@ -411,38 +411,3 @@ export const customRoleTemplates: CustomRole[] = [
     }
   }
 ]
-
-// Drag & Drop Configuration
-export interface DragDropConfig {
-  zones: {
-    permissions: { accepts: ['permission'], maxItems?: number }
-    users: { accepts: ['permission', 'role'], maxItems?: number }
-    roles: { accepts: ['permission', 'restriction'], maxItems?: number }
-    restrictions: { accepts: ['restriction'], maxItems?: number }
-    templates: { accepts: ['role'], maxItems?: number }
-    builder: { accepts: ['permission', 'restriction', 'role'], maxItems?: number }
-  }
-  automations: {
-    roleInheritance: boolean
-    restrictionApplication: boolean
-    permissionValidation: boolean
-    contextualRestrictions: boolean
-  }
-}
-
-export const dragDropConfig: DragDropConfig = {
-  zones: {
-    permissions: { accepts: ['permission'] },
-    users: { accepts: ['permission', 'role'] },
-    roles: { accepts: ['permission', 'restriction'] },
-    restrictions: { accepts: ['restriction'] },
-    templates: { accepts: ['role'] },
-    builder: { accepts: ['permission', 'restriction', 'role'] }
-  },
-  automations: {
-    roleInheritance: true,
-    restrictionApplication: true,
-    permissionValidation: true,
-    contextualRestrictions: true
-  }
-} 

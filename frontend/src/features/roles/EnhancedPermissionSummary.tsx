@@ -14,7 +14,6 @@ import {
   Lock,
   X
 } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -251,20 +250,10 @@ export function EnhancedPermissionSummary({
     };
   }, [permissions, searchQuery, filterType]);
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { duration: 0.3 } }
-  };
-
   return (
-    <motion.div
-      initial="hidden"
-      animate="visible"
-      variants={containerVariants}
-      className={cn("w-full space-y-4", className)}
-    >
+    <div className={cn("w-full space-y-4", className)}>
       {/* Header & Controls - Compact */}
-      <Card className="bg-white/90 backdrop-blur-md border-slate-200 shadow-xl overflow-hidden">
+      <Card className="bg-white border-slate-200 shadow-xl overflow-hidden">
         <CardHeader className="border-b border-slate-100 py-3 px-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
@@ -339,7 +328,7 @@ export function EnhancedPermissionSummary({
           {analysis.grouped.length > 0 ? (
             <table className="w-full text-center border-collapse table-fixed">
               <thead className="sticky top-0 z-20">
-                <tr className="bg-slate-50/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
+                <tr className="bg-slate-50 border-b border-slate-200 shadow-sm">
                   <th className="py-4 px-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 w-[180px] border-r border-slate-200/50 text-center">Application</th>
                   <th className="py-4 px-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 w-[160px] border-r border-slate-200/50 text-center">Module</th>
                   <th className="py-4 px-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-center">Granted Permissions</th>
@@ -349,19 +338,19 @@ export function EnhancedPermissionSummary({
                 {analysis.grouped.map((group: any, idx: number) => (
                   <tr
                     key={idx}
-                    className="group hover:bg-[#1B2E5A]/5 transition-all duration-200"
+                    className="group hover:bg-[#1B2E5A]/5"
                   >
-                    <td className="p-0 border-r border-slate-100/50 w-[180px] align-middle bg-slate-50/20 group-hover:bg-slate-50/50 transition-colors">
+                    <td className="p-0 border-r border-slate-100/50 w-[180px] align-middle bg-slate-50/20 group-hover:bg-slate-50/50">
                       <div className="flex flex-col items-center justify-center gap-3 p-4">
-                        <div className="w-10 h-10 rounded-xl bg-white border border-[#1B2E5A]/20 shadow-sm flex items-center justify-center text-slate-400 group-hover:text-[#1B2E5A] group-hover:border-[#1B2E5A]/20 group-hover:shadow-md transition-all duration-300">
+                        <div className="w-10 h-10 rounded-xl bg-white border border-[#1B2E5A]/20 shadow-sm flex items-center justify-center text-slate-400 group-hover:text-[#1B2E5A] group-hover:border-[#1B2E5A]/20">
                           {group.appIcon}
                         </div>
                         <span className="text-[13px] font-bold text-slate-800 tracking-tight leading-tight text-center">{group.app}</span>
                       </div>
                     </td>
-                    <td className="p-0 border-r border-slate-100/50 w-[160px] align-middle bg-slate-50/10 group-hover:bg-slate-50/30 transition-colors">
+                    <td className="p-0 border-r border-slate-100/50 w-[160px] align-middle bg-slate-50/10 group-hover:bg-slate-50/30">
                       <div className="p-4 flex flex-col items-center justify-center">
-                        <span className="inline-block font-bold text-[12px] text-slate-600 tracking-tight group-hover:text-[#1B2E5A] transition-colors text-center">
+                        <span className="inline-block font-bold text-[12px] text-slate-600 tracking-tight group-hover:text-[#1B2E5A] text-center">
                           {group.module}
                         </span>
                       </div>
@@ -372,13 +361,13 @@ export function EnhancedPermissionSummary({
                           <div
                             key={pIdx}
                             className={cn(
-                              "group/perm flex items-center gap-2 px-2.5 py-1.5 rounded-lg border shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 min-w-[110px] max-w-[160px]",
+                              "group/perm flex items-center gap-2 px-2.5 py-1.5 rounded-lg border shadow-sm min-w-[110px] max-w-[160px]",
                               perm.color,
-                              "bg-white/80 backdrop-blur-sm"
+                              "bg-white"
                             )}
                             title={`${perm.code}: ${perm.description}`}
                           >
-                            <div className="shrink-0 scale-90 group-hover/perm:scale-110 transition-transform">
+                            <div className="shrink-0 scale-90">
                               {perm.icon}
                             </div>
                             <div className="flex-1 min-w-0">
@@ -415,6 +404,6 @@ export function EnhancedPermissionSummary({
         </CardContent>
       </Card>
 
-    </motion.div>
+    </div>
   );
 }

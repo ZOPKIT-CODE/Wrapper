@@ -20,7 +20,7 @@ export const StateStep = ({ selectedState, onSelect, userClassification }: State
     <div className="space-y-8">
       <div>
         <div className="mb-4">
-          {userClassification && (
+          {userClassification && userClassification !== 'aspiringFounder' && (
             <Badge variant="outline" className="bg-brand-50 text-brand-700 border-brand-200 px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase">
               {userClassification.replace(/([A-Z])/g, ' $1').trim()}
             </Badge>

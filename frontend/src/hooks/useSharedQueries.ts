@@ -193,7 +193,12 @@ export function useApplicationAllocations(entityId?: string) {
   })
 }
 
-// Shared notifications hook with caching and optimized polling
+// Shared notifications hook with caching and optimized polling.
+// Multiple components can call this — TanStack Query deduplicates by queryKey.
+// IMPORTANT: the default options object is stable (module-level constant) so all
+// callers that pass no options share the exact same query key and cache entry.
+const DEFAULT_NOTIFICATION_OPTIONS = {} as const;
+
 export function useNotifications(options: {
   limit?: number;
   offset?: number;
@@ -201,11 +206,17 @@ export function useNotifications(options: {
   includeDismissed?: boolean;
   type?: string;
   priority?: string;
-} = {}) {
+} = DEFAULT_NOTIFICATION_OPTIONS) {
   const { isAuthenticated, user } = useKindeAuth()
 
+  // Stable key: only include non-default options to avoid different {} refs
+  const hasCustomOptions = options !== DEFAULT_NOTIFICATION_OPTIONS && Object.keys(options).length > 0;
+  const queryKey = hasCustomOptions
+    ? [...queryKeys.notifications, options]
+    : queryKeys.notifications;
+
   return useQuery({
-    queryKey: [...queryKeys.notifications, options],
+    queryKey,
     queryFn: async () => {
       const params = new URLSearchParams()
 
@@ -225,9 +236,10 @@ export function useNotifications(options: {
       throw new Error('Failed to fetch notifications')
     },
     enabled: !!isAuthenticated && !!user,
-    staleTime: 30 * 1000, // 30 seconds - notifications change frequently
-    gcTime: 2 * 60 * 1000, // 2 minutes cache
-    refetchInterval: 60 * 1000, // Auto-refresh every minute
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchInterval: 5 * 60 * 1000,
+    refetchOnWindowFocus: false, // prevents a refetch on every tab switch (was the main source of excess calls)
     retry: (failureCount, error: any) => {
       if (error?.response?.status === 401) return false
       return failureCount < 2
@@ -236,32 +248,12 @@ export function useNotifications(options: {
   })
 }
 
-// Shared unread count hook with optimized polling
+// Derive unread count from the notifications cache — no separate API call.
+// Eliminates the /api/notifications/unread-count endpoint entirely.
 export function useUnreadCount() {
-  const { isAuthenticated, user } = useKindeAuth()
-
-  return useQuery({
-    queryKey: queryKeys.unreadCount,
-    queryFn: async () => {
-      const response = await api.get('/notifications/unread-count')
-
-      if (response.data.success) {
-        const count = response.data.data?.count || 0
-        return count
-      }
-
-      return 0
-    },
-    enabled: !!isAuthenticated && !!user,
-    staleTime: 30 * 1000, // 30 seconds
-    gcTime: 2 * 60 * 1000, // 2 minutes cache
-    refetchInterval: 30 * 1000, // Auto-refresh every 30 seconds (less frequent than notifications)
-    retry: (failureCount, error: any) => {
-      if (error?.response?.status === 401) return false
-      return failureCount < 1 // Only retry once for unread count
-    },
-    placeholderData: 0
-  })
+  const { data: notifications = [] } = useNotifications()
+  const count = (notifications as Array<{ isRead?: boolean }>).filter(n => !n.isRead).length
+  return { data: count }
 }
 
 // Shared credit status hook
@@ -275,8 +267,9 @@ export function useCreditStatusQuery(enabled: boolean = true) {
       return response.data
     },
     enabled: enabled && !!isAuthenticated && !!user,
-    staleTime: 1 * 60 * 1000, // 1 minute
-    gcTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000, // raised from 1min — credit balance doesn't change on every page visit
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
     retry: (failureCount, error: any) => {
       if (error?.response?.status === 401) return false
       return failureCount < 2

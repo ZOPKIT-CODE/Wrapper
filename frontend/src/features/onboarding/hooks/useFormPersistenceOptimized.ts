@@ -9,6 +9,7 @@ import { onboardingAPIOptimized } from '@/lib/apiOptimized';
 import { useKindeAuth } from '@kinde-oss/kinde-auth-react';
 import { secureStore, secureRetrieve, secureClear } from '../utils/secureStorage';
 import { onboardingLogger } from '../utils/onboardingLogger';
+import { applyIndiaRegionalDefaultsIfMissing, resolveCountryCode } from '../config/countryConfig';
 
 const STORAGE_KEY_PREFIX = 'onboarding_progress_';
 const STORAGE_KEY_FORM_DATA = 'onboarding_form_data';
@@ -43,20 +44,24 @@ export const useFormPersistenceOptimized = ({
         : {};
 
     // Support legacy flat payload keys so select fields hydrate correctly.
+    const mergedCountry = resolveCountryCode(
+      existingBusinessDetails.country ?? normalized.country ?? normalized.businessDetails?.country
+    );
     normalized.businessDetails = {
       ...existingBusinessDetails,
       companyName: existingBusinessDetails.companyName ?? normalized.companyName ?? normalized.businessName,
       businessType: existingBusinessDetails.businessType ?? normalized.businessType ?? normalized.industry,
       organizationSize:
         existingBusinessDetails.organizationSize ?? normalized.organizationSize ?? normalized.companySize,
-      country: (existingBusinessDetails.country ?? normalized.country ?? 'IN')?.toUpperCase(),
+      country: mergedCountry,
     };
 
-    normalized.country = (normalized.country ?? normalized.businessDetails.country ?? 'IN')?.toUpperCase();
+    normalized.country = mergedCountry;
     normalized.defaultCurrency = normalized.defaultCurrency ?? normalized.currency;
     normalized.defaultTimeZone = normalized.defaultTimeZone ?? normalized.timezone;
     normalized.defaultLanguage = normalized.defaultLanguage ?? normalized.language;
     normalized.defaultLocale = normalized.defaultLocale ?? normalized.locale;
+    applyIndiaRegionalDefaultsIfMissing(normalized);
     normalized.billingAddress = normalized.billingAddress ?? normalized.billingStreet;
     normalized.billingStreet = normalized.billingStreet ?? normalized.billingAddress;
     normalized.state = normalized.state ?? normalized.billingState ?? normalized.incorporationState;

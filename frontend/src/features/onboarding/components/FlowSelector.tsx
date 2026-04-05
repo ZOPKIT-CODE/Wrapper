@@ -106,7 +106,7 @@ export const FlowSelector: React.FC<FlowSelectorProps> = ({
       <div className="w-full max-w-4xl">
         <div className="text-center mb-12">
           <div className="mb-4">
-            {userClassification && (
+            {userClassification && userClassification !== 'aspiringFounder' && (
               <Badge
                 variant="secondary"
                 className={cn(

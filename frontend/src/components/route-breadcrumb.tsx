@@ -17,10 +17,7 @@ const routeMap: Record<string, string> = {
   '/': 'Home',
   '/dashboard': 'Dashboard',
   '/dashboard/overview': 'Overview',
-  '/dashboard/users': 'Users',
   '/dashboard/applications': 'Applications',
-  '/dashboard/user-apps': 'User Applications',
-  '/dashboard/user-application-management': 'App Management',
   '/dashboard/billing': 'Billing',
   '/dashboard/analytics': 'Analytics',
   '/dashboard/usage': 'Usage',
@@ -67,7 +64,7 @@ const getOrgRouteLabel = (pathname: string): string | null => {
 
 // Special handling for dashboard with query parameters
 const getDashboardTabLabel = (pathname: string, search: string): string | null => {
-  if (pathname === '/dashboard') {
+  if (pathname === '/dashboard' || pathname === '/dashboard/applications') {
     const urlParams = new URLSearchParams(search)
     const tab = urlParams.get('tab')
     if (tab) {
@@ -135,7 +132,7 @@ export function RouteBreadcrumb({
     if (dashboardTabLabel) {
       breadcrumbs.push({
         label: 'Dashboard',
-        href: '/dashboard',
+        href: '/dashboard/applications',
         isLast: false
       })
       breadcrumbs.push({
@@ -270,7 +267,7 @@ export function useRouteBreadcrumbs() {
     if (dashboardTabLabel) {
       breadcrumbs.push({
         label: 'Dashboard',
-        href: '/dashboard',
+        href: '/dashboard/applications',
         isLast: false
       })
       breadcrumbs.push({

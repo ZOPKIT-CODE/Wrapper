@@ -8,9 +8,97 @@ import { ZopkitRoundLoader } from '@/components/common/feedback/ZopkitRoundLoade
 import toast from 'react-hot-toast'
 import { motion, AnimatePresence } from 'framer-motion'
 import api, { createCancelableRequest } from '@/lib/api'
-import { crmAuthService } from '@/services/crmAuthService'
-import { config } from '@/lib/config'
+import { jwtService } from '@/services/jwtService'
+import { config, CRM_DOMAIN, CRM_CALLBACK_PATH } from '@/lib/config'
 import { consumeSessionRecoveryReason } from '@/lib/auth/session-recovery'
+
+const crmCallbackPath = CRM_CALLBACK_PATH || '/callback'
+
+type CrmUser = {
+  id: string
+  email?: string
+  name?: string
+  givenName?: string
+  organization?: { code?: string }
+  tenantId?: string
+  permissions?: string[]
+  [key: string]: unknown
+}
+
+function extractCrmIntendedPath(returnTo: string): string {
+  try {
+    const returnUrl = new URL(returnTo)
+    let intendedPath = returnUrl.pathname
+    if (!intendedPath || intendedPath === '/') intendedPath = '/'
+    if (intendedPath.includes('/callback')) {
+      console.warn('⚠️ Blocked redirect to callback, using fallback')
+      intendedPath = '/'
+    }
+    if (intendedPath.includes('/login')) {
+      console.warn('⚠️ Blocked redirect to login, using fallback')
+      intendedPath = '/'
+    }
+    if (returnUrl.hostname.includes('wrapper.zopkit.com')) {
+      console.warn('⚠️ Blocked wrapper domain, using fallback')
+      intendedPath = '/'
+    }
+    return intendedPath
+  } catch (error) {
+    console.error('❌ Error extracting intended path:', error)
+    return '/'
+  }
+}
+
+function validateCrmReturnToUrl(returnTo: string): boolean {
+  try {
+    const returnUrl = new URL(returnTo)
+    const isDevelopment =
+      import.meta.env.MODE === 'development' ||
+      import.meta.env.DEV === true ||
+      window.location.hostname === 'localhost'
+    if (isDevelopment && returnUrl.hostname === 'localhost') return true
+    const crmHostname = new URL(CRM_DOMAIN).hostname
+    if (!returnUrl.hostname.includes(crmHostname)) {
+      console.warn('⚠️ Invalid CRM domain:', returnUrl.hostname)
+      return false
+    }
+    const wrapperHostname = new URL(config.WRAPPER_DOMAIN).hostname
+    if (
+      returnUrl.pathname.includes('/callback') ||
+      returnUrl.pathname.includes('/login') ||
+      returnUrl.hostname.includes(wrapperHostname)
+    ) {
+      console.warn('⚠️ Dangerous returnTo URL blocked:', returnUrl.pathname)
+      return false
+    }
+    return true
+  } catch (error) {
+    console.error('❌ Invalid returnTo URL format:', error)
+    return false
+  }
+}
+
+function generateCrmCallbackUrl(user: CrmUser, returnTo: string): string {
+  try {
+    const token = jwtService.generateCRMToken(user)
+    const callbackUrl = new URL(`${CRM_DOMAIN}${crmCallbackPath}`)
+    callbackUrl.searchParams.set('code', token)
+    callbackUrl.searchParams.set('state', 'authenticated')
+    callbackUrl.searchParams.set('user_id', user.id)
+    callbackUrl.searchParams.set('timestamp', Date.now().toString())
+    callbackUrl.searchParams.set('returnTo', extractCrmIntendedPath(returnTo))
+    callbackUrl.searchParams.set('source', 'wrapper')
+    callbackUrl.searchParams.set('app', 'crm')
+    return callbackUrl.toString()
+  } catch (error) {
+    console.error('❌ Error generating CRM callback URL:', error)
+    return `${CRM_DOMAIN}/`
+  }
+}
+
+function generateCrmFallbackUrl(): string {
+  return `${CRM_DOMAIN}/?error=auth_failed&source=wrapper`
+}
 
 // --- Animated Components ---
 
@@ -210,7 +298,7 @@ export function Login() {
       
       try {
         // Validate return URL using CRM auth service
-        if (!crmAuthService.validateReturnToUrl(returnTo)) {
+        if (!validateCrmReturnToUrl(returnTo)) {
           console.error('❌ Invalid CRM return URL:', returnTo)
           toast.error('Invalid return URL. Please contact support.')
           setIsRedirecting(false)
@@ -233,7 +321,7 @@ export function Login() {
         window.history.replaceState({}, '', currentUrl.toString())
         
         // Generate CRM callback URL with JWT authentication
-        const callbackUrl = crmAuthService.generateCRMCallback(user, returnTo)
+        const callbackUrl = generateCrmCallbackUrl(user, returnTo)
         
         // Clear stored paths and redirect count
         sessionStorage.removeItem('crm_intended_path')
@@ -250,7 +338,7 @@ export function Login() {
         
       } catch (err) {
         console.error('❌ Failed to generate CRM authentication:', err)
-        window.location.href = crmAuthService.generateFallbackUrl()
+        window.location.href = generateCrmFallbackUrl()
       }
     }
     
@@ -274,11 +362,11 @@ export function Login() {
         const status = response.data
 
         if (status.user && status.isOnboarded && !status.needsOnboarding) {
-          navigate({ to: '/dashboard', replace: true })
+          navigate({ to: '/dashboard/applications', replace: true })
         } else if (status.authStatus?.onboardingCompleted === true || 
                    status.authStatus?.userType === 'INVITED_USER' ||
                    status.authStatus?.isInvitedUser === true) {
-          navigate({ to: '/dashboard', replace: true })
+          navigate({ to: '/dashboard/applications', replace: true })
         } else {
           navigate({ to: '/onboarding', replace: true })
         }
@@ -293,7 +381,7 @@ export function Login() {
   }, [isAuthenticated, user, isLoading, returnTo, navigate, isRedirecting])
 
   const handleBackToCRM = () => {
-    if (returnTo && crmAuthService.validateReturnToUrl(returnTo)) {
+    if (returnTo && validateCrmReturnToUrl(returnTo)) {
       window.location.href = returnTo
     } else {
       toast.error('Invalid return URL')

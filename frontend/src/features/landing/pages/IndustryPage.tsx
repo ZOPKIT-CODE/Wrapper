@@ -1,94 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from '@tanstack/react-router';
 import { 
-    ArrowRight, PlayCircle, ChevronRight, Star, Check, Zap,
+    ArrowRight, PlayCircle, Check, Zap,
     ShoppingCart, Package, Truck, FileCheck, DollarSign, Gift, 
     TrendingUp, Users, CheckCircle2, Activity, Clock, Globe, Lock,
-    Briefcase, Award, Workflow, GraduationCap, Server, BarChart3,
+    Briefcase, Award, Workflow, GraduationCap, Server,
     ShieldCheck, MousePointer2
 } from 'lucide-react';
-import { motion, AnimatePresence, useInView, useScroll, useTransform } from 'framer-motion';
-import { AreaChart, Area, ResponsiveContainer, Tooltip, XAxis } from 'recharts';
-
-import { industryPagesData, getIndustryBySlug, type IndustryProduct } from '@/data/industryPages';
+import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
+import { getIndustryBySlug } from '@/data/industryPages';
+import { OrbitalEcosystem, WORKFLOW_ORBIT_APP_IDS } from '@/features/landing/components/OrbitalEcosystem';
 import { cn } from '@/lib/utils';
-import {
-    Navbar,
-    NavBody,
-    MobileNav,
-    NavbarLogo,
-    NavbarButton,
-    MobileNavHeader,
-    MobileNavMenu,
-} from "@/components/ui/resizable-navbar";
+import { NavbarButton } from "@/components/ui/resizable-navbar";
 import { LandingFooter } from '@/components/layout/LandingFooter';
-
-// --- Utility Components ---
-
-const CountUpAnimation = ({ value, suffix = '', prefix = '' }: { value: string | number, suffix?: string, prefix?: string }) => {
-    const ref = useRef(null);
-    const isInView = useInView(ref, { once: true });
-    const numericValue = typeof value === 'string' ? parseFloat(value.replace(/[^0-9.]/g, '')) : value;
-    const isDecimal = value.toString().includes('.');
-    
-    // Fallback if parsing fails
-    if (isNaN(numericValue)) return <span>{value}</span>;
-
-    return (
-        <span ref={ref} className="tabular-nums">
-            {prefix}
-            {isInView ? (
-                <motion.span
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.5 }}
-                >
-                    <Counter from={0} to={numericValue} duration={2} isDecimal={isDecimal} />
-                </motion.span>
-            ) : (
-                "0"
-            )}
-            {suffix}
-        </span>
-    );
-};
-
-const Counter = ({ from, to, duration, isDecimal }: { from: number, to: number, duration: number, isDecimal: boolean }) => {
-    const [count, setCount] = useState(from);
-
-    useEffect(() => {
-        let startTime: number;
-        let animationFrame: number;
-
-        const update = (timestamp: number) => {
-            if (!startTime) startTime = timestamp;
-            const progress = Math.min((timestamp - startTime) / (duration * 1000), 1);
-            
-            // Ease out quart
-            const ease = 1 - Math.pow(1 - progress, 4);
-            
-            setCount(from + (to - from) * ease);
-
-            if (progress < 1) {
-                animationFrame = requestAnimationFrame(update);
-            }
-        };
-
-        animationFrame = requestAnimationFrame(update);
-        return () => cancelAnimationFrame(animationFrame);
-    }, [from, to, duration]);
-
-    return <>{isDecimal ? count.toFixed(1) : Math.round(count)}</>;
-};
-
-const FloatingElement = ({ children, delay = 0, duration = 4, yOffset = 8 }: { children: React.ReactNode, delay?: number, duration?: number, yOffset?: number }) => (
-    <motion.div
-        animate={{ y: [0, -yOffset, 0] }}
-        transition={{ duration, repeat: Infinity, ease: "easeInOut", delay }}
-    >
-        {children}
-    </motion.div>
-);
+import { MarketingNavbar } from '@/components/layout/MarketingNavbar';
 
 // --- Visualization Components ---
 
@@ -472,232 +397,6 @@ const IndustryWorkflowVisualizer: React.FC<IndustryWorkflowVisualizerProps> = ({
     );
 };
 
-interface ProductNodeProps {
-    product: {
-        id: string;
-        name: string;
-        priority: number;
-        description: string;
-    };
-    navigate: ReturnType<typeof useNavigate>;
-    priority: number;
-    isEntryPoint?: boolean;
-    isCore?: boolean;
-    isSupport?: boolean;
-    className?: string;
-}
-
-const ProductNode: React.FC<ProductNodeProps> = ({ product, navigate, priority, isEntryPoint, isCore, isSupport, className }) => {
-    return (
-        <motion.div 
-            whileHover={{ y: -8, scale: 1.05 }}
-            className={cn("relative group cursor-pointer", className)}
-            onClick={() => navigate({ to: `/products/${product.id}` })}
-        >
-            <div className={cn(
-                "bg-white/90 backdrop-blur-md rounded-xl border transition-all duration-300 p-4 w-[200px] relative z-10",
-                "shadow-[0_4px_20px_-2px_rgba(0,0,0,0.1)] group-hover:shadow-[0_20px_40px_-4px_rgba(0,0,0,0.2)]",
-                isCore 
-                    ? "border-orange-200 ring-1 ring-orange-500/20" 
-                    : isEntryPoint
-                        ? "border-blue-200 ring-1 ring-blue-500/20"
-                        : "border-slate-200"
-            )}>
-                {isCore && <div className="absolute inset-0 bg-gradient-to-br from-orange-50/50 to-transparent rounded-xl pointer-events-none" />}
-                
-                <div className="relative z-20">
-                    <div className="flex items-center justify-between mb-2">
-                        <div className="flex gap-0.5">
-                            {[1, 2, 3].map((star) => (
-                                <Star
-                                    key={star}
-                                    size={10}
-                                    className={star <= priority ? 'fill-amber-400 text-amber-400' : 'text-slate-200'}
-                                />
-                            ))}
-                        </div>
-                        {isCore && (
-                            <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 bg-orange-100 text-orange-700 rounded border border-orange-200 font-bold shadow-sm">
-                                Core
-                            </span>
-                        )}
-                        {isEntryPoint && (
-                            <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded border border-blue-200 font-bold shadow-sm">
-                                Input
-                            </span>
-                        )}
-                    </div>
-                    <h3 className={cn(
-                        "text-sm font-bold mb-1.5 transition-colors group-hover:text-blue-600 antialiased",
-                        isCore ? "text-[#1B2E5A]" : "text-slate-800"
-                    )}>
-                        {product.name}
-                    </h3>
-                    <p className="text-xs text-slate-600 mb-3 line-clamp-2 leading-relaxed min-h-[2.5rem] font-medium">
-                        {product.description}
-                    </p>
-                    <div className={cn(
-                        "w-full h-1 rounded-full overflow-hidden",
-                        isCore ? "bg-orange-100" : "bg-slate-100"
-                    )}>
-                        <motion.div 
-                            className={cn(
-                                "h-full rounded-full",
-                                isCore ? "bg-orange-500" : "bg-blue-500"
-                            )} 
-                            initial={{ width: "0%" }}
-                            whileInView={{ width: "66%" }}
-                            transition={{ duration: 1, delay: 0.2 }}
-                        />
-                    </div>
-                </div>
-            </div>
-            
-            {/* Hover Glow Effect */}
-            <div className={cn(
-                "absolute -inset-2 bg-gradient-to-r rounded-2xl blur-xl opacity-0 group-hover:opacity-60 transition-opacity duration-500 -z-10",
-                isCore ? "from-orange-400 to-amber-300" : "from-blue-400 to-cyan-300"
-            )} />
-        </motion.div>
-    );
-};
-
-const SVGWorkflowDiagram: React.FC<{
-    topRow: IndustryProduct[];
-    centerRow: IndustryProduct[];
-    bottomRow: IndustryProduct[];
-    navigate: ReturnType<typeof useNavigate>;
-}> = ({ topRow, centerRow, bottomRow, navigate }) => {
-    const viewBox = { w: 920, h: 580 };
-    const left = 180;
-    const right = 740;
-    const topY = 95;
-    const midY = 290;
-    const bottomY = 485;
-    const cx = 460;
-
-    const dataFlowPath1 = `M ${left} ${topY} C ${left + 80} ${topY + 60}, ${cx - 60} ${midY - 40}, ${cx} ${midY}`;
-    const dataFlowPath2 = `M ${right} ${topY} C ${right - 80} ${topY + 60}, ${cx + 60} ${midY - 40}, ${cx} ${midY}`;
-    const integrationPath1 = `M ${cx} ${midY} C ${cx - 80} ${midY + 60}, ${left + 60} ${bottomY - 40}, ${left} ${bottomY}`;
-    const integrationPath2 = `M ${cx} ${midY} C ${cx + 80} ${midY + 60}, ${right - 60} ${bottomY - 40}, ${right} ${bottomY}`;
-
-    return (
-        <div
-            className="relative w-full bg-slate-50/50 rounded-2xl border border-slate-200"
-            style={{ aspectRatio: `${viewBox.w} / ${viewBox.h}`, minHeight: 420 }}
-        >
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
-            
-            <svg
-                className="absolute inset-0 w-full h-full pointer-events-none z-0"
-                viewBox={`0 0 ${viewBox.w} ${viewBox.h}`}
-                preserveAspectRatio="xMidYMid meet"
-                fill="none"
-                aria-hidden
-            >
-                <defs>
-                    <linearGradient id="dataFlowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.1" />
-                        <stop offset="50%" stopColor="#3b82f6" stopOpacity="0.8" />
-                        <stop offset="100%" stopColor="#2563eb" stopOpacity="0.1" />
-                    </linearGradient>
-                    <linearGradient id="integrationGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stopColor="#10b981" stopOpacity="0.1" />
-                        <stop offset="50%" stopColor="#10b981" stopOpacity="0.8" />
-                        <stop offset="100%" stopColor="#059669" stopOpacity="0.1" />
-                    </linearGradient>
-                    <filter id="glow">
-                        <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
-                        <feMerge>
-                            <feMergeNode in="coloredBlur"/>
-                            <feMergeNode in="SourceGraphic"/>
-                        </feMerge>
-                    </filter>
-                </defs>
-
-                {/* Animated Paths */}
-                {[dataFlowPath1, dataFlowPath2].map((d, i) => (
-                    <motion.path
-                        key={`flow-${i}`}
-                        d={d}
-                        stroke="url(#dataFlowGrad)"
-                        strokeWidth="3"
-                        fill="none"
-                        strokeLinecap="round"
-                        strokeDasharray="10 20"
-                        initial={{ strokeDashoffset: 100 }}
-                        animate={{ strokeDashoffset: 0 }}
-                        transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
-                        filter="url(#glow)"
-                    />
-                ))}
-                
-                {[integrationPath1, integrationPath2].map((d, i) => (
-                    <motion.path
-                        key={`int-${i}`}
-                        d={d}
-                        stroke="url(#integrationGrad)"
-                        strokeWidth="3"
-                        fill="none"
-                        strokeLinecap="round"
-                        strokeDasharray="10 20"
-                        initial={{ strokeDashoffset: 0 }}
-                        animate={{ strokeDashoffset: -100 }}
-                        transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
-                        filter="url(#glow)"
-                    />
-                ))}
-
-                {/* Labels - placed mid-path so they are not hidden behind nodes */}
-                <text x={(left + cx) / 2} y={(topY + midY) / 2 - 8} textAnchor="middle" fill="#334155" fontSize="13" fontWeight="700" className="uppercase tracking-widest">Inflow</text>
-                <text x={(right + cx) / 2} y={(topY + midY) / 2 - 8} textAnchor="middle" fill="#334155" fontSize="13" fontWeight="700" className="uppercase tracking-widest">Inflow</text>
-                <text x={cx} y={(midY + bottomY) / 2 + 36} textAnchor="middle" fill="#047857" fontSize="13" fontWeight="700" className="uppercase tracking-widest">Distribution</text>
-            </svg>
-
-            {/* Nodes - z-10 so diagram labels stay visible in path gaps */}
-            <div className="absolute inset-0 z-10 pointer-events-none">
-                <div className="relative w-full h-full pointer-events-auto" style={{ minHeight: viewBox.h }}>
-                    {topRow[0] && (
-                        <div className="absolute" style={{ left: `${(left / viewBox.w) * 100}%`, top: `${(topY / viewBox.h) * 100}%`, transform: 'translate(-50%, -50%)' }}>
-                            <FloatingElement delay={0}>
-                                <ProductNode product={topRow[0]} navigate={navigate} priority={topRow[0].priority} isEntryPoint className="pointer-events-auto" />
-                            </FloatingElement>
-                        </div>
-                    )}
-                    {topRow[1] && (
-                        <div className="absolute" style={{ left: `${(right / viewBox.w) * 100}%`, top: `${(topY / viewBox.h) * 100}%`, transform: 'translate(-50%, -50%)' }}>
-                            <FloatingElement delay={0.5}>
-                                <ProductNode product={topRow[1]} navigate={navigate} priority={topRow[1].priority} isEntryPoint className="pointer-events-auto" />
-                            </FloatingElement>
-                        </div>
-                    )}
-                    {centerRow[0] && (
-                        <div className="absolute" style={{ left: '50%', top: `${(midY / viewBox.h) * 100}%`, transform: 'translate(-50%, -50%)' }}>
-                            <FloatingElement delay={0.2} yOffset={5}>
-                                <ProductNode product={centerRow[0]} navigate={navigate} priority={centerRow[0].priority} isCore className="pointer-events-auto scale-110" />
-                            </FloatingElement>
-                        </div>
-                    )}
-                    {bottomRow[0] && (
-                        <div className="absolute" style={{ left: `${(left / viewBox.w) * 100}%`, top: `${(bottomY / viewBox.h) * 100}%`, transform: 'translate(-50%, -50%)' }}>
-                             <FloatingElement delay={0.7}>
-                                <ProductNode product={bottomRow[0]} navigate={navigate} priority={bottomRow[0].priority} isSupport={bottomRow[0].priority < 3} className="pointer-events-auto" />
-                             </FloatingElement>
-                        </div>
-                    )}
-                    {bottomRow[1] && (
-                        <div className="absolute" style={{ left: `${(right / viewBox.w) * 100}%`, top: `${(bottomY / viewBox.h) * 100}%`, transform: 'translate(-50%, -50%)' }}>
-                             <FloatingElement delay={0.9}>
-                                <ProductNode product={bottomRow[1]} navigate={navigate} priority={bottomRow[1].priority} isSupport={bottomRow[1].priority < 3} className="pointer-events-auto" />
-                             </FloatingElement>
-                        </div>
-                    )}
-                </div>
-            </div>
-        </div>
-    );
-};
-
 // --- Main Page Component ---
 
 const IndustryPage: React.FC = () => {
@@ -706,71 +405,9 @@ const IndustryPage: React.FC = () => {
     const { scrollY } = useScroll();
     const backgroundY = useTransform(scrollY, [0, 500], [0, 150]);
 
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
-    const [showProductsDropdown, setShowProductsDropdown] = React.useState(false);
-    const [showIndustriesDropdown, setShowIndustriesDropdown] = React.useState(false);
-    const productsDropdownTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-    const industriesDropdownTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-
     React.useEffect(() => {
         window.scrollTo({ top: 0, behavior: 'instant' });
     }, [industrySlug]);
-
-    const handleProductsMouseEnter = () => {
-        if (productsDropdownTimeoutRef.current) clearTimeout(productsDropdownTimeoutRef.current);
-        setShowProductsDropdown(true);
-    };
-
-    const handleProductsMouseLeave = () => {
-        productsDropdownTimeoutRef.current = setTimeout(() => setShowProductsDropdown(false), 300);
-    };
-
-    const handleIndustriesMouseEnter = () => {
-        if (industriesDropdownTimeoutRef.current) clearTimeout(industriesDropdownTimeoutRef.current);
-        setShowIndustriesDropdown(true);
-    };
-
-    const handleIndustriesMouseLeave = () => {
-        industriesDropdownTimeoutRef.current = setTimeout(() => setShowIndustriesDropdown(false), 300);
-    };
-
-    const allIndustries = [
-        { slug: 'e-commerce', name: 'E-Commerce & Retail' },
-        { slug: 'saas', name: 'SaaS & Technology' },
-        { slug: 'manufacturing', name: 'Manufacturing' },
-        { slug: 'professional-services', name: 'Professional Services' },
-    ];
-
-    const allProducts = [
-        { id: 'operations-management', name: 'Operations Management' },
-        { id: 'b2b-crm', name: 'B2B CRM' },
-        { id: 'financial-accounting', name: 'Financial Accounting' },
-        { id: 'project-management', name: 'Project Management' },
-        { id: 'hrms', name: 'HRMS' },
-        { id: 'esop-system', name: 'ESOP System' },
-        { id: 'affiliate-connect', name: 'Affiliate Connect' },
-        { id: 'flowtilla', name: 'Flowtilla' },
-        { id: 'zopkit-academy', name: 'Zopkit Academy' },
-        { id: 'zopkit-itsm', name: 'Zopkit ITSM' },
-        { id: 'b2c-crm', name: 'B2C CRM' },
-    ];
-
-    const handleAnchorClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-        if (href.startsWith('/')) {
-            e.preventDefault();
-            navigate({ to: href });
-            return;
-        }
-        e.preventDefault();
-        const targetId = href.replace('#', '');
-        const targetElement = document.getElementById(targetId);
-        if (targetElement) {
-            const navbarOffset = 100;
-            const elementPosition = targetElement.getBoundingClientRect().top;
-            const offsetPosition = elementPosition + window.pageYOffset - navbarOffset;
-            window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
-        }
-    };
 
     const data = industrySlug ? getIndustryBySlug(industrySlug) : undefined;
 
@@ -785,20 +422,6 @@ const IndustryPage: React.FC = () => {
         );
     }
 
-    const chartData = [
-        { name: 'Q1', value: 40, label: 'Efficiency' },
-        { name: 'Q2', value: 65, label: 'Efficiency' },
-        { name: 'Q3', value: 55, label: 'Efficiency' },
-        { name: 'Q4', value: 85, label: 'Efficiency' },
-        { name: 'Q5', value: 95, label: 'Efficiency' },
-    ];
-
-    const navItems = [
-        { name: "Pricing", link: "/pricing" },
-        { name: "Workflows", link: "#workflows" },
-        { name: "Contact Us", link: "/landing#pricing" },
-    ];
-
     return (
         <div className="w-full bg-white text-slate-900 font-sans selection:bg-blue-100 selection:text-blue-900">
              <style>{`
@@ -808,111 +431,28 @@ const IndustryPage: React.FC = () => {
                 .custom-scrollbar::-webkit-scrollbar-thumb:hover { background-color: rgba(71, 85, 105, 0.5); }
             `}</style>
             
-            {/* Navbar */}
-            <Navbar>
-                <NavBody>
-                    <NavbarLogo />
-                    <div className="flex-1 flex flex-row items-center justify-center space-x-1 text-sm font-medium text-slate-700 transition duration-200 px-4 min-w-0">
-                         {/* Products Dropdown */}
-                         <div
-                            className="relative shrink-0"
-                            onMouseEnter={handleProductsMouseEnter}
-                            onMouseLeave={handleProductsMouseLeave}
-                        >
-                            <button
-                                className="px-3 py-2 text-slate-700 hover:text-slate-900 font-medium flex items-center gap-1 whitespace-nowrap"
-                            >
-                                Products
-                                <ChevronRight size={16} className={`transition-transform duration-200 ${showProductsDropdown ? 'rotate-90' : ''}`} />
-                            </button>
-                            <AnimatePresence>
-                                {showProductsDropdown && (
-                                    <motion.div 
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, y: 10 }}
-                                        className="absolute top-full left-0 mt-2 w-64 bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-slate-200 py-2 z-50 ring-1 ring-slate-900/5"
-                                    >
-                                        <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
-                                            {allProducts.map((product) => (
-                                                <button
-                                                    key={product.id}
-                                                    onClick={() => navigate({ to: `/products/${product.id}` })}
-                                                    className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-colors"
-                                                >
-                                                    {product.name}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-                        </div>
-                        {/* Industries Dropdown */}
-                        <div
-                            className="relative shrink-0"
-                            onMouseEnter={handleIndustriesMouseEnter}
-                            onMouseLeave={handleIndustriesMouseLeave}
-                        >
-                            <button
-                                className="px-3 py-2 text-slate-700 hover:text-slate-900 font-medium flex items-center gap-1 whitespace-nowrap"
-                            >
-                                Industries
-                                <ChevronRight size={16} className={`transition-transform duration-200 ${showIndustriesDropdown ? 'rotate-90' : ''}`} />
-                            </button>
-                            <AnimatePresence>
-                                {showIndustriesDropdown && (
-                                    <motion.div 
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, y: 10 }}
-                                        className="absolute top-full left-0 mt-2 w-64 bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-slate-200 py-2 z-50 ring-1 ring-slate-900/5"
-                                    >
-                                        {allIndustries.map((industry) => (
-                                            <button
-                                                key={industry.slug}
-                                                onClick={() => navigate({ to: `/industries/${industry.slug}` })}
-                                                className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-colors"
-                                            >
-                                                {industry.name}
-                                            </button>
-                                        ))}
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-                        </div>
-                        {navItems.map((item) => (
-                            <a
-                                key={item.name}
-                                href={item.link}
-                                onClick={(e) => handleAnchorClick(e, item.link)}
-                                className="px-3 py-2 text-slate-700 hover:text-slate-900 font-medium transition cursor-pointer whitespace-nowrap shrink-0 hover:bg-slate-50 rounded-lg"
-                            >
-                                {item.name}
-                            </a>
-                        ))}
-                    </div>
-                    <div className="flex items-center gap-3 shrink-0 ml-4">
-                         <NavbarButton variant="outline" onClick={() => navigate({ to: '/' })} as="button" className="rounded-xl px-5 py-2">
-                            Home
-                        </NavbarButton>
-                        <NavbarButton variant="gradient" onClick={() => navigate({ to: '/onboarding' })} as="button" className="rounded-xl px-5 py-2 shadow-lg shadow-blue-500/20">
-                            Start Free Trial
-                        </NavbarButton>
-                    </div>
-                </NavBody>
-                <MobileNav>
-                    <MobileNavHeader><NavbarLogo /></MobileNavHeader>
-                    <MobileNavMenu isOpen={true} onClose={() => {}}>
-                         {/* Mobile menu content omitted for brevity, keeping same logic as original */}
-                         <div className="flex w-full flex-col gap-3 mt-4">
-                            <NavbarButton onClick={() => { setIsMobileMenuOpen(false); navigate({ to: '/onboarding' }); }} variant="gradient" className="w-full rounded-xl" as="button">
-                                Start Free Trial
-                            </NavbarButton>
-                        </div>
-                    </MobileNavMenu>
-                </MobileNav>
-            </Navbar>
+            <MarketingNavbar
+                desktopRight={
+                    <NavbarButton
+                        variant="gradient"
+                        onClick={() => navigate({ to: '/onboarding' })}
+                        as="button"
+                        className="rounded-xl px-6 py-2.5 shadow-lg shadow-blue-500/20"
+                    >
+                        Sign up
+                    </NavbarButton>
+                }
+                mobileFooter={
+                    <NavbarButton
+                        onClick={() => navigate({ to: '/onboarding' })}
+                        variant="gradient"
+                        className="w-full justify-center rounded-xl"
+                        as="button"
+                    >
+                        Sign up
+                    </NavbarButton>
+                }
+            />
 
             {/* Hero Section */}
             <section className="relative pt-32 pb-24 px-4 sm:px-6 lg:px-8 overflow-hidden">
@@ -958,7 +498,7 @@ const IndustryPage: React.FC = () => {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5, delay: 0.3 }}
-                        className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16"
+                        className="flex flex-col sm:flex-row gap-4 justify-center items-center"
                     >
                         <button
                             onClick={() => navigate({ to: '/onboarding' })}
@@ -970,25 +510,6 @@ const IndustryPage: React.FC = () => {
                             <PlayCircle size={20} className="text-slate-400 group-hover:text-blue-500 transition-colors" /> {data.hero.secondaryCTA}
                         </button>
                     </motion.div>
-
-                    {/* Stats Grid */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-5xl mx-auto">
-                        {data.hero.stats.map((stat, i) => (
-                            <motion.div 
-                                key={i}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.5, delay: 0.4 + (i * 0.1) }}
-                                whileHover={{ y: -5 }}
-                                className="bg-white/60 backdrop-blur-sm p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-lg hover:border-blue-200 transition-all duration-300"
-                            >
-                                <div className="text-3xl font-bold text-[#1B2E5A] mb-1">
-                                    <CountUpAnimation value={stat.value} />
-                                </div>
-                                <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">{stat.label}</div>
-                            </motion.div>
-                        ))}
-                    </div>
                 </div>
             </section>
 
@@ -1009,13 +530,13 @@ const IndustryPage: React.FC = () => {
                                 whileInView={{ opacity: 1, y: 0 }}
                                 viewport={{ once: true }}
                                 transition={{ delay: i * 0.1 }}
-                                className="group bg-slate-50 hover:bg-white p-8 rounded-2xl border border-slate-200 hover:border-blue-200 transition-all duration-300 hover:shadow-xl hover:shadow-blue-900/5 hover:-translate-y-1"
+                                className="group bg-slate-50 hover:bg-[#1B2E5A] p-8 rounded-2xl border border-slate-200 hover:border-[#162447] transition-all duration-300 hover:shadow-xl hover:shadow-[#0f172a]/25 hover:-translate-y-1"
                             >
-                                <div className="w-12 h-12 rounded-xl bg-blue-100 group-hover:bg-[#1B2E5A] transition-colors flex items-center justify-center mb-6">
+                                <div className="w-12 h-12 rounded-xl bg-blue-100 group-hover:bg-white/15 transition-colors flex items-center justify-center mb-6">
                                     <point.icon size={24} className="text-blue-600 group-hover:text-white transition-colors" />
                                 </div>
-                                <h3 className="text-lg font-bold text-[#1B2E5A] mb-2">{point.text}</h3>
-                                <p className="text-slate-500 text-sm leading-relaxed">
+                                <h3 className="text-lg font-bold text-[#1B2E5A] group-hover:text-white mb-2 transition-colors">{point.text}</h3>
+                                <p className="text-slate-500 group-hover:text-slate-200 text-sm leading-relaxed transition-colors">
                                     Our platform directly addresses this by streamlining operations and providing real-time visibility.
                                 </p>
                             </motion.div>
@@ -1024,172 +545,36 @@ const IndustryPage: React.FC = () => {
                 </div>
             </section>
 
-            {/* Products Section - SVG Workflow Diagram */}
+            {/* Integrated solutions — orbital ecosystem (same interactive as home page) */}
             <section id="integrated-solutions" className="pt-28 pb-24 px-4 sm:px-6 lg:px-8 bg-slate-50 border-y border-slate-200 scroll-mt-24">
-                <div className="max-w-5xl mx-auto">
-                    <div className="text-center mb-16">
+                <div className="max-w-7xl mx-auto">
+                    <div className="text-center mb-12 sm:mb-16">
                         <h2 className="text-4xl font-bold text-[#1B2E5A] mb-4">
                             Integrated Solutions Ecosystem
                         </h2>
                         <p className="text-xl text-slate-600 max-w-2xl mx-auto">
-                            See how data flows seamlessly between input channels, core processors, and supporting applications.
+                            Explore how every app connects around the Zopkit hub — tap the orbit to see dependencies, matching the home page experience.
                         </p>
                     </div>
-                    {(() => {
-                        const priority3Products = data.products.filter(p => p.priority === 3);
-                        const priority2Products = data.products.filter(p => p.priority === 2);
-                        const priority1Products = data.products.filter(p => p.priority === 1);
-                        const topRow = priority3Products.slice(0, 2);
-                        const centerRow = priority3Products.length > 2 ? [priority3Products[2]] : (priority3Products.length === 1 ? priority3Products : []);
-                        const bottomRow = [...priority3Products.slice(3), ...priority2Products, ...priority1Products].slice(0, 2);
-                        const hasFlow = topRow.length > 0 || centerRow.length > 0 || bottomRow.length > 0;
-                        return (
-                             <motion.div 
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                whileInView={{ opacity: 1, scale: 1 }}
-                                viewport={{ once: true }}
-                                transition={{ duration: 0.6 }}
-                                className="bg-white rounded-3xl border border-slate-200 shadow-2xl shadow-slate-200/50 p-6 md:p-12 overflow-hidden"
-                            >
-                                {hasFlow ? (
-                                    <SVGWorkflowDiagram
-                                        topRow={topRow}
-                                        centerRow={centerRow}
-                                        bottomRow={bottomRow}
-                                        navigate={navigate}
-                                    />
-                                ) : (
-                                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 py-8">
-                                        {data.products.map((product) => (
-                                            <ProductNode
-                                                key={product.id}
-                                                product={product}
-                                                navigate={navigate}
-                                                priority={product.priority}
-                                            />
-                                        ))}
-                                    </div>
-                                )}
-                            </motion.div>
-                        );
-                    })()}
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.98 }}
+                        whileInView={{ opacity: 1, scale: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.5 }}
+                        className="bg-white rounded-3xl border border-slate-200 shadow-xl shadow-slate-200/40 p-8 md:p-12 flex justify-center"
+                    >
+                        <OrbitalEcosystem
+                            layout="stack"
+                            appIds={WORKFLOW_ORBIT_APP_IDS}
+                            motionClassName="mx-auto w-full max-w-[420px] lg:max-w-[520px]"
+                        />
+                    </motion.div>
                 </div>
             </section>
 
             {/* Interactive Visualizer */}
             <section id="workflows" className="py-24 px-4 sm:px-6 lg:px-8 bg-slate-100">
                 <IndustryWorkflowVisualizer workflows={data.workflows} industryName={data.name} />
-            </section>
-
-            {/* ROI Metrics Section */}
-            <section id="roi" className="py-24 px-4 sm:px-6 lg:px-8 bg-white">
-                <div className="max-w-7xl mx-auto">
-                    <div className="text-center mb-16">
-                        <h2 className="text-4xl font-bold text-[#1B2E5A] mb-4">Measurable Impact</h2>
-                        <p className="text-xl text-slate-600 max-w-2xl mx-auto">
-                            Real results from real companies in the {data.name} sector.
-                        </p>
-                    </div>
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {data.roiMetrics.map((metric, i) => (
-                            <motion.div 
-                                key={i}
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ delay: i * 0.1 }}
-                                className="bg-slate-50 rounded-2xl p-8 border border-slate-100 relative overflow-hidden group hover:border-blue-200 transition-colors"
-                            >
-                                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                                    <BarChart3 size={64} className="text-blue-900" />
-                                </div>
-                                <div className="relative z-10">
-                                    <div className="text-5xl font-extrabold text-blue-600 mb-2 tracking-tight">
-                                        <CountUpAnimation value={metric.value} />
-                                    </div>
-                                    <div className="text-lg font-bold text-[#1B2E5A] mb-3">{metric.label}</div>
-                                    <p className="text-slate-500 text-sm leading-relaxed mb-6">{metric.description || "Consistent improvement observed across all client deployments within the first quarter."}</p>
-                                    
-                                    {/* Mini Visualization */}
-                                    <div className="h-16 w-full opacity-50">
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <AreaChart data={chartData}>
-                                                <defs>
-                                                    <linearGradient id={`colorGradient-${i}`} x1="0" y1="0" x2="0" y2="1">
-                                                        <stop offset="5%" stopColor="#2563eb" stopOpacity={0.3}/>
-                                                        <stop offset="95%" stopColor="#2563eb" stopOpacity={0}/>
-                                                    </linearGradient>
-                                                </defs>
-                                                <Area type="monotone" dataKey="value" stroke="#2563eb" strokeWidth={2} fillOpacity={1} fill={`url(#colorGradient-${i})`} />
-                                            </AreaChart>
-                                        </ResponsiveContainer>
-                                    </div>
-                                </div>
-                            </motion.div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* Case Study Section */}
-            <section id="case-study" className="py-24 px-4 sm:px-6 lg:px-8 bg-slate-50">
-                <div className="max-w-5xl mx-auto">
-                    <motion.div 
-                        initial={{ opacity: 0, scale: 0.98 }}
-                        whileInView={{ opacity: 1, scale: 1 }}
-                        viewport={{ once: true }}
-                        className="bg-white rounded-3xl overflow-hidden shadow-2xl shadow-slate-200/50 border border-slate-100"
-                    >
-                        <div className="grid md:grid-cols-2">
-                            <div className="p-10 md:p-14 flex flex-col justify-center">
-                                <div className="mb-8">
-                                    <span className="text-blue-600 font-bold uppercase tracking-widest text-xs mb-2 block">Featured Success Story</span>
-                                    <h2 className="text-3xl font-bold text-[#1B2E5A] mb-2">{data.caseStudy.company}</h2>
-                                    <div className="text-slate-500 font-medium">{data.caseStudy.industry}</div>
-                                </div>
-                                <blockquote className="text-xl text-slate-700 italic leading-relaxed mb-8">
-                                    "{data.caseStudy.quote}"
-                                </blockquote>
-                                <div className="mt-auto pt-6 border-t border-slate-100">
-                                    <h4 className="font-bold text-[#1B2E5A] mb-4 flex items-center gap-2">
-                                        <Award size={18} className="text-orange-500" /> Key Outcomes
-                                    </h4>
-                                    <ul className="space-y-3">
-                                        {data.caseStudy.results.map((result, i) => (
-                                            <li key={i} className="flex items-start gap-3 text-slate-600 text-sm">
-                                                <div className="mt-0.5 min-w-[18px] h-[18px] rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
-                                                    <Check size={12} strokeWidth={3} />
-                                                </div>
-                                                {result}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            </div>
-                            <div className="bg-slate-900 p-10 md:p-14 text-white flex flex-col justify-center relative overflow-hidden group">
-                                <motion.div 
-                                    className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-blue-800 to-slate-900 opacity-50"
-                                    animate={{ scale: [1, 1.1, 1] }}
-                                    transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-                                ></motion.div>
-                                <div className="relative z-10">
-                                    <h3 className="text-2xl font-bold mb-6">Ready to achieve similar results?</h3>
-                                    <p className="text-slate-300 mb-8 leading-relaxed">
-                                        Join forward-thinking companies in the {data.name} industry who have transformed their operations.
-                                    </p>
-                                    <button 
-                                        onClick={() => navigate({ to: '/onboarding' })}
-                                        className="w-full py-4 bg-white text-slate-900 rounded-xl font-bold hover:bg-blue-50 transition-colors flex items-center justify-center gap-2 group/btn"
-                                    >
-                                        Start Your Journey <ArrowRight size={18} className="group-hover/btn:translate-x-1 transition-transform" />
-                                    </button>
-                                </div>
-                                {/* Decorative elements */}
-                                <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-blue-500 rounded-full blur-[100px] opacity-20 group-hover:opacity-30 transition-opacity"></div>
-                            </div>
-                        </div>
-                    </motion.div>
-                </div>
             </section>
 
             {/* Final CTA Section */}

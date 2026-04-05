@@ -159,7 +159,7 @@ export const AdminDetailsStep = memo(({ form, userClassification }: AdminDetails
     <div className="space-y-8">
       <div className="space-y-2">
         <div className="flex items-center gap-2 mb-4">
-          {userClassification && (
+          {userClassification && userClassification !== 'aspiringFounder' && (
             <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-100 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide">
               {userClassification.replace(/([A-Z])/g, ' $1').trim()}
             </Badge>
@@ -198,7 +198,7 @@ export const AdminDetailsStep = memo(({ form, userClassification }: AdminDetails
                         <TooltipTrigger asChild>
                           <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-help" />
                         </TooltipTrigger>
-                        <TooltipContent className="max-w-xs bg-slate-900 text-white">
+                        <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                           <p className="font-semibold mb-1">Mandatory Field</p>
                           <p>Your first name as the primary administrator. Used for account identification, official communications, and user profile setup.</p>
                         </TooltipContent>
@@ -228,7 +228,7 @@ export const AdminDetailsStep = memo(({ form, userClassification }: AdminDetails
                         <TooltipTrigger asChild>
                           <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-help" />
                         </TooltipTrigger>
-                        <TooltipContent className="max-w-xs bg-slate-900 text-white">
+                        <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                           <p className="font-semibold mb-1">Mandatory Field</p>
                           <p>Your last name as the primary administrator. Required for complete identification and official account documentation.</p>
                         </TooltipContent>
@@ -264,7 +264,7 @@ export const AdminDetailsStep = memo(({ form, userClassification }: AdminDetails
                         <TooltipTrigger asChild>
                           <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-help" />
                         </TooltipTrigger>
-                        <TooltipContent className="max-w-xs bg-slate-900 text-white">
+                        <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                           <p className="font-semibold mb-1">Mandatory Field</p>
                           <p>Primary email address for the administrator account. Automatically filled from your Kinde authentication. Used for login, account recovery, important notifications, and official communications.</p>
                         </TooltipContent>
@@ -351,7 +351,7 @@ export const AdminDetailsStep = memo(({ form, userClassification }: AdminDetails
                         <TooltipTrigger asChild>
                           <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-help" />
                         </TooltipTrigger>
-                        <TooltipContent className="max-w-xs bg-slate-900 text-white">
+                        <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                           <p>Formal title (Mr., Mrs., Dr., etc.) used in professional communications and official documents.</p>
                         </TooltipContent>
                       </Tooltip>
@@ -386,7 +386,7 @@ export const AdminDetailsStep = memo(({ form, userClassification }: AdminDetails
                         <TooltipTrigger asChild>
                           <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-help" />
                         </TooltipTrigger>
-                        <TooltipContent className="max-w-xs bg-slate-900 text-white">
+                        <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                           <p>Your professional position helps us personalize communications and understand your role in decision-making processes.</p>
                         </TooltipContent>
                       </Tooltip>
@@ -418,7 +418,7 @@ export const AdminDetailsStep = memo(({ form, userClassification }: AdminDetails
                         <TooltipTrigger asChild>
                           <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-help" />
                         </TooltipTrigger>
-                        <TooltipContent className="max-w-xs bg-slate-900 text-white">
+                        <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                           <p>Complete your full legal name for official documents and compliance requirements.</p>
                         </TooltipContent>
                       </Tooltip>
@@ -447,7 +447,7 @@ export const AdminDetailsStep = memo(({ form, userClassification }: AdminDetails
                         <TooltipTrigger asChild>
                           <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-help" />
                         </TooltipTrigger>
-                        <TooltipContent className="max-w-xs bg-slate-900 text-white">
+                        <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                           <p>Your department helps route communications appropriately and ensures you receive relevant updates.</p>
                         </TooltipContent>
                       </Tooltip>
@@ -479,7 +479,7 @@ export const AdminDetailsStep = memo(({ form, userClassification }: AdminDetails
                         <TooltipTrigger asChild>
                           <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-help" />
                         </TooltipTrigger>
-                        <TooltipContent className="max-w-xs bg-slate-900 text-white">
+                        <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                           <p>Indicates your decision-making authority level, helping us prioritize communications and route important matters appropriately.</p>
                         </TooltipContent>
                       </Tooltip>
@@ -514,7 +514,7 @@ export const AdminDetailsStep = memo(({ form, userClassification }: AdminDetails
                         <TooltipTrigger asChild>
                           <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-help" />
                         </TooltipTrigger>
-                        <TooltipContent className="max-w-xs bg-slate-900 text-white">
+                        <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                           <p>Your preferred method helps us contact you efficiently for important updates, support, and account-related matters.</p>
                         </TooltipContent>
                       </Tooltip>
@@ -552,7 +552,7 @@ export const AdminDetailsStep = memo(({ form, userClassification }: AdminDetails
                         <TooltipTrigger asChild>
                           <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-help" />
                         </TooltipTrigger>
-                        <TooltipContent className="max-w-xs bg-slate-900 text-white">
+                        <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                           <p>Your direct office line for urgent business matters and account verification purposes.</p>
                         </TooltipContent>
                       </Tooltip>
@@ -582,7 +582,7 @@ export const AdminDetailsStep = memo(({ form, userClassification }: AdminDetails
                         <TooltipTrigger asChild>
                           <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-help" />
                         </TooltipTrigger>
-                        <TooltipContent className="max-w-xs bg-slate-900 text-white">
+                        <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                           <p>Alternative mobile number for backup contact and SMS notifications for security alerts.</p>
                         </TooltipContent>
                       </Tooltip>
@@ -615,7 +615,7 @@ export const AdminDetailsStep = memo(({ form, userClassification }: AdminDetails
                         <TooltipTrigger asChild>
                           <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-help" />
                         </TooltipTrigger>
-                        <TooltipContent className="max-w-xs bg-slate-900 text-white">
+                        <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                           <p>Separate email for billing invoices and payment-related communications. If not provided, admin email will be used.</p>
                         </TooltipContent>
                       </Tooltip>
@@ -658,7 +658,7 @@ export const AdminDetailsStep = memo(({ form, userClassification }: AdminDetails
                         <TooltipTrigger asChild>
                           <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-help" />
                         </TooltipTrigger>
-                        <TooltipContent className="max-w-xs bg-slate-900 text-white">
+                        <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                           <p className="font-semibold mb-1">Optional Field</p>
                           <p>Indicates if your organization is registered for tax purposes in your country. When enabled, the corresponding tax identification number (PAN for India, EIN for US) becomes mandatory for tax-compliant invoicing, regulatory reporting, and compliance with local tax authorities.</p>
                         </TooltipContent>
@@ -703,7 +703,7 @@ export const AdminDetailsStep = memo(({ form, userClassification }: AdminDetails
                             <TooltipTrigger asChild>
                               <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-help" />
                             </TooltipTrigger>
-                            <TooltipContent className="max-w-xs bg-slate-900 text-white">
+                            <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                               <p className="font-semibold mb-1">{taxRegistered ? 'Mandatory Field' : 'Optional Field'}</p>
                               <p>Permanent Account Number (PAN) is a 10-character alphanumeric identifier issued by the Income Tax Department of India. {taxRegistered ? 'Required when Tax Registered toggle is enabled. ' : ''}Used for tax compliance, financial transactions, and regulatory reporting.</p>
                             </TooltipContent>
@@ -782,7 +782,7 @@ export const AdminDetailsStep = memo(({ form, userClassification }: AdminDetails
                             <TooltipTrigger asChild>
                               <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-help" />
                             </TooltipTrigger>
-                            <TooltipContent className="max-w-xs bg-slate-900 text-white">
+                            <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                               <p className="font-semibold mb-1">Optional Field</p>
                               <p>Employer Identification Number (EIN) is a 9-digit number issued by the IRS for tax purposes. Required for businesses operating in the US.</p>
                             </TooltipContent>

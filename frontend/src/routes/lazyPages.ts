@@ -7,6 +7,7 @@ export const IndustryPage = React.lazy(() => import('@/features/landing/pages/In
 export const PrivacyPolicy = React.lazy(() => import('@/features/landing/pages/PrivacyPolicy'))
 export const TermsOfService = React.lazy(() => import('@/features/landing/pages/TermsOfService'))
 export const CookiePolicy = React.lazy(() => import('@/features/landing/pages/CookiePolicy'))
+export const RefundPolicy = React.lazy(() => import('@/features/landing/pages/RefundPolicy'))
 export const Security = React.lazy(() => import('@/features/landing/pages/Security'))
 export const Pricing = React.lazy(() => import('@/features/landing/pages/Pricing'))
 
@@ -27,23 +28,20 @@ export const Billing = React.lazy(() => import('@/features/billing/pages/Billing
 
 // Dashboard
 export const SuiteDashboard = React.lazy(() => import('@/features/dashboard/pages/SuiteDashboard'))
-export const ActivityDashboard = React.lazy(() => import('@/features/dashboard/pages/ActivityDashboardPage').then(m => ({ default: m.ActivityDashboard })))
+export const ActivityPage = React.lazy(() => import('@/features/dashboard/pages/ActivityPage').then(m => ({ default: m.ActivityPage })))
+
 
 // Applications
 export const ApplicationPage = React.lazy(() => import('@/features/applications/pages/ApplicationPage').then(m => ({ default: m.ApplicationPage })))
 export const ApplicationDetailsPage = React.lazy(() => import('@/features/applications/pages/ApplicationDetailsPage').then(m => ({ default: m.ApplicationDetailsPage })))
 
-// Users — direct import to avoid dynamic chunk fetch failures (ERR_CONNECTION_REFUSED)
-import { UserManagementDashboard as UserManagementDashboardComponent } from '@/features/users/components/UserManagementDashboard'
-export const UserManagementDashboard = React.lazy(() => Promise.resolve({ default: UserManagementDashboardComponent }))
-export const InviteUserPage = React.lazy(() => import('@/features/users/pages/InviteUserPage').then(m => ({ default: m.InviteUserPage })))
-export const UserDetailsPage = React.lazy(() => import('@/features/users/pages/UserDetailsPage').then(m => ({ default: m.UserDetailsPage })))
-export const UserApplicationAccessPage = React.lazy(() => import('@/features/users/pages/UserApplicationAccess'))
-
 // Roles
 export const RolesPage = React.lazy(() => import('@/features/roles/pages/RolesPage').then(m => ({ default: m.RolesPage })))
 export const RoleDetailsPage = React.lazy(() => import('@/features/roles/pages/RoleDetailsPage').then(m => ({ default: m.RoleDetailsPage })))
 export const RoleBuilderPage = React.lazy(() => import('@/features/roles/pages/RoleBuilderPage').then(m => ({ default: m.RoleBuilderPage })))
+
+// Users
+export const UserManagementPage = React.lazy(() => import('@/features/users/pages/UserManagementPage'))
 
 // Organizations — import directly from the page file, not the barrel (avoids pulling in reactflow)
 export const OrganizationPage = React.lazy(() => import('@/features/organizations/pages/OrganizationPage'))
