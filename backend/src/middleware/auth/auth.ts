@@ -7,7 +7,7 @@ import { RequestAnalyzer } from './request-analyzer.js';
 import { shouldLogVerbose } from '../../utils/verbose-log.js';
 import { getUserPermissions, checkPermissions } from './permission-middleware.js';
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import type { UserContext, LegacyUser, OnboardingStatus } from '../../types/common.js';
+import type { OnboardingStatus } from '../../types/common.js';
 
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -35,6 +35,7 @@ const PUBLIC_ROUTES: string[] = [
   '/api/onboarding/verify-gstin',
   '/api/onboarding/check-subdomain',
   '/api/onboarding/onboard-frontend',
+  '/api/onboarding/status',
   'POST /api/onboarding/get-data',
   '/api/contact',
   '/api/demo',
@@ -45,7 +46,8 @@ interface UserRecord {
   userId: string;
   tenantId: string;
   email: string;
-  name: string;
+  firstName?: string | null;
+  lastName?: string | null;
   onboardingCompleted: boolean | null;
   isActive: boolean | null;
   isTenantAdmin: boolean | null;
@@ -62,62 +64,56 @@ interface KindeUser {
   organization?: { id: string; name?: string } | null;
 }
 
-async function findUserInDatabase(kindeUserId: string): Promise<UserRecord | null> {
+async function findUserInDatabase(kindeUserId: string, tenantId?: string): Promise<UserRecord | null> {
+  // Cache key includes tenantId so multi-tenant users get correct records per tenant.
+  const cacheKey = tenantId ? `${kindeUserId}:${tenantId}` : kindeUserId;
+
   // Check in-process cache first — eliminates a DB round-trip on every request
   // for the same user within the 5-minute TTL window.
-  const cached = userRecordCache.get(kindeUserId);
+  const cached = userRecordCache.get(cacheKey);
   if (cached && Date.now() < cached.expiresAt) {
-    if (shouldLogVerbose()) console.log('🔍 User cache HIT:', kindeUserId);
-    // If cached user has a tenant, verify that tenant still exists (e.g. not deleted).
-    // Otherwise we keep returning stale tenantId after tenant deletion until TTL expires.
-    if (cached.value?.tenantId) {
-      try {
-        const [tenant] = await db
-          .select({ tenantId: tenants.tenantId })
-          .from(tenants)
-          .where(eq(tenants.tenantId, cached.value.tenantId))
-          .limit(1);
-        if (!tenant) {
-          userRecordCache.delete(kindeUserId);
-          userRecordCache.set(kindeUserId, { value: null, expiresAt: Date.now() + USER_RECORD_CACHE_TTL_MS });
-          if (shouldLogVerbose()) console.log('🔍 User cache invalidated: tenant no longer exists');
-          return null;
-        }
-      } catch {
-        // On DB error, use cached value (fail open)
-      }
+    if (shouldLogVerbose()) console.log('🔍 User cache HIT:', cacheKey);
+    // Verify tenant still exists — uses tenantExistsCache (30-min TTL) to avoid
+    // a live DB round-trip on every request. Accepts ≤30min stale window for deletions.
+    if (cached.value?.tenantId && !(await isTenantValid(cached.value.tenantId))) {
+      userRecordCache.delete(cacheKey);
+      userRecordCache.set(cacheKey, { value: null, expiresAt: Date.now() + USER_RECORD_CACHE_TTL_MS });
+      if (shouldLogVerbose()) console.log('🔍 User cache invalidated: tenant no longer exists');
+      return null;
     }
     return cached.value;
   }
 
   try {
-    if (shouldLogVerbose()) console.log('🔍 Looking up user:', kindeUserId);
+    if (shouldLogVerbose()) console.log('🔍 Looking up user:', cacheKey);
+
+    const whereClause = tenantId
+      ? and(eq(tenantUsers.kindeUserId, kindeUserId), eq(tenantUsers.tenantId, tenantId), eq(tenantUsers.isActive, true))
+      : and(eq(tenantUsers.kindeUserId, kindeUserId), eq(tenantUsers.isActive, true));
 
     const userRecords = await db
       .select({
         userId: tenantUsers.userId,
         tenantId: tenantUsers.tenantId,
         email: tenantUsers.email,
-        name: tenantUsers.name,
+        firstName: tenantUsers.firstName,
+        lastName: tenantUsers.lastName,
         onboardingCompleted: tenantUsers.onboardingCompleted,
         isActive: tenantUsers.isActive,
         isTenantAdmin: tenantUsers.isTenantAdmin
       })
       .from(tenantUsers)
-      .where(and(
-        eq(tenantUsers.kindeUserId, kindeUserId),
-        eq(tenantUsers.isActive, true)
-      )) as UserRecord[];
+      .where(whereClause) as UserRecord[];
 
     if (!Array.isArray(userRecords) || userRecords.length === 0) {
-      if (shouldLogVerbose()) console.log('⚠️ No user records found');
-      userRecordCache.set(kindeUserId, { value: null, expiresAt: Date.now() + USER_RECORD_CACHE_TTL_MS });
+      if (shouldLogVerbose()) console.log('⚠️ No user records found (expected during onboarding)');
+      userRecordCache.set(cacheKey, { value: null, expiresAt: Date.now() + USER_RECORD_CACHE_TTL_MS });
       return null;
     }
 
     const selectedUser = userRecords.find(u => u.onboardingCompleted) || userRecords[0];
     if (shouldLogVerbose()) console.log('Auth: user found', selectedUser.userId);
-    userRecordCache.set(kindeUserId, { value: selectedUser, expiresAt: Date.now() + USER_RECORD_CACHE_TTL_MS });
+    userRecordCache.set(cacheKey, { value: selectedUser, expiresAt: Date.now() + USER_RECORD_CACHE_TTL_MS });
     return selectedUser;
 
   } catch (error: unknown) {
@@ -135,8 +131,16 @@ const USER_RECORD_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 interface UserRecordCacheEntry { value: UserRecord | null; expiresAt: number }
 const userRecordCache = new Map<string, UserRecordCacheEntry>();
 
-export function invalidateUserCache(kindeUserId: string): void {
-  userRecordCache.delete(kindeUserId);
+export function invalidateUserCache(kindeUserId: string, tenantId?: string): void {
+  userRecordCache.delete(kindeUserId); // bare key (legacy)
+  if (tenantId) {
+    userRecordCache.delete(`${kindeUserId}:${tenantId}`);
+  } else {
+    // Delete all tenant-specific keys for this user
+    for (const key of userRecordCache.keys()) {
+      if (key.startsWith(`${kindeUserId}:`)) userRecordCache.delete(key);
+    }
+  }
 }
 // ─────────────────────────────────────────────────────────────────────────
 
@@ -150,6 +154,34 @@ const roleCacheByUserId = new Map<string, RoleCacheEntry>();
 
 export function invalidateRoleCache(internalUserId: string): void {
   roleCacheByUserId.delete(internalUserId);
+}
+// ─────────────────────────────────────────────────────────────────────────
+
+// ── Tenant-exists cache ───────────────────────────────────────────────────
+// Verifying tenant existence is done on every cache HIT in findUserInDatabase
+// and findTenantByOrgCode. Since tenantIds are immutable once created, we cache
+// existence checks for 30 minutes to avoid a DB round-trip on every request.
+// Worst case: a deleted tenant's cache entry persists for up to 30 minutes.
+const TENANT_EXISTS_CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
+const tenantExistsCache = new Map<string, number>(); // tenantId -> expiresAt timestamp
+
+async function isTenantValid(tenantId: string): Promise<boolean> {
+  const expiry = tenantExistsCache.get(tenantId);
+  if (expiry && Date.now() < expiry) return true; // cache hit — no DB round-trip
+  try {
+    const [row] = await db
+      .select({ tenantId: tenants.tenantId })
+      .from(tenants)
+      .where(eq(tenants.tenantId, tenantId))
+      .limit(1);
+    if (row) {
+      tenantExistsCache.set(tenantId, Date.now() + TENANT_EXISTS_CACHE_TTL_MS);
+      return true;
+    }
+    return false;
+  } catch {
+    return true; // fail open — don't invalidate on transient DB errors
+  }
 }
 // ─────────────────────────────────────────────────────────────────────────
 
@@ -167,23 +199,12 @@ async function findTenantByOrgCode(orgCode: string): Promise<string | null> {
   // Check in-process cache (hits AND misses).
   const cached = tenantLookupCache.get(orgCode);
   if (cached && Date.now() < cached.expiresAt) {
-    // If we have a cached tenantId, verify that tenant still exists (e.g. not deleted).
-    if (cached.value) {
-      try {
-        const [tenant] = await db
-          .select({ tenantId: tenants.tenantId })
-          .from(tenants)
-          .where(eq(tenants.tenantId, cached.value))
-          .limit(1);
-        if (!tenant) {
-          tenantLookupCache.delete(orgCode);
-          tenantLookupCache.set(orgCode, { value: null, expiresAt: Date.now() + TENANT_LOOKUP_CACHE_TTL_MS });
-          if (shouldLogVerbose()) console.log('🔍 Tenant lookup cache invalidated: tenant no longer exists');
-          return null;
-        }
-      } catch {
-        // On DB error, use cached value (fail open)
-      }
+    // Verify tenant still exists — uses tenantExistsCache (30-min TTL).
+    if (cached.value && !(await isTenantValid(cached.value))) {
+      tenantLookupCache.delete(orgCode);
+      tenantLookupCache.set(orgCode, { value: null, expiresAt: Date.now() + TENANT_LOOKUP_CACHE_TTL_MS });
+      if (shouldLogVerbose()) console.log('🔍 Tenant lookup cache invalidated: tenant no longer exists');
+      return null;
     }
     return cached.value; // null means "not found" — also cached to avoid repeated DB hits
   }
@@ -204,8 +225,8 @@ async function findTenantByOrgCode(orgCode: string): Promise<string | null> {
     if (result) {
       if (shouldLogVerbose()) console.log('✅ Found tenant:', result);
     } else {
-      // Only log once per TTL window — the cache prevents log spam on every request.
-      console.log(`⚠️ No tenant found for org code: ${orgCode} (will suppress for ${TENANT_LOOKUP_CACHE_TTL_MS / 1000}s)`);
+      // Expected during onboarding (no tenant record yet) — verbose-only to avoid noise.
+      if (shouldLogVerbose()) console.log(`⚠️ No tenant found for org code: ${orgCode}`);
     }
     return result;
   } catch (error: unknown) {
@@ -326,48 +347,24 @@ async function handleTokenRefresh(request: FastifyRequest, reply: FastifyReply, 
 }
 
 async function processAuthenticatedUser(request: FastifyRequest, reply: FastifyReply, kindeUser: KindeUser): Promise<void> {
-  const userRecord = await findUserInDatabase(kindeUser.userId);
+  // Resolve tenantId first so findUserInDatabase can use it as part of the cache key.
+  // This ensures multi-tenant users always get the correct record for their active org.
   let tenantId: string | null = null;
-
   if (kindeUser.organization?.id) {
     tenantId = await findTenantByOrgCode(kindeUser.organization.id);
   }
 
+  // Look up the user scoped to the resolved tenant (cache key: kindeUserId:tenantId).
+  const userRecord = await findUserInDatabase(kindeUser.userId, tenantId ?? undefined);
+
+  // Fallback: if tenantId couldn't be resolved from the org, derive it from the DB record.
   if (!tenantId && userRecord?.tenantId) {
     tenantId = userRecord.tenantId;
   }
 
-  // Use the user record that matches the resolved tenantId. When a user belongs to multiple
-  // tenants, findUserInDatabase may return a record from a different tenant, causing
-  // isTenantAdmin to be wrong (e.g. admin in new org but record from old org has isTenantAdmin: false).
-  let effectiveUserRecord = userRecord;
-  if (tenantId && userRecord?.tenantId && userRecord.tenantId !== tenantId) {
-    try {
-      const [tenantUser] = await db
-        .select({
-          userId: tenantUsers.userId,
-          tenantId: tenantUsers.tenantId,
-          email: tenantUsers.email,
-          name: tenantUsers.name,
-          onboardingCompleted: tenantUsers.onboardingCompleted,
-          isActive: tenantUsers.isActive,
-          isTenantAdmin: tenantUsers.isTenantAdmin
-        })
-        .from(tenantUsers)
-        .where(and(
-          eq(tenantUsers.kindeUserId, kindeUser.userId),
-          eq(tenantUsers.tenantId, tenantId),
-          eq(tenantUsers.isActive, true)
-        ))
-        .limit(1);
-
-      if (tenantUser) {
-        effectiveUserRecord = tenantUser as UserRecord;
-      }
-    } catch (err) {
-      if (shouldLogVerbose()) console.warn('⚠️ Failed to fetch user for tenant, using fallback:', (err as Error).message);
-    }
-  }
+  // effectiveUserRecord is the correct tenant-scoped record (findUserInDatabase already
+  // filters by tenantId when provided, so no mismatch check needed).
+  const effectiveUserRecord = userRecord;
 
   const { needsOnboarding } = determineOnboardingStatus(effectiveUserRecord, tenantId);
 
@@ -406,7 +403,7 @@ async function processAuthenticatedUser(request: FastifyRequest, reply: FastifyR
     tenantId,
     kindeOrgId: kindeUser.organization?.id,
     email: effectiveUserRecord?.email || kindeUser.email || '',
-    name: effectiveUserRecord?.name || kindeUser.name || '',
+    name: [effectiveUserRecord?.firstName, effectiveUserRecord?.lastName].filter(Boolean).join(' ') || kindeUser.name || '',
     isAuthenticated: true,
     needsOnboarding,
     onboardingCompleted: effectiveUserRecord?.onboardingCompleted || false,
@@ -440,6 +437,16 @@ async function processAuthenticatedUser(request: FastifyRequest, reply: FastifyR
 }
 
 export async function authMiddleware(request: FastifyRequest, reply: FastifyReply): Promise<void> {
+  // Skip if already authenticated by an earlier preHandler in the same request lifecycle.
+  // Routes that have both a global hook preHandler AND a per-route preHandler would otherwise
+  // run full Kinde token validation + DB queries twice (400-800ms duplicate cost).
+  if (request.userContext?.tenantId) return;
+
+  // CORS preflight has no auth headers; never 401 here or the browser blocks the real request.
+  if (request.method.toUpperCase() === 'OPTIONS') {
+    return;
+  }
+
   if (isPublicRoute(request.url)) {
     await setupDatabaseConnection(request);
     return;
@@ -469,6 +476,7 @@ export async function authMiddleware(request: FastifyRequest, reply: FastifyRepl
           if (tenant) {
             const [u] = await db.select().from(tenantUsers).where(and(eq(tenantUsers.tenantId, tenant.tenantId), eq(tenantUsers.email, decoded.email))).limit(1);
             if (u) {
+              const uName = [u.firstName, u.lastName].filter(Boolean).join(' ') || u.email || '';
               request.userContext = {
                 userId: u.kindeUserId || u.userId,
                 kindeUserId: u.kindeUserId || u.userId,
@@ -476,7 +484,7 @@ export async function authMiddleware(request: FastifyRequest, reply: FastifyRepl
                 tenantId: tenant.tenantId,
                 kindeOrgId: tenant.kindeOrgId,
                 email: u.email,
-                name: u.name,
+                name: uName,
                 isAuthenticated: true,
                 needsOnboarding: !u.onboardingCompleted,
                 onboardingCompleted: u.onboardingCompleted || false,
@@ -491,7 +499,7 @@ export async function authMiddleware(request: FastifyRequest, reply: FastifyRepl
                 internalUserId: u.userId,
                 tenantId: tenant.tenantId,
                 email: u.email,
-                name: u.name,
+                name: uName,
                 isAuthenticated: true,
                 isAdmin: request.userContext.isAdmin,
                 isTenantAdmin: request.userContext.isTenantAdmin,

@@ -43,7 +43,7 @@ describe('RequestAnalyzer.isPublicEndpoint', () => {
     '/api/payments/history',
     '/api/subscriptions',
     '/api/credits/deduct',
-    '/api/users/profile',
+    '/api/notifications',
     '/api/admin/tenants',
     '/api/roles',
   ])('returns false for protected path: %s', (url) => {
@@ -63,7 +63,7 @@ describe('RequestAnalyzer.isSystemOperation', () => {
     '/health',
     '/api/health',
     '/api/auth/logout',
-    '/api/user-sync/update',
+    '/api/internal/health',
     '/api/permission-sync/run',
     '/api/permissions/sync',
   ])('returns true for system path: %s', (url) => {
@@ -74,7 +74,7 @@ describe('RequestAnalyzer.isSystemOperation', () => {
     '/api/payments/history',
     '/api/subscriptions',
     '/api/credits',
-    '/api/users/profile',
+    '/api/notifications',
   ])('returns false for non-system path: %s', (url) => {
     expect(RequestAnalyzer.isSystemOperation(req(url))).toBe(false);
   });
@@ -139,7 +139,7 @@ describe('RequestAnalyzer.analyzeRequest — connection type & security level', 
   });
 
   it('sets tenantId=null (extracted from JWT, not from URL)', () => {
-    const analysis = RequestAnalyzer.analyzeRequest(req('/api/users/profile'));
+    const analysis = RequestAnalyzer.analyzeRequest(req('/api/notifications'));
     expect(analysis.tenantId).toBeNull();
   });
 });
@@ -155,7 +155,7 @@ describe('RequestAnalyzer.shouldBypassRLS', () => {
   });
 
   it('returns false for regular user routes (enforce RLS)', () => {
-    expect(RequestAnalyzer.shouldBypassRLS(req('/api/users/profile'))).toBe(false);
+    expect(RequestAnalyzer.shouldBypassRLS(req('/api/notifications'))).toBe(false);
   });
 
   it('returns false for credit routes', () => {

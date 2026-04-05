@@ -156,7 +156,7 @@ describe('authMiddleware', () => {
 
   it('returns 401 when no token is present for protected routes', async () => {
     const { authMiddleware } = await loadAuthModule();
-    const req = makeRequest({ url: '/api/users/profile' });
+    const req = makeRequest({ url: '/api/notifications' });
     const reply = makeReply();
 
     await authMiddleware(req, reply);
@@ -178,7 +178,7 @@ describe('authMiddleware', () => {
     );
 
     const req = makeRequest({
-      url: '/api/users/profile',
+      url: '/api/notifications',
       cookies: { kinde_token: 't' },
     });
     const reply = makeReply();
@@ -210,7 +210,7 @@ describe('authMiddleware', () => {
     analyzeRequestMock.mockReturnValue({ requiresBypass: true });
 
     const req = makeRequest({
-      url: '/api/users/profile',
+      url: '/api/notifications',
       cookies: { kinde_token: 'bad', kinde_refresh_token: 'refresh' },
     });
     const reply = makeReply();
@@ -262,7 +262,7 @@ describe('authMiddleware', () => {
     analyzeRequestMock.mockReturnValue({ requiresBypass: true });
 
     const req = makeRequest({
-      url: '/api/users/profile',
+      url: '/api/notifications',
       headers: { authorization: 'Bearer ops-token' },
     });
     const reply = makeReply();
@@ -285,7 +285,7 @@ describe('csrfProtection', () => {
   it('does nothing for GET requests', async () => {
     process.env.NODE_ENV = 'production';
     const { csrfProtection } = await loadAuthModule();
-    const req = makeRequest({ method: 'GET', url: '/api/users/profile' });
+    const req = makeRequest({ method: 'GET', url: '/api/notifications' });
     const reply = makeReply();
 
     await csrfProtection(req, reply);
@@ -309,7 +309,7 @@ describe('csrfProtection', () => {
     const { csrfProtection } = await loadAuthModule();
     const req = makeRequest({
       method: 'POST',
-      url: '/api/users/profile',
+      url: '/api/notifications',
       headers: { authorization: 'Bearer abc' },
     });
     const reply = makeReply();
@@ -322,7 +322,7 @@ describe('csrfProtection', () => {
   it('blocks cookie-authenticated POST without Origin/Referer in production', async () => {
     process.env.NODE_ENV = 'production';
     const { csrfProtection } = await loadAuthModule();
-    const req = makeRequest({ method: 'POST', url: '/api/users/profile', headers: {} });
+    const req = makeRequest({ method: 'POST', url: '/api/notifications', headers: {} });
     const reply = makeReply();
 
     await csrfProtection(req, reply);
@@ -339,7 +339,7 @@ describe('csrfProtection', () => {
     const { csrfProtection } = await loadAuthModule();
     const req = makeRequest({
       method: 'POST',
-      url: '/api/users/profile',
+      url: '/api/notifications',
       headers: { origin: 'https://evil.example.com' },
     });
     const reply = makeReply();
@@ -358,7 +358,7 @@ describe('csrfProtection', () => {
     const { csrfProtection } = await loadAuthModule();
     const req = makeRequest({
       method: 'POST',
-      url: '/api/users/profile',
+      url: '/api/notifications',
       headers: { origin: 'https://app.zopkit.com' },
     });
     const reply = makeReply();

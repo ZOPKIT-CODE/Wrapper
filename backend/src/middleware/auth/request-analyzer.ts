@@ -75,7 +75,6 @@ export class RequestAnalyzer {
       '/api/health',
 
       '/api/permissions/sync',
-      '/api/user-sync/',
       '/api/permission-sync/'
     ];
 

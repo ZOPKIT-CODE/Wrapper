@@ -1,8 +1,8 @@
 import { db } from '../../db/index.js';
 import { eq, and } from 'drizzle-orm';
-import { tenantUsers, userRoleAssignments, customRoles } from '../../db/schema/index.js';
+import { userRoleAssignments, customRoles } from '../../db/schema/index.js';
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import type { UserPermissions, UserRole } from '../../types/common.js';
+import type { UserPermissions } from '../../types/common.js';
 
 export function requirePermissions(requiredPermissions: string[]) {
   return async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
