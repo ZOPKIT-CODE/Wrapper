@@ -15,11 +15,11 @@
  * - Credit expiry dates
  */
 
-import { db, systemDbConnection } from '../../../db/index.js';
+import { systemDbConnection } from '../../../db/index.js';
 import { tenants, tenantUsers, customRoles, userRoleAssignments, subscriptions, entities, credits } from '../../../db/schema/index.js';
 // REMOVED: creditAllocations - Application-specific allocations removed (applications manage their own credits)
 import { organizationApplications } from '../../../db/schema/core/suite-schema.js';
-import { eq, and, isNotNull, isNull } from 'drizzle-orm';
+import { eq, and, isNull } from 'drizzle-orm';
 
 export class OnboardingVerificationService {
   

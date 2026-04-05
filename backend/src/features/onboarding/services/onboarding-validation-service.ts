@@ -7,7 +7,7 @@
 
 import { systemDbConnection } from '../../../db/index.js';
 import { tenants, tenantUsers } from '../../../db/schema/index.js';
-import { eq, and } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import VerificationService from './verification-service.js';
 
 class OnboardingValidationService {

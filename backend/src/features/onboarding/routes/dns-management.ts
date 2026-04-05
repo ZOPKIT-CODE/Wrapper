@@ -1,4 +1,5 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { authenticateToken } from '../../../middleware/auth/auth.js';
 import DNSManagementService from '../services/dns-management-service.js';
 import { db } from '../../../db/index.js';
 import { tenants } from '../../../db/schema/index.js';
@@ -312,9 +313,18 @@ export default async function dnsManagementRoutes(fastify: FastifyInstance, _opt
   });
 
   // Delete subdomain
-  fastify.delete('/api/dns/subdomains/:tenantId', async (request: FastifyRequest<{ Params: { tenantId: string } }>, reply: FastifyReply) => {
+  fastify.delete<{ Params: { tenantId: string } }>('/api/dns/subdomains/:tenantId', {
+    preHandler: authenticateToken
+  }, async (request, reply) => {
     try {
       const { tenantId } = request.params;
+
+      if (request.userContext.tenantId !== tenantId) {
+        return reply.code(403).send({
+          success: false,
+          error: 'Forbidden: you do not have access to this tenant'
+        });
+      }
 
       console.log(`🗑️ Deleting subdomain for tenant: ${tenantId}`);
 
@@ -378,9 +388,18 @@ export default async function dnsManagementRoutes(fastify: FastifyInstance, _opt
   });
 
   // Delete custom domain
-  fastify.delete('/api/dns/custom-domains/:tenantId', async (request: FastifyRequest<{ Params: { tenantId: string } }>, reply: FastifyReply) => {
+  fastify.delete<{ Params: { tenantId: string } }>('/api/dns/custom-domains/:tenantId', {
+    preHandler: authenticateToken
+  }, async (request, reply) => {
     try {
       const { tenantId } = request.params;
+
+      if (request.userContext.tenantId !== tenantId) {
+        return reply.code(403).send({
+          success: false,
+          error: 'Forbidden: you do not have access to this tenant'
+        });
+      }
 
       console.log(`🗑️ Deleting custom domain for tenant: ${tenantId}`);
 

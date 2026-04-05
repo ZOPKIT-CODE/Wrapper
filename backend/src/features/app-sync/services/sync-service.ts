@@ -1,7 +1,7 @@
 import { db } from '../../../db/index.js';
 import { tenants, tenantUsers, customRoles, userRoleAssignments, entities, credits } from '../../../db/schema/index.js';
 // REMOVED: creditAllocations - Table removed, applications manage their own credits
-import { eq, and, sql, desc } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 
 export interface TriggerTenantSyncOptions {
   skipReferenceData?: boolean;
@@ -108,7 +108,7 @@ export class WrapperSyncService {
   /**
    * Sync essential data (tenant info, user profiles, organizations)
    */
-  static async syncEssentialData(tenantId: string, requestedBy?: string): Promise<{ success: boolean; data: Record<string, unknown> }> {
+  static async syncEssentialData(tenantId: string, _requestedBy?: string): Promise<{ success: boolean; data: Record<string, unknown> }> {
     const results: { success: boolean; data: Record<string, unknown> } = { success: false, data: {} };
 
     try {
@@ -294,13 +294,10 @@ export class WrapperSyncService {
             'email', ${tenantUsers.email}
           )`,
           organization: sql`json_build_object(
-            'orgCode', COALESCE(${tenantUsers.primaryOrganizationId}, ${tenantId}::text),
-            'department', ${tenantUsers.department},
-            'designation', ${tenantUsers.title}
+            'orgCode', COALESCE(${tenantUsers.primaryOrganizationId}, ${tenantId}::text)
           )`,
           status: sql`json_build_object(
-            'isActive', ${tenantUsers.isActive},
-            'lastActivityAt', ${tenantUsers.lastLoginAt}
+            'isActive', ${tenantUsers.isActive}
           )`,
           roles: sql`(SELECT json_agg(json_build_object(
             'roleId', ${customRoles.roleId},
@@ -380,21 +377,12 @@ export class WrapperSyncService {
           isTenantAdmin: tenantUsers.isTenantAdmin,
           isVerified: sql`true`,
           onboardingCompleted: tenantUsers.onboardingCompleted,
-          lastLoginAt: tenantUsers.lastLoginAt,
-          loginCount: sql`0`,
           preferences: sql`COALESCE(${tenantUsers.preferences}, '{}'::jsonb)`,
-          profile: sql`json_build_object(
-            'title', ${tenantUsers.title},
-            'department', ${tenantUsers.department},
-            'employeeCode', COALESCE(${tenantUsers.userId}::text, ${tenantUsers.userId}::text)
-          )`,
+          profile: sql`json_build_object('employeeCode', COALESCE(${tenantUsers.userId}::text, ''))`,
           security: sql`json_build_object(
             'isActive', ${tenantUsers.isActive}
           )`,
-          metadata: sql`json_build_object(
-            'avatar', ${tenantUsers.avatar},
-            'name', ${tenantUsers.name}
-          )`
+          metadata: sql`json_build_object('name', COALESCE(${tenantUsers.firstName} || ' ' || ${tenantUsers.lastName}, ${tenantUsers.firstName}, ${tenantUsers.lastName}, ''))`
         })
         .from(tenantUsers)
         .where(and(eq(tenantUsers.tenantId, tenantId), eq(tenantUsers.isActive, true)));
@@ -446,7 +434,6 @@ export class WrapperSyncService {
     // Applications now manage their own credit consumption
     // Use credits table instead for organization-level credits
     try {
-      const { creditTransactions } = await import('../../../db/schema/index.js');
       const entityCredits = await db
         .select({
           tenantId: credits.tenantId,
@@ -485,8 +472,6 @@ export class WrapperSyncService {
           deactivatedBy: sql`NULL`,
           priority: sql`1`,
           metadata: sql`json_build_object(
-            'department', ${tenantUsers.department},
-            'designation', ${tenantUsers.title},
             'employeeCode', COALESCE(${tenantUsers.userId}::text, ${tenantUsers.userId}::text)
           )`
         })
@@ -519,7 +504,7 @@ export class WrapperSyncService {
           isActive: userRoleAssignments.isActive,
           metadata: sql`json_build_object(
             'userEmail', ${tenantUsers.email},
-            'userName', ${tenantUsers.name},
+            'userName', COALESCE(${tenantUsers.firstName} || ' ' || ${tenantUsers.lastName}, ${tenantUsers.firstName}, ${tenantUsers.lastName}, ''),
             'roleName', ${customRoles.roleName}
           )`
         })

@@ -55,7 +55,7 @@ export default async function dataManagementRoutes(
           user: {
             id: user.userId,
             email: user.email,
-            name: user.name,
+            name: [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email || '',
             isAdmin: user.isTenantAdmin,
             onboardingCompleted: user.onboardingCompleted
           }
@@ -99,7 +99,6 @@ export default async function dataManagementRoutes(
         .update(tenantUsers)
         .set({
           onboardingCompleted: true,
-          onboardingStep: 'completed',
           updatedAt: new Date()
         })
         .where(eq(tenantUsers.userId, userId))
@@ -131,36 +130,31 @@ export default async function dataManagementRoutes(
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const body = request.body as Record<string, unknown>;
-      const { step, data, formData, email, kindeUserId: kindeUserIdFromBody } = body;
+      const { step, data, formData, email } = body;
       let kindeUserId: string | null = null;
       let userEmail: string | null = null;
-      const userContext = request.userContext as { userId?: string; kindeUserId?: string; email?: string } | undefined;
 
-      // Get Kinde user ID and email from authenticated context
-      if (userContext?.userId) {
-        kindeUserId = userContext.kindeUserId || userContext.userId;
-        userEmail = (userContext.email || email) as string;
-      } else if (email) {
-        userEmail = email as string;
-        if (typeof kindeUserIdFromBody === 'string' && kindeUserIdFromBody.trim().length > 0) {
-          kindeUserId = kindeUserIdFromBody;
-        }
-        // Try to get Kinde ID from existing onboarding data
-        if (!kindeUserId) {
-          const [existingData] = await db
-            .select()
-            .from(onboardingFormData)
-            .where(eq(onboardingFormData.email, email as string))
-            .limit(1);
+      // Require a valid Kinde JWT — reject unauthenticated requests
+      const authHeader = request.headers.authorization;
+      if (!authHeader?.startsWith('Bearer ')) {
+        return reply.code(401).send({ success: false, error: 'Authentication required' });
+      }
+      try {
+        const { kindeService } = await import('../../auth/index.js');
+        const token = authHeader.substring(7);
+        const user = await kindeService.validateToken(token);
+        kindeUserId = (user.kindeUserId || user.userId) as string;
+        // Prefer email from the verified token; fall back to body
+        userEmail = ((user.email || email) as unknown) as string | null;
+      } catch (authErr: unknown) {
+        return reply.code(401).send({ success: false, error: 'Invalid authentication token' });
+      }
+      if (!kindeUserId) {
+        return reply.code(401).send({ success: false, error: 'Authentication required' });
+      }
 
-          if (existingData) {
-            kindeUserId = existingData.kindeUserId;
-          }
-        }
-      } else {
-        return reply.code(400).send({
-          error: 'Either authentication token or email is required'
-        });
+      if (!userEmail) {
+        userEmail = email as string | null;
       }
 
       if (!kindeUserId || !userEmail) {

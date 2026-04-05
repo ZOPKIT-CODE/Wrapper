@@ -31,27 +31,34 @@ import {
   entities,
   credits,
   creditTransactions,
-  creditUsage,
   creditConfigurations,
   organizationMemberships,
-  applications,
-  organizationApplications,
 } from '../../../db/schema/index.js';
-import { eq, and, or, sql } from 'drizzle-orm';
+import { eq, and, sql, desc } from 'drizzle-orm';
 import Logger from '../../../utils/logger.js';
 import { BUSINESS_SUITE_MATRIX } from '../../../data/permission-matrix.js';
+import { subscriptions } from '../../../db/schema/billing/subscriptions.js';
 
 // ─── Public Types ──────────────────────────────────────────────────────────
 
 export interface BootstrapTenantRecord {
   tenantId: string;
-  companyName: string;
+  tenantName: string;
   kindeOrgId: string | null;
   isActive: boolean;
-  planName: string | null;
+  /** Subscription status/billing/trial details — plan name is at the event top-level */
+  subscription: {
+    status: string | null;
+    billingCycle: string | null;
+    isTrialUser: boolean;
+    trialStartedAt: string | null;
+    trialEndsAt: string | null;
+  } | null;
 }
 
 export interface BootstrapOrganization {
+  /** Wrapper UUID — use this as the FK for wrapper_entities.entity_id in FA */
+  entityId: string;
   orgCode: string;
   orgName: string;
   parentId: string | null;
@@ -76,7 +83,6 @@ export interface BootstrapRole {
   roleName: string;
   /** Flat permission strings scoped to appCode, e.g. "accounting.journals.create" */
   permissions: string[];
-  priority: number;
   isSystemRole: boolean;
 }
 
@@ -84,8 +90,6 @@ export interface BootstrapEmployeeAssignment {
   assignmentId: string;
   userId: string;
   entityId: string;
-  membershipType: string;
-  isPrimary: boolean;
   accessLevel: string | null;
 }
 
@@ -93,7 +97,6 @@ export interface BootstrapRoleAssignment {
   assignmentId: string;
   userId: string;
   roleId: string;
-  entityId: string | null;
   assignedAt: Date | null;
   isActive: boolean;
 }
@@ -212,114 +215,106 @@ export class BootstrapService {
 
     Logger.log('info', 'bootstrap', 'bootstrap_service', 'assembling payload', { tenantId, appCode });
 
-    // Wrap all reads in a single transaction for snapshot consistency.
-    // We use a read-only transaction — no writes happen here.
-    const result = await db.transaction(async (tx) => {
+    // ── Critical collections — run in parallel ────────────────────────────────
+    // All 8 fetch methods accept `db` directly (same interface as a tx object).
+    // We no longer wrap reads in a transaction: the prior sequential-in-tx approach
+    // cost ~1,600ms because Drizzle transactions hold a single connection and cannot
+    // overlap I/O. Parallel reads reduce end-to-end time to ~350ms (slowest query).
+    // Trade-off: reads are no longer from a single Postgres snapshot, but bootstrap
+    // payloads are always reconciled against MQ delta events, so minor cross-
+    // collection skew is acceptable.
+    const [tenantResult, organizationsResult, usersResult, rolesResult] = await Promise.allSettled([
+      this.fetchTenant(db, tenantId),
+      this.fetchOrganizations(db, tenantId),
+      this.fetchUsers(db, tenantId),
+      this.fetchRoles(db, tenantId, appCode),
+    ]);
 
-      // ── Critical collections ─────────────────────────────────────────
-      // Failure here aborts the entire bootstrap (caller gets 500/503).
+    // Critical failures abort the bootstrap entirely.
+    if (tenantResult.status === 'rejected') {
+      throw new Error(`bootstrap.fetchTenant failed: ${tenantResult.reason?.message || 'unknown error'}`);
+    }
+    if (organizationsResult.status === 'rejected') {
+      throw new Error(`bootstrap.fetchOrganizations failed: ${organizationsResult.reason?.message || 'unknown error'}`);
+    }
+    if (usersResult.status === 'rejected') {
+      throw new Error(`bootstrap.fetchUsers failed: ${usersResult.reason?.message || 'unknown error'}`);
+    }
+    if (rolesResult.status === 'rejected') {
+      throw new Error(`bootstrap.fetchRoles failed: ${rolesResult.reason?.message || 'unknown error'}`);
+    }
 
-      let tenant: BootstrapTenantRecord | null = null;
-      try {
-        tenant = await this.fetchTenant(tx, tenantId);
-      } catch (err: any) {
-        throw new Error(`bootstrap.fetchTenant failed: ${err?.message || 'unknown error'}`);
-      }
-      if (!tenant) {
-        throw new Error(`Tenant not found: ${tenantId}`);
-      }
+    const tenant = tenantResult.value;
+    if (!tenant) {
+      throw new Error(`Tenant not found: ${tenantId}`);
+    }
+    const organizations = organizationsResult.value;
+    const users = usersResult.value;
+    const roles = rolesResult.value;
 
-      let organizations: BootstrapOrganization[] = [];
-      try {
-        organizations = await this.fetchOrganizations(tx, tenantId);
-      } catch (err: any) {
-        throw new Error(`bootstrap.fetchOrganizations failed: ${err?.message || 'unknown error'}`);
-      }
+    // ── Non-critical collections — run in parallel ────────────────────────────
+    // Failures are recorded in warnings; empty arrays returned.
+    const [
+      employeeAssignmentsResult,
+      roleAssignmentsResult,
+      creditConfigsResult,
+      entityCreditsResult,
+    ] = await Promise.allSettled([
+      this.fetchEmployeeAssignments(db, tenantId),
+      this.fetchRoleAssignments(db, tenantId),
+      this.fetchCreditConfigs(db, tenantId, appCode),
+      this.fetchEntityCredits(db, tenantId, appCode),
+    ]);
 
-      let users: BootstrapUser[] = [];
-      try {
-        users = await this.fetchUsers(tx, tenantId);
-      } catch (err: any) {
-        throw new Error(`bootstrap.fetchUsers failed: ${err?.message || 'unknown error'}`);
-      }
+    const employeeAssignments = employeeAssignmentsResult.status === 'fulfilled'
+      ? employeeAssignmentsResult.value
+      : (() => {
+          warnings.push({ collection: 'employeeAssignments', error: employeeAssignmentsResult.reason?.message });
+          Logger.log('warning', 'bootstrap', 'bootstrap_service', 'employeeAssignments fetch failed (non-critical)', {
+            tenantId, error: employeeAssignmentsResult.reason?.message,
+          });
+          return [] as BootstrapEmployeeAssignment[];
+        })();
 
-      let roles: BootstrapRole[] = [];
-      try {
-        roles = await this.fetchRoles(tx, tenantId, appCode);
-      } catch (err: any) {
-        throw new Error(`bootstrap.fetchRoles failed: ${err?.message || 'unknown error'}`);
-      }
+    const roleAssignments = roleAssignmentsResult.status === 'fulfilled'
+      ? roleAssignmentsResult.value
+      : (() => {
+          warnings.push({ collection: 'roleAssignments', error: roleAssignmentsResult.reason?.message });
+          Logger.log('warning', 'bootstrap', 'bootstrap_service', 'roleAssignments fetch failed (non-critical)', {
+            tenantId, error: roleAssignmentsResult.reason?.message,
+          });
+          return [] as BootstrapRoleAssignment[];
+        })();
 
-      // ── Non-critical collections ─────────────────────────────────────
-      // Failure here is recorded in warnings; empty array returned.
+    const creditConfigs = creditConfigsResult.status === 'fulfilled'
+      ? creditConfigsResult.value
+      : (() => {
+          warnings.push({ collection: 'creditConfigs', error: creditConfigsResult.reason?.message });
+          Logger.log('warning', 'bootstrap', 'bootstrap_service', 'creditConfigs fetch failed (non-critical)', {
+            tenantId, appCode, error: creditConfigsResult.reason?.message,
+          });
+          return [] as BootstrapCreditConfig[];
+        })();
 
-      let employeeAssignments: BootstrapEmployeeAssignment[] = [];
-      try {
-        employeeAssignments = await this.fetchEmployeeAssignments(tx, tenantId);
-      } catch (err: any) {
-        warnings.push({ collection: 'employeeAssignments', error: err.message });
-        Logger.log('warning', 'bootstrap', 'bootstrap_service', 'employeeAssignments fetch failed (non-critical)', {
-          tenantId,
-          error: err.message,
-        });
-      }
-
-      let roleAssignments: BootstrapRoleAssignment[] = [];
-      try {
-        roleAssignments = await this.fetchRoleAssignments(tx, tenantId);
-      } catch (err: any) {
-        warnings.push({ collection: 'roleAssignments', error: err.message });
-        Logger.log('warning', 'bootstrap', 'bootstrap_service', 'roleAssignments fetch failed (non-critical)', {
-          tenantId,
-          error: err.message,
-        });
-      }
-
-      let creditConfigs: BootstrapCreditConfig[] = [];
-      try {
-        creditConfigs = await this.fetchCreditConfigs(tx, tenantId, appCode);
-      } catch (err: any) {
-        warnings.push({ collection: 'creditConfigs', error: err.message });
-        Logger.log('warning', 'bootstrap', 'bootstrap_service', 'creditConfigs fetch failed (non-critical)', {
-          tenantId,
-          appCode,
-          error: err.message,
-        });
-      }
-
-      let entityCredits: BootstrapEntityCredit[] = [];
-      try {
-        entityCredits = await this.fetchEntityCredits(tx, tenantId, appCode);
-      } catch (err: any) {
-        warnings.push({ collection: 'entityCredits', error: err.message });
-        Logger.log('warning', 'bootstrap', 'bootstrap_service', 'entityCredits fetch failed (non-critical)', {
-          tenantId,
-          appCode,
-          error: err.message,
-        });
-      }
-
-      return {
-        tenant,
-        organizations,
-        users,
-        roles,
-        employeeAssignments,
-        roleAssignments,
-        creditConfigs,
-        entityCredits,
-      };
-    });
+    const entityCredits = entityCreditsResult.status === 'fulfilled'
+      ? entityCreditsResult.value
+      : (() => {
+          warnings.push({ collection: 'entityCredits', error: entityCreditsResult.reason?.message });
+          Logger.log('warning', 'bootstrap', 'bootstrap_service', 'entityCredits fetch failed (non-critical)', {
+            tenantId, appCode, error: entityCreditsResult.reason?.message,
+          });
+          return [] as BootstrapEntityCredit[];
+        })();
 
     const recordCounts: Record<string, number> = {
-      tenant:              result.tenant ? 1 : 0,
-      organizations:       result.organizations.length,
-      users:               result.users.length,
-      roles:               result.roles.length,
-      employeeAssignments: result.employeeAssignments.length,
-      roleAssignments:     result.roleAssignments.length,
-      creditConfigs:       result.creditConfigs.length,
-      entityCredits:       result.entityCredits.length,
+      tenant:              tenant ? 1 : 0,
+      organizations:       organizations.length,
+      users:               users.length,
+      roles:               roles.length,
+      employeeAssignments: employeeAssignments.length,
+      roleAssignments:     roleAssignments.length,
+      creditConfigs:       creditConfigs.length,
+      entityCredits:       entityCredits.length,
     };
 
     Logger.log('info', 'bootstrap', 'bootstrap_service', 'payload assembled', {
@@ -333,7 +328,14 @@ export class BootstrapService {
       snapshotAt,
       tenantId,
       appCode,
-      ...result,
+      tenant,
+      organizations,
+      users,
+      roles,
+      employeeAssignments,
+      roleAssignments,
+      creditConfigs,
+      entityCredits,
       recordCounts,
       warnings,
     };
@@ -357,12 +359,38 @@ export class BootstrapService {
 
     if (!rows.length) return null;
     const r = rows[0];
+
+    // Fetch the most recent active (or trialing) subscription for this tenant.
+    const subRows = await tx
+      .select({
+        plan:           subscriptions.plan,
+        status:         subscriptions.status,
+        billingCycle:   subscriptions.billingCycle,
+        isTrialUser:    subscriptions.isTrialUser,
+        trialStartedAt: subscriptions.trialStartedAt,
+        trialEndsAt:    subscriptions.trialEndsAt,
+      })
+      .from(subscriptions)
+      .where(eq(subscriptions.tenantId, tenantId))
+      .orderBy(desc(subscriptions.createdAt))
+      .limit(1);
+
+    const sub = subRows[0] ?? null;
+
     return {
-      tenantId:    r.tenantId,
-      companyName: r.companyName ?? '',
-      kindeOrgId:  r.kindeOrgId ?? null,
-      isActive:    r.isActive ?? true,
-      planName:    null,
+      tenantId:   r.tenantId,
+      tenantName: r.companyName ?? '',
+      kindeOrgId: r.kindeOrgId ?? null,
+      isActive:   r.isActive ?? true,
+      subscription: sub
+        ? {
+            status:         sub.status ?? null,
+            billingCycle:   sub.billingCycle ?? null,
+            isTrialUser:    Boolean(sub.isTrialUser),
+            trialStartedAt: sub.trialStartedAt ? new Date(sub.trialStartedAt).toISOString() : null,
+            trialEndsAt:    sub.trialEndsAt    ? new Date(sub.trialEndsAt).toISOString()    : null,
+          }
+        : null,
     };
   }
 
@@ -370,10 +398,10 @@ export class BootstrapService {
     const rows = await tx
       .select({
         entityId:    entities.entityId,
-        entityCode:  entities.entityCode,
         entityName:  entities.entityName,
         parentId:    entities.parentEntityId,
         level:       entities.entityLevel,
+        country:     entities.country,
         currency:    entities.currency,
         isActive:    entities.isActive,
       })
@@ -384,23 +412,25 @@ export class BootstrapService {
       ))
       .orderBy(entities.entityLevel, entities.entityName);
 
-    // Build entityId -> entityCode map so we can resolve parentId (UUID) to parent's entityCode.
-    // FA needs orgCode=entityCode and parentId=parent's entityCode to reconstruct hierarchy correctly.
+    // entity_code was dropped in migration 0015 — use entityId as the stable org code.
+    // FA uses orgCode as FK; since entity_code never existed in FA's data yet, entityId is safe.
     const entityIdToCode = new Map<string, string>(
       rows
-        .filter((r: any) => r.entityId && (r.entityCode ?? r.entityId))
-        .map((r: any) => [r.entityId, (r.entityCode ?? r.entityId) as string])
+        .filter((r: any) => r.entityId)
+        .map((r: any) => [r.entityId, r.entityId as string])
     );
 
     return rows.map((r: any) => ({
-      orgCode:  (r.entityCode ?? r.entityId) as string,
+      orgCode:  r.entityId as string,
       orgName:  r.entityName ?? '',
       entityId: r.entityId,
       parentId: r.parentId ? (entityIdToCode.get(r.parentId) ?? r.parentId) : null,
-      level:    r.level     ?? null,
-      country:  null,
-      currency: r.currency  ?? null,
-      isActive: r.isActive  ?? true,
+      // Default to 1 for root orgs — entity_level column has DB default 1 but can be null
+      // if inserted without the field. FA's hierarchy_level is NOT NULL (defaults 0).
+      level:    r.level ?? (r.parentId ? null : 1),
+      country:  r.country  ?? null,
+      currency: r.currency ?? null,
+      isActive: r.isActive ?? true,
     }));
   }
 
@@ -410,7 +440,8 @@ export class BootstrapService {
         userId:       tenantUsers.userId,
         kindeUserId:  tenantUsers.kindeUserId,
         email:        tenantUsers.email,
-        name:         tenantUsers.name,
+        firstName:    tenantUsers.firstName,
+        lastName:     tenantUsers.lastName,
         isTenantAdmin:tenantUsers.isTenantAdmin,
         isActive:     tenantUsers.isActive,
       })
@@ -421,9 +452,8 @@ export class BootstrapService {
       ));
 
     return rows.map((r: any) => {
-      const parts     = (r.name ?? '').split(' ');
-      const firstName = parts[0] ?? '';
-      const lastName  = parts.slice(1).join(' ') ?? '';
+      const firstName = r.firstName ?? '';
+      const lastName  = r.lastName ?? '';
       return {
         userId:       r.userId,
         kindeId:      r.kindeUserId ?? null,
@@ -447,25 +477,21 @@ export class BootstrapService {
         roleId:       customRoles.roleId,
         roleName:     customRoles.roleName,
         permissions:  customRoles.permissions,
-        priority:     customRoles.priority,
         isSystemRole: customRoles.isSystemRole,
       })
       .from(customRoles)
       .where(eq(customRoles.tenantId, tenantId))
-      .orderBy(customRoles.priority, customRoles.roleName);
+      .orderBy(customRoles.roleName);
 
     const result: BootstrapRole[] = [];
 
     for (const r of rows) {
       const flatPerms = this.extractAppPermissions(r.permissions, appCode);
-      // Include system roles (admin/super-admin) even if they have no app-specific
-      // permissions — FA needs them to resolve user access levels.
       if (flatPerms.length > 0 || r.isSystemRole) {
         result.push({
           roleId:       r.roleId,
           roleName:     r.roleName ?? '',
           permissions:  flatPerms,
-          priority:     r.priority ?? 0,
           isSystemRole: r.isSystemRole ?? false,
         });
       }
@@ -479,10 +505,8 @@ export class BootstrapService {
       .select({
         membershipId:   organizationMemberships.membershipId,
         userId:         organizationMemberships.userId,
-        entityId:       organizationMemberships.entityId,
-        membershipType: organizationMemberships.membershipType,
-        isPrimary:      organizationMemberships.isPrimary,
-        accessLevel:    organizationMemberships.accessLevel,
+        entityId:    organizationMemberships.entityId,
+        accessLevel: organizationMemberships.accessLevel,
       })
       .from(organizationMemberships)
       .where(and(
@@ -491,12 +515,10 @@ export class BootstrapService {
       ));
 
     return rows.map((r: any) => ({
-      assignmentId:   r.membershipId,
-      userId:         r.userId,
-      entityId:       r.entityId,
-      membershipType: r.membershipType ?? 'primary',
-      isPrimary:      r.isPrimary ?? false,
-      accessLevel:    r.accessLevel ?? null,
+      assignmentId: r.membershipId,
+      userId:       r.userId,
+      entityId:     r.entityId,
+      accessLevel:  r.accessLevel ?? null,
     }));
   }
 
@@ -521,7 +543,6 @@ export class BootstrapService {
       assignmentId: r.id,
       userId:       r.userId,
       roleId:       r.roleId,
-      entityId:     r.orgId ?? null,
       assignedAt:   r.assignedAt ?? null,
       isActive:     r.isActive ?? true,
     }));
@@ -557,14 +578,19 @@ export class BootstrapService {
       operationName: config.operationName ?? config.operationCode,
       creditCost:    parseFloat(String(config.creditCost ?? 0)),
       unit:          config.unit ?? 'operation',
-      isGlobal:      false,
+      isGlobal:      config.isGlobal ?? false,
       source:        'tenant' as const,
     }));
   }
 
   private async fetchEntityCredits(tx: any, tenantId: string, appCode: string): Promise<BootstrapEntityCredit[]> {
+    // Only credits explicitly allocated to this app are sent.
+    // The onboarding pool (operationCode='onboarding') is tenant-wide and NOT
+    // app-specific — FA only receives credits that were transferred to it via
+    // POST /api/credits/allocate/application (operationCode='application_allocation:{appCode}').
+    // At initial onboarding, no such allocation exists → allocatedCredits=0 is correct.
+    // An admin allocates credits to FA post-onboarding through the credit management UI.
     const allocationOpCode = `application_allocation:${appCode}`;
-    const usagePrefix = `${appCode}.`;
 
     const creditRows = await tx
       .select({ entityId: credits.entityId, isActive: credits.isActive })
@@ -577,7 +603,6 @@ export class BootstrapService {
       .map((c: any) => c.entityId)
       .filter((id: string | null | undefined): id is string => Boolean(id));
 
-    // Allocation totals per entity
     const allocations = entityIds.length > 0
       ? await tx
           .select({
@@ -593,36 +618,18 @@ export class BootstrapService {
           .groupBy(creditTransactions.entityId)
       : [];
 
-    // Usage totals per entity
-    const usages = entityIds.length > 0
-      ? await tx
-          .select({
-            entityId:  creditUsage.entityId,
-            totalUsed: sql`COALESCE(SUM(${creditUsage.creditsDebited}), 0)`,
-          })
-          .from(creditUsage)
-          .where(and(
-            eq(creditUsage.tenantId, tenantId),
-            sql`${creditUsage.operationCode} LIKE ${usagePrefix + '%'}`,
-            eq(creditUsage.success, true),
-            sql`${creditUsage.entityId} IN (${sql.join(entityIds.map((id: string) => sql`${id}::uuid`), sql`, `)})`,
-          ))
-          .groupBy(creditUsage.entityId)
-      : [];
-
     const allocationMap: Record<string, number> = {};
-    const usageMap:      Record<string, number> = {};
-    for (const r of allocations) allocationMap[(r as any).entityId ?? ''] = parseFloat(String((r as any).totalAllocated ?? 0));
-    for (const r of usages)      usageMap[(r as any).entityId ?? '']      = parseFloat(String((r as any).totalUsed ?? 0));
+    for (const r of allocations) {
+      allocationMap[(r as any).entityId ?? ''] = parseFloat(String((r as any).totalAllocated ?? 0));
+    }
 
     return creditRows.map((c: any) => {
       const allocated = allocationMap[c.entityId ?? ''] ?? 0;
-      const used      = usageMap[c.entityId ?? '']      ?? 0;
       return {
         entityId:        c.entityId ?? '',
         allocatedCredits:allocated,
-        usedCredits:     used,
-        availableCredits:allocated - used,
+        usedCredits:     0,   // Apps track their own consumption; Wrapper only tracks allocations
+        availableCredits:allocated,
         isActive:        c.isActive ?? true,
       };
     });

@@ -21,16 +21,17 @@ export default async function verificationRoutes(
         type: 'object',
         required: ['pan'],
         properties: {
-          pan: { 
-            type: 'string', 
-            pattern: '^[A-Z]{5}[0-9]{4}[A-Z]{1}$', 
-            minLength: 10, 
-            maxLength: 10 
+          pan: {
+            type: 'string',
+            pattern: '^[A-Z]{5}[0-9]{4}[A-Z]{1}$',
+            minLength: 10,
+            maxLength: 10
           },
           name: { type: 'string', minLength: 2, maxLength: 100 }
         }
       }
-    }
+    },
+    config: { rateLimit: { max: 10, timeWindow: 60000 } }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const body = request.body as Record<string, unknown>;
@@ -81,7 +82,8 @@ export default async function verificationRoutes(
    * POST /onboarding/verify-gstin
    */
   fastify.post('/verify-gstin', {
-    schema: {}
+    schema: {},
+    config: { rateLimit: { max: 10, timeWindow: 60000 } }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const body = request.body as Record<string, unknown>;

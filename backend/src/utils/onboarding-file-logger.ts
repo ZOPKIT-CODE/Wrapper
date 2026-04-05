@@ -146,60 +146,59 @@ export class OnboardingFileLogger {
       return;
     }
     this._consoleIntercepted = true;
-    
-    const self = this;
+
     let isCapturing = false; // Prevent infinite loops
-    
+
     // Intercept console.log
     const originalLog = console.log;
     console.log = (...args) => {
-      if (!isCapturing && self.initialized) {
+      if (!isCapturing && this.initialized) {
         isCapturing = true;
-        self.captureConsoleOutput('info', 'console', args);
+        this.captureConsoleOutput('info', 'console', args);
         isCapturing = false;
       }
       originalLog(...args);
     };
-    
+
     // Intercept console.error
     const originalError = console.error;
     console.error = (...args) => {
-      if (!isCapturing && self.initialized) {
+      if (!isCapturing && this.initialized) {
         isCapturing = true;
-        self.captureConsoleOutput('error', 'console', args);
+        this.captureConsoleOutput('error', 'console', args);
         isCapturing = false;
       }
       originalError(...args);
     };
-    
+
     // Intercept console.warn
     const originalWarn = console.warn;
     console.warn = (...args) => {
-      if (!isCapturing && self.initialized) {
+      if (!isCapturing && this.initialized) {
         isCapturing = true;
-        self.captureConsoleOutput('warning', 'console', args);
+        this.captureConsoleOutput('warning', 'console', args);
         isCapturing = false;
       }
       originalWarn(...args);
     };
-    
+
     // Intercept console.info
     const originalInfo = console.info;
     console.info = (...args) => {
-      if (!isCapturing && self.initialized) {
+      if (!isCapturing && this.initialized) {
         isCapturing = true;
-        self.captureConsoleOutput('info', 'console', args);
+        this.captureConsoleOutput('info', 'console', args);
         isCapturing = false;
       }
       originalInfo(...args);
     };
-    
+
     // Intercept console.debug
     const originalDebug = console.debug;
     console.debug = (...args) => {
-      if (!isCapturing && self.initialized) {
+      if (!isCapturing && this.initialized) {
         isCapturing = true;
-        self.captureConsoleOutput('debug', 'console', args);
+        this.captureConsoleOutput('debug', 'console', args);
         isCapturing = false;
       }
       originalDebug(...args);
@@ -591,7 +590,7 @@ export async function parseLogFile(logFilePath: string): Promise<{
         } else {
           logs.push(entry);
         }
-      } catch (parseError) {
+      } catch (_parseError) {
         // Skip invalid JSON lines
         console.warn('Failed to parse log line:', line);
       }

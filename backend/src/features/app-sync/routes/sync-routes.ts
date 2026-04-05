@@ -3,7 +3,7 @@ import { authenticateToken } from '../../../middleware/auth/auth.js';
 import { WrapperSyncService } from '../services/sync-service.js';
 import { bootstrapService } from '../services/bootstrap-service.js';
 import { db } from '../../../db/index.js';
-import { tenants, applications, organizationApplications, tenantUsers, customRoles, userRoleAssignments, entities, credits, creditTransactions, creditUsage, creditConfigurations, organizationMemberships } from '../../../db/schema/index.js';
+import { applications, organizationApplications, tenantUsers, customRoles, entities, credits, creditTransactions, creditConfigurations, organizationMemberships } from '../../../db/schema/index.js';
 import { eq, and, or, sql, inArray } from 'drizzle-orm';
 import ErrorResponses from '../../../utils/error-responses.js';
 import { BUSINESS_SUITE_MATRIX } from '../../../data/permission-matrix.js';
@@ -48,6 +48,25 @@ async function authenticateServiceOrToken(request: FastifyRequest, reply: Fastif
 }
 
 /**
+ * Guard: when a Kinde user (not a service token) calls a sync route, they can only
+ * access their own tenant. Service tokens (M2M) may access any tenant.
+ */
+function assertTenantAccess(request: FastifyRequest, reply: FastifyReply, resolvedTenantId: string): boolean {
+  const isServiceAuth = !!(request as any).serviceAuth;
+  if (isServiceAuth) return true; // M2M — allowed to access any tenant
+  const jwtTenantId = (request as any).userContext?.tenantId;
+  if (jwtTenantId && jwtTenantId !== resolvedTenantId) {
+    reply.code(403).send({
+      success: false,
+      error: 'Forbidden',
+      message: 'You can only access data for your own tenant'
+    });
+    return false;
+  }
+  return true;
+}
+
+/**
  * Wrapper CRM Data Synchronization Routes
  * Provides endpoints for CRM to sync tenant data from Wrapper
  */
@@ -65,12 +84,12 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
       description: 'Trigger full tenant data synchronization for CRM'
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
     const query = request.query as Record<string, string>;
     try {
       const resolvedTenantId = await appSyncRepository.resolveTenantId(params.tenantId);
       if (!resolvedTenantId) return ErrorResponses.notFound(reply, 'Tenant', 'Tenant not found');
+      if (!assertTenantAccess(request, reply, resolvedTenantId)) return;
       const tenantId = resolvedTenantId;
       const skipReferenceData = query.skipReferenceData === 'true';
       const forceSync = query.forceSync === 'true';
@@ -115,6 +134,7 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
     try {
       const tenantId = await appSyncRepository.resolveTenantId(params.tenantId);
       if (!tenantId) return ErrorResponses.notFound(reply, 'Tenant', 'Tenant not found');
+      if (!assertTenantAccess(request, reply, tenantId)) return;
 
       const status = await (WrapperSyncService as any).getSyncStatus(tenantId);
 
@@ -140,9 +160,6 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
       description: 'Get complete data requirements specification for CRM integration'
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const requirements = (WrapperSyncService as any).getDataRequirements();
 
@@ -176,6 +193,7 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
     try {
       const resolvedTenantId = await appSyncRepository.resolveTenantId(params.tenantId);
       if (!resolvedTenantId) return ErrorResponses.notFound(reply, 'Tenant', 'Tenant not found');
+      if (!assertTenantAccess(request, reply, resolvedTenantId)) return;
 
       const tenant = await appSyncRepository.getBasicTenantById(resolvedTenantId);
 
@@ -218,6 +236,7 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
     try {
       const tenantId = await appSyncRepository.resolveTenantId(params.tenantId);
       if (!tenantId) return ErrorResponses.notFound(reply, 'Tenant', 'Tenant not found');
+      if (!assertTenantAccess(request, reply, tenantId)) return;
       const entityId = query.entityId ?? '';
       const includeInactive = query.includeInactive === 'true';
       const page = Number(query.page) || 1;
@@ -239,7 +258,8 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
           userId: tenantUsers.userId,
           kindeUserId: tenantUsers.kindeUserId,
           email: tenantUsers.email,
-          name: tenantUsers.name,
+          firstName: tenantUsers.firstName,
+          lastName: tenantUsers.lastName,
           isActive: tenantUsers.isActive,
           tenantId: tenantUsers.tenantId,
           createdAt: tenantUsers.createdAt,
@@ -253,18 +273,13 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
 
       // Transform to CRM format
       const transformedUsers = users.map(user => {
-        // Parse name if available
-        const nameParts = user.name ? user.name.split(' ') : ['', ''];
-        const firstName = nameParts[0] || '';
-        const lastName = nameParts.slice(1).join(' ') || '';
-
         return {
           userId: user.userId,
           kindeId: user.kindeUserId ?? null,
           employeeCode: user.userId, // Use userId as employee code for now
           personalInfo: {
-            firstName: firstName,
-            lastName: lastName,
+            firstName: user.firstName || '',
+            lastName: user.lastName || '',
             email: user.email || ''
           },
           organization: {
@@ -321,6 +336,7 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
     try {
       const tenantId = await appSyncRepository.resolveTenantId(params.tenantId);
       if (!tenantId) return ErrorResponses.notFound(reply, 'Tenant', 'Tenant not found');
+      if (!assertTenantAccess(request, reply, tenantId)) return;
       const includeInactive = query.includeInactive === 'true';
       const page = Number(query.page) || 1;
       const limit = Number(query.limit) || 50;
@@ -332,12 +348,10 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
         conditions.push(eq(entities.isActive, true));
       }
 
-      // Use entityCode as orgCode and resolve parentId to parent's entityCode so FA can
-      // reconstruct the same hierarchy. Include entityId for FA's entity_id FK.
+      // entity_code was dropped in migration 0015 — use entityId as the stable org code.
       const rawOrgs = await db
         .select({
           entityId: entities.entityId,
-          entityCode: entities.entityCode,
           entityName: entities.entityName,
           parentEntityId: entities.parentEntityId,
           entityLevel: entities.entityLevel,
@@ -353,21 +367,21 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
         .limit(limit)
         .offset(offset);
 
-      // Resolve parent UUID to parent's entityCode for hierarchy reconstruction
+      // parentId resolves to parentEntityId UUID (entity_code dropped, entityId is the stable key)
       const parentIds = [...new Set(rawOrgs.map((r: any) => r.parentEntityId).filter(Boolean))];
       const parentCodeMap = new Map<string, string>();
       if (parentIds.length > 0) {
         const parents = await db
-          .select({ entityId: entities.entityId, entityCode: entities.entityCode })
+          .select({ entityId: entities.entityId })
           .from(entities)
           .where(and(eq(entities.tenantId, tenantId), inArray(entities.entityId, parentIds)));
         for (const p of parents) {
-          parentCodeMap.set(p.entityId, (p.entityCode ?? p.entityId) as string);
+          parentCodeMap.set(p.entityId, p.entityId);
         }
       }
 
       const organizations = rawOrgs.map((r: any) => ({
-        orgCode: (r.entityCode ?? r.entityId) as string,
+        orgCode: r.entityId as string,
         entityId: r.entityId,
         orgName: r.entityName ?? '',
         parentId: r.parentEntityId ? (parentCodeMap.get(r.parentEntityId) ?? r.parentEntityId) : null,
@@ -427,6 +441,7 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
     try {
       const tenantId = await appSyncRepository.resolveTenantId(params.tenantId);
       if (!tenantId) return ErrorResponses.notFound(reply, 'Tenant', 'Tenant not found');
+      if (!assertTenantAccess(request, reply, tenantId)) return;
       const includeInactive = query.includeInactive === 'true';
       const page = Number(query.page) || 1;
       const limit = Number(query.limit) || 50;
@@ -444,13 +459,12 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
           tenantId: tenantUsers.tenantId,
           kindeId: tenantUsers.kindeUserId,
           email: tenantUsers.email,
-          name: tenantUsers.name,
+          firstName: tenantUsers.firstName,
+          lastName: tenantUsers.lastName,
           isResponsiblePerson: tenantUsers.isTenantAdmin,
           isTenantAdmin: tenantUsers.isTenantAdmin,
           onboardingCompleted: tenantUsers.onboardingCompleted,
-          lastLoginAt: tenantUsers.lastLoginAt,
           isActive: tenantUsers.isActive,
-          avatar: tenantUsers.avatar,
           createdAt: tenantUsers.createdAt,
           updatedAt: tenantUsers.updatedAt
         })
@@ -462,38 +476,26 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
 
       // Transform to CRM format
       const transformedTenantUsers = tenantUsersData.map(user => {
-        // Parse name if available
-        const nameParts = user.name ? user.name.split(' ') : ['', ''];
-        const firstName = nameParts[0] || '';
-        const lastName = nameParts.slice(1).join(' ') || '';
-
         return {
           userId: user.userId,
           tenantId: user.tenantId,
           kindeId: user.kindeId,
           email: user.email || '',
-          firstName: firstName,
-          lastName: lastName,
+          firstName: user.firstName || '',
+          lastName: user.lastName || '',
           primaryOrganizationId: tenantId, // Default to tenant ID
           isResponsiblePerson: (user as any).isResponsiblePerson || false,
           isTenantAdmin: user.isTenantAdmin || false,
           isVerified: false,
           onboardingCompleted: user.onboardingCompleted || false,
-          lastLoginAt: user.lastLoginAt,
-          loginCount: 0,
           preferences: {},
           profile: {
-            title: '',
-            department: '',
             employeeCode: user.userId
           },
           security: {
             isActive: user.isActive !== null ? user.isActive : true
           },
-          metadata: {
-            avatar: (user as any).avatar || '',
-            name: user.name || ''
-          },
+          metadata: {},
           createdAt: user.createdAt,
           updatedAt: user.updatedAt
         };
@@ -540,7 +542,7 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
     try {
       const tenantId = await appSyncRepository.resolveTenantId(params.tenantId);
       if (!tenantId) return ErrorResponses.notFound(reply, 'Tenant', 'Tenant not found');
-      const includeInactive = query.includeInactive === 'true';
+      if (!assertTenantAccess(request, reply, tenantId)) return;
       const page = Number(query.page) || 1;
       const limit = Number(query.limit) || 50;
       const appCode = query.appCode ? String(query.appCode).trim() : null;
@@ -662,6 +664,7 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
     try {
       const tenantId = await appSyncRepository.resolveTenantId(params.tenantId);
       if (!tenantId) return ErrorResponses.notFound(reply, 'Tenant', 'Tenant not found');
+      if (!assertTenantAccess(request, reply, tenantId)) return;
 
       const appCode = (query.appCode ?? 'crm').toString().trim();
 
@@ -919,6 +922,7 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
     try {
       const tenantId = await appSyncRepository.resolveTenantId(params.tenantId);
       if (!tenantId) return ErrorResponses.notFound(reply, 'Tenant', 'Tenant not found');
+      if (!assertTenantAccess(request, reply, tenantId)) return;
 
       const appCode = (query.appCode ?? '').toString().trim();
       if (!appCode) {
@@ -1015,6 +1019,7 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
     try {
       const tenantId = await appSyncRepository.resolveTenantId(params.tenantId);
       if (!tenantId) return ErrorResponses.notFound(reply, 'Tenant', 'Tenant not found');
+      if (!assertTenantAccess(request, reply, tenantId)) return;
       const entityId = query.entityId ?? '';
       const page = Number(query.page) || 1;
       const limit = Number(query.limit) || 50;
@@ -1041,7 +1046,7 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
         .filter((id): id is string => Boolean(id));
 
       const allocationMap: Record<string, number> = {};
-      const usageMap: Record<string, number> = {};
+      // usageMap removed — apps track their own consumption
 
       if (entityIds.length > 0) {
         const allocations = await db
@@ -1062,37 +1067,19 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
           if (eid) allocationMap[eid] = parseFloat(String((row as any).totalAllocated ?? 0));
         }
 
-        const usagePrefix = `${appCode}.`;
-        const usages = await db
-          .select({
-            entityId: creditUsage.entityId,
-            totalUsed: sql`COALESCE(SUM(${creditUsage.creditsDebited}), 0)`
-          })
-          .from(creditUsage)
-          .where(and(
-            eq(creditUsage.tenantId, tenantId),
-            sql`${creditUsage.operationCode} LIKE ${usagePrefix + '%'}`,
-            eq(creditUsage.success, true),
-            sql`${creditUsage.entityId} IN (${sql.join(entityIds.map(id => sql`${id}::uuid`), sql`, `)})`
-          ))
-          .groupBy(creditUsage.entityId) as any[];
-
-        for (const row of usages) {
-          const eid = (row as any).entityId ?? '';
-          if (eid) usageMap[eid] = parseFloat(String((row as any).totalUsed ?? 0));
-        }
+        // NOTE: usedCredits is NOT tracked by Wrapper — each app maintains its own
+        // consumption ledger. Wrapper only knows how much was allocated to each app.
       }
 
       const entityCredits = entityCreditsData.map(credit => {
         const allocated = allocationMap[credit.entityId ?? ''] ?? 0;
-        const used = usageMap[credit.entityId ?? ''] ?? 0;
         return {
           tenantId: credit.tenantId,
           entityId: credit.entityId,
           allocatedCredits: allocated,
           targetApplication: appCode,
-          usedCredits: used,
-          availableCredits: allocated - used,
+          usedCredits: 0,                    // Apps track their own usage
+          availableCredits: allocated,       // = allocated (from Wrapper's perspective)
           allocationType: 'organization',
           allocationPurpose: 'Organization credit balance',
           expiresAt: null,
@@ -1145,9 +1132,9 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
 
       const tenantId = await appSyncRepository.resolveTenantId(params.tenantId);
       if (!tenantId) return ErrorResponses.notFound(reply, 'Tenant', 'Tenant not found');
+      if (!assertTenantAccess(request, reply, tenantId)) return;
       const userId = query.userId ?? '';
       const entityId = query.entityId ?? '';
-      const includeInactive = query.includeInactive === 'true';
       const page = Number(query.page) || 1;
       const limit = Number(query.limit) || 50;
       const offset = (page - 1) * limit;
@@ -1180,11 +1167,10 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
           createdBy: organizationMemberships.createdBy,
           // User details
           userEmail: tenantUsers.email,
-          userName: tenantUsers.name,
+          userName: sql<string>`COALESCE(${tenantUsers.firstName} || ' ' || ${tenantUsers.lastName}, ${tenantUsers.email})`,
           userIsActive: tenantUsers.isActive,
           // Entity details
           entityName: entities.entityName,
-          entityCode: entities.entityCode
         })
         .from(organizationMemberships)
         .innerJoin(tenantUsers, eq(organizationMemberships.userId, tenantUsers.userId))
@@ -1222,7 +1208,7 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
           designation: '',
           employeeCode: membership.userId,
           organizationName: membership.entityName,
-          organizationCode: membership.entityCode,
+          organizationCode: membership.entityId,
           accessLevel: membership.accessLevel
         }
       }));
@@ -1305,6 +1291,7 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
     if (!resolvedTenantId) {
       return reply.code(404).send({ success: false, error: 'Tenant not found' });
     }
+    if (!assertTenantAccess(request, reply, resolvedTenantId)) return;
 
     // Verify tenant has access to this app (entitlement gate on Wrapper side)
     const entitlement = await db
@@ -1391,6 +1378,7 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
     try {
       const tenantId = await appSyncRepository.resolveTenantId(params.tenantId);
       if (!tenantId) return ErrorResponses.notFound(reply, 'Tenant', 'Tenant not found');
+      if (!assertTenantAccess(request, reply, tenantId)) return;
       const userId = query.userId ?? '';
       const roleId = query.roleId ?? '';
       const includeInactive = query.includeInactive === 'true';
@@ -1435,7 +1423,7 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
           isTemporary: userRoleAssignments.isTemporary,
           // User details
           userEmail: tenantUsers.email,
-          userName: tenantUsers.name,
+          userName: sql<string>`COALESCE(${tenantUsers.firstName} || ' ' || ${tenantUsers.lastName}, ${tenantUsers.email})`,
           userIsActive: tenantUsers.isActive,
           // Role details
           roleName: customRoles.roleName,

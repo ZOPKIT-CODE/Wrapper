@@ -1,6 +1,5 @@
-import { db, systemDbConnection } from '../../../db/index.js';
-import { eq, and } from 'drizzle-orm';
-import { tenants } from '../../../db/schema/index.js';
+import { systemDbConnection } from '../../../db/index.js';
+import { eq } from 'drizzle-orm';
 import { applications, organizationApplications, applicationModules } from '../../../db/schema/core/suite-schema.js';
 import { v4 as uuidv4 } from 'uuid';
 import { publishTenantApplicationSyncEvent } from '../../messaging/services/tenant-application-event-service.js';
@@ -41,7 +40,6 @@ class OnboardingOrganizationSetupService {
    * Inserts into organization_applications so the Applications dashboard shows all plan apps (e.g. CRM + HR for Professional).
    */
   async updateOrganizationApplicationsForPlanChange(tenantId: string, planId: string, options: PlanChangeOptions = {}): Promise<Record<string, unknown>> {
-    const { skipIfRecentlyUpdated } = options;
     try {
       console.log('🔄 Updating organization applications for plan change:', { tenantId, planId });
 
@@ -205,7 +203,7 @@ class OnboardingOrganizationSetupService {
   }
 
   // Setup initial organization structure
-  async setupInitialOrganizationStructure(tenantId: string, organizationData: Record<string, unknown>): Promise<Record<string, unknown>> {
+  async setupInitialOrganizationStructure(tenantId: string, _organizationData: Record<string, unknown>): Promise<Record<string, unknown>> {
     try {
       console.log('🏗️ Setting up initial organization structure:', { tenantId });
 

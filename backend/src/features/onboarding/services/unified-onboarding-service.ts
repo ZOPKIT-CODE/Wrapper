@@ -4,19 +4,20 @@
  * Used by /onboard-frontend endpoint
  */
 
+import * as Sentry from '@sentry/node';
 import { db, systemDbConnection } from '../../../db/index.js';
-import { tenants, tenantUsers, customRoles, userRoleAssignments, subscriptions, entities, onboardingEvents, onboardingFormData, credits, creditTransactions } from '../../../db/schema/index.js';
-import { eq, and, isNull } from 'drizzle-orm';
+import { tenants, tenantUsers, customRoles, userRoleAssignments, subscriptions, entities, onboardingFormData, credits, creditTransactions } from '../../../db/schema/index.js';
+import { eq, and, sql } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 
 // Import existing services
 
 import { kindeService } from '../../../features/auth/index.js';
 import { CreditService } from '../../../features/credits/index.js';
-import { SubscriptionService } from '../../../features/subscriptions/index.js';
 import OnboardingValidationService from './onboarding-validation-service.js';
 import { OnboardingFileLogger } from '../../../utils/onboarding-file-logger.js';
 import { InterAppEventService } from '../../../features/messaging/index.js';
+import { BootstrapService } from '../../../features/app-sync/services/bootstrap-service.js';
 
 /** Validation result with optional errors and data */
 interface ValidationResult {
@@ -35,7 +36,7 @@ interface OnboardingError extends Error {
 /** Result of createCompleteOnboardingInTransaction */
 interface DbOnboardingResult {
   tenant: { tenantId: string; companyName?: string; subdomain?: string; kindeOrgId?: string; adminEmail?: string; onboardingCompleted?: boolean; onboardedAt?: Date; trialStartedAt?: Date };
-  organization: { organizationId: string; organizationName?: string; organizationCode?: string };
+  organization: { organizationId: string; organizationName?: string };
   adminUser: { userId: string };
   adminRole?: Record<string, unknown>;
   roleAssignment?: Record<string, unknown>;
@@ -45,35 +46,6 @@ interface DbOnboardingResult {
   creditResult: { amount: number };
 }
 
-/**
- * Flatten nested permissions object to dot-notation strings and return structure.
- * Used for tenant.onboarded snapshot so FA receives roles with permissions.
- */
-function flattenPermissionsForSnapshot(permissions: unknown): { flat: string[]; structure: Record<string, unknown> } {
-  if (!permissions) return { flat: [], structure: {} };
-  let permObj: Record<string, unknown>;
-  try {
-    permObj = typeof permissions === 'string' ? (JSON.parse(permissions) as Record<string, unknown>) : (permissions as Record<string, unknown>);
-  } catch {
-    return { flat: [], structure: {} };
-  }
-  if (!permObj || typeof permObj !== 'object' || Array.isArray(permObj)) {
-    return { flat: [], structure: {} };
-  }
-  const flat: string[] = [];
-  for (const [appCode, appPerms] of Object.entries(permObj)) {
-    if (appPerms && typeof appPerms === 'object' && !Array.isArray(appPerms)) {
-      for (const [resource, actions] of Object.entries(appPerms as Record<string, unknown>)) {
-        if (Array.isArray(actions)) {
-          for (const action of actions as string[]) {
-            flat.push(`${appCode}.${resource}.${action}`);
-          }
-        }
-      }
-    }
-  }
-  return { flat, structure: permObj };
-}
 
 /** Onboarding payload from frontend/enhanced flow */
 interface OnboardingPayload {
@@ -216,6 +188,10 @@ export class UnifiedOnboardingService {
       timestamp: new Date().toISOString()
     });
 
+    return await Sentry.startSpan(
+      { name: 'onboarding.completeWorkflow', op: 'onboarding', attributes: { type: String(type ?? 'frontend'), plan: String(selectedPlan ?? 'free') } },
+      async () => {
+
     try {
       // 1. VALIDATE INPUT DATA
       const validationData = type === 'frontend' ? {
@@ -268,7 +244,10 @@ export class UnifiedOnboardingService {
         subdomain
       };
 
-      const validation = await OnboardingValidationService.validateCompleteOnboarding(validationData, type ?? 'frontend') as unknown as ValidationResult;
+      const validation = await Sentry.startSpan(
+        { name: 'onboarding.step1.validate', op: 'onboarding.validate' },
+        () => OnboardingValidationService.validateCompleteOnboarding(validationData, type ?? 'frontend')
+      ) as unknown as ValidationResult;
       if (!validation.success) {
         const firstError = validation.errors?.[0];
         // Check if it's a duplicate email error
@@ -307,27 +286,35 @@ export class UnifiedOnboardingService {
         throw alreadyOnboardedError;
       }
 
-      // 2. GENERATE/CONfirm SUBDOMAIN
-      logger.onboarding.step(2, 'SUBDOMAIN_GENERATION', 'Generating/confirming subdomain');
-      const finalSubdomain = (validationDataObj?.generatedSubdomain as string) || (subdomain as string) ||
-        await OnboardingValidationService.generateUniqueSubdomain(companyName ?? '');
-      logger.onboarding.success('Subdomain generated', { subdomain: finalSubdomain });
-
-      // 3. EXTRACT AND VALIDATE AUTHENTICATION (if request provided)
-      logger.onboarding.step(3, 'AUTHENTICATION', 'Extracting and validating authentication');
-      const authResult = await this.extractAndValidateAuthentication(request, logger as OnboardingFileLogger | null);
+      // 2+3: Run subdomain generation and auth extraction in parallel (independent)
+      logger.onboarding.step(2, 'SUBDOMAIN_AND_AUTH', 'Generating subdomain + validating auth in parallel');
+      const [finalSubdomain, authResult] = await Promise.all([
+        (async () => {
+          const sd = (validationDataObj?.generatedSubdomain as string) || (subdomain as string) ||
+            await OnboardingValidationService.generateUniqueSubdomain(companyName ?? '');
+          logger.onboarding.success('Subdomain generated', { subdomain: sd });
+          return sd;
+        })(),
+        Sentry.startSpan(
+          { name: 'onboarding.step3.authenticate', op: 'onboarding.auth' },
+          () => this.extractAndValidateAuthentication(request, logger as OnboardingFileLogger | null)
+        ),
+      ]);
       logger.onboarding.success('Authentication validated', { userId: authResult.user?.kindeUserId });
 
-      // 4. SETUP KINDE ORGANIZATION AND USER
+      // 4. SETUP KINDE ORGANIZATION AND USER (needs both subdomain + auth result)
       logger.onboarding.step(4, 'KINDE_SETUP', 'Setting up Kinde organization and user');
-      const kindeResult = await this.setupKindeIntegration({
-        companyName: companyName ?? '',
-        adminEmail: adminEmail ?? '',
-        firstName,
-        lastName,
-        subdomain: finalSubdomain,
-        existingUser: authResult.user
-      }, logger as OnboardingFileLogger | null);
+      const kindeResult = await Sentry.startSpan(
+        { name: 'onboarding.step4.kindeSetup', op: 'onboarding.kinde' },
+        () => this.setupKindeIntegration({
+          companyName: companyName ?? '',
+          adminEmail: adminEmail ?? '',
+          firstName,
+          lastName,
+          subdomain: finalSubdomain,
+          existingUser: authResult.user
+        }, logger as OnboardingFileLogger | null)
+      );
 
       // 5. CREATE ALL DATABASE RECORDS IN SINGLE TRANSACTION
       // This ensures atomicity - if any step fails, everything rolls back
@@ -336,7 +323,9 @@ export class UnifiedOnboardingService {
       const kindeOrgIdForCleanup: string = String(kindeResult.orgCode ?? ''); // Store for potential cleanup
       
       try {
-        dbResult = await this.createCompleteOnboardingInTransaction({
+        dbResult = await Sentry.startSpan(
+          { name: 'onboarding.step5.dbTransaction', op: 'db.transaction' },
+          () => this.createCompleteOnboardingInTransaction({
           type: type ?? 'frontend',
           companyName: companyName ?? '',
           subdomain: finalSubdomain,
@@ -385,7 +374,6 @@ export class UnifiedOnboardingService {
           contactDepartment: contactDepartment ?? null,
           contactDirectPhone: contactDirectPhone ?? null,
           contactMobilePhone: contactMobilePhone ?? null,
-          contactPreferredContactMethod: contactPreferredContactMethod ?? null,
           contactAuthorityLevel: contactAuthorityLevel ?? null,
           taxRegistrationDetails: taxRegistrationDetails ?? {},
           panNumber: panNumber ?? null,
@@ -393,7 +381,8 @@ export class UnifiedOnboardingService {
           maxProjects,
           planName: planName ?? 'Trial Plan',
           planPrice: planPrice ?? 0
-        }, logger as OnboardingFileLogger | null) as unknown as DbOnboardingResult;
+          }, logger as OnboardingFileLogger | null)
+        ) as unknown as DbOnboardingResult;
 
         logger.onboarding.success('All database records created successfully in transaction', {
           tenantId: dbResult.tenant.tenantId,
@@ -431,95 +420,46 @@ export class UnifiedOnboardingService {
         throw transactionError;
       }
 
-      // 6. VERIFY ONBOARDING COMPLETION (CRITICAL STEP)
-      logger.onboarding.step(6, 'VERIFICATION', 'Verifying all onboarding steps completed successfully');
-      const { OnboardingVerificationService } = await import('./onboarding-verification-service.js');
-      const verificationResult = await OnboardingVerificationService.verifyOnboardingCompletion(
-        dbResult.tenant.tenantId,
-        logger as any
-      );
-
-      const details = verificationResult.details as Record<string, unknown> | undefined;
-      if (!verificationResult.verified) {
-        const criticalIssues = (verificationResult.criticalIssues || []) as Array<{ step?: string; issue?: string }>;
-        const missingItems = (details?.missingItems as string[] | undefined) || [];
-        
-        logger.onboarding.error('Onboarding verification failed', null, {
-          criticalIssues: criticalIssues.map((i: { step?: string; issue?: string }) => `${i.step}: ${i.issue}`),
-          missingItems
-        });
-
-        // Attempt to fix issues automatically
-        const fixResult = await OnboardingVerificationService.autoFixOnboardingIssues(
-          dbResult.tenant.tenantId,
-          verificationResult,
-          logger as any
-        );
-
-        if (!fixResult.success) {
-          // If auto-fix fails, throw error with details
-          const errorMessage = `Onboarding incomplete. Missing: ${missingItems.join(', ')}. Issues: ${criticalIssues.map(i => i.issue).join('; ')}`;
-          throw new Error(errorMessage);
-        }
-
-        // Re-verify after auto-fix
-        const reVerificationResult = await OnboardingVerificationService.verifyOnboardingCompletion(
-          dbResult.tenant.tenantId,
-          logger as any
-        );
-
-        const reDetails = reVerificationResult.details as Record<string, unknown> | undefined;
-        if (!reVerificationResult.verified) {
-          const reMissingItems = (reDetails?.missingItems as string[] | undefined) || [];
-          const reCriticalIssues = (reVerificationResult.criticalIssues || []) as Array<{ step?: string; issue?: string }>;
-          const missingItemsStr = reMissingItems.length > 0 
-            ? reMissingItems.join(', ') 
-            : reCriticalIssues.map((i: { step?: string; issue?: string }) => `${i.step}: ${i.issue}`).join('; ') || 'Unknown verification issues';
-          const errorMessage = `Onboarding verification failed after auto-fix. Missing: ${missingItemsStr}`;
-          throw new Error(errorMessage);
-        }
-      }
-
-      const appAssignments = (details?.applicationAssignments as unknown[]) || [];
-      logger.onboarding.success('Onboarding verification passed - all components verified', {
-        applicationAssignments: appAssignments.length
-      });
-
-      // 7. MARK ONBOARDING AS COMPLETE IN DATABASE (only after verification passes)
-      logger.onboarding.step(7, 'MARKING_COMPLETE', 'Marking onboarding as complete in database');
-      await db
-        .update(tenants)
-        .set({
-          onboardingCompleted: true,
-          updatedAt: new Date()
-        })
-        .where(eq(tenants.tenantId, dbResult.tenant.tenantId));
-      
+      // 6+7. MARK ONBOARDING COMPLETE + DELETE STORED FORM DATA (parallel — independent ops)
+      logger.onboarding.step(6, 'MARKING_COMPLETE', 'Marking onboarding as complete + cleaning form data in parallel');
+      const kindeUserIdForCleanup = kindeResult.userId as string;
+      await Promise.all([
+        db
+          .update(tenants)
+          .set({ onboardingCompleted: true, updatedAt: new Date() })
+          .where(eq(tenants.tenantId, dbResult.tenant.tenantId)),
+        kindeUserIdForCleanup && adminEmail
+          ? this.deleteStoredOnboardingFormData(kindeUserIdForCleanup, adminEmail as string).catch(
+              (err: unknown) => console.warn('⚠️ Failed to delete stored form data (non-critical):', (err as Error).message)
+            )
+          : Promise.resolve(),
+      ]);
       logger.onboarding.success('Onboarding marked as complete in database');
 
-      // 8. DELETE STORED FORM DATA (if exists) since onboarding succeeded
-      try {
-        const authResult = await this.extractAndValidateAuthentication(request, logger as OnboardingFileLogger | null);
-        const kindeUserId = authResult.user?.kindeUserId || kindeResult.userId;
-        if (kindeUserId && adminEmail) {
-          await this.deleteStoredOnboardingFormData(kindeUserId as string, adminEmail as string);
-        }
-      } catch (err: unknown) {
-        const deleteError = err as Error;
-        console.warn('⚠️ Failed to delete stored form data (non-critical):', deleteError.message);
-      }
+      // 8. POST-ONBOARDING ASYNC WORK (fire-and-forget — does NOT block the response)
+      // All of these are non-critical: failures are logged but never surfaced to the user.
+      void Promise.resolve().then(async () => {
+        // Track onboarding completion metrics
+        await this.trackOnboardingCompletion({
+          tenantId: dbResult.tenant.tenantId,
+          type: type ?? 'frontend',
+          companyName: companyName ?? '',
+          adminEmail: adminEmail ?? '',
+          subdomain: finalSubdomain,
+          selectedPlan: selectedPlan ?? 'free',
+          creditAmount: dbResult.creditResult.amount
+        }).catch((err: unknown) => console.warn('⚠️ trackOnboardingCompletion failed (non-fatal):', (err as Error).message));
 
-      // 8. TRACK ONBOARDING COMPLETION
-      logger.onboarding.step(8, 'TRACKING', 'Tracking onboarding completion');
-      await this.trackOnboardingCompletion({
-        tenantId: dbResult.tenant.tenantId,
-        type: type ?? 'frontend',
-        companyName: companyName ?? '',
-        adminEmail: adminEmail ?? '',
-        subdomain: finalSubdomain,
-        selectedPlan: selectedPlan ?? 'free',
-        creditAmount: dbResult.creditResult.amount
-      });
+        // Welcome notification for the admin user
+        const { notifications: notificationsTable } = await import('../../../db/schema/notifications/notifications.js');
+        await db.insert(notificationsTable).values({
+          tenantId: dbResult.tenant.tenantId,
+          targetUserId: dbResult.adminUser.userId,
+          type: 'welcome',
+          title: 'Welcome to the platform!',
+          message: `Your workspace "${companyName ?? 'your organisation'}" is ready. Start by exploring the dashboard.`,
+        }).catch((err: unknown) => console.warn('⚠️ Welcome notification failed (non-fatal):', (err as Error).message));
+      }).catch((err: unknown) => console.error('⚠️ Post-onboarding async block failed:', (err as Error).message));
 
       logger.onboarding.success(`Unified ${type} onboarding completed successfully`, {
         tenantId: dbResult.tenant.tenantId,
@@ -549,9 +489,6 @@ export class UnifiedOnboardingService {
         tenantId: dbResult.tenant.tenantId,
         organizationId: dbResult.organization.organizationId,
         userId: dbResult.adminUser.userId,
-        verificationDetails: {
-          applicationAssignments: appAssignments.length
-        }
       });
 
       return {
@@ -563,13 +500,9 @@ export class UnifiedOnboardingService {
         adminRole: dbResult.adminRole,
         subscription: dbResult.subscription,
         redirectUrl: `${process.env.FRONTEND_URL || 'http://localhost:3001'}/dashboard`,
-        logFile: logResult.logFile, // Include log file path in response
+        logFile: logResult.logFile,
         onboardingType: type,
         creditAllocated: dbResult.creditResult.amount,
-        verification: {
-          verified: true,
-          applicationAssignments: appAssignments.length
-        }
       };
 
     } catch (err: unknown) {
@@ -615,22 +548,23 @@ export class UnifiedOnboardingService {
       
       throw error;
     }
+
+    }); // end Sentry.startSpan
   }
 
   /**
    * publishAppProvisioningEvents
    *
-   * Publishes ONE thin `tenant.app.provisioned` event per app the tenant has
-   * access to, based on organization_applications rows.
+   * Publishes provisioning events after onboarding completes:
    *
-   * Why thin events instead of one fat snapshot:
-   *  - SRP: each event carries only provisioning metadata, not domain data
-   *  - Routing: each event is routed with key `<appCode>.tenant.app.provisioned`
-   *    so only the target app's queue receives it
-   *  - Loose coupling: apps bootstrap lazily on first login — Wrapper never
-   *    needs to know which data each app wants
-   *  - Fault isolation: if one app's event fails to publish, others still succeed
-   *  - Idempotency: receiving the event twice is safe (DB upsert with NO CONFLICT)
+   *  - accounting: ONE consolidated `tenant.onboarded` event that merges the
+   *    thin provisioning metadata (plan, enabledModules, expiresAt) WITH the
+   *    full bootstrap snapshot (users, orgs, roles, assignments, credits).
+   *    Downstream accounting app needs only this single event — no lazy pull
+   *    required on first login.
+   *
+   *  - all other apps (crm, hr, ops, …): thin `tenant.app.provisioned` signal
+   *    as before. They bootstrap lazily via POST /api/sync/tenants/:id/bootstrap.
    *
    * Called after onboarding verification passes. Non-fatal if MQ is down.
    */
@@ -641,7 +575,6 @@ export class UnifiedOnboardingService {
   ): Promise<void> {
     // Fetch which apps this tenant has enabled
     const { organizationApplications, applications } = await import('../../../db/schema/index.js');
-    const { eq, and } = await import('drizzle-orm');
 
     const enabledApps = await db
       .select({
@@ -665,21 +598,20 @@ export class UnifiedOnboardingService {
       return;
     }
 
-    console.log(`[Onboarding] Publishing ${enabledApps.length} app provisioning events for tenant ${tenantId}`);
+    console.log(`[Onboarding] Publishing provisioning events for ${enabledApps.length} app(s), tenant ${tenantId}`);
 
-    // Publish concurrently — independent events per app
-    const results = await Promise.allSettled(
-      enabledApps.map(async (app) => {
+    // ── Non-accounting apps: thin provisioning signal (lazy bootstrap on first login) ──
+    const nonAccountingApps = enabledApps.filter((a) => a.appCode !== 'accounting');
+    const thinResults = await Promise.allSettled(
+      nonAccountingApps.map(async (app) => {
         await InterAppEventService.publishEvent({
           eventType:         'tenant.app.provisioned',
           sourceApplication: 'wrapper',
-          // Route to specific app's queue: e.g. 'accounting.tenant.app.provisioned'
           targetApplication: app.appCode,
           tenantId,
           entityId:          tenantId,
           publishedBy,
           eventData: {
-            // Thin payload — NO domain data embedded
             appCode:          app.appCode,
             tenantId,
             plan,
@@ -687,19 +619,60 @@ export class UnifiedOnboardingService {
             enabledModules:   Array.isArray(app.enabledModules) ? app.enabledModules : [],
             expiresAt:        app.expiresAt ? new Date(app.expiresAt).toISOString() : null,
             onboardedAt:      new Date().toISOString(),
-            // Signal: "pull your data when you're ready, via POST /bootstrap"
             bootstrapHint:    'lazy — call POST /api/sync/tenants/:id/bootstrap on first user login',
           },
         });
         console.log(`  ✅ Published tenant.app.provisioned → ${app.appCode} (tenant: ${tenantId})`);
       })
     );
-
-    // Log any failures without throwing — onboarding already succeeded
-    for (const [i, result] of results.entries()) {
+    for (const [i, result] of thinResults.entries()) {
       if (result.status === 'rejected') {
-        const appCode = enabledApps[i]?.appCode ?? 'unknown';
+        const appCode = nonAccountingApps[i]?.appCode ?? 'unknown';
         console.warn(`  ⚠️ Failed to publish tenant.app.provisioned → ${appCode}:`, (result.reason as Error).message);
+      }
+    }
+
+    // ── Accounting: ONE consolidated tenant.onboarded event ──
+    // Merges provisioning metadata + full bootstrap snapshot so the accounting
+    // app never needs to make a separate API call on first login.
+    const accountingApp = enabledApps.find((a) => a.appCode === 'accounting');
+    if (accountingApp) {
+      try {
+        const bootstrapService = new BootstrapService();
+        const bootstrapPayload = await bootstrapService.assemble(tenantId, 'accounting');
+
+        await InterAppEventService.publishEvent({
+          eventType:         'tenant.onboarded',
+          sourceApplication: 'wrapper',
+          targetApplication: 'accounting',
+          tenantId,
+          entityId:          tenantId,
+          publishedBy,
+          eventData: {
+            appCode:        'accounting',
+            tenantId,
+            plan,
+            enabledModules: Array.isArray(accountingApp.enabledModules) ? accountingApp.enabledModules : [],
+            expiresAt:      accountingApp.expiresAt ? new Date(accountingApp.expiresAt).toISOString() : null,
+            tenantName:     bootstrapPayload.tenant?.tenantName ?? '',
+            adminEmail:     bootstrapPayload.users?.find((u) => u.isTenantAdmin)?.email ?? null,
+            kindeOrgId:     bootstrapPayload.tenant?.kindeOrgId ?? null,
+            snapshot: {
+              tenant:              bootstrapPayload.tenant,
+              organizations:       bootstrapPayload.organizations,
+              users:               bootstrapPayload.users,
+              roles:               bootstrapPayload.roles,
+              employeeAssignments: bootstrapPayload.employeeAssignments,
+              roleAssignments:     bootstrapPayload.roleAssignments,
+              creditConfigs:       bootstrapPayload.creditConfigs,
+              entityCredits:       bootstrapPayload.entityCredits,
+            },
+          },
+        });
+        console.log(`  ✅ Published consolidated tenant.onboarded → accounting (tenant: ${tenantId})`);
+      } catch (err: unknown) {
+        // Non-fatal: accounting falls back to auth-flow bootstrap on first login.
+        console.warn(`  ⚠️ Failed to publish consolidated tenant.onboarded → accounting:`, (err as Error).message);
       }
     }
   }
@@ -935,25 +908,12 @@ export class UnifiedOnboardingService {
         
         // Only try to add if organization was actually created in Kinde (not fallback)
         if (!orgCreatedWithFallback) {
-          const addResult = await kindeService.addUserToOrganization(finalKindeUserId, actualOrgCode, {
-            role_code: 'admin', // Give admin role in the organization
-            is_admin: true,
-            exclusive: true // Remove from other organizations first
-          });
+          const addResult = await kindeService.addUserToOrganization(finalKindeUserId, actualOrgCode, { skipRoleAssignment: true });
 
           if (addResult?.success) {
             console.log('✅ User successfully added to Kinde organization');
           } else {
-            // Non-fatal: the user is already a member of the org via Kinde's
-            // createOrganization flow (is_admin:true). The role assignment is
-            // supplementary — failure here does NOT block onboarding.
-            // FIX: Create a role with key "admin" in your Kinde dashboard
-            //      (auth.zopkit.com → Roles) to silence this warning.
-            console.warn(
-              '⚠️ [Kinde] Role assignment for the new org admin failed (non-fatal). ' +
-              'The user is already an org member. ' +
-              'To resolve: create a role with key "admin" in your Kinde dashboard → Roles.'
-            );
+            console.warn('⚠️ [Kinde] addUserToOrganization returned non-success (non-fatal, onboarding continues)');
           }
         } else {
           console.log('ℹ️ Skipping Kinde user addition (organization created with fallback)');
@@ -1128,7 +1088,10 @@ export class UnifiedOnboardingService {
 
     const currentTime = new Date();
 
-    // Wrap ALL database operations in a single transaction
+    // Wrap ALL database operations in a single transaction.
+    // isolationLevel 'read committed' prevents postgres.js v3 from silently retrying the
+    // transaction body on serialization/deadlock errors — without this, the 14-step body
+    // was executing 3× on every request, adding ~6s of latency.
     const result = await systemDbConnection.transaction(async (tx) => {
       // ============================================
       // STEP 1: CREATE TENANT
@@ -1147,15 +1110,17 @@ export class UnifiedOnboardingService {
           industry: businessType || null, // Use businessType for backward compatibility
           website: website || null,
           organizationSize: companySize || null,
-          defaultTimeZone: timezone || 'UTC',
-          defaultCurrency: currency || 'USD',
+          defaultTimeZone: timezone || 'Asia/Kolkata',
+          defaultCurrency: currency || 'INR',
           defaultLanguage: defaultLanguage || 'en',
-          defaultLocale: defaultLocale || 'en-US',
+          defaultLocale: defaultLocale || 'en-IN',
           phone: contactDirectPhone || contactMobilePhone || adminMobile || null,
           onboardingCompleted: false,
           onboardedAt: currentTime,
-          onboardingStartedAt: currentTime,
-          trialStartedAt: currentTime,
+          // Use formStartedAt if provided by frontend; otherwise approximate 30s before completion
+          onboardingStartedAt: (params as { formStartedAt?: string }).formStartedAt
+            ? new Date((params as { formStartedAt?: string }).formStartedAt as string)
+            : new Date(currentTime.getTime() - 30_000),
           firstLoginAt: currentTime,
           taxRegistered: taxRegistered || false,
           vatGstRegistered: vatGstRegistered || false,
@@ -1179,60 +1144,16 @@ export class UnifiedOnboardingService {
           contactDepartment: contactDepartment || null,
           contactDirectPhone: contactDirectPhone || null,
           contactMobilePhone: contactMobilePhone || adminMobile || null,
-          contactPreferredContactMethod: contactPreferredContactMethod || null,
           contactAuthorityLevel: contactAuthorityLevel || null,
           taxRegistrationDetails: taxRegistrationDetails || (panNumber ? { pan: panNumber, country: country || 'IN' } : {}),
-          settings: {
-            subscriptionTier: selectedPlan,
-            subscriptionStatus: 'trial',
-            trialStatus: 'active',
-            featuresEnabled: { crm: true, users: true, roles: true, dashboard: true },
-            onboardingStep: 'in_progress',
-            onboardingProgress: {
-              accountSetup: { completed: true, completedAt: currentTime },
-              companyInfo: { completed: true, completedAt: currentTime },
-              planSelection: { completed: true, completedAt: currentTime },
-              teamInvites: { completed: false, completedAt: null }
-            },
-            selectedPlan,
-            planName: selectedPlan === 'trial' ? 'Trial Plan' : (selectedPlan === 'free' ? 'Free Plan' : 'Professional Plan'),
-            planPrice: selectedPlan === 'trial' ? 0 : (selectedPlan === 'free' ? 0 : 99),
-            maxUsers: selectedPlan === 'trial' ? 2 : (selectedPlan === 'free' ? 5 : 50),
-            maxProjects: selectedPlan === 'trial' ? 5 : (selectedPlan === 'free' ? 10 : 100),
-            teamInviteCount: 0,
-            onboardingCompletedAt: currentTime,
-            companyType: companyType || null,
-            businessType: businessType || null,
-            industry: businessType || null, // Use businessType for backward compatibility
-            website: website || null,
-            companySize: companySize || null,
-            country: country || null,
-            state: state || null,
-            timezone: timezone || null,
-            currency: currency || null,
-            defaultLanguage: defaultLanguage || null,
-            defaultLocale: defaultLocale || null,
-            hasGstin: hasGstin || false,
-            gstinProvided: hasGstin && gstin ? true : false,
-            taxRegistered: taxRegistered || false,
-            vatGstRegistered: vatGstRegistered || false,
-            billingEmail: billingEmail || null,
-            adminMobile: adminMobile || null,
-            contactJobTitle: contactJobTitle || null,
-            preferredContactMethod: preferredContactMethod || null,
-            mailingAddressSameAsRegistered: mailingAddressSameAsRegistered !== undefined ? mailingAddressSameAsRegistered : true,
-            mailingStreet: mailingStreet || null,
-            mailingCity: mailingCity || null,
-            mailingState: mailingState || state || null,
-            mailingZip: mailingZip || null,
-            mailingCountry: mailingCountry || null,
-            billingStreet: billingStreet || null,
-            billingCity: billingCity || null,
-            billingState: billingState || state || null,
-            billingZip: billingZip || null,
-            billingCountry: billingCountry || country || null,
-            supportEmail: supportEmail || null
-          }
+          // No application-level data stored here. Each concern has its own table:
+          //   Subscription / trial → subscriptions table
+          //   Features enabled     → organization_applications table
+          //   Onboarding step      → tenant_users.onboardingStep column
+          //   Onboarding progress  → onboarding_form_data table
+          //   Plan details         → subscriptions.plan column
+          //   Completed at         → tenants.onboardedAt column
+          settings: {}
         })
         .returning({
           tenantId: tenants.tenantId,
@@ -1242,11 +1163,9 @@ export class UnifiedOnboardingService {
           adminEmail: tenants.adminEmail,
           onboardingCompleted: tenants.onboardingCompleted,
           onboardedAt: tenants.onboardedAt,
-          trialStartedAt: tenants.trialStartedAt
         });
 
       // Set tenant context for RLS within transaction
-      const { sql } = await import('drizzle-orm');
       await tx.execute(sql`SELECT set_config('app.tenant_id', ${tenant.tenantId}, false)`);
 
       // ============================================
@@ -1263,21 +1182,26 @@ export class UnifiedOnboardingService {
           hierarchyPath: organizationEntityId.toString(),
           fullHierarchyPath: companyName,
           entityName: companyName,
-          entityCode: `org_${subdomain}_${Date.now()}`,
           description: `Root organization created during ${type} onboarding`,
           entityType: 'organization',
-          organizationType: 'business_unit',
           isActive: true,
-          isDefault: true,
-          isHeadquarters: true,
+          // Carry over fields available from onboarding
+          legalName: companyName,
+          country: country || null,
+          currency: currency || 'INR',
+          timezone: timezone || 'Asia/Kolkata',
+          language: defaultLanguage || 'en',
+          fiscalYearEnd: '12-31',
+          taxId: hasGstin && gstin ? gstin.toUpperCase() : null,
           contactEmail: adminEmail,
+          contactPhone: contactDirectPhone || contactMobilePhone || adminMobile || null,
+          contactWebsite: website || null,
           createdBy: null,
           updatedBy: null
         })
         .returning({
           organizationId: entities.entityId,
           organizationName: entities.entityName,
-          organizationCode: entities.entityCode
         });
 
       if (!organization || !organization.organizationId) {
@@ -1309,12 +1233,12 @@ export class UnifiedOnboardingService {
       const [adminUser] = await tx
         .insert(tenantUsers)
         .values({
-          userId: uuidv4(),
           tenantId: tenant.tenantId,
           kindeUserId,
           email: adminEmail,
-          name: adminName,
-          phone: null,
+          firstName: firstName ?? null,
+          lastName: lastName ?? null,
+          phone: adminMobile ?? contactMobilePhone ?? contactDirectPhone ?? null,
           isActive: true,
           isVerified: true,
           isTenantAdmin: true,
@@ -1423,13 +1347,6 @@ export class UnifiedOnboardingService {
             canConfigureEntity: true,
             canGenerateReports: true
           },
-          notificationPreferences: {
-            creditAlerts: true,
-            userActivities: true,
-            systemAlerts: true,
-            weeklyReports: true,
-            monthlyReports: true
-          },
           assignedBy: adminUser.userId,
           assignedAt: currentTime,
           assignmentReason: 'Initial assignment during onboarding - admin user is responsible for primary organization',
@@ -1453,71 +1370,50 @@ export class UnifiedOnboardingService {
       // STEP 8: CREATE SUBSCRIPTION
       // ============================================
       let subscription;
+      const trialStartDate = currentTime;
+      // Free plan: 3-month trial. Paid plan: 14-day trial (5 min in dev).
+      const trialDurationMs = selectedPlan === 'free'
+        ? 3 * 30 * 24 * 60 * 60 * 1000
+        : (process.env.NODE_ENV === 'production' ? 14 * 24 * 60 * 60 * 1000 : 5 * 60 * 1000);
+      const trialEndDate = new Date(trialStartDate.getTime() + trialDurationMs);
+
       if (selectedPlan === 'free') {
-        // For free plan, create subscription record
-        const trialDurationMs = 3 * 30 * 24 * 60 * 60 * 1000; // 3 months
-        const trialStartDate = new Date();
-        const trialEndDate = new Date(Date.now() + trialDurationMs);
-
-        const subscriptionData = {
-          subscriptionId: uuidv4(),
-          tenantId: tenant.tenantId,
-          plan: 'free',
-          status: 'active',
-          subscribedTools: ['crm'],
-          usageLimits: {
-            apiCalls: 10000,
-            storage: 5000000000, // 5GB
-            users: 5,
-            roles: 2,
-            projects: 10
-          },
-          monthlyPrice: '0.00',
-          yearlyPrice: '0.00',
-          billingCycle: 'prepaid',
-          trialStart: trialStartDate,
-          trialEnd: trialEndDate,
-          currentPeriodStart: trialStartDate,
-          currentPeriodEnd: trialEndDate,
-          addOns: []
-        };
-
         [subscription] = await tx
           .insert(subscriptions)
-          .values(subscriptionData)
+          .values({
+            subscriptionId: uuidv4(),
+            tenantId: tenant.tenantId,
+            plan: 'free',
+            status: 'active',
+            yearlyPrice: '0.00',
+            billingCycle: 'monthly',
+            isTrialUser: true,
+            trialStartedAt: trialStartDate,
+            trialEndsAt: trialEndDate,
+            currentPeriodStart: trialStartDate,
+            currentPeriodEnd: trialEndDate,
+          })
           .returning();
       } else {
-        // Create trial or paid subscription
-        const trialDurationMs = process.env.NODE_ENV === 'production' ? 14 * 24 * 60 * 60 * 1000 : 5 * 60 * 1000;
-        const trialStartDate = new Date();
-        const trialEndDate = new Date(Date.now() + trialDurationMs);
-
-        const subscriptionData = {
-          subscriptionId: uuidv4(),
-          tenantId: tenant.tenantId,
-          plan: selectedPlan,
-          status: 'trialing',
-          subscribedTools: ['crm'],
-          usageLimits: {
-            apiCalls: 10000,
-            storage: 1000000000, // 1GB
-            users: maxUsers || 2,
-            roles: 2,
-            projects: maxProjects || 5
-          },
-          monthlyPrice: (planPrice || 0).toString(),
-          yearlyPrice: '0.00',
-          billingCycle: 'monthly',
-          trialStart: trialStartDate,
-          trialEnd: trialEndDate,
-          currentPeriodStart: trialStartDate,
-          currentPeriodEnd: trialEndDate,
-          addOns: []
-        };
+        const { getPlan } = await import('../../../data/plans.js');
+        const planDef = getPlan(selectedPlan);
+        const annualUsd = planDef?.yearlyPrice ?? planPrice ?? 0;
 
         [subscription] = await tx
           .insert(subscriptions)
-          .values(subscriptionData)
+          .values({
+            subscriptionId: uuidv4(),
+            tenantId: tenant.tenantId,
+            plan: selectedPlan,
+            status: 'trialing',
+            yearlyPrice: String(annualUsd),
+            billingCycle: 'yearly',
+            isTrialUser: true,
+            trialStartedAt: trialStartDate,
+            trialEndsAt: trialEndDate,
+            currentPeriodStart: trialStartDate,
+            currentPeriodEnd: trialEndDate,
+          })
           .returning();
       }
 
@@ -1673,90 +1569,24 @@ export class UnifiedOnboardingService {
         },
         applicationsConfigured: applicationsToInsert.length
       };
-    });
+    }, { isolationLevel: 'read committed' });
 
     console.log('✅ Complete onboarding transaction committed successfully');
 
-    // Publish tenant.onboarded to the outbox (event_tracking table) so Financial-Accounting
-    // can bootstrap its local copy of all tenant data without requiring a separate API call.
-    // This is non-fatal: if it fails, FA falls back to auth-flow pull-based bootstrap.
+    // Note: consolidated tenant.onboarded (provisioning metadata + snapshot) for accounting
+    // is now published inside publishAppProvisioningEvents() alongside the thin events for
+    // other apps. No separate publish block needed here.
+
+    // Clean up temporary onboarding_form_data now that the tenant is fully created.
+    // Non-fatal: form data is only needed during the onboarding wizard.
     try {
-      await InterAppEventService.publishEvent({
-        eventType: 'tenant.onboarded',
-        sourceApplication: 'wrapper',
-        targetApplication: 'accounting',
-        tenantId: result.tenant?.tenantId ?? '',
-        entityId: result.tenant?.tenantId ?? '',
-        publishedBy: result.adminUser?.userId ?? 'system',
-        eventData: {
-          tenantId: result.tenant?.tenantId ?? '',
-          tenantName: result.tenant?.companyName ?? '',
-          onboardedAt: new Date().toISOString(),
-          adminEmail: result.adminUser?.email ?? null,
-          kindeOrgId: result.tenant?.kindeOrgId ?? null,
-          subdomain: result.tenant?.subdomain ?? null,
-          wrapperTenantId: result.tenant?.tenantId ?? '',
-          snapshot: {
-            tenant: {
-              tenantId: result.tenant?.tenantId ?? '',
-              name: result.tenant?.companyName ?? '',
-              kindeOrgId: result.tenant?.kindeOrgId ?? null,
-              status: 'active',
-            },
-            // Organizations, users, roles will be fetched by FA via pull-sync if needed.
-            // Embedding minimal onboarding org so FA can bootstrap without any API calls.
-            organizations: result.organization ? [{
-              orgCode: result.organization.organizationCode ?? result.organization.organizationId,
-              orgName: result.organization.organizationName ?? '',
-              status: 'active',
-              isActive: true,
-              country: null,
-              currency: null,
-              hierarchyLevel: 0,
-              parentOrgCode: null,
-            }] : [],
-            users: result.adminUser ? [{
-              userId: result.adminUser.userId,
-              email: result.adminUser.email,
-              firstName: result.adminUser.firstName ?? '',
-              lastName: result.adminUser.lastName ?? '',
-              status: { isActive: true },
-            }] : [],
-            roles: result.adminRole ? (() => {
-              const { flat, structure } = flattenPermissionsForSnapshot(result.adminRole?.permissions);
-              return [{
-                roleId: result.adminRole!.roleId,
-                roleName: result.adminRole!.roleName ?? 'admin',
-                permissions: flat,
-                permissionsStructure: structure,
-                isActive: true,
-                priority: 1,
-              }];
-            })() : [],
-            employeeAssignments: result.orgMembership ? [{
-              assignmentId: `emp_${result.tenant?.tenantId}_${result.adminUser?.userId}`,
-              userId: result.adminUser?.userId,
-              entityId: result.organization?.organizationId,
-              accessLevel: 'admin',
-              isActive: true,
-              assignedAt: new Date().toISOString(),
-            }] : [],
-            roleAssignments: result.roleAssignment ? [{
-              assignmentId: `ra_${result.tenant?.tenantId}`,
-              userIdString: result.adminUser?.userId,
-              roleIdString: result.adminRole?.roleId,
-              isActive: true,
-              assignedAt: new Date().toISOString(),
-            }] : [],
-            creditConfigs: [],
-            entityCredits: [],
-          },
-        },
-      });
-      console.log('✅ tenant.onboarded event written to outbox for Financial-Accounting');
-    } catch (outboxErr: any) {
-      // Non-fatal: onboarding succeeded; FA will fall back to auth-flow bootstrap on first login.
-      console.warn('⚠️ Failed to write tenant.onboarded to outbox (non-fatal):', outboxErr?.message);
+      const adminKindeUserId = result.adminUser?.kindeUserId;
+      if (adminKindeUserId) {
+        await db.delete(onboardingFormData).where(eq(onboardingFormData.kindeUserId, adminKindeUserId));
+        console.log('🧹 Cleaned up onboarding_form_data for', adminKindeUserId);
+      }
+    } catch (cleanupErr: any) {
+      console.warn('⚠️ Failed to clean up onboarding_form_data (non-fatal):', cleanupErr?.message);
     }
 
     return result;
@@ -1832,13 +1662,12 @@ export class UnifiedOnboardingService {
            gstin: hasGstin && gstin ? gstin.toUpperCase() : null,
            industry: businessType || null,
            organizationSize: companySize || null,
-           defaultTimeZone: timezone || 'UTC',
-           defaultCurrency: currency || 'USD',
+           defaultTimeZone: timezone || 'Asia/Kolkata',
+           defaultCurrency: currency || 'INR',
            phone: contactDirectPhone || contactMobilePhone || null,
            onboardingCompleted: false,
            onboardedAt: currentTime,
            onboardingStartedAt: currentTime,
-           trialStartedAt: currentTime,
            firstLoginAt: currentTime,
            taxRegistered: taxRegistered || false,
            vatGstRegistered: vatGstRegistered || false,
@@ -1862,40 +1691,9 @@ export class UnifiedOnboardingService {
            contactDepartment: contactDepartment || null,
            contactDirectPhone: contactDirectPhone || null,
            contactMobilePhone: contactMobilePhone || null,
-           contactPreferredContactMethod: contactPreferredContactMethod || null,
            contactAuthorityLevel: contactAuthorityLevel || null,
            taxRegistrationDetails: taxRegistrationDetails || {},
-           settings: {
-             subscriptionTier: selectedPlan,
-             subscriptionStatus: 'trial',
-             trialStatus: 'active',
-             featuresEnabled: { crm: true, users: true, roles: true, dashboard: true },
-             onboardingStep: 'in_progress',
-             onboardingProgress: {
-               accountSetup: { completed: true, completedAt: currentTime },
-               companyInfo: { completed: true, completedAt: currentTime },
-               planSelection: { completed: true, completedAt: currentTime },
-               teamInvites: { completed: false, completedAt: null }
-             },
-             selectedPlan,
-             planName: selectedPlan === 'trial' ? 'Trial Plan' : (selectedPlan === 'free' ? 'Free Plan' : 'Professional Plan'),
-             planPrice: selectedPlan === 'trial' ? 0 : (selectedPlan === 'free' ? 0 : 99),
-             maxUsers: selectedPlan === 'trial' ? 2 : (selectedPlan === 'free' ? 5 : 50),
-             maxProjects: selectedPlan === 'trial' ? 5 : (selectedPlan === 'free' ? 10 : 100),
-             teamInviteCount: 0,
-             onboardingCompletedAt: currentTime,
-             businessType: businessType || null,
-             companySize: companySize || null,
-             country: country || null,
-             timezone: timezone || null,
-             currency: currency || null,
-             hasGstin: hasGstin || false,
-             gstinProvided: hasGstin && gstin ? true : false,
-             taxRegistered: taxRegistered || false,
-             vatGstRegistered: vatGstRegistered || false,
-             billingEmail: billingEmail || null,
-             supportEmail: supportEmail || null
-           }
+           settings: {}
          })
         .returning({
           tenantId: tenants.tenantId,
@@ -1905,11 +1703,9 @@ export class UnifiedOnboardingService {
           adminEmail: tenants.adminEmail,
           onboardingCompleted: tenants.onboardingCompleted,
           onboardedAt: tenants.onboardedAt,
-          trialStartedAt: tenants.trialStartedAt
         });
 
       // Set tenant context for RLS within transaction
-      const { sql } = await import('drizzle-orm');
       await tx.execute(sql`SELECT set_config('app.tenant_id', ${tenant.tenantId}, false)`);
 
       // 2. Create parent organization (root entity)
@@ -1919,28 +1715,21 @@ export class UnifiedOnboardingService {
         .values({
           entityId: organizationEntityId,
           tenantId: tenant.tenantId,
-          parentEntityId: null, // Root entity has no parent - this is critical for hierarchy
-          entityLevel: 1, // Root entities start at level 1
-          // Note: hierarchyPath and fullHierarchyPath will be set by database triggers
-          // For root entities, triggers will set hierarchyPath to the entity ID string
-          hierarchyPath: organizationEntityId.toString(), // Set initial value (triggers will validate/update)
-          fullHierarchyPath: companyName, // Full path is just the entity name for root
+          parentEntityId: null,
+          entityLevel: 1,
+          hierarchyPath: organizationEntityId.toString(),
+          fullHierarchyPath: companyName,
           entityName: companyName,
-          entityCode: `org_${subdomain}_${Date.now()}`,
           description: `Root organization created during ${type} onboarding`,
           entityType: 'organization',
-          organizationType: 'business_unit', // Parent organization - matches organization service expectations
           isActive: true,
-          isDefault: true,
-          isHeadquarters: true, // Root organization is the headquarters
           contactEmail: adminEmail,
-          createdBy: null, // Will be updated after user creation
+          createdBy: null,
           updatedBy: null
         })
         .returning({
           organizationId: entities.entityId,
           organizationName: entities.entityName,
-          organizationCode: entities.entityCode
         });
       
       // Verify root entity was created correctly
@@ -1978,12 +1767,12 @@ export class UnifiedOnboardingService {
       const [adminUser] = await tx
         .insert(tenantUsers)
         .values({
-          userId: uuidv4(),
           tenantId: tenant.tenantId,
           kindeUserId,
           email: adminEmail,
-          name: adminName,
-          phone: null,
+          firstName: firstName ?? null,
+          lastName: lastName ?? null,
+          phone: contactMobilePhone ?? contactDirectPhone ?? null,
           isActive: true,
           isVerified: true,
           isTenantAdmin: true,
@@ -2089,13 +1878,6 @@ export class UnifiedOnboardingService {
             canConfigureEntity: true,
             canGenerateReports: true
           },
-          notificationPreferences: {
-            creditAlerts: true,
-            userActivities: true,
-            systemAlerts: true,
-            weeklyReports: true,
-            monthlyReports: true
-          },
           assignedBy: adminUser.userId,
           assignedAt: currentTime,
           assignmentReason: 'Initial assignment during onboarding - admin user is responsible for primary organization',
@@ -2137,34 +1919,29 @@ export class UnifiedOnboardingService {
    * Create subscription record for the tenant
    */
   static async createTrialSubscription(params: { tenantId: string; selectedPlan: string; maxUsers?: number; maxProjects?: number; planName?: string; planPrice?: number }): Promise<Record<string, unknown>> {
-    const { tenantId, selectedPlan, maxUsers, maxProjects, planName, planPrice } = params;
+    const { tenantId, selectedPlan, planPrice } = params;
     console.log('📝 Creating trial subscription for tenant:', tenantId);
 
     const trialDurationMs = process.env.NODE_ENV === 'production' ? 14 * 24 * 60 * 60 * 1000 : 5 * 60 * 1000;
     const trialStartDate = new Date();
     const trialEndDate = new Date(Date.now() + trialDurationMs);
 
+    const { getPlan } = await import('../../../data/plans.js');
+    const planDef = getPlan(selectedPlan);
+    const annualUsd = planDef?.yearlyPrice ?? planPrice ?? 0;
+
     const subscriptionData = {
       subscriptionId: uuidv4(),
       tenantId,
       plan: selectedPlan,
       status: 'trialing',
-      subscribedTools: ['crm'],
-      usageLimits: {
-        apiCalls: 10000,
-        storage: 1000000000, // 1GB
-        users: maxUsers ?? 2,
-        roles: 2,
-        projects: maxProjects ?? 5
-      },
-      monthlyPrice: String(planPrice ?? 0),
-      yearlyPrice: '0.00',
-      billingCycle: 'monthly',
-      trialStart: trialStartDate,
-      trialEnd: trialEndDate,
+      yearlyPrice: String(annualUsd),
+      billingCycle: selectedPlan === 'free' ? 'monthly' : 'yearly',
+      isTrialUser: true,
+      trialStartedAt: trialStartDate,
+      trialEndsAt: trialEndDate,
       currentPeriodStart: trialStartDate,
       currentPeriodEnd: trialEndDate,
-      addOns: []
     };
 
     const [subscription] = await systemDbConnection
@@ -2236,7 +2013,6 @@ export class UnifiedOnboardingService {
 
     // Update tenant with subdomain information
     const { tenants } = await import('../../../db/schema/index.js');
-    const { eq } = await import('drizzle-orm');
 
     const [updatedTenant] = await systemDb
       .update(tenants)

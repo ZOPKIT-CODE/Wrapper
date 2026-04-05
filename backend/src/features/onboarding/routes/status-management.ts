@@ -290,26 +290,22 @@ export default async function statusManagementRoutes(
       const onboardingData = (user.preferences as { onboarding?: { formData?: unknown } })?.onboarding || {};
       let formData: Record<string, unknown> = (onboardingData.formData || {}) as Record<string, unknown>;
 
-      if (Object.keys(formData).length === 0 && (tenant as { initialSetupData?: Record<string, unknown> } | null)?.initialSetupData) {
-        const setupData = (tenant as { initialSetupData?: Record<string, unknown> }).initialSetupData!;
-        formData = {
-          businessType: setupData.businessType || undefined,
-          companySize: setupData.companySize || undefined,
-          country: setupData.country || undefined,
-          timezone: setupData.timezone || undefined,
-          currency: setupData.currency || undefined,
-          hasGstin: setupData.hasGstin || undefined,
-          gstin: setupData.gstin || undefined,
-          selectedPlan: setupData.selectedPlan || undefined,
-          planName: setupData.planName || undefined,
-          maxUsers: setupData.maxUsers || undefined,
-          maxProjects: setupData.maxProjects || undefined
+      // Fallback: if no form data in user preferences, reconstruct from tenant columns.
+      if (Object.keys(formData).length === 0 && tenant) {
+        const fallback: Record<string, unknown> = {
+          businessType: tenant.industry || undefined,
+          companySize: tenant.organizationSize || undefined,
+          country: tenant.billingCountry || tenant.mailingCountry || undefined,
+          timezone: tenant.defaultTimeZone || undefined,
+          currency: tenant.defaultCurrency || undefined,
+          hasGstin: tenant.gstin ? true : undefined,
+          gstin: tenant.gstin || undefined,
         };
-        Object.keys(formData).forEach(key => {
-          if ((formData as Record<string, unknown>)[key] === undefined) {
-            delete (formData as Record<string, unknown>)[key];
-          }
-        });
+        // Strip undefined keys
+        for (const key of Object.keys(fallback)) {
+          if (fallback[key] === undefined) delete fallback[key];
+        }
+        if (Object.keys(fallback).length > 0) formData = fallback;
       }
 
       // Invited users should never be sent to onboarding
@@ -327,7 +323,7 @@ export default async function statusManagementRoutes(
         data: {
           isOnboarded: isOnboarded,
           needsOnboarding: needsOnboarding,
-          onboardingStep: user.onboardingStep || (isOnboarded ? 'completed' : '1'),
+          onboardingStep: isOnboarded ? 'completed' : '1',
           savedFormData: formData,
           onboardingProgress: onboardingData,
           tenant: tenant ? {
@@ -338,7 +334,7 @@ export default async function statusManagementRoutes(
           user: {
             id: user.userId,
             email: user.email,
-            name: user.name,
+            name: [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email,
             kindeUserId: user.kindeUserId
           }
         },
@@ -374,19 +370,35 @@ export default async function statusManagementRoutes(
     }
   });
 
-  // Get onboarding data by email (for non-authenticated users)
-  // Checks both onboarding_form_data table and user preferences
+  // Get onboarding data — requires a valid Kinde JWT
   fastify.post('/get-data', {
     schema: {
       body: z.object({
         email: z.string().email(),
-        kindeUserId: z.string().optional() // Optional Kinde user ID
+        kindeUserId: z.string().optional()
       })
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const body = request.body as Record<string, unknown>;
-      const { email, kindeUserId } = body;
+      const { email } = body;
+      let kindeUserId: string | undefined;
+
+      // Require a valid Kinde JWT — extract kindeUserId from the token
+      const authHeader = request.headers.authorization;
+      if (!authHeader?.startsWith('Bearer ')) {
+        return reply.code(401).send({ success: false, error: 'Authentication required' });
+      }
+      try {
+        const token = authHeader.substring(7);
+        const user = await kindeService.validateToken(token);
+        kindeUserId = (user.kindeUserId || user.userId) as string;
+      } catch (authErr: unknown) {
+        return reply.code(401).send({ success: false, error: 'Invalid authentication token' });
+      }
+      if (!kindeUserId) {
+        return reply.code(401).send({ success: false, error: 'Authentication required' });
+      }
 
       // First, try to get data from onboarding_form_data table (for users not yet created)
       let formDataFromTable = null;
@@ -458,7 +470,7 @@ export default async function statusManagementRoutes(
           data: {
             isOnboarded: user.onboardingCompleted,
             needsOnboarding: !user.onboardingCompleted,
-            onboardingStep: user.onboardingStep,
+            onboardingStep: null,
             savedFormData: formData,
             onboardingProgress: onboardingData,
             source: 'user_preferences'

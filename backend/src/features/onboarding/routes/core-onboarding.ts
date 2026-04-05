@@ -8,6 +8,9 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import UnifiedOnboardingService from '../services/unified-onboarding-service.js';
 import OnboardingValidationService from '../services/onboarding-validation-service.js';
 import { invalidateUserCache } from '../../../middleware/auth/auth.js';
+import { db } from '../../../db/index.js';
+import { tenants } from '../../../db/schema/index.js';
+import { eq } from 'drizzle-orm';
 
 export default async function coreOnboardingRoutes(
   fastify: FastifyInstance,
@@ -358,14 +361,18 @@ export default async function coreOnboardingRoutes(
 
       console.log('🎉 === FRONTEND ONBOARDING COMPLETE ===');
 
-      // Invalidate user cache so the next request (e.g. auth-status, tenant) does a fresh
-      // lookup and gets the new tenant_users row with the new tenantId (dashboard access).
-      const kindeUserId = (request as FastifyRequest & { userContext?: { userId?: string } }).userContext?.userId;
-      if (kindeUserId) {
-        invalidateUserCache(kindeUserId);
-      }
+      const res = result as { tenant: { tenantId: string; subdomain: string }; adminUser: { userId: string; kindeUserId?: string }; organization: { organizationId: string }; adminRole: { roleId: string }; redirectUrl?: string; creditAllocated?: number; onboardingType?: string };
 
-      const res = result as { tenant: { tenantId: string; subdomain: string }; adminUser: { userId: string }; organization: { organizationId: string }; adminRole: { roleId: string }; redirectUrl?: string; creditAllocated?: number; onboardingType?: string };
+      // Invalidate the user record cache using the kindeUserId from the result.
+      // This MUST use the result — this route is public (no auth middleware), so
+      // request.userContext is always undefined here. Before onboarding, the auth
+      // middleware cached the user as `null` (no tenant_users row yet). Without
+      // invalidation, that null entry persists for 5 minutes, causing every
+      // post-onboarding request to fail with 401 ("Unauthorized") until TTL expires.
+      const kindeUserIdFromResult = res.adminUser.kindeUserId;
+      if (kindeUserIdFromResult) {
+        invalidateUserCache(kindeUserIdFromResult);
+      }
       return reply.code(201).send({
         success: true,
         message: 'Organization onboarded successfully via frontend flow',

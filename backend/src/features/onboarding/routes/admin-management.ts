@@ -66,7 +66,6 @@ export default async function adminManagementRoutes(
         .update(tenantUsers)
         .set({
           onboardingCompleted: false,
-          onboardingStep: null,
           updatedAt: new Date()
         })
         .where(eq(tenantUsers.userId, userIdToReset))
@@ -294,12 +293,7 @@ export default async function adminManagementRoutes(
           adminEmail,
           industry: industry || null,
           onboardingCompleted: false,
-          onboardingStep: '1',
-          trialStartedAt: new Date(),
-          trialStatus: 'active',
-          subscriptionStatus: 'trial',
-          featuresEnabled: { crm: true, users: true, roles: true, dashboard: true },
-          initialSetupData: { selectedPlan, planName, planPrice, maxUsers, maxProjects, teamInviteCount: (teamEmails as string[]).length }
+          settings: {},
         } as any)
         .returning();
 
@@ -319,7 +313,6 @@ export default async function adminManagementRoutes(
           isVerified: true,
           isTenantAdmin: true,
           onboardingCompleted: false,
-          onboardingStep: '1'
         } as any)
         .returning();
 

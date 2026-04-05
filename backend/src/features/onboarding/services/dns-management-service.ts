@@ -99,7 +99,7 @@ class DNSManagementService {
       }
 
       // Create DNS record (this will handle existing records gracefully)
-      const targetValue = "35.171.71.112" ;
+      const targetValue = this.serverTarget;
       const dnsResult = await this.createDNSRecord(
         `${subdomain}.${this._baseDomain}`,
         this._recordTypes.SUBDOMAIN,
@@ -180,6 +180,7 @@ class DNSManagementService {
         status: 'pending',
         createdAt: new Date()
       };
+      void verificationRequest;
 
       console.log(`✅ Verification setup complete for: ${customDomain}`);
       console.log(`📝 TXT Record: ${verificationDomain} = "${verificationToken}"`);

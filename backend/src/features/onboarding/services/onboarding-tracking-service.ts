@@ -1,4 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
+import { db } from '../../../db/index.js';
+import { eventTracking } from '../../../db/schema/index.js';
+import { eq, and, gte, lte, like } from 'drizzle-orm';
 
 interface TrackingMetadata {
   userId?: string;
@@ -8,23 +11,7 @@ interface TrackingMetadata {
   eventData?: Record<string, unknown>;
 }
 
-interface TrackingRecord {
-  trackingId: string;
-  tenantId: string;
-  phase: string;
-  status: string;
-  userId: string | null;
-  sessionId: string | null;
-  ipAddress: string | null;
-  userAgent: string | null;
-  eventData: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
 class OnboardingTrackingService {
-  _trackingRecords: TrackingRecord[] | undefined;
-
   // Track onboarding phase completion/progress
   async trackOnboardingPhase(tenantId: string, phase: string, status: string, metadata: TrackingMetadata = {}): Promise<Record<string, unknown>> {
     try {
@@ -38,40 +25,42 @@ class OnboardingTrackingService {
         eventData = {}
       } = metadata;
 
-      // Create tracking record
-      const trackingId = uuidv4();
-      const trackingRecord: TrackingRecord = {
-        trackingId,
-        tenantId,
-        phase,
-        status,
-        userId: userId || null,
-        sessionId: sessionId || null,
-        ipAddress: ipAddress || null,
-        userAgent: userAgent || null,
-        eventData: JSON.stringify(eventData),
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
+      const eventId = uuidv4();
 
-      // In a real implementation, you'd save this to a database table
-      // For now, just log it
+      await db.insert(eventTracking).values({
+        eventId,
+        eventType: 'onboarding_phase_' + phase,
+        tenantId: tenantId as unknown as string, // uuid column, value is already a uuid string
+        streamKey: 'onboarding',
+        sourceApplication: 'onboarding',
+        targetApplication: 'platform',
+        status: 'published',
+        eventData: {
+          phase,
+          status,
+          userId: userId ?? null,
+          sessionId: sessionId ?? null,
+          ...eventData
+        },
+        metadata: {
+          ipAddress: ipAddress ?? null,
+          userAgent: userAgent ?? null
+        },
+        publishedBy: userId ?? null
+      });
+
       console.log('✅ Onboarding phase tracked:', {
-        trackingId,
+        trackingId: eventId,
         tenantId,
         phase,
         status,
         userId,
-        sessionId,
-        eventData: Object.keys(eventData as object)
+        sessionId
       });
-
-      // Store in memory for this session (in production, use database)
-      this._storeTrackingRecord(trackingRecord);
 
       return {
         success: true,
-        trackingId,
+        trackingId: eventId,
         tenantId,
         phase,
         status
@@ -89,21 +78,37 @@ class OnboardingTrackingService {
     try {
       console.log('📊 Getting onboarding progress for tenant:', tenantId);
 
-      // Get completed phases
-      const completedPhases = this._getCompletedPhases(tenantId);
+      const rows = await db.select()
+        .from(eventTracking)
+        .where(
+          and(
+            eq(eventTracking.tenantId, tenantId as unknown as string),
+            like(eventTracking.eventType, 'onboarding_phase_%'),
+            eq(eventTracking.status, 'published')
+          )
+        );
 
-      // Calculate overall progress
+      // Extract completed phases from eventData
+      const completedPhases = new Set<string>();
+      for (const row of rows) {
+        const data = row.eventData as { phase?: string; status?: string } | null;
+        if (data && data.status === 'completed' && data.phase) {
+          completedPhases.add(data.phase);
+        }
+      }
+
       const totalPhases = ['profile', 'payment', 'upgrade', 'trial'];
-      const completedCount = completedPhases.length;
+      const completedCount = completedPhases.size;
       const progressPercentage = (completedCount / totalPhases.length) * 100;
+      const completedPhaseList = Array.from(completedPhases);
 
       const progress = {
         tenantId,
         totalPhases: totalPhases.length,
         completedPhases: completedCount,
         progressPercentage: Math.round(progressPercentage),
-        completedPhaseList: completedPhases,
-        remainingPhases: totalPhases.filter(phase => !completedPhases.includes(phase)),
+        completedPhaseList,
+        remainingPhases: totalPhases.filter(phase => !completedPhases.has(phase)),
         lastUpdated: new Date().toISOString()
       };
 
@@ -124,30 +129,46 @@ class OnboardingTrackingService {
 
       console.log('📊 Getting onboarding analytics:', { tenantId, phase, startDate, endDate });
 
-      // Get tracking records for the tenant
-      const records = this._getTrackingRecords(tenantId, { startDate, endDate, phase });
+      const conditions = [
+        eq(eventTracking.tenantId, tenantId as unknown as string),
+        like(eventTracking.eventType, 'onboarding_phase_%')
+      ];
 
-      // Calculate analytics
+      if (startDate) {
+        conditions.push(gte(eventTracking.createdAt, new Date(startDate)) as ReturnType<typeof eq>);
+      }
+      if (endDate) {
+        conditions.push(lte(eventTracking.createdAt, new Date(endDate)) as ReturnType<typeof eq>);
+      }
+      if (phase) {
+        conditions.push(eq(eventTracking.eventType, 'onboarding_phase_' + phase));
+      }
+
+      const rows = await db.select()
+        .from(eventTracking)
+        .where(and(...conditions));
+
+      // Group by eventType (phase)
+      const phasesCompleted: Record<string, Record<string, number>> = {};
+      for (const row of rows) {
+        const phaseName = row.eventType.replace('onboarding_phase_', '');
+        const data = row.eventData as { status?: string } | null;
+        const phaseStatus = data?.status ?? 'unknown';
+
+        if (!phasesCompleted[phaseName]) {
+          phasesCompleted[phaseName] = {};
+        }
+        phasesCompleted[phaseName][phaseStatus] = (phasesCompleted[phaseName][phaseStatus] ?? 0) + 1;
+      }
+
       const analytics: Record<string, unknown> = {
         tenantId,
-        totalEvents: records.length,
-        phasesCompleted: {} as Record<string, Record<string, number>>,
+        totalEvents: rows.length,
+        phasesCompleted,
         averageCompletionTime: 0,
         completionRates: {},
         generatedAt: new Date().toISOString()
       };
-
-      // Group by phase and status
-      const phasesCompleted = analytics.phasesCompleted as Record<string, Record<string, number>>;
-      records.forEach(record => {
-        if (!phasesCompleted[record.phase]) {
-          phasesCompleted[record.phase] = {};
-        }
-        if (!phasesCompleted[record.phase][record.status]) {
-          phasesCompleted[record.phase][record.status] = 0;
-        }
-        phasesCompleted[record.phase][record.status]++;
-      });
 
       console.log('✅ Onboarding analytics generated:', analytics);
       return analytics;
@@ -157,62 +178,6 @@ class OnboardingTrackingService {
       console.error('❌ Error getting onboarding analytics:', error);
       throw error;
     }
-  }
-
-  // Helper method to store tracking records (in-memory for now)
-  _storeTrackingRecord(record: TrackingRecord): void {
-    if (!this._trackingRecords) {
-      this._trackingRecords = [];
-    }
-    this._trackingRecords.push(record);
-  }
-
-  // Helper method to get completed phases
-  _getCompletedPhases(tenantId: string): string[] {
-    if (!this._trackingRecords) {
-      return [];
-    }
-
-    const tenantRecords = this._trackingRecords.filter(r => r.tenantId === tenantId);
-    const completedPhases = new Set<string>();
-
-    tenantRecords.forEach(record => {
-      if (record.status === 'completed') {
-        completedPhases.add(record.phase);
-      }
-    });
-
-    return Array.from(completedPhases);
-  }
-
-  // Helper method to get tracking records with filters
-  _getTrackingRecords(tenantId: string, filters: { phase?: string; startDate?: string | Date; endDate?: string | Date } = {}): TrackingRecord[] {
-    if (!this._trackingRecords) {
-      return [];
-    }
-
-    let records = this._trackingRecords.filter(r => r.tenantId === tenantId);
-
-    if (filters.phase) {
-      records = records.filter(r => r.phase === filters.phase);
-    }
-
-    if (filters.startDate) {
-      const start = new Date(filters.startDate);
-      records = records.filter(r => new Date(r.createdAt) >= start);
-    }
-
-    if (filters.endDate) {
-      const end = new Date(filters.endDate);
-      records = records.filter(r => new Date(r.createdAt) <= end);
-    }
-
-    return records;
-  }
-
-  // Clear tracking records (for testing)
-  _clearRecords(): void {
-    this._trackingRecords = [];
   }
 }
 
