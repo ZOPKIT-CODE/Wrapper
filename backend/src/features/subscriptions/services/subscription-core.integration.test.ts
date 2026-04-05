@@ -1,12 +1,11 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { and, eq } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import {
   createTestDb,
   seedTenant,
   type TestDb,
 } from '../../../db/test-helpers/seed.js';
 import { subscriptions } from '../../../db/schema/index.js';
-import { SubscriptionRepository } from './subscription-repository.js';
 import { getCurrentSubscription } from './subscription-core.js';
 
 let db: TestDb;
@@ -36,7 +35,10 @@ describe('subscription repository/core integration', () => {
       status: 'active',
     });
 
-    const latestActive = await SubscriptionRepository.getLatestActiveByTenant(tenant.tenantId);
+    // Query directly since SubscriptionRepository was inlined into subscription-core
+    const [latestActive] = await db.select().from(subscriptions)
+      .where(and(eq(subscriptions.tenantId, tenant.tenantId), eq(subscriptions.status, 'active')))
+      .orderBy(subscriptions.createdAt).limit(1);
     expect(latestActive).not.toBeNull();
     expect(latestActive?.plan).toBe('professional');
     expect(latestActive?.status).toBe('active');
@@ -66,8 +68,10 @@ describe('subscription repository/core integration', () => {
       status: 'active',
     });
 
-    const forA = await SubscriptionRepository.getLatestByTenant(tenantA.tenantId);
-    expect(forA).toBeNull();
+    const [forA] = await db.select().from(subscriptions)
+      .where(eq(subscriptions.tenantId, tenantA.tenantId))
+      .orderBy(subscriptions.createdAt).limit(1);
+    expect(forA).toBeUndefined();
 
     const bRows = await db
       .select()

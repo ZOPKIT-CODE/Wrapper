@@ -160,7 +160,7 @@ export async function trialRestrictionMiddleware(request: FastifyRequest, reply:
 }
 
 // Export for use in routes that need trial checking
-export async function checkTrialStatus(tenantId: string): Promise<{ isExpired: boolean; hasRestrictions: boolean }> {
+export async function checkTrialStatus(_tenantId: string): Promise<{ isExpired: boolean; hasRestrictions: boolean }> {
   // Temporarily disabled - trialManager file missing
   // return await trialManager.isTrialExpired(tenantId);
   return { isExpired: false, hasRestrictions: false }; // Stub implementation

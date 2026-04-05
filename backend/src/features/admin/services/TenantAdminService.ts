@@ -4,8 +4,8 @@
  */
 
 import { db } from '../../../db/index.js';
-import { tenants, tenantUsers, entities, credits, creditTransactions } from '../../../db/schema/index.js';
-import { eq, and, desc, sql, count, sum, gte, lte, like, or } from 'drizzle-orm';
+import { tenants, tenantUsers, entities, credits, creditTransactions, subscriptions } from '../../../db/schema/index.js';
+import { eq, and, desc, sql, count, like, or } from 'drizzle-orm';
 
 export class TenantAdminService {
   /**
@@ -30,20 +30,21 @@ export class TenantAdminService {
           adminEmail: tenants.adminEmail,
           isActive: tenants.isActive,
           isVerified: tenants.isVerified,
-          trialEndsAt: tenants.trialEndsAt,
+          trialEndsAt: subscriptions.trialEndsAt,
           createdAt: tenants.createdAt,
           updatedAt: tenants.updatedAt,
           userCount: sql<number>`count(distinct ${tenantUsers.userId})`,
           entityCount: sql<number>`count(distinct ${entities.entityId})`,
           totalCredits: sql<number>`coalesce(sum(${credits.availableCredits}), 0)`,
           reservedCredits: sql<number>`coalesce(sum(${(credits as any).reservedCredits}), 0)`,
-          lastActivity: sql`greatest(max(${tenantUsers.lastLoginAt}), max(${creditTransactions.createdAt}))`
+          lastActivity: sql`greatest(max(${tenantUsers.lastActiveAt}), max(${creditTransactions.createdAt}))`
         })
         .from(tenants)
         .leftJoin(tenantUsers, eq(tenants.tenantId, tenantUsers.tenantId))
         .leftJoin(entities, eq(tenants.tenantId, entities.tenantId))
         .leftJoin(credits, eq(tenants.tenantId, credits.tenantId))
-        .leftJoin(creditTransactions, eq(tenants.tenantId, creditTransactions.tenantId));
+        .leftJoin(creditTransactions, eq(tenants.tenantId, creditTransactions.tenantId))
+        .leftJoin(subscriptions, eq(tenants.tenantId, subscriptions.tenantId));
 
       if (search) {
         query = query.where(or(
@@ -61,12 +62,12 @@ export class TenantAdminService {
             query = query.where(eq(tenants.isActive, false));
             break;
           case 'trial':
-            query = query.where(sql`${tenants.trialEndsAt} > now()`);
+            query = query.where(sql`${subscriptions.trialEndsAt} > now()`);
             break;
           case 'paid':
             query = query.where(or(
-              sql`${tenants.trialEndsAt} is null`,
-              sql`${tenants.trialEndsAt} < now()`
+              sql`${subscriptions.trialEndsAt} is null`,
+              sql`${subscriptions.trialEndsAt} < now()`
             ));
             break;
           case 'verified':
@@ -110,7 +111,8 @@ export class TenantAdminService {
     try {
       const { search, status } = filters as { search?: string; status?: string };
 
-      let query: any = db.select({ count: count() }).from(tenants);
+      let query: any = db.select({ count: count() }).from(tenants)
+        .leftJoin(subscriptions, eq(tenants.tenantId, subscriptions.tenantId));
 
       if (search) {
         query = query.where(or(
@@ -128,12 +130,12 @@ export class TenantAdminService {
             query = query.where(eq(tenants.isActive, false));
             break;
           case 'trial':
-            query = query.where(sql`${tenants.trialEndsAt} > now()`);
+            query = query.where(sql`${subscriptions.trialEndsAt} > now()`);
             break;
           case 'paid':
             query = query.where(or(
-              sql`${tenants.trialEndsAt} is null`,
-              sql`${tenants.trialEndsAt} < now()`
+              sql`${subscriptions.trialEndsAt} is null`,
+              sql`${subscriptions.trialEndsAt} < now()`
             ));
             break;
           case 'verified':
@@ -180,12 +182,12 @@ export class TenantAdminService {
           firstName: tenantUsers.firstName,
           lastName: tenantUsers.lastName,
           isActive: tenantUsers.isActive,
-          lastLoginAt: tenantUsers.lastLoginAt,
+          lastActiveAt: tenantUsers.lastActiveAt,
           createdAt: tenantUsers.createdAt
         })
         .from(tenantUsers)
         .where(eq(tenantUsers.tenantId, tenantId))
-        .orderBy(desc(tenantUsers.lastLoginAt));
+        .orderBy(desc(tenantUsers.lastActiveAt));
 
       // Get entity summary
       const entitySummary = await db
@@ -290,16 +292,16 @@ export class TenantAdminService {
         .select({
           type: sql<string>`'user_login'`,
           description: sql<string>`concat(${tenantUsers.firstName}, ' ', ${tenantUsers.lastName}, ' logged in')`,
-          timestamp: tenantUsers.lastLoginAt,
+          timestamp: tenantUsers.lastActiveAt,
           userId: tenantUsers.userId,
           metadata: sql`json_build_object('userId', ${tenantUsers.userId}, 'email', ${tenantUsers.email})`
         })
         .from(tenantUsers)
         .where(and(
           eq(tenantUsers.tenantId, tenantId),
-          sql`${tenantUsers.lastLoginAt} is not null`
+          sql`${tenantUsers.lastActiveAt} is not null`
         ))
-        .orderBy(desc(tenantUsers.lastLoginAt))
+        .orderBy(desc(tenantUsers.lastActiveAt))
         .limit(limit);
 
       // Credit transaction activities
@@ -433,7 +435,7 @@ export class TenantAdminService {
       case 'totalCredits':
         return sql`coalesce(sum(${credits.availableCredits}), 0)`;
       case 'lastActivity':
-        return sql`greatest(max(${tenantUsers.lastLoginAt}), max(${creditTransactions.createdAt}))`;
+        return sql`greatest(max(${tenantUsers.lastActiveAt}), max(${creditTransactions.createdAt}))`;
       default:
         return tenants.createdAt;
     }
@@ -447,7 +449,7 @@ export class TenantAdminService {
       .select({
         total: count(),
         active: sql<number>`count(case when ${tenantUsers.isActive} = true then 1 end)`,
-        recentlyActive: sql<number>`count(case when ${tenantUsers.lastLoginAt} > now() - interval '30 days' then 1 end)`
+        recentlyActive: sql<number>`count(case when ${tenantUsers.lastActiveAt} > now() - interval '30 days' then 1 end)`
       })
       .from(tenantUsers)
       .where(eq(tenantUsers.tenantId, tenantId));
@@ -491,7 +493,7 @@ export class TenantAdminService {
 
     return await db
       .select({
-        userLogins: sql<number>`count(distinct case when ${tenantUsers.lastLoginAt} > ${thirtyDaysAgo} then ${tenantUsers.userId} end)`,
+        userLogins: sql<number>`count(distinct case when ${tenantUsers.lastActiveAt} > ${thirtyDaysAgo} then ${tenantUsers.userId} end)`,
         creditTransactions: sql<number>`count(case when ${creditTransactions.createdAt} > ${thirtyDaysAgo} then 1 end)`,
         newEntities: sql<number>`count(case when ${entities.createdAt} > ${thirtyDaysAgo} then 1 end)`
       })

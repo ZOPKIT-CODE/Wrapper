@@ -354,7 +354,7 @@ export default async function permissionMatrixRoutes(fastify: FastifyInstance, _
             targetUser: {
               id: targetUser.userId,
               email: targetUser.email,
-              name: targetUser.name,
+              name: [targetUser.firstName, targetUser.lastName].filter(Boolean).join(' ') || targetUser.email || '',
               isActive: targetUser.isActive
             },
             organization: {

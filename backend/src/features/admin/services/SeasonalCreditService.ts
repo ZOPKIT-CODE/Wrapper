@@ -8,8 +8,7 @@ import {
   creditTransactions,
   notifications
 } from '../../../db/schema/index.js';
-import { eq, and, desc, gte, lte, sql, inArray } from 'drizzle-orm';
-import { CreditService } from '../../credits/services/credit-service.js';
+import { eq, and, desc, gte, lte } from 'drizzle-orm';
 import { NOTIFICATION_TYPES, NOTIFICATION_PRIORITIES } from '../../../db/schema/notifications/notifications.js';
 
 /**
@@ -179,7 +178,7 @@ export class SeasonalCreditService {
   /**
    * Add credits to tenant's primary organization
    */
-  static async addCreditsToOrganization(tenantId: string, entityId: string, creditAmount: number | string, campaignId: string, campaignName: string): Promise<{ previousBalance: number; newBalance: number; creditAmount: number | string }> {
+  static async addCreditsToOrganization(tenantId: string, entityId: string, creditAmount: number | string, campaignId: string, _campaignName: string): Promise<{ previousBalance: number; newBalance: number; creditAmount: number | string }> {
     // Get or create credit record for the entity
     let [creditRecord] = await db
       .select()
@@ -280,8 +279,8 @@ export class SeasonalCreditService {
   static async distributeCreditsToTenants(campaignId: string): Promise<Record<string, unknown>> {
     const campaign = await this.getCampaign(campaignId);
     
-    if (campaign.distributionStatus !== 'pending') {
-      throw new Error(`Campaign already processed. Current status: ${campaign.distributionStatus}`);
+    if (campaign.distributionStatus === 'completed' || campaign.distributionStatus === 'cancelled') {
+      throw new Error(`Campaign already completed or cancelled. Current status: ${campaign.distributionStatus}`);
     }
     
     // Update campaign status to processing
@@ -372,7 +371,8 @@ export class SeasonalCreditService {
               allocatedAt: new Date(),
               createdAt: new Date(),
               updatedAt: new Date()
-            });
+            })
+            .onConflictDoNothing();
         } else {
           // Application-specific allocation
           // Calculate credits per application (distribute evenly)
@@ -405,7 +405,8 @@ export class SeasonalCreditService {
                 allocatedAt: new Date(),
                 createdAt: new Date(),
                 updatedAt: new Date()
-              });
+              })
+              .onConflictDoNothing();
           }
           
           console.log(`✅ Created ${targetApplications.length} application-specific allocations for tenant ${tenantId}`);

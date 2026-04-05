@@ -14,15 +14,9 @@ declare module 'fastify' {
     activityContext?: { startTime: number; method: string; url: string; userAgent?: string; ipAddress?: string; sessionId?: string };
     pendingActivity?: { userId: string; tenantId: string; action: string; appId: string | null; metadata: Record<string, unknown>; requestContext: unknown };
     auditContext?: { tenantId: string; userId: string; resourceType: string; resourceId?: string; requestContext: unknown; captureChanges?: boolean };
-    userAccessScope?: unknown;
     cacheMetrics?: unknown;
     subscription?: { plan: string; [k: string]: unknown };
     entityScope?: { scope: string; entityIds: string[]; isUnrestricted?: boolean; [k: string]: unknown };
-    applicationContext?: { application: string; permissions: number; accessibleOrganizations?: string[]; accessibleLocations?: string[]; scope?: unknown };
-    isolationContext?: { tenantId: string; application: string; userId: string; organizations: string[]; locations: string[]; permissions: number };
-    crossAppSharing?: { sourceApp: string; targetApp: string; dataType?: string; dataId?: string; approved: boolean };
-    filterByApplication?: (data: unknown, dataType?: string) => Promise<unknown>;
-    canAccessInApplication?: (dataType: string, dataId: string) => Promise<boolean>;
     usageStartTime?: number;
   }
 }

@@ -4,7 +4,7 @@ import { authenticateToken, requirePermission } from '../../../middleware/auth/a
 import { PERMISSIONS } from '../../../constants/permissions.js';
 import { db } from '../../../db/index.js';
 import { tenantUsers, auditLogs, tenants } from '../../../db/schema/index.js';
-import { eq, and, desc, or } from 'drizzle-orm';
+import { eq, and, desc, or, sql } from 'drizzle-orm';
 
 /**
  * Admin promotion routes for single System Administrator system
@@ -32,7 +32,7 @@ export default async function adminPromotionRoutes(fastify: FastifyInstance, _op
         data: {
           currentAdmin: currentAdmin ? {
             userId: currentAdmin.userId ?? '',
-            userName: currentAdmin.name ?? '',
+            userName: [currentAdmin.firstName, currentAdmin.lastName].filter(Boolean).join(' ') || currentAdmin.email || '',
             userEmail: currentAdmin.email ?? ''
           } : null
         }
@@ -83,7 +83,7 @@ export default async function adminPromotionRoutes(fastify: FastifyInstance, _op
           eligibleUsers,
           currentAdmin: currentAdmin ? {
             userId: currentAdmin.userId ?? '',
-            userName: currentAdmin.name ?? '',
+            userName: [currentAdmin.firstName, currentAdmin.lastName].filter(Boolean).join(' ') || currentAdmin.email || '',
             userEmail: currentAdmin.email ?? ''
           } : null,
           totalEligible: eligibleUsers.length
@@ -129,11 +129,11 @@ export default async function adminPromotionRoutes(fastify: FastifyInstance, _op
       const [targetUser] = await db
         .select({
           userId: tenantUsers.userId,
-          name: tenantUsers.name,
+          name: sql<string>`COALESCE(NULLIF(TRIM(COALESCE(${tenantUsers.firstName}, '') || ' ' || COALESCE(${tenantUsers.lastName}, '')), ''), ${tenantUsers.email}, '')`.as('name'),
           email: tenantUsers.email,
           firstName: tenantUsers.firstName,
           lastName: tenantUsers.lastName
-        } as const)
+        })
         .from(tenantUsers)
         .where(and(
           eq(tenantUsers.userId, targetUserId),
@@ -174,7 +174,7 @@ export default async function adminPromotionRoutes(fastify: FastifyInstance, _op
             },
             currentAdmin: currentAdmin ? {
               userId: currentAdmin.userId ?? '',
-              name: currentAdmin.name,
+              name: [currentAdmin.firstName, currentAdmin.lastName].filter(Boolean).join(' ') || currentAdmin.email || '',
               email: currentAdmin.email,
               willLoseRole: 'System Administrator'
             } : null,
@@ -185,7 +185,7 @@ export default async function adminPromotionRoutes(fastify: FastifyInstance, _op
               permissions: 'All permissions across all modules'
             },
             warnings: currentAdmin ? [
-              `${currentAdmin.name} will lose System Administrator privileges`,
+              `${[currentAdmin.firstName, currentAdmin.lastName].filter(Boolean).join(' ') || currentAdmin.email || ''} will lose System Administrator privileges`,
               'Only one System Administrator can exist at a time',
               'This action cannot be undone easily'
             ] : [
@@ -245,7 +245,7 @@ export default async function adminPromotionRoutes(fastify: FastifyInstance, _op
       const currentAdmin = await AdminPromotionService.getCurrentSystemAdmin(tenantId);
       console.log(`🔍 [${requestId}] Current System Administrator:`, currentAdmin ? {
         userId: currentAdmin.userId,
-        name: currentAdmin.name,
+        name: [currentAdmin.firstName, currentAdmin.lastName].filter(Boolean).join(' ') || currentAdmin.email || '',
         email: currentAdmin.email
       } : 'None');
 
@@ -253,7 +253,7 @@ export default async function adminPromotionRoutes(fastify: FastifyInstance, _op
       const [targetUser] = await db
         .select({
           userId: tenantUsers.userId,
-          name: tenantUsers.name,
+          name: sql<string>`COALESCE(NULLIF(TRIM(COALESCE(${tenantUsers.firstName}, '') || ' ' || COALESCE(${tenantUsers.lastName}, '')), ''), ${tenantUsers.email}, '')`.as('name'),
           email: tenantUsers.email,
           firstName: tenantUsers.firstName,
           lastName: tenantUsers.lastName,
@@ -307,7 +307,7 @@ export default async function adminPromotionRoutes(fastify: FastifyInstance, _op
           requiresConfirmation: true,
           currentAdmin: {
             userId: currentAdmin.userId,
-            name: currentAdmin.name,
+            name: [currentAdmin.firstName, currentAdmin.lastName].filter(Boolean).join(' ') || currentAdmin.email || '',
             email: currentAdmin.email,
             assignedAt: currentAdmin.assignedAt
           },
@@ -362,7 +362,7 @@ export default async function adminPromotionRoutes(fastify: FastifyInstance, _op
           forceTransfer,
           previousAdmin: currentAdmin ? {
             userId: currentAdmin.userId ?? '',
-            userName: currentAdmin.name ?? '',
+            userName: [currentAdmin.firstName, currentAdmin.lastName].filter(Boolean).join(' ') || currentAdmin.email || '',
             userEmail: currentAdmin.email ?? ''
           } : undefined
         }
@@ -448,7 +448,7 @@ export default async function adminPromotionRoutes(fastify: FastifyInstance, _op
           message: 'Confirmation code required when demoting existing System Administrator',
           requiresConfirmation: true,
           currentAdmin: {
-            name: currentAdmin.name,
+            name: [currentAdmin.firstName, currentAdmin.lastName].filter(Boolean).join(' ') || currentAdmin.email || '',
             email: currentAdmin.email
           },
           requestId,
@@ -477,7 +477,7 @@ export default async function adminPromotionRoutes(fastify: FastifyInstance, _op
           forceTransfer: !!currentAdmin,
           previousAdmin: currentAdmin ? {
             userId: currentAdmin.userId ?? '',
-            userName: currentAdmin.name ?? '',
+            userName: [currentAdmin.firstName, currentAdmin.lastName].filter(Boolean).join(' ') || currentAdmin.email || '',
             userEmail: currentAdmin.email ?? ''
           } : undefined
         }
@@ -548,7 +548,7 @@ export default async function adminPromotionRoutes(fastify: FastifyInstance, _op
         data: {
           currentAdmin: currentAdmin ? {
             userId: currentAdmin.userId ?? '',
-            userName: currentAdmin.name ?? '',
+            userName: [currentAdmin.firstName, currentAdmin.lastName].filter(Boolean).join(' ') || currentAdmin.email || '',
             userEmail: currentAdmin.email ?? ''
           } : null,
           eligibleUsers: userMap.map(user => ({
@@ -680,6 +680,25 @@ export default async function adminPromotionRoutes(fastify: FastifyInstance, _op
         });
       }
 
+      // Validate that the target user belongs to this tenant
+      const [validUser] = await db
+        .select({ userId: tenantUsers.userId })
+        .from(tenantUsers)
+        .where(and(
+          eq(tenantUsers.userId, newAdminId),
+          eq(tenantUsers.tenantId, tenantId),
+          eq(tenantUsers.isActive, true)
+        ))
+        .limit(1);
+
+      if (!validUser) {
+        return reply.code(404).send({
+          success: false,
+          error: 'User not found',
+          message: 'Target user not found in this organization'
+        });
+      }
+
       // Check if there are any existing System Administrators
       const existingAdmin = await AdminPromotionService.getCurrentSystemAdmin(tenantId);
 
@@ -689,7 +708,7 @@ export default async function adminPromotionRoutes(fastify: FastifyInstance, _op
           error: 'System Administrator exists',
           message: 'Emergency recovery not needed - active System Administrator exists',
           currentAdmin: {
-            name: existingAdmin.name,
+            name: [existingAdmin.firstName, existingAdmin.lastName].filter(Boolean).join(' ') || existingAdmin.email || '',
             email: existingAdmin.email
           }
         });

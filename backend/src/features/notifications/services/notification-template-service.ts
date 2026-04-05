@@ -1,6 +1,6 @@
 import { db } from '../../../db/index.js';
 import { notificationTemplates, TEMPLATE_CATEGORIES } from '../../../db/schema/notifications/notification-templates.js';
-import { eq, and, desc, sql, like, or } from 'drizzle-orm';
+import { eq, and, desc, like, or } from 'drizzle-orm';
 import { NOTIFICATION_TYPES, NOTIFICATION_PRIORITIES } from '../../../db/schema/notifications/notifications.js';
 import { notificationCacheService } from './notification-cache-service.js';
 

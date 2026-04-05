@@ -12,16 +12,6 @@ import {
   validateOrganizationUpdate,
   sanitizeInputMiddleware
 } from '../../../middleware/validation/validation.js';
-import {
-  enforceOrganizationAccess,
-  addUserAccessContext
-} from '../../../middleware/security/data-isolation.js';
-import {
-  enforceApplicationAccess,
-  addApplicationDataFiltering,
-  validateApplicationExists
-} from '../../../middleware/security/application-isolation.js';
-
 console.log('🚀 Loading entities.js routes file...');
 
 /**
@@ -35,7 +25,7 @@ function toEntityResponse(entity: Record<string, unknown>): Record<string, unkno
     entityType: entity.entityType,
     parentEntityId: entity.parentEntityId,
     entityName: entity.entityName,
-    entityCode: entity.entityCode,
+    entityCode: entity.entityId,
     description: entity.description,
     organizationType: entity.organizationType,
     locationType: entity.locationType,
@@ -67,17 +57,11 @@ export default async function entityRoutes(
   // Simple logging to verify routes are loaded
   console.log('🔄 Entities routes are being registered...');
 
-  // Apply authentication and data isolation to all entity routes
   fastify.addHook('preHandler', async (request, reply) => {
-    // First authenticate the user
-    await authenticateToken(request, reply);
-
-    // Add user context for data isolation
-    await addUserAccessContext()(request, reply);
-
-    // Validate application access
-    await validateApplicationExists()(request, reply);
-    await enforceApplicationAccess()(request, reply);
+    // Skip if the global app-level preHandler already ran auth and populated userContext.
+    if (!request.userContext?.tenantId) {
+      await authenticateToken(request, reply);
+    }
   });
 
   // Resolve tenant by Kinde org ID (bootstrap helper endpoint)
@@ -130,8 +114,6 @@ export default async function entityRoutes(
   // Get entity hierarchy - FULL DATABASE VERSION (including locations)
   fastify.get('/hierarchy/:tenantId', async (request: FastifyRequest, reply: FastifyReply) => {
     const params = request.params as Record<string, string>;
-    const body = request.body as Record<string, unknown>;
-    const query = request.query as Record<string, string>;
     try {
       const tenantId = params.tenantId ?? '';
 
@@ -151,7 +133,7 @@ export default async function entityRoutes(
               tenantId: entity.tenantId,
               entityName: entity.entityName,
               entityType: entity.entityType,
-              entityCode: entity.entityCode,
+              entityCode: entity.entityId,
               entityLevel: entity.entityLevel,
               hierarchyPath: entity.hierarchyPath,
               fullHierarchyPath: entity.fullHierarchyPath,
@@ -224,7 +206,7 @@ export default async function entityRoutes(
                 tenantId: entity.tenantId,
                 entityName: entity.entityName,
                 entityType: entity.entityType,
-                entityCode: entity.entityCode,
+                entityCode: entity.entityId,
                 entityLevel: entity.entityLevel || 1,
                 hierarchyPath: entity.hierarchyPath || entity.entityId,
                 fullHierarchyPath: entity.fullHierarchyPath || entity.entityName,
@@ -280,13 +262,14 @@ export default async function entityRoutes(
       const { entities } = await import('../../../db/schema/index.js');
       const { eq, and } = await import('drizzle-orm');
 
+      const jwtTenantId = (request as any).userContext?.tenantId ?? '';
+
       const [parentEntity] = await db
         .select({
           entityId: entities.entityId,
           tenantId: entities.tenantId,
           entityName: entities.entityName,
           entityType: entities.entityType,
-          entityCode: entities.entityCode,
           entityLevel: entities.entityLevel,
           hierarchyPath: entities.hierarchyPath,
           fullHierarchyPath: entities.fullHierarchyPath,
@@ -302,6 +285,7 @@ export default async function entityRoutes(
         })
         .from(entities)
         .where(and(
+          eq(entities.tenantId, jwtTenantId),
           eq(entities.entityId, parentEntityId),
           eq(entities.isActive, true)
         ));
@@ -321,7 +305,6 @@ export default async function entityRoutes(
           tenantId: entities.tenantId,
           entityName: entities.entityName,
           entityType: entities.entityType,
-          entityCode: entities.entityCode,
           entityLevel: entities.entityLevel,
           hierarchyPath: entities.hierarchyPath,
           fullHierarchyPath: entities.fullHierarchyPath,
@@ -355,7 +338,7 @@ export default async function entityRoutes(
         entityId: parentEntity.entityId,
         entityName: parentEntity.entityName,
         entityType: parentEntity.entityType,
-        entityCode: parentEntity.entityCode,
+        entityCode: parentEntity.entityId,
         entityLevel: parentEntity.entityLevel,
         hierarchyPath: parentEntity.hierarchyPath,
         fullHierarchyPath: parentEntity.fullHierarchyPath,
@@ -392,7 +375,8 @@ export default async function entityRoutes(
     const params = request.params as Record<string, string>;
     const query = request.query as Record<string, string>;
     try {
-      const tenantId = params.tenantId ?? '';
+      // Always use JWT tenantId — never trust URL param for tenant scoping
+      const tenantId = (request as any).userContext?.tenantId ?? params.tenantId ?? '';
       const entityType = query?.entityType;
 
       console.log('🏢 Getting tenant entities:', {
@@ -418,56 +402,27 @@ export default async function entityRoutes(
         });
       }
 
-      // DEBUG: Check if tenant exists in database
-      const { db } = await import('../../../db/index.js');
-      const { tenants, tenantUsers } = await import('../../../db/schema/index.js');
-      const { eq, and } = await import('drizzle-orm');
+      // Fast path: auth middleware already validated the JWT and confirmed the tenant.
+      // Only perform a DB round-trip when the URL tenantId does not match the JWT
+      // context (e.g. a stale client sending the wrong ID).
+      if (request.userContext?.tenantId && request.userContext.tenantId !== tenantId) {
+        console.error('🚨 tenantId mismatch — URL param differs from JWT context:', {
+          urlTenantId: tenantId,
+          jwtTenantId: request.userContext.tenantId
+        });
 
-      const [tenantRecord] = await db
-        .select({ tenantId: tenants.tenantId, companyName: tenants.companyName })
-        .from(tenants)
-        .where(eq(tenants.tenantId, tenantId))
-        .limit(1);
+        // Fall back to the tenant that the JWT actually belongs to.
+        const correctedTenantId = request.userContext.tenantId;
+        const result = await EntityAdminService.getTenantEntities(correctedTenantId, entityType);
 
-      if (!tenantRecord) {
-        console.error('🚨 Tenant does not exist in database:', tenantId);
-
-        // Try to find the correct tenant for this user as fallback
-        if (request.userContext?.userId) {
-          console.log('🔍 Attempting to find correct tenant for user:', request.userContext.userId);
-
-          const userTenants = await db
-            .select({
-              tenantId: tenants.tenantId,
-              companyName: tenants.companyName,
-              subdomain: tenants.subdomain
-            })
-            .from(tenants)
-            .innerJoin(tenantUsers, eq(tenants.tenantId, tenantUsers.tenantId))
-            .where(and(
-              eq(tenantUsers.kindeUserId, request.userContext.userId),
-              eq(tenants.isActive, true)
-            ))
-            .orderBy(tenants.createdAt)
-            .limit(1);
-
-          if (userTenants.length > 0) {
-            const correctTenant = userTenants[0];
-            console.log('✅ Found correct tenant for user:', correctTenant);
-
-            // Use the correct tenant instead
-            const result = await EntityAdminService.getTenantEntities(correctTenant.tenantId, entityType);
-
-            if (result.success) {
-              console.log('✅ Returned entities for correct tenant:', correctTenant.tenantId);
-              return reply.send({
-                ...result,
-                correctedTenantId: correctTenant.tenantId,
-                originalTenantId: tenantId,
-                message: `Tenant corrected from ${tenantId} to ${correctTenant.tenantId}`
-              });
-            }
-          }
+        if (result.success) {
+          console.log('✅ Returned entities for JWT tenant (corrected):', correctedTenantId);
+          return reply.send({
+            ...result,
+            correctedTenantId,
+            originalTenantId: tenantId,
+            message: `Tenant corrected from ${tenantId} to ${correctedTenantId}`
+          });
         }
 
         return reply.code(404).send({
@@ -478,10 +433,7 @@ export default async function entityRoutes(
         });
       }
 
-      console.log('✅ Tenant exists:', {
-        tenantId: tenantRecord.tenantId,
-        companyName: tenantRecord.companyName
-      });
+      console.log('✅ Tenant confirmed via JWT context:', tenantId);
 
       const result = await EntityAdminService.getTenantEntities(tenantId, entityType);
 
@@ -522,11 +474,7 @@ export default async function entityRoutes(
 
   // Unified create entity endpoint
   fastify.post('/', {
-    preHandler: [
-      authenticateToken,
-      addUserAccessContext(),
-      sanitizeInputMiddleware()
-    ]
+    preHandler: [authenticateToken, sanitizeInputMiddleware()]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
     try {
@@ -567,7 +515,7 @@ export default async function entityRoutes(
           entityType,
           subType: (entityData.subType as string) || (entityData.organizationType as string) || (entityData.locationType as string),
           parentEntityId: (entityData.parentEntityId as string) || null,
-          parentTenantId: (entityData.parentTenantId as string) ?? (request as any).user?.tenantId ?? '',
+          parentTenantId: (request as any).userContext?.tenantId ?? (entityData.parentTenantId as string) ?? '',
           responsiblePersonId: (entityData.responsiblePersonId as string) || null,
           entityCode: (entityData.entityCode as string) || undefined,
           description: (entityData.description as string) || '',
@@ -611,8 +559,6 @@ export default async function entityRoutes(
     preHandler: [
       authenticateToken,
       validateOrganizationUpdate,
-      addUserAccessContext(),
-      enforceApplicationAccess(),
       sanitizeInputMiddleware()
     ]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
@@ -671,12 +617,7 @@ export default async function entityRoutes(
 
   // Delete entity - FULL DATABASE VERSION
   fastify.delete('/:entityId', {
-    preHandler: [
-      authenticateToken,
-      addUserAccessContext(),
-      enforceApplicationAccess(),
-      sanitizeInputMiddleware()
-    ]
+    preHandler: [authenticateToken, sanitizeInputMiddleware()]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const params = request.params as Record<string, string>;
     try {

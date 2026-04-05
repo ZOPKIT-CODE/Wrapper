@@ -3,7 +3,7 @@ import { and, eq } from 'drizzle-orm';
 
 import { db } from '../../../db/index.js';
 import { entities } from '../../../db/schema/organizations/unified-entities.js';
-import { amazonMQPublisher } from '../../messaging/utils/amazon-mq-publisher.js';
+import { snsSqsPublisher } from '../../messaging/utils/sns-sqs-publisher.js';
 import accountingEntityProvisioningService from '../../messaging/services/accounting-entity-provisioning-service.js';
 
 type EntityType = 'organization' | 'location' | 'department' | 'team';
@@ -50,7 +50,6 @@ class EntityService {
       const [parent] = await db
         .select({
           entityId: entities.entityId,
-          entityCode: entities.entityCode,
           tenantId: entities.tenantId,
         })
         .from(entities)
@@ -62,7 +61,7 @@ class EntityService {
       }
       tenantIdToUse = parent.tenantId;
       parentEntityId = parent.entityId;
-      parentEntityCode = parent.entityCode ?? null;
+      parentEntityCode = parent.entityId ?? null;
     }
 
     if (!tenantIdToUse) {
@@ -83,7 +82,6 @@ class EntityService {
         entityType: data.entityType,
         parentEntityId,
         entityName: data.entityName.trim(),
-        entityCode,
         description: data.description || null,
         organizationType: data.entityType === 'organization' ? data.subType ?? null : null,
         locationType: data.entityType === 'location' ? data.subType ?? null : null,
@@ -109,7 +107,7 @@ class EntityService {
 
     // Publish one unified event across suite apps.
     try {
-      await amazonMQPublisher.publishOrgEventToSuite(
+      await snsSqsPublisher.publishOrgEventToSuite(
         'entity.created',
         tenantIdToUse,
         entity.entityId,

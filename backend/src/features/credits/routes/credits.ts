@@ -4,7 +4,7 @@ import { authenticateToken, requirePermission } from '../../../middleware/auth/a
 import { PERMISSIONS } from '../../../constants/permissions.js';
 import { db } from '../../../db/index.js';
 import { creditPurchases, tenantUsers, entities, eventTracking } from '../../../db/schema/index.js';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, asc } from 'drizzle-orm';
 import ErrorResponses from '../../../utils/error-responses.js';
 
 export default async function creditRoutes(
@@ -134,20 +134,21 @@ export default async function creditRoutes(
       // Find all organization entities for this tenant
       // Select only columns we use so the query works when legal_name (and other FA fields) are not yet migrated
       console.log('🔍 Credit API: Finding organization entities for tenant:', tenantId);
-      let organizationEntities: { entityId: string; entityName: string; isDefault: boolean | null }[] = [];
+      let organizationEntities: { entityId: string; entityName: string; entityLevel: number | null }[] = [];
       try {
         organizationEntities = await db
           .select({
             entityId: entities.entityId,
             entityName: entities.entityName,
-            isDefault: entities.isDefault,
+            entityLevel: entities.entityLevel,
           })
           .from(entities)
           .where(and(
             eq(entities.tenantId, tenantId),
             eq(entities.entityType, 'organization'),
             eq(entities.isActive, true)
-          ));
+          ))
+          .orderBy(asc(entities.entityLevel), asc(entities.createdAt));
       } catch (dbErr: unknown) {
         const dbError = dbErr as Error;
         console.error('❌ Error querying organization entities:', dbError);
@@ -161,8 +162,8 @@ export default async function creditRoutes(
 
         // Try to find credits on any organization entity for this tenant
         // Start with the default entity if available, otherwise try all entities
-        const defaultEntity = organizationEntities.find(entity => entity.isDefault);
-        const entitiesToCheck = defaultEntity ? [defaultEntity] : organizationEntities;
+        const primaryEntity = organizationEntities[0];
+        const entitiesToCheck = organizationEntities;
 
         for (const entity of entitiesToCheck) {
           console.log('🔍 Checking credits for entity:', entity.entityId, entity.entityName);
@@ -184,13 +185,13 @@ export default async function creditRoutes(
         }
 
         // If no entity has credits, use the default entity for consistent API response
-        if (!creditBalance && defaultEntity) {
-          console.log('⚠️ Credit API: No credits found, using default entity for response');
+        if (!creditBalance && primaryEntity) {
+          console.log('⚠️ Credit API: No credits found, using primary entity for response');
           try {
-            creditBalance = await CreditService.getCurrentBalance(tenantId, 'organization', defaultEntity.entityId);
-            creditBalance.entityId = defaultEntity.entityId;
+            creditBalance = await CreditService.getCurrentBalance(tenantId, 'organization', primaryEntity.entityId);
+            creditBalance.entityId = primaryEntity.entityId;
           } catch (entityError) {
-            console.error(`❌ Error getting balance for default entity ${defaultEntity.entityId}:`, entityError);
+            console.error(`❌ Error getting balance for primary entity ${primaryEntity.entityId}:`, entityError);
             // Will fall through to default response
           }
         } else if (!creditBalance && organizationEntities.length > 0) {
@@ -532,19 +533,20 @@ export default async function creditRoutes(
           .select({
             entityId: entities.entityId,
             entityName: entities.entityName,
-            isDefault: entities.isDefault,
+            entityLevel: entities.entityLevel,
           })
           .from(entities)
           .where(and(
             eq(entities.tenantId, tenantId),
             eq(entities.entityType, 'organization'),
             eq(entities.isActive, true)
-          ));
+          ))
+          .orderBy(asc(entities.entityLevel), asc(entities.createdAt));
 
         if (organizationEntities.length > 0) {
           // Try to find credits on any organization entity for this tenant
-          const defaultEntity = organizationEntities.find(entity => entity.isDefault);
-          const entitiesToCheck = defaultEntity ? [defaultEntity] : organizationEntities;
+          const primaryEntity = organizationEntities[0];
+          const entitiesToCheck = organizationEntities;
 
           for (const entity of entitiesToCheck) {
             console.log('🔍 Checking credits for entity:', entity.entityId, entity.entityName);
@@ -561,9 +563,9 @@ export default async function creditRoutes(
 
           // If no entity has credits, use the default entity as fallback
           if (!sourceEntityId) {
-            if (defaultEntity) {
-              console.log('⚠️ No credits found, using default entity as source:', defaultEntity.entityId);
-              sourceEntityId = defaultEntity.entityId;
+            if (primaryEntity) {
+              console.log('⚠️ No credits found, using primary entity as source:', primaryEntity.entityId);
+              sourceEntityId = primaryEntity.entityId;
             } else {
               console.log('⚠️ No credits found, using first entity as source:', organizationEntities[0].entityId);
               sourceEntityId = organizationEntities[0].entityId;
@@ -798,7 +800,6 @@ export default async function creditRoutes(
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const params = request.params as Record<string, string>;
-      const { alertId } = params;
       const tenantId = (request.userContext as { userId: string; tenantId?: string | null; internalUserId?: string }).tenantId;
 
       if (!tenantId) {
@@ -1133,7 +1134,7 @@ export default async function creditRoutes(
         const reservedCredits = parseFloat(String(creditBalance?.reservedCredits ?? 0));
         
         // Check if payment has been processed (credits added)
-        const isProcessed = payment.status === 'completed' || payment.paymentStatus === 'completed' || payment.creditedAt;
+        const isProcessed = payment.status === 'completed' || payment.creditedAt;
         
         // For display purposes, treat all available credits as paid credits (since we don't track free vs paid separately in simplified schema)
         // If payment is pending, show what the balance will be after processing
@@ -1162,7 +1163,7 @@ export default async function creditRoutes(
             billingCycle: 'one-time',
             paymentMethod: payment.paymentMethod || 'card',
             paymentMethodDetails: finalPaymentMethodDetails,
-            status: payment.status || payment.paymentStatus || 'completed',
+            status: payment.status || 'completed',
             createdAt: payment.createdAt || payment.requestedAt,
             processedAt: payment.creditedAt || payment.paidAt || payment.createdAt,
             description: `Credit purchase: ${creditsAdded.toLocaleString()} credits for $${totalAmount.toFixed(2)}`,

@@ -8,7 +8,7 @@ import { PERMISSIONS } from '../../../constants/permissions.js';
 import { authenticateToken, requirePermission } from '../../../middleware/auth/auth.js';
 import { db } from '../../../db/index.js';
 import { credits, creditTransactions, tenants, entities, subscriptions } from '../../../db/schema/index.js';
-import { eq, and, desc, sql, count, sum, gte, lte, between, isNotNull, inArray } from 'drizzle-orm';
+import { eq, and, desc, sql, count, gte, lte, between, isNotNull } from 'drizzle-orm';
 import { SeasonalCreditService } from '../../../features/credits/index.js';
 
 export default async function adminCreditOverviewRoutes(fastify: FastifyInstance, _options?: object): Promise<void> {
@@ -19,9 +19,6 @@ export default async function adminCreditOverviewRoutes(fastify: FastifyInstance
       description: 'Get comprehensive credit overview across all tenants'
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const totalStats = await db
         .select({
@@ -114,8 +111,6 @@ export default async function adminCreditOverviewRoutes(fastify: FastifyInstance
       description: 'Get credit usage analytics'
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
     const query = request.query as Record<string, string>;
     try {
       const period = query.period ?? '30d';
@@ -177,10 +172,12 @@ export default async function adminCreditOverviewRoutes(fastify: FastifyInstance
         .orderBy(desc(sql`sum(${creditTransactions.amount})`))
         .limit(10);
 
-      // Daily usage trend
-      const dateFormat = groupBy === 'month' ? "DATE_TRUNC('month', created_at)" :
-                        groupBy === 'week' ? "DATE_TRUNC('week', created_at)" :
-                        "DATE_TRUNC('day', created_at)";
+      // Daily usage trend (reserved for non-day grouping; currently usageTrend uses day truncation below)
+      const _dateFormat =
+        groupBy === 'month' ? "DATE_TRUNC('month', created_at)" :
+        groupBy === 'week' ? "DATE_TRUNC('week', created_at)" :
+        "DATE_TRUNC('day', created_at)";
+      void _dateFormat;
 
       const usageTrend = await db
         .select({
@@ -224,9 +221,6 @@ export default async function adminCreditOverviewRoutes(fastify: FastifyInstance
       description: 'Get credit alerts and warnings'
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       // Critical alerts (very low balance)
       const criticalAlerts = await db
@@ -322,8 +316,6 @@ export default async function adminCreditOverviewRoutes(fastify: FastifyInstance
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const allocations = (body.allocations as any[]) ?? [];
       const reason = body.reason;
@@ -441,8 +433,6 @@ export default async function adminCreditOverviewRoutes(fastify: FastifyInstance
       description: 'Get all entities with their current credit balances'
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
     const query = request.query as Record<string, string>;
     try {
       const page = Number(query.page) || 1;
@@ -469,7 +459,6 @@ export default async function adminCreditOverviewRoutes(fastify: FastifyInstance
           tenantId: entities.tenantId,
           entityType: entities.entityType,
           entityName: entities.entityName,
-          entityCode: entities.entityCode,
           companyName: tenants.companyName,
           availableCredits: sql`coalesce(${credits.availableCredits}, 0)`,
           totalCredits: sql`coalesce(${credits.availableCredits}, 0)`,
@@ -534,8 +523,6 @@ export default async function adminCreditOverviewRoutes(fastify: FastifyInstance
       description: 'Get credit transaction history'
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
     const queryParams = request.query as Record<string, string>;
     try {
       const page = Number(queryParams.page) || 1;
@@ -615,9 +602,6 @@ export default async function adminCreditOverviewRoutes(fastify: FastifyInstance
       description: 'Get all application credit allocations across all tenants'
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       console.log('🔍 Getting all application allocations (admin view)');
 
@@ -712,9 +696,7 @@ export default async function adminCreditOverviewRoutes(fastify: FastifyInstance
   fastify.get('/entity/:entityId/application-allocations', {
     preHandler: [authenticateToken]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const entityId = params.entityId ?? '';
       const tenantId = (request as any).userContext?.tenantId ?? '';
@@ -748,8 +730,6 @@ export default async function adminCreditOverviewRoutes(fastify: FastifyInstance
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const creditTypes = body.creditTypes as string[] | undefined;
       const processSubscriptionCredits = body.processSubscriptionCredits !== false;
@@ -848,12 +828,9 @@ export default async function adminCreditOverviewRoutes(fastify: FastifyInstance
       description: 'Get summary of all expiring credits across all types'
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
     const query = request.query as Record<string, string>;
     try {
       const daysAhead = query.daysAhead ?? '30';
-      const creditType = query.creditType;
       const now = new Date();
       const futureDate = new Date(now.getTime() + (parseInt(daysAhead) * 24 * 60 * 60 * 1000));
 

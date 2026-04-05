@@ -2,11 +2,8 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { db } from '../db/index.js';
 import {
   applications,
-  organizationApplications,
-  userApplicationPermissions,
-  applicationModules
+  organizationApplications
 } from '../db/schema/core/suite-schema.js';
-import { tenants, tenantUsers } from '../db/schema/index.js';
 import { eq, and } from 'drizzle-orm';
 
 export default async function suiteRoutes(fastify: FastifyInstance, _options?: Record<string, unknown>): Promise<void> {

@@ -4,8 +4,8 @@ vi.mock('../../../db/index.js', () => ({
   db: {},
 }));
 
-vi.mock('../../messaging/utils/amazon-mq-publisher.js', () => ({
-  amazonMQPublisher: {},
+vi.mock('../../messaging/utils/sns-sqs-publisher.js', () => ({
+  snsSqsPublisher: {},
 }));
 
 import permissionService from './permission-service.js';

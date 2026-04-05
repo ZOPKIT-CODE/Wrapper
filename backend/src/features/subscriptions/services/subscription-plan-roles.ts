@@ -40,42 +40,45 @@ export async function updateAdministratorRolesForPlan(tenantId: string, newPlanI
 
     console.log(`📋 Found ${adminRoles.length} administrator role(s) to update`);
 
-    for (const role of adminRoles) {
-      try {
-        let updatedPermissions: Record<string, unknown>, updatedRestrictions: Record<string, unknown>, updatedDescription: string;
+    await db.transaction(async (tx) => {
+      for (const role of adminRoles) {
+        try {
+          let updatedPermissions: Record<string, unknown>, updatedRestrictions: Record<string, unknown>, updatedDescription: string;
 
-        if (role.roleName === 'Super Administrator' && role.isSystemRole) {
-          const newRoleConfig = createSuperAdminRoleConfig(newPlanId, tenantId, role.createdBy);
-          updatedPermissions = newRoleConfig.permissions as Record<string, unknown>;
-          updatedRestrictions = newRoleConfig.restrictions as Record<string, unknown>;
-          updatedDescription = newRoleConfig.description as string;
+          if (role.roleName === 'Super Administrator' && role.isSystemRole) {
+            const newRoleConfig = createSuperAdminRoleConfig(newPlanId, tenantId, role.createdBy);
+            updatedPermissions = newRoleConfig.permissions as Record<string, unknown>;
+            updatedRestrictions = newRoleConfig.restrictions as Record<string, unknown>;
+            updatedDescription = newRoleConfig.description as string;
 
-          console.log(`   🎯 Updating Super Administrator with full ${newPlanId} plan access`);
-        } else {
-          updatedPermissions = await enhanceAdminPermissionsForPlan(role.permissions as Record<string, unknown>, newPlanId, planAccess as Record<string, unknown>);
-          updatedRestrictions = await updateAdminRestrictionsForPlan(role.restrictions as Record<string, unknown>, newPlanId, planAccess as Record<string, unknown>);
-          updatedDescription = `${role.description} (Updated for ${newPlanId.charAt(0).toUpperCase() + newPlanId.slice(1)} Plan)`;
+            console.log(`   🎯 Updating Super Administrator with full ${newPlanId} plan access`);
+          } else {
+            updatedPermissions = await enhanceAdminPermissionsForPlan(role.permissions as Record<string, unknown>, newPlanId, planAccess as Record<string, unknown>);
+            updatedRestrictions = await updateAdminRestrictionsForPlan(role.restrictions as Record<string, unknown>, newPlanId, planAccess as Record<string, unknown>);
+            updatedDescription = `${role.description} (Updated for ${newPlanId.charAt(0).toUpperCase() + newPlanId.slice(1)} Plan)`;
 
-          console.log(`   🔧 Enhancing custom admin role: ${role.roleName}`);
+            console.log(`   🔧 Enhancing custom admin role: ${role.roleName}`);
+          }
+
+          await tx
+            .update(customRoles)
+            .set({
+              description: updatedDescription,
+              permissions: updatedPermissions as any,
+              restrictions: updatedRestrictions as any,
+              updatedAt: new Date()
+            })
+            .where(eq(customRoles.roleId, role.roleId));
+
+          console.log(`   ✅ Updated role: ${role.roleName}`);
+
+        } catch (errRole: unknown) {
+          const roleError = errRole as Error;
+          console.error(`   ❌ Failed to update role ${role.roleName}:`, roleError.message);
+          throw roleError;
         }
-
-        await db
-          .update(customRoles)
-          .set({
-            description: updatedDescription,
-            permissions: updatedPermissions as any,
-            restrictions: updatedRestrictions as any,
-            updatedAt: new Date()
-          })
-          .where(eq(customRoles.roleId, role.roleId));
-
-        console.log(`   ✅ Updated role: ${role.roleName}`);
-
-      } catch (errRole: unknown) {
-        const roleError = errRole as Error;
-        console.error(`   ❌ Failed to update role ${role.roleName}:`, roleError.message);
       }
-    }
+    });
 
     await updateTenantAdminUsersForPlan(tenantId, newPlanId);
 
@@ -181,7 +184,7 @@ export async function updateAdminRestrictionsForPlan(
 /**
  * Helper to update tenant admin users for new plan
  */
-export async function updateTenantAdminUsersForPlan(tenantId: string, newPlanId: string): Promise<void> {
+export async function updateTenantAdminUsersForPlan(tenantId: string, _newPlanId: string): Promise<void> {
   try {
     console.log(`👥 Checking tenant admin users for plan update...`);
 

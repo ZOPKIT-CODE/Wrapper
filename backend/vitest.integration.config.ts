@@ -2,7 +2,7 @@
  * Vitest configuration for integration tests.
  *
  * Integration tests spin up a real PostgreSQL container via Testcontainers and
- * run against actual SQL — they verify that data-isolation rules, idempotency
+ * run against actual SQL — they verify DB constraints, idempotency
  * constraints, and tenant-scoping work end-to-end.
  *
  * Keep this config separate from vitest.config.ts so the unit-test run (pnpm test)

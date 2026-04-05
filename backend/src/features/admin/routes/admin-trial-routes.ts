@@ -5,7 +5,6 @@ import { eq, and, or, lt, sql } from 'drizzle-orm';
 import { authenticateToken } from '../../../middleware/auth/auth.js';
 import Logger from '../../../utils/logger.js';
 import trialManager from '../../../utils/trial-manager.js';
-import ErrorResponses from '../../../utils/error-responses.js';
 
 type ReqWithUser = FastifyRequest & { userContext?: Record<string, unknown> };
 
@@ -16,9 +15,6 @@ export default async function adminTrialRoutes(
   fastify.post('/trials/check-expired', {
     preHandler: [authenticateToken]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     const startTime = Date.now();
     const requestId = Logger.generateRequestId('manual-trial-check');
 
@@ -56,9 +52,6 @@ export default async function adminTrialRoutes(
   fastify.post('/trials/send-reminders', {
     preHandler: [authenticateToken]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     const startTime = Date.now();
     const requestId = Logger.generateRequestId('manual-trial-reminders');
 
@@ -96,9 +89,7 @@ export default async function adminTrialRoutes(
   fastify.post('/trials/:tenantId/expire', {
     preHandler: [authenticateToken]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     const startTime = Date.now();
     const requestId = Logger.generateRequestId('manual-trial-expire');
     const tenantId = params.tenantId ?? '';
@@ -149,9 +140,7 @@ export default async function adminTrialRoutes(
   fastify.get('/trials/:tenantId/status', {
     preHandler: [authenticateToken]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     const requestId = Logger.generateRequestId('trial-status');
     const tenantId = params.tenantId ?? '';
 
@@ -186,9 +175,6 @@ export default async function adminTrialRoutes(
   fastify.get('/trials/current/status', {
     preHandler: [authenticateToken]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     const requestId = Logger.generateRequestId('current-trial-status');
     const tenantId = ((request as ReqWithUser).userContext?.tenantId ?? '') as string;
 
@@ -236,9 +222,6 @@ export default async function adminTrialRoutes(
   fastify.get('/trials/check-before-load', {
     preHandler: [authenticateToken]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     const requestId = Logger.generateRequestId('trial-init-check');
     const tenantId = ((request as ReqWithUser).userContext?.tenantId ?? '') as string;
 
@@ -339,9 +322,6 @@ export default async function adminTrialRoutes(
   fastify.get('/trials/system-status', {
     preHandler: [authenticateToken]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     const requestId = Logger.generateRequestId('trial-system-status');
 
     try {
@@ -441,9 +421,6 @@ export default async function adminTrialRoutes(
   fastify.post('/trials/restart-monitoring', {
     preHandler: [authenticateToken]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     const requestId = Logger.generateRequestId('restart-trial-monitoring');
 
     try {

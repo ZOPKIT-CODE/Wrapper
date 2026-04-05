@@ -2,7 +2,6 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { NotificationService } from '../../notifications/services/notification-service.js';
 import { NotificationTemplateService } from '../../notifications/services/notification-template-service.js';
 import { TenantFilterService } from '../../../services/tenant-filter-service.js';
-import { TenantService } from '../../../services/tenant-service.js';
 import { contentGenerationService } from '../../notifications/services/ai/content-generation-service.js';
 import { personalizationService } from '../../notifications/services/ai/personalization-service.js';
 import { smartTargetingService } from '../../notifications/services/ai/smart-targeting-service.js';
@@ -11,13 +10,12 @@ import { notificationAnalyticsService } from '../../notifications/services/notif
 import { authenticateToken, requirePermission } from '../../../middleware/auth/auth.js';
 import { PERMISSIONS } from '../../../constants/permissions.js';
 import { db } from '../../../db/index.js';
-import { tenants, tenantUsers, notifications } from '../../../db/schema/index.js';
-import { eq, and, inArray, sql, desc, count, gte, lte, or, like } from 'drizzle-orm';
+import { tenants, notifications } from '../../../db/schema/index.js';
+import { eq, and, inArray, sql, desc, gte, lte, like } from 'drizzle-orm';
 import { NOTIFICATION_TYPES, NOTIFICATION_PRIORITIES } from '../../../db/schema/notifications/notifications.js';
 import { broadcastToTenant } from '../../../utils/websocket-server.js';
 
 const templateService = new NotificationTemplateService();
-const filterService = new TenantFilterService();
 const notificationService = new NotificationService();
 
 /**
@@ -37,8 +35,6 @@ export default async function adminNotificationRoutes(fastify: FastifyInstance, 
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const { tenantId, ...notificationData } = body;
       const adminUserId = (request as any).userContext?.userId ?? '';
@@ -115,8 +111,6 @@ export default async function adminNotificationRoutes(fastify: FastifyInstance, 
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const { tenantIds, filters, templateId, ...notificationData } = body;
       const adminUserId = (request as any).userContext?.userId ?? '';
@@ -156,9 +150,9 @@ export default async function adminNotificationRoutes(fastify: FastifyInstance, 
           } else if (f.status === 'inactive') {
             whereConditions.push(eq(tenants.isActive, false));
           } else if (f.status === 'trial') {
-            whereConditions.push(sql`${tenants.trialEndsAt} > now()`);
+            whereConditions.push(sql`EXISTS (SELECT 1 FROM subscriptions s WHERE s.tenant_id = ${tenants.tenantId} AND s.trial_ends_at > now())`);
           } else if (f.status === 'paid') {
-            whereConditions.push(sql`${tenants.trialEndsAt} is null or ${tenants.trialEndsAt} < now()`);
+            whereConditions.push(sql`NOT EXISTS (SELECT 1 FROM subscriptions s WHERE s.tenant_id = ${tenants.tenantId} AND s.trial_ends_at > now())`);
           }
         }
 
@@ -301,7 +295,6 @@ export default async function adminNotificationRoutes(fastify: FastifyInstance, 
 
       // Broadcast notifications via WebSocket
       try {
-        const { broadcastToTenants } = await import('../../../utils/websocket-server.js');
         createdNotifications.forEach((notification: any) => {
             try {
             broadcastToTenant(notification.tenantId, notification);
@@ -344,8 +337,6 @@ export default async function adminNotificationRoutes(fastify: FastifyInstance, 
       description: 'Get sent notifications history'
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
     const query = request.query as Record<string, string>;
     try {
       const page = Number(query.page) || 1;
@@ -436,8 +427,6 @@ export default async function adminNotificationRoutes(fastify: FastifyInstance, 
       description: 'Get notification statistics'
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
     const query = request.query as Record<string, string>;
     try {
       const filters = {
@@ -475,8 +464,6 @@ export default async function adminNotificationRoutes(fastify: FastifyInstance, 
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const previewData = {
         ...body,
@@ -515,8 +502,6 @@ export default async function adminNotificationRoutes(fastify: FastifyInstance, 
       description: 'Get all notification templates'
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
     const query = request.query as Record<string, string>;
     try {
       // Normalize query parameters
@@ -576,8 +561,6 @@ export default async function adminNotificationRoutes(fastify: FastifyInstance, 
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const template = await templateService.createTemplate({
         ...body,
@@ -612,7 +595,6 @@ export default async function adminNotificationRoutes(fastify: FastifyInstance, 
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const template = await templateService.updateTemplate(
         params.templateId ?? '',
@@ -645,9 +627,7 @@ export default async function adminNotificationRoutes(fastify: FastifyInstance, 
       description: 'Delete a notification template'
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       await templateService.deleteTemplate(params.templateId ?? '');
       
@@ -673,9 +653,6 @@ export default async function adminNotificationRoutes(fastify: FastifyInstance, 
   fastify.get('/templates/categories', {
     preHandler: [authenticateToken, requirePermission(PERMISSIONS.ADMIN_NOTIFICATIONS_VIEW)]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const categories = templateService.getCategories();
       reply.send({
@@ -703,9 +680,7 @@ export default async function adminNotificationRoutes(fastify: FastifyInstance, 
       description: 'Get a specific template'
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const template = await templateService.getTemplate(params.templateId ?? '');
       
@@ -736,7 +711,6 @@ export default async function adminNotificationRoutes(fastify: FastifyInstance, 
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const variables = body.variables;
       const rendered = await templateService.renderTemplate(
@@ -770,8 +744,6 @@ export default async function adminNotificationRoutes(fastify: FastifyInstance, 
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const { prompt, variantCount, ...options } = body;
 
@@ -810,8 +782,6 @@ export default async function adminNotificationRoutes(fastify: FastifyInstance, 
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const { tenantId, content } = body;
       const personalized = await personalizationService.personalizeContent(String(tenantId ?? ''), content as any);
@@ -841,8 +811,6 @@ export default async function adminNotificationRoutes(fastify: FastifyInstance, 
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const { content, maxSuggestions } = body;
       const suggestions = await smartTargetingService.suggestTargets(content as any, { maxSuggestions: maxSuggestions as number } as any);
@@ -872,8 +840,6 @@ export default async function adminNotificationRoutes(fastify: FastifyInstance, 
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const { content, includeSuggestions } = body;
       const analysis = await sentimentService.analyzeSentiment(content as any, { includeSuggestions } as any);
@@ -903,8 +869,6 @@ export default async function adminNotificationRoutes(fastify: FastifyInstance, 
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const { description, category, type, priority } = body;
       const adminUserId = (request as any).userContext?.internalUserId ?? '';
@@ -953,8 +917,6 @@ export default async function adminNotificationRoutes(fastify: FastifyInstance, 
       description: 'Get comprehensive analytics dashboard data'
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
     const query = request.query as Record<string, string>;
     try {
       const filters = {

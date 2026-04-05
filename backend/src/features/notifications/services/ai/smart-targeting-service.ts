@@ -2,7 +2,7 @@ import { aiServiceFactory } from './ai-service-factory.js';
 import { TenantFilterService } from '../../../../services/tenant-filter-service.js';
 import { db } from '../../../../db/index.js';
 import { tenants, notifications } from '../../../../db/schema/index.js';
-import { eq, sql, desc } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
 
 interface NotificationContent { title?: string; message?: string; type?: string; [k: string]: unknown }
 interface SuggestOptions { maxSuggestions?: number; includeReasoning?: boolean; useHistoricalData?: boolean }

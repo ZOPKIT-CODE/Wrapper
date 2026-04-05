@@ -113,12 +113,13 @@ export async function getUserAccessibleEntities(userId: string, tenantId: string
   // Tenant Admin sees EVERYTHING
   if (user.isTenantAdmin) {
     console.log('👑 User is Tenant Admin - unrestricted access');
+    // entity_code column was dropped (migration 0015); expose entityId as entityCode for API compatibility
     const allEntities = await db
       .select({
         entityId: entities.entityId,
         entityName: entities.entityName,
         entityType: entities.entityType,
-        entityCode: entities.entityCode
+        entityCode: sql<string>`cast(${entities.entityId} as varchar)`.as('entityCode'),
       })
       .from(entities)
       .where(and(
@@ -150,6 +151,7 @@ export async function getUserAccessibleEntities(userId: string, tenantId: string
     .from(responsiblePersons)
     .where(and(
       eq(responsiblePersons.userId, userId),
+      eq(responsiblePersons.tenantId, tenantId),
       eq(responsiblePersons.isActive, true)
     ));
 
@@ -181,7 +183,7 @@ export async function getUserAccessibleEntities(userId: string, tenantId: string
       entityId: entities.entityId,
       entityName: entities.entityName,
       entityType: entities.entityType,
-      entityCode: entities.entityCode
+      entityCode: sql<string>`cast(${entities.entityId} as varchar)`.as('entityCode'),
     })
     .from(entities)
     .where(and(
@@ -206,34 +208,65 @@ export async function getUserAccessibleEntities(userId: string, tenantId: string
   return result;
 }
 
+// UUID v4 format guard — used to validate IDs before injecting via sql.raw()
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 /**
- * OPTIMIZED: Get all descendant entity IDs using recursive CTE
- * This replaces the old recursive function with a single optimized query
- * @param {string[]} parentIds - Array of parent entity IDs
- * @param {string} tenantId - Tenant ID
- * @returns {Promise<string[]>} Array of all descendant entity IDs (including parents)
+ * Get all descendant entity IDs (including the parents themselves) using a
+ * single recursive CTE — replaces the old depth-loop that issued one query per
+ * level (up to 20 round-trips for a deep hierarchy).
+ *
+ * Security note: `parentIds` and `tenantId` are UUID strings sourced from the
+ * JWT / DB, never from raw user input.  We still validate UUID format before
+ * interpolating via `sql.raw()` so a malformed value throws early rather than
+ * reaching the database.
+ *
+ * @param parentIds - Array of root entity IDs whose subtree we want
+ * @param tenantId  - Tenant ID (UUID) used to scope every row touched
+ * @returns Flat array of all entity IDs reachable from the given roots
  */
 async function getAllDescendantEntityIds(parentIds: string[], tenantId: string): Promise<string[]> {
   if (!parentIds || parentIds.length === 0) {
     return [];
   }
 
-  // Use fallback: get direct children and recurse (simplified to avoid raw SQL typing)
-  const allEntityIds = new Set<string>(parentIds);
-  let currentLevel = parentIds;
-  for (let depth = 0; depth < 20 && currentLevel.length > 0; depth++) {
-    const children = await db
-      .select({ entityId: entities.entityId })
-      .from(entities)
-      .where(and(
-        eq(entities.tenantId, tenantId),
-        eq(entities.isActive, true),
-        inArray(entities.parentEntityId, currentLevel)
-      ));
-    currentLevel = children.map(c => c.entityId).filter((id): id is string => id != null);
-    currentLevel.forEach(id => allEntityIds.add(id));
+  // Validate every ID is a well-formed UUID before using sql.raw()
+  const invalidId = parentIds.find(id => !UUID_RE.test(id));
+  if (invalidId) {
+    throw new Error(`getAllDescendantEntityIds: invalid UUID in parentIds: ${invalidId}`);
   }
-  return Array.from(allEntityIds);
+  if (!UUID_RE.test(tenantId)) {
+    throw new Error(`getAllDescendantEntityIds: invalid tenantId UUID: ${tenantId}`);
+  }
+
+  // Build the ARRAY[...] literal — safe because every element passed the UUID regex above
+  const anchorValues = parentIds.map(id => `'${id}'::uuid`).join(', ');
+
+  const result = await db.execute(sql`
+    WITH RECURSIVE entity_tree AS (
+      -- Anchor: start from the given parent IDs
+      SELECT entity_id
+      FROM entities
+      WHERE entity_id = ANY(ARRAY[${sql.raw(anchorValues)}]::uuid[])
+        AND tenant_id = ${tenantId}::uuid
+        AND is_active = true
+
+      UNION ALL
+
+      -- Recursive: find children one level at a time
+      SELECT e.entity_id
+      FROM entities e
+      INNER JOIN entity_tree et ON e.parent_entity_id = et.entity_id
+      WHERE e.tenant_id = ${tenantId}::uuid
+        AND e.is_active = true
+    )
+    SELECT entity_id FROM entity_tree
+  `);
+
+  // Drizzle db.execute() returns an array-like iterable of row objects.
+  // Cast through unknown first — RowList<Record<string, unknown>> doesn't
+  // structurally overlap with a typed interface, so the double cast is required.
+  return Array.from(result as unknown as { entity_id: string }[]).map(r => r.entity_id);
 }
 
 /**

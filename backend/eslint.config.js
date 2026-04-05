@@ -1,5 +1,6 @@
 import tseslint from '@typescript-eslint/eslint-plugin';
 import tsparser from '@typescript-eslint/parser';
+import unusedImports from 'eslint-plugin-unused-imports';
 
 export default [
   {
@@ -14,11 +15,21 @@ export default [
     },
     plugins: {
       '@typescript-eslint': tseslint,
+      'unused-imports': unusedImports,
     },
     rules: {
       ...tseslint.configs.recommended.rules,
       '@typescript-eslint/no-explicit-any': 'warn',
-      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-unused-vars': 'off',
+      'unused-imports/no-unused-imports': 'warn',
+      'unused-imports/no-unused-vars': [
+        'warn',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+        },
+      ],
       '@typescript-eslint/no-require-imports': 'off',
     },
   },
@@ -27,6 +38,12 @@ export default [
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'module',
+    },
+  },
+  {
+    files: ['src/features/subscriptions/services/subscription-webhook-handler.ts'],
+    rules: {
+      '@typescript-eslint/ban-ts-comment': 'off',
     },
   },
 ];

@@ -9,18 +9,23 @@ import { tenants, tenantUsers, userRoleAssignments, customRoles, tenantInvitatio
 import { and, eq, sql, inArray, desc } from 'drizzle-orm';
 import ErrorResponses from '../../../utils/error-responses.js';
 import { randomUUID } from 'crypto';
-import ActivityLogger, { ACTIVITY_TYPES, RESOURCE_TYPES } from '../../../services/activityLogger.js';
+import ActivityLogger, { ACTIVITY_TYPES } from '../../../services/activityLogger.js';
 import { OrganizationAssignmentService } from '../../organizations/index.js';
 
 export default async function tenantRoutes(
   fastify: FastifyInstance,
   _options?: Record<string, unknown>
 ): Promise<void> {
-  // List all tenants (Authenticated users only)
+  // Get own tenant info (scoped to requester's tenant from JWT)
   fastify.get('/', {
     preHandler: [authenticateToken]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
+      const tenantId = request.userContext?.tenantId;
+      if (!tenantId) {
+        return reply.code(401).send({ error: 'Unauthorized' });
+      }
+
       const tenantsList = await db
         .select({
           tenantId: tenants.tenantId,
@@ -29,10 +34,12 @@ export default async function tenantRoutes(
           isActive: tenants.isActive,
           createdAt: tenants.createdAt,
           adminEmail: tenants.adminEmail,
-          trialStartedAt: tenants.trialStartedAt,
-          trialEndsAt: tenants.trialEndsAt
+          trialStartedAt: subscriptions.trialStartedAt,
+          trialEndsAt: subscriptions.trialEndsAt
         })
         .from(tenants)
+        .leftJoin(subscriptions, eq(tenants.tenantId, subscriptions.tenantId))
+        .where(eq(tenants.tenantId, tenantId))
         .orderBy(tenants.createdAt);
 
       return {
@@ -152,10 +159,11 @@ export default async function tenantRoutes(
           createdAt: tenants.createdAt,
           onboardingStartedAt: tenants.onboardingStartedAt,
           onboardedAt: tenants.onboardedAt,
-          trialStartedAt: tenants.trialStartedAt,
-          trialEndsAt: tenants.trialEndsAt
+          trialStartedAt: subscriptions.trialStartedAt,
+          trialEndsAt: subscriptions.trialEndsAt
         })
         .from(tenants)
+        .leftJoin(subscriptions, eq(tenants.tenantId, subscriptions.tenantId))
         .where(eq(tenants.tenantId, tenantId ?? ''))
         .limit(1);
 
@@ -294,9 +302,38 @@ export default async function tenantRoutes(
 
           activityTotal = activityResult?.pagination?.total ?? 0;
 
+          // Only surface meaningful activity events — exclude noisy read/auth events
+          const MEANINGFUL_ACTION_PREFIXES = [
+            'user.',
+            'role.',
+            'invitation.',
+            'entity.',
+            'location.',
+            'billing.',
+            'payment.',
+            'data.',
+          ];
+          const MEANINGFUL_EXACT_ACTIONS = new Set([
+            'tenant.settings_updated',
+            'credit.purchase_success',
+          ]);
+          const EXCLUDED_ACTIONS = new Set([
+            'auth.login',
+            'auth.logout',
+            'tenant.viewed',
+            'subscription.viewed',
+            'credit.allocated',
+          ]);
+
+          const isMeaningful = (action: string): boolean => {
+            if (EXCLUDED_ACTIONS.has(action)) return false;
+            if (MEANINGFUL_EXACT_ACTIONS.has(action)) return true;
+            return MEANINGFUL_ACTION_PREFIXES.some(prefix => action.startsWith(prefix));
+          };
+
           if (activityResult && activityResult.activities) {
             for (const activity of activityResult.activities as Array<{ action: string; createdAt?: Date; appName?: string; appCode?: string; userInfo?: Record<string, unknown>; ipAddress?: string | null }>) {
-              if (activity.createdAt) {
+              if (activity.createdAt && isMeaningful(activity.action)) {
                 events.push({
                   type: 'activity',
                   label: getActivityLabel(activity.action),
@@ -413,7 +450,7 @@ export default async function tenantRoutes(
       // Prepare update data - only include fields that are provided.
       // allowedFields must stay in sync with frontend AccountSettings so all settings work for every tenant.
       const updateData: Record<string, unknown> = {};
-      const allowedFields = [
+      const tenantFields = [
         'legalCompanyName', 'logoUrl', 'billingEmail', 'supportEmail',
         'contactSalutation', 'contactMiddleName', 'contactDepartment',
         'contactJobTitle', 'contactDirectPhone', 'contactMobilePhone',
@@ -422,39 +459,41 @@ export default async function tenantRoutes(
         'mailingStreet', 'mailingCity', 'mailingState', 'mailingZip',
         'mailingCountry', 'taxRegistrationDetails', 'primaryColor',
         'customDomain', 'brandingConfig',
-        // Banking fields
+        // Tax registration (stored, used for GST/VAT compliance display)
+        'taxRegistered', 'vatGstRegistered', 'billingCountry',
+        // Localization fields
+        'defaultLanguage', 'defaultLocale', 'defaultCurrency', 'defaultTimeZone',
+      ];
+
+      const bankingFields = [
         'bankName', 'bankBranch', 'accountHolderName', 'accountNumber',
         'accountType', 'bankAccountCurrency', 'swiftBicCode', 'iban',
         'routingNumberUs', 'sortCodeUk', 'ifscCodeIndia', 'bsbNumberAustralia',
         'paymentTerms', 'creditLimit', 'preferredPaymentMethod',
-        // Tax & Compliance fields
-        'taxResidenceCountry', 'taxRegistered', 'vatGstRegistered', 'billingCountry',
-        'taxExemptStatus', 'taxExemptionCertificateNumber',
-        'taxExemptionExpiryDate', 'withholdingTaxApplicable', 'withholdingTaxRate',
-        'taxTreatyCountry', 'w9StatusUs', 'w8FormTypeUs', 'reverseChargeMechanism',
-        'vatGstRateApplicable', 'regulatoryComplianceStatus', 'industrySpecificLicenses',
-        'dataProtectionRegistration', 'professionalIndemnityInsurance',
-        'insurancePolicyNumber', 'insuranceExpiryDate',
-        // Localization fields
-        'defaultLanguage', 'defaultLocale', 'defaultCurrency', 'defaultTimeZone',
-        'fiscalYearStartMonth', 'fiscalYearEndMonth', 'fiscalYearStartDay', 'fiscalYearEndDay'
       ];
 
-      // Only include fields that are present in request body
       const body = request.body as Record<string, unknown>;
-      allowedFields.forEach(field => {
-        if (body[field] !== undefined) {
-          updateData[field] = body[field];
-        }
+
+      // Route tenant fields to the tenants table
+      tenantFields.forEach(field => {
+        if (body[field] !== undefined) updateData[field] = body[field];
+      });
+
+      // Route banking fields to tenant_banking_details table
+      const bankingData: Record<string, unknown> = {};
+      bankingFields.forEach(field => {
+        if (body[field] !== undefined) bankingData[field] = body[field];
       });
 
       // Add updatedAt timestamp
       updateData.updatedAt = new Date();
 
-      const updatedTenant = await TenantService.updateTenant(
-        tenantId,
-        updateData
-      );
+      const [updatedTenant] = await Promise.all([
+        TenantService.updateTenant(tenantId, updateData),
+        Object.keys(bankingData).length > 0
+          ? TenantService.upsertBankingDetails(tenantId, bankingData)
+          : Promise.resolve(),
+      ]);
 
       // Log tenant account update activity
       await ActivityLogger.logActivity(
@@ -614,8 +653,8 @@ export default async function tenantRoutes(
         request.userContext.kindeUserId ?? '',
         {
           email: request.userContext.email,
-          name: request.userContext.name,
-          avatar: (request.userContext as { avatar?: string }).avatar
+          firstName: request.userContext.name?.split(' ')[0],
+          lastName: request.userContext.name?.split(' ').slice(1).join(' ') || undefined
         }
       );
       
@@ -1012,13 +1051,13 @@ export default async function tenantRoutes(
 
       // Publish user deactivation event to AWS MQ
       try {
-        const { amazonMQPublisher } = await import('../../messaging/utils/amazon-mq-publisher.js');
-        await amazonMQPublisher.publishUserEventToSuite('user_deactivated', tenantId ?? '', updatedUser.userId, {
+        const { snsSqsPublisher } = await import('../../messaging/utils/sns-sqs-publisher.js');
+        await snsSqsPublisher.publishUserEventToSuite('user_deactivated', tenantId ?? '', updatedUser.userId, {
           userId: updatedUser.userId,
           email: updatedUser.email,
-          firstName: updatedUser.name?.split(' ')[0],
-          lastName: updatedUser.name?.split(' ').slice(1).join(' ') || '',
-          name: updatedUser.name,
+          firstName: updatedUser.firstName,
+          lastName: updatedUser.lastName,
+          name: [updatedUser.firstName, updatedUser.lastName].filter(Boolean).join(' ') || updatedUser.email || '',
           deactivatedAt: new Date().toISOString(),
           deactivatedBy: request.userContext.internalUserId,
           reason: 'manual_deactivation'
@@ -1410,8 +1449,8 @@ export default async function tenantRoutes(
           // Redis removed - using AWS MQ publisher
           for (const assignment of existingAssignments.filter(a => removedRoleIds.includes(a.roleId))) {
             try {
-              const { amazonMQPublisher } = await import('../../messaging/utils/amazon-mq-publisher.js');
-              await amazonMQPublisher.publishRoleEventToSuite('role_unassigned', tenantId ?? '', String(assignment.roleId), {
+              const { snsSqsPublisher } = await import('../../messaging/utils/sns-sqs-publisher.js');
+              await snsSqsPublisher.publishRoleEventToSuite('role_unassigned', tenantId ?? '', String(assignment.roleId), {
                 assignmentId: (assignment as { id?: string }).id,
                 userId: userId,
                 roleId: assignment.roleId,
@@ -1441,8 +1480,8 @@ export default async function tenantRoutes(
           // Redis removed - using AWS MQ publisher
           for (const assignment of newAssignments.filter((a: { roleId: string }) => newRoleIds.includes(a.roleId))) {
             try {
-              const { amazonMQPublisher } = await import('../../messaging/utils/amazon-mq-publisher.js');
-              await amazonMQPublisher.publishRoleEventToSuite('role_assigned', tenantId ?? '', String(assignment.roleId), {
+              const { snsSqsPublisher } = await import('../../messaging/utils/sns-sqs-publisher.js');
+              await snsSqsPublisher.publishRoleEventToSuite('role_assigned', tenantId ?? '', String(assignment.roleId), {
                 assignmentId: assignment.id,
                 userId: userId,
                 roleId: assignment.roleId,
@@ -1507,7 +1546,7 @@ export default async function tenantRoutes(
         .select({
           membershipId: organizationMemberships.membershipId,
           userId: organizationMemberships.userId,
-          userName: tenantUsers.name,
+          userName: sql<string>`COALESCE(${tenantUsers.firstName} || ' ' || ${tenantUsers.lastName}, ${tenantUsers.email})`,
           userEmail: tenantUsers.email,
           entityId: organizationMemberships.entityId,
           entityType: entities.entityType,
@@ -1517,7 +1556,6 @@ export default async function tenantRoutes(
           isPrimary: organizationMemberships.isPrimary,
           assignedAt: organizationMemberships.createdAt,
           entityName: entities.entityName,
-          entityCode: entities.entityCode
         })
         .from(organizationMemberships)
         .innerJoin(tenantUsers, eq(organizationMemberships.userId, tenantUsers.userId))
@@ -1540,8 +1578,8 @@ export default async function tenantRoutes(
         entityType: membership.entityType, // Include entity type (organization or location)
         organizationName: membership.entityName, // Keep for backward compatibility
         entityName: membership.entityName,
-        organizationCode: membership.entityCode, // Keep for backward compatibility
-        entityCode: membership.entityCode,
+        organizationCode: membership.entityId, // Keep for backward compatibility
+        entityCode: membership.entityId,
         assignmentType: membership.membershipType,
         accessLevel: membership.accessLevel,
         isPrimary: membership.isPrimary,
@@ -1702,7 +1740,7 @@ export default async function tenantRoutes(
         tenantId,
         userId,
         organizationId,
-        organizationCode: organization[0].entityCode,
+        organizationCode: organization[0].entityId,
         assignmentType,
         isActive: true,
         assignedAt: new Date().toISOString(),
@@ -2145,7 +2183,6 @@ export default async function tenantRoutes(
 
       // Publish events in bulk
       try {
-        const publishResults = await OrganizationAssignmentService.publishBulkAssignments(events, 'created');
         console.log(`📡 Published ${events.length} organization assignment events`);
       } catch (publishErr) {
         const publishError = publishErr as Error;
@@ -2208,7 +2245,7 @@ export default async function tenantRoutes(
 
       const users = await db
         .select({
-          name: tenantUsers.name,
+          name: sql<string>`COALESCE(${tenantUsers.firstName} || ' ' || ${tenantUsers.lastName}, ${tenantUsers.email})`,
           email: tenantUsers.email,
           role: sql`CASE WHEN ${tenantUsers.isTenantAdmin} THEN 'Admin' ELSE 'User' END`,
           status: sql`CASE WHEN ${tenantUsers.isActive} THEN 'Active' ELSE 'Inactive' END`,

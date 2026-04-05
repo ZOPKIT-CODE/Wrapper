@@ -8,8 +8,7 @@ import { authenticateToken, requirePermission } from '../../../middleware/auth/a
 import { PERMISSIONS } from '../../../constants/permissions.js';
 import { db } from '../../../db/index.js';
 import { entities, tenants, credits } from '../../../db/schema/index.js';
-import { eq, and, desc, sql, count, isNull } from 'drizzle-orm';
-import { randomUUID } from 'crypto';
+import { eq, and, desc, sql, count } from 'drizzle-orm';
 
 export default async function adminEntityManagementRoutes(fastify: FastifyInstance, _options?: object): Promise<void> {
 
@@ -19,8 +18,6 @@ export default async function adminEntityManagementRoutes(fastify: FastifyInstan
       description: 'Get all entities across tenants with filtering'
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
     const queryParams = request.query as Record<string, string>;
     try {
       const page = Number(queryParams.page) || 1;
@@ -35,7 +32,7 @@ export default async function adminEntityManagementRoutes(fastify: FastifyInstan
       const conditions = [];
       if (tenantId) conditions.push(eq(entities.tenantId, tenantId));
       if (entityType) conditions.push(eq(entities.entityType, entityType));
-      if (search) conditions.push(sql`${entities.entityName} ilike ${`%${search}%`} or ${entities.entityCode} ilike ${`%${search}%`}`);
+      if (search) conditions.push(sql`${entities.entityName} ilike ${`%${search}%`}`);
       if (isActive !== undefined) conditions.push(eq(entities.isActive, isActive === 'true'));
 
       let entitiesQuery = db
@@ -44,7 +41,6 @@ export default async function adminEntityManagementRoutes(fastify: FastifyInstan
           tenantId: entities.tenantId,
           entityType: entities.entityType,
           entityName: entities.entityName,
-          entityCode: entities.entityCode,
           parentEntityId: entities.parentEntityId,
           entityLevel: entities.entityLevel,
           isActive: entities.isActive,
@@ -151,7 +147,6 @@ export default async function adminEntityManagementRoutes(fastify: FastifyInstan
           entityId: entities.entityId,
           entityType: entities.entityType,
           entityName: entities.entityName,
-          entityCode: entities.entityCode,
           isActive: entities.isActive,
           availableCredits: sql`
             coalesce((
@@ -195,7 +190,6 @@ export default async function adminEntityManagementRoutes(fastify: FastifyInstan
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const entityId = params.entityId ?? '';
       const isActive = body.isActive;
@@ -229,8 +223,6 @@ export default async function adminEntityManagementRoutes(fastify: FastifyInstan
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const entityIds = body.entityIds as string[];
       const isActive = body.isActive;
@@ -263,9 +255,6 @@ export default async function adminEntityManagementRoutes(fastify: FastifyInstan
       description: 'Get entity statistics overview'
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const typeDistribution = await db
         .select({
@@ -322,8 +311,6 @@ export default async function adminEntityManagementRoutes(fastify: FastifyInstan
       description: 'Search entities across all tenants'
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
     const queryParams = request.query as Record<string, string>;
     try {
       const q = queryParams.q ?? '';
@@ -331,7 +318,7 @@ export default async function adminEntityManagementRoutes(fastify: FastifyInstan
       const tenantId = queryParams.tenantId;
       const limit = Number(queryParams.limit) || 20;
 
-      const searchConditions = [sql`${entities.entityName} ilike ${`%${q}%`} or ${entities.entityCode} ilike ${`%${q}%`}`];
+      const searchConditions = [sql`${entities.entityName} ilike ${`%${q}%`}`];
       if (entityType) searchConditions.push(eq(entities.entityType, entityType));
       if (tenantId) searchConditions.push(eq(entities.tenantId, tenantId));
 
@@ -340,7 +327,6 @@ export default async function adminEntityManagementRoutes(fastify: FastifyInstan
           entityId: entities.entityId,
           entityType: entities.entityType,
           entityName: entities.entityName,
-          entityCode: entities.entityCode,
           tenantId: entities.tenantId,
           companyName: tenants.companyName,
           isActive: entities.isActive,
@@ -380,9 +366,7 @@ export default async function adminEntityManagementRoutes(fastify: FastifyInstan
       description: 'Get entity hierarchy for a specific tenant'
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       let tenantId = params.tenantId ?? '';
 
@@ -404,7 +388,6 @@ export default async function adminEntityManagementRoutes(fastify: FastifyInstan
           tenantId: entities.tenantId,
           entityType: entities.entityType,
           entityName: entities.entityName,
-          entityCode: entities.entityCode,
           parentEntityId: entities.parentEntityId,
           entityLevel: entities.entityLevel,
           isActive: entities.isActive,
@@ -471,9 +454,6 @@ export default async function adminEntityManagementRoutes(fastify: FastifyInstan
       description: 'Get entity hierarchy for current tenant'
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const tenantId = (request as any).userContext?.tenantId;
 
@@ -489,7 +469,6 @@ export default async function adminEntityManagementRoutes(fastify: FastifyInstan
           entityId: entities.entityId,
           entityName: entities.entityName,
           entityType: entities.entityType,
-          entityCode: entities.entityCode,
           parentEntityId: entities.parentEntityId,
           entityLevel: entities.entityLevel,
           hierarchyPath: entities.hierarchyPath,

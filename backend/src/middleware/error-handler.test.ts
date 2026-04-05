@@ -5,6 +5,15 @@
  * We supply lightweight mock objects and never touch the DB.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
+// ── Mock Sentry to avoid @opentelemetry ESM resolution issues in Vitest ────
+vi.mock('@sentry/node', () => ({
+  captureException: vi.fn(),
+  withScope: vi.fn((cb: (scope: { setTag: unknown; setContext: unknown }) => void) =>
+    cb({ setTag: vi.fn(), setContext: vi.fn() })
+  ),
+}));
+
 import { errorHandler } from './error-handler.js';
 
 // ── Mock ActivityLogger so fire-and-forget doesn't blow up ─────────────────
@@ -310,14 +319,14 @@ describe('errorHandler – generic errors', () => {
   });
 
   it('includes timestamp and path in all responses', async () => {
-    const req = makeRequest({ url: '/api/users/me' });
+    const req = makeRequest({ url: '/api/notifications' });
     const reply = makeReply();
     const err = makeError({ statusCode: 403 });
 
     await errorHandler(err, req, reply);
 
     const body = (reply.send as ReturnType<typeof vi.fn>).mock.calls[0][0];
-    expect(body.path).toBe('/api/users/me');
+    expect(body.path).toBe('/api/notifications');
     expect(typeof body.timestamp).toBe('string');
     // timestamp must be ISO 8601
     expect(() => new Date(body.timestamp)).not.toThrow();

@@ -1,5 +1,4 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { db } from '../../../db/index.js';
 
 export default async function seasonalCreditsPublicRoutes(fastify: FastifyInstance, _options?: Record<string, unknown>): Promise<void> {
   /**
@@ -9,8 +8,6 @@ export default async function seasonalCreditsPublicRoutes(fastify: FastifyInstan
   fastify.get('/recent-allocations', async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const query = request.query as Record<string, string>;
-      const days = Number(query.days) || 7;
-      const limit = Number(query.limit) || 10;
 
       // Get current tenant from auth (simplified - would use proper tenant context)
       const tenantId = (request as any).userContext?.tenantId ?? (request as any).user?.tenantId;

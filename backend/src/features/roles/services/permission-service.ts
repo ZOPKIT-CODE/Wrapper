@@ -1,12 +1,12 @@
 import { db } from '../../../db/index.js';
 import { customRoles, userRoleAssignments } from '../../../db/schema/core/permissions.js';
-import { tenantUsers, auditLogs } from '../../../db/schema/core/users.js';
+import { auditLogs } from '../../../db/schema/core/users.js';
 import { organizationMemberships } from '../../../db/schema/organizations/organization_memberships.js';
 import { eq, and, like, desc, count, or, ne, inArray } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 // Static imports — avoids repeated module-resolution overhead on every request.
-import { amazonMQPublisher } from '../../messaging/utils/amazon-mq-publisher.js';
-import { CRM_PERMISSION_MATRIX, CRM_SPECIAL_PERMISSIONS } from '../../../data/comprehensive-crm-permissions.js';
+import { snsSqsPublisher } from '../../messaging/utils/sns-sqs-publisher.js';
+import { BUSINESS_SUITE_MATRIX } from '../../../data/permission-matrix.js';
 import { invalidateRoleCache } from '../../../middleware/auth/auth.js';
 // Role templates removed - using application/module based role creation
 const SYSTEM_ACTOR_UUID = '00000000-0000-0000-0000-000000000000';
@@ -30,45 +30,34 @@ type AdvancedRoleUpdateData = { name?: string; description?: string; color?: str
 class PermissionService {
   // Get all available permissions organized by application → module → operation
   async getAvailablePermissions(): Promise<{ applications: unknown[]; summary: { applicationCount: number; moduleCount: number; operationCount: number }; structure: Record<string, unknown> }> {
-    // Convert realistic permissions to frontend format
-    const crmModules: Record<string, ModuleDisplay> = {};
-    
-    Object.entries(CRM_PERMISSION_MATRIX).forEach(([moduleKey, modulePermissions]: [string, Record<string, string>]) => {
-      const moduleKeyUpper = moduleKey.toUpperCase();
-      
-      crmModules[moduleKeyUpper] = {
-        name: this.getModuleDisplayName(moduleKey),
-        description: this.getModuleDescription(moduleKey),
-        operations: Object.entries(modulePermissions).map(([permissionKey, description]: [string, string]) => ({
-          id: permissionKey,
-          name: this.getOperationDisplayName(permissionKey),
-          description: description,
-          level: this.getPermissionLevel(permissionKey)
-        }))
-      };
-    });
-    
-    // Add special permissions module
-    crmModules.SPECIAL = {
-      name: 'Special Permissions',
-      description: 'Cross-module administrative permissions',
-      operations: Object.entries(CRM_SPECIAL_PERMISSIONS as Record<string, string>).map(([permissionKey, description]: [string, string]) => ({
-        id: permissionKey,
-        name: this.getOperationDisplayName(permissionKey),
-        description: description,
-        level: 'advanced'
-      }))
-    };
+    // Build from BUSINESS_SUITE_MATRIX (single source of truth)
+    const applicationStructure: Record<string, { name: string; description: string; icon: string; color: string; modules: Record<string, ModuleDisplay> }> = {};
 
-    const applicationStructure: Record<string, { name: string; description: string; icon: string; color: string; modules: Record<string, ModuleDisplay> }> = {
-      CRM: {
-        name: 'Customer Relationship Management',
-        description: 'Realistic B2B CRM with 16 modules and 107 permissions',
-        icon: '💼',
-        color: '#3B82F6',
-        modules: crmModules
+    const matrix = BUSINESS_SUITE_MATRIX as Record<string, { appInfo: { appCode: string; appName: string; description: string; icon: string }; modules: Record<string, { moduleName: string; description?: string; permissions: Array<{ code: string; name: string; description: string }> }> }>;
+    for (const [appKey, appDef] of Object.entries(matrix)) {
+      const modules: Record<string, ModuleDisplay> = {};
+      if (appDef.modules) {
+        for (const [modKey, modDef] of Object.entries(appDef.modules)) {
+          modules[modKey.toUpperCase()] = {
+            name: modDef.moduleName ?? this.getModuleDisplayName(modKey),
+            description: modDef.description ?? '',
+            operations: (modDef.permissions ?? []).map((p) => ({
+              id: p.code,
+              name: p.name,
+              description: p.description,
+              level: this.getPermissionLevel(p.code)
+            }))
+          };
+        }
       }
-    };
+      applicationStructure[appKey.toUpperCase()] = {
+        name: appDef.appInfo?.appName ?? appKey,
+        description: appDef.appInfo?.description ?? '',
+        icon: appDef.appInfo?.icon ?? '',
+        color: '#3B82F6',
+        modules,
+      };
+    }
 
     // Transform to expected frontend format
     const applications = Object.entries(applicationStructure).map(([key, app]) => ({
@@ -373,7 +362,7 @@ class PermissionService {
     // Publish role change event to AWS MQ for real-time sync
     try {
       const row = updatedRole[0] as typeof customRoles.$inferSelect;
-      await amazonMQPublisher.publishRoleEventToSuite('role_updated', tenantId, row.roleId, {
+      await snsSqsPublisher.publishRoleEventToSuite('role_updated', tenantId, row.roleId, {
         roleId: row.roleId,
         roleName: row.roleName,
         description: row.description,
@@ -413,7 +402,7 @@ class PermissionService {
       };
 
       // Publish to AWS MQ
-      const result = await amazonMQPublisher.publishInterAppEvent({
+      const result = await snsSqsPublisher.publishInterAppEvent({
         eventType: 'role_permissions_changed',
         sourceApplication: 'wrapper',
         targetApplication: 'crm',
@@ -628,7 +617,7 @@ class PermissionService {
       
       // Publish role assignment event (reassignment)
       try {
-        await amazonMQPublisher.publishRoleEventToSuite('role_assigned', tenantId, roleId, {
+        await snsSqsPublisher.publishRoleEventToSuite('role_assigned', tenantId, roleId, {
           assignmentId: updated[0].id ?? '',
           userId: userId,
           roleId: roleId,
@@ -667,7 +656,7 @@ class PermissionService {
     
     // Publish role assignment event
     try {
-      await amazonMQPublisher.publishRoleEventToSuite('role_assigned', tenantId, roleId, {
+      await snsSqsPublisher.publishRoleEventToSuite('role_assigned', tenantId, roleId, {
         assignmentId: assignment[0].id,
         userId: userId,
         roleId: roleId,
@@ -722,7 +711,7 @@ class PermissionService {
     
     // Publish role unassignment event
     try {
-      await amazonMQPublisher.publishRoleEventToSuite('role_unassigned', tenantId, roleId, {
+      await snsSqsPublisher.publishRoleEventToSuite('role_unassigned', tenantId, roleId, {
         assignmentId: assignment.id ?? '',
         userId: userId,
         roleId: roleId,
@@ -770,7 +759,7 @@ class PermissionService {
     
     // Publish role unassignment event
     try {
-      await amazonMQPublisher.publishRoleEventToSuite('role_unassigned', tenantId, assignment.roleId, {
+      await snsSqsPublisher.publishRoleEventToSuite('role_unassigned', tenantId, assignment.roleId, {
         assignmentId: assignment.id, // Use 'id' as assignmentId in event
         userId: assignment.userId,
         roleId: assignment.roleId,
@@ -918,8 +907,8 @@ class PermissionService {
       inheritance
     });
 
-    const { parentRoles, inheritanceMode = 'additive', priority = 0 } = inheritance;
     
+    const { parentRoles, inheritanceMode } = inheritance as { parentRoles?: unknown[]; inheritanceMode?: string };
     if (!parentRoles || !Array.isArray(parentRoles) || parentRoles.length === 0) {
       console.log('⚠️ No parent roles specified, returning base permissions');
       return basePermissions || {};
@@ -953,7 +942,7 @@ class PermissionService {
 
     if (parents.length !== parentRoles.length) {
         const foundRoleIds = parents.map(p => p.roleId);
-        const missingRoleIds = parentRoles.filter(id => !foundRoleIds.includes(id));
+        const missingRoleIds = parentRoles.filter(id => !foundRoleIds.includes(id as string));
         console.log('⚠️ Some parent roles not found:', missingRoleIds);
         // Don't throw error, just continue with found roles
     }
@@ -1216,7 +1205,6 @@ class PermissionService {
         const parts = permission.split('.');
         if (parts.length >= 3) {
           const [app, module, ...actionParts] = parts;
-          const action = actionParts.join('.');
           const resourceKey = `${app}.${module}`;
           
           if (!groupedPermissions[resourceKey]) {
@@ -1415,13 +1403,12 @@ class PermissionService {
   }
 
   // Create role from template with customizations (role templates table removed - stub)
-  async createRoleFromTemplate(templateData: Record<string, unknown>): Promise<typeof customRoles.$inferSelect> {
+  async createRoleFromTemplate(_templateData: Record<string, unknown>): Promise<typeof customRoles.$inferSelect> {
     throw new Error('Role templates have been removed. Use application/module based role creation (getAvailablePermissions + createRole/createAdvancedRole).');
   }
 
   // Validate role access with context
   async validateRoleAccess(tenantId: string, roleId: string, context: ValidateRoleContext = {}): Promise<{ allowed: boolean; reason?: string; roleData?: unknown }> {
-    const { userId, ipAddress, timeOfAccess, requestedResource, requestedAction } = context;
 
     // Get role with permissions and restrictions
     const role = await db
@@ -1444,6 +1431,7 @@ class PermissionService {
     const restrictions = typeof roleData.restrictions === 'string' ? JSON.parse(roleData.restrictions) : (roleData.restrictions ?? {});
 
     const restr = (typeof restrictions === 'object' && restrictions !== null) ? restrictions as Record<string, unknown> : {};
+    const { timeOfAccess, ipAddress, requestedResource, requestedAction } = context;
     if (restr.timeRestrictions && timeOfAccess) {
       const timeCheck = this.validateTimeRestrictions(restr.timeRestrictions as Record<string, unknown>, new Date(timeOfAccess as string | Date));
       if (!timeCheck.allowed) {
@@ -1760,7 +1748,7 @@ class PermissionService {
           console.log('💡 Use CustomRoleService.updateRoleFromAppsAndModules() or set allowAdvancedUpdate=true');
           throw new Error('This role was created using the application/module builder. Use the custom role update API or set allowAdvancedUpdate=true to override this protection.');
         }
-      } catch (parseError) {
+      } catch (_parseError) {
         console.log('⚠️ Could not parse existing permissions, proceeding with update');
       }
     }
@@ -1897,7 +1885,7 @@ class PermissionService {
       // Publish role update event to AWS MQ
       try {
         const row = updatedRole[0] as typeof customRoles.$inferSelect;
-        await amazonMQPublisher.publishRoleEventToSuite('role_updated', tenantId, row.roleId, {
+        await snsSqsPublisher.publishRoleEventToSuite('role_updated', tenantId, row.roleId, {
           roleId: row.roleId,
           roleName: row.roleName,
           description: row.description,

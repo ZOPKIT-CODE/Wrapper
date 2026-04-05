@@ -131,7 +131,6 @@ export default async function healthRoutes(fastify: FastifyInstance, _options?: 
       // Redis removed - no Redis check needed
       if (false) { // Redis removed
         try {
-          const startTime = Date.now();
           // Redis removed
           const responseTime = 0;
           
@@ -152,8 +151,8 @@ export default async function healthRoutes(fastify: FastifyInstance, _options?: 
 
       // Amazon MQ health check
       try {
-        const { amazonMQPublisher } = await import('../features/messaging/utils/amazon-mq-publisher.js');
-        const status = amazonMQPublisher.getStatus();
+        const { snsSqsPublisher } = await import('../features/messaging/utils/sns-sqs-publisher.js');
+        const status = snsSqsPublisher.getStatus();
         (detailedHealth.services as Record<string, unknown>).amazonMq = {
           status: status.isConnected ? 'healthy' : 'unhealthy',
           reconnectAttempts: status.reconnectAttempts,
@@ -248,8 +247,8 @@ export default async function healthRoutes(fastify: FastifyInstance, _options?: 
 
       // MQ readiness check
       try {
-        const { amazonMQPublisher } = await import('../features/messaging/utils/amazon-mq-publisher.js');
-        const status = amazonMQPublisher.getStatus();
+        const { snsSqsPublisher } = await import('../features/messaging/utils/sns-sqs-publisher.js');
+        const status = snsSqsPublisher.getStatus();
         (readiness.checks as Record<string, string>).amazonMq = status.isConnected ? 'ready' : 'not_ready';
         if (!status.isConnected) {
           readiness.ready = false;

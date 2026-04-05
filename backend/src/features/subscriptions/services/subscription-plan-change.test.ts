@@ -19,9 +19,10 @@ describe('subscription-plan-change helper logic', () => {
 
   it('calculates feature loss between plans', () => {
     const loss = calculateFeatureLoss('enterprise', 'starter');
-    expect(loss).toContain('inventory');
-    expect(loss).toContain('accounting');
+    expect(loss).toContain('affiliateConnect');
+    expect(loss).toContain('operations');
     expect(loss).not.toContain('crm');
+    expect(loss).not.toContain('accounting');
   });
 
   it('calculates retention and user-limit downgrade impact', () => {

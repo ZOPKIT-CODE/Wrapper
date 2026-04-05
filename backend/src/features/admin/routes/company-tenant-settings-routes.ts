@@ -37,9 +37,6 @@ export default async function companyTenantSettingsRoutes(fastify: FastifyInstan
   fastify.get('/tenant', {
     preHandler: [authenticateToken]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     const requestId = Logger.generateRequestId('tenant-info');
     const tenantId = ((request as ReqWithUser).userContext?.tenantId ?? '') as string;
 
@@ -87,9 +84,6 @@ export default async function companyTenantSettingsRoutes(fastify: FastifyInstan
   fastify.get('/tenant/onboarding-status', {
     preHandler: [authenticateToken]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     const requestId = Logger.generateRequestId('tenant-onboarding-status');
     const tenantId = ((request as ReqWithUser).userContext?.tenantId ?? '') as string;
 
@@ -123,9 +117,7 @@ export default async function companyTenantSettingsRoutes(fastify: FastifyInstan
 
       // Calculate trial status
       const now = new Date();
-      const tenantAny = tenant as Record<string, unknown>;
-      const subAny = subscription as Record<string, unknown> | undefined;
-      const trialEnd = tenant.trialEndsAt ?? subAny?.trialEnd;
+      const trialEnd = subscription?.trialEndsAt ?? subscription?.currentPeriodEnd;
       const trialActive = trialEnd && new Date(trialEnd as Date) > now;
       const trialExpired = trialEnd && new Date(trialEnd as Date) <= now;
 
@@ -147,28 +139,20 @@ export default async function companyTenantSettingsRoutes(fastify: FastifyInstan
 
         // Onboarding tracking
         onboardingCompleted: tenant.onboardingCompleted,
-        onboardingStep: (tenantAny.onboardingStep as string) ?? null,
-        onboardingProgress: (tenantAny.onboardingProgress as Record<string, unknown>) || {},
         onboardedAt: tenant.onboardedAt,
         onboardingStartedAt: tenant.onboardingStartedAt,
-        setupCompletionRate: (tenantAny.setupCompletionRate as number) ?? 0,
 
-        // Trial & subscription tracking
-        trialStartedAt: tenant.trialStartedAt,
+        // Trial & subscription tracking (derived from dedicated columns/tables)
+        trialStartedAt: subscription?.trialStartedAt ?? subscription?.createdAt ?? null,
         trialEndsAt: trialEnd,
-        trialStatus: (tenantAny.trialStatus as string) ?? null,
         trialActive,
         trialExpired,
         trialTimeRemaining,
-        subscriptionStatus: (tenantAny.subscriptionStatus as string) ?? null,
+        subscriptionStatus: subscription?.status ?? 'none',
 
-        // Feature adoption
-        featuresEnabled: (tenantAny.featuresEnabled as Record<string, unknown>) || {},
+        // Activity
         firstLoginAt: tenant.firstLoginAt,
         lastActivityAt: tenant.lastActivityAt,
-
-        // Setup data
-        initialSetupData: (tenantAny.initialSetupData as Record<string, unknown>) || {},
 
         // Current status
         userCount: userCount.count,
@@ -182,7 +166,7 @@ export default async function companyTenantSettingsRoutes(fastify: FastifyInstan
 
       console.log(`✅ [${requestId}] Comprehensive onboarding status retrieved`);
       console.log(`📊 [${requestId}] Onboarding completed: ${onboardingStatus.onboardingCompleted}`);
-      console.log(`⏰ [${requestId}] Trial status: ${onboardingStatus.trialStatus} (Active: ${trialActive})`);
+      console.log(`⏰ [${requestId}] Subscription status: ${onboardingStatus.subscriptionStatus} (Trial active: ${trialActive})`);
 
       return {
         success: true,
@@ -206,8 +190,6 @@ export default async function companyTenantSettingsRoutes(fastify: FastifyInstan
     preHandler: [authenticateToken, requirePermission(PERMISSIONS.TENANT_SETTINGS_EDIT)]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     const requestId = Logger.generateRequestId('tenant-update');
     const tenantId = ((request as ReqWithUser).userContext?.tenantId ?? '') as string;
     const updateData = body as Record<string, unknown>;
@@ -255,7 +237,6 @@ export default async function companyTenantSettingsRoutes(fastify: FastifyInstan
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     const requestId = Logger.generateRequestId('tenant-deletion');
     const tenantId = params.tenantId ?? '';
     const confirmDeletion = body.confirmDeletion;
@@ -310,9 +291,7 @@ export default async function companyTenantSettingsRoutes(fastify: FastifyInstan
   fastify.get('/tenant/:tenantId/data-summary', {
     preHandler: [authenticateToken, requirePermission(PERMISSIONS.TENANT_SETTINGS_VIEW)]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     const requestId = Logger.generateRequestId('tenant-summary');
     const tenantId = params.tenantId ?? '';
 

@@ -1,7 +1,10 @@
+import { v4 as uuidv4 } from 'uuid';
 import { db } from '../../../db/index.js';
+import * as Sentry from '@sentry/node';
 import { payments } from '../../../db/schema/billing/subscriptions.js';
 import { eq, desc, and } from 'drizzle-orm';
 import { PaymentRepository } from './payment-repository.js';
+import { getPaymentGateway } from '../adapters/index.js';
 
 type PaymentData = Record<string, unknown> & {
   tenantId: string;
@@ -67,6 +70,17 @@ export class PaymentService {
     } catch (err: unknown) {
       const error = err as Error;
       console.error('❌ Failed to record payment:', error);
+      Sentry.withScope((scope) => {
+        scope.setTag('payment.operation', 'recordPayment');
+        scope.setTag('payment.status', paymentData.status);
+        scope.setContext('payment', {
+          tenantId: paymentData.tenantId,
+          amount: paymentData.amount,
+          paymentType: paymentData.paymentType,
+          stripePaymentIntentId: paymentData.stripePaymentIntentId,
+        });
+        Sentry.captureException(error);
+      });
       throw error;
     }
   }
@@ -97,6 +111,7 @@ export class PaymentService {
     } catch (err: unknown) {
       const error = err as Error;
       console.error('❌ Failed to update payment status:', error);
+      Sentry.captureException(error, { tags: { 'payment.operation': 'updateStatus', 'payment.new_status': status } });
       throw error;
     }
   }
@@ -112,12 +127,21 @@ export class PaymentService {
     }
   }
 
-  // Record a comprehensive refund
+  // Record a comprehensive refund — atomic: both the status update and refund record succeed or neither does.
   static async recordRefund(originalPaymentId: string, refundAmount: string | number, reason?: string) {
     try {
-      // Get the original payment
+      // Use explicit columns to avoid "column does not exist" when DB is behind Drizzle schema
       const [originalPayment] = await db
-        .select()
+        .select({
+          paymentId: payments.paymentId,
+          tenantId: payments.tenantId,
+          subscriptionId: payments.subscriptionId,
+          stripeChargeId: payments.stripeChargeId,
+          amount: payments.amount,
+          currency: payments.currency,
+          metadata: payments.metadata,
+          amountRefunded: payments.amountRefunded,
+        })
         .from(payments)
         .where(eq(payments.paymentId, originalPaymentId))
         .limit(1);
@@ -126,54 +150,70 @@ export class PaymentService {
         throw new Error('Original payment not found');
       }
 
-      const isPartialRefund = parseFloat(String(refundAmount)) < parseFloat(String(originalPayment.amount));
+      const totalPreviousRefunds = parseFloat(String(originalPayment.amountRefunded ?? '0'));
+      const newRefundAmount = parseFloat(String(refundAmount));
+      const originalAmount = parseFloat(String(originalPayment.amount));
 
-      // Update original payment record (schema may have amountRefunded, refundReason, etc.)
-      const [updatedPayment] = await db
-        .update(payments)
-        .set({
-          amountRefunded: String(refundAmount),
-          status: isPartialRefund ? 'partially_refunded' : 'refunded',
-          refundReason: reason,
-          isPartialRefund,
-          refundedAt: new Date(),
-          updatedAt: new Date(),
-          metadata: {
-            ...(originalPayment.metadata as Record<string, unknown> || {}),
-            refund: {
-              amount: refundAmount,
-              reason: reason,
-              processed_at: new Date().toISOString(),
-              is_partial: isPartialRefund
+      if (newRefundAmount + totalPreviousRefunds > originalAmount) {
+        throw new Error('Refund amount exceeds original payment amount');
+      }
+
+      const totalRefunded = newRefundAmount + totalPreviousRefunds;
+      const isPartialRefund = totalRefunded < originalAmount;
+
+      const result = await db.transaction(async (tx) => {
+        const [updatedPayment] = await tx
+          .update(payments)
+          .set({
+            amountRefunded: String(totalRefunded),
+            status: isPartialRefund ? 'partially_refunded' : 'refunded',
+            refundReason: reason,
+            isPartialRefund,
+            refundedAt: new Date(),
+            updatedAt: new Date(),
+            metadata: {
+              ...(originalPayment.metadata as Record<string, unknown> || {}),
+              refund: {
+                amount: refundAmount,
+                reason: reason,
+                processed_at: new Date().toISOString(),
+                is_partial: isPartialRefund
+              }
             }
-          }
-        } as any)
-        .where(eq(payments.paymentId, originalPaymentId))
-        .returning();
+          } as any)
+          .where(eq(payments.paymentId, originalPaymentId))
+          .returning();
 
-      // Create separate refund record
-      const [refundRecord] = await db.insert(payments).values({
-        tenantId: originalPayment.tenantId,
-        subscriptionId: originalPayment.subscriptionId,
-        stripeChargeId: originalPayment.stripeChargeId,
-        amount: (-parseFloat(String(refundAmount))).toString(), // Negative for refund
-        currency: originalPayment.currency,
-        status: 'succeeded',
-        paymentType: 'refund',
-        billingReason: 'refund',
-        description: `Refund for ${reason || 'customer request'}`,
-        metadata: {
-          originalPaymentId: originalPaymentId,
-          refundReason: reason,
-          isPartialRefund
-        },
-        paidAt: new Date()
-      } as any).returning();
+        const [refundRecord] = await tx.insert(payments).values({
+          tenantId: originalPayment.tenantId,
+          subscriptionId: originalPayment.subscriptionId,
+          stripeChargeId: originalPayment.stripeChargeId,
+          amount: (-parseFloat(String(refundAmount))).toString(),
+          currency: originalPayment.currency,
+          status: 'succeeded',
+          paymentType: 'refund',
+          billingReason: 'refund',
+          description: `Refund for ${reason || 'customer request'}`,
+          metadata: {
+            originalPaymentId: originalPaymentId,
+            refundReason: reason,
+            isPartialRefund
+          },
+          paidAt: new Date()
+        } as any).returning();
 
-      return { updatedPayment, refundRecord };
+        return { updatedPayment, refundRecord };
+      });
+
+      return result;
     } catch (err: unknown) {
       const error = err as Error;
       console.error('❌ Failed to record refund:', error);
+      Sentry.withScope((scope) => {
+        scope.setTag('payment.operation', 'recordRefund');
+        scope.setContext('refund', { originalPaymentId, refundAmount, reason });
+        Sentry.captureException(error);
+      });
       throw error;
     }
   }
@@ -344,6 +384,198 @@ export class PaymentService {
       const error = err as Error;
       console.error('❌ Failed to get failed payments:', error);
       throw error;
+    }
+  }
+
+  // Create a full payment record (used by webhook handler and plan-change service)
+  static async createPaymentRecord(paymentData: Record<string, unknown>): Promise<Record<string, unknown>> {
+    try {
+      const paymentRecord = {
+        paymentId: uuidv4(),
+        tenantId: paymentData.tenantId as string,
+        subscriptionId: paymentData.subscriptionId as string | undefined,
+        stripePaymentIntentId: paymentData.stripePaymentIntentId,
+        stripeInvoiceId: paymentData.stripeInvoiceId,
+        stripeChargeId: paymentData.stripeChargeId,
+        amount: String(paymentData.amount ?? 0),
+        currency: String(paymentData.currency ?? 'USD').toUpperCase(),
+        status: paymentData.status as string,
+        paymentMethod: paymentData.paymentMethod || 'card',
+        paymentMethodDetails: paymentData.paymentMethodDetails || {},
+        paymentType: paymentData.paymentType || 'subscription',
+        billingReason: paymentData.billingReason,
+        invoiceNumber: paymentData.invoiceNumber,
+        description: paymentData.description,
+        taxAmount: paymentData.taxAmount?.toString() || '0',
+        metadata: paymentData.metadata || {},
+        stripeRawData: paymentData.stripeRawData || {},
+        provider: paymentData.provider || getPaymentGateway().providerName,
+        paidAt: paymentData.paidAt || new Date(),
+        createdAt: new Date(),
+      };
+
+      const [payment] = await db.insert(payments).values(paymentRecord as any).returning();
+      console.log('✅ Payment record created:', payment.paymentId);
+      return payment as unknown as Record<string, unknown>;
+    } catch (err: unknown) {
+      const error = err as Error;
+      console.error('❌ Failed to create payment record:', error);
+      Sentry.withScope((scope) => {
+        scope.setTag('payment.operation', 'createPaymentRecord');
+        scope.setContext('payment', {
+          tenantId: paymentData.tenantId,
+          amount: paymentData.amount,
+          paymentType: paymentData.paymentType,
+          status: paymentData.status,
+        });
+        Sentry.captureException(error);
+      });
+      throw error;
+    }
+  }
+
+  // Process an immediate refund via the payment gateway, then record it atomically.
+  static async processRefund(params: { tenantId: string; paymentId: string; amount?: number | null; reason?: string }): Promise<Record<string, unknown>> {
+    const { tenantId, paymentId, amount = null, reason = 'customer_request' } = params;
+    const gateway = getPaymentGateway();
+
+    try {
+      const [payment] = await db
+        .select()
+        .from(payments)
+        .where(eq(payments.paymentId, paymentId))
+        .limit(1);
+
+      if (!payment) throw new Error('Payment not found');
+      if (payment.tenantId !== tenantId) throw new Error('Payment does not belong to this tenant');
+
+      const refundAmount = amount ?? parseFloat(payment.amount);
+      const isPartialRefund = amount != null && amount < parseFloat(payment.amount);
+
+      let gatewayRefund: { refundId?: string; paymentIntentId?: string; chargeId?: string } | null = null;
+
+      if ((payment.stripePaymentIntentId || payment.stripeChargeId) && gateway.isConfigured()) {
+        gatewayRefund = await gateway.createRefund({
+          paymentIntentId: payment.stripePaymentIntentId ?? undefined,
+          chargeId: payment.stripeChargeId ?? undefined,
+          amount: Math.round(refundAmount * 100),
+          reason,
+          metadata: { tenantId, paymentId, reason },
+        });
+        console.log('✅ Gateway refund created:', gatewayRefund.refundId, '(provider:', gateway.providerName + ')');
+      }
+
+      await db.transaction(async (tx) => {
+        await tx.update(payments).set({
+          status: isPartialRefund ? 'partially_refunded' : 'refunded',
+          updatedAt: new Date(),
+          metadata: {
+            ...(payment.metadata as Record<string, unknown> || {}),
+            amountRefunded: refundAmount,
+            refundReason: reason,
+            gatewayRefundId: gatewayRefund?.refundId,
+            provider: gateway.providerName,
+          }
+        } as any).where(eq(payments.paymentId, paymentId));
+
+        await tx.insert(payments).values({
+          tenantId,
+          subscriptionId: payment.subscriptionId,
+          stripePaymentIntentId: gatewayRefund?.paymentIntentId ?? null,
+          stripeChargeId: gatewayRefund?.chargeId ?? null,
+          amount: String(-refundAmount),
+          currency: payment.currency,
+          status: 'succeeded',
+          paymentType: 'refund',
+          billingReason: 'refund_request',
+          description: `Refund for ${reason}`,
+          metadata: { originalPaymentId: paymentId, refundReason: reason, isPartialRefund, provider: gateway.providerName },
+          stripeRawData: gatewayRefund || {},
+        } as any);
+      });
+
+      return { refundId: gatewayRefund?.refundId, amount: refundAmount, currency: payment.currency, status: 'succeeded', isPartialRefund, provider: gateway.providerName };
+    } catch (err: unknown) {
+      const error = err as Error;
+      console.error('❌ Refund processing failed:', error);
+      Sentry.withScope((scope) => {
+        scope.setTag('payment.operation', 'processRefund');
+        scope.setContext('refund', { tenantId, paymentId, amount, reason });
+        Sentry.captureException(error);
+      });
+      throw error;
+    }
+  }
+
+  // Retrieve payment details from a checkout session ID via the gateway adapter.
+  static async getPaymentDetailsByCheckoutSessionId(sessionId: string, tenantId: string): Promise<Record<string, unknown> | null> {
+    const gateway = getPaymentGateway();
+    if (!gateway.isConfigured()) return null;
+
+    try {
+      const session = await gateway.retrieveCheckoutSession(sessionId, ['subscription']);
+      const meta = session.metadata || {};
+      if (meta.tenantId !== tenantId) return null;
+
+      const planId = meta.planId || meta.packageId || 'starter';
+      const billingCycle = meta.billingCycle || 'yearly';
+
+      const { PLAN_ACCESS_MATRIX } = await import('../../../data/permission-matrix.js');
+      const planAccess = (PLAN_ACCESS_MATRIX as Record<string, any>)[planId];
+      const planDetails = planAccess ? {
+        name: planId.charAt(0).toUpperCase() + planId.slice(1),
+        features: [
+          ...(planAccess.applications?.includes('crm') ? ['CRM Suite'] : []),
+          ...(planAccess.applications?.includes('hr') ? ['HR Management'] : []),
+          `${planAccess.credits?.free || 0} Free Credits`,
+        ],
+        credits: planAccess.credits?.free || 0,
+      } : null;
+
+      const amount = session.amountTotal ? session.amountTotal / 100 : 0;
+      const status = session.paymentStatus === 'paid' ? 'succeeded' : (session.paymentStatus || 'pending');
+      const sessionCreatedAt = session.created ? new Date(session.created * 1000).toISOString() : new Date().toISOString();
+
+      const sub = session.subscription as Record<string, unknown> | null | undefined;
+      const subPeriodEnd = sub?.currentPeriodEnd as string | undefined || sub?.current_period_end as string | undefined;
+      const renewalDate = subPeriodEnd ? (typeof subPeriodEnd === 'number' ? new Date(subPeriodEnd * 1000).toISOString() : subPeriodEnd) : null;
+      const subPeriodStart = sub?.currentPeriodStart as string | undefined || sub?.current_period_start as string | undefined;
+      const periodStart = subPeriodStart ? (typeof subPeriodStart === 'number' ? new Date((subPeriodStart as unknown as number) * 1000).toISOString() : subPeriodStart) : null;
+
+      const sessionAny = session as unknown as Record<string, unknown>;
+      const stripePaymentIntentId = sessionAny.paymentIntentId as string | undefined;
+
+      return {
+        success: true,
+        data: {
+          sessionId: session.id,
+          transactionId: stripePaymentIntentId || session.id,
+          stripePaymentIntentId: stripePaymentIntentId || null,
+          stripeInvoiceId: sessionAny.stripeInvoiceId as string | null || null,
+          invoiceNumber: null,
+          amount,
+          currency: (session.currency || 'usd').toUpperCase(),
+          taxAmount: 0,
+          planId,
+          planName: planDetails?.name || planId,
+          billingCycle,
+          paymentMethod: 'card',
+          paymentMethodDetails: null,
+          status,
+          createdAt: sessionCreatedAt,
+          paidAt: session.paymentStatus === 'paid' ? sessionCreatedAt : null,
+          processedAt: session.paymentStatus === 'paid' ? sessionCreatedAt : null,
+          description: `Subscription: ${planDetails?.name || planId}`,
+          subscription: (renewalDate || periodStart) ? { status: 'active', currentPeriodStart: periodStart, currentPeriodEnd: renewalDate, nextBillingDate: renewalDate, renewalDate } : null,
+          features: planDetails?.features || [],
+          credits: planDetails?.credits || 0,
+          provider: gateway.providerName,
+        },
+      };
+    } catch (err: unknown) {
+      const error = err as Error;
+      console.error('getPaymentDetailsByCheckoutSessionId:', error?.message);
+      return null;
     }
   }
 } 

@@ -32,7 +32,6 @@ import {
   createFreeSubscription,
   checkTrialHistory,
   cancelSubscription,
-  recordTrialEvent,
   handleExpiredTrials,
   sendTrialReminders,
 } from './subscription-trial.js';
@@ -47,12 +46,14 @@ import {
   changePlan,
   scheduleDowngrade,
   processImmediatePlanChange,
-  isValidPlanChange,
   immediateDowngrade,
+} from './subscription-plan-change.js';
+import {
+  isValidPlanChange,
   calculateFeatureLoss,
   calculateDataRetention,
   calculateUserLimits,
-} from './subscription-plan-change.js';
+} from './subscription-plan-change.helpers.js';
 
 import {
   updateAdministratorRolesForPlan,
@@ -62,11 +63,8 @@ import {
   updateSuperAdminRoleForPlan,
 } from './subscription-plan-roles.js';
 
-import {
-  getPaymentDetailsByCheckoutSessionId,
-  createPaymentRecord,
-  processRefund,
-} from './subscription-payment-records.js';
+import { PaymentService as _PaymentService } from './payment-service.js';
+const { getPaymentDetailsByCheckoutSessionId, createPaymentRecord, processRefund } = _PaymentService;
 import {
   handleWebhook,
   handleCheckoutCompleted,
@@ -83,7 +81,6 @@ import {
   handleSubscriptionDeleted,
 } from './subscription-webhook-handler.js';
 
-import type { RequestContext } from '../../../services/activityLogger.js';
 
 export class SubscriptionService {
   // Gateway adapter (primary API for payment operations)
@@ -101,7 +98,6 @@ export class SubscriptionService {
   static createFreeSubscription = createFreeSubscription;
   static checkTrialHistory = checkTrialHistory;
   static cancelSubscription = cancelSubscription;
-  static recordTrialEvent = recordTrialEvent;
   static handleExpiredTrials = handleExpiredTrials;
   static sendTrialReminders = sendTrialReminders;
 

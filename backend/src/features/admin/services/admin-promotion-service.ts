@@ -7,9 +7,8 @@ import {
   tenants,
   tenantInvitations
 } from '../../../db/schema/index.js';
-import { eq, and, or, isNull, ne, count } from 'drizzle-orm';
+import { eq, and, isNull, ne, count } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
-import Logger from '../../../utils/logger.js';
 import { kindeService } from '../../auth/index.js';
 
 type PromotionOptions = {
@@ -151,12 +150,12 @@ export class AdminPromotionService {
             previousAdmin: {
               userId: currentAdmin.userId,
               email: currentAdmin.email,
-              name: currentAdmin.name
+              name: [currentAdmin.firstName, currentAdmin.lastName].filter(Boolean).join(' ') || currentAdmin.email
             },
             newAdmin: {
               userId: newAdmin.userId,
               email: newAdmin.email,
-              name: newAdmin.name
+              name: [newAdmin.firstName, newAdmin.lastName].filter(Boolean).join(' ') || newAdmin.email
             },
             transitionType,
             transferredData: prePromotionAudit.dataOwnership,
@@ -670,17 +669,18 @@ export class AdminPromotionService {
   /**
    * Get users eligible for admin promotion
    */
-  static async getEligibleUsers(tenantId: string, currentAdminId: string): Promise<Array<{ userId: string | null; email: string; name: string; isActive: boolean | null; isTenantAdmin: boolean | null; createdAt: Date | null; lastLoginAt: Date | null }>> {
+  static async getEligibleUsers(tenantId: string, currentAdminId: string): Promise<Array<{ userId: string | null; email: string; firstName: string | null; lastName: string | null; isActive: boolean | null; isTenantAdmin: boolean | null; createdAt: Date | null; lastActiveAt: Date | null }>> {
     try {
       const users = await db
         .select({
           userId: tenantUsers.userId,
           email: tenantUsers.email,
-          name: tenantUsers.name,
+          firstName: tenantUsers.firstName,
+          lastName: tenantUsers.lastName,
           isActive: tenantUsers.isActive,
           isTenantAdmin: tenantUsers.isTenantAdmin,
           createdAt: tenantUsers.createdAt,
-          lastLoginAt: tenantUsers.lastLoginAt
+          lastActiveAt: tenantUsers.lastActiveAt
         })
         .from(tenantUsers)
         .where(and(
@@ -836,7 +836,8 @@ export class AdminPromotionService {
             .select({
               userId: userRoleAssignments.userId,
               assignmentId: userRoleAssignments.id,
-              userName: tenantUsers.name,
+              userFirstName: tenantUsers.firstName,
+              userLastName: tenantUsers.lastName,
               userEmail: tenantUsers.email
             })
             .from(userRoleAssignments)
@@ -851,7 +852,9 @@ export class AdminPromotionService {
             .limit(1);
 
           if (currentSystemAdmin.length > 0 && !forceTransfer) {
-            throw new Error(`Another user (${currentSystemAdmin[0].userName}) is already System Administrator. Use forceTransfer option to replace them.`);
+            const sa = currentSystemAdmin[0];
+            const saName = [sa.userFirstName, sa.userLastName].filter(Boolean).join(' ') || sa.userEmail;
+            throw new Error(`Another user (${saName}) is already System Administrator. Use forceTransfer option to replace them.`);
           }
         }
 
@@ -902,7 +905,8 @@ export class AdminPromotionService {
             .select({
               userId: userRoleAssignments.userId,
               assignmentId: userRoleAssignments.id,
-              userName: tenantUsers.name,
+              userFirstName: tenantUsers.firstName,
+              userLastName: tenantUsers.lastName,
               userEmail: tenantUsers.email
             })
             .from(userRoleAssignments)
@@ -915,15 +919,23 @@ export class AdminPromotionService {
             .limit(1);
 
           if (existingSystemAdmin.length > 0) {
-            detectedPreviousAdmin = existingSystemAdmin[0];
-            console.log(`🔍 [SystemAdminPromotion-${transactionId}] Detected existing System Administrator: ${detectedPreviousAdmin.userName}`);
+            const raw = existingSystemAdmin[0];
+            const dpaName = [raw.userFirstName, raw.userLastName].filter(Boolean).join(' ') || raw.userEmail || '';
+            detectedPreviousAdmin = {
+              userId: raw.userId,
+              assignmentId: raw.assignmentId,
+              userName: dpaName,
+              userEmail: raw.userEmail
+            };
+            console.log(`🔍 [SystemAdminPromotion-${transactionId}] Detected existing System Administrator: ${dpaName}`);
           }
         }
 
         // Remove System Administrator role from previous admin
         if (detectedPreviousAdmin) {
-          const prevAdmin = detectedPreviousAdmin as { userId: string; userName?: string | null; userEmail?: string | null; assignmentId?: string };
-          console.log(`⚠️ [SystemAdminPromotion-${transactionId}] Removing System Administrator from: ${prevAdmin.userName}`);
+          const prevAdmin = detectedPreviousAdmin as { userId: string; userName: string; userEmail?: string | null; assignmentId?: string };
+          const prevAdminName = prevAdmin.userName || prevAdmin.userEmail;
+          console.log(`⚠️ [SystemAdminPromotion-${transactionId}] Removing System Administrator from: ${prevAdminName}`);
           
           // Deactivate their role assignment
           if (prevAdmin.assignmentId) {
@@ -985,7 +997,8 @@ export class AdminPromotionService {
           .where(eq(tenantUsers.userId, targetUserId))
           .returning();
 
-        console.log(`✅ [SystemAdminPromotion-${transactionId}] System Administrator role assigned to: ${updatedTargetUser.name}`);
+        const targetUserName = [updatedTargetUser.firstName, updatedTargetUser.lastName].filter(Boolean).join(' ') || updatedTargetUser.email;
+        console.log(`✅ [SystemAdminPromotion-${transactionId}] System Administrator role assigned to: ${targetUserName}`);
 
         // Phase 5: Enhanced Audit logging
         console.log(`📝 [SystemAdminPromotion-${transactionId}] Phase 5: Enhanced Audit logging...`);
@@ -1001,7 +1014,7 @@ export class AdminPromotionService {
           } : null,
           newAdmin: {
             userId: targetUserId,
-            name: updatedTargetUser.name,
+            name: targetUserName,
             email: updatedTargetUser.email
           },
           systemAdminRoleId: systemAdminRole.roleId,
@@ -1031,7 +1044,7 @@ export class AdminPromotionService {
             resourceId: detectedPreviousAdmin.userId,
             details: {
               transactionId,
-              reason: `Demoted due to new System Administrator promotion: ${updatedTargetUser.name}`,
+              reason: `Demoted due to new System Administrator promotion: ${targetUserName}`,
               forceTransfer,
               newAdmin: auditDetails.newAdmin,
               timestamp: new Date().toISOString()
@@ -1048,7 +1061,7 @@ export class AdminPromotionService {
             transactionId,
             newAdmin: {
               userId: targetUserId,
-              name: updatedTargetUser.name,
+              name: targetUserName,
               email: updatedTargetUser.email,
               roleId: systemAdminRole.roleId,
               roleName: 'System Administrator',
@@ -1082,14 +1095,15 @@ export class AdminPromotionService {
   /**
    * Get current System Administrator
    */
-  static async getCurrentSystemAdmin(tenantId: string): Promise<{ userId: string | null; name: string | null; email: string | null; roleId: string | null; roleName: string | null; assignedAt: Date | null } | null> {
+  static async getCurrentSystemAdmin(tenantId: string): Promise<{ userId: string | null; firstName: string | null; lastName: string | null; email: string | null; roleId: string | null; roleName: string | null; assignedAt: Date | null } | null> {
     console.log(`🔍 Getting current System Administrator for tenant: ${tenantId}`);
 
     try {
       const [currentAdmin] = await db
         .select({
           userId: tenantUsers.userId,
-          name: tenantUsers.name,
+          firstName: tenantUsers.firstName,
+          lastName: tenantUsers.lastName,
           email: tenantUsers.email,
           roleId: customRoles.roleId,
           roleName: customRoles.roleName,
@@ -1118,7 +1132,7 @@ export class AdminPromotionService {
   /**
    * Get eligible users for System Administrator promotion
    */
-  static async getEligibleUsersForSystemAdmin(tenantId: string, currentAdminId: string): Promise<Array<Record<string, unknown>>> {
+  static async getEligibleUsersForSystemAdmin(tenantId: string, _currentAdminId: string): Promise<Array<Record<string, unknown>>> {
     console.log(`🔍 Getting eligible users for System Administrator promotion in tenant: ${tenantId}`);
 
     try {
@@ -1126,7 +1140,6 @@ export class AdminPromotionService {
       const eligibleUsers = await db
         .select({
           userId: tenantUsers.userId,
-          name: tenantUsers.name,
           email: tenantUsers.email,
           firstName: tenantUsers.firstName,
           lastName: tenantUsers.lastName,

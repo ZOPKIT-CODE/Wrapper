@@ -1,13 +1,12 @@
 import { db, sql } from '../db/index.js';
 import { subscriptions } from '../db/schema/billing/subscriptions.js';
 import { tenants } from '../db/schema/core/tenants.js';
-import { eq, and, lt, gt, or } from 'drizzle-orm';
+import { eq, and, lt, gt, or, isNull } from 'drizzle-orm';
 import { EmailService } from '../utils/email.js';
 import Logger from './logger.js';
 import cron from 'node-cron';
 
 // Schema may have been migrated; trial columns asserted for type compatibility where used
-const subsSchema = subscriptions as typeof subscriptions & { trialEnd?: unknown; trialToggledOff?: unknown };
 
 interface TrialSubscriptionRow {
   subscriptionId: string;
@@ -145,13 +144,16 @@ class TrialManager {
       console.log(`⏰ Timestamp: ${Logger.getTimestamp()}`);
       
       // Find ALL subscriptions that should be expired but aren't marked as such
+      // NOTE: The DB has no `trial_end` column — `currentPeriodEnd` IS the trial end date.
+      // subsSchema.trialEnd was a phantom reference that resolved to undefined at runtime,
+      // crashing Drizzle's orderSelectedFields. Use currentPeriodEnd everywhere.
       const potentiallyExpired = (await db
         .select({
           subscriptionId: subscriptions.subscriptionId,
           tenantId: subscriptions.tenantId,
           plan: subscriptions.plan,
           status: subscriptions.status,
-          trialEnd: subsSchema.trialEnd as typeof subscriptions.currentPeriodEnd,
+          trialEnd: subscriptions.currentPeriodEnd,
           currentPeriodEnd: subscriptions.currentPeriodEnd,
           companyName: tenants.companyName,
           adminEmail: tenants.adminEmail,
@@ -160,20 +162,20 @@ class TrialManager {
         .leftJoin(tenants, eq(subscriptions.tenantId, tenants.tenantId))
         .where(
           and(
-            // Either trial or paid subscription
             or(
-              // Trial subscriptions
+              // Trial subscriptions where period has ended
               and(
                 or(
                   eq(subscriptions.status, 'trialing'),
                   eq(subscriptions.plan, 'trial')
                 ),
-                lt(subsSchema.trialEnd as typeof subscriptions.currentPeriodEnd, new Date())
+                lt(subscriptions.currentPeriodEnd, new Date())
               ),
-              // Paid subscriptions with expired periods
+              // Non-Stripe-managed paid subscriptions with expired periods
               and(
                 eq(subscriptions.status, 'active'),
-                lt(subscriptions.currentPeriodEnd, new Date())
+                lt(subscriptions.currentPeriodEnd, new Date()),
+                isNull(subscriptions.stripeSubscriptionId)
               )
             ),
             // Not already marked as expired
@@ -234,12 +236,14 @@ class TrialManager {
       await db
         .update(subscriptions)
         .set({
-          status: 'past_due',
+          status: 'suspended',
+          suspendedAt: new Date(),
+          suspendedReason: 'Trial expired - upgrade required',
           updatedAt: new Date()
         })
         .where(eq(subscriptions.subscriptionId, trial.subscriptionId));
 
-      console.log(`✅ [${requestId}] Subscription status updated to 'past_due'`);
+      console.log(`✅ [${requestId}] Subscription status updated to 'suspended'`);
 
       // Step 2: Create trial expiry event record (NOT in payments table)
       console.log(`📝 [${requestId}] Step 2: Recording trial expiry event...`);
@@ -254,6 +258,51 @@ class TrialManager {
       // Step 3: Apply immediate access restrictions
       console.log(`📝 [${requestId}] Step 3: Applying access restrictions...`);
       await this.applyTrialRestrictions(trial.tenantId);
+
+      // Step 3.5: Deduct remaining trial credits
+      console.log(`📝 [${requestId}] Step 3.5: Deducting remaining trial credits...`);
+      try {
+        const { db: dbConn } = await import('../db/index.js');
+        const { credits: creditsTable, creditTransactions } = await import('../db/schema/index.js');
+        const { eq: eqFn } = await import('drizzle-orm');
+        const { randomUUID } = await import('crypto');
+
+        const tenantCredits = await dbConn
+          .select()
+          .from(creditsTable)
+          .where(eqFn(creditsTable.tenantId, trial.tenantId));
+
+        for (const creditRecord of tenantCredits) {
+          const currentBalance = parseFloat(String(creditRecord.availableCredits ?? 0));
+          if (currentBalance <= 0) continue;
+
+          await dbConn
+            .update(creditsTable)
+            .set({ availableCredits: '0', lastUpdatedAt: new Date() })
+            .where(eqFn(creditsTable.creditId, creditRecord.creditId));
+
+          if (creditRecord.entityId != null) {
+            await dbConn
+              .insert(creditTransactions)
+              .values({
+                transactionId: randomUUID(),
+                tenantId: trial.tenantId,
+                entityId: creditRecord.entityId,
+                transactionType: 'expiry',
+                amount: (-currentBalance).toString(),
+                previousBalance: currentBalance.toString(),
+                newBalance: '0',
+                operationCode: `trial_expiry:${trial.subscriptionId}`,
+                createdAt: new Date()
+              });
+          }
+        }
+
+        console.log(`✅ [${requestId}] Trial credits deducted for tenant ${trial.tenantId}`);
+      } catch (creditErr) {
+        // Non-fatal: log but don't abort the trial expiry flow
+        console.error(`⚠️ [${requestId}] Failed to deduct trial credits (non-fatal):`, creditErr);
+      }
 
       // Step 4: Send immediate email notification
       console.log(`📝 [${requestId}] Step 4: Sending immediate email notification...`);
@@ -298,7 +347,6 @@ class TrialManager {
 
   // Handle expired paid plan - different from trial expiry
   async handleExpiredPaidPlan(subscription: TrialSubscriptionRow, parentRequestId: string | null = null): Promise<void> {
-    const startTime = Date.now();
     const requestId = parentRequestId || Logger.generateRequestId('paid-plan-expire');
     
     try {
@@ -324,7 +372,7 @@ class TrialManager {
       });
 
       // Send plan expiry email
-      const emailResult = await EmailService.sendPlanExpiredNotification({
+      await EmailService.sendPlanExpiredNotification({
         email: subscription.adminEmail ?? '',
         companyName: subscription.companyName ?? '',
         planName: subscription.plan,
@@ -395,7 +443,6 @@ class TrialManager {
 
   // Send trial reminders
   async sendTrialReminders() {
-    const startTime = Date.now();
     const requestId = Logger.generateRequestId('trial-reminders');
     
     try {
@@ -403,15 +450,13 @@ class TrialManager {
       
       // Find trials expiring in next 3 days, 1 day, and 1 hour
       const threeDaysFromNow = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
-      const oneDayFromNow = new Date(Date.now() + 24 * 60 * 60 * 1000);
-      const oneHourFromNow = new Date(Date.now() + 60 * 60 * 1000);
       
       const upcomingExpirations = (await db
         .select({
           subscriptionId: subscriptions.subscriptionId,
           tenantId: subscriptions.tenantId,
           plan: subscriptions.plan,
-          trialEnd: subsSchema.trialEnd as typeof subscriptions.currentPeriodEnd,
+          trialEnd: subscriptions.currentPeriodEnd,
           companyName: tenants.companyName,
           adminEmail: tenants.adminEmail,
         })
@@ -423,8 +468,8 @@ class TrialManager {
               eq(subscriptions.status, 'trialing'),
               eq(subscriptions.plan, 'trial')
             ),
-            lt(subsSchema.trialEnd as typeof subscriptions.currentPeriodEnd, threeDaysFromNow),
-            gt(subsSchema.trialEnd as typeof subscriptions.currentPeriodEnd, new Date())
+            lt(subscriptions.currentPeriodEnd, threeDaysFromNow),
+            gt(subscriptions.currentPeriodEnd, new Date())
           )
         )) as TrialSubscriptionRow[];
 
@@ -434,8 +479,6 @@ class TrialManager {
         const trialEnd = trial.trialEnd != null ? trial.trialEnd : null;
         if (trialEnd == null) continue;
         const timeUntilExpiry = new Date(trialEnd).getTime() - new Date().getTime();
-        const hoursUntilExpiry = Math.floor(timeUntilExpiry / (1000 * 60 * 60));
-        const daysUntilExpiry = Math.floor(timeUntilExpiry / (1000 * 60 * 60 * 24));
 
         let reminderType = '';
         if (timeUntilExpiry <= 60 * 60 * 1000) { // 1 hour
@@ -542,12 +585,11 @@ class TrialManager {
       const [subscription] = (await db
         .select({
           status: subscriptions.status,
-          trialEnd: subsSchema.trialEnd as typeof subscriptions.currentPeriodEnd,
+          trialEnd: subscriptions.currentPeriodEnd,
           currentPeriodEnd: subscriptions.currentPeriodEnd,
           plan: subscriptions.plan,
           stripeSubscriptionId: subscriptions.stripeSubscriptionId,
           hasEverUpgraded: subscriptions.hasEverUpgraded,
-          trialToggledOff: subsSchema.trialToggledOff as typeof subscriptions.isTrialUser,
         })
         .from(subscriptions)
         .where(eq(subscriptions.tenantId, tenantId))
@@ -556,16 +598,6 @@ class TrialManager {
 
       if (!subscription) {
         return { expired: false, reason: 'no_subscription' };
-      }
-
-      // Check if trial restrictions are manually disabled
-      if (subscription.trialToggledOff) {
-        return {
-          expired: false,
-          reason: 'trial_manually_disabled',
-          trialEnd: subscription.trialEnd ?? undefined,
-          plan: subscription.plan
-        };
       }
 
       // Check if user has ever upgraded (never show trial restrictions again)
@@ -597,11 +629,11 @@ class TrialManager {
         }
       }
 
-      // Check for past_due status (definitely expired)
-      if (subscription.status === 'past_due') {
+      // Check for past_due or suspended status (definitely expired)
+      if (subscription.status === 'past_due' || subscription.status === 'suspended') {
         return {
           expired: true,
-          reason: 'status_past_due',
+          reason: subscription.status === 'suspended' ? 'status_suspended' : 'status_past_due',
           trialEnd: subscription.trialEnd ?? undefined,
           plan: subscription.plan
         };
@@ -657,7 +689,6 @@ class TrialManager {
           stripeSubscriptionId: subscriptions.stripeSubscriptionId,
           currentPeriodEnd: subscriptions.currentPeriodEnd,
           hasEverUpgraded: subscriptions.hasEverUpgraded,
-          trialToggledOff: subsSchema.trialToggledOff as typeof subscriptions.isTrialUser,
         })
         .from(subscriptions)
         .where(eq(subscriptions.tenantId, tenantId))
@@ -665,11 +696,6 @@ class TrialManager {
         .limit(1);
 
       if (!subscription) return false;
-
-      type SubRow2 = { trialToggledOff?: boolean };
-      const subRow2 = subscription as SubRow2;
-      // If trial manually toggled off, consider as "has paid subscription"
-      if (subRow2.trialToggledOff) return true;
 
       // If user has ever upgraded, don't show trial restrictions
       if (subscription.hasEverUpgraded) return true;

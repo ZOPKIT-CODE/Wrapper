@@ -5,7 +5,10 @@
 
 import { db } from '../../../db/index.js';
 import { entities, tenants, credits, tenantUsers } from '../../../db/schema/index.js';
-import { eq, and, desc, sql, count, sum, like, or, gte, lte, isNull } from 'drizzle-orm';
+import { eq, and, desc, sql, count, like, or, gte } from 'drizzle-orm';
+
+/** entity_code was dropped (migration 0015); keep API field via UUID cast */
+const entityCodeFromId = sql<string>`cast(${entities.entityId} as varchar)`.as('entityCode');
 
 export class EntityAdminService {
   /**
@@ -29,7 +32,7 @@ export class EntityAdminService {
           tenantId: entities.tenantId,
           entityType: entities.entityType,
           entityName: entities.entityName,
-          entityCode: entities.entityCode,
+          entityCode: entityCodeFromId,
           parentEntityId: entities.parentEntityId,
           entityLevel: entities.entityLevel,
           isActive: entities.isActive,
@@ -54,7 +57,7 @@ export class EntityAdminService {
       if (search) {
         query = query.where(or(
           like(entities.entityName, `%${search}%`),
-          like(entities.entityCode, `%${search}%`),
+          sql`cast(${entities.entityId} as text) ilike ${`%${search}%`}`,
           like(tenants.companyName, `%${search}%`)
         ));
       }
@@ -109,7 +112,7 @@ export class EntityAdminService {
       if (search) {
         query = query.where(or(
           like(entities.entityName, `%${search}%`),
-          like(entities.entityCode, `%${search}%`),
+          sql`cast(${entities.entityId} as text) ilike ${`%${search}%`}`,
           like(tenants.companyName, `%${search}%`)
         ));
       }
@@ -143,7 +146,7 @@ export class EntityAdminService {
           tenantId: entities.tenantId,
           entityType: entities.entityType,
           entityName: entities.entityName,
-          entityCode: entities.entityCode,
+          entityCode: entityCodeFromId,
           parentEntityId: entities.parentEntityId,
           entityLevel: entities.entityLevel,
           isActive: entities.isActive,
@@ -151,7 +154,7 @@ export class EntityAdminService {
           updatedAt: entities.updatedAt,
           address: entities.address,
           locationType: entities.locationType,
-          organizationType: entities.organizationType,
+          organizationType: sql<string | null>`coalesce(${entities.locationType}, ${entities.departmentType})`.as('organizationType'),
           availableCredits: sql`coalesce(${credits.availableCredits}, 0)`
         })
         .from(entities)
@@ -245,7 +248,7 @@ export class EntityAdminService {
           tenantId: entities.tenantId,
           entityType: entities.entityType,
           entityName: entities.entityName,
-          entityCode: entities.entityCode,
+          entityCode: entityCodeFromId,
           parentEntityId: entities.parentEntityId,
           entityLevel: entities.entityLevel,
           isActive: entities.isActive,
@@ -411,7 +414,7 @@ export class EntityAdminService {
           entityId: entities.entityId,
           entityType: entities.entityType,
           entityName: entities.entityName,
-          entityCode: entities.entityCode,
+          entityCode: entityCodeFromId,
           tenantId: entities.tenantId,
           companyName: tenants.companyName,
           isActive: entities.isActive,
@@ -422,7 +425,7 @@ export class EntityAdminService {
         .leftJoin(credits, eq(entities.entityId, credits.entityId))
         .where(or(
           like(entities.entityName, `%${query}%`),
-          like(entities.entityCode, `%${query}%`),
+          sql`cast(${entities.entityId} as text) ilike ${`%${query}%`}`,
           like(tenants.companyName, `%${query}%`)
         ))
         .orderBy(desc(sql`case when ${entities.entityName} ilike ${`${query}%`} then 1 else 0 end`))
@@ -501,7 +504,7 @@ export class EntityAdminService {
           entityId: entities.entityId,
           entityType: entities.entityType,
           entityName: entities.entityName,
-          entityCode: entities.entityCode,
+          entityCode: entityCodeFromId,
           isActive: entities.isActive,
           availableCredits: sql`coalesce(${credits.availableCredits}, 0)`
         })

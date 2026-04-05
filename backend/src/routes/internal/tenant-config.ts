@@ -8,6 +8,7 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { validateInternalApiKey } from '../../middleware/auth/internal.js';
 import { TenantService } from '../../services/tenant-service.js';
 import ErrorResponses from '../../utils/error-responses.js';
+import { getPlanApplications, getPlanLimits } from '../../data/plans.js';
 
 export default async function internalTenantConfigRoutes(fastify: FastifyInstance): Promise<void> {
 
@@ -46,8 +47,8 @@ export default async function internalTenantConfigRoutes(fastify: FastifyInstanc
           subscription: {
             plan: subscription?.plan,
             status: subscription?.status,
-            subscribedTools: subscription?.subscribedTools || [],
-            usageLimits: subscription?.usageLimits || {},
+            applications: getPlanApplications(subscription?.plan as string ?? ''),
+            limits: getPlanLimits(subscription?.plan as string ?? ''),
           },
         },
       };

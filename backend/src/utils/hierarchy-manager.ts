@@ -215,7 +215,6 @@ export class HierarchyManager {
           tenantId: entities.tenantId,
           entityName: entities.entityName,
           entityType: entities.entityType,
-          entityCode: entities.entityCode,
           entityLevel: entities.entityLevel,
           hierarchyPath: entities.hierarchyPath,
           fullHierarchyPath: entities.fullHierarchyPath,

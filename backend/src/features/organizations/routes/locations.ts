@@ -24,7 +24,6 @@ export default async function locationRoutes(
       'POST /api/locations/',                // Allow location creation with fallback auth
     ];
 
-    const routeKey = `${request.method} ${request.url}`;
     const isPublic = publicRoutes.some(route => {
       const routeParts = route.split(' ');
       const method = routeParts[0];
@@ -45,8 +44,6 @@ export default async function locationRoutes(
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       let createdBy = (request as any).userContext?.internalUserId;
       let responsiblePersonId = (request as any).userContext?.internalUserId;
@@ -101,9 +98,7 @@ export default async function locationRoutes(
       description: 'Get detailed information about a location'
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const locationId = (params as any).locationId ?? '';
       const result = await LocationService.getLocationById(locationId);
@@ -137,7 +132,6 @@ export default async function locationRoutes(
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const locationId = (params as any).locationId ?? '';
       const userId = (request as any).userContext?.userId ?? '';
@@ -170,9 +164,7 @@ export default async function locationRoutes(
       description: 'Assign an existing location to an organization'
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const locationId = (params as any).locationId ?? '';
       const organizationId = (params as any).organizationId ?? '';
@@ -214,9 +206,7 @@ export default async function locationRoutes(
       description: 'Remove location assignment from organization'
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const locationId = (params as any).locationId ?? '';
       const organizationId = (params as any).organizationId ?? '';
@@ -260,7 +250,6 @@ export default async function locationRoutes(
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const locationId = (params as any).locationId ?? '';
       const capacityData = body;
@@ -308,9 +297,7 @@ export default async function locationRoutes(
       description: 'Get location utilization analytics'
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const locationId = (params as any).locationId ?? '';
 
@@ -343,9 +330,7 @@ export default async function locationRoutes(
       description: 'Get locations filtered by utilization level'
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const tenantId = (params as any).tenantId ?? '';
       const utilizationLevel = (params as any).utilizationLevel ?? 'all';
@@ -371,8 +356,6 @@ export default async function locationRoutes(
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const updates = (body as any).updates;
 
@@ -402,12 +385,9 @@ export default async function locationRoutes(
       description: 'Delete location (soft delete)'
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const locationId = (params as any).locationId ?? '';
-      const userId = (request as any).userContext?.userId ?? '';
       const result = await LocationService.deleteLocation(locationId);
 
       return reply.send(result);
@@ -445,9 +425,7 @@ export default async function locationRoutes(
       description: 'Get all locations for a tenant'
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const tenantId = (params as any).tenantId ?? '';
       const result = await EntityAdminService.getTenantEntities(tenantId, 'location');

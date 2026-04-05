@@ -5,7 +5,7 @@
 
 import { db } from '../../../db/index.js';
 import { credits, creditTransactions, tenants, entities } from '../../../db/schema/index.js';
-import { eq, and, desc, sql, count, sum, gte, lte, like, or, between } from 'drizzle-orm';
+import { eq, and, desc, sql, count, gte, lte } from 'drizzle-orm';
 
 export class CreditAdminService {
   /**

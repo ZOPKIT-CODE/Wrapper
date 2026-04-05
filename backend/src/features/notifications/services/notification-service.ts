@@ -2,7 +2,6 @@ import { db } from '../../../db/index.js';
 import { notifications, NOTIFICATION_TYPES, NOTIFICATION_PRIORITIES } from '../../../db/schema/notifications/notifications.js';
 import { and, eq, or, lt, lte, gte, desc, sql, isNull } from 'drizzle-orm';
 import type { SQL } from 'drizzle-orm';
-import { notificationCacheService } from './notification-cache-service.js';
 import type { NewNotification } from '../../../db/schema/types.js';
 
 export interface GetNotificationsOptions {

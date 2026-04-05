@@ -42,13 +42,15 @@
     "sync-permissions:app": "tsx src/scripts/sync-permissions.js app",
     "temporal:worker": "node temporal/worker.js",
     "temporal:start": "node temporal/start-workflow.js",
-    "amazon-mq:setup-topology": "node ../../scripts/setup-amazon-mq-topology.js",
     "lint": "eslint src/",
     "ngrok": "ngrok http ${PORT:-3000}"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",
     "@aws-sdk/client-route-53": "^3.700.0",
+    "@aws-sdk/client-s3": "^3.1024.0",
+    "@aws-sdk/client-sns": "^3.1024.0",
+    "@aws-sdk/client-sqs": "^3.1024.0",
     "@fastify/cookie": "^9.2.0",
     "@fastify/cors": "^8.4.0",
     "@fastify/helmet": "^11.1.1",
@@ -60,7 +62,6 @@
     "@sentry/node": "^10.46.0",
     "@temporalio/worker": "^1.8.0",
     "@temporalio/workflow": "^1.8.0",
-    "amqplib": "^0.10.3",
     "axios": "^1.6.2",
     "dotenv": "^16.3.1",
     "drizzle-kit": "^0.20.6",
@@ -83,7 +84,6 @@
   },
   "devDependencies": {
     "@testcontainers/postgresql": "^11.12.0",
-    "@types/amqplib": "^0.10.8",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^25.3.0",
     "@types/nodemailer": "^7.0.10",

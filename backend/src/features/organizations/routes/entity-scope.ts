@@ -3,7 +3,7 @@ import { authenticateToken } from '../../../middleware/auth/auth.js';
 import { getUserAccessibleEntities } from '../../../middleware/security/entity-scope.js';
 import { db } from '../../../db/index.js';
 import { entities, responsiblePersons, tenantUsers } from '../../../db/schema/index.js';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import ErrorResponses from '../../../utils/error-responses.js';
 
@@ -195,9 +195,8 @@ export default async function entityScopeRoutes(fastify: FastifyInstance, _optio
       const [user] = await db
         .select({
           userId: tenantUsers.userId,
-          name: tenantUsers.name,
+          name: sql<string>`COALESCE(${tenantUsers.firstName} || ' ' || ${tenantUsers.lastName}, ${tenantUsers.firstName}, ${tenantUsers.lastName}, '')`,
           email: tenantUsers.email,
-          avatar: tenantUsers.avatar
         } as const)
         .from(tenantUsers)
         .where(eq(tenantUsers.userId, rpId))

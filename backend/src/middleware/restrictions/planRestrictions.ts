@@ -3,51 +3,13 @@ import { SubscriptionService } from '../../features/subscriptions/index.js';
 import { db } from '../../db/index.js';
 import { eq, count } from 'drizzle-orm';
 import { tenantUsers, customRoles } from '../../db/schema/index.js';
-
-type PlanKey = 'trial' | 'starter' | 'professional' | 'enterprise';
-
-// Plan application + module access control based on your B2B architecture
-const PLAN_APPLICATION_ACCESS: Record<PlanKey, { applications: string[]; modules: Record<string, string[] | string> }> = {
-  'trial': {
-    applications: ['crm'],
-    modules: {
-      crm: ['leads', 'contacts', 'dashboard'] // Basic CRM only during trial - no advanced features
-    }
-  },
-  'starter': {
-    applications: ['crm', 'hr'],
-    modules: {
-      crm: ['leads', 'contacts', 'accounts', 'opportunities', 'quotations', 'tickets', 'communications', 'dashboard', 'users'],
-      hr: ['employees', 'payroll', 'leave', 'documents']
-    }
-  },
-  'professional': {
-    applications: ['crm', 'hr', 'affiliate'],
-    modules: {
-      crm: ['leads', 'contacts', 'accounts', 'opportunities', 'quotations', 'tickets', 'communications', 'invoices', 'dashboard', 'users', 'roles', 'bulk_operations'],
-      hr: ['employees', 'payroll', 'leave', 'documents', 'performance', 'recruitment'],
-      affiliate: ['partners', 'commissions']
-    }
-  },
-  'enterprise': {
-    applications: ['crm', 'hr', 'affiliate', 'accounting', 'inventory'],
-    modules: {
-      crm: '*', // All CRM modules
-      hr: '*',  // All HR modules  
-      affiliate: '*', // All affiliate modules
-      accounting: '*', // All accounting modules (when built)
-      inventory: '*'  // All inventory modules (when built)
-    }
-  }
-};
-
-// Plan limits
-const PLAN_LIMITS: Record<PlanKey, { users: number; roles: number }> = {
-  'trial': { users: 2, roles: 2 },
-  'starter': { users: 10, roles: 10 },
-  'professional': { users: 50, roles: 25 },
-  'enterprise': { users: -1, roles: -1 } // -1 means unlimited
-};
+import {
+  getPlanApplications,
+  getPlanModules,
+  getPlanLimits as getPlanLimitsData,
+  getMinimumPlanForApp,
+  getMinimumPlanForModule,
+} from '../../data/plans.js';
 
 // Middleware to check application access
 export const checkApplicationAccess = (requiredApplication: string) => {
@@ -73,12 +35,12 @@ export const checkApplicationAccess = (requiredApplication: string) => {
       }
 
       // Check if application is allowed for current plan
-      const planAccess = PLAN_APPLICATION_ACCESS[subscription.plan as PlanKey] || { applications: [], modules: {} };
+      const planApplications = getPlanApplications(subscription.plan as string);
 
-      if (!planAccess.applications.includes(requiredApplication)) {
+      if (!planApplications.includes(requiredApplication)) {
         return res.status(403).json({
           success: false,
-          error: `Access to ${requiredApplication.toUpperCase()} application requires ${getMinimumPlanForApplication(requiredApplication)} plan or higher`,
+          error: `Access to ${requiredApplication.toUpperCase()} application requires ${getMinimumPlanForApp(requiredApplication)} plan or higher`,
           currentPlan: subscription.plan,
           requiredApplication,
           upgradeRequired: true
@@ -121,10 +83,11 @@ export const checkModuleAccess = (requiredApplication: string, requiredModule: s
         });
       }
 
-      const planAccess = PLAN_APPLICATION_ACCESS[subscription.plan as PlanKey] || { applications: [], modules: {} };
+      const planApplications = getPlanApplications(subscription.plan as string);
+      const planModules = getPlanModules(subscription.plan as string);
 
       // First check if application is allowed
-      if (!planAccess.applications.includes(requiredApplication)) {
+      if (!planApplications.includes(requiredApplication)) {
         return res.status(403).json({
           success: false,
           error: `Access to ${requiredApplication.toUpperCase()} application requires upgrade`,
@@ -135,10 +98,10 @@ export const checkModuleAccess = (requiredApplication: string, requiredModule: s
       }
 
       // Then check if specific module is allowed within the application
-      const allowedModules = planAccess.modules[requiredApplication] || [];
+      const allowedModules = planModules[requiredApplication] ?? [];
 
       // Check for wildcard access (enterprise plan)
-      if (allowedModules !== '*' && !allowedModules.includes(requiredModule)) {
+      if (allowedModules !== '*' && !(allowedModules as string[]).includes(requiredModule)) {
         return res.status(403).json({
           success: false,
           error: `Access to ${requiredModule} module in ${requiredApplication.toUpperCase()} requires ${getMinimumPlanForModule(requiredApplication, requiredModule)} plan or higher`,
@@ -184,13 +147,7 @@ export const checkUserLimit = async (request: FastifyRequest, reply: FastifyRepl
       });
     }
 
-    const planLimits = PLAN_LIMITS[subscription.plan as PlanKey];
-
-    if (!planLimits) {
-      console.warn(`⚠️ Unknown subscription plan: ${subscription.plan}, allowing request with unlimited access`);
-      request.subscription = { ...subscription, plan: (subscription as Record<string, unknown>).plan as string } as { plan: string; [k: string]: unknown };
-      return;
-    }
+    const planLimits = getPlanLimitsData(subscription.plan as string);
 
     // Check if plan has unlimited users
     if (planLimits.users === -1) {
@@ -247,13 +204,7 @@ export const checkRoleLimit = async (request: FastifyRequest, reply: FastifyRepl
       });
     }
 
-    const planLimits = PLAN_LIMITS[subscription.plan as PlanKey];
-
-    if (!planLimits) {
-      console.warn(`⚠️ Unknown subscription plan: ${subscription.plan}, allowing request with unlimited access`);
-      request.subscription = { ...subscription, plan: (subscription as Record<string, unknown>).plan as string } as { plan: string; [k: string]: unknown };
-      return;
-    }
+    const planLimits = getPlanLimitsData(subscription.plan as string);
 
     // Check if plan has unlimited roles
     if (planLimits.roles === -1) {
@@ -292,27 +243,6 @@ export const checkRoleLimit = async (request: FastifyRequest, reply: FastifyRepl
   }
 };
 
-// Helper function to get minimum plan required for an application
-function getMinimumPlanForApplication(application: string): string {
-  for (const [plan, planAccess] of Object.entries(PLAN_APPLICATION_ACCESS)) {
-    if (planAccess.applications.includes(application)) {
-      return plan;
-    }
-  }
-  return 'enterprise'; // Default to highest plan if not found
-}
-
-// Helper function to get minimum plan required for a specific module
-function getMinimumPlanForModule(application: string, module: string): string {
-  for (const [plan, planAccess] of Object.entries(PLAN_APPLICATION_ACCESS)) {
-    const allowedModules = (planAccess.modules as Record<string, string[] | string>)[application] || [];
-    if (allowedModules === '*' || allowedModules.includes(module)) {
-      return plan;
-    }
-  }
-  return 'enterprise'; // Default to highest plan if not found
-}
-
 // Utility function to get plan limits for frontend
 export const getPlanLimits = async (req: { user?: { tenantId?: string } }, res: { status: (n: number) => { json: (o: unknown) => void }; json: (o: unknown) => void }) => {
   try {
@@ -345,16 +275,17 @@ export const getPlanLimits = async (req: { user?: { tenantId?: string } }, res: 
       .from(customRoles)
       .where(eq(customRoles.tenantId, tenantId));
 
-    const planLimits = PLAN_LIMITS[subscription.plan as PlanKey] || {};
-    const planAccess = PLAN_APPLICATION_ACCESS[subscription.plan as PlanKey] || { applications: [], modules: {} };
+    const planLimits = getPlanLimitsData(subscription.plan as string);
+    const planApplications = getPlanApplications(subscription.plan as string);
+    const planModules = getPlanModules(subscription.plan as string);
 
     res.json({
       success: true,
       data: {
         currentPlan: subscription.plan,
         limits: planLimits,
-        allowedApplications: planAccess.applications,
-        allowedModules: planAccess.modules,
+        allowedApplications: planApplications,
+        allowedModules: planModules,
         currentUsage: {
           users: userCount.count,
           roles: roleCount.count

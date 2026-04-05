@@ -2,8 +2,8 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { db } from '../../../db/index.js';
 import { platformStaff, platformAuditLogs, PLATFORM_PERMISSIONS } from '../../../db/schema/platform/platform-staff.js';
 import { tenantUsers } from '../../../db/schema/index.js';
-import { eq, desc, and, gt } from 'drizzle-orm';
-import { authenticateToken, invalidateRoleCache } from '../../../middleware/auth/auth.js';
+import { eq, desc, and } from 'drizzle-orm';
+import { authenticateToken } from '../../../middleware/auth/auth.js';
 import { invalidateStaffCache } from '../../../middleware/auth/platform-permission-middleware.js';
 
 const MAX_GRANT_DAYS = 30;

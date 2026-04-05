@@ -1,12 +1,11 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { SubscriptionService } from '../services/subscription-service.js';
-import { TenantService } from '../../../services/tenant-service.js';
 import { authenticateToken, requirePermission } from '../../../middleware/auth/auth.js';
 import { PERMISSIONS } from '../../../constants/permissions.js';
 import { getPlanLimits } from '../../../middleware/restrictions/planRestrictions.js';
 import { db } from '../../../db/index.js';
 import { tenants, payments, subscriptions } from '../../../db/schema/index.js';
-import { eq, and, desc, inArray, sql } from 'drizzle-orm';
+import { eq, and, inArray, sql } from 'drizzle-orm';
 import ErrorResponses from '../../../utils/error-responses.js';
 import { PLAN_ACCESS_MATRIX } from '../../../data/permission-matrix.js';
 import { z } from 'zod';
@@ -27,31 +26,13 @@ export default async function subscriptionRoutes(
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const uc = (request as RequestWithUser).userContext as Record<string, unknown> | undefined;
-      const userId = uc?.userId as string | undefined;
       const tenantId = uc?.tenantId as string | undefined;
-
-      console.log('🔍 Subscription /current endpoint called:', {
-        userId,
-        tenantId,
-        hasTenantId: !!tenantId
-      });
 
       if (!tenantId) {
         return ErrorResponses.notFound(reply, 'Subscription', 'User is not associated with any organization');
       }
 
       const subscription = await SubscriptionService.getCurrentSubscription(tenantId as string);
-
-      const subId = subscription ? String((subscription as Record<string, unknown>).id ?? '') : '';
-      const subscriptionType = subscription ? (subId.startsWith('credit_') ? 'credit-based' : 'traditional') : 'none';
-      console.log('📋 Subscription lookup result:', {
-        tenantId,
-        subscriptionFound: !!subscription,
-        subscriptionType,
-        plan: subscription?.plan,
-        status: subscription?.status,
-        availableCredits: subscription?.availableCredits
-      });
 
       if (!subscription) {
         return ErrorResponses.notFound(reply, 'Subscription', 'No active subscription for this organization');
@@ -82,33 +63,19 @@ export default async function subscriptionRoutes(
     }
   });
 
-  // Get available credit packages (alias; same data as /plans)
-  fastify.get('/credit-packages', async (request, reply) => {
-    try {
-      const packages = await SubscriptionService.getAvailablePlans();
-      return {
-        success: true,
-        data: packages
-      };
-    } catch (error) {
-      request.log.error(error, 'Error fetching credit packages:');
-      return reply.code(500).send({ error: 'Failed to fetch credit packages' });
-    }
-  });
-
-  // Get configuration status (for debugging)
-  fastify.get('/config-status', async (request, reply) => {
+  // Get configuration status (internal debugging — requires auth)
+  fastify.get('/config-status', { preHandler: authenticateToken }, async (request, reply) => {
     try {
       const isStripeConfigured = SubscriptionService.isStripeConfigured();
       const hasWebhookSecret = !!process.env.STRIPE_WEBHOOK_SECRET;
       
       const priceIdStatus = {
-        starter_monthly: !!process.env.STRIPE_STARTER_MONTHLY_PRICE_ID,
-        starter_yearly: !!process.env.STRIPE_STARTER_YEARLY_PRICE_ID,
-        professional_monthly: !!process.env.STRIPE_PROFESSIONAL_MONTHLY_PRICE_ID,
-        professional_yearly: !!process.env.STRIPE_PROFESSIONAL_YEARLY_PRICE_ID,
-        enterprise_monthly: !!process.env.STRIPE_ENTERPRISE_MONTHLY_PRICE_ID,
-        enterprise_yearly: !!process.env.STRIPE_ENTERPRISE_YEARLY_PRICE_ID
+        starter_yearly_usd: !!process.env.STRIPE_STARTER_YEARLY_PRICE_ID,
+        starter_yearly_inr: !!process.env.STRIPE_STARTER_YEARLY_INR_PRICE_ID,
+        professional_yearly_usd: !!process.env.STRIPE_PROFESSIONAL_YEARLY_PRICE_ID,
+        professional_yearly_inr: !!process.env.STRIPE_PROFESSIONAL_YEARLY_INR_PRICE_ID,
+        enterprise_yearly_usd: !!process.env.STRIPE_ENTERPRISE_YEARLY_PRICE_ID,
+        enterprise_yearly_inr: !!process.env.STRIPE_ENTERPRISE_YEARLY_INR_PRICE_ID
       };
       
       return {
@@ -143,12 +110,7 @@ export default async function subscriptionRoutes(
         });
       }
 
-      // Mock req/res objects for the middleware function
       const mockReq = { user: { tenantId } };
-      const mockRes = {
-        json: (data: unknown) => data,
-        status: (code: number) => ({ json: (data: unknown) => ({ statusCode: code, ...(data as object) }) })
-      };
 
       // Call the getPlanLimits function directly
       const result = await new Promise<{ statusCode?: number } & Record<string, unknown>>((resolve) => {
@@ -173,13 +135,44 @@ export default async function subscriptionRoutes(
     }
   });
 
+  // Zod schemas for POST route bodies
+  const changePlanBodySchema = z.object({
+    planId: z.string().min(1),
+    billingCycle: z.enum(['yearly']).optional().default('yearly'),
+    currency: z.enum(['usd', 'inr']).optional().default('usd')
+  });
+
+  const portalBodySchema = z.object({
+    returnUrl: z.string().url().optional()
+  });
+
+  const updatePaymentMethodBodySchema = z.object({
+    paymentMethodId: z.string().min(1)
+  });
+
+  const applyCouponBodySchema = z.object({
+    couponCode: z.string().min(1)
+  });
+
+  const refundBodySchema = z.object({
+    paymentId: z.string().min(1),
+    amount: z.number().positive().optional(),
+    reason: z.string().optional().default('customer_request')
+  });
+
+  const toggleTrialRestrictionsBodySchema = z.object({
+    disable: z.boolean()
+  });
+
   // Create Stripe checkout session for both plans and credit packages
   const checkoutBodySchema = z.union([
     z.object({
       planId: z.string(),
-      billingCycle: z.enum(['monthly', 'yearly']),
       successUrl: z.string(),
-      cancelUrl: z.string()
+      cancelUrl: z.string(),
+      currency: z.enum(['usd', 'inr']).optional().default('usd'),
+      /** @deprecated Monthly billing removed; only yearly is supported */
+      billingCycle: z.enum(['monthly', 'yearly']).optional()
     }),
     z.object({
       packageId: z.string(),
@@ -197,32 +190,30 @@ export default async function subscriptionRoutes(
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const body = request.body as Record<string, unknown>;
-      const { packageId, credits, planId, billingCycle, successUrl, cancelUrl } = body;
+      const { packageId, credits, planId, billingCycle, currency, successUrl, cancelUrl } = body as Record<string, unknown>;
       const uc = (request as any).userContext as unknown as Record<string, unknown> | undefined;
       const tenantId = uc?.tenantId as string | undefined;
-      const userId = uc?.userId as string | undefined;
 
       // Determine if this is a plan subscription or credit package purchase
-      const isPlanSubscription = !!(planId && billingCycle);
+      const isPlanSubscription = !!planId && !packageId;
       const isCreditPurchase = !!(packageId && credits);
 
       if (!isPlanSubscription && !isCreditPurchase) {
         return reply.code(400).send({
           error: 'Invalid request',
-          message: 'Either planId/billingCycle (for plan subscription) or packageId/credits (for credit purchase) must be provided'
+          message: 'Either planId (annual subscription) or packageId/credits (credit purchase) must be provided'
         });
       }
 
-      console.log('🔍 Checkout - User context:', {
-        tenantId,
-        userId,
-        email: uc?.email,
-        organization: uc?.organization
-      });
+      if (isPlanSubscription && billingCycle === 'monthly') {
+        return reply.code(400).send({
+          error: 'Monthly billing unavailable',
+          message: 'Subscriptions are billed annually only. Omit billingCycle or use yearly.'
+        });
+      }
 
       if (!tenantId) {
-        console.log('❌ Checkout - No tenantId found, user needs onboarding');
-        return reply.code(400).send({ 
+        return reply.code(400).send({
           error: 'No organization found',
           message: 'User must be associated with an organization to create a subscription',
           action: 'redirect_to_onboarding',
@@ -238,17 +229,13 @@ export default async function subscriptionRoutes(
         .limit(1);
       
       if (!tenant) {
-        console.log('❌ Checkout - Tenant not found in database:', tenantId);
         return ErrorResponses.notFound(reply, 'Organization', 'Organization data not found. Please complete onboarding first.', {
           action: 'redirect_to_onboarding',
           redirectUrl: '/onboarding'
         });
       }
 
-      console.log('✅ Checkout - Found tenant:', tenant.companyName);
-
       let checkoutParams;
-      let itemDescription;
 
       if (isPlanSubscription) {
         // Validate plan exists
@@ -263,9 +250,7 @@ export default async function subscriptionRoutes(
         const currentSubscription = await SubscriptionService.getCurrentSubscription(tenantId);
         if (currentSubscription && currentSubscription.status === 'active') {
           // Allow upgrades from trial to paid plans
-          if (currentSubscription.plan === 'trial') {
-            console.log('🔄 Allowing upgrade from trial to paid plan:', planId);
-          } else if (currentSubscription.plan !== 'free') {
+          if (currentSubscription.plan !== 'trial' && currentSubscription.plan !== 'free') {
             return reply.code(400).send({
               error: 'Active subscription exists',
               message: 'Use the plan change endpoint for modifying existing subscriptions'
@@ -276,15 +261,13 @@ export default async function subscriptionRoutes(
         checkoutParams = {
           tenantId,
           planId,
-          billingCycle,
+          billingCycle: 'yearly',
+          currency: (currency as 'usd' | 'inr' | undefined) ?? 'usd',
           customerId: tenant.stripeCustomerId || null,
           customerEmail: (uc?.email as string | undefined) ?? undefined,
           successUrl,
           cancelUrl
         };
-
-        itemDescription = `Plan subscription: ${selectedPlan.name}`;
-        console.log('🎯 Checkout - Creating checkout session for plan subscription:', selectedPlan.name);
 
       } else if (isCreditPurchase) {
         // Check if credit package is valid
@@ -314,14 +297,10 @@ export default async function subscriptionRoutes(
           cancelUrl
         };
 
-        itemDescription = `Credit purchase: $${credits} for ${selectedPackage.name}`;
-        console.log('🎯 Checkout - Creating checkout session for credit purchase:', selectedPackage.name, 'for $', credits);
       }
 
       // Create Stripe checkout session
       const checkoutUrl = await SubscriptionService.createCheckoutSession(checkoutParams as Parameters<typeof SubscriptionService.createCheckoutSession>[0]);
-
-      console.log('✅ Checkout - Session created successfully');
 
       // Return appropriate data based on checkout type
       const responseData: Record<string, unknown> = {
@@ -330,7 +309,8 @@ export default async function subscriptionRoutes(
 
       if (isPlanSubscription) {
         responseData.planId = planId;
-        responseData.billingCycle = billingCycle;
+        responseData.billingCycle = 'yearly';
+        responseData.currency = (currency as string) ?? 'usd';
       } else if (isCreditPurchase) {
         responseData.packageId = packageId;
         responseData.amount = credits; // Dollar amount
@@ -394,21 +374,6 @@ export default async function subscriptionRoutes(
     } catch (err: unknown) {
       const error = err as Error;
       request.log.error(error, 'Error fetching billing history:');
-      console.error('❌ Billing history error details:', {
-        message: error.message,
-        name: error.name,
-        stack: error.stack?.substring(0, 300)
-      });
-
-      // Check if it's a database table issue
-      if (error.message?.includes('relation "credit_purchases" does not exist')) {
-        return reply.code(503).send({
-          error: 'Billing History Unavailable',
-          message: 'Billing history is not yet available. Please contact support if this persists.',
-          details: 'Database table not found'
-        });
-      }
-
       return reply.code(500).send({
         error: 'Failed to fetch billing history',
         message: 'Unable to retrieve billing history at this time.'
@@ -423,10 +388,9 @@ export default async function subscriptionRoutes(
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const tenantId = ((request as any).userContext as Record<string, unknown> | undefined)?.tenantId as string | undefined;
-      const userId = ((request as any).userContext as Record<string, unknown> | undefined)?.userId as string | undefined;
 
       if (!tenantId) {
-        return reply.code(400).send({ 
+        return reply.code(400).send({
           error: 'No organization found',
           message: 'User must be associated with an organization'
         });
@@ -449,15 +413,15 @@ export default async function subscriptionRoutes(
     }
   });
 
-  // Plan changes disabled - credit-based system uses credit purchases instead
   fastify.post('/change-plan', {
-    preHandler: authenticateToken,
-    schema: {}
+    preHandler: authenticateToken
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
-      const body = request.body as Record<string, unknown>;
-      const planId = body.planId as string;
-      const billingCycle = (body.billingCycle as string) ?? 'monthly';
+      const bodyResult = changePlanBodySchema.safeParse(request.body);
+      if (!bodyResult.success) {
+        return reply.code(400).send({ error: 'Validation error', details: bodyResult.error.issues });
+      }
+      const { planId, billingCycle, currency } = bodyResult.data;
       const tenantId = ((request as any).userContext as Record<string, unknown> | undefined)?.tenantId as string | undefined;
 
       if (!tenantId) {
@@ -467,12 +431,11 @@ export default async function subscriptionRoutes(
         });
       }
 
-      console.log('🔄 Plan change requested:', { tenantId, planId, billingCycle });
-
       const result = await SubscriptionService.changePlan({
         tenantId,
         planId,
-        billingCycle
+        billingCycle,
+        currency
       });
 
       // If result contains a checkout URL, return it for payment
@@ -482,7 +445,8 @@ export default async function subscriptionRoutes(
           data: {
             checkoutUrl: result,
             planId,
-            billingCycle
+            billingCycle,
+            currency
           },
           message: 'Redirecting to payment for plan change'
         };
@@ -511,20 +475,13 @@ export default async function subscriptionRoutes(
       rawBody: true
     } as Record<string, unknown>
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    console.log('🎣 SUBSCRIPTION WEBHOOK ENDPOINT HIT - URL:', request.url);
-    console.log('🎣 Request method:', request.method);
-    console.log('🎣 Request headers:', Object.keys(request.headers));
-
     try {
       const sig = request.headers['stripe-signature'];
       const sigStr = Array.isArray(sig) ? sig[0] : sig;
       const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
       if (!sigStr || !endpointSecret) {
-        console.error('❌ Webhook configuration missing:', { 
-          hasSignature: !!sigStr,
-          hasSecret: !!endpointSecret 
-        });
+        request.log.warn('Webhook received without signature or secret configured');
         return reply.code(400).send({ error: 'Missing webhook signature or secret' });
       }
 
@@ -536,28 +493,13 @@ export default async function subscriptionRoutes(
       } else if (request.body) {
         rawBody = Buffer.from(JSON.stringify(request.body));
       } else {
-        console.error('❌ No raw body found for webhook verification');
+        request.log.error('No raw body found for webhook verification');
         return reply.code(400).send({ error: 'No body content' });
       }
-      
-      console.log('🎣 Processing Stripe webhook with signature verification');
-      console.log('📝 Raw body length:', rawBody.length);
-      console.log('🔑 Has signature:', !!sigStr);
-      console.log('🔐 Has secret:', !!endpointSecret);
-      console.log('🔍 Debug info:', {
-        rawBodyType: typeof rawBody,
-        rawBodyIsBuffer: Buffer.isBuffer(rawBody),
-        signatureType: typeof sigStr,
-        signatureValue: sigStr ? String(sigStr).substring(0, 20) + '...' : 'none',
-        secretType: typeof endpointSecret,
-        secretValue: endpointSecret ? endpointSecret.substring(0, 10) + '...' : 'none'
-      });
 
       // Verify webhook signature and process event
       const result = await SubscriptionService.handleWebhook(rawBody, sigStr, endpointSecret);
-      
-      console.log('✅ Webhook processed successfully:', result.eventType);
-      
+
       return reply.code(200).send({
         success: true,
         received: true,
@@ -565,33 +507,26 @@ export default async function subscriptionRoutes(
       });
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Webhook processing error:', error);
-      request.log.error(error, 'Webhook processing error:');
-      
-      // Return 200 to prevent Stripe from retrying if it's a non-retryable error
+      request.log.error(error, 'Webhook processing error');
+
       if (error.message?.includes('signature') || error.message?.includes('timestamp')) {
-        console.log('🔄 Non-retryable error, returning 400');
-        return reply.code(400).send({ 
+        return reply.code(400).send({
           error: 'Webhook signature verification failed',
           message: error.message
         });
       }
-      
-      // Check if it's a test webhook or missing metadata (should not retry)
-      if (error.message?.includes('Missing tenantId or planId') || 
+
+      if (error.message?.includes('Missing tenantId or planId') ||
           error.message?.includes('test webhook') ||
           error.message?.includes('already_processed')) {
-        console.log('🔄 Non-critical error, returning 200 to prevent retry');
-        return reply.code(200).send({ 
+        return reply.code(200).send({
           success: true,
           message: 'Webhook processed (non-critical issue)',
           details: error.message
         });
       }
-      
-      // Return 500 for retryable errors
-      console.log('🔄 Retryable error, returning 500');
-      return reply.code(500).send({ 
+
+      return reply.code(500).send({
         error: 'Webhook processing failed',
         message: error.message
       });
@@ -600,220 +535,98 @@ export default async function subscriptionRoutes(
 
   // Create customer portal session
   fastify.post('/portal', {
-    preHandler: [authenticateToken, requirePermission(PERMISSIONS.BILLING_PLANS_MANAGE)],
-    schema: {}
+    preHandler: [authenticateToken, requirePermission(PERMISSIONS.BILLING_PLANS_MANAGE)]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
-      const body = request.body as Record<string, unknown>;
-      const { returnUrl } = body;
-      
+      const bodyResult = portalBodySchema.safeParse(request.body);
+      if (!bodyResult.success) {
+        return reply.code(400).send({ error: 'Validation error', details: bodyResult.error.issues });
+      }
+      const { returnUrl } = bodyResult.data;
+
       const tenantIdForPortal = getTenantId(request);
-      const session = await (SubscriptionService as any).createPortalSession(
+      const portalUrl = await SubscriptionService.createBillingPortalSession(
         tenantIdForPortal as string,
-        (returnUrl as string) || `${process.env.FRONTEND_URL}/dashboard/billing`
+        returnUrl || `${process.env.FRONTEND_URL}/dashboard/billing`
       );
-      
+
+      if (!portalUrl) {
+        return reply.code(503).send({ error: 'Billing portal is not available' });
+      }
+
       return {
         success: true,
-        data: {
-          url: session.url
-        }
+        data: { url: portalUrl }
       };
     } catch (err: unknown) {
       const error = err as Error;
-      fastify.log.error(error, 'Error creating portal session:');
+      request.log.error(error, 'Error creating portal session:');
       return reply.code(500).send({ error: 'Failed to create portal session' });
     }
   });
 
-  // Update payment method
+  // Update payment method — not yet implemented
   fastify.post('/payment-method', {
     preHandler: [authenticateToken, requirePermission(PERMISSIONS.BILLING_PLANS_MANAGE)],
-    schema: {}
-  }, async (request: FastifyRequest, reply: FastifyReply) => {
-    try {
-      const body = request.body as Record<string, unknown>;
-      const { paymentMethodId } = body;
-      
-      await (SubscriptionService as any).updatePaymentMethod(
-        getTenantId(request) as string,
-        paymentMethodId as string
-      );
-      
-      return {
-        success: true,
-        message: 'Payment method updated successfully'
-      };
-    } catch (err: unknown) {
-      const error = err as Error;
-      fastify.log.error(error, 'Error updating payment method:');
-      return reply.code(500).send({ error: 'Failed to update payment method' });
-    }
+    schema: { body: updatePaymentMethodBodySchema }
+  }, async (_request: FastifyRequest, reply: FastifyReply) => {
+    return reply.code(501).send({ error: 'Not implemented' });
   });
 
-  // Reactivate subscription
+  // Reactivate subscription — not yet implemented
   fastify.post('/reactivate', {
     preHandler: [authenticateToken, requirePermission(PERMISSIONS.BILLING_PLANS_MANAGE)]
-  }, async (request: FastifyRequest, reply: FastifyReply) => {
-    try {
-      const result = await (SubscriptionService as any).reactivateSubscription(getTenantId(request) as string);
-      
-      return {
-        success: true,
-        data: result,
-        message: 'Subscription reactivated successfully'
-      };
-    } catch (err: unknown) {
-      const error = err as Error;
-      fastify.log.error(error, 'Error reactivating subscription:');
-      return reply.code(500).send({ error: 'Failed to reactivate subscription' });
-    }
+  }, async (_request: FastifyRequest, reply: FastifyReply) => {
+    return reply.code(501).send({ error: 'Not implemented' });
   });
 
-  // Apply coupon
+  // Apply coupon — not yet implemented
   fastify.post('/coupon', {
     preHandler: [authenticateToken, requirePermission(PERMISSIONS.BILLING_PLANS_MANAGE)],
-    schema: {}
-  }, async (request: FastifyRequest, reply: FastifyReply) => {
-    try {
-      const body = request.body as Record<string, unknown>;
-      const { couponCode } = body;
-      
-      const result = await (SubscriptionService as any).applyCoupon(
-        getTenantId(request) as string,
-        couponCode as string
-      );
-      
-      return {
-        success: true,
-        data: result,
-        message: 'Coupon applied successfully'
-      };
-    } catch (err: unknown) {
-      const error = err as Error;
-      fastify.log.error(error, 'Error applying coupon:');
-      if (error.message?.includes('Invalid') || error.message?.includes('expired')) {
-        return reply.code(400).send({ error: error.message });
-      }
-      return reply.code(500).send({ error: 'Failed to apply coupon' });
-    }
+    schema: { body: applyCouponBodySchema }
+  }, async (_request: FastifyRequest, reply: FastifyReply) => {
+    return reply.code(501).send({ error: 'Not implemented' });
   });
 
-  // Get upcoming invoice
+  // Get upcoming invoice — not yet implemented
   fastify.get('/upcoming-invoice', {
     preHandler: [authenticateToken, requirePermission(PERMISSIONS.BILLING_PLANS_READ)]
-  }, async (request: FastifyRequest, reply: FastifyReply) => {
-    try {
-      const invoice = await (SubscriptionService as any).getUpcomingInvoice(getTenantId(request) as string);
-      
-      return {
-        success: true,
-        data: invoice
-      };
-    } catch (err: unknown) {
-      const error = err as Error;
-      fastify.log.error(error, 'Error fetching upcoming invoice:');
-      return reply.code(500).send({ error: 'Failed to fetch upcoming invoice' });
-    }
+  }, async (_request: FastifyRequest, reply: FastifyReply) => {
+    return reply.code(501).send({ error: 'Not implemented' });
   });
 
-  // Download invoice
+  // Download invoice — not yet implemented
   fastify.get('/invoice/:invoiceId/download', {
     preHandler: [authenticateToken, requirePermission(PERMISSIONS.BILLING_PLANS_READ)],
     schema: {}
-  }, async (request: FastifyRequest, reply: FastifyReply) => {
-    try {
-      const params = request.params as Record<string, string>;
-      const { invoiceId } = params;
-      
-      const invoiceUrl = await (SubscriptionService as any).getInvoiceDownloadUrl(
-        getTenantId(request) as string,
-        invoiceId
-      );
-      
-      return reply.redirect(invoiceUrl);
-    } catch (err: unknown) {
-      const error = err as Error;
-      fastify.log.error(error, 'Error downloading invoice:');
-      return reply.code(500).send({ error: 'Failed to download invoice' });
-    }
+  }, async (_request: FastifyRequest, reply: FastifyReply) => {
+    return reply.code(501).send({ error: 'Not implemented' });
   });
-
-  // Downgrade disabled - credit-based system uses credit purchases instead
-  /*
-  fastify.post('/immediate-downgrade', {
-    preHandler: authenticateToken,
-    schema: {
-      body: {
-        type: 'object',
-        required: ['newPlan'],
-        properties: {
-          newPlan: { type: 'string' },
-          reason: { type: 'string' },
-          refundRequested: { type: 'boolean', default: false }
-        }
-      }
-    }
-  }, async (request, reply) => {
-    try {
-      const { newPlan, reason = 'customer_request', refundRequested = false } = request.body;
-      const tenantId = request.userContext.tenantId;
-
-      if (!tenantId) {
-        return reply.code(400).send({ 
-          error: 'No organization found',
-          message: 'User must be associated with an organization'
-        });
-      }
-
-      console.log('🔄 Plan change requested:', { tenantId, newPlan, refundRequested });
-
-      // Use changePlan which will automatically schedule downgrades (never immediate)
-      const result = await SubscriptionService.changePlan({
-        tenantId,
-        planId: newPlan,
-        billingCycle: 'yearly' // Annual billing only
-      });
-
-      return {
-        success: true,
-        data: result,
-        message: 'Plan change scheduled successfully'
-      };
-    } catch (error) {
-      request.log.error(error, 'Error processing immediate downgrade:');
-      return reply.code(500).send({
-        error: 'Failed to process downgrade',
-        message: error.message
-      });
-    }
-  });
-  */
 
   // Process refund for a specific payment
   fastify.post('/refund', {
-    preHandler: authenticateToken,
-    schema: {}
+    preHandler: authenticateToken
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
-      const body = request.body as Record<string, unknown>;
-      const { paymentId, amount, reason = 'customer_request' } = body;
+      const bodyResult = refundBodySchema.safeParse(request.body);
+      if (!bodyResult.success) {
+        return reply.code(400).send({ error: 'Validation error', details: bodyResult.error.issues });
+      }
+      const { paymentId, amount, reason } = bodyResult.data;
       const tenantId = ((request as any).userContext as Record<string, unknown> | undefined)?.tenantId as string | undefined;
 
       if (!tenantId) {
-        return reply.code(400).send({ 
+        return reply.code(400).send({
           error: 'No organization found',
           message: 'User must be associated with an organization'
         });
       }
 
-      console.log('💸 Refund requested:', { tenantId, paymentId, amount, reason });
-
       const result = await SubscriptionService.processRefund({
-        tenantId: tenantId as string,
-        paymentId: paymentId as string,
-        amount: amount as number | undefined,
-        reason: reason as string
+        tenantId,
+        paymentId,
+        amount,
+        reason
       });
       
       return {
@@ -879,78 +692,77 @@ export default async function subscriptionRoutes(
 
       let payment;
 
+      // Select only columns that exist in the DB to avoid "column does not exist" errors
+      // when the Drizzle schema is ahead of the actual database (pending migration).
+      const safePaymentColumns = {
+        paymentId: payments.paymentId,
+        tenantId: payments.tenantId,
+        subscriptionId: payments.subscriptionId,
+        stripePaymentIntentId: payments.stripePaymentIntentId,
+        stripeInvoiceId: payments.stripeInvoiceId,
+        stripeChargeId: payments.stripeChargeId,
+        amount: payments.amount,
+        currency: payments.currency,
+        status: payments.status,
+        paymentMethod: payments.paymentMethod,
+        paymentMethodDetails: payments.paymentMethodDetails,
+        paymentType: payments.paymentType,
+        billingReason: payments.billingReason,
+        invoiceNumber: payments.invoiceNumber,
+        description: payments.description,
+        taxAmount: payments.taxAmount,
+        metadata: payments.metadata,
+        stripeRawData: payments.stripeRawData,
+        paidAt: payments.paidAt,
+        createdAt: payments.createdAt,
+        updatedAt: payments.updatedAt,
+      };
+
       try {
         // Check if identifier is a valid UUID (paymentId) or Stripe ID
         const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(identifier);
 
         if (isUUID) {
-          // Try to find by paymentId first (if it's a UUID)
-          let [paymentById] = await db
-            .select()
+          const [paymentById] = await db
+            .select(safePaymentColumns)
             .from(payments)
-            .where(and(
-              eq(payments.paymentId, identifier),
-              eq(payments.tenantId, tenantId)
-            ))
+            .where(and(eq(payments.paymentId, identifier), eq(payments.tenantId, tenantId)))
             .limit(1);
-
-          if (paymentById) {
-            payment = paymentById;
-          }
+          if (paymentById) payment = paymentById;
         }
 
-        // If not found by paymentId or identifier is not a UUID, try by Stripe payment intent ID
         if (!payment) {
-          let [paymentByIntent] = await db
-            .select()
+          const [paymentByIntent] = await db
+            .select(safePaymentColumns)
             .from(payments)
-            .where(and(
-              eq(payments.stripePaymentIntentId, identifier),
-              eq(payments.tenantId, tenantId)
-            ))
+            .where(and(eq(payments.stripePaymentIntentId, identifier), eq(payments.tenantId, tenantId)))
             .limit(1);
-
-          if (paymentByIntent) {
-            payment = paymentByIntent;
-          }
+          if (paymentByIntent) payment = paymentByIntent;
         }
 
-        // Also try by Stripe invoice ID (for invoice-based payments)
         if (!payment && identifier.startsWith('in_')) {
-          let [paymentByInvoice] = await db
-            .select()
+          const [paymentByInvoice] = await db
+            .select(safePaymentColumns)
             .from(payments)
-            .where(and(
-              eq(payments.stripeInvoiceId, identifier),
-              eq(payments.tenantId, tenantId)
-            ))
+            .where(and(eq(payments.stripeInvoiceId, identifier), eq(payments.tenantId, tenantId)))
             .limit(1);
-
-          if (paymentByInvoice) {
-            payment = paymentByInvoice;
-          }
+          if (paymentByInvoice) payment = paymentByInvoice;
         }
 
-        // Try by Stripe checkout session ID (stored in metadata, real implementation like top-ups)
         if (!payment && (identifier.startsWith('cs_test_') || identifier.startsWith('cs_live_'))) {
           const [paymentBySession] = await db
-            .select()
+            .select(safePaymentColumns)
             .from(payments)
             .where(and(
               eq(payments.tenantId, tenantId),
               sql`${payments.metadata}->>'stripeCheckoutSessionId' = ${identifier}`
             ))
             .limit(1);
-          if (paymentBySession) {
-            payment = paymentBySession;
-          }
+          if (paymentBySession) payment = paymentBySession;
         }
       } catch (dbError) {
-        console.error('Database error in payment lookup:', dbError);
-        return reply.code(500).send({
-          error: 'Database error',
-          message: 'Failed to query payment records'
-        });
+        // Log but DON'T return 500 — fall through to Stripe API lookup below
+        console.error('Database error in payment lookup (falling through to gateway):', dbError);
       }
 
       if (!payment) {
@@ -1003,23 +815,38 @@ export default async function subscriptionRoutes(
         return {
           success: true,
           data: {
+            // Identifiers
             sessionId: payment.stripePaymentIntentId || paymentMeta?.stripeCheckoutSessionId,
             transactionId: payment.paymentId,
+            stripePaymentIntentId: payment.stripePaymentIntentId,
+            stripeInvoiceId: payment.stripeInvoiceId,
+            stripeChargeId: payment.stripeChargeId,
+            invoiceNumber: payment.invoiceNumber,
+            // Financials
             amount: parseFloat(payment.amount),
             currency: payment.currency,
-            planId: planId,
+            taxAmount: payment.taxAmount ? parseFloat(payment.taxAmount) : 0,
+            // Plan info
+            planId,
             planName: planDetails?.name || planId,
             billingCycle,
+            // Payment method
             paymentMethod: payment.paymentMethod,
+            paymentMethodDetails: payment.paymentMethodDetails,
+            // Status + dates
             status: payment.status,
             createdAt: payment.createdAt,
             processedAt: payment.paidAt || payment.createdAt,
+            paidAt: payment.paidAt,
+            // Description
             description: `Subscription: ${planDetails?.name || planId}`,
+            // Subscription details
             subscription: subscription ? {
               status: subscription.status,
               currentPeriodStart: subscription.currentPeriodStart,
               currentPeriodEnd: subscription.currentPeriodEnd,
-              nextBillingDate: subscription.currentPeriodEnd
+              nextBillingDate: subscription.currentPeriodEnd,
+              renewalDate: subscription.currentPeriodEnd
             } : null,
             features: planDetails?.features || [],
             credits: planDetails?.credits || 0
@@ -1043,46 +870,43 @@ export default async function subscriptionRoutes(
       }
     });
 
-    // Get subscription actions history
-    fastify.get('/actions', {}, async (request: FastifyRequest, reply: FastifyReply) => {
-      try {
+  // Get subscription actions history
+  fastify.get('/actions', {
+    preHandler: authenticateToken
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
       const tenantId = ((request as any).userContext as Record<string, unknown> | undefined)?.tenantId as string | undefined;
 
       if (!tenantId) {
-        return reply.code(400).send({ 
+        return reply.code(400).send({
           error: 'No organization found',
           message: 'User must be associated with an organization'
         });
       }
 
-      // Get subscription actions
-      // Subscription actions are now handled by Stripe webhooks
-      // Return empty array for now
-      const formattedActions: unknown[] = [];
-      
+      // Subscription action history is tracked via Stripe webhooks / event_tracking
       return {
         success: true,
-        data: formattedActions
+        data: [] as unknown[]
       };
     } catch (err: unknown) {
       const error = err as Error;
       request.log.error(error, 'Error fetching subscription actions:');
-      return reply.code(500).send({ 
+      return reply.code(500).send({
         error: 'Failed to fetch subscription actions',
         message: error.message
       });
     }
   });
 
-  // Clean up duplicate payment records (admin endpoint)
+  // Clean up duplicate payment records (billing admin endpoint)
   fastify.post('/cleanup-duplicate-payments', {
-    preHandler: [authenticateToken],
+    preHandler: [authenticateToken, requirePermission(PERMISSIONS.BILLING_PLANS_MANAGE)],
     schema: {}
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const tenantId = ((request as any).userContext as Record<string, unknown> | undefined)?.tenantId as string | undefined;
-      
-      console.log(`🧹 Starting duplicate payment cleanup for tenant: ${tenantId}`);
+      request.log.info({ tenantId }, 'Starting duplicate payment cleanup');
       
       // Find duplicate payments (same amount, same date, same tenant)
       const duplicates = await db
@@ -1122,8 +946,6 @@ export default async function subscriptionRoutes(
             duplicatePaymentIds.push(payment.paymentId);
           });
           removedCount += toDelete.length;
-          
-          console.log(`🗑️ Found ${group.length} duplicates for key ${key}, removing ${toDelete.length}`);
         }
       }
       
@@ -1132,10 +954,6 @@ export default async function subscriptionRoutes(
         await db
           .delete(payments)
           .where(inArray(payments.paymentId, duplicatePaymentIds));
-        
-        console.log(`✅ Cleaned up ${removedCount} duplicate payments for tenant: ${tenantId}`);
-      } else {
-        console.log(`✅ No duplicate payments found for tenant: ${tenantId}`);
       }
       
       return {
@@ -1148,7 +966,7 @@ export default async function subscriptionRoutes(
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error cleaning up duplicate payments:', error);
+      request.log.error(error, 'Error cleaning up duplicate payments');
       return reply.code(500).send({
         success: false,
         error: 'Failed to clean up duplicate payments',
@@ -1159,37 +977,29 @@ export default async function subscriptionRoutes(
 
   // Manually toggle off trial restrictions (for upgraded users)
   fastify.post('/toggle-trial-restrictions', {
-    preHandler: [authenticateToken],
-    schema: {}
+    preHandler: [authenticateToken]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const tenantId = ((request as any).userContext as Record<string, unknown> | undefined)?.tenantId as string | undefined;
-      const body = request.body as Record<string, unknown>;
-      const { disable } = body;
-      
-      console.log(`🔧 Toggling trial restrictions for tenant: ${tenantId}, disable: ${disable}`);
-      
-      // Update subscription - trial restrictions are no longer used
-      // This endpoint is deprecated and should not update database fields
-      const updatedSubscription = { tenantId };
-
-      if (!updatedSubscription) {
-        return ErrorResponses.notFound(reply, 'Subscription', 'Subscription not found');
+      const bodyResult = toggleTrialRestrictionsBodySchema.safeParse(request.body);
+      if (!bodyResult.success) {
+        return reply.code(400).send({ error: 'Validation error', details: bodyResult.error.issues });
       }
-      
-      console.log(`✅ Trial restrictions ${disable ? 'disabled' : 'enabled'} for tenant: ${tenantId}`);
-      
+      const { disable } = bodyResult.data;
+
+      // Trial restrictions are no longer tracked in the database.
+      // This endpoint is kept for backwards compatibility.
       return {
         success: true,
         message: `Trial restrictions ${disable ? 'disabled' : 'enabled'} successfully`,
         data: {
-          disabled: disable as boolean,
+          disabled: disable,
           tenantId: tenantId as string
         }
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error toggling trial restrictions:', error);
+      request.log.error(error, 'Error toggling trial restrictions');
       return reply.code(500).send({
         success: false,
         error: 'Failed to toggle trial restrictions',

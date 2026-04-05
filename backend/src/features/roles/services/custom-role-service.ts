@@ -1,9 +1,9 @@
 import { db } from '../../../db/index.js';
-import { eq, and, inArray, or, isNull, like } from 'drizzle-orm';
-import { applications, applicationModules, organizationApplications, userApplicationPermissions } from '../../../db/schema/core/suite-schema.js';
+import { eq, and, inArray, isNull, like } from 'drizzle-orm';
+import { applications, applicationModules, organizationApplications } from '../../../db/schema/core/suite-schema.js';
 import { customRoles } from '../../../db/schema/core/permissions.js';
 import { creditConfigurations } from '../../../db/schema/billing/credit_configurations.js';
-import { PERMISSION_TIERS, getAccessibleModules, isModuleAccessible } from '../../../config/permission-tiers.js';
+import { getAccessibleModules } from '../../../config/permission-tiers.js';
 import { BUSINESS_SUITE_MATRIX } from '../../../data/permission-matrix.js';
 
 import { v4 as uuidv4 } from 'uuid';
@@ -92,7 +92,6 @@ async function formatPermissionsForUI(permissionCodes: string[] | { code?: strin
     ));
 
   // Then, get global configs for operations not covered by tenant-specific configs
-  const tenantOperationCodes = new Set(tenantConfigs.map(c => c.operationCode));
   const globalConfigs = await db
     .select({
       operationCode: creditConfigurations.operationCode,
@@ -278,6 +277,7 @@ export class CustomRoleService {
       createdFrom: 'applications_modules',
       createdAt: new Date().toISOString()
     };
+    void roleMetadata;
 
     for (const app of apps) {
       const appSelectedModules = selectedModules[app.appCode] || [];
@@ -464,7 +464,7 @@ export class CustomRoleService {
 
     // 3. Build permission list by iterating through apps and modules
     const permissions: string[] = [];
-    const roleMetadata = {
+    const updateRoleMetadata = {
       ...metadata,
       selectedApps,
       selectedModules,
@@ -472,6 +472,7 @@ export class CustomRoleService {
       updatedFrom: 'applications_modules',
       updatedAt: new Date().toISOString()
     };
+    void updateRoleMetadata;
 
     for (const app of apps) {
       const appSelectedModules = (selectedModules[app.appCode] || []) as string[];
@@ -553,8 +554,8 @@ export class CustomRoleService {
       // Redis removed - using AWS MQ publisher
 
       // Publish using standard publishRoleEvent method for consistency
-      const { amazonMQPublisher } = await import('../../messaging/utils/amazon-mq-publisher.js');
-      await amazonMQPublisher.publishRoleEventToSuite('role_updated', tenantId, updatedRole.roleId, {
+      const { snsSqsPublisher } = await import('../../messaging/utils/sns-sqs-publisher.js');
+      await snsSqsPublisher.publishRoleEventToSuite('role_updated', tenantId, updatedRole.roleId, {
         roleId: updatedRole.roleId,
         roleName: updatedRole.roleName,
         description: updatedRole.description,
@@ -596,8 +597,8 @@ export class CustomRoleService {
         }
       };
 
-      // Publish to AWS MQ (reusing amazonMQPublisher from above)
-      const result = await amazonMQPublisher.publishInterAppEvent({
+      // Publish to AWS MQ (reusing snsSqsPublisher from above)
+      const result = await snsSqsPublisher.publishInterAppEvent({
         eventType: 'role_permissions_changed',
         sourceApplication: 'wrapper',
         targetApplication: 'crm',
@@ -876,10 +877,10 @@ export class CustomRoleService {
    */
   static async assignUserSpecificPermissions({
     userId,
-    tenantId,
-    appCode,
-    moduleCode,
-    permissions,
+    tenantId: _tenantId,
+    appCode: _appCode,
+    moduleCode: _moduleCode,
+    permissions: _permissions,
     reason = 'Custom access granted',
     expiresAt = null
   }: {
@@ -890,45 +891,9 @@ export class CustomRoleService {
     permissions: string[] | Record<string, unknown>;
     reason?: string;
     expiresAt?: string | null;
-  }): Promise<typeof userApplicationPermissions.$inferSelect> {
-    console.log(`👤 Assigning user-specific permissions to user ${userId}`);
-
-    // Get app and module IDs
-    const [app] = await db
-      .select()
-      .from(applications)
-      .where(eq(applications.appCode, appCode));
-
-    const [module] = await db
-      .select()
-      .from(applicationModules)
-      .where(and(
-        eq(applicationModules.appId, app!.appId),
-        eq(applicationModules.moduleCode, moduleCode)
-      ));
-
-    if (!app || !module) {
-      throw new Error(`Application ${appCode} or module ${moduleCode} not found`);
-    }
-
-    // Create or update user-specific permissions
-    const permArray = Array.isArray(permissions) ? permissions : [];
-    const [userPerm] = await db.insert(userApplicationPermissions).values({
-      userId,
-      tenantId,
-      appId: app.appId,
-      moduleId: module.moduleId,
-      permissions: (permissions as unknown) as Record<string, unknown>,
-      isActive: true,
-      metadata: {
-        reason,
-        grantedAt: new Date().toISOString(),
-        expiresAt
-      } as Record<string, unknown>
-    }).returning();
-
-    console.log(`✅ Granted ${permArray.length} extra permissions to user`);
-    return userPerm!;
+  }): Promise<Record<string, unknown>> {
+    console.log(`👤 Assigning user-specific permissions to user ${userId} — table dropped, no-op`);
+    return {};
   }
 
   /**
@@ -981,39 +946,6 @@ export class CustomRoleService {
         eq(organizationApplications.tenantId, tenantId),
         eq(organizationApplications.isEnabled, true)
       ));
-
-    // 3. Get user-specific permissions (overrides)
-    const userPerms = await db
-      .select({
-        permissions: userApplicationPermissions.permissions,
-        appCode: applications.appCode,
-        moduleCode: applicationModules.moduleCode,
-        metadata: userApplicationPermissions.metadata
-      })
-      .from(userApplicationPermissions)
-      .innerJoin(applications, eq(applications.appId, userApplicationPermissions.appId))
-      .innerJoin(applicationModules, eq(applicationModules.moduleId, userApplicationPermissions.moduleId))
-      .where(and(
-        eq(userApplicationPermissions.userId, userId),
-        eq(userApplicationPermissions.tenantId, tenantId),
-        eq(userApplicationPermissions.isActive, true)
-      ));
-
-    userPerms.forEach((userPerm: { permissions: unknown; appCode: string; moduleCode: string; metadata?: unknown }) => {
-      const perms = userPerm.permissions;
-      if (!perms) return;
-      const permList = Array.isArray(perms) ? (perms as string[]) : flattenPermissions(perms as Record<string, unknown>);
-      permList.forEach((permission: string) => {
-        const fullCode = `${userPerm.appCode}.${userPerm.moduleCode}.${permission}`;
-        allPermissions.add(fullCode);
-        const meta = userPerm.metadata as Record<string, unknown> | undefined;
-        permissionSources.push({
-          source: 'user_override',
-          reason: meta?.reason != null ? String(meta.reason) : 'Individual access',
-          permission: fullCode
-        });
-      });
-    });
 
     console.log(`🎯 Resolved ${allPermissions.size} total permissions from ${permissionSources.length} sources`);
 

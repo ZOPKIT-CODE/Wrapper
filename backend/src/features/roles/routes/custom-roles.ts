@@ -21,9 +21,6 @@ export default async function customRolesRoutes(
   fastify.get('/builder-options', {
     preHandler: [authenticateToken, requirePermission(PERMISSIONS.ROLES_MANAGEMENT_READ)]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const tenantId = (request as any).userContext?.tenantId ?? '';
       
@@ -62,8 +59,6 @@ export default async function customRolesRoutes(
     preHandler: [authenticateToken, requirePermission(PERMISSIONS.ROLES_MANAGEMENT_CREATE)]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const tenantId = (request as any).userContext?.tenantId ?? '';
       const roleName = (body as any).roleName;
@@ -118,7 +113,6 @@ export default async function customRolesRoutes(
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const tenantId = (request as any).userContext?.tenantId ?? '';
       const roleId = (params as any).roleId ?? '';
@@ -158,8 +152,8 @@ export default async function customRolesRoutes(
       } as any);
       
       try {
-        const { amazonMQPublisher } = await import('../../messaging/utils/amazon-mq-publisher.js');
-        await amazonMQPublisher.publishRoleEventToSuite('role_updated', tenantId, updatedRole.roleId, {
+        const { snsSqsPublisher } = await import('../../messaging/utils/sns-sqs-publisher.js');
+        await snsSqsPublisher.publishRoleEventToSuite('role_updated', tenantId, updatedRole.roleId, {
           roleId: updatedRole.roleId,
           roleName: updatedRole.roleName,
           description: updatedRole.description,
@@ -196,12 +190,9 @@ export default async function customRolesRoutes(
   
   /**
    * 3️⃣ **ASSIGN USER-SPECIFIC PERMISSIONS**
-   * Shows why user_application_permissions table is needed
    */
   fastify.post('/assign-user-permissions', async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const tenantId = (request as any).userContext?.tenantId ?? '';
       const userId = (body as any).userId;
@@ -242,9 +233,7 @@ export default async function customRolesRoutes(
    * Shows how all tables work together for permission resolution
    */
   fastify.get('/user-permissions/:userId', async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const tenantId = (request as any).userContext?.tenantId ?? '';
       const userId = (params as any).userId ?? '';
@@ -275,9 +264,6 @@ export default async function customRolesRoutes(
    * Educational endpoint showing why each table is needed
    */
   fastify.get('/demonstrate-usage', async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       await CustomRoleService.demonstrateTableUsage();
       
@@ -289,7 +275,6 @@ export default async function customRolesRoutes(
             applications_table: 'Defines what apps exist in the system',
             application_modules_table: 'Defines modules and permissions within each app',
             organization_applications_table: 'Controls which apps/modules each tenant can access',
-            user_application_permissions_table: 'Individual user-level permission overrides',
             custom_roles_table: 'Role definitions created from apps/modules'
           },
           workflow: [
@@ -316,7 +301,7 @@ export default async function customRolesRoutes(
    * 6️⃣ **EXAMPLE ROLE CREATION PAYLOAD**
    * Shows the exact structure needed to create roles
    */
-  fastify.get('/example-payload', async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.get('/example-payload', async (_request: FastifyRequest, _reply: FastifyReply) => {
     return {
       success: true,
       data: {

@@ -1,5 +1,4 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import DistributedSSOCache from '../../utils/distributed-sso-cache.js';
 
 interface CacheMetricsData {
   hits: number;
@@ -244,7 +243,6 @@ export function cacheMetricsMiddleware(appCode = 'wrapper') {
           return null;
         }
       } catch (error) {
-        const responseTime = Date.now() - startTime;
         cacheMetrics.recordError(key, error, appCode);
         
         // Execute fallback on error if provided

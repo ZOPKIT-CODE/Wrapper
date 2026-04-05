@@ -1,5 +1,5 @@
 import { db } from '../../../db/index.js';
-import { credits, creditTransactions } from '../../../db/schema/index.js';
+import { credits, creditTransactions, subscriptions } from '../../../db/schema/index.js';
 import { eq, and, desc, gte, lte, sql, isNotNull } from 'drizzle-orm';
 
 // Extended balance type for UI/alert fields not in current schema
@@ -129,12 +129,13 @@ export async function getCurrentBalance(tenantId: string, entityType = 'organiza
     let paidCreditsExpiry: string | null = null;
     let seasonalCreditsExpiry: string | null = null;
 
-    // Get subscription expiry date (for free credits from subscription)
-    let subscriptionExpiry: string | null = null;
-    try {
-      const { subscriptions } = await import('../../../db/schema/billing/subscriptions.js');
+    // parallelized — fetch subscription (expiry + plan), purchase transactions, and seasonal allocations concurrently
+    const { seasonalCreditAllocations } = await import('../../../db/schema/billing/seasonal-credits.js');
+
+    const [subscriptionResult, purchaseTransactionsResult, activeAllocationsResult] = await Promise.all([
+      // Single subscription query that covers both currentPeriodEnd (expiry) and plan
       // Order by updated_at desc so we use the same subscription row as source of truth (matches Supabase data)
-      const [subscription] = await db
+      db
         .select({
           currentPeriodEnd: subscriptions.currentPeriodEnd,
           plan: subscriptions.plan
@@ -145,22 +146,14 @@ export async function getCurrentBalance(tenantId: string, entityType = 'organiza
           eq(subscriptions.status, 'active')
         ))
         .orderBy(desc(subscriptions.updatedAt))
-        .limit(1);
+        .limit(1)
+        .catch((err: unknown) => {
+          console.warn('⚠️ Error fetching subscription:', (err as Error).message);
+          return [] as { currentPeriodEnd: Date | null; plan: string }[];
+        }),
 
-      if (subscription?.currentPeriodEnd) {
-        subscriptionExpiry = new Date(subscription.currentPeriodEnd).toISOString();
-        // Free credits expire with subscription period (use DB value so UI shows e.g. May when current_period_end is May)
-        freeCreditsExpiry = subscriptionExpiry;
-      }
-    } catch (err: unknown) {
-      const subError = err as Error;
-      console.warn('⚠️ Error fetching subscription expiry:', subError.message);
-    }
-
-    // Analyze credit transactions to categorize credits
-    try {
-      // Get all purchase transactions for this entity
-      const purchaseTransactions = await db
+      // Purchase transactions for credit categorization
+      db
         .select()
         .from(creditTransactions)
         .where(and(
@@ -168,10 +161,52 @@ export async function getCurrentBalance(tenantId: string, entityType = 'organiza
           eq(creditTransactions.entityId, String(searchEntityId)),
           eq(creditTransactions.transactionType, 'purchase')
         ))
-        .orderBy(desc(creditTransactions.createdAt));
+        .orderBy(desc(creditTransactions.createdAt))
+        .catch((err: unknown) => {
+          console.warn('⚠️ Error fetching credit transactions:', (err as Error).message);
+          return [] as (typeof creditTransactions.$inferSelect)[];
+        }),
 
-      // Categorize credits based on operation_code and source
-      for (const transaction of purchaseTransactions) {
+      // Active seasonal allocations for expiry dates
+      db
+        .select({
+          allocatedCredits: seasonalCreditAllocations.allocatedCredits,
+          usedCredits: seasonalCreditAllocations.usedCredits,
+          expiresAt: seasonalCreditAllocations.expiresAt,
+          targetApplication: seasonalCreditAllocations.targetApplication
+        })
+        .from(seasonalCreditAllocations)
+        .where(and(
+          eq(seasonalCreditAllocations.tenantId, tenantId),
+          eq(seasonalCreditAllocations.entityId, String(searchEntityId)),
+          eq(seasonalCreditAllocations.isActive, true),
+          eq(seasonalCreditAllocations.isExpired, false),
+          isNotNull(seasonalCreditAllocations.expiresAt),
+          gte(seasonalCreditAllocations.expiresAt, new Date())
+        ))
+        .orderBy(seasonalCreditAllocations.expiresAt)
+        .catch((err: unknown) => {
+          console.warn('⚠️ Error fetching seasonal credit expiry:', (err as Error).message);
+          return [] as { allocatedCredits: string; usedCredits: string | null; expiresAt: Date; targetApplication: string | null }[];
+        }),
+    ]);
+
+    // Derive subscription expiry and plan from the single subscription query result
+    let subscriptionExpiry: string | null = null;
+    let actualPlan = 'credit_based';
+    const subscription = subscriptionResult[0] ?? null;
+    if (subscription?.currentPeriodEnd) {
+      subscriptionExpiry = new Date(subscription.currentPeriodEnd).toISOString();
+      // Free credits expire with subscription period (use DB value so UI shows e.g. May when current_period_end is May)
+      freeCreditsExpiry = subscriptionExpiry;
+    }
+    if (subscription?.plan) {
+      actualPlan = subscription.plan;
+    }
+
+    // Categorize credits based on operation_code and source
+    try {
+      for (const transaction of purchaseTransactionsResult) {
         const amount = parseFloat(String(transaction.amount ?? 0));
         const operationCode = (transaction.operationCode ?? '') as string;
 
@@ -202,57 +237,31 @@ export async function getCurrentBalance(tenantId: string, entityType = 'organiza
       freeCredits = parseFloat(String((creditBalance as CreditBalanceRow).availableCredits ?? 0));
     }
 
-    // Get seasonal credit allocations with expiry dates
+    // Process seasonal credit allocations with expiry dates
     let earliestExpiry: string | null = null;
     const applicationExpiryDates: Record<string, string> = {};
 
-    try {
-      const { seasonalCreditAllocations } = await import('../../../db/schema/billing/seasonal-credits.js');
+    // Calculate seasonal credits and find earliest expiry
+    for (const allocation of activeAllocationsResult) {
+      const allocated = parseFloat(String(allocation.allocatedCredits ?? 0));
+      const used = parseFloat(String(allocation.usedCredits ?? 0));
+      const available = allocated - used;
+      seasonalCredits += available;
 
-      // Get all active, non-expired allocations for this entity
-      const activeAllocations = await db
-        .select({
-          allocatedCredits: seasonalCreditAllocations.allocatedCredits,
-          usedCredits: seasonalCreditAllocations.usedCredits,
-          expiresAt: seasonalCreditAllocations.expiresAt,
-          targetApplication: seasonalCreditAllocations.targetApplication
-        })
-        .from(seasonalCreditAllocations)
-        .where(and(
-          eq(seasonalCreditAllocations.tenantId, tenantId),
-          eq(seasonalCreditAllocations.entityId, String(searchEntityId)),
-          eq(seasonalCreditAllocations.isActive, true),
-          eq(seasonalCreditAllocations.isExpired, false),
-          isNotNull(seasonalCreditAllocations.expiresAt),
-          gte(seasonalCreditAllocations.expiresAt, new Date())
-        ))
-        .orderBy(seasonalCreditAllocations.expiresAt);
-
-      // Calculate seasonal credits and find earliest expiry
-      for (const allocation of activeAllocations) {
-        const allocated = parseFloat(String(allocation.allocatedCredits ?? 0));
-        const used = parseFloat(String(allocation.usedCredits ?? 0));
-        const available = allocated - used;
-        seasonalCredits += available;
-
-        const expiryDate = new Date(allocation.expiresAt);
-        if (!seasonalCreditsExpiry || expiryDate < new Date(seasonalCreditsExpiry)) {
-          seasonalCreditsExpiry = expiryDate.toISOString();
-        }
-
-        if (!earliestExpiry || expiryDate < new Date(earliestExpiry)) {
-          earliestExpiry = expiryDate.toISOString();
-        }
-
-        // Group by application
-        const appKey = allocation.targetApplication || 'primary_org';
-        if (!applicationExpiryDates[appKey] || expiryDate < new Date(applicationExpiryDates[appKey])) {
-          applicationExpiryDates[appKey] = expiryDate.toISOString();
-        }
+      const expiryDate = new Date(allocation.expiresAt);
+      if (!seasonalCreditsExpiry || expiryDate < new Date(seasonalCreditsExpiry)) {
+        seasonalCreditsExpiry = expiryDate.toISOString();
       }
-    } catch (err: unknown) {
-      const expiryError = err as Error;
-      console.warn('⚠️ Error fetching seasonal credit expiry:', expiryError.message);
+
+      if (!earliestExpiry || expiryDate < new Date(earliestExpiry)) {
+        earliestExpiry = expiryDate.toISOString();
+      }
+
+      // Group by application
+      const appKey = allocation.targetApplication || 'primary_org';
+      if (!applicationExpiryDates[appKey] || expiryDate < new Date(applicationExpiryDates[appKey])) {
+        applicationExpiryDates[appKey] = expiryDate.toISOString();
+      }
     }
 
     // Calculate total available credits
@@ -306,7 +315,7 @@ export async function getCurrentBalance(tenantId: string, entityType = 'organiza
       seasonalCreditsExpiry: seasonalCreditsExpiry, // Seasonal credits expiry
       subscriptionExpiry: subscriptionExpiry, // Subscription plan expiry
       applicationExpiryDates: applicationExpiryDates,
-      plan: 'credit_based',
+      plan: actualPlan,
       status: totalAvailable > 0 ? 'active' : 'insufficient_credits',
       usageThisPeriod: 0,
       periodLimit: 0,

@@ -1,4 +1,4 @@
-import { eq, and, lt, gt } from 'drizzle-orm';
+import { eq, and, lt, gt, isNull } from 'drizzle-orm';
 import { db } from '../../../db/index.js';
 import {
   subscriptions,
@@ -64,13 +64,8 @@ export async function createTrialSubscription(
       plan: 'credit_based',
       status: 'active',
       isTrialUser: false,
-      subscribedTools: ['crm', 'hr', 'analytics'],
-      usageLimits: {
-        users: 100
-      },
-      monthlyPrice: 0,
       yearlyPrice: 0,
-      billingCycle: 'prepaid',
+      billingCycle: 'yearly',
       trialStart: new Date(),
       trialEnd: expiryDate,
       currentPeriodStart: new Date(),
@@ -141,13 +136,8 @@ export async function createFreeSubscription(
       plan: 'free',
       status: 'active',
       isTrialUser: false,
-      subscribedTools: ['crm'],
-      usageLimits: {
-        users: 5
-      },
-      monthlyPrice: 0,
       yearlyPrice: 0,
-      billingCycle: 'prepaid',
+      billingCycle: 'yearly',
       trialStart: new Date(),
       trialEnd: expiryDate,
       currentPeriodStart: new Date(),
@@ -261,16 +251,6 @@ export async function cancelSubscription(
   }
 }
 
-/** No-op or log trial events (e.g. for analytics). */
-export async function recordTrialEvent(
-  _tenantId: string,
-  _subscriptionId: string | null,
-  _eventType: string,
-  _eventData: Record<string, unknown> = {}
-): Promise<void> {
-  // Optional: persist to event_tracking or audit log
-}
-
 /**
  * Handle trial expiration - suspend accounts that haven't upgraded.
  */
@@ -280,7 +260,8 @@ export async function handleExpiredTrials(): Promise<number> {
     .from(subscriptions)
     .where(and(
       eq(subscriptions.status, 'trialing'),
-      lt(subscriptions.currentPeriodEnd!, new Date())
+      lt(subscriptions.currentPeriodEnd!, new Date()),
+      isNull(subscriptions.stripeSubscriptionId)
     ));
 
   for (const subscription of expiredTrials) {
@@ -294,13 +275,6 @@ export async function handleExpiredTrials(): Promise<number> {
         suspendedReason: 'Trial expired - upgrade required'
       })
       .where(eq(subscriptions.subscriptionId, subscription.subscriptionId));
-
-    await recordTrialEvent(subscription.tenantId, subscription.subscriptionId, 'trial_expired', {
-      trialExpired: true,
-      suspendedAt: new Date(),
-      upgradeRequired: true,
-      originalTrialEnd: (subscription as any).trialEnd ?? subscription.currentPeriodEnd
-    });
 
     console.log(`📧 Sending trial expiration notice to tenant: ${subscription.tenantId}`);
   }
@@ -330,12 +304,6 @@ export async function sendTrialReminders(): Promise<number> {
       : 0;
 
     console.log(`📧 Sending ${daysRemaining}-day trial reminder to tenant: ${subscription.tenantId}`);
-
-    await recordTrialEvent(subscription.tenantId, subscription.subscriptionId, 'reminder_sent', {
-      reminderType: 'trial_expiring',
-      daysRemaining: daysRemaining,
-      trialEnd: endDate
-    });
   }
 
   return expiringTrials.length;

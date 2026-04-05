@@ -6,7 +6,7 @@ import {
 import { eq, sql, count, avg, desc, and } from 'drizzle-orm';
 import { authenticateToken } from '../../../middleware/auth/auth.js';
 import { requirePlatformPermission } from '../../../middleware/auth/platform-permission-middleware.js';
-import { amazonMQPublisher } from '../../messaging/utils/amazon-mq-publisher.js';
+import { snsSqsPublisher } from '../../messaging/utils/sns-sqs-publisher.js';
 
 /**
  * Admin Operation Cost Management Routes
@@ -51,7 +51,7 @@ export default async function operationCostRoutes(fastify: FastifyInstance, _opt
       // Keep FA behavior and extend to Ops for global/operation-cost updates.
       for (const targetApp of ['accounting', 'operations']) {
         try {
-          await amazonMQPublisher.publishCreditEvent(
+          await snsSqsPublisher.publishCreditEvent(
             targetApp,
             'credit.config.updated',
             tenantIdForMessage,

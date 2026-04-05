@@ -1,7 +1,7 @@
 import { db, systemDbConnection } from '../../../db/index.js';
 import { creditConfigurations } from '../../../db/schema/index.js';
 import { eq, and } from 'drizzle-orm';
-import { amazonMQPublisher } from '../../messaging/utils/amazon-mq-publisher.js';
+import { snsSqsPublisher } from '../../messaging/utils/sns-sqs-publisher.js';
 import { getModulePermissions } from './credit-core.js';
 import { getGlobalOperationConfigs, getGlobalModuleConfigs, getGlobalAppConfigs } from './credit-config-global.js';
 
@@ -40,7 +40,7 @@ async function publishCreditConfigEventToSuite(
 
   for (const app of targetApps) {
     try {
-      await amazonMQPublisher.publishCreditEvent(app, eventType, tenantId, eventPayload);
+      await snsSqsPublisher.publishCreditEvent(app, eventType, tenantId, eventPayload);
       console.log(`✅ Published ${eventType} to ${app} for tenant ${tenantId}`);
     } catch (streamErr: unknown) {
       const streamError = streamErr as Error;
@@ -662,7 +662,7 @@ export async function getConfigurationTemplates(): Promise<Record<string, unknow
 /**
  * Apply configuration template to tenant (creditConfigurationTemplates removed - not supported)
  */
-export async function applyConfigurationTemplate(tenantId: string, templateId: string, userId: string): Promise<Record<string, unknown>> {
+export async function applyConfigurationTemplate(_tenantId: string, _templateId: string, _userId: string): Promise<Record<string, unknown>> {
   throw new Error('Configuration templates are not supported. Use setTenantOperationConfig / setTenantModuleConfig / setTenantAppConfig instead.');
 }
 

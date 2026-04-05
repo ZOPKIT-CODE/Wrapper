@@ -60,7 +60,7 @@ export default async function internalUserAccessRoutes(fastify: FastifyInstance)
           eq(tenantUsers.userId, userId),
           eq(tenantUsers.isActive, true),
         ))
-        .limit(1)) as Array<{ userId: string; name: string | null; email: string | null; isTenantAdmin: boolean | null }>;
+        .limit(1)) as Array<{ userId: string; firstName: string | null; lastName: string | null; email: string | null; isTenantAdmin: boolean | null }>;
 
       if (!user) {
         return reply.code(403).send({ error: 'User not found or inactive', hasAccess: false });
@@ -71,7 +71,7 @@ export default async function internalUserAccessRoutes(fastify: FastifyInstance)
         hasAccess: true,
         user: {
           id: user.userId,
-          name: user.name ?? '',
+          name: [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email || '',
           email: user.email ?? '',
           isTenantAdmin: user.isTenantAdmin ?? false,
         },

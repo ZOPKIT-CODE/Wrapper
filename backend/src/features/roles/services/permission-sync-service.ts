@@ -6,7 +6,6 @@
 
 import { db } from '../../../db/index.js';
 import { eq } from 'drizzle-orm';
-import { applications, organizationApplications } from '../../../db/schema/core/suite-schema.js';
 import { tenants } from '../../../db/schema/index.js';
 import { customRoleService as CustomRoleService } from '../index.js';
 import { PERMISSION_TIERS, type TierKey } from '../../../config/permission-tiers.js';

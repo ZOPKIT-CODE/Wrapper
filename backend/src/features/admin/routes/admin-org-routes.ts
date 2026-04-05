@@ -1,15 +1,13 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { db, dbManager } from '../../../db/index.js';
-import { tenants, tenantUsers, customRoles, userRoleAssignments, organizationMemberships, entities, tenantInvitations } from '../../../db/schema/index.js';
-import { eq, and, isNull } from 'drizzle-orm';
+import { tenants, tenantUsers, customRoles, userRoleAssignments, entities, tenantInvitations } from '../../../db/schema/index.js';
+import { eq, and, isNull, sql } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import EmailService from '../../../utils/email.js';
 import { authenticateToken, requirePermission } from '../../../middleware/auth/auth.js';
 import { PERMISSIONS } from '../../../constants/permissions.js';
 import { checkUserLimit } from '../../../middleware/restrictions/planRestrictions.js';
 import Logger from '../../../utils/logger.js';
-import ErrorResponses from '../../../utils/error-responses.js';
-import permissionService from '../../roles/services/permission-service.js';
 import { shouldLogVerbose } from '../../../utils/verbose-log.js';
 
 /**
@@ -46,9 +44,6 @@ type ReqWithUser = FastifyRequest & { userContext?: Record<string, unknown> };
 export default async function adminOrgRoutes(fastify: FastifyInstance): Promise<void> {
   // Debug auth status endpoint
   fastify.get('/auth-status', async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     const req = request as ReqWithUser;
     try {
       console.log('🔍 Admin Auth Status Check');
@@ -106,7 +101,6 @@ export default async function adminOrgRoutes(fastify: FastifyInstance): Promise<
           })));
 
           // Aggregate permissions from all roles
-          const aggregatedPermissions = {};
 
           for (const role of roles) {
             console.log(`🔍 Processing role: ${role.roleName} (${role.roleId})`);
@@ -294,9 +288,6 @@ export default async function adminOrgRoutes(fastify: FastifyInstance): Promise<
   fastify.get('/organizations/all', {
     preHandler: [authenticateToken, requirePermission(PERMISSIONS.USERS_MANAGEMENT_VIEW)]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     const requestId = Logger.generateRequestId('all-organizations');
     const tenantId = ((request as ReqWithUser).userContext?.tenantId ?? '') as string;
 
@@ -308,7 +299,6 @@ export default async function adminOrgRoutes(fastify: FastifyInstance): Promise<
           entityId: entities.entityId,
           entityName: entities.entityName,
           entityType: entities.entityType,
-          entityCode: entities.entityCode,
           entityLevel: entities.entityLevel,
           hierarchyPath: entities.hierarchyPath,
           fullHierarchyPath: entities.fullHierarchyPath,
@@ -357,8 +347,6 @@ export default async function adminOrgRoutes(fastify: FastifyInstance): Promise<
         preHandler: [authenticateToken, checkUserLimit]
       }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
         const startTime = Date.now();
         const requestId = Logger.generateRequestId('user-invite-org');
 
@@ -572,7 +560,7 @@ export default async function adminOrgRoutes(fastify: FastifyInstance): Promise<
                 const url = new URL(origin);
                 invitationUrl = `${url.protocol}//${url.host}/invite/accept?token=${invitationToken}`;
                 console.log(`🔗 [${requestId}] Using request origin for URL: ${invitationUrl}`);
-              } catch (e) {
+              } catch (_e) {
                 console.warn(`⚠️ [${requestId}] Invalid origin URL, using default: ${origin}`);
                 invitationUrl = `http://localhost:3000/invite/accept?token=${invitationToken}`;
               }
@@ -743,9 +731,6 @@ export default async function adminOrgRoutes(fastify: FastifyInstance): Promise<
       fastify.get('/users', {
         preHandler: [authenticateToken]
       }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
         const requestId = Logger.generateRequestId('org-users');
         const tenantId = ((request as ReqWithUser).userContext?.tenantId ?? '') as string;
 
@@ -756,7 +741,7 @@ export default async function adminOrgRoutes(fastify: FastifyInstance): Promise<
             .select({
               userId: tenantUsers.userId,
               email: tenantUsers.email,
-              name: tenantUsers.name,
+              name: sql<string>`COALESCE(${tenantUsers.firstName} || ' ' || ${tenantUsers.lastName}, ${tenantUsers.firstName}, ${tenantUsers.lastName}, '')`,
               isActive: tenantUsers.isActive,
               isTenantAdmin: tenantUsers.isTenantAdmin,
               invitedAt: tenantUsers.invitedAt,

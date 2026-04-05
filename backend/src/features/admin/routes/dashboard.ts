@@ -6,7 +6,7 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { authenticateToken, requirePermission } from '../../../middleware/auth/auth.js';
 import { PERMISSIONS } from '../../../constants/permissions.js';
 import { db } from '../../../db/index.js';
-import { tenants, entities, credits, creditTransactions, contactSubmissions } from '../../../db/schema/index.js';
+import { tenants, entities, credits, creditTransactions, contactSubmissions, subscriptions } from '../../../db/schema/index.js';
 import { eq, desc, sql, count, sum } from 'drizzle-orm';
 
 export default async function adminDashboardRoutes(
@@ -27,10 +27,11 @@ export default async function adminDashboardRoutes(
         .select({
           total: count(),
           active: sql`count(case when ${tenants.isActive} = true then 1 end)`,
-          trial: sql`count(case when ${tenants.trialEndsAt} > now() then 1 end)`,
-          paid: sql`count(case when ${tenants.trialEndsAt} is null or ${tenants.trialEndsAt} < now() then 1 end)`
+          trial: sql`count(case when ${subscriptions.trialEndsAt} > now() then 1 end)`,
+          paid: sql`count(case when ${subscriptions.trialEndsAt} is null or ${subscriptions.trialEndsAt} < now() then 1 end)`
         })
-        .from(tenants);
+        .from(tenants)
+        .leftJoin(subscriptions, eq(tenants.tenantId, subscriptions.tenantId));
 
       // Get entity statistics
       const entityStats = await db

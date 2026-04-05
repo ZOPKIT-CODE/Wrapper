@@ -6,6 +6,12 @@ import { CreditService } from '../../credits/index.js';
 import { getPaymentGateway } from '../adapters/index.js';
 import type { CreateCheckoutParams, CheckoutLineItem } from '../adapters/index.js';
 import { getAvailablePlans } from './subscription-core.js';
+import {
+  getAnnualStripePriceId,
+  getAnnualAmount,
+  type PlanCheckoutCurrency,
+  type PlanDefinition,
+} from '../../../data/plans.js';
 
 /**
  * Create checkout session (subscription or credit purchase)
@@ -18,10 +24,23 @@ export async function createCheckoutSession(params: {
   customerEmail?: string;
   successUrl: string;
   cancelUrl: string;
+  /** Annual only; ignored if set to monthly ( callers should send yearly ) */
   billingCycle?: string;
+  /** Checkout currency — must match a configured Stripe annual price */
+  currency?: PlanCheckoutCurrency;
   credits?: number;
 }): Promise<string> {
-  const { tenantId, planId, customerId, customerEmail, successUrl, cancelUrl, billingCycle = 'monthly', credits } = params;
+  const {
+    tenantId,
+    planId,
+    customerId,
+    customerEmail,
+    successUrl,
+    cancelUrl,
+    currency = 'usd',
+    credits,
+  } = params;
+  const checkoutCurrency: PlanCheckoutCurrency = currency === 'inr' ? 'inr' : 'usd';
   const startTime = Date.now();
   const requestId = Logger.generateRequestId('checkout');
   const gateway = getPaymentGateway();
@@ -34,7 +53,8 @@ export async function createCheckoutSession(params: {
     planId,
     customerId,
     customerEmail,
-    billingCycle,
+    billingCycle: 'yearly',
+    currency: checkoutCurrency,
     credits,
     isSubscriptionCheckout,
     gatewayConfigured: gateway.isConfigured(),
@@ -55,15 +75,16 @@ export async function createCheckoutSession(params: {
       throw new Error('Invalid subscription plan selected');
     }
 
-    totalAmount = Number(selectedPlan.price) || 0;
+    totalAmount = getAnnualAmount(selectedPlan as unknown as PlanDefinition, checkoutCurrency);
     mode = 'subscription';
 
-    const priceId = billingCycle === 'yearly' ?
-      selectedPlan.stripeYearlyPriceId :
-      selectedPlan.stripePriceId;
+    const priceId = getAnnualStripePriceId(selectedPlan as unknown as PlanDefinition, checkoutCurrency);
 
     if (!priceId) {
-      throw new Error(`Price ID not configured for ${planId} plan (${billingCycle})`);
+      throw new Error(
+        `Stripe annual price ID not configured for ${planId} (${checkoutCurrency.toUpperCase()}). ` +
+          'Set STRIPE_*_YEARLY_PRICE_ID (USD) or STRIPE_*_YEARLY_INR_PRICE_ID (INR).'
+      );
     }
 
     lineItems = [{
@@ -75,7 +96,8 @@ export async function createCheckoutSession(params: {
       planId: selectedPlan.id,
       name: selectedPlan.name,
       price: totalAmount,
-      billingCycle,
+      billingCycle: 'yearly',
+      currency: checkoutCurrency,
       priceId,
     });
   } else {
@@ -112,7 +134,7 @@ export async function createCheckoutSession(params: {
   if (!gateway.isConfigured()) {
     console.log(`🧪 createCheckoutSession — mock mode for ${checkoutType.toLowerCase()}`);
     const mockSessionId = `mock_${isSubscriptionCheckout ? 'subscription' : 'credit'}_session_${Date.now()}`;
-    const mockCheckoutUrl = `${successUrl}?session_id=${mockSessionId}&mock=true&planId=${planId}${isSubscriptionCheckout ? `&billingCycle=${billingCycle}` : `&credits=${credits}`}`;
+    const mockCheckoutUrl = `${successUrl}?session_id=${mockSessionId}&mock=true&planId=${planId}${isSubscriptionCheckout ? `&billingCycle=yearly&currency=${checkoutCurrency}` : `&credits=${credits}`}`;
 
     if (!isSubscriptionCheckout) {
       setTimeout(async () => {
@@ -150,7 +172,7 @@ export async function createCheckoutSession(params: {
       tenantId,
       planId,
       ...(isSubscriptionCheckout
-        ? { billingCycle, packageId: planId }
+        ? { billingCycle: 'yearly', checkoutCurrency, packageId: planId }
         : { packageId: planId, dollarAmount: String(credits ?? 0), totalAmount: String(totalAmount) }),
     },
   };
@@ -174,7 +196,7 @@ export async function createCheckoutSession(params: {
     const isDev = process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test';
     if (isMissingPrice && isDev && isSubscriptionCheckout) {
       const mockSessionId = `mock_subscription_session_${Date.now()}`;
-      const mockCheckoutUrl = `${successUrl.replace('{CHECKOUT_SESSION_ID}', mockSessionId)}&mock=true&planId=${planId}&billingCycle=${billingCycle}`;
+      const mockCheckoutUrl = `${successUrl.replace('{CHECKOUT_SESSION_ID}', mockSessionId)}&mock=true&planId=${planId}&billingCycle=yearly&currency=${checkoutCurrency}`;
       console.warn('⚠️ Price ID not found — using mock checkout in dev mode');
       return mockCheckoutUrl;
     }

@@ -189,8 +189,17 @@ export class StripePaymentGateway implements PaymentGatewayPort {
   ): Promise<NormalizedWebhookEvent> {
     const s = this.ensureStripe();
 
-    const isDev = process.env.NODE_ENV === 'development';
     const bypassSig = process.env.BYPASS_WEBHOOK_SIGNATURE === 'true';
+
+    // Hard gate: NEVER allow signature bypass in production, even if the flag leaks.
+    if (bypassSig && process.env.NODE_ENV === 'production') {
+      throw new Error(
+        'FATAL: BYPASS_WEBHOOK_SIGNATURE=true is set in production. ' +
+        'This would allow forged webhooks. Remove the variable and restart.'
+      );
+    }
+
+    const isDev = process.env.NODE_ENV === 'development';
 
     let stripeEvent: Stripe.Event;
 

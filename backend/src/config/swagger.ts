@@ -3,7 +3,6 @@ import type { FastifySwaggerUiOptions } from '@fastify/swagger-ui';
 
 const TAG_DEFINITIONS = [
   { name: 'Auth', description: 'Authentication — OAuth2 login, token management, logout' },
-  { name: 'Users', description: 'User profiles, preferences, and tenant association' },
   { name: 'Tenants', description: 'Tenant CRUD and configuration' },
   { name: 'Onboarding', description: 'Tenant onboarding — company setup, verification, subdomain, invites' },
   { name: 'Organizations', description: 'Organization hierarchy, structure, and membership' },
@@ -32,7 +31,6 @@ const TAG_DEFINITIONS = [
 
 const PREFIX_TO_TAG: Record<string, string> = {
   '/api/auth': 'Auth',
-  '/api/users': 'Users',
   '/api/tenants': 'Tenants',
   '/api/onboarding': 'Onboarding',
   '/api/entities': 'Entities',
@@ -57,13 +55,10 @@ const PREFIX_TO_TAG: Record<string, string> = {
   '/api/dns': 'DNS',
   '/api/suite': 'Suite',
   '/api/applications': 'Applications',
-  '/api/user-applications': 'Applications',
-  '/api/user-sync': 'App Sync',
   '/api/sync': 'App Sync',
   '/api/internal': 'Internal',
   '/api/contact': 'Contact',
   '/api/demo': 'Demo',
-  '/api/user-verification': 'Users',
   '/health': 'Health',
 };
 

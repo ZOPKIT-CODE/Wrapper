@@ -2,7 +2,9 @@ import { db, systemDbConnection } from '../../../db/index.js';
 import { credits, creditTransactions } from '../../../db/schema/index.js';
 import { eq, and, lte, isNotNull, gte, isNull, asc } from 'drizzle-orm';
 import { seasonalCreditAllocations } from '../../../db/schema/billing/seasonal-credits.js';
+import { creditPurchases } from '../../../db/schema/billing/credit_purchases.js';
 import { randomUUID } from 'crypto';
+import { snsSqsPublisher } from '../../messaging/utils/sns-sqs-publisher.js';
 
 type SeasonalAllocationRow = typeof seasonalCreditAllocations.$inferSelect;
 
@@ -65,12 +67,17 @@ export class CreditExpiryService {
         console.log(`📊 [CreditExpiryService] Application-specific expiry summary:`, applicationExpiryMap);
       }
 
+      // Also process expired purchased credit batches
+      const purchaseExpiry = await this.processExpiredPurchases();
+      console.log(`✅ [CreditExpiryService] Expired purchases: ${purchaseExpiry.processedCount} processed, ${purchaseExpiry.errorCount} errors`);
+
       return {
         success: true,
         processedCount,
         errorCount,
         totalExpired: expiredAllocations.length,
         applicationExpiryMap,
+        expiredPurchases: purchaseExpiry,
         timestamp: now.toISOString()
       };
     } catch (error) {
@@ -87,7 +94,9 @@ export class CreditExpiryService {
     const allocationId = String(allocation.allocationId ?? '');
     const tenantId = String(allocation.tenantId ?? '');
     const entityId = String(allocation.entityId ?? '');
-    const { allocatedCredits, usedCredits, expiresAt, targetApplication } = allocation;
+    const targetApplication = allocation.targetApplication ?? null;
+    const allocatedCredits = allocation.allocatedCredits;
+    const usedCredits = allocation.usedCredits;
 
     const allocationType = targetApplication ? `application-specific (${targetApplication})` : 'primary org';
     console.log(`🔄 [CreditExpiryService] Processing expired ${allocationType} allocation ${allocationId}`);
@@ -109,15 +118,20 @@ export class CreditExpiryService {
 
     console.log(`✅ [CreditExpiryService] Marked ${allocationType} allocation ${allocationId} as expired`);
 
-    // If there are unused credits, deduct them from the organization's credit balance
-    // Note: For application-specific allocations, we still deduct from org balance
-    // but track which application the credits were allocated to
     if (unusedCredits > 0) {
       const app = (typeof targetApplication === 'string' ? targetApplication : null) as string | null;
-      const tId = String(tenantId);
-      const eId = String(entityId);
-      const aId = String(allocationId);
-      await this.deductExpiredCredits(tId, eId, unusedCredits, aId, app);
+      if (app) {
+        // Credits were already deducted from org pool at allocation time.
+        // Notify the downstream app to revoke its remaining balance.
+        await CreditExpiryService.revokeAppCredits(
+          String(tenantId), String(entityId), unusedCredits, String(allocationId), app
+        );
+      } else {
+        // Org-level allocation: credits are still in the org pool, deduct them.
+        await CreditExpiryService.deductExpiredCredits(
+          String(tenantId), String(entityId), unusedCredits, String(allocationId), null
+        );
+      }
     }
 
     // TODO: Send notification to organization admins about expired credits
@@ -130,6 +144,61 @@ export class CreditExpiryService {
       deducted: unusedCredits > 0,
       targetApplication: typeof targetApplication === 'string' ? targetApplication : 'primary_org'
     };
+  }
+
+  /**
+   * Process expired purchased credit batches
+   * Finds completed purchases whose expiryDate has passed and deducts remaining credits
+   */
+  private static async processExpiredPurchases(): Promise<{ processedCount: number; errorCount: number }> {
+    const now = new Date();
+
+    // Find completed purchases whose expiry date has passed and aren't already expired
+    const expiredPurchases = await db
+      .select()
+      .from(creditPurchases)
+      .where(and(
+        eq(creditPurchases.status, 'completed'),
+        isNotNull(creditPurchases.expiryDate),
+        lte(creditPurchases.expiryDate, now),
+        isNotNull(creditPurchases.entityId)
+      ));
+
+    let processedCount = 0;
+    let errorCount = 0;
+
+    for (const purchase of expiredPurchases) {
+      try {
+        const tenantId = String(purchase.tenantId);
+        const entityId = String(purchase.entityId);
+        const creditAmount = parseFloat(String(purchase.creditAmount ?? 0));
+
+        if (creditAmount <= 0) continue;
+
+        // Deduct from balance (reuse existing deductExpiredCredits logic)
+        await CreditExpiryService.deductExpiredCredits(
+          tenantId,
+          entityId,
+          creditAmount,
+          String(purchase.purchaseId),
+          null  // null = primary org (no targetApplication for purchases)
+        );
+
+        // Mark purchase as expired so we don't process it again
+        await db
+          .update(creditPurchases)
+          .set({ status: 'expired' })
+          .where(eq(creditPurchases.purchaseId, purchase.purchaseId));
+
+        processedCount++;
+        console.log(`✅ [CreditExpiryService] Expired purchase ${purchase.purchaseId} — deducted ${creditAmount} credits from entity ${entityId}`);
+      } catch (err) {
+        console.error(`❌ [CreditExpiryService] Error expiring purchase ${purchase.purchaseId}:`, err);
+        errorCount++;
+      }
+    }
+
+    return { processedCount, errorCount };
   }
 
   /**
@@ -153,8 +222,7 @@ export class CreditExpiryService {
         .limit(1);
 
       if (!creditRecord) {
-        console.warn(`⚠️ [CreditExpiryService] No credit record found for tenant ${tenantId}, entity ${entityId}`);
-        return;
+        throw new Error(`Credit record not found for entity ${entityId} in tenant ${tenantId}`);
       }
 
       const currentBalance = parseFloat(String(creditRecord.availableCredits ?? 0));
@@ -193,6 +261,58 @@ export class CreditExpiryService {
       console.log(`✅ [CreditExpiryService] Deducted ${expiredCredits} expired ${allocationType} credits from entity ${entityId}`);
     } catch (error) {
       console.error(`❌ [CreditExpiryService] Error deducting expired credits:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Revoke expired credits from a downstream application.
+   * Used when targetApplication is set — credits already left the org pool at allocation time,
+   * so we do NOT touch credits.available_credits. We only notify the app via MQ and write an audit entry.
+   */
+  static async revokeAppCredits(
+    tenantId: string,
+    entityId: string,
+    expiredCredits: number,
+    allocationId: string,
+    targetApplication: string
+  ): Promise<void> {
+    try {
+      // Publish credit.expired event so the downstream app zeros its local balance
+      await snsSqsPublisher.publishCreditEvent(
+        targetApplication,
+        'credit.expired',
+        tenantId,
+        {
+          entityId,
+          allocationId,
+          expiredCredits,
+          reason: 'allocation_expiry',
+          expiredAt: new Date().toISOString()
+        },
+        'system'
+      );
+
+      console.log(
+        `✅ [CreditExpiryService] Published credit.expired to ${targetApplication} — ${expiredCredits} credits revoked for entity ${entityId}`
+      );
+
+      // Write audit ledger entry (no balance change — credits left the org pool at allocation time)
+      await systemDbConnection
+        .insert(creditTransactions)
+        .values({
+          transactionId: randomUUID(),
+          tenantId,
+          entityId,
+          transactionType: 'expiry',
+          amount: (-expiredCredits).toString(),
+          previousBalance: '0',  // org pool was already debited; this is purely an audit record
+          newBalance: '0',
+          operationCode: `credit_expiry:${targetApplication}:${allocationId}`,
+          createdAt: new Date()
+        });
+    } catch (error) {
+      console.error(`❌ [CreditExpiryService] Error revoking app credits for ${targetApplication}:`, error);
       throw error;
     }
   }

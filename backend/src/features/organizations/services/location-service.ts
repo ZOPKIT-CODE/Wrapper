@@ -6,7 +6,7 @@
 
 import { db } from '../../../db/index.js';
 import { entities } from '../../../db/schema/organizations/unified-entities.js';
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import HierarchyManager from '../../../utils/hierarchy-manager.js';
 

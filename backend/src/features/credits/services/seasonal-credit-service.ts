@@ -1,6 +1,3 @@
-import { db } from '../../../db/index.js';
-import { eq, and, sql, gte, desc, sum, inArray, lt } from 'drizzle-orm';
-import { v4 as uuidv4 } from 'uuid';
 // REMOVED: CreditAllocationService - Application-specific allocations removed
 // REMOVED: creditAllocations, creditAllocationTransactions - Tables removed
 
@@ -87,8 +84,8 @@ class SeasonalCreditService {
     allocatedBy: string;
     targetApplications?: string[] | null;
   }): Promise<unknown[]> {
-    const { tenantId, sourceEntityId, creditAmount, campaignId, campaignName, allocatedBy, targetApplications = null } = params;
     let { creditType = 'seasonal', expiresAt = null, metadata = {} } = params;
+    const { tenantId, creditAmount, campaignId, campaignName, targetApplications } = params;
     try {
       console.log('🎄 Allocating seasonal credits:', {
         tenantId,
@@ -129,6 +126,7 @@ class SeasonalCreditService {
         creditConfig: creditConfig,
         campaignType: creditType
       };
+      void fullMetadata;
 
       // Determine target applications
       // REMOVED: SUPPORTED_APPLICATIONS from CreditAllocationService
@@ -140,7 +138,6 @@ class SeasonalCreditService {
       }
 
       // Calculate credits per application (distribute evenly)
-      const creditsPerApp = creditAmount / applications.length;
 
       const allocations: unknown[] = [];
 
@@ -225,7 +222,7 @@ class SeasonalCreditService {
   /**
    * Get active seasonal campaigns for a tenant
    */
-  async getActiveSeasonalCampaigns(tenantId: string): Promise<never> {
+  async getActiveSeasonalCampaigns(_tenantId: string): Promise<never> {
     // REMOVED: creditAllocations table queries
     // TODO: Refactor to use credit_transactions table with campaign metadata
     throw new Error('getActiveSeasonalCampaigns method needs refactoring. creditAllocations table has been removed.');

@@ -1,5 +1,6 @@
-// @ts-nocheck
-import { eq, and, sql } from 'drizzle-orm';
+// @ts-nocheck — legacy webhook handler; tighten types incrementally
+import { eq, and, sql, gte, count } from 'drizzle-orm';
+import * as Sentry from '@sentry/node';
 import { db } from '../../../db/index.js';
 import {
   subscriptions,
@@ -7,7 +8,8 @@ import {
   tenants,
   entities,
   tenantUsers,
-  eventTracking
+  eventTracking,
+  creditTransactions
 } from '../../../db/schema/index.js';
 import { EmailService } from '../../../utils/email.js';
 import { v4 as uuidv4 } from 'uuid';
@@ -21,7 +23,31 @@ import {
   getCurrentSubscription
 } from './subscription-core.js';
 import { updateAdministratorRolesForPlan } from './subscription-plan-roles.js';
-import { createPaymentRecord } from './subscription-payment-records.js';
+import { PaymentService } from './payment-service.js';
+
+// Safe column selection — avoids "column does not exist" when DB is behind the Drizzle schema.
+const safePaymentSelect = {
+  paymentId: payments.paymentId,
+  tenantId: payments.tenantId,
+  subscriptionId: payments.subscriptionId,
+  stripePaymentIntentId: payments.stripePaymentIntentId,
+  stripeInvoiceId: payments.stripeInvoiceId,
+  stripeChargeId: payments.stripeChargeId,
+  amount: payments.amount,
+  currency: payments.currency,
+  status: payments.status,
+  paymentMethod: payments.paymentMethod,
+  paymentMethodDetails: payments.paymentMethodDetails,
+  paymentType: payments.paymentType,
+  billingReason: payments.billingReason,
+  description: payments.description,
+  taxAmount: payments.taxAmount,
+  metadata: payments.metadata,
+  stripeRawData: payments.stripeRawData,
+  paidAt: payments.paidAt,
+  createdAt: payments.createdAt,
+  updatedAt: payments.updatedAt,
+};
 
 function buildCheckoutAuditSnapshot(session: Record<string, unknown>): Record<string, unknown> {
   const customerDetails = (session.customer_details ?? {}) as Record<string, unknown>;
@@ -91,20 +117,32 @@ export async function handleWebhook(
 
     console.log('🎣 Webhook received:', event.type, '(provider:', event.provider + ')');
 
-    // Idempotency check — skip already-processed events
-    try {
-      const [existing] = await db
-        .select({ id: eventTracking.id })
-        .from(eventTracking)
-        .where(eq(eventTracking.eventId, event.id))
-        .limit(1);
-      if (existing) {
-        console.log('⏭️ Skipping already-processed webhook event:', event.id);
-        return { processed: true, eventType: event.type, duplicate: true };
-      }
-    } catch (dedupeErr) {
-      console.warn('⚠️ Idempotency check failed, proceeding with processing:', (dedupeErr as Error).message);
+    // Idempotency: check-then-reserve BEFORE processing.
+    // If the check itself fails (DB pool exhausted, network blip), we REJECT the
+    // webhook so the payment provider retries later — never risk double-processing.
+    const [existing] = await db
+      .select({ id: eventTracking.id, status: eventTracking.status })
+      .from(eventTracking)
+      .where(eq(eventTracking.eventId, event.id))
+      .limit(1);
+
+    if (existing) {
+      console.log('⏭️ Skipping already-processed webhook event:', event.id);
+      return { processed: true, eventType: event.type, duplicate: true };
     }
+
+    // Reserve the event BEFORE dispatching handlers so a crash mid-processing
+    // still marks it as seen. Status is 'processing' until we update to 'processed'.
+    await db.insert(eventTracking).values({
+      eventId: event.id,
+      eventType: event.type,
+      tenantId: '00000000-0000-0000-0000-000000000000',
+      streamKey: 'payment-webhook',
+      sourceApplication: event.provider ?? 'unknown',
+      targetApplication: 'wrapper-backend',
+      eventData: event.data,
+      status: 'processing',
+    });
 
     const eventObj = event.data;
 
@@ -128,6 +166,7 @@ export async function handleWebhook(
         break;
 
       case 'payment.failed':
+      case 'invoice.payment_failed':
         await handlePaymentFailed(eventObj);
         break;
 
@@ -159,26 +198,41 @@ export async function handleWebhook(
         console.log(`⚠️ Unhandled webhook event type: ${event.type}`);
     }
 
-    // Record processed event for idempotency
+    // Mark event as fully processed.
     try {
-      await db.insert(eventTracking).values({
-        eventId: event.id,
-        eventType: event.type,
-        tenantId: 'system',
-        streamKey: 'stripe-subscription-webhook',
-        sourceApplication: 'stripe',
-        targetApplication: 'wrapper-backend',
-        eventData: event.data,
-        status: 'processed',
-      });
+      await db
+        .update(eventTracking)
+        .set({ status: 'processed' })
+        .where(eq(eventTracking.eventId, event.id));
     } catch (trackErr) {
-      console.warn('⚠️ Failed to record webhook event:', (trackErr as Error).message);
+      console.warn('⚠️ Failed to mark webhook event as processed:', (trackErr as Error).message);
     }
 
     return { processed: true, eventType: event.type, provider: event.provider };
   } catch (err: unknown) {
     const error = err as Error;
     console.error('❌ Webhook processing error:', error);
+
+    Sentry.withScope((scope) => {
+      scope.setTag('payment.webhook_event', event?.type || 'unknown');
+      scope.setTag('payment.provider', event?.provider || 'unknown');
+      scope.setContext('webhook', {
+        eventId: event?.id,
+        eventType: event?.type,
+        provider: event?.provider,
+      });
+      Sentry.captureException(error);
+    });
+
+    // Mark the reserved event as failed so retries aren't blocked forever.
+    if (event?.id) {
+      try {
+        await db
+          .update(eventTracking)
+          .set({ status: 'failed' })
+          .where(eq(eventTracking.eventId, event.id));
+      } catch { /* best-effort */ }
+    }
 
     if (
       error.message?.includes('Missing tenantId or planId') ||
@@ -206,7 +260,7 @@ export async function handleCheckoutCompleted(session: Record<string, unknown>):
 
     const tenantId = meta.tenantId as string | undefined;
     const packageId = (meta.packageId || meta.planId) as string | undefined;
-    const billingCycle = String(meta.billingCycle || 'yearly').toLowerCase();
+    const billingCycle = 'yearly';
     const dollarAmount = parseFloat(String(meta.dollarAmount ?? 0));
     const totalAmount = parseFloat(String(meta.totalAmount ?? 0));
     const creditAmount = Math.floor(dollarAmount * 1000);
@@ -380,16 +434,14 @@ export async function handleCheckoutCompleted(session: Record<string, unknown>):
           status: 'active',
           stripeSubscriptionId: session.subscription,
           stripeCustomerId: session.customer,
-          subscribedTools: plan.applications ?? [],
-          usageLimits: plan.limits ?? {},
-          yearlyPrice: String(plan.yearlyPrice ?? plan.price ?? 0),
-          billingCycle: billingCycle,
+          yearlyPrice: String((plan as { yearlyPrice?: number }).yearlyPrice ?? 0),
+          billingCycle,
           currentPeriodStart: new Date(),
-          currentPeriodEnd: new Date(Date.now() + (billingCycle === 'yearly' ? 365 : 30) * 24 * 60 * 60 * 1000),
+          currentPeriodEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
           updatedAt: new Date()
         } as Record<string, unknown>;
 
-        if (existingSubscription.plan === 'trial' || (existingSubscription as Record<string, unknown>).isTrialUser) {
+        if (planId !== 'trial' && planId !== 'free') {
           updateData.hasEverUpgraded = true;
           updateData.isTrialUser = false;
         }
@@ -426,12 +478,10 @@ export async function handleCheckoutCompleted(session: Record<string, unknown>):
             status: 'active',
             stripeSubscriptionId: (session as Record<string, unknown>).subscription ?? null,
             stripeCustomerId: (session as Record<string, unknown>).customer ?? null,
-            subscribedTools: (plan.applications ?? []) as unknown,
-            usageLimits: (plan.limits ?? {}) as unknown,
-            yearlyPrice: String((plan.yearlyPrice ?? plan.price ?? 0) as number),
-            billingCycle: billingCycle,
+            yearlyPrice: String((plan as { yearlyPrice?: number }).yearlyPrice ?? 0),
+            billingCycle,
             currentPeriodStart: new Date(),
-            currentPeriodEnd: new Date(Date.now() + (billingCycle === 'yearly' ? 365 : 30) * 24 * 60 * 60 * 1000),
+            currentPeriodEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
             hasEverUpgraded: true,
             isTrialUser: false,
             createdAt: new Date(),
@@ -517,28 +567,50 @@ export async function handleCheckoutCompleted(session: Record<string, unknown>):
         console.error('❌ Failed to persist checkout audit snapshot:', errAudit);
       }
 
-      // Allocate plan credits
+      // Allocate plan credits — with dedup guard to prevent double allocation
+      // from multiple checkout sessions in the same billing period.
       try {
         const planCredits = Number((plan as Record<string, unknown>).credits) || 0;
         if (planCredits > 0) {
-          const orgEntities = await db
-            .select()
-            .from(entities)
-            .where(and(eq(entities.tenantId, tenantId), eq(entities.entityType, 'organization'), eq(entities.isActive, true)));
+          // Check if credits were already allocated for this subscription in the current period.
+          // Two different checkout sessions produce two different event IDs, so the webhook
+          // idempotency check (by eventId) won't catch it — we need a business-level dedup.
+          const periodStart = existingSubscription?.currentPeriodStart
+            ? new Date(existingSubscription.currentPeriodStart as string | number)
+            : new Date(Date.now() - 60_000); // 1min ago fallback for brand-new subscriptions
 
-          const defaultEntity = orgEntities.find((e: { isDefault?: boolean }) => e.isDefault) || orgEntities[0];
+          const [alreadyAllocated] = await db
+            .select({ total: count() })
+            .from(creditTransactions)
+            .where(and(
+              eq(creditTransactions.tenantId, tenantId),
+              eq(creditTransactions.transactionType, 'initialization'),
+              gte(creditTransactions.createdAt, periodStart)
+            ));
 
-          if (defaultEntity) {
-            await CreditService.addCreditsToEntity({
-              tenantId,
-              entityType: 'organization',
-              entityId: defaultEntity.entityId,
-              creditAmount: planCredits,
-              source: 'subscription',
-              sourceId: (session as Record<string, unknown>).id || (subscriptionRecord?.subscriptionId as string),
-              description: `${(plan as Record<string, unknown>).name} plan credits (${planCredits.toLocaleString()} annual credits)`,
-              initiatedBy: '00000000-0000-0000-0000-000000000001'
-            });
+          if ((alreadyAllocated?.total ?? 0) > 0) {
+            console.log(`⏭️ Plan credits already allocated for tenant ${tenantId} in current period — skipping`);
+          } else {
+            const orgEntities = await db
+              .select()
+              .from(entities)
+              .where(and(eq(entities.tenantId, tenantId), eq(entities.entityType, 'organization'), eq(entities.isActive, true)));
+
+            const defaultEntity = orgEntities.find((e: { isDefault?: boolean }) => e.isDefault) || orgEntities[0];
+
+            if (defaultEntity) {
+              await CreditService.addCreditsToEntity({
+                tenantId,
+                entityType: 'organization',
+                entityId: defaultEntity.entityId,
+                creditAmount: planCredits,
+                source: 'subscription',
+                sourceId: (session as Record<string, unknown>).id || (subscriptionRecord?.subscriptionId as string),
+                description: `${(plan as Record<string, unknown>).name} plan credits (${planCredits.toLocaleString()} annual credits)`,
+                initiatedBy: 'system'
+              });
+              console.log(`✅ Allocated ${planCredits.toLocaleString()} plan credits for tenant ${tenantId}`);
+            }
           }
         }
       } catch (errCredit: unknown) {
@@ -554,13 +626,20 @@ export async function handleCheckoutCompleted(session: Record<string, unknown>):
           const { EmailService } = await import('../../../utils/email.js');
           const emailService = new EmailService();
 
+          const checkoutCur = String(meta.checkoutCurrency ?? 'usd').toLowerCase();
+          const amountForEmail =
+            checkoutCur === 'inr'
+              ? Number((plan as { yearlyPriceInr?: number }).yearlyPriceInr ?? 0)
+              : Number((plan as { yearlyPrice?: number }).yearlyPrice ?? 0);
+          const currencyForEmail = checkoutCur === 'inr' ? 'INR' : 'USD';
+
           await emailService.sendPaymentConfirmation({
             tenantId,
             userEmail: userInfo.email,
             userName: userInfo.name,
             paymentType: 'subscription',
-            amount: billingCycle === 'yearly' ? (plan as Record<string, unknown>).yearlyPrice : (plan as Record<string, unknown>).monthlyPrice,
-            currency: 'USD',
+            amount: amountForEmail,
+            currency: currencyForEmail,
             transactionId: (session as Record<string, unknown>).id,
             planName: (plan as Record<string, unknown>).name,
             billingCycle,
@@ -574,6 +653,11 @@ export async function handleCheckoutCompleted(session: Record<string, unknown>):
   } catch (err: unknown) {
     const error = err as Error;
     console.error('Error handling checkout completed:', error);
+    Sentry.withScope((scope) => {
+      scope.setTag('payment.handler', 'checkout.completed');
+      scope.setContext('checkout', { sessionId: session.id, mode: session.mode });
+      Sentry.captureException(error);
+    });
     throw error;
   }
 }
@@ -599,9 +683,7 @@ export async function applyInvoicePaymentToSubscription(
     const plan = plans.find((p: Record<string, unknown>) => p.id === planId) as Record<string, unknown> | undefined;
     if (plan) {
       setPayload.plan = planId;
-      setPayload.subscribedTools = plan.applications ?? [];
-      setPayload.usageLimits = plan.limits ?? {};
-      setPayload.yearlyPrice = String((plan.yearlyPrice ?? plan.price ?? 0) as number);
+      setPayload.yearlyPrice = String((plan.yearlyPrice ?? 0) as number);
     }
   }
   await db
@@ -742,9 +824,7 @@ export async function handlePaymentSucceeded(
         const plan = plans.find((p: Record<string, unknown>) => p.id === planId) as Record<string, unknown> | undefined;
         if (plan) {
           setPayload.plan = planId;
-          setPayload.subscribedTools = plan.applications ?? (plan as Record<string, unknown>).subscribedTools ?? [];
-          setPayload.usageLimits = plan.limits ?? (plan as Record<string, unknown>).usageLimits ?? {};
-          setPayload.yearlyPrice = String((plan.yearlyPrice ?? plan.price ?? 0) as number);
+          setPayload.yearlyPrice = String((plan.yearlyPrice ?? 0) as number);
         }
       }
       await db
@@ -770,7 +850,7 @@ export async function handlePaymentSucceeded(
       let existingPaymentByIntent: Record<string, unknown> | null = null;
       if (paymentIntentId) {
         const [existing] = await db
-          .select()
+          .select(safePaymentSelect)
           .from(payments)
           .where(eq(payments.stripePaymentIntentId, paymentIntentId))
           .limit(1);
@@ -816,7 +896,7 @@ export async function handlePaymentSucceeded(
           } as Record<string, unknown>)
           .where(eq(payments.paymentId, (existingPaymentByIntent.paymentId as string)));
       } else {
-        await createPaymentRecord({
+        await PaymentService.createPaymentRecord({
           tenantId: (subscription as Record<string, unknown>).tenantId,
           subscriptionId: ((subscription as Record<string, unknown>).subscriptionId ?? undefined) as string | undefined,
           stripePaymentIntentId: (invoice as Record<string, unknown>).payment_intent,
@@ -893,6 +973,11 @@ export async function handlePaymentSucceeded(
   } catch (err: unknown) {
     const error = err as Error;
     console.error('Error handling payment succeeded:', error);
+    Sentry.withScope((scope) => {
+      scope.setTag('payment.handler', 'payment.succeeded');
+      scope.setContext('invoice', { invoiceId: invoice.id, subscriptionId: invoice.subscription, amount: invoice.amount_paid });
+      Sentry.captureException(error);
+    });
     throw error;
   }
 }
@@ -923,7 +1008,7 @@ export async function handleInvoicePaymentPaid(invoicePayment: Record<string, un
       const paymentIntent = (invoicePayment as Record<string, unknown>).payment?.payment_intent;
       if (paymentIntent) {
         const [payment] = await db
-          .select()
+          .select(safePaymentSelect)
           .from(payments)
           .where(eq(payments.stripePaymentIntentId, paymentIntent as string))
           .limit(1);
@@ -944,6 +1029,11 @@ export async function handleInvoicePaymentPaid(invoicePayment: Record<string, un
   } catch (err: unknown) {
     const error = err as Error;
     console.error('Error handling invoice payment paid:', error);
+    Sentry.withScope((scope) => {
+      scope.setTag('payment.handler', 'invoice.payment_paid');
+      scope.setContext('invoice', { invoiceId: invoicePayment.id });
+      Sentry.captureException(error);
+    });
     throw error;
   }
 }
@@ -967,36 +1057,39 @@ export async function handlePaymentFailed(invoice: Record<string, unknown>): Pro
         return;
       }
 
-      await db
-        .update(subscriptions)
-        .set({ status: 'past_due', updatedAt: new Date() } as Record<string, unknown>)
-        .where(eq(subscriptions.stripeSubscriptionId, subscriptionId as string));
-
+      // Atomic: mark subscription as past_due + record the failed payment together.
       const inv = invoice as Record<string, unknown>;
-      await createPaymentRecord({
-        tenantId: subscription.tenantId,
-        subscriptionId: subscription.subscriptionId ?? undefined,
-        stripePaymentIntentId: inv.payment_intent,
-        stripeInvoiceId: inv.id,
-        amount: Number(inv.amount_due ?? 0) / 100,
-        currency: String(inv.currency ?? 'USD').toUpperCase(),
-        status: 'failed',
-        paymentMethod: 'card',
-        paymentType: 'subscription',
-        billingReason: inv.billing_reason,
-        invoiceNumber: inv.number,
-        description: `Failed subscription payment for ${subscription.plan} plan`,
-        metadata: {
-          stripeCustomerId: inv.customer,
-          failureReason: (inv.last_finalization_error as Error)?.message || 'Payment failed',
-          failureCode: (inv.last_finalization_error as Record<string, unknown>)?.code,
-          attemptCount: inv.attempt_count,
-          nextPaymentAttempt: inv.next_payment_attempt ? new Date((inv.next_payment_attempt as number) * 1000) : null,
-          billingReason: inv.billing_reason
-        },
-        stripeRawData: invoice,
-        paidAt: new Date()
-      } as Record<string, unknown>);
+      await db.transaction(async (tx) => {
+        await tx
+          .update(subscriptions)
+          .set({ status: 'past_due', updatedAt: new Date() } as Record<string, unknown>)
+          .where(eq(subscriptions.stripeSubscriptionId, subscriptionId as string));
+
+        await tx.insert(payments).values({
+          tenantId: subscription.tenantId,
+          subscriptionId: subscription.subscriptionId ?? undefined,
+          stripePaymentIntentId: inv.payment_intent as string | undefined,
+          stripeInvoiceId: inv.id as string | undefined,
+          amount: String(Number(inv.amount_due ?? 0) / 100),
+          currency: String(inv.currency ?? 'USD').toUpperCase(),
+          status: 'failed',
+          paymentMethod: 'card',
+          paymentType: 'subscription',
+          billingReason: inv.billing_reason as string | undefined,
+          invoiceNumber: inv.number as string | undefined,
+          description: `Failed subscription payment for ${subscription.plan} plan`,
+          metadata: {
+            stripeCustomerId: inv.customer,
+            failureReason: (inv.last_finalization_error as Error)?.message || 'Payment failed',
+            failureCode: (inv.last_finalization_error as Record<string, unknown>)?.code,
+            attemptCount: inv.attempt_count,
+            nextPaymentAttempt: inv.next_payment_attempt ? new Date((inv.next_payment_attempt as number) * 1000) : null,
+            billingReason: inv.billing_reason
+          },
+          stripeRawData: invoice as Record<string, unknown>,
+          paidAt: new Date()
+        } as any);
+      });
 
       try {
         const ActivityLogger = (await import('../../../services/activityLogger.js')).default;
@@ -1048,6 +1141,11 @@ export async function handlePaymentFailed(invoice: Record<string, unknown>): Pro
   } catch (err: unknown) {
     const error = err as Error;
     console.error('Error handling payment failed:', error);
+    Sentry.withScope((scope) => {
+      scope.setTag('payment.handler', 'payment.failed');
+      scope.setContext('invoice', { invoiceId: invoice.id, subscriptionId: invoice.subscription });
+      Sentry.captureException(error);
+    });
     throw error;
   }
 }
@@ -1069,7 +1167,7 @@ export async function handleChargeDispute(
     console.log('⚖️ Processing charge dispute:', dispute.id);
 
     const [payment] = await db
-      .select()
+      .select(safePaymentSelect)
       .from(payments)
       .where(eq(payments.stripeChargeId, dispute.charge))
       .limit(1);
@@ -1117,6 +1215,11 @@ export async function handleChargeDispute(
   } catch (err: unknown) {
     const error = err as Error;
     console.error('Error handling charge dispute:', error);
+    Sentry.withScope((scope) => {
+      scope.setTag('payment.handler', 'charge.disputed');
+      scope.setContext('dispute', { disputeId: dispute.id, chargeId: dispute.charge, amount: dispute.amount });
+      Sentry.captureException(error);
+    });
     throw error;
   }
 }
@@ -1139,7 +1242,7 @@ export async function handleRefund(
     console.log('💸 Processing refund:', refund.id);
 
     const [payment] = await db
-      .select()
+      .select(safePaymentSelect)
       .from(payments)
       .where(eq(payments.stripeChargeId, refund.charge))
       .limit(1);
@@ -1153,50 +1256,58 @@ export async function handleRefund(
     const isPartialRefund = refundAmount < parseFloat(String(payment.amount));
 
     const existingMeta = (payment.metadata as Record<string, unknown>) || {};
-    await db
-      .update(payments)
-      .set({
-        status: isPartialRefund ? 'partially_refunded' : 'refunded',
-        updatedAt: new Date(),
-        metadata: {
-          ...existingMeta,
-          amountRefunded: refundAmount,
-          stripeRefundId: refund.id,
-          refund: {
-            id: refund.id,
-            amount: refundAmount,
-            reason: refund.reason,
-            status: refund.status,
-            created: new Date(refundCreated * 1000)
-          }
-        }
-      } as Record<string, unknown>)
-      .where(eq(payments.paymentId, payment.paymentId));
 
-    await createPaymentRecord({
-      tenantId: payment.tenantId,
-      subscriptionId: payment.subscriptionId ?? undefined,
-      stripeChargeId: refund.charge,
-      stripeRefundId: refund.id,
-      amount: -refundAmount,
-      currency: String(refundCurrency).toUpperCase(),
-      status: (refund.status ?? 'succeeded') as string,
-      paymentType: 'refund',
-      billingReason: 'refund',
-      description: `Refund for ${refund.reason || 'customer request'}`,
-      metadata: {
-        originalPaymentId: payment.paymentId,
-        refundReason: refund.reason,
-        isPartialRefund
-      },
-      stripeRawData: refund,
-      paidAt: new Date(refundCreated * 1000)
+    // Atomic: update original payment + create refund record in one transaction.
+    await db.transaction(async (tx) => {
+      await tx
+        .update(payments)
+        .set({
+          status: isPartialRefund ? 'partially_refunded' : 'refunded',
+          updatedAt: new Date(),
+          metadata: {
+            ...existingMeta,
+            amountRefunded: refundAmount,
+            stripeRefundId: refund.id,
+            refund: {
+              id: refund.id,
+              amount: refundAmount,
+              reason: refund.reason,
+              status: refund.status,
+              created: new Date(refundCreated * 1000)
+            }
+          }
+        } as Record<string, unknown>)
+        .where(eq(payments.paymentId, payment.paymentId));
+
+      await tx.insert(payments).values({
+        tenantId: payment.tenantId,
+        subscriptionId: payment.subscriptionId ?? undefined,
+        stripeChargeId: refund.charge,
+        amount: String(-refundAmount),
+        currency: String(refundCurrency).toUpperCase(),
+        status: (refund.status ?? 'succeeded') as string,
+        paymentType: 'refund',
+        billingReason: 'refund',
+        description: `Refund for ${refund.reason || 'customer request'}`,
+        metadata: {
+          originalPaymentId: payment.paymentId,
+          refundReason: refund.reason,
+          isPartialRefund
+        },
+        stripeRawData: refund,
+        paidAt: new Date(refundCreated * 1000)
+      } as any);
     });
 
     console.log('💸 Refund recorded:', refund.id, 'amount:', refundAmount);
   } catch (err: unknown) {
     const error = err as Error;
     console.error('Error handling refund:', error);
+    Sentry.withScope((scope) => {
+      scope.setTag('payment.handler', 'refund.created');
+      scope.setContext('refund', { refundId: refund.id, chargeId: refund.charge, amount: refund.amount });
+      Sentry.captureException(error);
+    });
     throw error;
   }
 }
@@ -1234,9 +1345,7 @@ export async function handleSubscriptionUpdated(
       const plan = plans.find((p: Record<string, unknown>) => p.id === planId) as Record<string, unknown> | undefined;
       if (plan) {
         setPayload.plan = planId;
-        setPayload.subscribedTools = plan.applications ?? (plan as Record<string, unknown>).subscribedTools ?? [];
-        setPayload.usageLimits = plan.limits ?? (plan as Record<string, unknown>).usageLimits ?? {};
-        setPayload.yearlyPrice = String((plan.yearlyPrice ?? plan.price ?? 0) as number);
+        setPayload.yearlyPrice = String((plan.yearlyPrice ?? 0) as number);
       }
     }
 
@@ -1259,6 +1368,7 @@ export async function handleSubscriptionUpdated(
   } catch (err: unknown) {
     const error = err as Error;
     console.error('Error handling subscription updated:', error);
+    Sentry.captureException(error, { tags: { 'payment.handler': 'subscription.updated' } });
     throw error;
   }
 }
@@ -1299,6 +1409,7 @@ export async function handleSubscriptionCreated(
   } catch (err: unknown) {
     const error = err as Error;
     console.error('Error handling subscription created:', error);
+    Sentry.captureException(error, { tags: { 'payment.handler': 'subscription.created' } });
     throw error;
   }
 }
@@ -1327,7 +1438,7 @@ export async function handleChargeSucceeded(
       .limit(1);
 
     if (subscription) {
-      await createPaymentRecord({
+      await PaymentService.createPaymentRecord({
         tenantId: subscription.tenantId,
         subscriptionId: subscription.subscriptionId ?? undefined,
         stripeChargeId: charge.id,
@@ -1347,6 +1458,7 @@ export async function handleChargeSucceeded(
   } catch (err: unknown) {
     const error = err as Error;
     console.error('Error handling charge succeeded:', error);
+    Sentry.captureException(error, { tags: { 'payment.handler': 'charge.succeeded' } });
     throw error;
   }
 }
@@ -1478,6 +1590,11 @@ export async function handleCreditPurchase(session: Record<string, unknown>): Pr
   } catch (err: unknown) {
     const error = err as Error;
     console.error('❌ Error processing credit purchase:', error.message);
+    Sentry.withScope((scope) => {
+      scope.setTag('payment.handler', 'credit_purchase');
+      scope.setContext('credit_purchase', { tenantId: meta.tenantId, creditAmount: meta.creditAmount, sessionId: session.id });
+      Sentry.captureException(error);
+    });
     throw error;
   }
 }

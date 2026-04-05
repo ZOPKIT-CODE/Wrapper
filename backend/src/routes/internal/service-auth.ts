@@ -21,7 +21,7 @@ export default async function internalServiceAuthRoutes(fastify: FastifyInstance
   fastify.post('/validate-session', {
     preHandler: [validateInternalApiKey],
     schema: {},
-  }, async (request: FastifyRequest, reply: FastifyReply) => {
+  }, async (request: FastifyRequest, _reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
     const kinde_user_id  = (body.kinde_user_id  as string) ?? '';
     const kinde_org_code = (body.kinde_org_code as string) ?? '';

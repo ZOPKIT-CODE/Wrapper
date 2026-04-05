@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/node';
 import ActivityLogger from '../services/activityLogger.js';
 import type { FastifyRequest, FastifyReply } from 'fastify';
 
@@ -152,6 +153,13 @@ export async function errorHandler(error: FastifyError, request: FastifyRequest,
       } catch (logError) {
         console.error('❌ Failed to log error to activity logs:', logError);
       }
+    });
+  }
+
+  if (statusCode >= 500) {
+    Sentry.captureException(error, {
+      tags: { path: request.url, method: request.method },
+      extra: { statusCode, correlationId: response.correlationId },
     });
   }
 

@@ -4,7 +4,8 @@ import { createTestDb, seedTenant, seedPayment, type TestDb } from '../../../db/
 import { db } from '../../../db/index.js';
 import { payments } from '../../../db/schema/billing/subscriptions.js';
 import { and, eq } from 'drizzle-orm';
-import { createPaymentRecord, processRefund } from './subscription-payment-records.js';
+import { PaymentService } from './payment-service.js';
+const { createPaymentRecord, processRefund } = PaymentService;
 
 let testDb: TestDb;
 let endDb: () => Promise<void>;

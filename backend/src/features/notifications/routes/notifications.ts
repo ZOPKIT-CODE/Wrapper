@@ -14,7 +14,7 @@ export default async function notificationRoutes(fastify: FastifyInstance, _opti
    */
   fastify.get('/', async (request: FastifyRequest, reply: FastifyReply) => {
     try {
-      const { tenantId, internalUserId: userId } = request.userContext || {};
+      const { tenantId } = request.userContext || {};
       if (!tenantId) {
         return reply.code(401).send({ success: false, error: 'Unauthorized' });
       }

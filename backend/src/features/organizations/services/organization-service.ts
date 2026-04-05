@@ -6,13 +6,16 @@
 import { db } from '../../../db/index.js';
 import { tenants } from '../../../db/schema/core/tenants.js';
 import { entities } from '../../../db/schema/organizations/unified-entities.js';
-import { organizationMemberships } from '../../../db/schema/organizations/organization_memberships.js';
-import { eq, and, or, sql, inArray } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
-import DataIsolationService from '../../../services/data-isolation-service.js';
-import ApplicationDataIsolationService from '../../../services/application-data-isolation-service.js';
+import {
+  dataIsolationService,
+  applicationDataIsolationService,
+  type DataIsolationUserContext,
+  type ApplicationIsolationUserContext,
+} from './entity-access.js';
 import HierarchyManager from '../../../utils/hierarchy-manager.js';
-import { amazonMQPublisher } from '../../messaging/utils/amazon-mq-publisher.js';
+import { snsSqsPublisher } from '../../messaging/utils/sns-sqs-publisher.js';
 import accountingEntityProvisioningService from '../../messaging/services/accounting-entity-provisioning-service.js';
 
 export class OrganizationService {
@@ -21,7 +24,7 @@ export class OrganizationService {
    * Create a new parent organization (at most 1 per tenant)
    */
   async createParentOrganization(data: Record<string, unknown> & { name: string; description?: string; gstin?: string; parentTenantId: string }, createdBy: string) {
-    const { name, description, gstin, parentTenantId } = data;
+    const { name, description, gstin: _gstin, parentTenantId } = data;
 
     // Validate input
     this.validateOrganizationData(data);
@@ -61,7 +64,7 @@ export class OrganizationService {
       tenantId: parentTenantId,
       entityType: 'organization',
       entityName: name,
-      entityCode: `ORG_${organizationId.substring(0, 8)}`, // Generate code
+
       description,
       organizationType: 'business_unit', // Parent organization
       entityLevel: 1,
@@ -75,9 +78,9 @@ export class OrganizationService {
 
     // Publish organization creation event to AWS MQ
     try {
-      await amazonMQPublisher.publishOrgEventToSuite('entity.created', parentTenantId, organization[0].entityId, {
+      await snsSqsPublisher.publishOrgEventToSuite('entity.created', parentTenantId, organization[0].entityId, {
         entityId: organization[0].entityId,
-        entityCode: organization[0].entityCode ?? organization[0].entityId,
+        entityCode: organization[0].entityId,
         entityName: organization[0].entityName,
         entityType: 'organization',
         subType: 'business_unit',
@@ -100,7 +103,7 @@ export class OrganizationService {
         entityId: organization[0].entityId,
         entityType: 'organization',
         subType: 'business_unit',
-        entityCode: organization[0].entityCode ?? organization[0].entityId,
+        entityCode: organization[0].entityId,
         entityName: organization[0].entityName,
         parentId: null,
         description: organization[0].description ?? null,
@@ -150,7 +153,7 @@ export class OrganizationService {
    * Create a sub-organization under a parent organization
    */
   async createSubOrganization(data: Record<string, unknown> & { name: string; description?: string; gstin?: string; parentOrganizationId?: string; organizationType?: string; tenantId?: string; entityCode?: string; legalName?: string; status?: string; country?: string; currency?: string; fiscalYearEnd?: string; taxId?: string; registrationNumber?: string; email?: string; phone?: string; website?: string; notes?: string }, createdBy: string) {
-    const { name, description, gstin, parentOrganizationId, organizationType, tenantId, entityCode, legalName, status, country, currency, fiscalYearEnd, taxId, registrationNumber, email, phone, website, notes } = data;
+    const { name, description, parentOrganizationId, organizationType, tenantId, entityCode, legalName, status, country, currency, fiscalYearEnd, taxId, registrationNumber, email, phone, website, notes } = data;
 
     console.log('🏗️ OrganizationService.createSubOrganization called with:', {
       name,
@@ -207,7 +210,7 @@ export class OrganizationService {
       entityType: 'organization',
       parentEntityId: parentEntityId,
       entityName: name,
-      entityCode: organizationType === 'parent' ? `PARENT_${organizationId.substring(0, 8)}` : `ORG_${organizationId.substring(0, 8)}`,
+
       description,
       organizationType: organizationType || 'department',
       responsiblePersonId: createdBy,
@@ -221,9 +224,9 @@ export class OrganizationService {
 
     // Publish organization creation event to AWS MQ
     try {
-      await amazonMQPublisher.publishOrgEventToSuite('entity.created', tenantIdToUse, organization[0].entityId, {
+      await snsSqsPublisher.publishOrgEventToSuite('entity.created', tenantIdToUse, organization[0].entityId, {
         entityId: organization[0].entityId,
-        entityCode: entityCode ?? organization[0].entityCode ?? organization[0].entityId,
+        entityCode: entityCode ?? organization[0].entityId,
         entityName: organization[0].entityName,
         entityType: organization[0].entityType,
         subType: organization[0].organizationType,
@@ -257,7 +260,7 @@ export class OrganizationService {
         entityId: organization[0].entityId,
         entityType: organization[0].entityType,
         subType: organization[0].organizationType ?? null,
-        entityCode: entityCode ?? organization[0].entityCode ?? organization[0].entityId,
+        entityCode: entityCode ?? organization[0].entityId,
         entityName: organization[0].entityName,
         parentId: organization[0].parentEntityId ?? null,
         description: organization[0].description ?? null,
@@ -406,7 +409,6 @@ export class OrganizationService {
           entityId: entities.entityId,
           entityName: entities.entityName,
           entityType: entities.entityType,
-          entityCode: entities.entityCode,
           entityLevel: entities.entityLevel,
           hierarchyPath: entities.hierarchyPath,
           fullHierarchyPath: entities.fullHierarchyPath,
@@ -450,8 +452,8 @@ export class OrganizationService {
           // If application context is provided, use application-specific filtering
           const appContext = applicationContext as Record<string, unknown> | null;
           if (appContext?.application) {
-            const appAccess = await ApplicationDataIsolationService.getUserApplicationAccess(
-              userContext as unknown as import('../../../services/application-data-isolation-service.js').UserContext,
+            const appAccess = await applicationDataIsolationService.getUserApplicationAccess(
+              userContext as unknown as ApplicationIsolationUserContext,
               appContext.application as string
             );
 
@@ -467,7 +469,9 @@ export class OrganizationService {
             accessibleEntities = (appAccess.organizations || []) as string[];
           } else {
             // Use regular organizational access
-            accessibleEntities = await DataIsolationService.getUserAccessibleOrganizations(userContext as unknown as import('../../../services/data-isolation-service.js').UserContext);
+            accessibleEntities = await dataIsolationService.getUserAccessibleOrganizations(
+              userContext as unknown as DataIsolationUserContext
+            );
           }
 
           if (accessibleEntities.length > 0) {

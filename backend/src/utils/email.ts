@@ -96,7 +96,7 @@ class EmailService {
   }
 
   // Send welcome email to new organization admin
-  async sendWelcomeEmail({ email, name, companyName, subdomain, kindeOrgCode, loginUrl }: { email: string; name: string; companyName: string; subdomain: string; kindeOrgCode: string; loginUrl: string }) {
+  async sendWelcomeEmail({ email, name, companyName, subdomain, kindeOrgCode: _kindeOrgCode, loginUrl }: { email: string; name: string; companyName: string; subdomain: string; kindeOrgCode: string; loginUrl: string }) {
     const subject = `Welcome to ${companyName} - Your Zopkit Account is Ready!`;
     
     const html = `
@@ -850,7 +850,7 @@ class EmailService {
   }
 
   // Send usage alert email
-  async sendUsageAlert({ tenantId, adminEmail, tenantName, alertType, metricType, currentValue, limitValue, percentage }: { tenantId: string; adminEmail: string; tenantName: string; alertType: string; metricType: string; currentValue: string | number; limitValue: string | number; percentage: number }) {
+  async sendUsageAlert({ tenantId: _tenantId, adminEmail, tenantName, alertType, metricType, currentValue, limitValue, percentage }: { tenantId: string; adminEmail: string; tenantName: string; alertType: string; metricType: string; currentValue: string | number; limitValue: string | number; percentage: number }) {
     const subject = `${tenantName} - Usage Alert: ${alertType.replace('_', ' ').toUpperCase()}`;
     
     const html = `
@@ -920,7 +920,7 @@ class EmailService {
   }
 
   // Send downgrade confirmation email
-  async sendDowngradeConfirmation({ tenantId, fromPlan, toPlan, refundAmount, effectiveDate }: { tenantId: string; fromPlan: string; toPlan: string; refundAmount: number; effectiveDate: Date | string }) {
+  async sendDowngradeConfirmation({ tenantId: _tenantId, fromPlan, toPlan, refundAmount, effectiveDate }: { tenantId: string; fromPlan: string; toPlan: string; refundAmount: number; effectiveDate: Date | string }) {
     const subject = `Subscription Downgrade Confirmation`;
     
     const html = `
@@ -998,9 +998,9 @@ class EmailService {
       nextAttempt,
       failureReason
     });
-    
+
     const subject = `Payment Failed - Action Required`;
-    
+
     const html = `
       <!DOCTYPE html>
       <html>
@@ -1050,9 +1050,9 @@ class EmailService {
       reason,
       evidenceDueBy
     });
-    
+
     const subject = `Payment Dispute - ${disputeId}`;
-    
+
     const html = `
       <!DOCTYPE html>
       <html>
@@ -1087,7 +1087,7 @@ class EmailService {
   }
 
   // Send payment confirmation email
-  async sendPaymentConfirmation({ tenantId, userEmail, userName, paymentType, amount, currency, transactionId, planName, billingCycle, creditsAdded, sessionId }: { tenantId: string; userEmail: string; userName?: string; paymentType: string; amount: number; currency: string; transactionId?: string; planName?: string; billingCycle?: string; creditsAdded?: number; sessionId?: string }) {
+  async sendPaymentConfirmation({ tenantId, userEmail, userName: _userName, paymentType, amount, currency, transactionId, planName, billingCycle, creditsAdded, sessionId }: { tenantId: string; userEmail: string; userName?: string; paymentType: string; amount: number; currency: string; transactionId?: string; planName?: string; billingCycle?: string; creditsAdded?: number; sessionId?: string }) {
     console.log('📧 Sending payment confirmation:', {
       tenantId,
       userEmail,
@@ -1259,9 +1259,9 @@ This is an automated confirmation email. Please keep this for your records.
       reason,
       processedAt
     });
-    
+
     const subject = `Refund Confirmation - $${amount}`;
-    
+
     const html = `
       <!DOCTYPE html>
       <html>
@@ -1305,7 +1305,6 @@ This is an automated confirmation email. Please keep this for your records.
 
       // Normalize the 'to' field
       const recipients = Array.isArray(to) ? to : [{ email: typeof to === 'object' ? to.email : (to as string) }];
-      const recipientEmails = recipients.map((r: { email?: string }) => r.email || r);
 
       let result;
       let lastError;
@@ -2035,7 +2034,7 @@ This is an automated confirmation email. Please keep this for your records.
   }
 
   // Send trial reminder notification
-  async sendTrialReminderNotification({ email, companyName, planName, expirationDate, subscriptionId }: { email: string; companyName: string; planName: string; expirationDate: Date | string; subscriptionId: string }) {
+  async sendTrialReminderNotification({ email, companyName, planName, expirationDate, subscriptionId: _subscriptionId }: { email: string; companyName: string; planName: string; expirationDate: Date | string; subscriptionId: string }) {
     const subject = `⏰ Your ${planName} trial expires soon - ${companyName}`;
     
     const timeRemaining = new Date(expirationDate).getTime() - new Date().getTime();
@@ -2111,7 +2110,7 @@ This is an automated confirmation email. Please keep this for your records.
   }
 
   // Send trial expired notification
-  async sendTrialExpiredNotification({ email, companyName, planName, subscriptionId }: { email: string; companyName: string; planName: string; subscriptionId: string }) {
+  async sendTrialExpiredNotification({ email, companyName, planName, subscriptionId: _subscriptionId }: { email: string; companyName: string; planName: string; subscriptionId: string }) {
     const subject = `🔒 Your ${planName} trial has expired - ${companyName}`;
     
     const html = `
@@ -2206,7 +2205,7 @@ This is an automated confirmation email. Please keep this for your records.
   }
 
   // Send plan expired notification (for paid plans that expire)
-  static async sendPlanExpiredNotification({ email, companyName, planName, subscriptionId }: { email: string; companyName: string; planName: string; subscriptionId: string }) {
+  static async sendPlanExpiredNotification({ email, companyName, planName, subscriptionId: _subscriptionId }: { email: string; companyName: string; planName: string; subscriptionId: string }) {
     const subject = `🔒 Your ${planName} plan has expired - ${companyName}`;
     
     const html = `

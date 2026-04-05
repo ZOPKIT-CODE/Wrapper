@@ -1,22 +1,18 @@
 import { db } from '../db/index.js';
 import { 
-  tenants, 
-  tenantUsers, 
-  customRoles, 
+  tenants,
+  tenantUsers,
+  customRoles,
   userRoleAssignments,
   subscriptions,
   payments,
   auditLogs,
   organizationApplications,
-  userApplicationPermissions,
-  userSessions
 } from '../db/schema/index.js';
-import { eq, and, like, count, or } from 'drizzle-orm';
+import { eq, like, count, or } from 'drizzle-orm';
 
 interface DeletedRecords {
   userRoleAssignments?: number;
-  userApplicationPermissions?: number;
-  userSessions?: number;
   auditLogs?: number;
   customRoles?: number;
   tenantUsers?: number;
@@ -85,33 +81,7 @@ export const deleteTenantData = async (tenantId: string): Promise<{
       deletionResults.deletedRecords.userRoleAssignments = userRoleAssignmentsResult.length;
       console.log(`✅ Deleted ${userRoleAssignmentsResult.length} user role assignments`);
 
-      // 2. Delete user application permissions (has FK to tenantUsers)
-      console.log('🔄 Deleting user application permissions...');
-      let userAppPermsResult = [];
-      if (tenantUserIds.length > 0) {
-        const userIds = tenantUserIds.map(row => row.userId);
-        userAppPermsResult = await tx
-          .delete(userApplicationPermissions)
-          .where(
-            or(
-              ...userIds.map(userId => eq(userApplicationPermissions.userId, userId))
-            )
-          )
-          .returning({ id: userApplicationPermissions.id });
-      }
-      deletionResults.deletedRecords.userApplicationPermissions = userAppPermsResult.length;
-      console.log(`✅ Deleted ${userAppPermsResult.length} user application permissions`);
-
-      // 3. Delete user sessions (has FK to tenantUsers)
-      console.log('🔄 Deleting user sessions...');
-      const userSessionsResult = await tx
-        .delete(userSessions)
-        .where(eq(userSessions.tenantId, tenantId))
-        .returning({ id: userSessions.sessionId });
-      deletionResults.deletedRecords.userSessions = userSessionsResult.length;
-      console.log(`✅ Deleted ${userSessionsResult.length} user sessions`);
-
-      // 4. Delete audit logs (has FK to tenantUsers - must delete before tenant users)
+      // 2. Delete audit logs (has FK to tenantUsers - must delete before tenant users)
       console.log('🔄 Deleting audit logs...');
       const auditLogsResult = await tx
         .delete(auditLogs)
@@ -283,24 +253,6 @@ export const getTenantDataSummary = async (tenantId: string): Promise<{
         );
     }
 
-    let userAppPermsCount = { count: 0 };
-    if (tenantUserIds.length > 0) {
-      const userIds = tenantUserIds.map(row => row.userId);
-      [userAppPermsCount] = await db
-        .select({ count: count() })
-        .from(userApplicationPermissions)
-        .where(
-          or(
-            ...userIds.map(userId => eq(userApplicationPermissions.userId, userId))
-          )
-        );
-    }
-
-    const [userSessionsCount] = await db
-      .select({ count: count() })
-      .from(userSessions)
-      .where(eq(userSessions.tenantId, tenantId));
-
     const [tenantUsersCount] = await db
       .select({ count: count() })
       .from(tenantUsers)
@@ -335,8 +287,6 @@ export const getTenantDataSummary = async (tenantId: string): Promise<{
       tenant: tenantInfo,
       recordCounts: {
         userRoleAssignments: userRoleAssignmentsCount.count,
-        userApplicationPermissions: userAppPermsCount.count,
-        userSessions: userSessionsCount.count,
         tenantUsers: tenantUsersCount.count,
         customRoles: customRolesCount.count,
         subscriptions: subscriptionsCount.count,

@@ -4,8 +4,7 @@ import {
   applications,
   organizationApplications,
   applicationModules,
-  tenants,
-  entities
+  tenants
 } from '../../../db/schema/index.js';
 import { eq, and, sql, count, inArray } from 'drizzle-orm';
 import { authenticateToken } from '../../../middleware/auth/auth.js';
@@ -27,9 +26,7 @@ export default async function applicationAssignmentRoutes(fastify: FastifyInstan
     },
     preHandler: requirePlatformPermission('org_assignments:read')
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const tenantId = params.tenantId ?? '';
 
@@ -164,9 +161,6 @@ export default async function applicationAssignmentRoutes(fastify: FastifyInstan
     },
     preHandler: requirePlatformPermission('org_assignments:read')
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const totalApps = await db
         .select({ count: count() })
@@ -239,13 +233,10 @@ export default async function applicationAssignmentRoutes(fastify: FastifyInstan
     },
     preHandler: requirePlatformPermission('org_assignments:read')
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
     const queryParams = request.query as Record<string, string>;
     try {
       const search = queryParams.search;
       const hasApps = queryParams.hasApps;
-      const appCode = queryParams.appCode;
       const limit = Number(queryParams.limit) || 50;
       const offset = Number(queryParams.offset) || 0;
 

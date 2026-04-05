@@ -1,34 +1,25 @@
-import { randomUUID } from 'crypto';
 import { eq, and, desc } from 'drizzle-orm';
 import { db } from '../../../db/index.js';
 import { subscriptions, payments } from '../../../db/schema/index.js';
-import { webhookLogs } from '../../../db/schema/tracking/webhook-logs.js';
 import { EmailService } from '../../../utils/email.js';
 import { getCurrentSubscription, getAvailablePlans } from './subscription-core.js';
 import { getPaymentGateway } from '../adapters/index.js';
 import { updateAdministratorRolesForPlan } from './subscription-plan-roles.js';
-import { createPaymentRecord, processRefund } from './subscription-payment-records.js';
+import { PaymentService } from './payment-service.js';
 import { createCheckoutSession, createBillingPortalSession } from './subscription-checkout.js';
-import { recordTrialEvent } from './subscription-trial.js';
-import {
-  isValidPlanChange,
-  calculateFeatureLoss,
-  calculateDataRetention,
-  calculateUserLimits,
-} from './subscription-plan-change.helpers.js';
-
-export {
-  isValidPlanChange,
-  calculateFeatureLoss,
-  calculateDataRetention,
-  calculateUserLimits,
-};
+import { isValidPlanChange, calculateFeatureLoss, calculateDataRetention, calculateUserLimits } from './subscription-plan-change.helpers.js';
+export { isValidPlanChange, calculateFeatureLoss, calculateDataRetention, calculateUserLimits };
 
 /**
  * Change subscription plan (upgrade/downgrade).
  */
-export async function changePlan(params: { tenantId: string; planId: string; billingCycle?: string }): Promise<Record<string, unknown>> {
-  const { tenantId, planId, billingCycle = 'monthly' } = params;
+export async function changePlan(params: {
+  tenantId: string;
+  planId: string;
+  billingCycle?: string;
+  currency?: 'usd' | 'inr';
+}): Promise<Record<string, unknown>> {
+  const { tenantId, planId, billingCycle = 'yearly', currency = 'usd' } = params;
   try {
     console.log('🔄 Changing plan for tenant:', tenantId, 'to plan:', planId);
 
@@ -90,7 +81,8 @@ export async function changePlan(params: { tenantId: string; planId: string; bil
         currentSubscription,
         targetPlan,
         planId,
-        billingCycle
+        billingCycle,
+        currency
       })) as unknown as Record<string, unknown>;
     }
 
@@ -99,7 +91,8 @@ export async function changePlan(params: { tenantId: string; planId: string; bil
       currentSubscription,
       targetPlan,
       planId,
-      billingCycle
+      billingCycle,
+      currency
     })) as unknown as Record<string, unknown>;
 
   } catch (err: unknown) {
@@ -115,14 +108,6 @@ export async function changePlan(params: { tenantId: string; planId: string; bil
 export async function scheduleDowngrade(params: { tenantId: string; planId: string; effectiveDate: Date }): Promise<Record<string, unknown>> {
   const { tenantId, planId, effectiveDate } = params;
   try {
-    await db.insert(webhookLogs).values({
-      eventId: `scheduled_downgrade_${randomUUID()}`,
-      eventType: 'scheduled_downgrade',
-      status: 'processing',
-      createdAt: new Date(),
-      updatedAt: new Date()
-    });
-
     const current = await getCurrentSubscription(tenantId);
     return {
       message: `Downgrade to ${planId} scheduled for ${effectiveDate.toLocaleDateString()}`,
@@ -147,8 +132,9 @@ export async function processImmediatePlanChange(params: {
   targetPlan: Record<string, unknown>;
   planId: string;
   billingCycle: string;
+  currency?: 'usd' | 'inr';
 }): Promise<string | Record<string, unknown>> {
-  const { tenantId, currentSubscription, targetPlan, planId, billingCycle } = params;
+  const { tenantId, currentSubscription, planId, billingCycle: _billingCycle, currency } = params;
   const gateway = getPaymentGateway();
 
   try {
@@ -163,7 +149,8 @@ export async function processImmediatePlanChange(params: {
         customerId: (currentSubscription.stripeCustomerId as string) || undefined,
         successUrl: `${process.env.FRONTEND_URL || ''}/billing?payment=success&plan=${planId}`,
         cancelUrl: `${process.env.FRONTEND_URL || ''}/billing?payment=cancelled`,
-        billingCycle
+        billingCycle: 'yearly',
+        currency
       });
     }
   } catch (err: unknown) {
@@ -179,7 +166,7 @@ export async function processImmediatePlanChange(params: {
  * Uses the payment gateway adapter for all provider interactions.
  */
 export async function immediateDowngrade(params: { tenantId: string; newPlan: string; reason?: string; refundRequested?: boolean }): Promise<Record<string, unknown>> {
-  const { tenantId, newPlan, reason = 'customer_request', refundRequested = false } = params;
+  const { tenantId, newPlan, refundRequested } = params;
   const gateway = getPaymentGateway();
 
   try {
@@ -203,12 +190,10 @@ export async function immediateDowngrade(params: { tenantId: string; newPlan: st
       const remainingDays = Math.max(0,
         Math.ceil((periodEndTime - Date.now()) / (1000 * 60 * 60 * 24))
       );
-      const totalDays = currentSubscription.billingCycle === 'yearly' ? 365 : 30;
+      const totalDays = 365;
       const prorationRatio = remainingDays / totalDays;
 
-      const currentAmount = currentSubscription.billingCycle === 'yearly'
-        ? parseFloat(String((currentSubscription as Record<string, unknown>).yearlyPrice || 0))
-        : parseFloat(String((currentSubscription as Record<string, unknown>).monthlyPrice || 0));
+      const currentAmount = parseFloat(String((currentSubscription as Record<string, unknown>).yearlyPrice || 0));
 
       prorationAmount = currentAmount * prorationRatio;
       refundAmount = prorationAmount;
@@ -226,7 +211,7 @@ export async function immediateDowngrade(params: { tenantId: string; newPlan: st
 
       if (lastPayment) {
         const paymentDate = new Date((lastPayment.paidAt ?? lastPayment.createdAt) as Date);
-        const totalPeriod = (currentSubscription.billingCycle === 'yearly' ? 365 : 30) as number;
+        const totalPeriod = 365;
         const daysSincePayment = Math.ceil((Date.now() - paymentDate.getTime()) / (1000 * 60 * 60 * 24));
         const remainingDays = Math.max(0, totalPeriod - daysSincePayment);
 
@@ -250,13 +235,14 @@ export async function immediateDowngrade(params: { tenantId: string; newPlan: st
       const plans = await getAvailablePlans();
       const targetPlan = plans.find((p: Record<string, unknown>) => p.id === newPlan) as Record<string, unknown> | undefined;
 
-      if (targetPlan && (targetPlan as Record<string, unknown>).stripePriceId) {
+      const yearlyPriceId = (targetPlan as Record<string, unknown>).stripeYearlyPriceId as string | undefined;
+      if (targetPlan && yearlyPriceId) {
         const gatewaySub = await gateway.retrieveSubscription(currentSubscription.stripeSubscriptionId as string);
         const subscriptionItemId = gatewaySub.items?.[0]?.id;
 
         if (subscriptionItemId) {
           await gateway.updateSubscription(currentSubscription.stripeSubscriptionId as string, {
-            items: [{ id: subscriptionItemId, priceId: (targetPlan as Record<string, unknown>).stripePriceId as string }],
+            items: [{ id: subscriptionItemId, priceId: yearlyPriceId }],
             prorationBehavior: refundRequested ? 'always_invoice' : 'none',
           });
         }
@@ -269,9 +255,8 @@ export async function immediateDowngrade(params: { tenantId: string; newPlan: st
       .set({
         plan: newPlan,
         status: newPlan === 'trial' ? 'trialing' : (currentSubscription.status as string),
-        subscribedTools: (targetPlanDb?.applications ?? ['crm']) as Record<string, unknown>,
-        usageLimits: (targetPlanDb?.limits ?? { users: 2, apiCalls: 1000, storage: 1000000000, projects: 3 }) as Record<string, unknown>,
-        yearlyPrice: targetPlanDb != null ? String((targetPlanDb.yearlyPrice ?? targetPlanDb.price ?? 0) as number) : '0',
+        yearlyPrice: targetPlanDb != null ? String((targetPlanDb.yearlyPrice ?? 0) as number) : '0',
+        billingCycle: 'yearly',
         stripeSubscriptionId: newPlan === 'trial' ? undefined : (currentSubscription.stripeSubscriptionId as string | undefined),
         stripeCustomerId: newPlan === 'trial' ? undefined : (currentSubscription.stripeCustomerId as string | undefined),
         updatedAt: new Date()
@@ -290,22 +275,12 @@ export async function immediateDowngrade(params: { tenantId: string; newPlan: st
     const updatedSubscription = await getCurrentSubscription(tenantId);
 
     const subIdForEvent = (updatedSubscription as Record<string, unknown>).subscriptionId ?? (updatedSubscription as Record<string, unknown>).id;
-    if (newPlan === 'trial') {
-      await recordTrialEvent(tenantId, subIdForEvent as string, 'plan_downgraded_to_trial', {
-        fromPlan: currentSubscription.plan as string,
-        toPlan: newPlan,
-        downgradedAt: new Date(),
-        refundRequested: refundRequested,
-        prorationAmount: prorationAmount,
-        refundAmount: refundAmount,
-        isImmediate: true
-      });
-    } else {
+    if (newPlan !== 'trial') {
       const targetPlanForAmount = (await getAvailablePlans()).find((p: Record<string, unknown>) => p.id === newPlan) as Record<string, unknown> | undefined;
-      await createPaymentRecord({
+      await PaymentService.createPaymentRecord({
         tenantId: tenantId,
         subscriptionId: subIdForEvent as string,
-        amount: (targetPlanForAmount as Record<string, unknown>)?.monthlyPrice ?? 0,
+        amount: (targetPlanForAmount as Record<string, unknown>)?.yearlyPrice ?? 0,
         currency: 'USD',
         status: 'succeeded',
         paymentMethod: 'system',
@@ -340,14 +315,14 @@ export async function immediateDowngrade(params: { tenantId: string; newPlan: st
         .limit(1);
 
       if (recentPayment) {
-        await processRefund({
+        await PaymentService.processRefund({
           tenantId,
           paymentId: recentPayment.paymentId,
           amount: refundAmount,
           reason: `Prorated refund for downgrade from ${currentSubscription.plan} to ${newPlan}`
         });
       } else {
-        await createPaymentRecord({
+        await PaymentService.createPaymentRecord({
           tenantId: tenantId,
           subscriptionId: ((updatedSubscription as Record<string, unknown>).subscriptionId ?? (updatedSubscription as Record<string, unknown>).id) as string,
           amount: refundAmount,

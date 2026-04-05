@@ -1,7 +1,7 @@
 // 🔧 **SUPER ADMINISTRATOR PERMISSION GENERATOR**
 // Utility to generate comprehensive permissions for Super Administrator roles based on their plan
 
-import { BUSINESS_SUITE_MATRIX, PLAN_ACCESS_MATRIX, PermissionMatrixUtils } from '../data/permission-matrix.js';
+import { PLAN_ACCESS_MATRIX, PermissionMatrixUtils } from '../data/permission-matrix.js';
 
 type PlanIdKey = keyof typeof PLAN_ACCESS_MATRIX;
 
@@ -189,14 +189,6 @@ export function getSuperAdminRestrictions(planId: string): Record<string, unknow
 
   if (limitations.roles !== -1) {
     restrictions.maxRoles = limitations.roles;
-  }
-
-  if (limitations.storage !== 'unlimited') {
-    restrictions.storageLimit = limitations.storage;
-  }
-
-  if (limitations.apiCalls !== -1) {
-    restrictions.apiCallLimit = limitations.apiCalls;
   }
 
   // Special handling for trial

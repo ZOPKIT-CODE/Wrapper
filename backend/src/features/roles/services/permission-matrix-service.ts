@@ -1,7 +1,7 @@
 import { db } from '../../../db/index.js';
 import { customRoles, userRoleAssignments } from '../../../db/schema/core/permissions.js';
 import { tenantUsers, auditLogs } from '../../../db/schema/core/users.js';
-import { eq, and, or, inArray, count, sql } from 'drizzle-orm';
+import { eq, and, count, sql } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 const SYSTEM_ACTOR_UUID = '00000000-0000-0000-0000-000000000000';
 

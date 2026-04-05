@@ -4,8 +4,8 @@
  */
 
 import { db } from '../../../db/index.js';
-import { tenants, entities, credits, creditTransactions } from '../../../db/schema/index.js';
-import { eq, desc, sql, count, sum, gte, lte, and } from 'drizzle-orm';
+import { tenants, entities, credits, creditTransactions, subscriptions } from '../../../db/schema/index.js';
+import { eq, desc, sql, count, sum, gte, and } from 'drizzle-orm';
 
 export class DashboardService {
   /**
@@ -18,10 +18,11 @@ export class DashboardService {
         .select({
           total: count(),
           active: sql<number>`count(case when ${tenants.isActive} = true then 1 end)`,
-          trial: sql<number>`count(case when ${tenants.trialEndsAt} > now() then 1 end)`,
-          paid: sql<number>`count(case when ${tenants.trialEndsAt} is null or ${tenants.trialEndsAt} < now() then 1 end)`
+          trial: sql<number>`count(case when s.trial_ends_at > now() then 1 end)`,
+          paid: sql<number>`count(case when s.trial_ends_at is null or s.trial_ends_at < now() then 1 end)`
         })
-        .from(tenants);
+        .from(tenants)
+        .leftJoin(subscriptions, eq(tenants.tenantId, subscriptions.tenantId));
 
       // Get entity statistics
       const entityStats = await db

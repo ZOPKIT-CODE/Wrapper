@@ -7,7 +7,7 @@ import { userRoleAssignments, tenantUsers, customRoles } from '../../../db/schem
 import { applications as applicationsSchema, organizationApplications } from '../../../db/schema/core/suite-schema.js';
 import { eq, and } from 'drizzle-orm';
 import Logger from '../../../utils/logger.js';
-import ActivityLogger, { ACTIVITY_TYPES, RESOURCE_TYPES } from '../../../services/activityLogger.js';
+import ActivityLogger, { ACTIVITY_TYPES } from '../../../services/activityLogger.js';
 // crmSyncStreams removed - migrated to RabbitMQ (AmazonMQPublisher)
 import { PermissionMatrixUtils } from '../../../data/permission-matrix.js';
 import { PERMISSIONS } from '../../../constants/permissions.js';
@@ -135,10 +135,10 @@ export async function publishRoleEventToApplications(
       };
 
       try {
-        // Use AmazonMQPublisher to publish role event
-        const { amazonMQPublisher } = await import('../../messaging/utils/amazon-mq-publisher.js');
+        // Use SNS/SQS publisher to publish role event
+        const { snsSqsPublisher } = await import('../../messaging/utils/sns-sqs-publisher.js');
         
-        await amazonMQPublisher.publishRoleEvent(
+        await snsSqsPublisher.publishRoleEvent(
           appCode, // Target application (crm, hr, etc.)
           eventType, // Already in format: role.created, role.updated, role.deleted
           tenantId,
@@ -252,8 +252,6 @@ export default async function roleRoutes(
     schema: {}
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const userCtx = (request as any).userContext;
       const roleData = {
@@ -482,8 +480,6 @@ export default async function roleRoutes(
     schema: {}
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     const startTime = Date.now();
     const requestId = Logger.generateRequestId('role-create');
     
@@ -715,15 +711,21 @@ export default async function roleRoutes(
         }
       );
 
-      // Get users affected by this role change
+      // Get users affected by this role change — scoped to this tenant
       const affectedUsers = await db
         .select({
           userId: userRoleAssignments.userId,
           email: tenantUsers.email
         })
         .from(userRoleAssignments)
-        .leftJoin(tenantUsers, eq(userRoleAssignments.userId, tenantUsers.userId))
-        .where(eq(userRoleAssignments.roleId, roleId));
+        .leftJoin(tenantUsers, and(
+          eq(userRoleAssignments.userId, tenantUsers.userId),
+          eq(tenantUsers.tenantId, tenantId)
+        ))
+        .where(and(
+          eq(userRoleAssignments.roleId, roleId),
+          eq(userRoleAssignments.isActive, true)
+        ));
 
       console.log(`🔔 Role change affects ${affectedUsers.length} users`);
 

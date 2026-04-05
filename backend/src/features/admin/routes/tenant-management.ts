@@ -27,8 +27,6 @@ import { PERMISSIONS } from '../../../constants/permissions.js';
 import { db } from '../../../db/index.js';
 import { tenants, tenantUsers, entities, credits, auditLogs, subscriptions, tenantInvitations } from '../../../db/schema/index.js';
 import { eq, and, desc, sql, count, gte, lte } from 'drizzle-orm';
-import { randomUUID } from 'crypto';
-import ActivityLogger from '../../../services/activityLogger.js';
 
 type ReqWithUser = FastifyRequest & { userContext?: { userId?: string }; params?: Record<string, string>; query?: Record<string, string | undefined>; body?: Record<string, unknown> };
 
@@ -44,9 +42,7 @@ export default async function adminTenantManagementRoutes(
       description: 'Debug credit calculation for a tenant'
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const tenantId = params.tenantId ?? '';
 
@@ -221,7 +217,7 @@ export default async function adminTenantManagementRoutes(
           lastName: tenantUsers.lastName,
           isActive: tenantUsers.isActive,
           isTenantAdmin: tenantUsers.isTenantAdmin,
-          lastLoginAt: tenantUsers.lastLoginAt,
+          lastActiveAt: tenantUsers.lastActiveAt,
           createdAt: tenantUsers.createdAt
         })
         .from(tenantUsers)
@@ -283,7 +279,7 @@ export default async function adminTenantManagementRoutes(
           logId: auditLogs.logId,
           action: auditLogs.action,
           userId: auditLogs.userId,
-          userName: tenantUsers.name,
+          userName: sql<string>`COALESCE(${tenantUsers.firstName} || ' ' || ${tenantUsers.lastName}, ${tenantUsers.email})`,
           userEmail: tenantUsers.email,
           resourceType: auditLogs.resourceType,
           createdAt: auditLogs.createdAt,
@@ -476,7 +472,7 @@ export default async function adminTenantManagementRoutes(
         .select({
           logId: auditLogs.logId,
           userId: auditLogs.userId,
-          userName: tenantUsers.name,
+          userName: sql<string>`COALESCE(${tenantUsers.firstName} || ' ' || ${tenantUsers.lastName}, ${tenantUsers.email})`,
           userEmail: tenantUsers.email,
           action: auditLogs.action,
           resourceType: auditLogs.resourceType,
@@ -626,7 +622,7 @@ export default async function adminTenantManagementRoutes(
         .select({
           total: count(),
           active: sql`count(case when ${tenantUsers.isActive} = true then 1 end)`,
-          recentlyActive: sql`count(case when ${tenantUsers.lastLoginAt} > now() - interval '30 days' then 1 end)`
+          recentlyActive: sql`count(case when ${tenantUsers.lastActiveAt} > now() - interval '30 days' then 1 end)`
         })
         .from(tenantUsers)
         .where(eq(tenantUsers.tenantId, tenantId));
@@ -688,7 +684,7 @@ export default async function adminTenantManagementRoutes(
           adminEmail: tenants.adminEmail,
           isActive: tenants.isActive,
           isVerified: tenants.isVerified,
-          trialEndsAt: tenants.trialEndsAt,
+          trialEndsAt: subscriptions.trialEndsAt,
           createdAt: tenants.createdAt,
           updatedAt: tenants.updatedAt,
           entityCount: sql`count(distinct ${entities.entityId})`,
@@ -701,7 +697,8 @@ export default async function adminTenantManagementRoutes(
           eq(credits.entityId, entities.entityId),
           eq(credits.isActive, true)
         ))
-        .groupBy(tenants.tenantId);
+        .leftJoin(subscriptions, eq(tenants.tenantId, subscriptions.tenantId))
+        .groupBy(tenants.tenantId, subscriptions.trialEndsAt);
 
       // Apply filters
       if (search) {
@@ -717,10 +714,10 @@ export default async function adminTenantManagementRoutes(
             query = query.where(eq(tenants.isActive, false));
             break;
           case 'trial':
-            query = query.where(sql`${tenants.trialEndsAt} > now()`);
+            query = query.where(sql`${subscriptions.trialEndsAt} > now()`);
             break;
           case 'paid':
-            query = query.where(sql`${tenants.trialEndsAt} is null or ${tenants.trialEndsAt} < now()`);
+            query = query.where(sql`${subscriptions.trialEndsAt} is null or ${subscriptions.trialEndsAt} < now()`);
             break;
         }
       }

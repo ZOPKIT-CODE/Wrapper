@@ -37,7 +37,7 @@ export class RLSTenantIsolationService {
     try {
       const result = await dbClient`SELECT current_setting('app.tenant_id', true) as tenant_id`;
       return result[0]?.tenant_id || null;
-    } catch (error) {
+    } catch (_error) {
       return null;
     }
   }
@@ -341,10 +341,8 @@ export class RLSTenantIsolationService {
       'credits',
       'credit_transactions',
       'audit_logs',
-      'user_sessions',
       'trial_events',
       'applications',
-      'user_application_permissions',
       'locations',
       'organization_locations',
       'payments',
@@ -392,7 +390,6 @@ export class RLSTenantIsolationService {
 
   // Middleware for Express applications
   middleware(): (req: { headers: Record<string, string | undefined>; tenant?: unknown; tenantId?: string }, res: { status: (code: number) => { json: (body: unknown) => void }; send: (data?: unknown) => unknown }, next: () => void) => Promise<void> {
-    const self = this;
     return async (req: { headers: Record<string, string | undefined>; tenant?: unknown; tenantId?: string }, res: { status: (code: number) => { json: (body: unknown) => void }; send: (data?: unknown) => unknown }, next: () => void): Promise<void> => {
       // Extract tenant from headers
       const subdomain = req.headers['x-subdomain'] || req.headers['x-tenant'];
@@ -433,8 +430,8 @@ export class RLSTenantIsolationService {
 
         // Add cleanup function to response
         const originalSend = res.send.bind(res);
-        res.send = function(data?: unknown): unknown {
-          self.clearTenantContext().catch(console.error);
+        res.send = (data?: unknown): unknown => {
+          void this.clearTenantContext().catch(console.error);
           return originalSend(data);
         };
 
@@ -549,10 +546,8 @@ export function createAllTenantRLSPolicies() {
     'credits',
     'credit_transactions',
     'audit_logs',
-    'user_sessions',
     'trial_events',
     'applications',
-    'user_application_permissions',
     'locations',
     'organization_locations',
     'payments',

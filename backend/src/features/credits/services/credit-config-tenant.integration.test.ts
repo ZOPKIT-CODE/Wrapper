@@ -2,7 +2,7 @@
  * Integration tests for credit-config-tenant service functions.
  *
  * Tests hit a real PostgreSQL container (started by global-setup.ts).
- * AmazonMQ publisher is mocked so no MQ broker is required.
+ * SNS publisher is mocked — no real AWS calls made.
  */
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { randomUUID } from 'crypto';
@@ -19,9 +19,9 @@ import {
   getTenantConfigurations,
 } from './credit-config-tenant.js';
 
-// ── Mock AmazonMQ so publish events are fire-and-forget in tests ──────────
-vi.mock('../../messaging/utils/amazon-mq-publisher.js', () => ({
-  amazonMQPublisher: {
+// ── Mock SNS/SQS publisher so events are fire-and-forget in tests ──────────
+vi.mock('../../messaging/utils/sns-sqs-publisher.js', () => ({
+  snsSqsPublisher: {
     publishCreditEvent: vi.fn().mockResolvedValue(undefined),
   },
 }));

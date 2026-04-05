@@ -54,9 +54,9 @@ class TenantFilterService {
         } else if (status === 'inactive') {
           whereConditions.push(eq(tenants.isActive, false));
         } else if (status === 'trial') {
-          whereConditions.push(sql`${tenants.trialEndsAt} > now()`);
+          whereConditions.push(sql`EXISTS (SELECT 1 FROM subscriptions s WHERE s.tenant_id = ${tenants.tenantId} AND s.trial_ends_at > now())`);
         } else if (status === 'paid') {
-          whereConditions.push(sql`${tenants.trialEndsAt} is null or ${tenants.trialEndsAt} < now()`);
+          whereConditions.push(sql`NOT EXISTS (SELECT 1 FROM subscriptions s WHERE s.tenant_id = ${tenants.tenantId} AND s.trial_ends_at > now())`);
         }
       }
 

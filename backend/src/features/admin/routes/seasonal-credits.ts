@@ -12,8 +12,6 @@ export default async function seasonalCreditsRoutes(fastify: FastifyInstance, _o
   fastify.get('/campaigns', {
     preHandler: [authenticateToken, requirePermission(PERMISSIONS.ADMIN_CREDITS_MANAGE)]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
     const query = request.query as Record<string, string>;
     try {
       const isActive = query.isActive;
@@ -50,8 +48,6 @@ export default async function seasonalCreditsRoutes(fastify: FastifyInstance, _o
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const campaignData = {
         ...body,
@@ -84,9 +80,7 @@ export default async function seasonalCreditsRoutes(fastify: FastifyInstance, _o
   fastify.get('/campaigns/:campaignId', {
     preHandler: [authenticateToken, requirePermission(PERMISSIONS.ADMIN_CREDITS_MANAGE)]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const campaign = await SeasonalCreditService.getCampaign(params.campaignId ?? '');
       
@@ -112,9 +106,7 @@ export default async function seasonalCreditsRoutes(fastify: FastifyInstance, _o
   fastify.post('/campaigns/:campaignId/distribute', {
     preHandler: [authenticateToken, requirePermission(PERMISSIONS.ADMIN_CREDITS_MANAGE)]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const result = await SeasonalCreditService.distributeCreditsToTenants(
         params.campaignId ?? ''
@@ -143,9 +135,7 @@ export default async function seasonalCreditsRoutes(fastify: FastifyInstance, _o
   fastify.get('/campaigns/:campaignId/status', {
     preHandler: [authenticateToken, requirePermission(PERMISSIONS.ADMIN_CREDITS_MANAGE)]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const status = await SeasonalCreditService.getCampaignDistributionStatus(
         params.campaignId ?? ''
@@ -178,7 +168,6 @@ export default async function seasonalCreditsRoutes(fastify: FastifyInstance, _o
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const result = await SeasonalCreditService.extendCampaignExpiry(
         params.campaignId ?? '',
@@ -212,8 +201,6 @@ export default async function seasonalCreditsRoutes(fastify: FastifyInstance, _o
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const result = await SeasonalCreditService.sendExpiryWarnings(
         (body.daysAhead as number) ?? 7
@@ -245,8 +232,6 @@ export default async function seasonalCreditsRoutes(fastify: FastifyInstance, _o
       description: 'Get credits expiring soon'
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
     const query = request.query as Record<string, string>;
     try {
       const daysAhead = parseInt(String(query.daysAhead ?? 30), 10) || 30;
@@ -274,9 +259,6 @@ export default async function seasonalCreditsRoutes(fastify: FastifyInstance, _o
   fastify.get('/tenant-allocations', {
     preHandler: authenticateToken
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const tenantId = (request as any).userContext?.tenantId;
       
@@ -312,9 +294,6 @@ export default async function seasonalCreditsRoutes(fastify: FastifyInstance, _o
   fastify.post('/process-expiries', {
     preHandler: [authenticateToken, requirePermission(PERMISSIONS.ADMIN_CREDITS_MANAGE)]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const result = await SeasonalCreditService.processExpiries();
       
@@ -341,9 +320,6 @@ export default async function seasonalCreditsRoutes(fastify: FastifyInstance, _o
   fastify.get('/types', {
     preHandler: authenticateToken
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     reply.send({
       success: true,
       data: [

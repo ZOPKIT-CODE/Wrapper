@@ -10,6 +10,7 @@
 
 import winston from 'winston';
 import { ElasticsearchTransport } from 'winston-elasticsearch';
+import * as Sentry from '@sentry/node';
 import BaseLogger from './logger.js';
 
 const SERVICE_NAME = process.env.SERVICE_NAME || 'wrapper-backend';
@@ -150,20 +151,24 @@ const enhancedLogger = {
     start: (requestId: string, data: Record<string, unknown>) => {
       BaseLogger.onboarding.start(requestId, data);
       winstonLogger.info('Onboarding started', { requestId, category: 'onboarding', ...data });
+      Sentry.logger.info('Onboarding started', { requestId, category: 'onboarding', ...data });
     },
 
     step: (requestId: string, stepNumber: number, description: string, data: Record<string, unknown> = {}) => {
       BaseLogger.onboarding.step(requestId, stepNumber, description, data);
       winstonLogger.info('Onboarding step', { requestId, stepNumber, description, category: 'onboarding', ...data });
+      Sentry.logger.info(`Onboarding step ${stepNumber}: ${description}`, { requestId, stepNumber, description, category: 'onboarding', ...data });
     },
 
     success: (requestId: string, message: string, data: Record<string, unknown> = {}) => {
       BaseLogger.onboarding.success(requestId, message, data);
       winstonLogger.info('Onboarding success', { requestId, message, category: 'onboarding', ...data });
+      Sentry.logger.info(`Onboarding success: ${message}`, { requestId, category: 'onboarding', ...data });
     },
 
     error: (requestId: string, message: string, error: Error & { code?: string }, startTime: number) => {
       BaseLogger.onboarding.error(requestId, message, error, startTime);
+      const duration = BaseLogger.getDuration(startTime);
       winstonLogger.error('Onboarding error', {
         requestId,
         message,
@@ -173,18 +178,21 @@ const enhancedLogger = {
           code: error.code
         },
         category: 'onboarding',
-        duration: BaseLogger.getDuration(startTime)
+        duration
       });
+      Sentry.logger.error(`Onboarding error: ${message}`, { requestId, category: 'onboarding', errorMessage: error.message, errorCode: error.code, duration });
     },
 
     complete: (requestId: string, startTime: number, data: Record<string, unknown> = {}) => {
       BaseLogger.onboarding.complete(requestId, startTime, data);
+      const duration = BaseLogger.getDuration(startTime);
       winstonLogger.info('Onboarding completed', {
         requestId,
         category: 'onboarding',
-        duration: BaseLogger.getDuration(startTime),
+        duration,
         ...data
       });
+      Sentry.logger.info('Onboarding completed', { requestId, category: 'onboarding', duration, ...data });
     }
   },
 

@@ -1,7 +1,7 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { db, dbManager } from '../../../db/index.js';
 import { tenants, tenantUsers, customRoles, userRoleAssignments, tenantInvitations, organizationMemberships, entities } from '../../../db/schema/index.js';
-import { eq, and, desc, isNull } from 'drizzle-orm';
+import { eq, and, desc, isNull, sql } from 'drizzle-orm';
 import { kindeService } from '../../auth/index.js';
 import { v4 as uuidv4 } from 'uuid';
 import { authenticateToken, invalidateRoleCache, invalidateUserCache } from '../../../middleware/auth/auth.js';
@@ -336,7 +336,7 @@ async function generateInvitationUrl(
         const invitationUrl = `${baseUrl}/invite/accept?token=${invitationToken}`;
         console.log('🔗 Generated invitation URL using request origin (development):', invitationUrl);
         return invitationUrl;
-      } catch (e) {
+      } catch (_e) {
         console.warn('⚠️ Invalid origin URL, continuing with other methods:', origin);
       }
     }
@@ -518,7 +518,7 @@ export default async function invitationRoutes(
       const inviterIdFromInvitation = invitationRow?.invitedBy ?? invitedUser.userId;
       const [inviter] = await db
         .select({
-          name: tenantUsers.name,
+          name: sql<string>`COALESCE(${tenantUsers.firstName} || ' ' || ${tenantUsers.lastName}, ${tenantUsers.firstName}, ${tenantUsers.lastName}, '')`,
           email: tenantUsers.email
         })
         .from(tenantUsers)
@@ -655,7 +655,7 @@ export default async function invitationRoutes(
           expiresAt: invitation.expiresAt,
           status: invitation.status,
           roleName: roleName,
-          inviterName: inviter?.name || 'Team Administrator',
+          inviterName: [inviter?.firstName, inviter?.lastName].filter(Boolean).join(' ').trim() || inviter?.email || 'Team Administrator',
           tenantId: invitation.tenantId,
           invitationId: invitation.invitationId
         }
@@ -710,7 +710,7 @@ export default async function invitationRoutes(
         .orderBy(desc(tenantInvitations.createdAt));
 
       // Format invitations with invitation URLs
-      const formattedInvitations = await Promise.all(invitations.map(async ({ invitation, role, inviter }: { invitation: { invitationId: string; email: string; status: string | null; createdAt: Date | null; expiresAt: Date; acceptedAt: Date | null; invitationUrl: string | null; invitationToken: string }; role: { roleName?: string } | null; inviter: { name?: string | null } | null }) => {
+      const formattedInvitations = await Promise.all(invitations.map(async ({ invitation, role, inviter }: { invitation: { invitationId: string; email: string; status: string | null; createdAt: Date | null; expiresAt: Date; acceptedAt: Date | null; invitationUrl: string | null; invitationToken: string }; role: { roleName?: string } | null; inviter: { firstName?: string | null; lastName?: string | null; email?: string | null } | null }) => {
         // Use stored URL if available, otherwise generate a new one
         const invitationUrl = invitation.invitationUrl || await generateInvitationUrl(invitation.invitationToken, request, tenant.tenantId);
         
@@ -724,7 +724,7 @@ export default async function invitationRoutes(
             email: invitation.email,
             roleName: role?.roleName || 'No role assigned',
             status: invitation.status,
-            invitedBy: inviter?.name || 'Unknown',
+            invitedBy: [inviter?.firstName, inviter?.lastName].filter(Boolean).join(' ').trim() || inviter?.email || 'Unknown',
             invitedAt: invitation.createdAt,
             expiresAt: expAt,
             acceptedAt: invitation.acceptedAt,
@@ -741,7 +741,7 @@ export default async function invitationRoutes(
           email: invitation.email,
           roleName: role?.roleName || 'No role assigned',
           status: invitation.status,
-          invitedBy: inviter?.name || 'Unknown',
+          invitedBy: [inviter?.firstName, inviter?.lastName].filter(Boolean).join(' ').trim() || inviter?.email || 'Unknown',
           invitedAt: invitation.createdAt,
           expiresAt: expAt,
           acceptedAt: invitation.acceptedAt,
@@ -923,7 +923,7 @@ export default async function invitationRoutes(
           tenantName: tenant.companyName,
           roleName,
           invitationToken: invitationUrl, // Pass full URL instead of token
-          invitedByName: invitation.inviter?.name || 'Team Administrator',
+          invitedByName: [invitation.inviter?.firstName, invitation.inviter?.lastName].filter(Boolean).join(' ').trim() || invitation.inviter?.email || 'Team Administrator',
           message: 'Your invitation has been resent by an administrator.',
           organizations: emailOrganizations,
           locations: emailLocations,
@@ -1081,32 +1081,7 @@ export default async function invitationRoutes(
       // Get the current user as inviter
       const inviter = request.userContext;
 
-      // Get or create a default role
-      let [role] = await db
-        .select()
-        .from(customRoles)
-        .where(and(
-          eq(customRoles.tenantId, tenant.tenantId),
-          eq(customRoles.roleName, roleName as string)
-        ))
-        .limit(1);
-
-      if (!role) {
-        // Create a default role if it doesn't exist
-        const [newRole] = await db.insert(customRoles).values({
-          tenantId: tenant.tenantId,
-          roleName: roleName,
-          description: `Default ${roleName} role`,
-          permissions: { read: true, write: false, admin: false },
-          restrictions: {},
-          isSystemRole: false,
-          isDefault: false,
-          priority: 50
-        } as any).returning();
-        role = newRole;
-      }
-
-      // Check if invitation already exists
+      // Check if invitation already exists BEFORE creating a role (avoid orphaned roles)
       const [existingInvitation] = await db
         .select()
         .from(tenantInvitations)
@@ -1124,17 +1099,14 @@ export default async function invitationRoutes(
         });
       }
 
-      // Create the invitation
+      // Prepare invitation data before the transaction
       const invitationToken = uuidv4();
       const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
-      
-      // Generate the full invitation URL using tenant subdomain
       const invitationUrl = await generateInvitationUrl(invitationToken, request, tenant.tenantId);
-      
-      // Get the internal user ID for invitedBy (must reference tenantUsers.userId)
+
+      // Resolve invitedBy user ID
       let invitedByUserId: string | undefined = (inviter as { internalUserId?: string; userId?: string }).internalUserId || (inviter as { userId?: string }).userId;
       if (!invitedByUserId) {
-        // Fallback: try to find user by kindeUserId
         const [inviterUser] = await db
           .select({ userId: tenantUsers.userId })
           .from(tenantUsers)
@@ -1149,16 +1121,45 @@ export default async function invitationRoutes(
         invitedByUserId = inviterUser.userId;
       }
 
-      const [newInvitation] = await db.insert(tenantInvitations).values({
-        tenantId: tenant.tenantId,
-        email: email,
-        invitationToken: invitationToken,
-        invitationUrl: invitationUrl,
-        status: 'pending',
-        expiresAt: expiresAt,
-        invitedBy: invitedByUserId!, // FIXED: Use internal user ID instead of kindeUserId
-        roleId: role.roleId
-      } as any).returning();
+      // Atomically: get/create role + create invitation
+      const { newInvitation, role } = await db.transaction(async (tx) => {
+        // Get or create a default role
+        let [existingRole] = await tx
+          .select()
+          .from(customRoles)
+          .where(and(
+            eq(customRoles.tenantId, tenant.tenantId),
+            eq(customRoles.roleName, roleName as string)
+          ))
+          .limit(1);
+
+        if (!existingRole) {
+          const [newRole] = await tx.insert(customRoles).values({
+            tenantId: tenant.tenantId,
+            roleName: roleName,
+            description: `Default ${roleName} role`,
+            permissions: { read: true, write: false, admin: false },
+            restrictions: {},
+            isSystemRole: false,
+            isDefault: false,
+            priority: 50
+          } as any).returning();
+          existingRole = newRole;
+        }
+
+        const [inv] = await tx.insert(tenantInvitations).values({
+          tenantId: tenant.tenantId,
+          email: email,
+          invitationToken: invitationToken,
+          invitationUrl: invitationUrl,
+          status: 'pending',
+          expiresAt: expiresAt,
+          invitedBy: invitedByUserId!,
+          roleId: existingRole.roleId
+        } as any).returning();
+
+        return { newInvitation: inv, role: existingRole };
+      });
 
       console.log('✅ Invitation created successfully:', {
         invitationId: newInvitation.invitationId,
@@ -1827,7 +1828,7 @@ export default async function invitationRoutes(
       // Get inviter details
       const [inviter] = await db
         .select({
-          name: tenantUsers.name,
+          name: sql<string>`COALESCE(${tenantUsers.firstName} || ' ' || ${tenantUsers.lastName}, ${tenantUsers.firstName}, ${tenantUsers.lastName}, '')`,
           email: tenantUsers.email
         })
         .from(tenantUsers)
@@ -2054,7 +2055,6 @@ export default async function invitationRoutes(
             if (entityRecord) {
               // If it's a location, get its parent organization
               // If it's already an organization, use it directly
-              let orgEntityId = entity.entityId;
 
               if (entityRecord.entityType === 'location' && entityRecord.parentEntityId) {
                 // For locations, we need the parent organization
@@ -2178,16 +2178,15 @@ export default async function invitationRoutes(
 
         // Publish invitation-accepted event to all applications (existing user path)
         try {
-          const { amazonMQPublisher } = await import('../../messaging/utils/amazon-mq-publisher.js');
-          const nameParts = (newUser.name || newUser.email || '').split(' ');
-          const firstName = nameParts[0] || '';
-          const lastName = nameParts.slice(1).join(' ') || '';
-          await amazonMQPublisher.publishUserEventToSuite('user_invitation_accepted', invitation.tenantId, newUser.userId, {
+          const { snsSqsPublisher } = await import('../../messaging/utils/sns-sqs-publisher.js');
+          const firstName = newUser.firstName || '';
+          const lastName = newUser.lastName || '';
+          await snsSqsPublisher.publishUserEventToSuite('user_invitation_accepted', invitation.tenantId, newUser.userId, {
             userId: newUser.userId,
             email: newUser.email,
             firstName: firstName,
             lastName: lastName,
-            name: newUser.name || newUser.email || `${firstName} ${lastName}`.trim(),
+            name: `${firstName} ${lastName}`.trim() || newUser.email || '',
             isActive: newUser.isActive !== undefined ? newUser.isActive : true,
             onboardingCompleted: true,
             kindeUserId: newUser.kindeUserId,
@@ -2238,30 +2237,29 @@ export default async function invitationRoutes(
 
         // Publish user creation event to Redis streams
         try {
-          const { amazonMQPublisher } = await import('../../messaging/utils/amazon-mq-publisher.js');
-          // Split name into firstName and lastName for CRM requirements
-          const nameParts = (newUser.name || '').split(' ');
-          const firstName = nameParts[0] || '';
-          const lastName = nameParts.slice(1).join(' ') || '';
-          
-          await amazonMQPublisher.publishUserEventToSuite('user_created', invitation.tenantId, newUser.userId, {
+          const { snsSqsPublisher } = await import('../../messaging/utils/sns-sqs-publisher.js');
+          // Build firstName and lastName from schema columns
+          const firstName = newUser.firstName || '';
+          const lastName = newUser.lastName || '';
+
+          await snsSqsPublisher.publishUserEventToSuite('user_created', invitation.tenantId, newUser.userId, {
             userId: newUser.userId,
             email: newUser.email,
             kindeUserId: newUser.kindeUserId,
             firstName: firstName,
             lastName: lastName,
-            name: newUser.name || `${firstName} ${lastName}`.trim(),
+            name: `${firstName} ${lastName}`.trim() || newUser.email || '',
             isActive: newUser.isActive !== undefined ? newUser.isActive : true,
             createdAt: newUser.createdAt ? (typeof newUser.createdAt === 'string' ? newUser.createdAt : newUser.createdAt.toISOString()) : new Date().toISOString()
           });
           console.log('📡 Published user_created event to AWS MQ');
           // Also publish invitation-accepted so all applications get a consistent event
-          await amazonMQPublisher.publishUserEventToSuite('user_invitation_accepted', invitation.tenantId, newUser.userId, {
+          await snsSqsPublisher.publishUserEventToSuite('user_invitation_accepted', invitation.tenantId, newUser.userId, {
             userId: newUser.userId,
             email: newUser.email,
             firstName,
             lastName,
-            name: newUser.name || `${firstName} ${lastName}`.trim(),
+            name: `${firstName} ${lastName}`.trim() || newUser.email || '',
             isActive: newUser.isActive !== undefined ? newUser.isActive : true,
             onboardingCompleted: true,
             kindeUserId: newUser.kindeUserId,
@@ -2647,9 +2645,9 @@ export default async function invitationRoutes(
       // Publish role_assigned to other apps so invited user has the role in CRM, Ops, Accounting, etc.
       if (roleAssignmentsToPublish.length > 0) {
         try {
-          const { amazonMQPublisher } = await import('../../messaging/utils/amazon-mq-publisher.js');
+          const { snsSqsPublisher } = await import('../../messaging/utils/sns-sqs-publisher.js');
           for (const a of roleAssignmentsToPublish) {
-            await amazonMQPublisher.publishRoleEventToSuite('role_assigned', invitation.tenantId, a.roleId, {
+            await snsSqsPublisher.publishRoleEventToSuite('role_assigned', invitation.tenantId, a.roleId, {
               assignmentId: a.id,
               userId: newUser.userId,
               roleId: a.roleId,
@@ -2674,7 +2672,6 @@ export default async function invitationRoutes(
               .select({
                 entityId: entities.entityId,
                 entityName: entities.entityName,
-                entityCode: entities.entityCode
               })
               .from(entities)
               .where(and(
@@ -2689,7 +2686,7 @@ export default async function invitationRoutes(
                 tenantId: invitation.tenantId,
                 userId: newUser.userId,
                 organizationId: entityId,
-                organizationCode: organization.entityCode ?? entityId,
+                organizationCode: organization.entityId,
                 assignmentType: isPrimary ? 'primary' : 'direct',
                 isActive: true,
                 assignedAt: new Date().toISOString(),
@@ -2715,14 +2712,22 @@ export default async function invitationRoutes(
         invalidateUserCache(newUser.kindeUserId);
       }
 
-      // Update invitation status to accepted
-      await db
-        .update(tenantInvitations)
-        .set({
-          status: 'accepted',
-          acceptedAt: new Date()
-        } as any)
-        .where(eq(tenantInvitations.invitationId, invitation.invitationId));
+      // Atomically mark invitation as accepted — if this fails, the handler
+      // returns 500 and the user can retry. Without the transaction, earlier
+      // writes (user creation, memberships) would be committed but the invitation
+      // would stay 'pending', causing duplicate acceptance on retry.
+      await db.transaction(async (tx) => {
+        await tx
+          .update(tenantInvitations)
+          .set({
+            status: 'accepted',
+            acceptedAt: new Date()
+          } as any)
+          .where(and(
+            eq(tenantInvitations.invitationId, invitation.invitationId),
+            eq(tenantInvitations.status, 'pending') // guard against double-accept
+          ));
+      });
 
       console.log('✅ Invitation accepted successfully by token:', {
         userId: newUser.userId,
@@ -2743,7 +2748,7 @@ export default async function invitationRoutes(
         user: {
           userId: newUser.userId,
           email: newUser.email,
-          name: newUser.name,
+          name: `${newUser.firstName || ''} ${newUser.lastName || ''}`.trim() || newUser.email || '',
           isActive: newUser.isActive,
           tenantId: newUser.tenantId,
           onboardingCompleted: newUser.onboardingCompleted,

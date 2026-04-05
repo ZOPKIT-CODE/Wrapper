@@ -22,8 +22,6 @@ export default async function adminUserRoutes(
     preHandler: [authenticateToken, checkUserLimit]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     const reqUser = request as ReqWithUser;
     const startTime = Date.now();
     const requestId = Logger.generateRequestId('user-invite');
@@ -142,9 +140,6 @@ export default async function adminUserRoutes(
   fastify.get('/users', {
     preHandler: [authenticateToken, requirePermission(PERMISSIONS.USERS_MANAGEMENT_VIEW)]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     const requestId = Logger.generateRequestId('users-list');
     const tenantId = request.userContext?.tenantId;
 
@@ -164,25 +159,25 @@ export default async function adminUserRoutes(
 
       console.log(`🔍 [${requestId}] Getting users list for tenant: ${tenantId}`);
 
-      const users = await db
+      const usersRaw = await db
         .select({
           userId: tenantUsers.userId,
           email: tenantUsers.email,
-          name: tenantUsers.name,
-          avatar: tenantUsers.avatar,
-          title: tenantUsers.title,
-          department: tenantUsers.department,
+          firstName: tenantUsers.firstName,
+          lastName: tenantUsers.lastName,
           isActive: tenantUsers.isActive,
           isTenantAdmin: tenantUsers.isTenantAdmin,
           isVerified: tenantUsers.isVerified,
           onboardingCompleted: tenantUsers.onboardingCompleted,
           createdAt: tenantUsers.createdAt,
-          lastActiveAt: tenantUsers.lastActiveAt,
-          lastLoginAt: tenantUsers.lastLoginAt,
-          loginCount: tenantUsers.loginCount
+          lastActiveAt: tenantUsers.lastActiveAt
         })
         .from(tenantUsers)
         .where(eq(tenantUsers.tenantId, tenantId));
+      const users = usersRaw.map(u => ({
+        ...u,
+        name: [u.firstName, u.lastName].filter(Boolean).join(' ') || u.email
+      }));
 
       console.log(`✅ [${requestId}] Found ${users.length} users`);
 
@@ -208,9 +203,7 @@ export default async function adminUserRoutes(
   fastify.get('/users/:userId', {
     preHandler: [authenticateToken, requirePermission(PERMISSIONS.USERS_MANAGEMENT_VIEW)]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     const requestId = Logger.generateRequestId('user-details');
     const userId = params.userId ?? '';
     const tenantId = ((request as ReqWithUser).userContext?.tenantId ?? '') as string;
@@ -218,22 +211,18 @@ export default async function adminUserRoutes(
     try {
       console.log(`🔍 [${requestId}] Getting user details: ${userId} for tenant: ${tenantId}`);
 
-      const [user] = await db
+      const [userRaw] = await db
         .select({
           userId: tenantUsers.userId,
           email: tenantUsers.email,
-          name: tenantUsers.name,
-          avatar: tenantUsers.avatar,
-          title: tenantUsers.title,
-          department: tenantUsers.department,
+          firstName: tenantUsers.firstName,
+          lastName: tenantUsers.lastName,
           isActive: tenantUsers.isActive,
           isTenantAdmin: tenantUsers.isTenantAdmin,
           isVerified: tenantUsers.isVerified,
           onboardingCompleted: tenantUsers.onboardingCompleted,
           createdAt: tenantUsers.createdAt,
-          lastActiveAt: tenantUsers.lastActiveAt,
-          lastLoginAt: tenantUsers.lastLoginAt,
-          loginCount: tenantUsers.loginCount
+          lastActiveAt: tenantUsers.lastActiveAt
         })
         .from(tenantUsers)
         .where(and(
@@ -241,6 +230,7 @@ export default async function adminUserRoutes(
           eq(tenantUsers.tenantId, tenantId)
         ))
         .limit(1);
+      const user = userRaw ? { ...userRaw, name: [userRaw.firstName, userRaw.lastName].filter(Boolean).join(' ') || userRaw.email } : undefined;
 
       if (!user) {
         return ErrorResponses.notFound(reply, 'User', 'User not found', {
@@ -250,7 +240,7 @@ export default async function adminUserRoutes(
         });
       }
 
-      console.log(`✅ [${requestId}] Found user: ${user.name} (${user.email})`);
+      console.log(`✅ [${requestId}] Found user: ${user?.email}`);
 
       return {
         success: true,
@@ -275,7 +265,6 @@ export default async function adminUserRoutes(
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     const requestId = Logger.generateRequestId('user-role-update');
     const userId = params.userId ?? '';
     const isTenantAdmin = body.isTenantAdmin as boolean;
@@ -331,8 +320,6 @@ export default async function adminUserRoutes(
     preHandler: [authenticateToken, requirePermission(PERMISSIONS.ROLES_ASSIGNMENT_ASSIGN)]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     const requestId = Logger.generateRequestId('assign-role');
     const userId = (body.userId ?? '') as string;
     const roleId = (body.roleId ?? '') as string;
@@ -381,9 +368,7 @@ export default async function adminUserRoutes(
   fastify.delete('/users/:userId/roles/:roleId', {
     preHandler: [authenticateToken, requirePermission(PERMISSIONS.ROLES_ASSIGNMENT_ASSIGN)]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     const requestId = Logger.generateRequestId('deassign-role');
     const userId = params.userId ?? '';
     const roleId = params.roleId ?? '';
@@ -429,9 +414,7 @@ export default async function adminUserRoutes(
   fastify.delete('/users/:userId', {
     preHandler: [authenticateToken, requirePermission(PERMISSIONS.USERS_MANAGEMENT_DELETE)]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     const requestId = Logger.generateRequestId('user-remove');
     const userId = params.userId ?? '';
     const tenantId = ((request as ReqWithUser).userContext?.tenantId ?? '') as string;
@@ -457,7 +440,7 @@ export default async function adminUserRoutes(
 
       // Delete user and all related data (use TenantService for proper cleanup)
       // This will handle: organization memberships, role assignments, invitations, and event publishing
-      const result = await TenantService.removeUser(
+      await TenantService.removeUser(
         tenantId,
         userId,
         ((request as ReqWithUser).userContext?.internalUserId ?? '') as string
@@ -491,9 +474,7 @@ export default async function adminUserRoutes(
   fastify.get('/users/:userId/roles', {
     preHandler: [authenticateToken, requirePermission(PERMISSIONS.USERS_MANAGEMENT_VIEW)]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     const requestId = Logger.generateRequestId('user-roles');
     const userId = params.userId ?? '';
     const tenantId = ((request as ReqWithUser).userContext?.tenantId ?? '') as string;
@@ -544,9 +525,7 @@ export default async function adminUserRoutes(
   fastify.get('/users/:userId/organizations', {
     preHandler: [authenticateToken, requirePermission(PERMISSIONS.USERS_MANAGEMENT_VIEW)]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     const requestId = Logger.generateRequestId('user-organizations');
     const userId = params.userId ?? '';
     const tenantId = ((request as ReqWithUser).userContext?.tenantId ?? '') as string;
@@ -695,8 +674,6 @@ export default async function adminUserRoutes(
     preHandler: [authenticateToken, requirePermission(PERMISSIONS.USERS_MANAGEMENT_EDIT)]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     const requestId = Logger.generateRequestId('assign-organization');
     const userId = (body.userId ?? '') as string; const organizationId = (body.organizationId ?? '') as string; const assignmentType = (body.assignmentType as string) ?? 'secondary'; const roleId = body.roleId;
     const tenantId = ((request as ReqWithUser).userContext?.tenantId ?? '') as string;
@@ -779,7 +756,6 @@ export default async function adminUserRoutes(
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     const requestId = Logger.generateRequestId('assign-organization');
     const userId = params.userId ?? '';
     const tenantId = ((request as ReqWithUser).userContext?.tenantId ?? '') as string;
@@ -937,9 +913,7 @@ export default async function adminUserRoutes(
   fastify.delete('/users/:userId/organizations/:membershipId', {
     preHandler: [authenticateToken, requirePermission(PERMISSIONS.USERS_MANAGEMENT_EDIT)]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     const requestId = Logger.generateRequestId('remove-organization');
     const userId = params.userId ?? ''; const membershipId = params.membershipId ?? '';
     const tenantId = ((request as ReqWithUser).userContext?.tenantId ?? '') as string;
@@ -983,9 +957,8 @@ export default async function adminUserRoutes(
 
       // Store entity info for event publishing before deletion
       const entityId = membership.entityId;
-      const entityName = membershipData.entityName;
 
-      const result = await db
+      await db
         .delete(organizationMemberships)
         .where(eq(organizationMemberships.membershipId, membershipId))
         .returning();
@@ -1033,7 +1006,6 @@ export default async function adminUserRoutes(
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     const requestId = Logger.generateRequestId('update-organization-role');
     const userId = params.userId ?? ''; const membershipId = params.membershipId ?? '';
     const tenantId = ((request as ReqWithUser).userContext?.tenantId ?? '') as string;

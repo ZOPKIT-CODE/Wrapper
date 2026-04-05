@@ -1,5 +1,4 @@
 import { v4 as uuidv4 } from 'uuid';
-import { amazonMQPublisher } from '../../messaging/utils/amazon-mq-publisher.js';
 import { sql as dbSql } from '../../../db/index.js';
 
 /**
@@ -178,15 +177,15 @@ export class OrganizationAssignmentService {
 
   /**
    * Core publishing logic with retry mechanism
-   * Migrated to RabbitMQ (Amazon MQ)
+   * Publishes via SNS
    */
   static async publishWithRetry(event: Record<string, unknown>, tenantId: string) {
     let lastError: unknown;
 
     for (let attempt = 1; attempt <= this.MAX_RETRY_ATTEMPTS; attempt++) {
       try {
-        // Import AmazonMQPublisher
-        const { amazonMQPublisher } = await import('../../messaging/utils/amazon-mq-publisher.js');
+        // Import SNS/SQS publisher
+        const { snsSqsPublisher } = await import('../../messaging/utils/sns-sqs-publisher.js');
         
         // Extract event type and data
         const eventData = (event.data || event) as Record<string, unknown>;
@@ -194,7 +193,7 @@ export class OrganizationAssignmentService {
         const assignmentData = eventData;
 
         // Publish to RabbitMQ - publish to all business suite apps
-        const results = await amazonMQPublisher.publishOrgAssignmentEventToSuite(
+        const results = await snsSqsPublisher.publishOrgAssignmentEventToSuite(
           eventType,
           tenantId,
           assignmentData as Record<string, unknown>,
@@ -205,7 +204,7 @@ export class OrganizationAssignmentService {
         const firstSuccess = results.find((r: { success?: boolean }) => r.success);
         const result = firstSuccess || results[0];
         const res = result as { eventId?: string; routingKey?: string };
-        console.log(`✅ [ORG-ASSIGNMENT] Published to RabbitMQ: ${eventType}`, {
+        console.log(`✅ [ORG-ASSIGNMENT] Published to SNS: ${eventType}`, {
           eventId: res.eventId,
           routingKey: res.routingKey,
           assignmentId: assignmentData.assignmentId,

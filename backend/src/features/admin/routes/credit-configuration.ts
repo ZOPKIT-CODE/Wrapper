@@ -23,9 +23,7 @@ export default async function creditConfigurationRoutes(fastify: FastifyInstance
     },
     preHandler: requirePlatformPermission('credit_config:read')
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const tenantId = params.tenantId ?? '';
 
@@ -57,7 +55,6 @@ export default async function creditConfigurationRoutes(fastify: FastifyInstance
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const tenantId = params.tenantId ?? '';
       const operationCode = params.operationCode ?? '';
@@ -94,7 +91,6 @@ export default async function creditConfigurationRoutes(fastify: FastifyInstance
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const tenantId = params.tenantId ?? '';
       const moduleCode = params.moduleCode ?? '';
@@ -130,7 +126,6 @@ export default async function creditConfigurationRoutes(fastify: FastifyInstance
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const tenantId = params.tenantId ?? '';
       const appCode = params.appCode ?? '';
@@ -162,9 +157,7 @@ export default async function creditConfigurationRoutes(fastify: FastifyInstance
     },
     preHandler: requirePlatformPermission('credit_config:write')
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const tenantId = params.tenantId ?? '';
       const configType = params.configType ?? '';
@@ -198,7 +191,6 @@ export default async function creditConfigurationRoutes(fastify: FastifyInstance
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const tenantId = params.tenantId ?? '';
       const updates = body.updates;
@@ -229,9 +221,6 @@ export default async function creditConfigurationRoutes(fastify: FastifyInstance
     },
     preHandler: requirePlatformPermission('credit_config:read')
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const templates = await CreditService.getConfigurationTemplates() as any;
       reply.send(templates);
@@ -255,7 +244,6 @@ export default async function creditConfigurationRoutes(fastify: FastifyInstance
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const tenantId = params.tenantId ?? '';
       const templateId = body.templateId;
@@ -286,9 +274,6 @@ export default async function creditConfigurationRoutes(fastify: FastifyInstance
     },
     preHandler: requirePlatformPermission('credit_config:read')
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const configurations = await CreditService.getApplicationCreditConfigurations() as any;
       return reply.send({
@@ -317,7 +302,6 @@ export default async function creditConfigurationRoutes(fastify: FastifyInstance
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const appCode = params.appCode ?? '';
       const configData = body;
@@ -345,7 +329,6 @@ export default async function creditConfigurationRoutes(fastify: FastifyInstance
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const appCode = params.appCode ?? '';
       const moduleCode = params.moduleCode ?? '';
@@ -374,7 +357,6 @@ export default async function creditConfigurationRoutes(fastify: FastifyInstance
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     try {
       const tenantId = params.tenantId ?? '';
       const configData = body;
@@ -414,10 +396,8 @@ export default async function creditConfigurationRoutes(fastify: FastifyInstance
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     const tenantId = params.tenantId ?? '';
     const initialCredits = Number(body.initialCredits) || 1000;
-    const userId = (request as any).userContext?.userId ?? (request as any).user?.userId ?? '';
 
     try {
       console.log(`🎯 Initializing ${initialCredits} credits for tenant: ${tenantId}`);
@@ -452,8 +432,6 @@ export default async function creditConfigurationRoutes(fastify: FastifyInstance
     },
     preHandler: requirePlatformPermission('credit_config:read')
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
     const query = request.query as Record<string, string>;
     try {
       const app = query.app;

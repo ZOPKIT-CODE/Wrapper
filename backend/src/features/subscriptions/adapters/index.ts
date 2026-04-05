@@ -14,6 +14,7 @@ export type { PaymentGatewayPort } from './payment-gateway.port.js';
 
 // Concrete adapters (for direct instantiation / testing)
 export { StripePaymentGateway } from './stripe.adapter.js';
+export { RazorpayPaymentGateway } from './razorpay.adapter.js';
 export { MockPaymentGateway } from './mock.adapter.js';
 
 // Shared types

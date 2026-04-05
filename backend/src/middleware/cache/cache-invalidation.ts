@@ -194,7 +194,7 @@ export class CacheInvalidationService {
     }
   }
   
-  static async getUsersWithRole(roleId: string, tenantId: string): Promise<string[]> {
+  static async getUsersWithRole(roleId: string, _tenantId: string): Promise<string[]> {
     try {
       const { db } = await import('../../db/index.js');
       const { userRoleAssignments } = await import('../../db/schema/index.js');

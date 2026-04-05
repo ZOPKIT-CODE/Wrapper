@@ -7,7 +7,7 @@ import { authenticateToken, requirePermission } from '../../../middleware/auth/a
 import { PERMISSIONS } from '../../../constants/permissions.js';
 import Logger from '../../../utils/logger.js';
 import ErrorResponses from '../../../utils/error-responses.js';
-import { amazonMQPublisher } from '../../messaging/utils/amazon-mq-publisher.js';
+import { snsSqsPublisher } from '../../messaging/utils/sns-sqs-publisher.js';
 
 type ReqWithUser = FastifyRequest & { userContext?: Record<string, unknown> };
 
@@ -16,9 +16,6 @@ export default async function adminRoleRoutes(fastify: FastifyInstance): Promise
   fastify.get('/roles', {
     preHandler: [authenticateToken, requirePermission(PERMISSIONS.ROLES_MANAGEMENT_READ)]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     const requestId = Logger.generateRequestId('roles-list');
     const tenantId = ((request as ReqWithUser).userContext?.tenantId ?? '') as string;
 
@@ -55,8 +52,6 @@ export default async function adminRoleRoutes(fastify: FastifyInstance): Promise
     preHandler: [authenticateToken, requirePermission(PERMISSIONS.ROLES_MANAGEMENT_CREATE)]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     const requestId = Logger.generateRequestId('role-create');
     const tenantId = ((request as ReqWithUser).userContext?.tenantId ?? '') as string;
     const roleName = body.roleName as string; const description = body.description as string; const permissions = body.permissions;
@@ -105,7 +100,6 @@ export default async function adminRoleRoutes(fastify: FastifyInstance): Promise
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     const requestId = Logger.generateRequestId('role-update');
     const roleId = params.roleId ?? '';
     const tenantId = ((request as ReqWithUser).userContext?.tenantId ?? '') as string;
@@ -137,7 +131,7 @@ export default async function adminRoleRoutes(fastify: FastifyInstance): Promise
       // Publish role update event to AWS MQ
       try {
         const updatedRole = result[0];
-        await amazonMQPublisher.publishRoleEventToSuite('role_updated', tenantId, updatedRole.roleId, {
+        await snsSqsPublisher.publishRoleEventToSuite('role_updated', tenantId, updatedRole.roleId, {
           roleId: updatedRole.roleId,
           roleName: updatedRole.roleName,
           description: updatedRole.description,
@@ -179,9 +173,7 @@ export default async function adminRoleRoutes(fastify: FastifyInstance): Promise
   fastify.delete('/roles/:roleId', {
     preHandler: [authenticateToken, requirePermission(PERMISSIONS.ROLES_MANAGEMENT_DELETE)]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     const requestId = Logger.generateRequestId('role-delete');
     const roleId = params.roleId ?? '';
     const tenantId = ((request as ReqWithUser).userContext?.tenantId ?? '') as string;
@@ -227,8 +219,6 @@ export default async function adminRoleRoutes(fastify: FastifyInstance): Promise
   fastify.get('/audit-logs', {
     preHandler: [authenticateToken, requirePermission(PERMISSIONS.AUDIT_LOG_VIEW)]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
     const query = request.query as Record<string, string>;
     const requestId = Logger.generateRequestId('audit-logs');
     const tenantId = ((request as ReqWithUser).userContext?.tenantId ?? '') as string;
@@ -280,9 +270,6 @@ export default async function adminRoleRoutes(fastify: FastifyInstance): Promise
   fastify.get('/roles/all', {
     preHandler: [authenticateToken, requirePermission(PERMISSIONS.ROLES_MANAGEMENT_READ)]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as Record<string, unknown>;
-    const params = request.params as Record<string, string>;
-    const query = request.query as Record<string, string>;
     const requestId = Logger.generateRequestId('all-roles');
     const tenantId = ((request as ReqWithUser).userContext?.tenantId ?? '') as string;
 

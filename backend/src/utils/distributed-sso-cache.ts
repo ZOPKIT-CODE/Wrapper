@@ -140,7 +140,7 @@ class DistributedSSOCache {
   /**
    * Invalidate user cache
    */
-  async invalidateUserCache(identifier: string, tenantId?: string): Promise<void> {
+  async invalidateUserCache(identifier: string, _tenantId?: string): Promise<void> {
     // Remove all entries for this user
     for (const [key] of this.userAuth.entries()) {
       if (key.includes(identifier)) {

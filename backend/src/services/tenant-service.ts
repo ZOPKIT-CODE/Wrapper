@@ -3,13 +3,13 @@ import { db } from '../db/index.js';
 import {
   tenants,
   tenantInvitations,
-  subscriptions,
   tenantUsers,
   customRoles,
   userRoleAssignments,
   organizationMemberships,
   entities,
-  auditLogs
+  auditLogs,
+  tenantBankingDetails,
 } from '../db/schema/index.js';
 import { v4 as uuidv4 } from 'uuid';
 import { kindeService } from '../features/auth/index.js';
@@ -17,7 +17,7 @@ import { getEmailProvider } from '../features/notifications/adapters/brevo-adapt
 import { SubscriptionService } from '../features/subscriptions/index.js';
 import { sql } from 'drizzle-orm';
 import { inArray } from 'drizzle-orm';
-import { amazonMQPublisher } from '../features/messaging/utils/amazon-mq-publisher.js';
+import { snsSqsPublisher } from '../features/messaging/utils/sns-sqs-publisher.js';
 import { TenantRepository } from './tenant-repository.js';
 
 type CreateTenantData = {
@@ -52,7 +52,7 @@ export class TenantService {
           adminEmail: data.adminEmail,
           organizationSize: data.organizationSize ?? data.companySize ?? undefined,
           industry: data.industry,
-          defaultTimeZone: data.timezone || 'UTC',
+          defaultTimeZone: data.timezone || 'Asia/Kolkata',
           onboardedAt: new Date(),
         }).returning();
 
@@ -66,7 +66,8 @@ export class TenantService {
           tenantId,
           kindeUserId: data.kindeUserId,
           email: data.adminEmail,
-          name: `${data.adminFirstName} ${data.adminLastName}`,
+          firstName: data.adminFirstName || null,
+          lastName: data.adminLastName || null,
           isVerified: true,
           isActive: true,
           isTenantAdmin: true,
@@ -119,7 +120,7 @@ export class TenantService {
   // Get tenant details with subscription info
   static async getTenantDetails(tenantId: string): Promise<Record<string, unknown>> {
     try {
-      const [tenant] = await db
+      const [row] = await db
         .select({
           tenantId: tenants.tenantId,
           companyName: tenants.companyName,
@@ -140,14 +141,7 @@ export class TenantService {
           // Contact Details
           billingEmail: tenants.billingEmail,
           supportEmail: tenants.supportEmail,
-          contactSalutation: tenants.contactSalutation,
-          contactMiddleName: tenants.contactMiddleName,
-          contactDepartment: tenants.contactDepartment,
           contactJobTitle: tenants.contactJobTitle,
-          contactDirectPhone: tenants.contactDirectPhone,
-          contactMobilePhone: tenants.contactMobilePhone,
-          contactPreferredContactMethod: tenants.contactPreferredContactMethod,
-          contactAuthorityLevel: tenants.contactAuthorityLevel,
           preferredContactMethod: tenants.preferredContactMethod,
           phone: tenants.phone,
           // Mailing Address
@@ -163,107 +157,107 @@ export class TenantService {
           billingState: tenants.billingState,
           billingZip: tenants.billingZip,
           billingCountry: tenants.billingCountry,
-          // Banking & Financial Information
-          bankName: tenants.bankName,
-          bankBranch: tenants.bankBranch,
-          accountHolderName: tenants.accountHolderName,
-          accountNumber: tenants.accountNumber,
-          accountType: tenants.accountType,
-          bankAccountCurrency: tenants.bankAccountCurrency,
-          swiftBicCode: tenants.swiftBicCode,
-          iban: tenants.iban,
-          routingNumberUs: tenants.routingNumberUs,
-          sortCodeUk: tenants.sortCodeUk,
-          ifscCodeIndia: tenants.ifscCodeIndia,
-          bsbNumberAustralia: tenants.bsbNumberAustralia,
-          paymentTerms: tenants.paymentTerms,
-          creditLimit: tenants.creditLimit,
-          preferredPaymentMethod: tenants.preferredPaymentMethod,
           // Tax & Compliance
           taxRegistered: tenants.taxRegistered,
           vatGstRegistered: tenants.vatGstRegistered,
           gstin: tenants.gstin,
           taxRegistrationDetails: tenants.taxRegistrationDetails,
-          taxResidenceCountry: tenants.taxResidenceCountry,
-          taxExemptStatus: tenants.taxExemptStatus,
-          taxExemptionCertificateNumber: tenants.taxExemptionCertificateNumber,
-          taxExemptionExpiryDate: tenants.taxExemptionExpiryDate,
-          withholdingTaxApplicable: tenants.withholdingTaxApplicable,
-          withholdingTaxRate: tenants.withholdingTaxRate,
-          taxTreatyCountry: tenants.taxTreatyCountry,
-          w9StatusUs: tenants.w9StatusUs,
-          w8FormTypeUs: tenants.w8FormTypeUs,
-          reverseChargeMechanism: tenants.reverseChargeMechanism,
-          vatGstRateApplicable: tenants.vatGstRateApplicable,
-          regulatoryComplianceStatus: tenants.regulatoryComplianceStatus,
-          industrySpecificLicenses: tenants.industrySpecificLicenses,
-          dataProtectionRegistration: tenants.dataProtectionRegistration,
-          professionalIndemnityInsurance: tenants.professionalIndemnityInsurance,
-          insurancePolicyNumber: tenants.insurancePolicyNumber,
-          insuranceExpiryDate: tenants.insuranceExpiryDate,
           // Localization
           defaultLanguage: tenants.defaultLanguage,
           defaultLocale: tenants.defaultLocale,
           defaultCurrency: tenants.defaultCurrency,
           defaultTimeZone: tenants.defaultTimeZone,
-          fiscalYearStartMonth: tenants.fiscalYearStartMonth,
-          fiscalYearEndMonth: tenants.fiscalYearEndMonth,
-          fiscalYearStartDay: tenants.fiscalYearStartDay,
-          fiscalYearEndDay: tenants.fiscalYearEndDay,
           // Branding
           primaryColor: tenants.primaryColor,
           customDomain: tenants.customDomain,
           brandingConfig: tenants.brandingConfig,
           // Settings
           settings: tenants.settings,
-          onboardedAt: tenants.onboardedAt
+          onboardedAt: tenants.onboardedAt,
+          // Banking (from joined table — null when no record exists yet)
+          bankName: tenantBankingDetails.bankName,
+          bankBranch: tenantBankingDetails.bankBranch,
+          accountHolderName: tenantBankingDetails.accountHolderName,
+          accountNumber: tenantBankingDetails.accountNumber,
+          accountType: tenantBankingDetails.accountType,
+          bankAccountCurrency: tenantBankingDetails.bankAccountCurrency,
+          swiftBicCode: tenantBankingDetails.swiftBicCode,
+          iban: tenantBankingDetails.iban,
+          routingNumberUs: tenantBankingDetails.routingNumberUs,
+          sortCodeUk: tenantBankingDetails.sortCodeUk,
+          ifscCodeIndia: tenantBankingDetails.ifscCodeIndia,
+          bsbNumberAustralia: tenantBankingDetails.bsbNumberAustralia,
+          paymentTerms: tenantBankingDetails.paymentTerms,
+          preferredPaymentMethod: tenantBankingDetails.preferredPaymentMethod,
+          creditLimit: tenantBankingDetails.creditLimit,
         })
         .from(tenants)
+        .leftJoin(tenantBankingDetails, eq(tenantBankingDetails.tenantId, tenants.tenantId))
         .where(eq(tenants.tenantId, tenantId))
         .limit(1);
+
+      const tenant = row;
 
       if (!tenant) {
         throw new Error('Tenant not found');
       }
 
-      // Get subscription info
-      let subscription = null;
-      try {
-        subscription = await SubscriptionService.getCurrentSubscription(tenantId);
-      } catch (error) {
-        console.warn('Could not fetch subscription for tenant:', tenantId);
-      }
+      // Parallelize independent follow-up queries
+      const [subscription, userCountRows, adminUserRows] = await Promise.all([
+        SubscriptionService.getCurrentSubscription(tenantId).catch((_error: unknown) => {
+          console.warn('Could not fetch subscription for tenant:', tenantId);
+          return null;
+        }),
+        db
+          .select({ count: count() })
+          .from(tenantUsers)
+          .where(eq(tenantUsers.tenantId, tenantId)),
+        db
+          .select()
+          .from(tenantUsers)
+          .where(and(
+            eq(tenantUsers.tenantId, tenantId),
+            eq(tenantUsers.isTenantAdmin, true)
+          ))
+          .limit(1),
+      ]);
 
-      // Get user count
-      const userCount = await db
-        .select({ count: count() })
-        .from(tenantUsers)
-        .where(eq(tenantUsers.tenantId, tenantId));
-
-      // Get admin user
-      const [adminUser] = await db
-        .select()
-        .from(tenantUsers)
-        .where(and(
-          eq(tenantUsers.tenantId, tenantId),
-          eq(tenantUsers.isTenantAdmin, true)
-        ))
-        .limit(1);
-
+      const adminUser = adminUserRows[0] ?? null;
       const tenantObj = tenant as Record<string, unknown>;
-      const sub = subscription as { status?: string; plan?: string } | null;
       return {
         ...tenantObj,
         subscription,
-        userCount: userCount[0]?.count || 0,
+        userCount: userCountRows[0]?.count || 0,
         adminUser: adminUser || null,
         isFullyOnboarded: Boolean(tenant.onboardedAt && adminUser?.onboardingCompleted),
-        subscriptionStatus: sub?.status ?? 'none'
+        subscriptionStatus: (subscription as { status?: string } | null)?.status ?? 'none'
       } as Record<string, unknown>;
     } catch (error) {
       console.error('Error getting tenant details:', error);
       throw error;
     }
+  }
+
+  // Upsert banking details for a tenant (create or update in one call)
+  static async upsertBankingDetails(tenantId: string, data: Record<string, unknown>): Promise<void> {
+    const bankingFields = [
+      'bankName', 'bankBranch', 'accountHolderName', 'accountNumber', 'accountType',
+      'bankAccountCurrency', 'swiftBicCode', 'iban', 'routingNumberUs', 'sortCodeUk',
+      'ifscCodeIndia', 'bsbNumberAustralia', 'paymentTerms', 'preferredPaymentMethod', 'creditLimit',
+    ] as const;
+
+    const values: Record<string, unknown> = { tenantId, updatedAt: new Date() };
+    for (const field of bankingFields) {
+      if (data[field] !== undefined) values[field] = data[field];
+    }
+
+    await db
+      .insert(tenantBankingDetails)
+      .values(values as typeof tenantBankingDetails.$inferInsert)
+      .onConflictDoUpdate({
+        target: tenantBankingDetails.tenantId,
+        set: { ...values, updatedAt: new Date() },
+      });
   }
 
   // Check if organization needs onboarding completion
@@ -307,7 +301,6 @@ export class TenantService {
         .update(tenantUsers)
         .set({
           onboardingCompleted: true,
-          onboardingStep: 'completed',
           updatedAt: new Date()
         })
         .where(eq(tenantUsers.userId, userId));
@@ -511,7 +504,7 @@ export class TenantService {
           tenantName: tenant.companyName,
           roleName,
           invitationToken: invitationToken.substring(0, 8) + '...',
-          invitedByName: inviter?.name || 'Team Administrator',
+          invitedByName: inviter ? ([inviter.firstName, inviter.lastName].filter(Boolean).join(' ') || inviter.email) : 'Team Administrator',
           hasMessage: !!data.message,
           organizations: organizations.length,
           locations: locations.length,
@@ -524,7 +517,7 @@ export class TenantService {
           tenantName: (tenant as { companyName: string }).companyName,
           roleName,
           invitationToken,
-          invitedByName: inviter?.name || 'Team Administrator',
+          invitedByName: inviter ? ([inviter.firstName, inviter.lastName].filter(Boolean).join(' ') || inviter.email) : 'Team Administrator',
           message: data.message,
           invitedDate: invitation.createdAt ?? undefined,
           expiryDate: invitation.expiresAt ? (typeof invitation.expiresAt === 'string' ? invitation.expiresAt : invitation.expiresAt.toISOString()) : undefined,
@@ -560,7 +553,7 @@ export class TenantService {
   static async acceptInvitation(
     invitationToken: string,
     kindeUserId: string,
-    userData: { email: string; name?: string; avatar?: string }
+    userData: { email: string; firstName?: string; lastName?: string }
   ): Promise<typeof tenantUsers.$inferSelect> {
     try {
       return await db.transaction(async (tx) => {
@@ -587,8 +580,8 @@ export class TenantService {
           tenantId: invitation.tenantId,
           kindeUserId,
           email: userData.email,
-          name: userData.name ?? userData.email,
-          avatar: userData.avatar ?? null,
+          firstName: userData.firstName ?? null,
+          lastName: userData.lastName ?? null,
           isVerified: true,
         }).returning();
 
@@ -689,7 +682,6 @@ export class TenantService {
                     .select({
                       entityId: entities.entityId,
                       entityName: entities.entityName,
-                      entityCode: entities.entityCode
                     })
                     .from(entities)
                     .where(and(
@@ -705,7 +697,7 @@ export class TenantService {
                   tenantId: invitation.tenantId,
                   userId: user.userId,
                   organizationId: invitation.primaryEntityId,
-                  organizationCode: organization.entityCode,
+                  organizationCode: organization.entityId,
                   assignmentType: 'primary',
                   isActive: true,
                   assignedAt: new Date().toISOString(),
@@ -753,18 +745,16 @@ export class TenantService {
 
         // Publish user creation event to Amazon MQ for suite sync
         try {
-          // Split name into firstName and lastName for CRM requirements
-          const nameParts = (user.name || '').split(' ');
-          const firstName = nameParts[0] || '';
-          const lastName = nameParts.slice(1).join(' ') || '';
-          
-          await amazonMQPublisher.publishUserEventToSuite('user_created', invitation.tenantId, user.userId, {
+          const firstName = user.firstName || '';
+          const lastName = user.lastName || '';
+
+          await snsSqsPublisher.publishUserEventToSuite('user_created', invitation.tenantId, user.userId, {
             userId: user.userId,
             email: user.email,
             kindeUserId: user.kindeUserId,
             firstName: firstName,
             lastName: lastName,
-            name: user.name || `${firstName} ${lastName}`.trim(),
+            name: [firstName, lastName].filter(Boolean).join(' ') || user.email,
             isActive: user.isActive !== undefined ? user.isActive : true,
             createdAt: user.createdAt ? (typeof user.createdAt === 'string' ? user.createdAt : user.createdAt.toISOString()) : new Date().toISOString()
           });
@@ -783,7 +773,7 @@ export class TenantService {
           setImmediate(async () => {
             try {
               for (const a of assignments) {
-                await amazonMQPublisher.publishRoleEventToSuite('role_assigned', tenantId, a.roleId, {
+                await snsSqsPublisher.publishRoleEventToSuite('role_assigned', tenantId, a.roleId, {
                   assignmentId: a.id,
                   userId,
                   roleId: a.roleId,
@@ -868,7 +858,7 @@ export class TenantService {
         tenantName: (tenant as { companyName: string }).companyName,
         roleName: roleRow?.roleName ?? 'Member',
         invitationToken: invitation.invitationToken,
-        invitedByName: inviter?.name ?? 'Team Administrator',
+        invitedByName: inviter ? ([inviter.firstName, inviter.lastName].filter(Boolean).join(' ') || inviter.email) : 'Team Administrator',
         message: '',
         invitedDate: invitation.createdAt ?? undefined,
         expiryDate: invitation.expiresAt ?? undefined,
@@ -975,15 +965,21 @@ export class TenantService {
 
   // Deactivate tenant
   static async deactivateTenant(tenantId: string, reason: string): Promise<typeof tenants.$inferSelect | undefined> {
-    const updated = await TenantRepository.deactivateTenant(tenantId, reason);
+    // Atomically deactivate tenant + all users
+    return db.transaction(async (tx) => {
+      const [updated] = await tx
+        .update(tenants)
+        .set({ isActive: false, updatedAt: new Date(), settings: { deactivationReason: reason } } as any)
+        .where(eq(tenants.tenantId, tenantId))
+        .returning();
 
-    // Also deactivate all users
-    await db
-      .update(tenantUsers)
-      .set({ isActive: false })
-      .where(eq(tenantUsers.tenantId, tenantId));
+      await tx
+        .update(tenantUsers)
+        .set({ isActive: false })
+        .where(eq(tenantUsers.tenantId, tenantId));
 
-    return updated;
+      return updated;
+    });
   }
 
   // Reactivate tenant
@@ -1003,20 +999,15 @@ export class TenantService {
           tenantId: tenantUsers.tenantId,
           kindeUserId: tenantUsers.kindeUserId,
           email: tenantUsers.email,
-          name: tenantUsers.name,
-          avatar: tenantUsers.avatar,
-          title: tenantUsers.title,
-          department: tenantUsers.department,
+          firstName: tenantUsers.firstName,
+          lastName: tenantUsers.lastName,
           isActive: tenantUsers.isActive,
           isVerified: tenantUsers.isVerified,
           isTenantAdmin: tenantUsers.isTenantAdmin,
           invitedAt: tenantUsers.invitedAt,
           lastActiveAt: tenantUsers.lastActiveAt,
-          lastLoginAt: tenantUsers.lastLoginAt,
-          loginCount: tenantUsers.loginCount,
           preferences: tenantUsers.preferences,
           onboardingCompleted: tenantUsers.onboardingCompleted,
-          onboardingStep: tenantUsers.onboardingStep,
           createdAt: tenantUsers.createdAt,
           updatedAt: tenantUsers.updatedAt
         })
@@ -1122,8 +1113,8 @@ export class TenantService {
           id: user.userId,
           userId: user.userId,
           email: user.email,
-          firstName: user.name?.split(' ')[0] || user.email.split('@')[0],
-          lastName: user.name?.split(' ').slice(1).join(' ') || '',
+          firstName: user.firstName || user.email.split('@')[0],
+          lastName: user.lastName || '',
           role: role?.roleName || 'No role assigned',
           roleId: role?.roleId || null,
           isActive: user.isActive !== false, // Default to true if undefined
@@ -1142,20 +1133,15 @@ export class TenantService {
               tenantId: user.tenantId,
               kindeUserId: user.kindeUserId,
               email: user.email,
-              name: user.name,
-              avatar: user.avatar,
-              title: user.title,
-              department: user.department,
+              firstName: user.firstName,
+              lastName: user.lastName,
               isActive: user.isActive,
               isVerified: user.isVerified,
               isTenantAdmin: user.isTenantAdmin,
               invitedAt: user.invitedAt,
               lastActiveAt: user.lastActiveAt,
-              lastLoginAt: user.lastLoginAt,
-              loginCount: user.loginCount,
               preferences: user.preferences,
               onboardingCompleted: user.onboardingCompleted,
-              onboardingStep: user.onboardingStep,
               createdAt: user.createdAt,
               updatedAt: user.updatedAt,
               invitationUrl: acceptedInvitation?.invitationUrl || null, // Include in originalData too
@@ -1352,20 +1338,15 @@ export class TenantService {
             tenantId: tenantUsers.tenantId,
             kindeUserId: tenantUsers.kindeUserId,
             email: tenantUsers.email,
-            name: tenantUsers.name,
-            avatar: tenantUsers.avatar,
-            title: tenantUsers.title,
-            department: tenantUsers.department,
+            firstName: tenantUsers.firstName,
+            lastName: tenantUsers.lastName,
             isActive: tenantUsers.isActive,
             isVerified: tenantUsers.isVerified,
             isTenantAdmin: tenantUsers.isTenantAdmin,
             invitedAt: tenantUsers.invitedAt,
             lastActiveAt: tenantUsers.lastActiveAt,
-            lastLoginAt: tenantUsers.lastLoginAt,
-            loginCount: tenantUsers.loginCount,
             preferences: tenantUsers.preferences,
             onboardingCompleted: tenantUsers.onboardingCompleted,
-            onboardingStep: tenantUsers.onboardingStep,
             createdAt: tenantUsers.createdAt,
             updatedAt: tenantUsers.updatedAt,
             primaryOrganizationId: tenantUsers.primaryOrganizationId
@@ -1472,12 +1453,12 @@ export class TenantService {
         const userRoleId = userRoleIdMap.get(user.userId);
         const role = userRoleId ? roleMap.get(userRoleId) : null;
 
-        const u = user as { userId?: string; email?: string; name?: string; isActive?: boolean; invitedAt?: Date | null; lastActiveAt?: Date | null };
+        const u = user as { userId?: string; email?: string; firstName?: string | null; lastName?: string | null; isActive?: boolean; invitedAt?: Date | null; lastActiveAt?: Date | null };
         return {
           id: u.userId,
           email: u.email ?? '',
-          firstName: (typeof u.name === 'string' ? u.name.split(' ')[0] : '') || (typeof u.email === 'string' ? u.email.split('@')[0] : ''),
-          lastName: typeof u.name === 'string' ? u.name.split(' ').slice(1).join(' ') : '',
+          firstName: u.firstName || (typeof u.email === 'string' ? u.email.split('@')[0] : ''),
+          lastName: u.lastName || '',
           role: role?.roleName || '',
           isActive: u.isActive !== false, // Default to true if undefined
           invitationStatus: 'active',
@@ -1709,7 +1690,7 @@ export class TenantService {
         // 4. Handle responsible person assignments where user is the assigner (assignedBy)
         // Set assignedBy to another admin user if possible, otherwise delete the assignments
         try {
-          const { responsiblePersons, responsibilityHistory } = await import('../db/schema/organizations/responsible_persons.js');
+          const { responsiblePersons } = await import('../db/schema/organizations/responsible_persons.js');
           // Find another admin user in the tenant to reassign
           const [replacementAdmin] = await tx
             .select({ userId: tenantUsers.userId })
@@ -1729,14 +1710,6 @@ export class TenantService {
               .where(eq(responsiblePersons.assignedBy, userId))
               .returning();
             console.log(`✅ Reassigned ${updatedAssignments.length} responsible person assignments to admin`);
-            
-            // Also update responsibility history where user is the changer
-            const updatedHistory = await tx
-              .update(responsibilityHistory)
-              .set({ changedBy: replacementAdmin.userId })
-              .where(eq(responsibilityHistory.changedBy, userId))
-              .returning();
-            console.log(`✅ Reassigned ${updatedHistory.length} responsibility history records to admin`);
           } else {
             // If no replacement admin, delete these assignments
             const deletedAssignments = await tx
@@ -1744,13 +1717,6 @@ export class TenantService {
               .where(eq(responsiblePersons.assignedBy, userId))
               .returning();
             console.log(`✅ Deleted ${deletedAssignments.length} responsible person assignments (no replacement admin)`);
-            
-            // Delete responsibility history records where user is the changer
-            const deletedHistory = await tx
-              .delete(responsibilityHistory)
-              .where(eq(responsibilityHistory.changedBy, userId))
-              .returning();
-            console.log(`✅ Deleted ${deletedHistory.length} responsibility history records`);
           }
         } catch (err: unknown) {
           const rpError = err as Error;
@@ -1775,19 +1741,17 @@ export class TenantService {
 
         // 6. Publish user deletion event to Amazon MQ before deletion
         try {
-          // Split name into firstName and lastName for CRM requirements
-          const nameParts = (user.name || '').split(' ');
-          const firstName = nameParts[0] || '';
-          const lastName = nameParts.slice(1).join(' ') || '';
+          const firstName = user.firstName || '';
+          const lastName = user.lastName || '';
           // Use kindeUserId as entityId — FA/CRM look up wrapper_user_id_mapping by kindeId
           const entityIdForEvent = user.kindeUserId || user.userId;
-          await amazonMQPublisher.publishUserEventToSuite('user_deleted', tenantId, entityIdForEvent, {
+          await snsSqsPublisher.publishUserEventToSuite('user_deleted', tenantId, entityIdForEvent, {
             userId: user.userId,
             kindeUserId: user.kindeUserId,
             email: user.email,
             firstName: firstName,
             lastName: lastName,
-            name: user.name || `${firstName} ${lastName}`.trim(),
+            name: [firstName, lastName].filter(Boolean).join(' ') || user.email,
             deletedAt: new Date().toISOString(),
             deletedBy: removedBy,
             reason: 'user_removed_from_tenant'
@@ -1893,17 +1857,15 @@ export class TenantService {
 
       // Publish user deactivation event to Amazon MQ
       try {
-        // Split name into firstName and lastName for CRM requirements
-        const nameParts = (updatedUser.name || '').split(' ');
-        const firstName = nameParts[0] || '';
-        const lastName = nameParts.slice(1).join(' ') || '';
-        
-        await amazonMQPublisher.publishUserEventToSuite('user_deactivated', tenantId, updatedUser.userId, {
+        const firstName = updatedUser.firstName || '';
+        const lastName = updatedUser.lastName || '';
+
+        await snsSqsPublisher.publishUserEventToSuite('user_deactivated', tenantId, updatedUser.userId, {
           userId: updatedUser.userId,
           email: updatedUser.email,
           firstName: firstName,
           lastName: lastName,
-          name: updatedUser.name || `${firstName} ${lastName}`.trim(),
+          name: [firstName, lastName].filter(Boolean).join(' ') || updatedUser.email,
           deactivatedAt: new Date().toISOString(),
           deactivatedBy: null, // System-initiated deactivation
           reason: 'user_deactivated'
@@ -1967,7 +1929,7 @@ export class TenantService {
         // Publish role unassignment events for removed roles
         for (const assignment of existingAssignments) {
           try {
-            await amazonMQPublisher.publishRoleEventToSuite('role_unassigned', tenantId, assignment.roleId, {
+            await snsSqsPublisher.publishRoleEventToSuite('role_unassigned', tenantId, assignment.roleId, {
               assignmentId: assignment.id,
               userId: userId,
               roleId: assignment.roleId,
@@ -2001,7 +1963,7 @@ export class TenantService {
 
         // Publish role assignment event for new role
         try {
-          await amazonMQPublisher.publishRoleEventToSuite('role_assigned', tenantId, roleId, {
+          await snsSqsPublisher.publishRoleEventToSuite('role_assigned', tenantId, roleId, {
             assignmentId: newRoleAssignment.id,
             userId: userId,
             roleId: roleId,

@@ -1,6 +1,5 @@
 import { db } from '../db/index.js';
 import { auditLogs, tenantUsers } from '../db/schema/core/users.js';
-import { applications } from '../db/schema/core/suite-schema.js';
 import { eq, and, desc, sql, gte, lte, inArray } from 'drizzle-orm';
 import Logger from '../utils/logger.js';
 
@@ -470,7 +469,7 @@ class ActivityLogger {
           action: auditLogs.action,
           userId: auditLogs.userId,
           tenantId: auditLogs.tenantId, // Include tenantId in response for verification
-          userName: tenantUsers.name,
+          userName: sql<string>`COALESCE(${tenantUsers.firstName} || ' ' || ${tenantUsers.lastName}, ${tenantUsers.firstName}, ${tenantUsers.lastName}, '')`,
           userEmail: tenantUsers.email,
           metadata: includeMetadata ? auditLogs.details : sql`NULL`,
           ipAddress: auditLogs.ipAddress,
@@ -645,7 +644,7 @@ class ActivityLogger {
         .select({
           logId: auditLogs.logId,
           userId: auditLogs.userId,
-          userName: tenantUsers.name,
+          userName: sql<string>`COALESCE(${tenantUsers.firstName} || ' ' || ${tenantUsers.lastName}, ${tenantUsers.firstName}, ${tenantUsers.lastName}, '')`,
           userEmail: tenantUsers.email,
           action: auditLogs.action,
           resourceType: auditLogs.resourceType,
@@ -1119,7 +1118,7 @@ class ActivityLogger {
           action: auditLogs.action,
           userId: auditLogs.userId,
           tenantId: auditLogs.tenantId,
-          userName: tenantUsers.name,
+          userName: sql<string>`COALESCE(${tenantUsers.firstName} || ' ' || ${tenantUsers.lastName}, ${tenantUsers.firstName}, ${tenantUsers.lastName}, '')`,
           userEmail: tenantUsers.email,
           details: auditLogs.details,
           ipAddress: auditLogs.ipAddress,

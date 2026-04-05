@@ -1,3 +1,5 @@
+import { getPlanApplications } from '../../../data/plans.js';
+
 export function isValidPlanChange(currentPlan: Record<string, unknown>, targetPlan: Record<string, unknown>): boolean {
   const planHierarchy: Record<string, number> = {
     free: 0,
@@ -15,16 +17,8 @@ export function isValidPlanChange(currentPlan: Record<string, unknown>, targetPl
 }
 
 export function calculateFeatureLoss(fromPlan: string, toPlan: string): string[] {
-  const planFeatures: Record<string, string[]> = {
-    free: ['crm'],
-    starter: ['crm', 'hr'],
-    professional: ['crm', 'hr', 'affiliate', 'accounting'],
-    enterprise: ['crm', 'hr', 'affiliate', 'accounting', 'inventory'],
-  };
-
-  const fromFeatures = planFeatures[fromPlan] || [];
-  const toFeatures = planFeatures[toPlan] || [];
-
+  const fromFeatures = getPlanApplications(fromPlan);
+  const toFeatures = getPlanApplications(toPlan);
   return fromFeatures.filter((feature: string) => !toFeatures.includes(feature));
 }
 

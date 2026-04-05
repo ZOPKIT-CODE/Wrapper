@@ -7,7 +7,7 @@ import {
 } from '../../../db/schema/index.js';
 import { eq, and, sql } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
-import { amazonMQPublisher } from '../../messaging/utils/amazon-mq-publisher.js';
+import { snsSqsPublisher } from '../../messaging/utils/sns-sqs-publisher.js';
 import { findRootOrganization, ensureCreditRecord, stripe } from './credit-core.js';
 import { getEntityBalance, getCurrentBalance } from './credit-balance.js';
 
@@ -280,7 +280,7 @@ export async function addCreditsToEntity(params: {
   description?: string;
   initiatedBy: string;
 }): Promise<void> {
-  const { tenantId, entityType, entityId, creditAmount, source, sourceId, description, initiatedBy } = params;
+  const { tenantId, entityType, entityId, creditAmount, source, sourceId, initiatedBy } = params;
   let previousBalance = 0;
   let newBalance = 0;
   try {
@@ -320,54 +320,61 @@ export async function addCreditsToEntity(params: {
       await sqlConn`SELECT set_config('app.is_admin', 'true', false)`;
       console.log('✅ RLS context set on direct connection');
 
-      const existingCredits = await sqlConn`
-          SELECT * FROM credits
-          WHERE tenant_id = ${tenantId}
-          AND entity_id = ${normalizedEntityId}
-          LIMIT 1
-        `;
-
-      console.log('📊 Existing credits check result:', existingCredits.length);
-
-      previousBalance = existingCredits.length > 0 ? parseFloat(String(existingCredits[0].available_credits)) : 0;
-      newBalance = previousBalance + creditAmount;
-
-      if (existingCredits.length > 0) {
-        console.log('📝 Updating existing credit record...');
-        await sqlConn`
-            UPDATE credits
-            SET available_credits = available_credits + ${creditAmount},
-                last_updated_at = NOW()
-            WHERE credit_id = ${existingCredits[0].credit_id}
+      // Wrap credit balance + transaction record in a single DB transaction
+      // so the ledger stays consistent if either step fails.
+      await sqlConn.begin(async (tx: any) => {
+        const existingCredits = await tx`
+            SELECT * FROM credits
+            WHERE tenant_id = ${tenantId}
+            AND entity_id = ${normalizedEntityId}
+            LIMIT 1
           `;
-        console.log('✅ Updated existing credit balance:', { previousBalance, newBalance });
-      } else {
-        console.log('📝 Creating new credit record...');
-        const newCredit = await sqlConn`
-            INSERT INTO credits (
-              tenant_id, entity_id, available_credits, is_active
+
+        console.log('📊 Existing credits check result:', existingCredits.length);
+
+        previousBalance = existingCredits.length > 0 ? parseFloat(String(existingCredits[0].available_credits)) : 0;
+        newBalance = previousBalance + creditAmount;
+
+        if (existingCredits.length > 0) {
+          console.log('📝 Updating existing credit record...');
+          const [updatedRow] = await tx`
+              UPDATE credits
+              SET available_credits = available_credits + ${creditAmount},
+                  last_updated_at = NOW()
+              WHERE credit_id = ${existingCredits[0].credit_id}
+              RETURNING available_credits
+            `;
+          newBalance = parseFloat(String(updatedRow.available_credits));
+          previousBalance = newBalance - creditAmount;
+          console.log('✅ Updated existing credit balance:', { previousBalance, newBalance });
+        } else {
+          console.log('📝 Creating new credit record...');
+          const newCredit = await tx`
+              INSERT INTO credits (
+                tenant_id, entity_id, available_credits, is_active
+              ) VALUES (
+                ${tenantId}, ${normalizedEntityId}, ${creditAmount.toString()}, true
+              )
+              RETURNING credit_id
+            `;
+          console.log('✅ Created new credit balance:', { creditId: newCredit[0].credit_id, newBalance: creditAmount });
+        }
+
+        console.log('📝 Creating transaction record...');
+
+        await tx`
+            INSERT INTO credit_transactions (
+              tenant_id, entity_id, transaction_type, amount,
+              previous_balance, new_balance, operation_code,
+              initiated_by
             ) VALUES (
-              ${tenantId}, ${normalizedEntityId}, ${creditAmount.toString()}, true
+              ${tenantId}, ${normalizedEntityId}, 'purchase', ${creditAmount.toString()},
+              ${previousBalance.toString()}, ${newBalance.toString()}, ${source},
+              ${initiatedBy === 'system' ? null : initiatedBy}
             )
-            RETURNING credit_id
           `;
-        console.log('✅ Created new credit balance:', { creditId: newCredit[0].credit_id, newBalance: creditAmount });
-      }
-
-      console.log('📝 Creating transaction record...');
-
-      await sqlConn`
-          INSERT INTO credit_transactions (
-            tenant_id, entity_id, transaction_type, amount,
-            previous_balance, new_balance, operation_code,
-            initiated_by
-          ) VALUES (
-            ${tenantId}, ${normalizedEntityId}, 'purchase', ${creditAmount.toString()},
-            ${previousBalance.toString()}, ${newBalance.toString()}, ${source},
-            ${initiatedBy === 'system' ? null : initiatedBy}
-          )
-        `;
-      console.log('✅ Transaction record created successfully');
+        console.log('✅ Transaction record created successfully');
+      });
     } finally {
       await sqlConn.end();
     }
@@ -376,32 +383,9 @@ export async function addCreditsToEntity(params: {
       `✅ Added ${creditAmount} credits to ${normalizedEntityType}${normalizedEntityId ? ` (${normalizedEntityId})` : ''} for tenant ${tenantId}`
     );
 
-    const allocationMetadata = {
-      allocationId: `alloc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      reason: source,
-      entityType: normalizedEntityType,
-      previousBalance: previousBalance,
-      newBalance: newBalance,
-      sourceId: sourceId,
-      description: description,
-      allocatedBy: initiatedBy
-    };
-
-    const targetApps = ['crm', 'operations'];
-    for (const app of targetApps) {
-      try {
-        await amazonMQPublisher.publishCreditAllocation(
-          app,
-          tenantId,
-          normalizedEntityId,
-          creditAmount,
-          allocationMetadata
-        );
-      } catch (streamErr: unknown) {
-        const streamError = streamErr as Error;
-        console.warn(`⚠️ Failed to publish credit allocation event to ${app}:`, streamError.message);
-      }
-    }
+    // NOTE: Do NOT publish MQ events here. addCreditsToEntity only adds to the
+    // tenant's POOL. Apps receive credits only when an admin explicitly allocates
+    // via allocateCreditsToApplication(), which publishes the MQ event itself.
   } catch (err: unknown) {
     const error = err as Error;
     console.error('Error adding credits to entity:', error);
@@ -445,54 +429,61 @@ export async function allocateCreditsToApplication(params: {
 
     let previousBalance = 0;
     let newBalance = 0;
-    let allocationId: string;
+    let allocationId = `app_alloc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     try {
       await sqlConn`SELECT set_config('app.tenant_id', ${tenantId}, false)`;
       await sqlConn`SELECT set_config('app.user_id', ${rlsUserId}, false)`;
       await sqlConn`SELECT set_config('app.is_admin', 'true', false)`;
 
-      const existingCredits = await sqlConn`
-          SELECT * FROM credits
-          WHERE tenant_id = ${tenantId}
-          AND entity_id = ${sourceEntityId}
-          LIMIT 1
-        `;
+      // Wrap deduction + transaction record atomically so the ledger
+      // stays consistent if either step fails.
+      await sqlConn.begin(async (tx: any) => {
+        const existingCredits = await tx`
+            SELECT * FROM credits
+            WHERE tenant_id = ${tenantId}
+            AND entity_id = ${sourceEntityId}
+            LIMIT 1
+          `;
 
-      if (existingCredits.length === 0) {
-        throw new Error('No credit record found for the source entity');
-      }
+        if (existingCredits.length === 0) {
+          throw new Error('No credit record found for the source entity');
+        }
 
-      previousBalance = parseFloat(existingCredits[0].available_credits);
+        previousBalance = parseFloat(existingCredits[0].available_credits);
 
-      if (previousBalance < creditAmount) {
-        throw new Error(`Insufficient credits. Available: ${previousBalance}, Requested: ${creditAmount}`);
-      }
+        if (previousBalance < creditAmount) {
+          throw new Error(`Insufficient credits. Available: ${previousBalance}, Requested: ${creditAmount}`);
+        }
 
-      newBalance = previousBalance - creditAmount;
+        newBalance = previousBalance - creditAmount;
 
-      await sqlConn`
-          UPDATE credits
-          SET available_credits = available_credits - ${creditAmount},
-              last_updated_at = NOW()
-          WHERE credit_id = ${existingCredits[0].credit_id}
-          AND available_credits >= ${creditAmount}
-        `;
+        const updateResult = await tx`
+            UPDATE credits
+            SET available_credits = available_credits - ${creditAmount},
+                last_updated_at = NOW()
+            WHERE credit_id = ${existingCredits[0].credit_id}
+            AND available_credits >= ${creditAmount}
+            RETURNING *
+          `;
 
-      allocationId = `app_alloc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        if (updateResult.length === 0) {
+          throw new Error('Insufficient credits for allocation');
+        }
 
-      await sqlConn`
-          INSERT INTO credit_transactions (
-            tenant_id, entity_id, transaction_type, amount,
-            previous_balance, new_balance, operation_code,
-            initiated_by
-          ) VALUES (
-            ${tenantId}, ${sourceEntityId}, 'allocation', ${creditAmount.toString()},
-            ${previousBalance.toString()}, ${newBalance.toString()},
-            ${'application_allocation:' + targetApplication},
-            ${initiatedByUuid}
-          )
-        `;
+        await tx`
+            INSERT INTO credit_transactions (
+              tenant_id, entity_id, transaction_type, amount,
+              previous_balance, new_balance, operation_code,
+              initiated_by
+            ) VALUES (
+              ${tenantId}, ${sourceEntityId}, 'allocation', ${creditAmount.toString()},
+              ${previousBalance.toString()}, ${newBalance.toString()},
+              ${'application_allocation:' + targetApplication},
+              ${initiatedByUuid}
+            )
+          `;
+      });
 
       console.log('✅ Deducted credits from entity balance:', {
         previousBalance,
@@ -530,7 +521,7 @@ export async function allocateCreditsToApplication(params: {
     };
 
     try {
-      await amazonMQPublisher.publishCreditEvent(
+      await snsSqsPublisher.publishCreditEvent(
         targetApplication,
         'credit.allocated',
         tenantId,
@@ -580,7 +571,7 @@ export async function recordCreditConsumption(
     console.log(`📊 Recording credit consumption: ${amount} credits by ${userId} for ${operationType}`);
 
     try {
-      await amazonMQPublisher.publishCreditConsumption(
+      await snsSqsPublisher.publishCreditConsumption(
         'crm',
         tenantId,
         entityId,
@@ -665,10 +656,15 @@ export async function consumeCredits(opts: {
           and(
             eq(credits.tenantId, tenantId),
             entityId ? eq(credits.entityId, entityId) : sql`${credits.entityId} IS NULL`,
-            eq(credits.isActive, true)
+            eq(credits.isActive, true),
+            sql`${credits.availableCredits} >= ${creditCost}`
           )
         )
         .returning();
+
+      if (!updatedCredit) {
+        throw new Error('Insufficient credits');
+      }
 
       const prevBal = Number(currentBalance.availableCredits ?? 0);
       const newBal = prevBal - creditCost;
@@ -719,7 +715,7 @@ export async function transferCredits(params: {
   initiatedBy?: string;
   reason?: string;
 }): Promise<Record<string, unknown>> {
-  const { fromTenantId, toEntityType, toEntityId, creditAmount, initiatedBy } = params;
+  const { fromTenantId, toEntityId, creditAmount, initiatedBy } = params;
   try {
     let tenantId: string;
     let fromEntityId: string;
@@ -769,13 +765,24 @@ export async function transferCredits(params: {
     }
 
     await db.transaction(async (tx) => {
-      await tx
+      const [deducted] = await tx
         .update(credits)
         .set({
           availableCredits: sql`${credits.availableCredits} - ${creditAmount}`,
           lastUpdatedAt: new Date()
         })
-        .where(and(eq(credits.tenantId, tenantId), eq(credits.entityId, fromEntityId)));
+        .where(
+          and(
+            eq(credits.tenantId, tenantId),
+            eq(credits.entityId, fromEntityId),
+            sql`${credits.availableCredits} >= ${creditAmount}`
+          )
+        )
+        .returning();
+
+      if (!deducted) {
+        throw new Error('Insufficient credits for transfer');
+      }
 
       const [existingCredit] = await tx
         .select()
