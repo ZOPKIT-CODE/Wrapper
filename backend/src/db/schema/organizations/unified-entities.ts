@@ -4,7 +4,7 @@
 // Since locations ARE organizations in your context, use ONE table for everything
 // This replaces both organizations.js and locations.js files
 
-import { pgTable, uuid, varchar, timestamp, jsonb, boolean, integer, text, decimal, index, uniqueIndex } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, timestamp, jsonb, boolean, integer, text, index, type AnyPgColumn } from 'drizzle-orm/pg-core';
 import { tenants } from '../core/tenants.js';
 
 // Unified entity table (handles organizations, locations, departments, etc.)
@@ -16,29 +16,24 @@ export const entities = pgTable('entities', {
   entityType: varchar('entity_type', { length: 20 }).notNull(), // 'organization', 'location', 'department', 'team'
 
   // Hierarchy Structure (ANY entity can have children)
-  parentEntityId: uuid('parent_entity_id'),
+  parentEntityId: uuid('parent_entity_id').references((): AnyPgColumn => entities.entityId, { onDelete: 'set null' }),
   entityLevel: integer('entity_level').default(1),
 
   // Basic Entity Info
   entityName: varchar('entity_name', { length: 255 }).notNull(),
-  entityCode: varchar('entity_code', { length: 50 }),
   description: text('description'),
 
   // Classification fields (depend on entity_type)
-  organizationType: varchar('organization_type', { length: 20 }), // 'business_unit', 'department', 'division', 'subsidiary'
   locationType: varchar('location_type', { length: 20 }), // 'office', 'warehouse', 'retail', 'remote', 'branch'
   departmentType: varchar('department_type', { length: 20 }), // 'hr', 'finance', 'it', 'sales', 'marketing'
   teamType: varchar('team_type', { length: 20 }), // 'development', 'design', 'management', 'support'
 
   // Physical attributes (for location-type entities)
   address: jsonb('address'), // Physical address
-  coordinates: jsonb('coordinates'), // lat/lng for mapping
-  businessHours: jsonb('business_hours'), // Operating hours
-  capacity: jsonb('capacity'), // Capacity and resources
 
   // Common fields for both (with inheritance)
-  timezone: varchar('timezone', { length: 50 }).default('UTC'),
-  currency: varchar('currency', { length: 3 }).default('USD'),
+  timezone: varchar('timezone', { length: 50 }).default('Asia/Kolkata'),
+  currency: varchar('currency', { length: 3 }).default('INR'),
   language: varchar('language', { length: 10 }).default('en'),
 
   // Financial Accounting / Legal & Compliance fields
@@ -49,30 +44,12 @@ export const entities = pgTable('entities', {
   registrationNumber: varchar('registration_number', { length: 100 }),
   contactWebsite: varchar('contact_website', { length: 500 }),
 
-  // Branding (inherited from tenant → organization → location)
-  logoUrl: varchar('logo_url', { length: 500 }),
-  primaryColor: varchar('primary_color', { length: 7 }),
-  brandingConfig: jsonb('branding_config').default({}),
-
   // Responsible person & contact
   responsiblePersonId: uuid('responsible_person_id'),
   contactEmail: varchar('contact_email', { length: 255 }),
   contactPhone: varchar('contact_phone', { length: 50 }),
 
-  // Credit system (hierarchical)
-  creditAllocation: decimal('credit_allocation', { precision: 15, scale: 4 }).default('0'),
-  creditPolicy: jsonb('credit_policy').default({
-    allowCreditAllocation: true,
-    maxCreditAllocation: null,
-    creditExpiryPolicy: { enabled: true, defaultDays: 365 },
-    allowOverage: true,
-    overageLimit: 10000,
-    overagePeriod: 'day'
-  }),
-
   // Inheritance controls
-  inheritSettings: boolean('inherit_settings').default(true),
-  inheritBranding: boolean('inherit_branding').default(true),
   inheritCredits: boolean('inherit_credits').default(false),
 
   // Settings (entity-specific)
@@ -84,12 +61,6 @@ export const entities = pgTable('entities', {
 
   // Status
   isActive: boolean('is_active').default(true),
-  isDefault: boolean('is_default').default(false),
-  isHeadquarters: boolean('is_headquarters').default(false),
-
-  // Onboarding
-  onboardingCompleted: boolean('onboarding_completed').default(false),
-  onboardedAt: timestamp('onboarded_at'),
 
   // Hierarchy path (auto-generated)
   hierarchyPath: text('hierarchy_path'),
@@ -101,7 +72,6 @@ export const entities = pgTable('entities', {
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 }, (table) => ({
-  entityCodeUnique: uniqueIndex('entities_entity_code_unique').on(table.entityCode),
   idxEntitiesHierarchyPath: index('idx_entities_hierarchy_path').on(table.hierarchyPath),
   idxEntitiesParentEntityId: index('idx_entities_parent_entity_id').on(table.parentEntityId),
   idxEntitiesTenantHierarchy: index('idx_entities_tenant_hierarchy').on(table.tenantId, table.parentEntityId, table.entityLevel),

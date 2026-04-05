@@ -32,18 +32,18 @@ export const seasonalCreditCampaigns = pgTable('seasonal_credit_campaigns', {
   failedCount: integer('failed_count').default(0),
   
   // Timing
-  startsAt: timestamp('starts_at').defaultNow(),
-  expiresAt: timestamp('expires_at').notNull(),
-  distributedAt: timestamp('distributed_at'),
+  startsAt: timestamp('starts_at', { withTimezone: true }).defaultNow(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  distributedAt: timestamp('distributed_at', { withTimezone: true }),
   
   // Status
   isActive: boolean('is_active').default(true),
   
   // Audit
   createdBy: uuid('created_by').references(() => tenantUsers.userId),
-  createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow(),
-  
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+
   // Additional Configuration
   metadata: jsonb('metadata'),
   sendNotifications: boolean('send_notifications').default(true),
@@ -85,12 +85,12 @@ export const seasonalCreditAllocations = pgTable('seasonal_credit_allocations', 
   isExpired: boolean('is_expired').default(false),
   
   // Timing
-  allocatedAt: timestamp('allocated_at').defaultNow(),
-  expiresAt: timestamp('expires_at').notNull(),
-  
+  allocatedAt: timestamp('allocated_at', { withTimezone: true }).defaultNow(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+
   // Audit
-  createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 }, (table) => ({
   idxSeasonalAllocationsCampaign: index('idx_seasonal_allocations_campaign').on(table.campaignId),
   idxSeasonalAllocationsTenantEntity: index('idx_seasonal_allocations_tenant_entity').on(table.tenantId, table.entityId),

@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, timestamp, jsonb, boolean, integer, text, uniqueIndex } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, timestamp, jsonb, boolean } from 'drizzle-orm/pg-core';
 import { tenants } from '../core/tenants.js';
 import { tenantUsers } from '../core/users.js';
 import { customRoles } from '../core/permissions.js';
@@ -16,8 +16,6 @@ export const organizationMemberships = pgTable('organization_memberships', {
 
   // Role Assignment
   roleId: uuid('role_id').references(() => customRoles.roleId),
-  roleName: varchar('role_name', { length: 100 }), // Cached for performance
-  permissions: jsonb('permissions').default({}), // Cached permissions for performance
 
   // Membership Details
   membershipType: varchar('membership_type', { length: 20 }).default('direct'), // 'direct', 'inherited', 'temporary'
@@ -28,51 +26,18 @@ export const organizationMemberships = pgTable('organization_memberships', {
   isPrimary: boolean('is_primary').default(false), // Is this the user's primary membership for this entity type
   canAccessSubEntities: boolean('can_access_sub_entities').default(false), // Can access child organizations/locations
 
-  // Credit Permissions
-  creditPermissions: jsonb('credit_permissions').default({
-    canPurchaseCredits: false,
-    canTransferCredits: false,
-    canApproveTransfers: false,
-    canViewCreditUsage: true,
-    creditLimit: null // NULL = no limit
-  }),
-
   // Time-based Access
   isTemporary: boolean('is_temporary').default(false),
   validFrom: timestamp('valid_from'),
   validUntil: timestamp('valid_until'),
-  timezone: varchar('timezone', { length: 50 }).default('UTC'),
-
-  // Department/Team Assignment
-  department: varchar('department', { length: 100 }),
-  team: varchar('team', { length: 100 }),
-  jobTitle: varchar('job_title', { length: 100 }),
-  employeeId: varchar('employee_id', { length: 50 }),
-
-  // Contact Override (entity-specific contact info)
-  contactOverride: jsonb('contact_override').default({}), // Override user's primary contact info
-
-  // Preferences
-  preferences: jsonb('preferences').default({
-    notifications: {
-      email: true,
-      sms: false,
-      push: true
-    },
-    dashboard: {
-      theme: 'default',
-      layout: 'standard'
-    }
-  }),
+  timezone: varchar('timezone', { length: 50 }).default('Asia/Kolkata'),
 
   // Audit & Tracking
   invitedBy: uuid('invited_by').references(() => tenantUsers.userId),
   invitedAt: timestamp('invited_at'),
   joinedAt: timestamp('joined_at'),
-  lastAccessedAt: timestamp('last_accessed_at'),
 
   // Metadata
-  notes: text('notes'),
   metadata: jsonb('metadata').default({}),
   createdBy: uuid('created_by').references(() => tenantUsers.userId).notNull(),
   updatedBy: uuid('updated_by').references(() => tenantUsers.userId),

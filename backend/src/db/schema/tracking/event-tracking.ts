@@ -1,11 +1,12 @@
 import { pgTable, uuid, varchar, timestamp, text, jsonb, boolean, integer, index, uniqueIndex } from 'drizzle-orm/pg-core';
+// tenant_id and entity_id are uuid (changed from text via M007)
 
 export const eventTracking = pgTable('event_tracking', {
   id: uuid('id').defaultRandom().primaryKey(),
   eventId: text('event_id').notNull(),
   eventType: text('event_type').notNull(),
-  tenantId: text('tenant_id').notNull(),
-  entityId: text('entity_id'),
+  tenantId: uuid('tenant_id').notNull(),   // M007: changed TEXT → UUID
+  entityId: uuid('entity_id'),             // M007: changed TEXT → UUID
   streamKey: text('stream_key').notNull(),
   sourceApplication: varchar('source_application', { length: 50 }).notNull(),
   targetApplication: varchar('target_application', { length: 50 }).notNull(),

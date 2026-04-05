@@ -11,7 +11,6 @@ export * from './core/onboarding-form-data.js';
 export * from './billing/subscriptions.js';
 export * from './billing/credits.js';
 export * from './billing/credit_purchases.js';
-export * from './billing/credit_usage.js';
 export * from './billing/credit_configurations.js';
 export * from './billing/seasonal-credits.js';
 
@@ -21,6 +20,6 @@ export * from './organizations/responsible_persons.js';
 
 export * from './notifications/notifications.js';
 export * from './notifications/notification-templates.js';
+export * from './notifications/tenant-template-customizations.js';
 
 export * from './tracking/event-tracking.js';
-export * from './tracking/webhook-logs.js';

@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, timestamp, boolean, decimal, uniqueIndex } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, timestamp, decimal, uniqueIndex } from 'drizzle-orm/pg-core';
 import { tenants } from '../core/tenants.js';
 import { tenantUsers } from '../core/users.js';
 import { entities } from '../organizations/unified-entities.js';
@@ -17,26 +17,27 @@ export const creditPurchases = pgTable('credit_purchases', {
   totalAmount: decimal('total_amount', { precision: 10, scale: 2 }).notNull(),
 
   // Credit Batch Details - SIMPLIFIED
-  batchId: uuid('batch_id').notNull(), // Unique identifier for this credit batch
-  expiryDate: timestamp('expiry_date'), // When these credits expire
+  batchId: uuid('batch_id').notNull(),
+  expiryDate: timestamp('expiry_date', { withTimezone: true }),
 
   // Payment Information - SIMPLIFIED
   paymentMethod: varchar('payment_method', { length: 50 }), // 'stripe', 'bank_transfer', 'check'
   stripePaymentIntentId: varchar('stripe_payment_intent_id', { length: 255 }),
-  paymentStatus: varchar('payment_status', { length: 20 }).default('pending'),
+  // payment_status_deprecated column exists in DB (renamed from payment_status via M010)
+  // — do not use; remove from queries and drop in a follow-up migration.
 
-  // Purchase Status - SIMPLIFIED
+  // Purchase Status — canonical column
+  // 'pending','processing','completed','failed','cancelled'
   status: varchar('status', { length: 20 }).default('pending'),
-  // 'pending', 'processing', 'completed', 'failed', 'cancelled', 'refunded'
 
-  // Timestamps - SIMPLIFIED
-  requestedAt: timestamp('requested_at').defaultNow(),
-  paidAt: timestamp('paid_at'),
-  creditedAt: timestamp('credited_at'), // When credits were added to balance
+  // Timestamps
+  requestedAt: timestamp('requested_at', { withTimezone: true }).defaultNow(),
+  paidAt: timestamp('paid_at', { withTimezone: true }),
+  creditedAt: timestamp('credited_at', { withTimezone: true }),
 
-  // Audit - SIMPLIFIED
+  // Audit
   requestedBy: uuid('requested_by').references(() => tenantUsers.userId).notNull(),
-  createdAt: timestamp('created_at').defaultNow(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 }, (table) => ({
   batchIdUnique: uniqueIndex('credit_purchases_batch_id_unique').on(table.batchId),
 }));

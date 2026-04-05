@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, timestamp, jsonb, boolean, text, integer, decimal, date, numeric, index } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, timestamp, jsonb, boolean, integer, index } from 'drizzle-orm/pg-core';
 
 // Main tenants table
 export const tenants = pgTable('tenants', {
@@ -40,6 +40,8 @@ export const tenants = pgTable('tenants', {
   contactDepartment: varchar('contact_department', { length: 100 }),
   contactDirectPhone: varchar('contact_direct_phone', { length: 50 }),
   contactMobilePhone: varchar('contact_mobile_phone', { length: 50 }),
+  // DEPRECATED: use preferredContactMethod instead (same table, line 26).
+  // Column kept in schema for migration safety; will be dropped in a future migration.
   contactPreferredContactMethod: varchar('contact_preferred_contact_method', { length: 20 }),
   contactAuthorityLevel: varchar('contact_authority_level', { length: 50 }),
 
@@ -56,52 +58,10 @@ export const tenants = pgTable('tenants', {
 
   // Essential Localization Settings
   defaultLanguage: varchar('default_language', { length: 10 }).default('en'),
-  defaultLocale: varchar('default_locale', { length: 20 }).default('en-US'),
-  defaultCurrency: varchar('default_currency', { length: 3 }).default('USD'),
-  defaultTimeZone: varchar('default_timezone', { length: 50 }).default('UTC'),
+  defaultLocale: varchar('default_locale', { length: 20 }).default('en-IN'),
+  defaultCurrency: varchar('default_currency', { length: 3 }).default('INR'),
+  defaultTimeZone: varchar('default_timezone', { length: 50 }).default('Asia/Kolkata'),
   
-  // Fiscal Year Settings
-  fiscalYearStartMonth: integer('fiscal_year_start_month').default(1),
-  fiscalYearEndMonth: integer('fiscal_year_end_month').default(12),
-  fiscalYearStartDay: integer('fiscal_year_start_day').default(1),
-  fiscalYearEndDay: integer('fiscal_year_end_day').default(31),
-  
-  // Banking & Financial Information
-  bankName: varchar('bank_name', { length: 255 }),
-  bankBranch: varchar('bank_branch', { length: 255 }),
-  accountHolderName: varchar('account_holder_name', { length: 255 }),
-  accountNumber: varchar('account_number', { length: 50 }), // Encrypted in application
-  accountType: varchar('account_type', { length: 50 }),
-  bankAccountCurrency: varchar('bank_account_currency', { length: 3 }),
-  swiftBicCode: varchar('swift_bic_code', { length: 11 }),
-  iban: varchar('iban', { length: 34 }),
-  routingNumberUs: varchar('routing_number_us', { length: 9 }),
-  sortCodeUk: varchar('sort_code_uk', { length: 6 }),
-  ifscCodeIndia: varchar('ifsc_code_india', { length: 11 }),
-  bsbNumberAustralia: varchar('bsb_number_australia', { length: 6 }),
-  paymentTerms: varchar('payment_terms', { length: 50 }),
-  creditLimit: decimal('credit_limit', { precision: 15, scale: 2 }),
-  preferredPaymentMethod: varchar('preferred_payment_method', { length: 50 }),
-  
-  // Enhanced Tax & Compliance
-  taxResidenceCountry: varchar('tax_residence_country', { length: 100 }),
-  taxExemptStatus: boolean('tax_exempt_status').default(false),
-  taxExemptionCertificateNumber: varchar('tax_exemption_certificate_number', { length: 50 }),
-  taxExemptionExpiryDate: date('tax_exemption_expiry_date'),
-  withholdingTaxApplicable: boolean('withholding_tax_applicable').default(false),
-  withholdingTaxRate: decimal('withholding_tax_rate', { precision: 5, scale: 2 }),
-  taxTreatyCountry: varchar('tax_treaty_country', { length: 100 }),
-  w9StatusUs: varchar('w9_status_us', { length: 50 }),
-  w8FormTypeUs: varchar('w8_form_type_us', { length: 50 }),
-  reverseChargeMechanism: boolean('reverse_charge_mechanism').default(false),
-  vatGstRateApplicable: varchar('vat_gst_rate_applicable', { length: 50 }),
-  regulatoryComplianceStatus: varchar('regulatory_compliance_status', { length: 50 }).default('Pending'),
-  industrySpecificLicenses: text('industry_specific_licenses'),
-  dataProtectionRegistration: varchar('data_protection_registration', { length: 50 }),
-  professionalIndemnityInsurance: boolean('professional_indemnity_insurance').default(false),
-  insurancePolicyNumber: varchar('insurance_policy_number', { length: 50 }),
-  insuranceExpiryDate: date('insurance_expiry_date'),
-
   // Essential Branding & Customization
   logoUrl: varchar('logo_url', { length: 500 }),
   primaryColor: varchar('primary_color', { length: 7 }).default('#2563eb'),
@@ -121,9 +81,14 @@ export const tenants = pgTable('tenants', {
   onboardedAt: timestamp('onboarded_at'),
   onboardingStartedAt: timestamp('onboarding_started_at'),
 
-  // Trial & Subscription Tracking
-  trialEndsAt: timestamp('trial_ends_at'),
-  trialStartedAt: timestamp('trial_started_at'),
+  // Trial dates moved to subscriptions table (fix_019 migration).
+  // trialEndsAt and trialStartedAt removed — query via subscriptions JOIN.
+
+  // Fiscal year bounds (collected during onboarding)
+  fiscalYearStartMonth: integer('fiscal_year_start_month'),
+  fiscalYearEndMonth: integer('fiscal_year_end_month'),
+  fiscalYearStartDay: integer('fiscal_year_start_day'),
+  fiscalYearEndDay: integer('fiscal_year_end_day'),
 
   // Activity Tracking
   firstLoginAt: timestamp('first_login_at'),
@@ -133,15 +98,7 @@ export const tenants = pgTable('tenants', {
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 }, (table) => ({
-  idxTenantsTaxRegistered: index('idx_tenants_tax_registered').on(table.taxRegistered),
-  idxTenantsVatGstRegistered: index('idx_tenants_vat_gst_registered').on(table.vatGstRegistered),
-  idxTenantsOrganizationSize: index('idx_tenants_organization_size').on(table.organizationSize),
-  idxTenantsBillingEmail: index('idx_tenants_billing_email').on(table.billingEmail),
-  idxTenantsSupportEmail: index('idx_tenants_support_email').on(table.supportEmail),
-  idxTenantsBankName: index('idx_tenants_bank_name').on(table.bankName),
-  idxTenantsTaxExemptStatus: index('idx_tenants_tax_exempt_status').on(table.taxExemptStatus),
-  idxTenantsTaxResidenceCountry: index('idx_tenants_tax_residence_country').on(table.taxResidenceCountry),
-  idxTenantsRegulatoryComplianceStatus: index('idx_tenants_regulatory_compliance_status').on(table.regulatoryComplianceStatus),
+  idxTenantsStripeCustomerId: index('idx_tenants_stripe_customer_id').on(table.stripeCustomerId),
 }));
 
 
@@ -182,31 +139,12 @@ export const onboardingEvents = pgTable('onboarding_events', {
   tenantId: uuid('tenant_id').references(() => tenants.tenantId).notNull(),
 
   // Event details
-  eventType: varchar('event_type', { length: 100 }).notNull(), // 'trial_onboarding_started', 'trial_onboarding_completed', 'upgrade_onboarding_started', etc.
-  eventPhase: varchar('event_phase', { length: 50 }).notNull(), // 'trial', 'profile', 'upgrade', 'team', 'integration'
+  eventType: varchar('event_type', { length: 100 }).notNull(),
   eventAction: varchar('event_action', { length: 50 }).notNull(), // 'started', 'completed', 'skipped', 'abandoned'
 
-  // Context and metadata
-  userId: uuid('user_id'), // Which user performed the action
-  sessionId: varchar('session_id', { length: 255 }), // For session tracking
-  ipAddress: varchar('ip_address', { length: 45 }), // IPv4/IPv6
-  userAgent: text('user_agent'), // Browser/device info
-
-  // Event data
-  eventData: jsonb('event_data').default({}), // Flexible data storage for event-specific info
-  metadata: jsonb('metadata').default({}), // Additional metadata
-
-  // Analytics fields
-  timeSpent: integer('time_spent'), // Time spent on this phase/step in seconds
-  completionRate: integer('completion_rate'), // Completion percentage at this point
-  stepNumber: integer('step_number'), // Which step in the phase
-  totalSteps: integer('total_steps'), // Total steps in this phase
-
-  // A/B testing and variants
-  variantId: varchar('variant_id', { length: 50 }), // A/B test variant
-  experimentId: varchar('experiment_id', { length: 50 }), // Which experiment this event belongs to
+  // Context
+  userId: uuid('user_id'),
 
   // Timestamps
-  createdAt: timestamp('created_at').defaultNow(),
-  eventTimestamp: timestamp('event_timestamp').defaultNow() // When the event actually occurred
+  createdAt: timestamp('created_at').defaultNow()
 }); 

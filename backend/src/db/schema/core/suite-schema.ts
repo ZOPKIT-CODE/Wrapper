@@ -1,8 +1,7 @@
-import { pgTable, uuid, varchar, text, boolean, timestamp, jsonb, integer, decimal, uniqueIndex } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, text, boolean, timestamp, jsonb, integer, uniqueIndex } from 'drizzle-orm/pg-core';
 
 // Import existing tables for proper foreign key references
 import { tenants } from './tenants.js';
-import { tenantUsers } from './users.js';
 
 // Applications registry
 export const applications = pgTable('applications', {
@@ -51,18 +50,4 @@ export const organizationApplications = pgTable('organization_applications', {
   tenantAppUnique: uniqueIndex('organization_applications_tenant_app_unique').on(table.tenantId, table.appId)
 }));
 
-// User application permissions
-export const userApplicationPermissions = pgTable('user_application_permissions', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').references(() => tenantUsers.userId),
-  tenantId: uuid('tenant_id').references(() => tenants.tenantId),
-  appId: uuid('app_id').references(() => applications.appId),
-  moduleId: uuid('module_id').references(() => applicationModules.moduleId),
-  permissions: jsonb('permissions'), // ['view', 'create', 'edit', 'delete']
-  isActive: boolean('is_active').default(true),
-  metadata: jsonb('metadata'), // Additional metadata like reason, expiry, etc.
-  grantedBy: uuid('granted_by').references(() => tenantUsers.userId),
-  grantedAt: timestamp('granted_at').defaultNow(),
-  expiresAt: timestamp('expires_at')
-});
 

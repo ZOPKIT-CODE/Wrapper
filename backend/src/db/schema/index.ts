@@ -10,9 +10,9 @@ export * from './core/onboarding-form-data.js';
 export * from './billing/subscriptions.js';
 export * from './billing/credits.js';
 export * from './billing/credit_purchases.js';
-export * from './billing/credit_usage.js';
 export * from './billing/credit_configurations.js';
 export * from './billing/seasonal-credits.js';
+export * from './billing/tenant_banking_details.js';
 
 // Organizations
 export * from './organizations/unified-entities.js';
@@ -22,10 +22,10 @@ export * from './organizations/responsible_persons.js';
 // Notifications
 export * from './notifications/notifications.js';
 export * from './notifications/notification-templates.js';
+export * from './notifications/tenant-template-customizations.js';
 
 // Tracking
 export * from './tracking/event-tracking.js';
-export * from './tracking/webhook-logs.js';
 
 // Platform staff (cross-tenant access control)
 export * from './platform/platform-staff.js';
@@ -40,19 +40,15 @@ import {
   customRoles,
   userRoleAssignments,
   tenantInvitations,
-  auditLogs,
   // New schema imports for relationships
   entities,
   organizationMemberships,
   credits,
   creditTransactions,
   creditPurchases,
-  creditUsage,
-  creditConfigurations,
   responsiblePersons,
-  responsibilityHistory,
-  eventTracking,
-  notifications
+  notifications,
+  tenantBankingDetails,
 } from './index.js';
 
 export const tenantsRelations = relations(tenants, ({ many, one }) => ({
@@ -60,14 +56,23 @@ export const tenantsRelations = relations(tenants, ({ many, one }) => ({
   subscription: one(subscriptions),
   roles: many(customRoles),
   payments: many(payments),
-  // New relationships for unified entities system
   entities: many(entities),
   memberships: many(organizationMemberships),
   credits: many(credits),
   creditPurchases: many(creditPurchases),
-  creditUsage: many(creditUsage),
   responsiblePersons: many(responsiblePersons),
   notifications: many(notifications),
+  bankingDetails: one(tenantBankingDetails, {
+    fields: [tenants.tenantId],
+    references: [tenantBankingDetails.tenantId],
+  }),
+}));
+
+export const tenantBankingDetailsRelations = relations(tenantBankingDetails, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [tenantBankingDetails.tenantId],
+    references: [tenants.tenantId],
+  }),
 }));
 
 export const tenantUsersRelations = relations(tenantUsers, ({ one, many }) => ({
@@ -82,7 +87,6 @@ export const tenantUsersRelations = relations(tenantUsers, ({ one, many }) => ({
   roleAssignments: many(userRoleAssignments),
   // New relationships for hierarchical organizations and credit system
   memberships: many(organizationMemberships),
-  creditUsage: many(creditUsage),
   responsibleFor: many(responsiblePersons),
 }));
 
@@ -185,7 +189,7 @@ export const entitiesRelations = relations(entities, ({ many, one }) => ({
   }),
 }));
 
-export const organizationMembershipsRelations = relations(organizationMemberships, ({ many, one }) => ({
+export const organizationMembershipsRelations = relations(organizationMemberships, ({ many: _many, one }) => ({
   user: one(tenantUsers, {
     fields: [organizationMemberships.userId],
     references: [tenantUsers.userId],
@@ -228,22 +232,7 @@ export const creditPurchasesRelations = relations(creditPurchases, ({ one }) => 
 }));
 
 
-export const creditUsageRelations = relations(creditUsage, ({ one }) => ({
-  tenant: one(tenants, {
-    fields: [creditUsage.tenantId],
-    references: [tenants.tenantId],
-  }),
-  entity: one(entities, {
-    fields: [creditUsage.entityId],
-    references: [entities.entityId],
-  }),
-  user: one(tenantUsers, {
-    fields: [creditUsage.userId],
-    references: [tenantUsers.userId],
-  }),
-}));
-
-export const responsiblePersonsRelations = relations(responsiblePersons, ({ many, one }) => ({
+export const responsiblePersonsRelations = relations(responsiblePersons, ({ many: _many, one }) => ({
   tenant: one(tenants, {
     fields: [responsiblePersons.tenantId],
     references: [tenants.tenantId],
@@ -252,5 +241,4 @@ export const responsiblePersonsRelations = relations(responsiblePersons, ({ many
     fields: [responsiblePersons.userId],
     references: [tenantUsers.userId],
   }),
-  history: many(responsibilityHistory),
 })); 

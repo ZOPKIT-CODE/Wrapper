@@ -1,7 +1,6 @@
 import { pgTable, uuid, varchar, timestamp, boolean, decimal, integer, uniqueIndex, index } from 'drizzle-orm/pg-core';
 import { tenants } from '../core/tenants.js';
 import { tenantUsers } from '../core/users.js';
-import { entities } from '../organizations/unified-entities.js';
 
 // Hybrid credit configuration system (global + tenant-specific)
 export const creditConfigurations = pgTable('credit_configurations', {

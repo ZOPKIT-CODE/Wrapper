@@ -1,6 +1,5 @@
-import { pgTable, uuid, varchar, timestamp, jsonb, decimal, integer, boolean, text, index } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, timestamp, jsonb, decimal, boolean, text, index } from 'drizzle-orm/pg-core';
 import { tenants } from '../core/tenants.js';
-import { entities } from '../organizations/unified-entities.js';
 
 // Main subscriptions
 export const subscriptions = pgTable('subscriptions', {
@@ -12,36 +11,34 @@ export const subscriptions = pgTable('subscriptions', {
   status: varchar('status', { length: 20 }).notNull(), // 'active', 'past_due', 'canceled', 'trialing', 'suspended'
 
   // Stripe subscription details
-  stripeSubscriptionId: varchar('stripe_subscription_id', { length: 255 }),
+  stripeSubscriptionId: varchar('stripe_subscription_id', { length: 255 }).unique(),
   stripeCustomerId: varchar('stripe_customer_id', { length: 255 }),
 
   // Trial information
   isTrialUser: boolean('is_trial_user').default(false),
+  trialStartedAt: timestamp('trial_started_at', { withTimezone: true }),
+  trialEndsAt: timestamp('trial_ends_at', { withTimezone: true }),
 
   // Upgrade tracking
   hasEverUpgraded: boolean('has_ever_upgraded').default(false), // Track if user ever had a paid plan
-
-  // Usage and limits
-  subscribedTools: jsonb('subscribed_tools').default([]),
-  usageLimits: jsonb('usage_limits').default({}),
 
   // Billing cycle and pricing
   billingCycle: varchar('billing_cycle', { length: 20 }).default('monthly'), // 'monthly', 'yearly'
   yearlyPrice: decimal('yearly_price', { precision: 10, scale: 2 }).default('0'),
 
   // Current period information
-  currentPeriodStart: timestamp('current_period_start'),
-  currentPeriodEnd: timestamp('current_period_end'),
+  currentPeriodStart: timestamp('current_period_start', { withTimezone: true }),
+  currentPeriodEnd: timestamp('current_period_end', { withTimezone: true }),
 
   // Cancellation information
-  cancelAt: timestamp('cancel_at'),
-  canceledAt: timestamp('canceled_at'),
-  suspendedAt: timestamp('suspended_at'),
+  cancelAt: timestamp('cancel_at', { withTimezone: true }),
+  canceledAt: timestamp('canceled_at', { withTimezone: true }),
+  suspendedAt: timestamp('suspended_at', { withTimezone: true }),
   suspendedReason: text('suspended_reason'),
 
   // Timestamps
-  createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 }, (table) => ({
   // Every subscription query filters by tenantId — without this index
   // Postgres does a full sequential scan of the entire table.
@@ -59,13 +56,13 @@ export const payments = pgTable('payments', {
   subscriptionId: uuid('subscription_id').references(() => subscriptions.subscriptionId),
 
   // Stripe Payment Details
-  stripePaymentIntentId: varchar('stripe_payment_intent_id', { length: 255 }),
+  stripePaymentIntentId: varchar('stripe_payment_intent_id', { length: 255 }).unique(),
   stripeInvoiceId: varchar('stripe_invoice_id', { length: 255 }),
   stripeChargeId: varchar('stripe_charge_id', { length: 255 }),
 
   // Payment Info
   amount: decimal('amount', { precision: 10, scale: 2 }).notNull(),
-  currency: varchar('currency', { length: 3 }).default('USD'),
+  currency: varchar('currency', { length: 3 }).notNull(), // Must come from Stripe event or tenant.defaultCurrency — no default to avoid mismatch
   status: varchar('status', { length: 20 }).notNull(), // 'succeeded', 'failed', 'pending', 'canceled'
   paymentMethod: varchar('payment_method', { length: 50 }), // 'card', 'bank_transfer', etc.
   paymentMethodDetails: jsonb('payment_method_details').default({}), // Card brand, last4, etc.
@@ -82,7 +79,7 @@ export const payments = pgTable('payments', {
   amountRefunded: decimal('amount_refunded', { precision: 10, scale: 2 }).default('0'),
   refundReason: varchar('refund_reason', { length: 100 }),
   isPartialRefund: boolean('is_partial_refund').default(false),
-  refundedAt: timestamp('refunded_at'),
+  refundedAt: timestamp('refunded_at', { withTimezone: true }),
 
   // Tax Information
   taxAmount: decimal('tax_amount', { precision: 10, scale: 2 }).default('0'),
@@ -91,10 +88,13 @@ export const payments = pgTable('payments', {
   metadata: jsonb('metadata').default({}),
   stripeRawData: jsonb('stripe_raw_data').default({}), // Full Stripe event data for debugging
 
+  // Payment gateway provider ('stripe' | 'razorpay')
+  provider: varchar('provider', { length: 20 }).default('stripe'),
+
   // Dates
-  paidAt: timestamp('paid_at'),
-  createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow(),
+  paidAt: timestamp('paid_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 }, (table) => ({
   tenantIdIdx: index('idx_payments_tenant_id').on(table.tenantId),
   tenantCreatedAtIdx: index('idx_payments_tenant_created_at').on(table.tenantId, table.createdAt),

@@ -3,7 +3,7 @@
  * Stores form data during onboarding process before user/tenant records are created
  */
 
-import { pgTable, uuid, varchar, jsonb, timestamp, text, index } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, jsonb, timestamp, index } from 'drizzle-orm/pg-core';
 
 export const onboardingFormData = pgTable('onboarding_form_data', {
   id: uuid('id').defaultRandom().primaryKey(),
