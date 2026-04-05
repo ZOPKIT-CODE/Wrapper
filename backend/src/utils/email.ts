@@ -34,6 +34,195 @@ interface SendEmailParams {
   attachments?: unknown[];
 }
 
+// Shared CSS injected into every template's <style> block
+const SHARED_CSS = `
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+      background: #EFF6FF;
+      padding: 40px 16px;
+      color: #0D1B3E;
+    }
+    .wrapper {
+      max-width: 620px;
+      margin: 0 auto;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(13,27,62,0.18);
+    }
+    /* Brand bar */
+    .brand-bar {
+      background: linear-gradient(135deg, #0D1B3E 0%, #1B2E5A 100%);
+      padding: 22px 36px;
+      display: table;
+      width: 100%;
+    }
+    .brand-logo {
+      display: table-cell;
+      height: 30px;
+      width: auto;
+      vertical-align: middle;
+      filter: brightness(0) invert(1);
+    }
+    .brand-badge {
+      display: table-cell;
+      vertical-align: middle;
+      text-align: right;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: #93C5FD;
+      background: rgba(255,255,255,0.10);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 20px;
+      padding: 4px 12px;
+      white-space: nowrap;
+    }
+    /* Hero */
+    .hero {
+      background: linear-gradient(160deg, #0D1B3E 0%, #1B2E5A 55%, #1e3a6e 100%);
+      padding: 52px 40px 48px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-circle-1 {
+      position: absolute; top:-60px; right:-60px;
+      width:240px; height:240px; border-radius:50%;
+      background: radial-gradient(circle, rgba(96,165,250,0.12), transparent);
+    }
+    .hero-circle-2 {
+      position: absolute; bottom:-40px; left:-40px;
+      width:180px; height:180px; border-radius:50%;
+      background: radial-gradient(circle, rgba(147,197,253,0.10), transparent);
+    }
+    .hero-icon {
+      font-size: 44px;
+      display: block;
+      margin-bottom: 20px;
+    }
+    .hero h1 {
+      font-size: 28px;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: -0.4px;
+      margin-bottom: 10px;
+    }
+    .hero-sub {
+      font-size: 15px;
+      color: #93C5FD;
+      font-weight: 500;
+    }
+    /* Body card */
+    .body-card {
+      background: #ffffff;
+      padding: 40px 40px 36px;
+    }
+    /* Section labels */
+    .label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #2563EB;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 6px;
+    }
+    /* Info rows */
+    .info-table { width:100%; border-collapse:collapse; margin:20px 0; }
+    .info-table td { padding:12px 0; border-bottom:1px solid #EFF6FF; vertical-align:top; }
+    .info-table tr:last-child td { border-bottom:none; }
+    .info-label { width:40%; font-size:13px; color:#64748B; font-weight:500; }
+    .info-value { font-size:14px; color:#0D1B3E; font-weight:600; }
+    /* Highlight box */
+    .highlight-box {
+      background: #F8FAFF;
+      border: 1px solid #DBEAFE;
+      border-radius: 10px;
+      padding: 20px 24px;
+      margin: 20px 0;
+    }
+    .highlight-box .hl-label {
+      font-size: 11px; font-weight:700; color:#2563EB;
+      text-transform:uppercase; letter-spacing:0.6px; margin-bottom:8px;
+    }
+    .highlight-box .hl-value {
+      font-size: 22px; font-weight:800; color:#0D1B3E;
+    }
+    /* CTA button */
+    .cta { text-align:center; margin: 32px 0 24px; }
+    .cta a {
+      display: inline-block;
+      padding: 16px 48px;
+      background: linear-gradient(135deg, #0D1B3E 0%, #2563EB 100%);
+      color: #ffffff !important;
+      text-decoration: none;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 15px;
+      letter-spacing: 0.2px;
+      box-shadow: 0 8px 24px rgba(37,99,235,0.35);
+    }
+    .cta-note { margin-top:10px; font-size:12px; color:#94A3B8; text-align:center; }
+    /* Alert strip */
+    .alert-strip {
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin: 16px 0;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .alert-warning { background:#FFF7ED; border-left:4px solid #F97316; color:#C2410C; }
+    .alert-danger  { background:#FFF1F2; border-left:4px solid #F43F5E; color:#BE123C; }
+    .alert-success { background:#F0FDF4; border-left:4px solid #22C55E; color:#15803D; }
+    .alert-info    { background:#F0F7FF; border-left:4px solid #2563EB; color:#1B2E5A; }
+    /* Checklist */
+    .checklist { list-style:none; margin:16px 0; padding:0; }
+    .checklist li {
+      padding: 9px 0 9px 28px;
+      position: relative;
+      font-size: 14px;
+      color: #475569;
+      border-bottom: 1px solid #EFF6FF;
+    }
+    .checklist li:last-child { border-bottom:none; }
+    .checklist li::before {
+      content: "→";
+      position: absolute; left:0;
+      color: #2563EB; font-weight:700;
+    }
+    /* Body text */
+    .body-card p {
+      font-size: 15px;
+      line-height: 1.75;
+      color: #475569;
+      margin-bottom: 18px;
+    }
+    .body-card p strong { color:#0D1B3E; }
+    /* Footer */
+    .footer {
+      background: linear-gradient(135deg, #0D1B3E 0%, #1B2E5A 100%);
+      padding: 28px 36px;
+      text-align: center;
+    }
+    .footer-logo { height:24px; width:auto; filter:brightness(0) invert(1); opacity:0.7; margin-bottom:14px; }
+    .footer-divider { width:36px; height:2px; background:rgba(255,255,255,0.15); margin:12px auto; border-radius:2px; }
+    .footer p { font-size:13px; color:#93C5FD; line-height:1.8; margin:0; }
+    .footer strong { color:#ffffff; }
+    .footer-copy { font-size:12px; color:rgba(147,197,253,0.7) !important; margin-top:6px !important; }
+    /* Responsive */
+    @media (max-width:600px) {
+      body { padding:20px 10px; }
+      .brand-bar { padding:18px 24px; }
+      .hero { padding:36px 24px 32px; }
+      .body-card { padding:28px 24px 24px; }
+      .footer { padding:24px; }
+      .cta a { padding:14px 32px; }
+    }
+`;
+
+const LOGO_URL = 'https://res.cloudinary.com/dr9vzaa7u/image/upload/v1765126845/Zopkit_Full_Logo_kezq1b.jpg';
+
 class EmailService {
   emailProvider: EmailProvider;
   smtpTransporter: ReturnType<typeof nodemailer.createTransport> | null;
@@ -72,7 +261,7 @@ class EmailService {
       return 'demo';
     }
   }
-  
+
   initializeSMTP(): void {
     try {
       this.smtpTransporter = nodemailer.createTransport({
@@ -87,7 +276,7 @@ class EmailService {
           rejectUnauthorized: process.env.SMTP_TLS_REJECT_UNAUTHORIZED !== 'false'
         }
       });
-      
+
       console.log('✅ SMTP transporter initialized successfully');
     } catch (err: unknown) {
       console.error('❌ Failed to initialize SMTP transporter:', err);
@@ -98,307 +287,81 @@ class EmailService {
   // Send welcome email to new organization admin
   async sendWelcomeEmail({ email, name, companyName, subdomain, kindeOrgCode: _kindeOrgCode, loginUrl }: { email: string; name: string; companyName: string; subdomain: string; kindeOrgCode: string; loginUrl: string }) {
     const subject = `Welcome to ${companyName} - Your Zopkit Account is Ready!`;
-    
-    const html = `
-<!DOCTYPE html>
+
+    const html = `<!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Zopkit Invitation</title>
-
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, Arial, sans-serif;
-      background: radial-gradient(circle at top, #1e293b 0%, #0b1220 45%);
-      padding: 48px 16px;
-      color: #0f172a;
-    }
-
-    .email-shell {
-      max-width: 720px;
-      margin: 0 auto;
-      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-      border-radius: 20px;
-      overflow: hidden;
-      box-shadow:
-        0 40px 120px rgba(15, 23, 42, 0.45),
-        0 10px 40px rgba(15, 23, 42, 0.25);
-    }
-
-    /* ---------- HEADER ---------- */
-    .header {
-      padding: 56px 56px 48px;
-      text-align: center;
-      background:
-        radial-gradient(circle at top, #eef2ff 0%, #ffffff 60%);
-    }
-
-    .logo {
-      max-width: 190px;
-      margin-bottom: 32px;
-    }
-
-    .header h1 {
-      font-size: 34px;
-      font-weight: 700;
-      letter-spacing: -0.6px;
-      margin-bottom: 12px;
-    }
-
-    .header p {
-      font-size: 17px;
-      color: #475569;
-      max-width: 520px;
-      margin: 0 auto;
-    }
-
-    /* ---------- CONTENT ---------- */
-    .content {
-      padding: 56px;
-    }
-
-    .greeting {
-      font-size: 21px;
-      font-weight: 600;
-      margin-bottom: 22px;
-    }
-
-    .content p {
-      font-size: 16.5px;
-      line-height: 1.75;
-      color: #334155;
-      margin-bottom: 22px;
-    }
-
-    /* ---------- INFO CARD ---------- */
-    .card {
-      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-      border-radius: 16px;
-      padding: 28px 30px;
-      margin: 32px 0;
-      box-shadow:
-        0 10px 30px rgba(15, 23, 42, 0.08),
-        inset 0 0 0 1px #e5e7eb;
-    }
-
-    .card h3 {
-      font-size: 18px;
-      font-weight: 700;
-      margin-bottom: 18px;
-    }
-
-    .card ul {
-      list-style: none;
-    }
-
-    .card li {
-      padding: 12px 0;
-      border-bottom: 1px dashed #e5e7eb;
-      font-size: 15.5px;
-      color: #334155;
-    }
-
-    .card li:last-child {
-      border-bottom: none;
-    }
-
-    .card strong {
-      color: #0f172a;
-      min-width: 160px;
-      display: inline-block;
-    }
-
-    /* ---------- SECTION TITLE ---------- */
-    .section {
-      margin-top: 48px;
-    }
-
-    .section-title {
-      font-size: 19px;
-      font-weight: 700;
-      margin-bottom: 14px;
-      position: relative;
-      padding-left: 14px;
-    }
-
-    .section-title::before {
-      content: "";
-      position: absolute;
-      left: 0;
-      top: 4px;
-      height: 70%;
-      width: 4px;
-      border-radius: 2px;
-      background: linear-gradient(180deg, #4f46e5, #38bdf8);
-    }
-
-    /* ---------- SSO BOX ---------- */
-    .sso-box {
-      background: linear-gradient(180deg, #eef2ff 0%, #f8fafc 100%);
-      border-radius: 14px;
-      padding: 24px;
-      margin-top: 22px;
-      box-shadow: inset 0 0 0 1px #c7d2fe;
-    }
-
-    .sso-box p {
-      font-size: 15px;
-      font-weight: 600;
-      margin-bottom: 10px;
-      color: #1e293b;
-    }
-
-    .login-link {
-      display: block;
-      padding: 14px 16px;
-      background: #ffffff;
-      border-radius: 10px;
-      font-size: 14px;
-      font-weight: 600;
-      color: #4f46e5;
-      text-decoration: none;
-      word-break: break-all;
-      box-shadow: 0 4px 14px rgba(79, 70, 229, 0.15);
-    }
-
-    /* ---------- CTA ---------- */
-    .cta {
-      text-align: center;
-      margin: 44px 0;
-    }
-
-    .cta a {
-      display: inline-block;
-      padding: 18px 48px;
-      border-radius: 14px;
-      background: linear-gradient(135deg, #4f46e5, #4338ca);
-      color: #ffffff;
-      font-size: 17px;
-      font-weight: 700;
-      text-decoration: none;
-      letter-spacing: 0.2px;
-      box-shadow:
-        0 18px 40px rgba(79, 70, 229, 0.45);
-    }
-
-    /* ---------- STEPS ---------- */
-    .steps {
-      margin-top: 24px;
-      list-style: none;
-    }
-
-    .steps li {
-      margin-bottom: 18px;
-      padding-left: 36px;
-      position: relative;
-      font-size: 15.5px;
-      color: #334155;
-    }
-
-    .steps li::before {
-      content: "→";
-      position: absolute;
-      left: 0;
-      top: 0;
-      color: #4f46e5;
-      font-weight: 700;
-    }
-
-    /* ---------- FOOTER ---------- */
-    .footer {
-      padding: 40px 56px;
-      background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
-      border-top: 1px solid #e5e7eb;
-    }
-
-    .footer p {
-      font-size: 14px;
-      color: #64748b;
-      line-height: 1.6;
-    }
-
-    .signature {
-      margin-top: 18px;
-      font-weight: 700;
-      color: #0f172a;
-    }
-
-    @media (max-width: 600px) {
-      .header, .content, .footer {
-        padding: 32px;
-      }
-      .header h1 {
-        font-size: 26px;
-      }
-    }
-  </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome to Zopkit</title>
+  <style>${SHARED_CSS}</style>
 </head>
-
 <body>
-  <div class="email-shell">
-    <div class="header">
-      <img src="https://res.cloudinary.com/dr9vzaa7u/image/upload/v1765126845/Zopkit_Full_Logo_kezq1b.jpg" class="logo" alt="Zopkit"/>
-      <h1>You’ve been invited to Zopkit</h1>
-      <p>Secure access to your organization’s AI-powered workspace</p>
+  <div class="wrapper">
+    <!-- ① BRAND BAR -->
+    <div class="brand-bar">
+      <img src="${LOGO_URL}" alt="Zopkit" class="brand-logo" style="height:30px;width:auto;filter:brightness(0) invert(1);">
+      <span class="brand-badge">Welcome</span>
     </div>
 
-    <div class="content">
-      <p class="greeting">Hello ${name},</p>
+    <!-- ② HERO -->
+    <div class="hero">
+      <div class="hero-circle-1"></div>
+      <div class="hero-circle-2"></div>
+      <div class="hero-icon">🎉</div>
+      <h1>Welcome to Zopkit!</h1>
+      <p class="hero-sub">Your workspace is live and ready</p>
+    </div>
 
-      <p>
-        You’ve been invited to join <strong>${companyName}</strong> on <strong>Zopkit</strong> —
-        a unified platform designed to streamline business operations, workflows,
-        and internal collaboration.
-      </p>
+    <!-- ③ BODY -->
+    <div class="body-card">
+      <p>Hi <strong>${name}</strong>, your account for <strong>${companyName}</strong> has been created and is ready to use.</p>
 
-      <div class="card">
-        <h3>Organization Details</h3>
-        <ul>
-          <li><strong>Organization</strong> ${companyName}</li>
-          <li><strong>Workspace</strong> ${subdomain}.zopkit.com</li>
-          <li><strong>Invited Email</strong> ${email}</li>
-        </ul>
-      </div>
+      <table class="info-table">
+        <tr>
+          <td class="info-label">Organization</td>
+          <td class="info-value">${companyName}</td>
+        </tr>
+        <tr>
+          <td class="info-label">Workspace</td>
+          <td class="info-value">${subdomain}.zopkit.com</td>
+        </tr>
+        <tr>
+          <td class="info-label">Email</td>
+          <td class="info-value">${email}</td>
+        </tr>
+      </table>
 
-      <div class="section">
-        <div class="section-title">Secure Access (SSO Enabled)</div>
-        <p>
-          Zopkit uses password-less Single Sign-On.
-          Sign in securely using your email address.
-        </p>
-
-        <div class="sso-box">
-          <p>Your login link</p>
-          <a href="${loginUrl}" class="login-link">${loginUrl}</a>
+      <div class="highlight-box">
+        <div class="hl-label">Your Login Link</div>
+        <div class="hl-value" style="font-size:14px;word-break:break-all;">
+          <a href="${loginUrl}" style="color:#2563EB;text-decoration:none;font-weight:700;">${loginUrl}</a>
         </div>
       </div>
 
       <div class="cta">
-        <a href="${loginUrl}">Accept Invitation</a>
+        <a href="${loginUrl}">Go to Your Dashboard</a>
+        <div class="cta-note">🔒 Secure SSO login · No password required</div>
       </div>
 
-      <div class="section">
-        <div class="section-title">Next Steps</div>
-        <ul class="steps">
-          <li>Sign in and confirm your account</li>
-          <li>Review your role and permissions</li>
-          <li>Explore your organization workspace</li>
-          <li>Start collaborating with your team</li>
-        </ul>
-      </div>
+      <ul class="checklist">
+        <li>Complete your organization profile</li>
+        <li>Invite your team members</li>
+        <li>Explore your applications</li>
+        <li>Set up roles and permissions</li>
+      </ul>
     </div>
 
+    <!-- ④ FOOTER -->
     <div class="footer">
-      <p>If you did not expect this invitation, you may safely ignore this email.</p>
-      <p class="signature">— The Zopkit Team</p>
+      <img src="${LOGO_URL}" alt="Zopkit" class="footer-logo">
+      <div class="footer-divider"></div>
+      <p>Questions? We're here to help — reply to this email.</p>
+      <p class="footer-copy">Powered by <strong>Zopkit</strong> — Your AI-first business operating system</p>
     </div>
   </div>
 </body>
-</html>
-    `;
+</html>`;
 
     return await this.sendEmail({
       to: [{ email, name }],
@@ -441,122 +404,182 @@ class EmailService {
         <title>Team Invitation</title>
         <style>
           * { margin: 0; padding: 0; box-sizing: border-box; }
-          body { 
+          body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             line-height: 1.6;
             color: #1f2937;
-            background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
-            padding: 20px;
+            background-color: #EFF6FF;
+            padding: 32px 16px;
             min-height: 100vh;
           }
-          .container { 
-            max-width: 650px;
+          .container {
+            max-width: 620px;
             margin: 0 auto;
           }
-          .card { 
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08), 0 8px 24px rgba(0, 0, 0, 0.05);
-            overflow: hidden;
+          /* ── Top brand bar ── */
+          .brand-bar {
+            background: linear-gradient(135deg, #0D1B3E 0%, #1B2E5A 100%);
+            border-radius: 16px 16px 0 0;
+            padding: 28px 40px;
+            display: table;
+            width: 100%;
           }
-          .header { 
-            background: linear-gradient(135deg, #ffffff 0%, #f8f9fb 100%);
-            padding: 50px 40px;
+          .brand-bar-inner {
+            display: table-row;
+          }
+          .brand-logo-cell {
+            display: table-cell;
+            vertical-align: middle;
+          }
+          .brand-logo-cell img {
+            height: 36px;
+            width: auto;
+            display: block;
+            filter: brightness(0) invert(1);
+          }
+          .brand-badge-cell {
+            display: table-cell;
+            vertical-align: middle;
+            text-align: right;
+          }
+          .brand-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.12);
+            color: #93C5FD;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            padding: 5px 14px;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.15);
+          }
+          /* ── Hero section ── */
+          .hero {
+            background: linear-gradient(160deg, #0D1B3E 0%, #1B2E5A 50%, #1e3a6e 100%);
+            padding: 52px 40px 48px;
             text-align: center;
             position: relative;
-            border-bottom: 1px solid #e5e7eb;
+            overflow: hidden;
           }
-          .logo-container {
-            margin-bottom: 32px;
-            background: rgba(0, 0, 0, 0.02);
-            backdrop-filter: blur(10px);
-            padding: 20px 30px;
-            border-radius: 12px;
-            display: inline-block;
-            border: 1px solid rgba(0, 0, 0, 0.05);
+          .hero-circle-1 {
+            position: absolute;
+            top: -60px; right: -60px;
+            width: 240px; height: 240px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(96,165,250,0.12), transparent);
           }
-          .logo {
-            max-width: 200px;
-            height: auto;
-            display: block;
+          .hero-circle-2 {
+            position: absolute;
+            bottom: -40px; left: -40px;
+            width: 180px; height: 180px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(147,197,253,0.10), transparent);
           }
-          .invitation-badge { 
-            background: linear-gradient(135deg, #1a1a1a 0%, #374151 100%);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 24px;
-            font-size: 14px;
-            font-weight: 700;
-            display: inline-block;
-            margin-bottom: 20px;
-            letter-spacing: 0.3px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+          .hero-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 68px; height: 68px;
+            background: rgba(255,255,255,0.10);
+            border: 2px solid rgba(255,255,255,0.15);
+            border-radius: 20px;
+            margin-bottom: 24px;
+            font-size: 28px;
           }
-          .header h1 {
-            margin: 16px 0;
-            font-size: 32px;
-            font-weight: 700;
-            color: #0f172a;
+          .hero h1 {
+            font-size: 30px;
+            font-weight: 800;
+            color: #ffffff;
             letter-spacing: -0.5px;
+            margin-bottom: 10px;
           }
-          .header p {
-            margin: 0;
-            font-size: 17px;
-            color: #64748b;
+          .hero p {
+            font-size: 16px;
+            color: #93C5FD;
+            font-weight: 500;
           }
-          .content { 
-            padding: 45px 40px;
-            background: white;
+          /* ── Card body ── */
+          .card-body {
+            background: #ffffff;
+            padding: 40px 40px 32px;
           }
-          .inviter-section { 
-            background: linear-gradient(135deg, #fafbfc 0%, #f1f3f5 100%);
-            border: 2px solid #e5e7eb;
-            border-radius: 12px;
-            padding: 24px;
-            margin: 0 0 32px 0;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+          /* ── Inviter chip ── */
+          .inviter-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #EFF6FF;
+            border: 1px solid #BFDBFE;
+            border-radius: 24px;
+            padding: 6px 14px 6px 8px;
+            margin-bottom: 28px;
           }
-          .inviter-section h2 {
-            margin: 0 0 10px 0;
-            color: #0f172a;
-            font-size: 18px;
-            font-weight: 700;
-          }
-          .inviter-section p {
-            margin: 0;
-            color: #475569;
-            font-size: 15px;
-            line-height: 1.7;
-          }
-          .details-grid { 
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-            margin: 32px 0;
-          }
-          .detail-item { 
-            background: linear-gradient(135deg, #fafbfc 0%, #f4f6f8 100%);
-            border: 2px solid #e5e7eb;
-            border-radius: 10px;
-            padding: 18px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
-          }
-          .detail-label { 
+          .inviter-avatar {
+            width: 28px; height: 28px;
+            background: linear-gradient(135deg, #0D1B3E, #2563EB);
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
             font-size: 12px;
             font-weight: 700;
-            color: #64748b;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 6px;
           }
-          .detail-value { 
-            font-size: 15px;
+          .inviter-chip span {
+            font-size: 13px;
             font-weight: 600;
-            color: #0f172a;
+            color: #1B2E5A;
           }
-          .role-badge { 
-            background: linear-gradient(135deg, #1a1a1a 0%, #374151 100%);
-            color: white;
+          /* ── Headline ── */
+          .card-headline {
+            font-size: 22px;
+            font-weight: 800;
+            color: #0D1B3E;
+            margin-bottom: 8px;
+            letter-spacing: -0.3px;
+          }
+          .card-subline {
+            font-size: 15px;
+            color: #64748b;
+            margin-bottom: 32px;
+            line-height: 1.6;
+          }
+          /* ── Detail grid ── */
+          .details-grid {
+            display: table;
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 12px;
+            margin: 0 -12px 24px;
+          }
+          .details-row { display: table-row; }
+          .detail-item {
+            display: table-cell;
+            width: 50%;
+            background: #F8FAFF;
+            border: 1px solid #DBEAFE;
+            border-radius: 10px;
+            padding: 16px 18px;
+            vertical-align: top;
+          }
+          .detail-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: #2563EB;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            margin-bottom: 5px;
+          }
+          .detail-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #0D1B3E;
+          }
+          .role-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #0D1B3E, #2563EB);
+            color: #ffffff;
             padding: 6px 14px;
             border-radius: 16px;
             font-size: 13px;
@@ -564,278 +587,317 @@ class EmailService {
             display: inline-block;
             letter-spacing: 0.3px;
           }
-          .organization-list { 
+          .organization-list {
             background: linear-gradient(135deg, #fafbfc 0%, #f4f6f8 100%);
             border: 2px solid #e5e7eb;
-            border-radius: 12px;
-            padding: 20px;
-            margin: 20px 0;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
-          }
-          .organization-list h3 {
-            margin: 0 0 16px 0;
-            font-size: 16px;
+            font-size: 11px;
             font-weight: 700;
-            color: #0f172a;
+            letter-spacing: 0.4px;
+            padding: 4px 12px;
+            border-radius: 20px;
           }
-          .org-item { 
-            display: flex;
-            align-items: center;
-            padding: 12px 0;
-            border-bottom: 1px solid #e5e7eb;
+          /* ── Entity list ── */
+          .entity-list {
+            background: #F8FAFF;
+            border: 1px solid #DBEAFE;
+            border-radius: 10px;
+            padding: 16px 20px;
+            margin: 0 0 20px;
           }
-          .org-item:last-child { 
-            border-bottom: none;
-            padding-bottom: 0;
+          .entity-list-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: #2563EB;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            margin-bottom: 10px;
           }
-          .org-icon { 
-            width: 10px;
-            height: 10px;
-            background: linear-gradient(135deg, #1a1a1a 0%, #374151 100%);
+          .entity-item {
+            display: table;
+            width: 100%;
+            padding: 8px 0;
+            border-bottom: 1px solid #DBEAFE;
+          }
+          .entity-item:last-child { border-bottom: none; padding-bottom: 0; }
+          .entity-dot {
+            display: table-cell;
+            vertical-align: middle;
+            width: 20px;
+          }
+          .entity-dot-inner {
+            width: 7px; height: 7px;
+            background: #2563EB;
             border-radius: 50%;
-            margin-right: 14px;
           }
-          .org-item span {
-            font-weight: 600;
-            color: #334155;
-            font-size: 15px;
-          }
-          .message-section { 
-            background: linear-gradient(135deg, #fef3c7 0%, #fef9c3 100%);
-            border: 2px solid #fde047;
-            border-left: 5px solid #eab308;
-            border-radius: 12px;
-            padding: 24px;
-            margin: 24px 0;
-            box-shadow: 0 2px 8px rgba(234, 179, 8, 0.08);
-          }
-          .message-section h3 {
-            margin: 0 0 10px 0;
-            color: #92400e;
-            font-size: 17px;
-            font-weight: 700;
-          }
-          .message-section p {
-            margin: 0;
-            font-style: italic;
-            color: #78350f;
-            font-size: 15px;
-            line-height: 1.7;
-          }
-          .expiry-notice { 
-            background: #fef2f2;
-            border: 2px solid #fecaca;
-            border-left: 5px solid #dc2626;
-            border-radius: 12px;
-            padding: 18px;
-            margin: 24px 0;
-            color: #991b1b;
+          .entity-name {
+            display: table-cell;
+            vertical-align: middle;
             font-size: 14px;
             font-weight: 600;
+            color: #1B2E5A;
           }
-          .cta-section { 
-            text-align: center;
-            margin: 36px 0;
+          /* ── Personal message ── */
+          .message-section {
+            background: #F0F7FF;
+            border-left: 4px solid #2563EB;
+            border-radius: 0 8px 8px 0;
+            padding: 16px 20px;
+            margin: 0 0 24px;
           }
-          .cta-button { 
+          .message-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: #2563EB;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            margin-bottom: 6px;
+          }
+          .message-text {
+            font-size: 14px;
+            color: #1B2E5A;
+            font-style: italic;
+            line-height: 1.6;
+          }
+          /* ── Expiry ── */
+          .expiry-notice {
+            display: table;
+            width: 100%;
+            background: #FFF7ED;
+            border: 1px solid #FED7AA;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin: 0 0 28px;
+          }
+          .expiry-icon { display: table-cell; vertical-align: middle; width: 24px; font-size: 16px; }
+          .expiry-text {
+            display: table-cell;
+            vertical-align: middle;
+            font-size: 13px;
+            color: #C2410C;
+            font-weight: 500;
+          }
+          /* ── CTA ── */
+          .cta-section { text-align: center; margin: 0 0 32px; }
+          .cta-button {
             display: inline-block;
-            padding: 16px 40px;
-            background: linear-gradient(135deg, #1a1a1a 0%, #2d3748 100%);
-            color: white;
+            padding: 16px 48px;
+            background: linear-gradient(135deg, #0D1B3E 0%, #2563EB 100%);
+            color: #ffffff !important;
             text-decoration: none;
             border-radius: 10px;
             font-weight: 700;
-            font-size: 16px;
-            letter-spacing: 0.3px;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-            transition: all 0.3s ease;
-          }
-          .cta-button:hover { 
-            transform: translateY(-2px);
-            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2);
-            background: linear-gradient(135deg, #2d3748 0%, #1a1a1a 100%);
-          }
-          .cta-section p {
-            margin: 16px 0 0 0;
-            font-size: 14px;
-            color: #64748b;
-          }
-          .features-section { 
-            background: linear-gradient(135deg, #fafbfc 0%, #f4f6f8 100%);
-            border: 2px solid #e5e7eb;
-            border-radius: 12px;
-            padding: 28px;
-            margin: 28px 0;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
-          }
-          .features-section h3 {
-            margin: 0 0 20px 0;
-            font-size: 18px;
-            font-weight: 700;
-            color: #0f172a;
-          }
-          .feature-grid { 
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-          }
-          .feature-item { 
-            display: flex;
-            align-items: center;
             font-size: 15px;
-            color: #334155;
-            font-weight: 500;
+            letter-spacing: 0.2px;
+            box-shadow: 0 8px 24px rgba(37, 99, 235, 0.35);
           }
-          .feature-icon { 
-            width: 32px;
-            height: 32px;
-            background: linear-gradient(135deg, #1a1a1a 0%, #374151 100%);
-            border-radius: 50%;
-            display: flex;
+          .cta-note {
+            margin-top: 12px;
+            font-size: 12px;
+            color: #94A3B8;
+          }
+          /* ── Feature strip ── */
+          .feature-strip {
+            display: table;
+            width: 100%;
+            border-top: 1px solid #EFF6FF;
+            padding-top: 24px;
+            margin-bottom: 0;
+          }
+          .feature-cell {
+            display: table-cell;
+            width: 25%;
+            text-align: center;
+            padding: 0 8px;
+            vertical-align: top;
+          }
+          .feature-icon-wrap {
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            margin-right: 12px;
-            color: white;
-            font-size: 16px;
-            font-weight: bold;
-            flex-shrink: 0;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            width: 40px; height: 40px;
+            background: linear-gradient(135deg, #0D1B3E, #2563EB);
+            border-radius: 10px;
+            margin-bottom: 8px;
+            font-size: 18px;
           }
-          .footer { 
+          .feature-label {
+            font-size: 12px;
+            color: #64748B;
+            font-weight: 500;
+            line-height: 1.4;
+          }
+          /* ── Footer ── */
+          .footer {
+            background: linear-gradient(135deg, #0D1B3E 0%, #1B2E5A 100%);
+            border-radius: 0 0 16px 16px;
+            padding: 28px 40px;
             text-align: center;
-            padding: 32px 40px;
-            color: #64748b;
-            font-size: 14px;
-            background: linear-gradient(135deg, #fafbfc 0%, #f4f6f8 100%);
-            border-top: 3px solid #1a1a1a;
           }
           .footer p {
-            margin: 0;
+            color: #93C5FD;
+            font-size: 13px;
             line-height: 1.8;
+            margin: 0;
           }
-          .footer strong {
-            color: #0f172a;
-            font-weight: 700;
+          .footer strong { color: #ffffff; }
+          .footer-divider {
+            width: 40px; height: 2px;
+            background: rgba(255,255,255,0.15);
+            margin: 16px auto;
+            border-radius: 2px;
           }
-          @media (max-width: 640px) { 
-            body { padding: 10px; }
-            .content { padding: 30px 24px; }
-            .header { padding: 40px 24px; }
-            .details-grid { grid-template-columns: 1fr; }
-            .feature-grid { grid-template-columns: 1fr; }
-            .header h1 { font-size: 26px; }
+          /* ── Responsive ── */
+          @media (max-width: 600px) {
+            body { padding: 16px 10px; }
+            .brand-bar { padding: 20px 24px; }
+            .hero { padding: 36px 24px 32px; }
+            .card-body { padding: 28px 24px 24px; }
+            .footer { padding: 24px; }
+            .detail-item { display: block; width: 100%; margin-bottom: 10px; }
+            .feature-cell { display: block; width: 50%; float: left; margin-bottom: 16px; }
           }
         </style>
       </head>
       <body>
         <div class="container">
-          <div class="card">
-            <div class="header">
-              <div class="logo-container">
-                <img src="https://res.cloudinary.com/dr9vzaa7u/image/upload/v1765126845/Zopkit_Full_Logo_kezq1b.jpg" alt="Zopkit Logo" class="logo">
-              </div>
-              <div class="invitation-badge">Team Invitation</div>
-              <h1>You're Invited!</h1>
-              <p>Join ${tenantName} on Zopkit</p>
-            </div>
 
-            <div class="content">
-              <div class="inviter-section">
-                <h2>Invitation from ${invitedByName}</h2>
-                <p>You've been personally invited to join our team. We're excited to have you collaborate with us!</p>
+          <!-- Brand bar -->
+          <div class="brand-bar">
+            <div class="brand-bar-inner">
+              <div class="brand-logo-cell">
+                <img src="${LOGO_URL}" alt="Zopkit" style="height:32px;width:auto;display:block;">
               </div>
-
-              <div class="details-grid">
-                <div class="detail-item">
-                  <div class="detail-label">Organization</div>
-                  <div class="detail-value">${primaryOrganizationName || (organizations && organizations.length > 0 ? organizations[0] : tenantName)}</div>
-                </div>
-                <div class="detail-item">
-                  <div class="detail-label">Your Role</div>
-                  <div class="detail-value">
-                    <span class="role-badge">${roleName}</span>
-                  </div>
-                </div>
-                <div class="detail-item">
-                  <div class="detail-label">Invited Date</div>
-                  <div class="detail-value">${invitedDateFormatted}</div>
-                </div>
-                <div class="detail-item">
-                  <div class="detail-label">Expires</div>
-                  <div class="detail-value">${expiryDateFormatted}</div>
-                </div>
+              <div class="brand-badge-cell">
+                <span class="brand-badge">Team Invitation</span>
               </div>
-
-              ${organizations && organizations.length > 0 ? `
-              <div class="organization-list">
-                <h3>Access to Organizations</h3>
-                ${organizations.map((org: string) => `
-                  <div class="org-item">
-                    <div class="org-icon"></div>
-                    <span>${org}</span>
-                  </div>
-                `).join('')}
-              </div>
-              ` : ''}
-
-              ${locations && locations.length > 0 ? `
-              <div class="organization-list">
-                <h3>Access to Locations</h3>
-                ${locations.map((loc: string) => `
-                  <div class="org-item">
-                    <div class="org-icon"></div>
-                    <span>${loc}</span>
-                  </div>
-                `).join('')}
-              </div>
-              ` : ''}
-
-              ${message ? `
-              <div class="message-section">
-                <h3>Personal Message</h3>
-                <p>"${message}"</p>
-              </div>
-              ` : ''}
-
-              <div class="expiry-notice">
-                <strong>Important:</strong> This invitation expires on ${expiryDateFormatted}. Please accept it before then.
-              </div>
-
-              <div class="cta-section">
-                <a href="${acceptUrl}" class="cta-button">Accept Invitation & Join Team</a>
-                <p>Secure sign-in • No passwords required</p>
-              </div>
-
-              <div class="features-section">
-                <h3>What You'll Get Access To</h3>
-                <div class="feature-grid">
-                  <div class="feature-item">
-                    <div class="feature-icon">1</div>
-                    <span>CRM & Business Tools</span>
-                  </div>
-                  <div class="feature-item">
-                    <div class="feature-icon">2</div>
-                    <span>Team Collaboration</span>
-                  </div>
-                  <div class="feature-item">
-                    <div class="feature-icon">3</div>
-                    <span>Analytics & Reporting</span>
-                  </div>
-                  <div class="feature-item">
-                    <div class="feature-icon">4</div>
-                    <span>Secure Workspace</span>
-                  </div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="footer">
-              <p>
-                  Questions? Contact <strong>${invitedByName}</strong> or reply to this email.<br>
-                Powered by <strong>Zopkit</strong> • Your AI-first business operating system
-                </p>
             </div>
           </div>
+
+          <!-- Hero -->
+          <div class="hero">
+            <div class="hero-circle-1"></div>
+            <div class="hero-circle-2"></div>
+            <div class="hero-icon">&#128100;</div>
+            <h1>You're Invited!</h1>
+            <p>Join <strong style="color:#ffffff;">${tenantName}</strong> on Zopkit</p>
+          </div>
+
+          <!-- Card body -->
+          <div class="card-body">
+
+            <!-- Inviter chip -->
+            <div class="inviter-chip">
+              <div class="inviter-avatar">${invitedByName.charAt(0).toUpperCase()}</div>
+              <span>${invitedByName} invited you</span>
+            </div>
+
+            <div class="card-headline">Welcome to the team</div>
+            <div class="card-subline">
+              You've been personally invited to collaborate with <strong>${tenantName}</strong>.
+              Accept below to get started immediately.
+            </div>
+
+            <!-- Details grid (table-based for email clients) -->
+            <table class="details-grid" cellpadding="0" cellspacing="0">
+              <tr class="details-row">
+                <td class="detail-item">
+                  <div class="detail-label">Organisation</div>
+                  <div class="detail-value">${primaryOrganizationName || (organizations && organizations.length > 0 ? organizations[0] : tenantName)}</div>
+                </td>
+                <td style="width:12px;"></td>
+                <td class="detail-item">
+                  <div class="detail-label">Your Role</div>
+                  <div class="detail-value"><span class="role-badge">${roleName}</span></div>
+                </td>
+              </tr>
+              <tr><td colspan="3" style="height:12px;"></td></tr>
+              <tr class="details-row">
+                <td class="detail-item">
+                  <div class="detail-label">Invited On</div>
+                  <div class="detail-value">${invitedDateFormatted}</div>
+                </td>
+                <td style="width:12px;"></td>
+                <td class="detail-item">
+                  <div class="detail-label">Expires</div>
+                  <div class="detail-value">${expiryDateFormatted}</div>
+                </td>
+              </tr>
+            </table>
+
+            ${organizations && organizations.length > 1 ? `
+            <div class="entity-list">
+              <div class="entity-list-title">Access to Organisations</div>
+              ${organizations.map((org: string) => `
+                <div class="entity-item">
+                  <div class="entity-dot"><div class="entity-dot-inner"></div></div>
+                  <div class="entity-name">${org}</div>
+                </div>
+              `).join('')}
+            </div>
+            ` : ''}
+
+            ${locations && locations.length > 0 ? `
+            <div class="entity-list">
+              <div class="entity-list-title">Access to Locations</div>
+              ${locations.map((loc: string) => `
+                <div class="entity-item">
+                  <div class="entity-dot"><div class="entity-dot-inner"></div></div>
+                  <div class="entity-name">${loc}</div>
+                </div>
+              `).join('')}
+            </div>
+            ` : ''}
+
+            ${message ? `
+            <div class="message-section">
+              <div class="message-label">Personal message</div>
+              <div class="message-text">"${message}"</div>
+            </div>
+            ` : ''}
+
+            <!-- Expiry notice -->
+            <div class="expiry-notice">
+              <div class="expiry-icon">&#9201;</div>
+              <div class="expiry-text">
+                <strong>Expires ${expiryDateFormatted}</strong> — accept before then to secure your access.
+              </div>
+            </div>
+
+            <!-- CTA -->
+            <div class="cta-section">
+              <a href="${acceptUrl}" class="cta-button">Accept Invitation &amp; Join Team</a>
+              <div class="cta-note">&#128274; Secure sign-in &bull; No password required &bull; Takes less than 60 seconds</div>
+            </div>
+
+            <!-- Feature strip -->
+            <div class="feature-strip">
+              <div class="feature-cell">
+                <div class="feature-icon-wrap">&#128202;</div>
+                <div class="feature-label">CRM &amp; Business Tools</div>
+              </div>
+              <div class="feature-cell">
+                <div class="feature-icon-wrap">&#129309;</div>
+                <div class="feature-label">Team Collaboration</div>
+              </div>
+              <div class="feature-cell">
+                <div class="feature-icon-wrap">&#128200;</div>
+                <div class="feature-label">Analytics &amp; Reporting</div>
+              </div>
+              <div class="feature-cell">
+                <div class="feature-icon-wrap">&#128274;</div>
+                <div class="feature-label">Secure Workspace</div>
+              </div>
+            </div>
+
+          </div><!-- /card-body -->
+
+          <!-- Footer -->
+          <div class="footer">
+            <p>Questions? Reach out to <strong>${invitedByName}</strong> or reply to this email.</p>
+            <div class="footer-divider"></div>
+            <p>Powered by <strong>Zopkit</strong> &bull; Your AI-first business operating system</p>
+          </div>
+
         </div>
       </body>
       </html>
@@ -852,64 +914,88 @@ class EmailService {
   // Send usage alert email
   async sendUsageAlert({ tenantId: _tenantId, adminEmail, tenantName, alertType, metricType, currentValue, limitValue, percentage }: { tenantId: string; adminEmail: string; tenantName: string; alertType: string; metricType: string; currentValue: string | number; limitValue: string | number; percentage: number }) {
     const subject = `${tenantName} - Usage Alert: ${alertType.replace('_', ' ').toUpperCase()}`;
-    
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Usage Alert</title>
-        <style>
-          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
-          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background: #f44336; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-          .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }
-          .alert-box { background: #ffebee; border-left: 4px solid #f44336; padding: 15px; margin: 20px 0; border-radius: 5px; }
-          .button { display: inline-block; padding: 15px 30px; background: #f44336; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 20px 0; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <h1>⚠️ Usage Alert</h1>
-            <p>Your organization has reached a usage threshold</p>
-          </div>
-          <div class="content">
-            <h2>Hi there!</h2>
-            
-            <p>Your organization <strong>${tenantName}</strong> has reached <strong>${percentage}%</strong> of your ${metricType} limit.</p>
-            
-            <div class="alert-box">
-              <h3>📊 Usage Details</h3>
-              <ul>
-                <li><strong>Current Usage:</strong> ${currentValue}</li>
-                <li><strong>Limit:</strong> ${limitValue}</li>
-                <li><strong>Percentage:</strong> ${percentage}%</li>
-                <li><strong>Alert Type:</strong> ${alertType.replace('_', ' ')}</li>
-              </ul>
-            </div>
-            
-            <h3>🚀 What You Can Do</h3>
-            <ul>
-              <li>Review your current usage in the dashboard</li>
-              <li>Consider upgrading your plan for higher limits</li>
-              <li>Optimize your usage patterns</li>
-              <li>Contact support if you need assistance</li>
-            </ul>
-            
-            <div style="text-align: center;">
-              <a href="${process.env.FRONTEND_URL}/dashboard/billing" class="button">Manage Your Plan</a>
-            </div>
-            
-            <p>If you have any questions, please don't hesitate to contact our support team.</p>
-            
-            <p><strong>The Wrapper Team</strong></p>
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
+
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Usage Alert</title>
+  <style>${SHARED_CSS}</style>
+</head>
+<body>
+  <div class="wrapper">
+    <!-- ① BRAND BAR -->
+    <div class="brand-bar">
+      <img src="${LOGO_URL}" alt="Zopkit" class="brand-logo" style="height:30px;width:auto;filter:brightness(0) invert(1);">
+      <span class="brand-badge">Usage Alert</span>
+    </div>
+
+    <!-- ② HERO -->
+    <div class="hero">
+      <div class="hero-circle-1"></div>
+      <div class="hero-circle-2"></div>
+      <div class="hero-icon">⚠️</div>
+      <h1>Credit Usage Warning</h1>
+      <p class="hero-sub">Your ${metricType} usage has reached ${percentage}%</p>
+    </div>
+
+    <!-- ③ BODY -->
+    <div class="body-card">
+      <div class="alert-strip alert-warning">
+        <strong>${tenantName}</strong> has used <strong>${percentage}%</strong> of its ${metricType} limit.
+      </div>
+
+      <table class="info-table">
+        <tr>
+          <td class="info-label">Metric Type</td>
+          <td class="info-value">${metricType}</td>
+        </tr>
+        <tr>
+          <td class="info-label">Current Usage</td>
+          <td class="info-value">${currentValue}</td>
+        </tr>
+        <tr>
+          <td class="info-label">Limit</td>
+          <td class="info-value">${limitValue}</td>
+        </tr>
+        <tr>
+          <td class="info-label">Usage</td>
+          <td class="info-value">${percentage}%</td>
+        </tr>
+        <tr>
+          <td class="info-label">Alert Type</td>
+          <td class="info-value">${alertType}</td>
+        </tr>
+      </table>
+
+      <div class="highlight-box">
+        <div class="hl-label">Usage Percentage</div>
+        <div class="hl-value">${percentage}%</div>
+      </div>
+
+      <div class="cta">
+        <a href="${process.env.FRONTEND_URL}/dashboard/billing">Manage Plan &amp; Credits</a>
+      </div>
+
+      <ul class="checklist">
+        <li>Review your current usage on the dashboard</li>
+        <li>Consider upgrading for higher limits</li>
+        <li>Purchase additional credits if needed</li>
+        <li>Optimise usage patterns to reduce consumption</li>
+      </ul>
+    </div>
+
+    <!-- ④ FOOTER -->
+    <div class="footer">
+      <img src="${LOGO_URL}" alt="Zopkit" class="footer-logo">
+      <div class="footer-divider"></div>
+      <p>This alert was sent because usage exceeded a configured threshold.</p>
+      <p class="footer-copy">Powered by <strong>Zopkit</strong> — Your AI-first business operating system</p>
+    </div>
+  </div>
+</body>
+</html>`;
 
     return await this.sendEmail({
       to: [{ email: adminEmail }],
@@ -922,64 +1008,78 @@ class EmailService {
   // Send downgrade confirmation email
   async sendDowngradeConfirmation({ tenantId: _tenantId, fromPlan, toPlan, refundAmount, effectiveDate }: { tenantId: string; fromPlan: string; toPlan: string; refundAmount: number; effectiveDate: Date | string }) {
     const subject = `Subscription Downgrade Confirmation`;
-    
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Downgrade Confirmation</title>
-        <style>
-          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
-          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-          .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }
-          .info-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 5px; }
-          .amount-box { background: #d4edda; border-left: 4px solid #28a745; padding: 15px; margin: 20px 0; border-radius: 5px; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <h1>📉 Subscription Downgrade Confirmed</h1>
-            <p>Your plan change has been processed</p>
-          </div>
-          <div class="content">
-            <h2>Downgrade Successful</h2>
-            
-            <p>Your subscription has been successfully changed:</p>
-            
-            <div class="info-box">
-              <h3>Plan Change Details</h3>
-              <ul>
-                <li><strong>From:</strong> ${fromPlan.charAt(0).toUpperCase() + fromPlan.slice(1)} Plan</li>
-                <li><strong>To:</strong> ${toPlan.charAt(0).toUpperCase() + toPlan.slice(1)} Plan</li>
-                <li><strong>Effective Date:</strong> ${new Date(effectiveDate).toLocaleDateString()}</li>
-              </ul>
-            </div>
-            
-            ${refundAmount > 0 ? `
-            <div class="amount-box">
-              <h3>💰 Refund Processing</h3>
-              <p>A prorated refund of <strong>$${refundAmount.toFixed(2)}</strong> is being processed and will appear in your account within 5-10 business days.</p>
-            </div>
-            ` : ''}
-            
-            <h3>What's Next?</h3>
-            <ul>
-              <li>Your new plan features are now active</li>
-              <li>You can upgrade again anytime from your billing page</li>
-              <li>Contact support if you have any questions</li>
-            </ul>
-            
-            <p>Thank you for using Wrapper!</p>
-            <p><strong>The Wrapper Team</strong></p>
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
+
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Subscription Updated</title>
+  <style>${SHARED_CSS}</style>
+</head>
+<body>
+  <div class="wrapper">
+    <!-- ① BRAND BAR -->
+    <div class="brand-bar">
+      <img src="${LOGO_URL}" alt="Zopkit" class="brand-logo" style="height:30px;width:auto;filter:brightness(0) invert(1);">
+      <span class="brand-badge">Plan Change</span>
+    </div>
+
+    <!-- ② HERO -->
+    <div class="hero">
+      <div class="hero-circle-1"></div>
+      <div class="hero-circle-2"></div>
+      <div class="hero-icon">📋</div>
+      <h1>Subscription Updated</h1>
+      <p class="hero-sub">Your plan change has been confirmed</p>
+    </div>
+
+    <!-- ③ BODY -->
+    <div class="body-card">
+      <p>Your Zopkit subscription has been successfully changed.</p>
+
+      <table class="info-table">
+        <tr>
+          <td class="info-label">Previous Plan</td>
+          <td class="info-value">${fromPlan} Plan</td>
+        </tr>
+        <tr>
+          <td class="info-label">New Plan</td>
+          <td class="info-value">${toPlan} Plan</td>
+        </tr>
+        <tr>
+          <td class="info-label">Effective Date</td>
+          <td class="info-value">${new Date(effectiveDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</td>
+        </tr>
+      </table>
+
+      ${refundAmount > 0 ? `
+      <div class="alert-strip alert-success">
+        A prorated refund of <strong>$${refundAmount.toFixed(2)} USD</strong> will appear in your account within 5–10 business days.
+      </div>
+      ` : ''}
+
+      <div class="cta">
+        <a href="${process.env.FRONTEND_URL}/dashboard/billing">View Billing Details</a>
+      </div>
+
+      <ul class="checklist">
+        <li>Your new plan features are now active</li>
+        <li>Previous plan features remain until the effective date</li>
+        <li>You can upgrade again at any time</li>
+      </ul>
+    </div>
+
+    <!-- ④ FOOTER -->
+    <div class="footer">
+      <img src="${LOGO_URL}" alt="Zopkit" class="footer-logo">
+      <div class="footer-divider"></div>
+      <p>Need help choosing the right plan? Contact our team.</p>
+      <p class="footer-copy">Powered by <strong>Zopkit</strong> — Your AI-first business operating system</p>
+    </div>
+  </div>
+</body>
+</html>`;
 
     return await this.sendEmail({
       to: [{ email: 'admin@example.com' }], // Would get tenant admin email in production
@@ -1001,43 +1101,81 @@ class EmailService {
 
     const subject = `Payment Failed - Action Required`;
 
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <title>Payment Failed</title>
-        <style>
-          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; }
-          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background: #dc3545; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-          .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }
-          .alert-box { background: #f8d7da; border-left: 4px solid #dc3545; padding: 15px; margin: 20px 0; border-radius: 5px; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <h1>⚠️ Payment Failed</h1>
-            <p>We couldn't process your payment</p>
-          </div>
-          <div class="content">
-            <div class="alert-box">
-              <h3>Payment Details</h3>
-              <p><strong>Amount:</strong> ${amount} ${currency}</p>
-              <p><strong>Reason:</strong> ${failureReason}</p>
-              ${nextAttempt ? `<p><strong>Next Attempt:</strong> ${new Date(nextAttempt).toLocaleDateString()}</p>` : ''}
-            </div>
-            
-            <p>Please update your payment method to avoid service interruption.</p>
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment Failed</title>
+  <style>${SHARED_CSS}</style>
+</head>
+<body>
+  <div class="wrapper">
+    <!-- ① BRAND BAR -->
+    <div class="brand-bar">
+      <img src="${LOGO_URL}" alt="Zopkit" class="brand-logo" style="height:30px;width:auto;filter:brightness(0) invert(1);">
+      <span class="brand-badge">Payment Alert</span>
+    </div>
 
-    // In production, you would get the tenant admin email and send the actual email
-    console.log('✅ Payment failure notification sent successfully');
+    <!-- ② HERO -->
+    <div class="hero">
+      <div class="hero-circle-1"></div>
+      <div class="hero-circle-2"></div>
+      <div class="hero-icon">❌</div>
+      <h1>Payment Failed</h1>
+      <p class="hero-sub">Action required to maintain your subscription</p>
+    </div>
+
+    <!-- ③ BODY -->
+    <div class="body-card">
+      <div class="alert-strip alert-danger">
+        We were unable to process your payment. Please update your payment method to avoid service interruption.
+      </div>
+
+      <table class="info-table">
+        <tr>
+          <td class="info-label">Amount</td>
+          <td class="info-value">${amount} ${currency}</td>
+        </tr>
+        <tr>
+          <td class="info-label">Failure Reason</td>
+          <td class="info-value">${failureReason}</td>
+        </tr>
+        <tr>
+          <td class="info-label">Next Attempt</td>
+          <td class="info-value">${nextAttempt ? new Date(nextAttempt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A'}</td>
+        </tr>
+      </table>
+
+      <div class="cta">
+        <a href="${process.env.FRONTEND_URL}/dashboard/billing">Update Payment Method</a>
+      </div>
+
+      <ul class="checklist">
+        <li>Update your card details in the billing settings</li>
+        <li>Ensure sufficient funds are available</li>
+        <li>Contact your bank if the issue persists</li>
+        <li>Reach out to Zopkit support for help</li>
+      </ul>
+    </div>
+
+    <!-- ④ FOOTER -->
+    <div class="footer">
+      <img src="${LOGO_URL}" alt="Zopkit" class="footer-logo">
+      <div class="footer-divider"></div>
+      <p>Your service will be paused if payment is not resolved within 7 days.</p>
+      <p class="footer-copy">Powered by <strong>Zopkit</strong> — Your AI-first business operating system</p>
+    </div>
+  </div>
+</body>
+</html>`;
+
+    return await this.sendEmail({
+      to: [{ email: 'admin@example.com' }],
+      subject,
+      htmlContent: html,
+      textContent: undefined
+    });
   }
 
   // Send dispute notification
@@ -1053,37 +1191,85 @@ class EmailService {
 
     const subject = `Payment Dispute - ${disputeId}`;
 
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <title>Payment Dispute</title>
-        <style>
-          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; }
-          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background: #6f42c1; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-          .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <h1>⚖️ Payment Dispute</h1>
-            <p>A dispute has been filed for your payment</p>
-          </div>
-          <div class="content">
-            <p><strong>Dispute ID:</strong> ${disputeId}</p>
-            <p><strong>Amount:</strong> ${amount} ${currency}</p>
-            <p><strong>Reason:</strong> ${reason}</p>
-            ${evidenceDueBy ? `<p><strong>Evidence Due:</strong> ${new Date(evidenceDueBy).toLocaleDateString()}</p>` : ''}
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment Dispute Filed</title>
+  <style>${SHARED_CSS}</style>
+</head>
+<body>
+  <div class="wrapper">
+    <!-- ① BRAND BAR -->
+    <div class="brand-bar">
+      <img src="${LOGO_URL}" alt="Zopkit" class="brand-logo" style="height:30px;width:auto;filter:brightness(0) invert(1);">
+      <span class="brand-badge">Dispute Notice</span>
+    </div>
 
-    console.log('✅ Dispute notification sent successfully');
+    <!-- ② HERO -->
+    <div class="hero">
+      <div class="hero-circle-1"></div>
+      <div class="hero-circle-2"></div>
+      <div class="hero-icon">⚖️</div>
+      <h1>Payment Dispute Filed</h1>
+      <p class="hero-sub">A dispute has been raised on your account</p>
+    </div>
+
+    <!-- ③ BODY -->
+    <div class="body-card">
+      <div class="alert-strip alert-warning">
+        A payment dispute has been filed. Please review the details and provide evidence promptly.
+      </div>
+
+      <table class="info-table">
+        <tr>
+          <td class="info-label">Dispute ID</td>
+          <td class="info-value">${disputeId}</td>
+        </tr>
+        <tr>
+          <td class="info-label">Amount</td>
+          <td class="info-value">${amount} ${currency}</td>
+        </tr>
+        <tr>
+          <td class="info-label">Reason</td>
+          <td class="info-value">${reason}</td>
+        </tr>
+        <tr>
+          <td class="info-label">Evidence Due</td>
+          <td class="info-value">${evidenceDueBy ? new Date(evidenceDueBy).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'Contact support'}</td>
+        </tr>
+      </table>
+
+      <div class="cta">
+        <a href="${process.env.FRONTEND_URL}/dashboard/billing">Respond to Dispute</a>
+      </div>
+
+      <ul class="checklist">
+        <li>Gather transaction evidence and receipts</li>
+        <li>Submit documentation before the deadline</li>
+        <li>Contact Zopkit support for guidance</li>
+        <li>Review your Stripe dashboard for details</li>
+      </ul>
+    </div>
+
+    <!-- ④ FOOTER -->
+    <div class="footer">
+      <img src="${LOGO_URL}" alt="Zopkit" class="footer-logo">
+      <div class="footer-divider"></div>
+      <p>Disputes must be responded to within the deadline to avoid automatic charge reversal.</p>
+      <p class="footer-copy">Powered by <strong>Zopkit</strong> — Your AI-first business operating system</p>
+    </div>
+  </div>
+</body>
+</html>`;
+
+    return await this.sendEmail({
+      to: [{ email: 'admin@example.com' }],
+      subject,
+      htmlContent: html,
+      textContent: undefined
+    });
   }
 
   // Send payment confirmation email
@@ -1099,8 +1285,8 @@ class EmailService {
 
     const isSubscription = paymentType === 'subscription';
     const isCreditPurchase = paymentType === 'credit_purchase' || paymentType === 'topup';
-    
-    const subject = isSubscription 
+
+    const subject = isSubscription
       ? `Payment Confirmation - ${planName} Plan`
       : `Payment Confirmation - Credit Purchase`;
 
@@ -1109,109 +1295,102 @@ class EmailService {
       currency: currency || 'USD'
     }).format(amount);
 
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Payment Confirmation</title>
-        <style>
-          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f5f5f5; }
-          .container { max-width: 600px; margin: 20px auto; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-          .header { background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; padding: 40px 30px; text-align: center; }
-          .header h1 { margin: 0; font-size: 28px; }
-          .header p { margin: 10px 0 0 0; opacity: 0.9; }
-          .content { padding: 30px; }
-          .success-icon { font-size: 48px; margin-bottom: 20px; }
-          .amount-box { background: #f0fdf4; border: 2px solid #22c55e; border-radius: 8px; padding: 20px; text-align: center; margin: 20px 0; }
-          .amount-box .amount { font-size: 32px; font-weight: bold; color: #16a34a; margin: 10px 0; }
-          .details { background: #f9fafb; border-radius: 8px; padding: 20px; margin: 20px 0; }
-          .detail-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e5e7eb; }
-          .detail-row:last-child { border-bottom: none; }
-          .detail-label { color: #6b7280; font-weight: 500; }
-          .detail-value { color: #111827; font-weight: 600; }
-          .features { margin: 20px 0; }
-          .features h3 { color: #111827; margin-bottom: 15px; }
-          .feature-item { display: flex; align-items: center; padding: 10px 0; }
-          .feature-item::before { content: "✓"; color: #22c55e; font-weight: bold; margin-right: 10px; font-size: 18px; }
-          .footer { background: #f9fafb; padding: 20px 30px; text-align: center; color: #6b7280; font-size: 14px; border-top: 1px solid #e5e7eb; }
-          .button { display: inline-block; background: #22c55e; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 10px 5px; font-weight: 600; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <div class="success-icon">✅</div>
-            <h1>Payment Confirmed</h1>
-            <p>Thank you for your payment!</p>
-          </div>
-          <div class="content">
-            <div class="amount-box">
-              <div style="color: #6b7280; font-size: 14px;">Amount Paid</div>
-              <div class="amount">${formattedAmount}</div>
-            </div>
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment Successful</title>
+  <style>${SHARED_CSS}</style>
+</head>
+<body>
+  <div class="wrapper">
+    <!-- ① BRAND BAR -->
+    <div class="brand-bar">
+      <img src="${LOGO_URL}" alt="Zopkit" class="brand-logo" style="height:30px;width:auto;filter:brightness(0) invert(1);">
+      <span class="brand-badge">Payment Confirmed</span>
+    </div>
 
-            <div class="details">
-              <div class="detail-row">
-                <span class="detail-label">Transaction ID:</span>
-                <span class="detail-value">${transactionId || sessionId || 'N/A'}</span>
-              </div>
-              ${isSubscription ? `
-              <div class="detail-row">
-                <span class="detail-label">Plan:</span>
-                <span class="detail-value">${planName || 'Premium Plan'}</span>
-              </div>
-              <div class="detail-row">
-                <span class="detail-label">Billing Cycle:</span>
-                <span class="detail-value">${billingCycle === 'yearly' ? 'Annual' : 'Monthly'}</span>
-              </div>
-              ` : ''}
-              ${isCreditPurchase && creditsAdded ? `
-              <div class="detail-row">
-                <span class="detail-label">Credits Added:</span>
-                <span class="detail-value">${creditsAdded.toLocaleString()} credits</span>
-              </div>
-              ` : ''}
-              <div class="detail-row">
-                <span class="detail-label">Payment Method:</span>
-                <span class="detail-value">Card</span>
-              </div>
-              <div class="detail-row">
-                <span class="detail-label">Date:</span>
-                <span class="detail-value">${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
-              </div>
-            </div>
+    <!-- ② HERO -->
+    <div class="hero">
+      <div class="hero-circle-1"></div>
+      <div class="hero-circle-2"></div>
+      <div class="hero-icon">✅</div>
+      <h1>Payment Successful</h1>
+      <p class="hero-sub">Thank you for your payment</p>
+    </div>
 
-            ${isSubscription ? `
-            <div class="features">
-              <h3>Your Plan Benefits:</h3>
-              <div class="feature-item">Access to all premium features</div>
-              <div class="feature-item">Priority customer support</div>
-              <div class="feature-item">Advanced analytics and reporting</div>
-              <div class="feature-item">${billingCycle === 'yearly' ? 'Annual billing with savings' : 'Monthly billing flexibility'}</div>
-            </div>
-            ` : isCreditPurchase ? `
-            <div class="features">
-              <h3>Your Credits:</h3>
-              <div class="feature-item">${creditsAdded ? creditsAdded.toLocaleString() + ' credits' : 'Credits'} added to your account</div>
-              <div class="feature-item">Credits never expire</div>
-              <div class="feature-item">Use across all applications</div>
-            </div>
-            ` : ''}
+    <!-- ③ BODY -->
+    <div class="body-card">
+      <div class="alert-strip alert-success">
+        Your payment has been processed successfully. A receipt has been sent to your email.
+      </div>
 
-            <p style="text-align: center; margin-top: 30px;">
-              <a href="${process.env.FRONTEND_URL || 'https://app.wrapper.app'}/billing" class="button">View Billing Details</a>
-            </p>
-          </div>
-          <div class="footer">
-            <p>This is an automated confirmation email. Please keep this for your records.</p>
-            <p>If you have any questions, please contact our support team.</p>
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
+      <div class="highlight-box">
+        <div class="hl-label">Amount Paid</div>
+        <div class="hl-value">${formattedAmount}</div>
+      </div>
+
+      <table class="info-table">
+        <tr>
+          <td class="info-label">Transaction ID</td>
+          <td class="info-value">${transactionId || sessionId || 'N/A'}</td>
+        </tr>
+        <tr>
+          <td class="info-label">Payment Type</td>
+          <td class="info-value">${isSubscription ? `${planName} Subscription` : isCreditPurchase ? 'Credit Purchase' : paymentType}</td>
+        </tr>
+        ${isSubscription ? `
+        <tr>
+          <td class="info-label">Billing Cycle</td>
+          <td class="info-value">${billingCycle === 'yearly' ? 'Annual' : 'Monthly'}</td>
+        </tr>
+        ` : ''}
+        ${isCreditPurchase && creditsAdded ? `
+        <tr>
+          <td class="info-label">Credits Added</td>
+          <td class="info-value">${creditsAdded.toLocaleString()} credits</td>
+        </tr>
+        ` : ''}
+        <tr>
+          <td class="info-label">Payment Method</td>
+          <td class="info-value">Card</td>
+        </tr>
+        <tr>
+          <td class="info-label">Date</td>
+          <td class="info-value">${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</td>
+        </tr>
+      </table>
+
+      <div class="cta">
+        <a href="${process.env.FRONTEND_URL}/dashboard">View Dashboard</a>
+      </div>
+
+      ${isSubscription ? `
+      <ul class="checklist">
+        <li>All premium features are now active</li>
+        <li>Access your upgraded workspace immediately</li>
+        <li>Priority support is enabled for your plan</li>
+      </ul>
+      ` : isCreditPurchase && creditsAdded ? `
+      <ul class="checklist">
+        <li>${creditsAdded.toLocaleString()} credits added to your account</li>
+        <li>Credits are available immediately</li>
+        <li>Use across all Zopkit applications</li>
+      </ul>
+      ` : ''}
+    </div>
+
+    <!-- ④ FOOTER -->
+    <div class="footer">
+      <img src="${LOGO_URL}" alt="Zopkit" class="footer-logo">
+      <div class="footer-divider"></div>
+      <p>Keep this email as your receipt. VAT/GST receipts available in billing settings.</p>
+      <p class="footer-copy">Powered by <strong>Zopkit</strong> — Your AI-first business operating system</p>
+    </div>
+  </div>
+</body>
+</html>`;
 
     const textContent = `
 Payment Confirmation
@@ -1262,37 +1441,85 @@ This is an automated confirmation email. Please keep this for your records.
 
     const subject = `Refund Confirmation - $${amount}`;
 
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <title>Refund Confirmation</title>
-        <style>
-          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; }
-          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background: #28a745; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-          .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <h1>💸 Refund Processed</h1>
-            <p>Your refund has been processed successfully</p>
-          </div>
-          <div class="content">
-            <p><strong>Refund Amount:</strong> ${amount} ${currency}</p>
-            <p><strong>Reason:</strong> ${reason}</p>
-            <p><strong>Processed:</strong> ${new Date(processedAt).toLocaleDateString()}</p>
-            <p>The refund will appear in your account within 5-10 business days.</p>
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Refund Confirmed</title>
+  <style>${SHARED_CSS}</style>
+</head>
+<body>
+  <div class="wrapper">
+    <!-- ① BRAND BAR -->
+    <div class="brand-bar">
+      <img src="${LOGO_URL}" alt="Zopkit" class="brand-logo" style="height:30px;width:auto;filter:brightness(0) invert(1);">
+      <span class="brand-badge">Refund Processed</span>
+    </div>
 
-    console.log('✅ Refund confirmation sent successfully');
+    <!-- ② HERO -->
+    <div class="hero">
+      <div class="hero-circle-1"></div>
+      <div class="hero-circle-2"></div>
+      <div class="hero-icon">💸</div>
+      <h1>Refund Confirmed</h1>
+      <p class="hero-sub">Your refund has been processed</p>
+    </div>
+
+    <!-- ③ BODY -->
+    <div class="body-card">
+      <div class="alert-strip alert-success">
+        Your refund has been successfully processed and is on its way.
+      </div>
+
+      <table class="info-table">
+        <tr>
+          <td class="info-label">Refund ID</td>
+          <td class="info-value">${refundId}</td>
+        </tr>
+        <tr>
+          <td class="info-label">Amount</td>
+          <td class="info-value">${amount} ${currency}</td>
+        </tr>
+        <tr>
+          <td class="info-label">Reason</td>
+          <td class="info-value">${reason}</td>
+        </tr>
+        <tr>
+          <td class="info-label">Processed On</td>
+          <td class="info-value">${new Date(processedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</td>
+        </tr>
+      </table>
+
+      <div class="highlight-box">
+        <div class="hl-label">Refund Amount</div>
+        <div class="hl-value">${amount} ${currency}</div>
+      </div>
+
+      <p>Refunds typically take <strong>5–10 business days</strong> to appear in your account, depending on your bank.</p>
+
+      <div class="cta">
+        <a href="${process.env.FRONTEND_URL}/dashboard/billing">View Billing History</a>
+      </div>
+    </div>
+
+    <!-- ④ FOOTER -->
+    <div class="footer">
+      <img src="${LOGO_URL}" alt="Zopkit" class="footer-logo">
+      <div class="footer-divider"></div>
+      <p>If you don't see the refund within 10 business days, contact your bank or reach out to us.</p>
+      <p class="footer-copy">Powered by <strong>Zopkit</strong> — Your AI-first business operating system</p>
+    </div>
+  </div>
+</body>
+</html>`;
+
+    return await this.sendEmail({
+      to: [{ email: 'admin@example.com' }],
+      subject,
+      htmlContent: html,
+      textContent: undefined
+    });
   }
 
   // Generic email sending method with multi-provider support
@@ -1315,17 +1542,17 @@ This is an automated confirmation email. Please keep this for your records.
           case 'brevo':
             result = await this.sendViaBrevo({ recipients, subject, htmlContent, textContent, attachments });
             break;
-            
+
           case 'smtp':
             result = await this.sendViaSMTP({ recipients, subject, htmlContent, textContent, attachments });
             break;
-            
+
           case 'demo':
           default:
             result = this.sendDemo({ recipients, subject, htmlContent, textContent });
             break;
         }
-        
+
         if (result) {
           console.log('✅ Email sent successfully via primary provider');
           return result;
@@ -1351,16 +1578,16 @@ This is an automated confirmation email. Please keep this for your records.
       // If all providers failed, fall back to demo mode
       console.log('🔄 All email providers failed, falling back to demo mode...');
       result = this.sendDemo({ recipients, subject, htmlContent, textContent });
-      
+
       // Log the failure for debugging
       console.warn('⚠️ Email sent in demo mode due to provider failures:', {
         primaryProvider: this.emailProvider,
         primaryError: (lastError as Error | undefined)?.message,
         fallbackUsed: 'demo'
       });
-      
+
       return result;
-      
+
     } catch (err: unknown) {
       const error = err as Error;
       console.error('❌ Critical error in email service:', error);
@@ -1446,13 +1673,13 @@ This is an automated confirmation email. Please keep this for your records.
     };
 
     const result = await this.smtpTransporter.sendMail(mailOptions);
-    
+
     console.log('✅ Email sent via SMTP:', {
       messageId: result.messageId,
       to: recipients.map((r: { email?: string }) => r.email || r),
       subject
     });
-    
+
     return {
       messageId: result.messageId,
       provider: 'smtp'
@@ -1468,7 +1695,7 @@ This is an automated confirmation email. Please keep this for your records.
       hasText: !!textContent,
       timestamp: new Date().toISOString()
     });
-    
+
     // In demo mode, also log a sample of the content for debugging
     if (htmlContent) {
       const preview = htmlContent.substring(0, 200).replace(/<[^>]*>/g, '');
@@ -1491,9 +1718,9 @@ This is an automated confirmation email. Please keep this for your records.
       }
 
       const emailData = {
-        sender: { 
-          name: senderName, 
-          email: senderEmail 
+        sender: {
+          name: senderName,
+          email: senderEmail
         },
         to,
         subject,
@@ -1506,13 +1733,13 @@ This is an automated confirmation email. Please keep this for your records.
       }
 
       const response = await brevoClient.post('/smtp/email', emailData);
-      
+
       console.log('Bulk email sent successfully via Brevo:', {
         messageId: response.data.messageId,
         recipients: to.length,
         subject
       });
-      
+
       return response.data;
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } }; message?: string };
@@ -1525,18 +1752,18 @@ This is an automated confirmation email. Please keep this for your records.
   async testConnection() {
     try {
       console.log(`🧪 Testing email connection for provider: ${this.emailProvider}`);
-      
+
       switch (this.emailProvider) {
         case 'brevo':
           return await this.testBrevoConnection();
-          
+
         case 'smtp':
           return await this.testSMTPConnection();
-          
+
         case 'demo':
           console.log('📧 Demo mode - no real connection to test');
           return { success: true, provider: 'demo', message: 'Demo mode active' };
-          
+
         default:
           return { success: false, provider: 'none', message: 'No email provider configured' };
       }
@@ -1601,11 +1828,11 @@ This is an automated confirmation email. Please keep this for your records.
       if (!this.smtpTransporter) {
         throw new Error('SMTP transporter not initialized');
       }
-      
+
       await this.smtpTransporter.verify();
       console.log('✅ SMTP connection test successful');
-      return { 
-        success: true, 
+      return {
+        success: true,
         provider: 'smtp',
         config: {
           host: process.env.SMTP_HOST,
@@ -1644,12 +1871,12 @@ This is an automated confirmation email. Please keep this for your records.
   // Send urgent trial reminder (1 day before expiry)
   static async sendUrgentTrialReminder({ tenantId, hoursRemaining, trialEnd, currentPlan }: { tenantId: string; hoursRemaining: number; trialEnd: Date | string; currentPlan: string }) {
     console.log(`📧 Sending urgent trial reminder to tenant: ${tenantId}`);
-    
+
     // In production, get tenant admin email from database
     const adminEmail = 'admin@example.com'; // Replace with actual tenant admin email
-    
+
     const subject = `🚨 URGENT: Your trial expires in ${hoursRemaining} hours!`;
-    
+
     const htmlContent = `
       <!DOCTYPE html>
       <html>
@@ -1684,22 +1911,22 @@ This is an automated confirmation email. Please keep this for your records.
             <h1>🚨 Trial Expiring Soon!</h1>
             <p>Don't lose access to your ${currentPlan} features</p>
           </div>
-          
+
           <div class="content">
             <div class="urgency-banner">
               <h2>⏰ Action Required</h2>
               <p>Your trial period is ending very soon. Upgrade now to maintain uninterrupted access to all features.</p>
             </div>
-            
+
             <div class="countdown">
               <div class="time">${hoursRemaining}</div>
               <div class="label">HOURS REMAINING</div>
             </div>
-            
+
             <p>Hello,</p>
-            
+
             <p>This is an <strong>urgent reminder</strong> that your ${currentPlan} trial will expire in just <strong>${hoursRemaining} hours</strong> on ${new Date(trialEnd).toLocaleDateString()}.</p>
-            
+
             <div class="features">
               <h3>Don't lose access to:</h3>
               <ul>
@@ -1710,13 +1937,13 @@ This is an automated confirmation email. Please keep this for your records.
                 <li>✅ Advanced analytics</li>
               </ul>
             </div>
-            
+
             <div class="cta">
               <a href="${process.env.FRONTEND_URL}/billing" class="cta-button">
                 🚀 Upgrade Now - Save Your Data
               </a>
             </div>
-            
+
             <p><strong>What happens if you don't upgrade?</strong></p>
             <ul>
               <li>❌ Your account will be suspended</li>
@@ -1724,10 +1951,10 @@ This is an automated confirmation email. Please keep this for your records.
               <li>❌ Your data will be at risk</li>
               <li>❌ You'll need to start over with a new trial</li>
             </ul>
-            
+
             <p>Upgrade takes less than 2 minutes. Secure your account now!</p>
           </div>
-          
+
           <div class="footer">
             <p>This is an automated reminder. If you have questions, contact our support team.</p>
             <p>© 2024 Your Company. All rights reserved.</p>
@@ -1736,18 +1963,18 @@ This is an automated confirmation email. Please keep this for your records.
       </body>
       </html>
     `;
-    
+
     const textContent = `
       🚨 URGENT: Your trial expires in ${hoursRemaining} hours!
-      
+
       Your ${currentPlan} trial will expire on ${new Date(trialEnd).toLocaleDateString()}.
-      
+
       Upgrade now to maintain access to all features:
       ${process.env.FRONTEND_URL}/billing
-      
+
       Don't lose your data and progress!
     `;
-    
+
     return (new EmailService()).sendEmail({
       to: [{ email: adminEmail }],
       subject,
@@ -1759,10 +1986,10 @@ This is an automated confirmation email. Please keep this for your records.
   // Send trial expiration notice
   static async sendTrialExpirationNotice({ tenantId, plan }: { tenantId: string; plan: string }) {
     console.log(`📧 Sending trial expiration notice to tenant: ${tenantId}`);
-    
+
     const adminEmail = 'admin@example.com';
     const subject = `❌ Your trial has expired - Account suspended`;
-    
+
     const htmlContent = `
       <!DOCTYPE html>
       <html>
@@ -1789,33 +2016,33 @@ This is an automated confirmation email. Please keep this for your records.
             <h1>Trial Period Ended</h1>
             <p>Your account has been suspended</p>
           </div>
-          
+
           <div class="content">
             <div class="status-banner">
               <h2>⚠️ Account Suspended</h2>
               <p>Your ${plan} trial has ended and your account has been temporarily suspended.</p>
             </div>
-            
+
             <p>Hello,</p>
-            
+
             <p>Your trial period has expired and your account is now suspended. To regain access to your data and features, please upgrade to a paid plan.</p>
-            
+
             <p><strong>Current status:</strong></p>
             <ul>
               <li>❌ Account suspended</li>
               <li>❌ No access to premium features</li>
               <li>⚠️ Data preserved for 30 days</li>
             </ul>
-            
+
             <div class="cta">
               <a href="${process.env.FRONTEND_URL}/billing" class="cta-button">
                 🔓 Upgrade to Restore Access
               </a>
             </div>
-            
+
             <p>Your data is safe for 30 days. After that, it may be permanently deleted.</p>
           </div>
-          
+
           <div class="footer">
             <p>Questions? Contact our support team for assistance.</p>
             <p>© 2024 Your Company. All rights reserved.</p>
@@ -1824,7 +2051,7 @@ This is an automated confirmation email. Please keep this for your records.
       </body>
       </html>
     `;
-    
+
     return (new EmailService()).sendEmail({
       to: [{ email: adminEmail }],
       subject,
@@ -1836,11 +2063,11 @@ This is an automated confirmation email. Please keep this for your records.
   // Send admin notification
   static async sendAdminNotification(data: { type: string; count?: number; breakdown?: { threeDay?: number; oneDay?: number }; deletedRecords?: number; updatedSubscriptions?: number; job?: string; error?: string }) {
     console.log(`📧 Sending admin notification: ${data.type}`);
-    
+
     const adminEmail = process.env.ADMIN_EMAIL || 'admin@company.com';
-    
+
     let subject, content;
-    
+
     switch (data.type) {
       case 'trial_expiration':
         subject = `🚨 ${data.count} trials expired today`;
@@ -1850,7 +2077,7 @@ This is an automated confirmation email. Please keep this for your records.
           <p>These accounts will need to upgrade to regain access.</p>
         `;
         break;
-        
+
       case 'trial_reminders':
         subject = `📧 ${data.count} trial reminders sent`;
         content = `
@@ -1862,7 +2089,7 @@ This is an automated confirmation email. Please keep this for your records.
           </ul>
         `;
         break;
-        
+
       case 'daily_cleanup':
         subject = `🧹 Daily cleanup completed`;
         content = `
@@ -1874,7 +2101,7 @@ This is an automated confirmation email. Please keep this for your records.
           </ul>
         `;
         break;
-        
+
       case 'cron_error':
         subject = `❌ Cron job error: ${data.job}`;
         content = `
@@ -1884,12 +2111,12 @@ This is an automated confirmation email. Please keep this for your records.
           <p>Please investigate and resolve this issue.</p>
         `;
         break;
-        
+
       default:
         subject = `📊 System notification`;
         content = `<p>${JSON.stringify(data)}</p>`;
     }
-    
+
     const htmlContent = `
       <!DOCTYPE html>
       <html>
@@ -1921,7 +2148,7 @@ This is an automated confirmation email. Please keep this for your records.
       </body>
       </html>
     `;
-    
+
     return (new EmailService()).sendEmail({
       to: [{ email: adminEmail }],
       subject,
@@ -1933,10 +2160,10 @@ This is an automated confirmation email. Please keep this for your records.
   // Send weekly analytics report
   static async sendWeeklyAnalyticsReport(analyticsData: { week: { start: Date; end: Date }; subscriptions: { newTrials: number; newPaid: number; expiredTrials: number; conversionRate: number }; revenue: { total: number; paymentCount: number; averagePayment: number } }) {
     console.log(`📊 Sending weekly analytics report`);
-    
+
     const adminEmail = process.env.ADMIN_EMAIL || 'admin@company.com';
     const subject = `📊 Weekly Analytics Report - ${analyticsData.week.start.toDateString()} to ${analyticsData.week.end.toDateString()}`;
-    
+
     const htmlContent = `
       <!DOCTYPE html>
       <html>
@@ -1966,7 +2193,7 @@ This is an automated confirmation email. Please keep this for your records.
             <h1>📊 Weekly Analytics Report</h1>
             <p>${analyticsData.week.start.toDateString()} - ${analyticsData.week.end.toDateString()}</p>
           </div>
-          
+
           <div class="content">
             <div class="section">
               <h3>🚀 Subscription Metrics</h3>
@@ -1986,7 +2213,7 @@ This is an automated confirmation email. Please keep this for your records.
               </div>
               <p><strong>Conversion Rate:</strong> <span class="conversion-rate">${analyticsData.subscriptions.conversionRate}%</span></p>
             </div>
-            
+
             <div class="section">
               <h3>💰 Revenue Metrics</h3>
               <div class="metrics">
@@ -2004,7 +2231,7 @@ This is an automated confirmation email. Please keep this for your records.
                 </div>
               </div>
             </div>
-            
+
             <div class="section">
               <h3>📈 Key Insights</h3>
               <ul>
@@ -2015,7 +2242,7 @@ This is an automated confirmation email. Please keep this for your records.
               </ul>
             </div>
           </div>
-          
+
           <div class="footer">
             <p>This report is generated automatically every Monday.</p>
             <p>© 2024 Your Company. All rights reserved.</p>
@@ -2024,7 +2251,7 @@ This is an automated confirmation email. Please keep this for your records.
       </body>
       </html>
     `;
-    
+
     return (new EmailService()).sendEmail({
       to: [{ email: adminEmail }],
       subject,
@@ -2036,70 +2263,77 @@ This is an automated confirmation email. Please keep this for your records.
   // Send trial reminder notification
   async sendTrialReminderNotification({ email, companyName, planName, expirationDate, subscriptionId: _subscriptionId }: { email: string; companyName: string; planName: string; expirationDate: Date | string; subscriptionId: string }) {
     const subject = `⏰ Your ${planName} trial expires soon - ${companyName}`;
-    
-    const timeRemaining = new Date(expirationDate).getTime() - new Date().getTime();
-    const minutesRemaining = Math.ceil(timeRemaining / (1000 * 60));
-    
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Trial Expiration Reminder</title>
-        <style>
-          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
-          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-          .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }
-          .button { display: inline-block; padding: 15px 30px; background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%); color: white; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 20px 0; }
-          .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 5px; }
-          .timer { background: #ffebee; border: 2px solid #f44336; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <h1>⏰ Trial Expiring Soon!</h1>
-            <p>Don't lose access to your ${planName} features</p>
-          </div>
-          <div class="content">
-            <h2>Hi there!</h2>
-            
-            <div class="timer">
-              <h3>🚨 ${minutesRemaining} minute${minutesRemaining !== 1 ? 's' : ''} remaining</h3>
-              <p>Your ${planName} trial expires at ${new Date(expirationDate).toLocaleString()}</p>
-            </div>
-            
-            <div class="warning-box">
-              <h3>⚠️ What happens when your trial expires?</h3>
-              <ul>
-                <li>Access to ${planName} features will be suspended</li>
-                <li>Your data will be preserved for 30 days</li>
-                <li>You can reactivate anytime by upgrading</li>
-              </ul>
-            </div>
-            
-            <div style="text-align: center;">
-              <a href="${process.env.FRONTEND_URL}/billing?upgrade=true" class="button">Upgrade Now</a>
-            </div>
-            
-            <h3>💳 Flexible Billing Options</h3>
-            <ul>
-              <li>Monthly or yearly billing</li>
-              <li>Cancel anytime</li>
-              <li>30-day money-back guarantee</li>
-              <li>Secure payment processing</li>
-            </ul>
-            
-            <p>Questions? Reply to this email - we're here to help!</p>
-            
-            <p>Best regards,<br><strong>The Wrapper Team</strong></p>
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
+
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Trial is Ending Soon</title>
+  <style>${SHARED_CSS}</style>
+</head>
+<body>
+  <div class="wrapper">
+    <!-- ① BRAND BAR -->
+    <div class="brand-bar">
+      <img src="${LOGO_URL}" alt="Zopkit" class="brand-logo" style="height:30px;width:auto;filter:brightness(0) invert(1);">
+      <span class="brand-badge">Trial Reminder</span>
+    </div>
+
+    <!-- ② HERO -->
+    <div class="hero">
+      <div class="hero-circle-1"></div>
+      <div class="hero-circle-2"></div>
+      <div class="hero-icon">⏰</div>
+      <h1>Your Trial is Ending Soon</h1>
+      <p class="hero-sub">Upgrade now to keep all your features</p>
+    </div>
+
+    <!-- ③ BODY -->
+    <div class="body-card">
+      <p>Your <strong>${planName}</strong> trial is ending on <strong>${new Date(expirationDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</strong>.</p>
+
+      <div class="alert-strip alert-warning">
+        After your trial ends, access to premium features will be restricted. Upgrade now to continue without interruption.
+      </div>
+
+      <table class="info-table">
+        <tr>
+          <td class="info-label">Plan</td>
+          <td class="info-value">${planName}</td>
+        </tr>
+        <tr>
+          <td class="info-label">Trial Expires</td>
+          <td class="info-value">${new Date(expirationDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</td>
+        </tr>
+        <tr>
+          <td class="info-label">Subscription ID</td>
+          <td class="info-value">${_subscriptionId}</td>
+        </tr>
+      </table>
+
+      <div class="cta">
+        <a href="${process.env.FRONTEND_URL}/dashboard/billing">Upgrade Your Plan</a>
+      </div>
+
+      <ul class="checklist">
+        <li>Choose the plan that fits your team</li>
+        <li>Keep all your data and settings</li>
+        <li>Continue using all premium features</li>
+        <li>Cancel anytime — no lock-in</li>
+      </ul>
+    </div>
+
+    <!-- ④ FOOTER -->
+    <div class="footer">
+      <img src="${LOGO_URL}" alt="Zopkit" class="footer-logo">
+      <div class="footer-divider"></div>
+      <p>Questions about pricing? Reply to this email or visit our pricing page.</p>
+      <p class="footer-copy">Powered by <strong>Zopkit</strong> — Your AI-first business operating system</p>
+    </div>
+  </div>
+</body>
+</html>`;
 
     return await this.sendEmail({
       to: [{ email }],
@@ -2112,80 +2346,77 @@ This is an automated confirmation email. Please keep this for your records.
   // Send trial expired notification
   async sendTrialExpiredNotification({ email, companyName, planName, subscriptionId: _subscriptionId }: { email: string; companyName: string; planName: string; subscriptionId: string }) {
     const subject = `🔒 Your ${planName} trial has expired - ${companyName}`;
-    
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Trial Expired</title>
-        <style>
-          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
-          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-          .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }
-          .button { display: inline-block; padding: 15px 30px; background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%); color: white; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 20px 0; }
-          .info-box { background: #e3f2fd; border-left: 4px solid #2196f3; padding: 15px; margin: 20px 0; border-radius: 5px; }
-          .action-box { background: #e8f5e8; border-left: 4px solid #4caf50; padding: 15px; margin: 20px 0; border-radius: 5px; }
-          .urgent-banner { background: #ffebee; border: 2px solid #f44336; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <h1>🔒 Trial Expired</h1>
-            <p>Your ${planName} trial has ended</p>
-          </div>
-          <div class="content">
-            <div class="urgent-banner">
-              <h2 style="color: #f44336; margin: 0;">⚠️ IMMEDIATE ACTION REQUIRED</h2>
-              <p style="margin: 10px 0 0 0;">Your account access has been suspended. Upgrade now to restore access.</p>
-            </div>
-            
-            <h2>Hi there!</h2>
-            
-            <p>Your ${planName} trial for <strong>${companyName}</strong> has expired. Your account has been suspended, but don't worry - your data is safe!</p>
-            
-            <div class="info-box">
-              <h3>📋 What's Happened?</h3>
-              <ul>
-                <li>Your ${planName} trial has ended and access is suspended</li>
-                <li>All your data is securely preserved for 30 days</li>
-                <li>You can reactivate anytime by upgrading</li>
-                <li>No credit card was charged during your trial</li>
-              </ul>
-            </div>
-            
-            <div class="action-box">
-              <h3>🚀 Ready to Continue?</h3>
-              <p>Upgrade now to restore full access to all your ${planName} features and continue where you left off.</p>
-            </div>
-            
-            <div style="text-align: center;">
-              <a href="${process.env.FRONTEND_URL}/billing?upgrade=true&expired=true&source=email" class="button">🚀 Upgrade & Restore Access Now</a>
-            </div>
-            
-            <h3>🔒 Your Data is Safe</h3>
-            <ul>
-              <li>All data preserved for 30 days after trial expiration</li>
-              <li>Instant restoration when you upgrade</li>
-              <li>Full backup and recovery available</li>
-            </ul>
-            
-            <h3>💡 Need Help Choosing a Plan?</h3>
-            <p>Our team is here to help you find the perfect plan for your needs. Just reply to this email!</p>
-            
-            <h3>📞 Urgent Support</h3>
-            <p>If you need immediate assistance, contact our support team directly.</p>
-            
-            <p>Thanks for trying Wrapper!</p>
-            <p><strong>The Wrapper Team</strong></p>
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
+
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Trial Has Ended</title>
+  <style>${SHARED_CSS}</style>
+</head>
+<body>
+  <div class="wrapper">
+    <!-- ① BRAND BAR -->
+    <div class="brand-bar">
+      <img src="${LOGO_URL}" alt="Zopkit" class="brand-logo" style="height:30px;width:auto;filter:brightness(0) invert(1);">
+      <span class="brand-badge">Trial Ended</span>
+    </div>
+
+    <!-- ② HERO -->
+    <div class="hero">
+      <div class="hero-circle-1"></div>
+      <div class="hero-circle-2"></div>
+      <div class="hero-icon">🔒</div>
+      <h1>Your Trial Has Ended</h1>
+      <p class="hero-sub">Reactivate to regain full access</p>
+    </div>
+
+    <!-- ③ BODY -->
+    <div class="body-card">
+      <div class="alert-strip alert-danger">
+        Your <strong>${planName}</strong> trial has expired. Your data is safe — simply upgrade to regain full access.
+      </div>
+
+      <p>We hope you enjoyed exploring Zopkit. To continue using all features, please select a plan.</p>
+
+      <table class="info-table">
+        <tr>
+          <td class="info-label">Plan</td>
+          <td class="info-value">${planName}</td>
+        </tr>
+        <tr>
+          <td class="info-label">Subscription ID</td>
+          <td class="info-value">${_subscriptionId}</td>
+        </tr>
+        <tr>
+          <td class="info-label">Status</td>
+          <td class="info-value">Trial Ended</td>
+        </tr>
+      </table>
+
+      <div class="cta">
+        <a href="${process.env.FRONTEND_URL}/dashboard/billing">Choose a Plan &amp; Reactivate</a>
+      </div>
+
+      <ul class="checklist">
+        <li>All your data and settings are preserved</li>
+        <li>Pick the plan that fits your team size</li>
+        <li>Reactivate in under 2 minutes</li>
+        <li>Priority onboarding support included</li>
+      </ul>
+    </div>
+
+    <!-- ④ FOOTER -->
+    <div class="footer">
+      <img src="${LOGO_URL}" alt="Zopkit" class="footer-logo">
+      <div class="footer-divider"></div>
+      <p>Your account will remain on free tier until you upgrade.</p>
+      <p class="footer-copy">Powered by <strong>Zopkit</strong> — Your AI-first business operating system</p>
+    </div>
+  </div>
+</body>
+</html>`;
 
     try {
       const result = await this.sendEmail({
@@ -2194,7 +2425,7 @@ This is an automated confirmation email. Please keep this for your records.
         htmlContent: html,
         textContent: undefined
       });
-      
+
       console.log(`✅ Trial expired email sent successfully to: ${email}`);
       return { success: true, result };
     } catch (err: unknown) {
@@ -2207,7 +2438,7 @@ This is an automated confirmation email. Please keep this for your records.
   // Send plan expired notification (for paid plans that expire)
   static async sendPlanExpiredNotification({ email, companyName, planName, subscriptionId: _subscriptionId }: { email: string; companyName: string; planName: string; subscriptionId: string }) {
     const subject = `🔒 Your ${planName} plan has expired - ${companyName}`;
-    
+
     const html = `
       <!DOCTYPE html>
       <html>
@@ -2234,9 +2465,9 @@ This is an automated confirmation email. Please keep this for your records.
           </div>
           <div class="content">
             <h2>Hi there!</h2>
-            
+
             <p>Your ${planName} subscription for <strong>${companyName}</strong> has expired. Your account access has been suspended.</p>
-            
+
             <div class="warning-box">
               <h3>⚠️ What's Changed?</h3>
               <ul>
@@ -2246,36 +2477,36 @@ This is an automated confirmation email. Please keep this for your records.
                 <li>You can reactivate anytime by renewing or choosing a new plan</li>
               </ul>
             </div>
-            
+
             <div class="action-box">
               <h3>🔄 What Are Your Options?</h3>
             </div>
-            
+
             <div class="option-box">
               <h4>💎 Renew Your ${planName} Plan</h4>
               <p>Continue with the same great features you've been using.</p>
               <a href="${process.env.FRONTEND_URL}/billing?renew=${planName.toLowerCase()}&source=email" class="button">Renew ${planName}</a>
             </div>
-            
+
             <div class="option-box">
               <h4>🏃‍♂️ Switch to Starter Plan</h4>
               <p>Need something more budget-friendly? Our Starter plan might be perfect for you this month.</p>
               <a href="${process.env.FRONTEND_URL}/billing?upgrade=starter&source=email" class="button">Switch to Starter</a>
             </div>
-            
+
             <div class="option-box">
               <h4>🚀 Upgrade to Professional</h4>
               <p>Ready for more features? Upgrade to our Professional plan.</p>
               <a href="${process.env.FRONTEND_URL}/billing?upgrade=professional&source=email" class="button">Upgrade to Professional</a>
             </div>
-            
+
             <h3>🔒 Your Data is Safe</h3>
             <ul>
               <li>All data preserved during suspension period</li>
               <li>Instant restoration when you renew or upgrade</li>
               <li>No data loss - pick up exactly where you left off</li>
             </ul>
-            
+
             <h3>💡 Need Help Deciding?</h3>
             <p>Our team is here to help you choose the best plan for your current needs. Whether you want to:</p>
             <ul>
@@ -2284,7 +2515,7 @@ This is an automated confirmation email. Please keep this for your records.
               <li>📈 Upgrade to get more features</li>
             </ul>
             <p>Just reply to this email and we'll help you find the perfect solution!</p>
-            
+
             <p>Best regards,</p>
             <p><strong>The Wrapper Team</strong></p>
           </div>
@@ -2301,7 +2532,7 @@ This is an automated confirmation email. Please keep this for your records.
         htmlContent: html,
         textContent: undefined
       });
-      
+
       console.log(`✅ Plan expired email sent successfully to: ${email}`);
       return { success: true, result };
     } catch (err: unknown) {
@@ -2313,4 +2544,4 @@ This is an automated confirmation email. Please keep this for your records.
 }
 
 export { EmailService };
-export default new EmailService(); 
+export default new EmailService();
