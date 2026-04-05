@@ -1,7 +1,7 @@
 import { db } from '../../../db/index.js';
 import { eventTracking } from '../../../db/schema/index.js';
 import { eq, and, inArray, sql } from 'drizzle-orm';
-import { amazonMQPublisher } from '../utils/amazon-mq-publisher.js';
+import { snsSqsPublisher } from '../utils/sns-sqs-publisher.js';
 
 // Maximum rows returned by getUnacknowledgedEvents to prevent OOM on large tenants.
 const UNACKNOWLEDGED_EVENTS_LIMIT = Number(process.env.UNACKNOWLEDGED_EVENTS_LIMIT || 500);
@@ -340,7 +340,7 @@ export class EventTrackingService {
     // Use allSettled so one failure does not abort the rest.
     const publishResults = await Promise.allSettled(
       rows.map((row) =>
-        amazonMQPublisher.publishInterAppEvent({
+        snsSqsPublisher.publishInterAppEvent({
           eventId: row.eventId,
           eventType: row.eventType,
           sourceApplication: row.sourceApplication,
@@ -398,6 +398,87 @@ export class EventTrackingService {
           lastRetryAt: now,
           updatedAt: now,
         } as any)
+        .where(inArray(eventTracking.eventId, failedIds));
+    }
+
+    return succeededIds.length;
+  }
+
+  /**
+   * Reprocess events that were marked as 'published' in the outbox but were
+   * never acknowledged by downstream consumers (acknowledged=false).
+   * This handles the case where MQ was disconnected at publish time and the
+   * fire-and-forget publisher wrote 'published' status without broker delivery.
+   *
+   * Runs separately from replayPendingEvents which only handles 'pending'/'failed'.
+   */
+  static async replayUnacknowledgedPublishedEvents(
+    staleSinceMs = 5 * 60 * 1000, // default: older than 5 minutes
+    maxBatchSize = 50
+  ): Promise<number> {
+    const cutoff = new Date(Date.now() - staleSinceMs);
+    const rows = await db
+      .select()
+      .from(eventTracking)
+      .where(
+        and(
+          eq(eventTracking.acknowledged, false),
+          eq(eventTracking.status, 'published'),
+          sql`${eventTracking.createdAt} < ${cutoff}`
+        )
+      )
+      .limit(maxBatchSize);
+
+    if (rows.length === 0) return 0;
+
+    const succeededIds: string[] = [];
+    const failedMap = new Map<string, string>();
+
+    const results = await Promise.allSettled(
+      rows.map((row) =>
+        snsSqsPublisher.publishInterAppEvent({
+          eventId: row.eventId,
+          eventType: row.eventType,
+          sourceApplication: row.sourceApplication,
+          targetApplication: row.targetApplication,
+          tenantId: row.tenantId,
+          entityId: row.entityId || '',
+          eventData: (row.eventData as Record<string, unknown>) || {},
+          publishedBy: row.publishedBy || 'outbox-unack-reprocessor',
+        })
+      )
+    );
+
+    results.forEach((result, i) => {
+      const row = rows[i];
+      if (result.status === 'fulfilled') {
+        succeededIds.push(row.eventId);
+      } else {
+        failedMap.set(row.eventId, (result.reason as Error)?.message || 'Reprocess failed');
+      }
+    });
+
+    const now = new Date();
+    if (succeededIds.length > 0) {
+      await db
+        .update(eventTracking)
+        .set({
+          retryCount: sql`COALESCE(${eventTracking.retryCount}, 0) + 1`,
+          lastRetryAt: now,
+          updatedAt: now,
+        } as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        .where(inArray(eventTracking.eventId, succeededIds));
+    }
+    if (failedMap.size > 0) {
+      const failedIds = Array.from(failedMap.keys());
+      await db
+        .update(eventTracking)
+        .set({
+          status: 'failed',
+          retryCount: sql`COALESCE(${eventTracking.retryCount}, 0) + 1`,
+          lastRetryAt: now,
+          updatedAt: now,
+        } as any) // eslint-disable-line @typescript-eslint/no-explicit-any
         .where(inArray(eventTracking.eventId, failedIds));
     }
 

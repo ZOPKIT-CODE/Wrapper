@@ -421,13 +421,13 @@ async function gracefulShutdown() {
     await fastify.close();
     console.log('✅ Fastify server closed.');
 
-    // Disconnect Amazon MQ publisher
+    // Disconnect SNS/SQS publisher (no-op for stateless SDK, but kept for clean shutdown)
     try {
-      const { amazonMQPublisher } = await import('./features/messaging/utils/amazon-mq-publisher.js');
-      await amazonMQPublisher.disconnect();
-      console.log('✅ Amazon MQ disconnected.');
+      const { snsSqsPublisher } = await import('./features/messaging/utils/sns-sqs-publisher.js');
+      await snsSqsPublisher.disconnect();
+      console.log('✅ SNS/SQS publisher disconnected.');
     } catch (mqError: unknown) {
-      console.warn('⚠️ Error closing Amazon MQ:', (mqError as Error).message);
+      console.warn('⚠️ Error closing SNS/SQS publisher:', (mqError as Error).message);
     }
 
     console.log('✅ Graceful shutdown completed.');
@@ -479,21 +479,14 @@ async function start() {
     console.log(`📚 API Documentation: http://${host}:${port}/docs`);
     console.log(`🏥 Health Check: http://${host}:${port}/health`);
 
-    // Pre-warm Amazon MQ connection BEFORE accepting traffic to avoid cold-start
-    // latency on the first publish (e.g., during tenant onboarding).
+    // Initialize SNS/SQS messaging
     try {
-      const { amazonMQPublisher } = await import('./features/messaging/utils/amazon-mq-publisher.js');
-      const mqReady = amazonMQPublisher.initializeAtStartup();
-      // Race against a 10s timeout so a slow broker never blocks startup
-      const timeout = new Promise<false>(resolve => setTimeout(() => resolve(false), 10_000));
-      const connected = await Promise.race([mqReady, timeout]);
-      if (connected === false) {
-        console.warn('⚠️ Amazon MQ warm-up timed out after 10s — will retry lazily on first publish');
-      }
+      const { snsSqsPublisher } = await import('./features/messaging/utils/sns-sqs-publisher.js');
+      await snsSqsPublisher.initializeAtStartup();
       const { startOutboxReplayWorker } = await import('./features/messaging/services/outbox-replay-worker.js');
       startOutboxReplayWorker();
     } catch (err: unknown) {
-      console.warn('⚠️ Amazon MQ initialization skipped:', (err as Error).message);
+      console.warn('⚠️ SNS/SQS initialization skipped:', (err as Error).message);
     }
 
     // Schedule nightly cleanup of old event_tracking rows (default: older than 7 days).

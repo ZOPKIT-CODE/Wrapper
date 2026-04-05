@@ -1,6 +1,6 @@
-export { default as AmazonMQInterAppConsumer } from './services/amazon-mq-consumer.js';
-export { amazonMQJobQueue } from './services/amazon-mq-job-queue.js';
+export { default as SqsInterAppConsumer } from './services/sqs-consumer.js';
+export { sqsJobQueue } from './services/sqs-job-queue.js';
 export { InterAppEventService } from './services/inter-app-event-service.js';
-export { amazonMQPublisher } from './utils/amazon-mq-publisher.js';
-export { getMessageBus, setMessageBus, resetMessageBus } from './adapters/amazon-mq-adapter.js';
+export { snsSqsPublisher } from './utils/sns-sqs-publisher.js';
+export { getMessageBus, setMessageBus, resetMessageBus } from './adapters/sns-sqs-adapter.js';
 export type { MessageBusPort } from './ports/message-bus.js';

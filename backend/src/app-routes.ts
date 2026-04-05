@@ -6,8 +6,7 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { authRoutes } from './features/auth/index.js';
 import tenantRoutes from './features/admin/routes/tenants.js';
-import { usersRoutes, userRoutes, userSyncRoutes, userVerificationRoutes } from './features/users/index.js';
-import { subscriptionsRoutes, paymentsRoutes, paymentUpgradeRoutes, paymentProfileCompletionRoutes } from './features/subscriptions/index.js';
+import { subscriptionsRoutes, paymentsRoutes, paymentUpgradeRoutes } from './features/subscriptions/index.js';
 import permissionRoutes from './features/roles/routes/permissions.js';
 import { rolesRoutes, customRolesRoutes } from './features/roles/index.js';
 import internalRoutes from './routes/internal.js';
@@ -29,13 +28,11 @@ import {
 import invitationRoutes from './features/organizations/routes/invitations.js';
 import suiteRoutes from './routes/suite.js';
 import activityRoutes from './routes/activity.js';
-import trialRoutes from './features/subscriptions/routes/trial.js';
 import adminPromotionRoutes from './features/admin/routes/admin-promotion.js';
 import permissionMatrixRoutes from './features/roles/routes/permission-matrix.js';
 import appSyncRoutes from './features/app-sync/routes/sync-routes.js';
 import healthRoutes from './routes/health.js';
 import permissionSyncRoutes from './features/roles/routes/permission-sync.js';
-import userApplicationRoutes from './features/users/routes/user-applications.js';
 import { locationsRoutes, entitiesRoutes } from './features/organizations/index.js';
 import { creditsRoutes, creditExpiryRoutes } from './features/credits/index.js';
 import demoRoutes from './routes/demo.js';
@@ -44,6 +41,7 @@ import applicationsRoutes from './routes/applications.js';
 import notificationRoutes from './features/notifications/routes/notifications.js';
 import entityScopeRoutes from './features/organizations/routes/entity-scope.js';
 import platformStaffManagementRoutes from './features/admin/routes/platform-staff-management.js';
+import userRoutes from './features/users/routes/user-routes.js';
 
 import { authMiddleware, csrfProtection } from './middleware/auth/auth.js';
 import { errorHandler } from './middleware/error-handler.js';
@@ -74,7 +72,7 @@ export async function registerMiddleware(fastify: FastifyInstance): Promise<void
 }
 
 export async function registerRoutes(fastify: FastifyInstance): Promise<void> {
-  fastify.get('/health', async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.get('/health', async (_request: FastifyRequest, _reply: FastifyReply) => {
     return {
       status: 'ok',
       timestamp: new Date().toISOString(),
@@ -86,7 +84,6 @@ export async function registerRoutes(fastify: FastifyInstance): Promise<void> {
 
   await fastify.register(authRoutes, { prefix: '/api/auth' });
   await fastify.register(tenantRoutes, { prefix: '/api/tenants' });
-  await fastify.register(usersRoutes, { prefix: '/api/users' });
   await fastify.register(subscriptionsRoutes, { prefix: '/api/subscriptions' });
   await fastify.register(permissionRoutes, { prefix: '/api/permissions' });
   await fastify.register(rolesRoutes, { prefix: '/api/roles' });
@@ -109,12 +106,9 @@ export async function registerRoutes(fastify: FastifyInstance): Promise<void> {
   await fastify.register(suiteRoutes, { prefix: '/api/suite' });
   await fastify.register(paymentsRoutes, { prefix: '/api/payments' });
   await fastify.register(activityRoutes, { prefix: '/api/activity' });
-  await fastify.register(trialRoutes, { prefix: '/api/trial' });
   await fastify.register(adminPromotionRoutes, { prefix: '/api/admin-promotion' });
   await fastify.register(permissionMatrixRoutes, { prefix: '/api/permission-matrix' });
   await fastify.register(permissionSyncRoutes, { prefix: '/api/permission-sync' });
-  await fastify.register(userSyncRoutes, { prefix: '/api/user-sync' });
-  await fastify.register(userApplicationRoutes, { prefix: '/api/user-applications' });
   // Canonical entity routes
   await fastify.register(entitiesRoutes, { prefix: '/api/entities' });
   await fastify.register(locationsRoutes, { prefix: '/api/locations' });
@@ -127,11 +121,11 @@ export async function registerRoutes(fastify: FastifyInstance): Promise<void> {
   await fastify.register(applicationsRoutes, { prefix: '/api/applications' });
   // Canonical external-app sync prefix
   await fastify.register(appSyncRoutes, { prefix: '/api/sync' });
-  await fastify.register(userVerificationRoutes, { prefix: '/api' });
   await fastify.register(healthRoutes, { prefix: '/api' });
   await fastify.register(entityScopeRoutes, { prefix: '/api/admin' });
   // Canonical mount for platform staff administration
   await fastify.register(platformStaffManagementRoutes, { prefix: '/api/admin/platform-staff' });
 
   await fastify.register(invitationRoutes, { prefix: '/api/invitations' });
+  await fastify.register(userRoutes, { prefix: '/api/users' });
 }

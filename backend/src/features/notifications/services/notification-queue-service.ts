@@ -1,35 +1,35 @@
-import amazonMQJobQueue from '../../messaging/services/amazon-mq-job-queue.js';
+import sqsJobQueue from '../../messaging/services/sqs-job-queue.js';
 import { NotificationService } from './notification-service.js';
 import { broadcastToTenant } from '../../../utils/websocket-server.js';
 
 /**
  * Notification Queue Service
- * Handles async processing of notifications using AWS MQ job queue
+ * Handles async processing of notifications using SQS job queues.
  */
-const isAmazonMQConfigured = () => {
-  const url = process.env.AMAZON_MQ_URL;
-  if (url && url.startsWith('amqp')) return true;
-  return !!(process.env.AMAZON_MQ_HOSTNAME || process.env.AMAZON_MQ_HOST) &&
-    process.env.AMAZON_MQ_USERNAME &&
-    process.env.AMAZON_MQ_PASSWORD;
+const isSqsConfigured = () => {
+  return !!(
+    process.env.SQS_NOTIFICATIONS_IMMEDIATE_URL ||
+    process.env.SQS_NOTIFICATIONS_BULK_URL ||
+    process.env.SQS_NOTIFICATIONS_SCHEDULED_URL
+  );
 };
 
 class NotificationQueueService {
-  private jobQueue: typeof amazonMQJobQueue;
+  private jobQueue: typeof sqsJobQueue;
   private notificationService: InstanceType<typeof NotificationService>;
   private workers: Record<string, unknown>;
   private workersInitialized: boolean;
 
   constructor() {
-    this.jobQueue = amazonMQJobQueue;
+    this.jobQueue = sqsJobQueue;
     this.notificationService = new NotificationService();
     this.workers = {};
     this.workersInitialized = false;
 
-    if (isAmazonMQConfigured()) {
+    if (isSqsConfigured()) {
       this.initializeWorkers().catch((err: unknown) => {
         const e = err as Error;
-        console.warn('⚠️ [Notification Queue] Could not connect to Amazon MQ (app running without job queue):', e.message);
+        console.warn('⚠️ [Notification Queue] Could not initialise SQS workers (app running without job queue):', e.message);
       });
     }
   }

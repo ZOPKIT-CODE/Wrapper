@@ -1,7 +1,7 @@
 import { db } from '../../../db/index.js';
 import { eventTracking } from '../../../db/schema/index.js';
 import { eq, and, sql } from 'drizzle-orm';
-import { amazonMQPublisher } from '../utils/amazon-mq-publisher.js';
+import { snsSqsPublisher } from '../utils/sns-sqs-publisher.js';
 import { EventTrackingService } from './event-tracking-service.js';
 
 export interface PublishEventParams {
@@ -59,7 +59,7 @@ export class InterAppEventService {
         publishedBy
       });
 
-      const publishResult = await amazonMQPublisher.publishInterAppEvent({
+      const publishResult = await snsSqsPublisher.publishInterAppEvent({
         eventId,
         eventType,
         sourceApplication,

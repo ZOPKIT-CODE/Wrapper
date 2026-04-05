@@ -69,10 +69,20 @@ export function startOutboxReplayWorker(): void {
     try {
       const replayed = await EventTrackingService.replayPendingEvents(batchSize, maxRetries);
       if (replayed > 0) {
-        console.log(`🔁 Outbox replay worker republished ${replayed} event(s)`);
+        console.log(`🔁 Outbox replay worker republished ${replayed} pending/failed event(s)`);
       }
-    } catch (error: any) {
-      console.error('❌ Outbox replay worker failed:', error?.message || error);
+    } catch (error: unknown) {
+      console.error('❌ Outbox replay worker (pending) failed:', (error as Error)?.message || error);
+    }
+
+    // Also reprocess events stuck as published+unacknowledged (MQ was down at publish time)
+    try {
+      const reprocessed = await EventTrackingService.replayUnacknowledgedPublishedEvents();
+      if (reprocessed > 0) {
+        console.log(`🔁 Outbox unack reprocessor redelivered ${reprocessed} event(s)`);
+      }
+    } catch (error: unknown) {
+      console.error('❌ Outbox replay worker (unack) failed:', (error as Error)?.message || error);
     }
   };
 

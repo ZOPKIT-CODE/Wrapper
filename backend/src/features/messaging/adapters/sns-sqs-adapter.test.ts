@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { amazonMQPublisherMock } = vi.hoisted(() => ({
-  amazonMQPublisherMock: {
+const { snsSqsPublisherMock } = vi.hoisted(() => ({
+  snsSqsPublisherMock: {
     isConfigured: vi.fn(() => true),
     initializeAtStartup: vi.fn(async () => true),
     publishInterAppEvent: vi.fn(async () => ({
@@ -15,13 +15,13 @@ const { amazonMQPublisherMock } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock('../utils/amazon-mq-publisher.js', () => ({
-  amazonMQPublisher: amazonMQPublisherMock,
+vi.mock('../utils/sns-sqs-publisher.js', () => ({
+  snsSqsPublisher: snsSqsPublisherMock,
 }));
 
-import { getMessageBus, resetMessageBus, setMessageBus } from './amazon-mq-adapter.js';
+import { getMessageBus, resetMessageBus, setMessageBus } from './sns-sqs-adapter.js';
 
-describe('amazon-mq-adapter', () => {
+describe('sns-sqs-adapter', () => {
   beforeEach(() => {
     resetMessageBus();
     vi.clearAllMocks();
@@ -39,7 +39,7 @@ describe('amazon-mq-adapter', () => {
       publishedBy: 'test',
     });
 
-    expect(amazonMQPublisherMock.publishInterAppEvent).toHaveBeenCalledTimes(1);
+    expect(snsSqsPublisherMock.publishInterAppEvent).toHaveBeenCalledTimes(1);
     expect(result.success).toBe(true);
   });
 

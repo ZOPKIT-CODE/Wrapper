@@ -70,26 +70,30 @@ declare global {
       STRIPE_PUBLISHABLE_KEY?: string;
       STRIPE_WEBHOOK_SECRET?: string;
       BYPASS_WEBHOOK_SIGNATURE?: string;
+      /** @deprecated Annual-only billing; monthly price IDs unused */
       STRIPE_STARTER_MONTHLY_PRICE_ID?: string;
       STRIPE_STARTER_YEARLY_PRICE_ID?: string;
+      STRIPE_STARTER_YEARLY_INR_PRICE_ID?: string;
       STRIPE_PROFESSIONAL_MONTHLY_PRICE_ID?: string;
       STRIPE_PROFESSIONAL_YEARLY_PRICE_ID?: string;
+      STRIPE_PROFESSIONAL_YEARLY_INR_PRICE_ID?: string;
       STRIPE_ENTERPRISE_MONTHLY_PRICE_ID?: string;
       STRIPE_ENTERPRISE_YEARLY_PRICE_ID?: string;
+      STRIPE_ENTERPRISE_YEARLY_INR_PRICE_ID?: string;
+      STRIPE_PRICE_ID_STARTER?: string;
+      STRIPE_PRICE_ID_PROFESSIONAL?: string;
+      STRIPE_PRICE_ID_ENTERPRISE?: string;
 
       // AWS
       AWS_ACCESS_KEY_ID?: string;
       AWS_SECRET_ACCESS_KEY?: string;
       AWS_REGION?: string;
       AWS_HOSTED_ZONE_ID?: string;
-
-      // Amazon MQ
-      AMAZON_MQ_PROTOCOL?: string;
-      AMAZON_MQ_HOSTNAME?: string;
-      AMAZON_MQ_PORT?: string;
-      AMAZON_MQ_USERNAME?: string;
-      AMAZON_MQ_PASSWORD?: string;
-      AMAZON_MQ_URL?: string;
+      // Dedicated messaging credentials (SNS/SQS/S3).
+      // If set, these take precedence over the general AWS credentials so that
+      // the Route 53 (DNS_MANAGEMENT) IAM user is not used for SNS:Publish.
+      AWS_MESSAGING_ACCESS_KEY_ID?: string;
+      AWS_MESSAGING_SECRET_ACCESS_KEY?: string;
 
       // Email
       BREVO_API_KEY?: string;

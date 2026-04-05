@@ -1,13 +1,13 @@
-import { amazonMQPublisher } from '../utils/amazon-mq-publisher.js';
+import { snsSqsPublisher } from '../utils/sns-sqs-publisher.js';
 import type { MessageBusPort } from '../ports/message-bus.js';
 
-class AmazonMqMessageBusAdapter implements MessageBusPort {
+class SnsSqsMessageBusAdapter implements MessageBusPort {
   isConfigured(): boolean {
-    return amazonMQPublisher.isConfigured();
+    return snsSqsPublisher.isConfigured();
   }
 
   initializeAtStartup(): Promise<boolean> {
-    return amazonMQPublisher.initializeAtStartup();
+    return snsSqsPublisher.initializeAtStartup();
   }
 
   publishInterAppEvent(payload: {
@@ -20,7 +20,7 @@ class AmazonMqMessageBusAdapter implements MessageBusPort {
     publishedBy?: string;
     eventId?: string;
   }): Promise<{ success: boolean; eventId: string; routingKey: string; messageId: string }> {
-    return amazonMQPublisher.publishInterAppEvent(payload);
+    return snsSqsPublisher.publishInterAppEvent(payload);
   }
 
   publishBroadcast(
@@ -28,11 +28,11 @@ class AmazonMqMessageBusAdapter implements MessageBusPort {
     eventData: Record<string, unknown>,
     publishedBy = 'system'
   ): Promise<{ success: boolean; eventType: string }> {
-    return amazonMQPublisher.publishBroadcast(eventType, eventData, publishedBy);
+    return snsSqsPublisher.publishBroadcast(eventType, eventData, publishedBy);
   }
 
   disconnect(): Promise<void> {
-    return amazonMQPublisher.disconnect();
+    return snsSqsPublisher.disconnect();
   }
 }
 
@@ -40,7 +40,7 @@ let messageBus: MessageBusPort | null = null;
 
 export function getMessageBus(): MessageBusPort {
   if (!messageBus) {
-    messageBus = new AmazonMqMessageBusAdapter();
+    messageBus = new SnsSqsMessageBusAdapter();
   }
   return messageBus;
 }
