@@ -15,7 +15,6 @@ type CreateEntityInput = {
   parentEntityId?: string | null;
   parentTenantId?: string;
   responsiblePersonId?: string | null;
-  entityCode?: string;
   description?: string;
   legalName?: string;
   status?: string;
@@ -68,11 +67,8 @@ class EntityService {
       throw new Error('Tenant ID is required');
     }
 
-    const entityCode =
-      data.entityCode ||
-      (data.entityType === 'location'
-        ? `LOC_${entityId.substring(0, 8)}`
-        : `ENT_${entityId.substring(0, 8)}`);
+    // entity_code column was dropped in migration 0015.
+    // Use entityId (UUID) as the stable code — consumers must not rely on ENT_/LOC_ prefixes.
 
     const inserted = await db
       .insert(entities)
@@ -113,7 +109,7 @@ class EntityService {
         {
           // Canonical unified-entity field names (entityId for FA wrapper_entities.entity_id FK)
           entityId: entity.entityId,
-          entityCode: entityCode,
+          entityCode: entity.entityId, // display alias — same UUID, not ENT_/LOC_ prefix
           entityName: entity.entityName,
           entityType: data.entityType,
           subType: data.subType ?? null,
@@ -153,7 +149,7 @@ class EntityService {
         entityId: entity.entityId,
         entityType: data.entityType,
         subType: data.subType ?? null,
-        entityCode,
+        entityCode: entity.entityId, // UUID — not ENT_/LOC_ prefix
         entityName: entity.entityName,
         parentId: parentEntityId,
         description: data.description ?? null,

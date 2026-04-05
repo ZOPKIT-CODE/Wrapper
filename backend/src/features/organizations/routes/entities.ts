@@ -514,7 +514,6 @@ export default async function entityRoutes(
           parentEntityId: (entityData.parentEntityId as string) || null,
           parentTenantId: (request as any).userContext?.tenantId ?? (entityData.parentTenantId as string) ?? '',
           responsiblePersonId: (entityData.responsiblePersonId as string) || null,
-          entityCode: (entityData.entityCode as string) || undefined,
           description: (entityData.description as string) || '',
           legalName: (entityData.legalName as string) || undefined,
           status: (entityData.status as string) || 'active',
