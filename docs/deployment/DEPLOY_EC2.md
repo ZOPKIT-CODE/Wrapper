@@ -12,9 +12,9 @@ The target instance is the **wrapper** EC2 in **us-east-1**:
 | **Instance** | Name: `wrapper`, ID: `i-085cb714d4af4a499` |
 | **EC2_HOST** | `35.171.71.112` or `ec2-35-171-71-112.compute-1.amazonaws.com` |
 | **EC2_USER** | `ec2-user` (Amazon Linux 2023 — omit or set to `ec2-user`) |
-| **EC2_SSH_KEY** | Deploy key from AWS key pair `github-actions-wrapper-deploy` (see `docs/GITHUB_SECRETS_VALUES.md`) |
+| **EC2_SSH_KEY** | Deploy key from AWS key pair `github-actions-wrapper-deploy` (see `GITHUB_SECRETS_VALUES.md`) |
 
-A key pair **`github-actions-wrapper-deploy`** was created in AWS (us-east-1) for GitHub Actions. The private key is in **`wrapper_deploy_key.pem`** in the repo root (gitignored). Copy it into GitHub Secret `EC2_SSH_KEY`, then add the public key to the wrapper instance’s `~/.ssh/authorized_keys` once (see `docs/GITHUB_SECRETS_VALUES.md`). To add the public key once: SSH in and run: `echo 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDECcJPYnGvoYXdAcjSgBdKm3siqtv2QyExQCJyjVSfwnQaHDgtvxzbG7vRhvT0rjeIk5GOfWeBFRvCI3fLTWXCNYmtEwUQyJq77I2t0Y5YgTgTjdQtiGSHziiE49uvq4t5jLKx9ISbtXxVOfqt5/4Bqcm5Cm+2ModBVX6nVE9QQLL4MFu8F6XuMSvl4oMONfs24LPHq7GFprxDlPrxCalOXnPiF3a6QXxWY/MvHVfdsRwbxh2DKBoHwxJETPLPhgwvlYkJJUuMlUOcGKLlVwfT39E6VvOXxne0uJg+6E7gW7Br5VWvXOqL0fvZklPftIevWkfcdf5VmUxYRl9tQzIh' >> /home/ec2-user/.ssh/authorized_keys`. Start the instance in the AWS console if it is stopped before deploying.
+A key pair **`github-actions-wrapper-deploy`** was created in AWS (us-east-1) for GitHub Actions. The private key is in **`wrapper_deploy_key.pem`** in the repo root (gitignored). Copy it into GitHub Secret `EC2_SSH_KEY`, then add the public key to the wrapper instance’s `~/.ssh/authorized_keys` once (see `GITHUB_SECRETS_VALUES.md`). To add the public key once: SSH in and run: `echo 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDECcJPYnGvoYXdAcjSgBdKm3siqtv2QyExQCJyjVSfwnQaHDgtvxzbG7vRhvT0rjeIk5GOfWeBFRvCI3fLTWXCNYmtEwUQyJq77I2t0Y5YgTgTjdQtiGSHziiE49uvq4t5jLKx9ISbtXxVOfqt5/4Bqcm5Cm+2ModBVX6nVE9QQLL4MFu8F6XuMSvl4oMONfs24LPHq7GFprxDlPrxCalOXnPiF3a6QXxWY/MvHVfdsRwbxh2DKBoHwxJETPLPhgwvlYkJJUuMlUOcGKLlVwfT39E6VvOXxne0uJg+6E7gW7Br5VWvXOqL0fvZklPftIevWkfcdf5VmUxYRl9tQzIh' >> /home/ec2-user/.ssh/authorized_keys`. Start the instance in the AWS console if it is stopped before deploying.
 
 ## One-time EC2 setup
 

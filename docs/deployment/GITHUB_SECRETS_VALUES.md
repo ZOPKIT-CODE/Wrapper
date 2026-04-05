@@ -36,4 +36,4 @@ ec2-user
 - Include the last line: `-----END OPENSSH PRIVATE KEY-----` (or `-----END RSA PRIVATE KEY-----`)
 - No extra spaces at the start or end
 
-If you haven’t created a deploy key yet, see **One-time EC2 setup** in `docs/DEPLOY_EC2.md`. Or use the AWS-created key: open **`wrapper_deploy_key.pem`** in the repo root (gitignored), copy its entire contents into the Secret field, then delete that file. Add the public key to the wrapper EC2 instance once when running—see the command in `docs/DEPLOY_EC2.md`.
+If you haven’t created a deploy key yet, see **One-time EC2 setup** in `DEPLOY_EC2.md`. Or use the AWS-created key: open **`wrapper_deploy_key.pem`** in the repo root (gitignored), copy its entire contents into the Secret field, then delete that file. Add the public key to the wrapper EC2 instance once when running—see the command in `DEPLOY_EC2.md`.

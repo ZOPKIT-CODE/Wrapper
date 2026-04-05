@@ -12,8 +12,8 @@
 | S1 | **Default JWT secret fallback** | `backend/src/routes/internal/service-auth.ts` | ~135 | Token forgery if env var missing — hardcoded `'default-secret-change-in-production'` | FIXED `281da89` |
 | S2 | **Stripe webhook signature bypass** | `backend/src/features/credits/routes/credits.ts` | ~1251 | Fake payment events when `STRIPE_WEBHOOK_SECRET` unset or `NODE_ENV=development` | FIXED `281da89` |
 | S3 | **Super admin role not tenant-scoped** | `backend/src/middleware/auth/auth.ts` | ~383 | `userRoleAssignments` query missing `tenantId` — cross-tenant privilege escalation | FIXED `281da89` |
-| S4 | **Entity routes bypass app isolation** | `backend/src/middleware/security/application-isolation.ts` | ~37 | `request.url.includes('/api/entities/')` blanket bypass | FIXED `eccab53` PR#5 |
-| S5 | **Data isolation missing tenantId** | `backend/src/services/data-isolation-service.ts` | ~32 | `organizationMemberships` query lacks `tenantId` — cross-tenant org access | FIXED `281da89` |
+| S4 | **Entity routes bypass app isolation** | _(removed — app isolation middleware deleted)_ | — | Historical: blanket bypass on `/api/entities/` | FIXED `eccab53` PR#5 |
+| S5 | **Data isolation missing tenantId** | `backend/src/features/organizations/services/entity-access.ts` | — | `organizationMemberships` query scoped by `tenantId` when present | FIXED `281da89` |
 | S6 | **Auth tokens in localStorage** | `frontend/src/features/auth/pages/InviteAccept.tsx` | 149, 164 | `pendingInvitationToken` in localStorage — XSS-vulnerable | FIXED `28cbd7c` PR#6 |
 | S7 | **CORS regex too broad** | `backend/src/app-fastify.ts` | — | `/^https?:\/\/[a-z0-9-]+\.zopkit\.com$/i` allows ANY subdomain | FIXED `28cbd7c` PR#6 |
 | S8 | **No rate limit on auth endpoints** | `backend/src/app-fastify.ts` | — | Global 200 req/15min; auth endpoints need stricter limits | FIXED `28cbd7c` PR#6 |
@@ -159,7 +159,7 @@ All captured requests were `GET /api/notifications?` — likely a frontend polli
 |-------|-------|
 | **Task ID** | S4 |
 | **Priority** | P0 |
-| **Files** | `backend/src/middleware/security/application-isolation.ts` (~line 37) |
+| **Files** | _(middleware removed; entity access lives in `entity-access.ts` + services)_ |
 | **Branch** | `fix/s4-entity-isolation-bypass` |
 
 **Problem:** The application isolation middleware has a blanket `if (request.url.includes('/api/entities/')) return;` that skips ALL isolation checks for entity routes. Any entity endpoint — including ones that return sensitive org hierarchy data — bypasses app-level data isolation entirely.
