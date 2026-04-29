@@ -113,34 +113,84 @@ function Headline() {
   )
 }
 
-// ─── App data for the ecosystem mock ──────────────────────────────────────────
-const ECOSYSTEM_APPS = [
-  { name: 'B2B CRM',     color: '#3b82f6', metric: '342 Leads',      val: '₹12.4M',  bars: [0.5,0.7,0.55,0.85,0.65], flows: ['Finance','Ops'] },
-  { name: 'Finance',     color: '#10b981', metric: '₹84.2L Rev',     val: '100% Tax', bars: [0.4,0.65,0.8,0.9,0.75],  flows: ['HRMS']         },
-  { name: 'Operations',  color: '#f59e0b', metric: '1,247 SKUs',      val: '34 Orders',bars: [0.7,0.5,0.85,0.6,0.45],  flows: ['Projects']     },
-  { name: 'HRMS',        color: '#8b5cf6', metric: '128 Employees',   val: '₹32L Pay', bars: [0.9,0.85,0.92,0.88,0.9], flows: ['Projects']     },
-  { name: 'Projects',    color: '#06b6d4', metric: '12 Active',       val: '84% Done', bars: [0.6,1.0,0.5,0.8,0.65],   flows: ['Finance']      },
-  { name: 'Flowtilla',   color: '#6366f1', metric: '47 Workflows',    val: '3 Live',   bars: [0.3,0.55,0.9,0.5,0.75],  flows: ['Projects']     },
+// ─── Agent data (3 agents, each fetching from one source) ─────────────────────
+const AGENTS = [
+  {
+    id: 1, label: 'Agent 1', source: 'B2B CRM',
+    color: '#3b82f6',
+    metric1: '342 Leads', metric2: '₹12.4M pipeline',
+    bars: [0.5, 0.7, 0.55, 0.85, 0.65],
+    progress: 87,
+  },
+  {
+    id: 2, label: 'Agent 2', source: 'Financial Accounting',
+    color: '#10b981',
+    metric1: '₹84.2L Rev', metric2: '100% GST filed',
+    bars: [0.4, 0.65, 0.8, 0.9, 0.75],
+    progress: 94,
+  },
+  {
+    id: 3, label: 'Agent 3', source: 'Operations Mgmt',
+    color: '#f59e0b',
+    metric1: '1,247 SKUs', metric2: '34 Orders today',
+    bars: [0.7, 0.5, 0.85, 0.6, 0.45],
+    progress: 72,
+  },
 ] as const
 
-const SIDEBAR_APPS = [
-  { color: '#3b82f6', active: false },
-  { color: '#f43f5e', active: false },
-  { color: '#10b981', active: false },
-  { color: '#f59e0b', active: false },
-  { color: '#06b6d4', active: false },
-  { color: '#8b5cf6', active: true  },
+// ─── Inline robot SVG icon ─────────────────────────────────────────────────────
+function RobotIcon({ color, size = 28 }: { color: string; size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" style={{ display: 'block', flexShrink: 0 }}>
+      {/* Antenna */}
+      <line x1="12" y1="1.5" x2="12" y2="4.2" stroke={color} strokeWidth="1.4" strokeLinecap="round" />
+      <circle cx="12" cy="1.2" r="1.2" fill={color} />
+      {/* Head */}
+      <rect x="3" y="4.2" width="18" height="13.5" rx="3.2" fill="#0d1120" stroke={color} strokeWidth="1" />
+      {/* Ear bumps */}
+      <rect x="1" y="8" width="2" height="5" rx="1" fill={color} opacity="0.45" />
+      <rect x="21" y="8" width="2" height="5" rx="1" fill={color} opacity="0.45" />
+      {/* Visor */}
+      <rect x="5" y="6.8" width="14" height="5.5" rx="1.5" fill={color} fillOpacity="0.1" stroke={color} strokeWidth="0.5" strokeOpacity="0.5" />
+      {/* Pulse line inside visor */}
+      <polyline
+        points="6.5,9.5 8,9.5 9,7.6 10.2,11.5 11.4,8.2 12.5,10.5 13.6,9.5 17.5,9.5"
+        stroke={color} fill="none" strokeWidth="0.9" strokeLinecap="round" strokeLinejoin="round"
+      />
+      {/* Mouth */}
+      <rect x="9" y="14.8" width="6" height="1.2" rx="0.6" fill={color} opacity="0.4" />
+    </svg>
+  )
+}
+
+const SIDEBAR_ITEMS = [
+  { color: '#3b82f6', active: false }, // Agent 1 CRM
+  { color: '#10b981', active: false }, // Agent 2 Finance
+  { color: '#f59e0b', active: false }, // Agent 3 Ops
+  { color: '#8b5cf6', active: true  }, // Agent 4 HRMS (active)
+  { color: '#06b6d4', active: false }, // Agent 5 Projects
+  { color: '#6366f1', active: false }, // Agent 6 Flowtilla
   { color: '#ec4899', active: false },
   { color: '#14b8a6', active: false },
-  { color: '#6366f1', active: false },
   { color: '#f97316', active: false },
   { color: '#ef4444', active: false },
+  { color: '#a3e635', active: false },
 ]
 
 const EXTRA_APPS = ['ESOP', 'B2C CRM', 'Academy', 'ITSM', 'Affiliates']
 const EXTRA_WIDTHS = [28, 38, 42, 26, 50]
 
-// ─── Ecosystem Dashboard mock ─────────────────────────────────────────────────
+// shared tiny-text style for the mock UI
+const TX = (color = 'rgba(255,255,255,0.85)', size = 8, weight = 500) => ({
+  fontSize: size,
+  fontWeight: weight,
+  color,
+  fontFamily: '"SF Mono","Fira Code","Fira Mono","Roboto Mono",monospace',
+  lineHeight: 1.3,
+  letterSpacing: '0.02em',
+})
+
+// ─── Agent Orchestrator Dashboard mock ───────────────────────────────────────
 function DashboardMock() {
   return (
     <motion.div
@@ -170,7 +220,7 @@ function DashboardMock() {
         zIndex: 5,
       }} />
 
-      {/* Sidebar — all 11 apps with colored indicators */}
+      {/* Sidebar */}
       <div style={{
         width: '19%',
         background: '#070b13',
@@ -186,23 +236,23 @@ function DashboardMock() {
             <div style={{ height: 3, width: '50%', background: 'rgba(255,255,255,0.3)', borderRadius: 1 }} />
           </div>
         </div>
-        {/* App nav rows */}
-        {SIDEBAR_APPS.map((app, i) => (
+        {/* Nav rows */}
+        {SIDEBAR_ITEMS.map((item, i) => (
           <div key={i} style={{
             display: 'flex', alignItems: 'center', gap: 5, padding: '4px 5px',
-            background: app.active ? 'rgba(27,46,90,0.4)' : 'transparent',
+            background: item.active ? 'rgba(27,46,90,0.4)' : 'transparent',
             borderRadius: 3,
-            borderLeft: `2px solid ${app.active ? app.color : 'transparent'}`,
+            borderLeft: `2px solid ${item.active ? item.color : 'transparent'}`,
             marginBottom: 2,
           }}>
             <div style={{
               width: 5, height: 5, borderRadius: '50%',
-              background: app.color, flexShrink: 0,
-              boxShadow: app.active ? `0 0 6px ${app.color}` : 'none',
+              background: item.color, flexShrink: 0,
+              boxShadow: item.active ? `0 0 6px ${item.color}` : 'none',
             }} />
             <div style={{
               height: 3, flex: 1,
-              background: app.active ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.28)',
+              background: item.active ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.28)',
               borderRadius: 1,
             }} />
           </div>
@@ -210,100 +260,183 @@ function DashboardMock() {
       </div>
 
       {/* Main content */}
-      <div style={{ flex: 1, padding: '10px 11px', display: 'flex', flexDirection: 'column', gap: 7 }}>
+      <div style={{ flex: 1, padding: '9px 12px', display: 'flex', flexDirection: 'column', gap: 0 }}>
 
-        {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <div style={{ height: 6, width: 100, background: 'rgba(255,255,255,0.65)', borderRadius: 2 }} />
-            <div style={{ height: 4, width: 55, background: 'rgba(255,255,255,0.2)', borderRadius: 2 }} />
+        {/* Header bar */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 7 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={TX('rgba(255,255,255,0.9)', 9, 600)}>AI Agent Orchestrator</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(74,222,128,0.12)', border: '1px solid rgba(74,222,128,0.28)', borderRadius: 100, padding: '2px 8px' }}>
+              <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 5px #4ade80' }} />
+              <span style={TX('rgba(74,222,128,0.9)', 7, 600)}>3 Agents Running</span>
+            </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 5px #4ade80' }} />
-            <div style={{ height: 3, width: 45, background: 'rgba(255,255,255,0.3)', borderRadius: 1 }} />
-            <div style={{ width: 14, height: 14, borderRadius: '50%', background: 'rgba(255,255,255,0.12)' }} />
+          <span style={TX('rgba(255,255,255,0.3)', 7)}>Live Sync</span>
+        </div>
+
+        {/* ── ORCHESTRATOR CARD (top, full width) ── */}
+        <div style={{
+          background: 'rgba(139,92,246,0.09)',
+          border: '1px solid rgba(139,92,246,0.45)',
+          borderRadius: 8,
+          padding: '8px 12px',
+          position: 'relative', overflow: 'hidden',
+        }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 50% 0%, rgba(139,92,246,0.20), transparent 65%)', pointerEvents: 'none' }} />
+          {/* Top row: icon + name + status */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {/* Orchestrator icon — larger, purple */}
+            <div style={{ position: 'relative', flexShrink: 0 }}>
+              <RobotIcon color="#a78bfa" size={28} />
+              {/* crown accent */}
+              <div style={{ position: 'absolute', top: -4, left: '50%', transform: 'translateX(-50%)', width: 10, height: 4, display: 'flex', gap: 2, justifyContent: 'center' }}>
+                {[0,1,2].map(i => <div key={i} style={{ width: 2, height: i === 1 ? 4 : 3, background: '#a78bfa', borderRadius: 1 }} />)}
+              </div>
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ ...TX('#a78bfa', 9, 700), textTransform: 'uppercase', letterSpacing: '0.12em' }}>Orchestrator</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                  <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 5px #4ade80' }} />
+                  <span style={TX('rgba(74,222,128,0.85)', 7, 500)}>Decision Engine Active</span>
+                </div>
+              </div>
+              <span style={TX('rgba(255,255,255,0.35)', 6.5)}>Aggregating sub-agent reports • Taking cross-system decisions</span>
+            </div>
+            {/* Decision badge */}
+            <div style={{ background: 'rgba(139,92,246,0.18)', border: '1px solid rgba(139,92,246,0.4)', borderRadius: 5, padding: '3px 8px', flexShrink: 0 }}>
+              <span style={TX('#c4b5fd', 6.5, 600)}>⟳ Analyzing…</span>
+            </div>
+          </div>
+          {/* Decision output row */}
+          <div style={{ marginTop: 7, background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(139,92,246,0.2)', borderRadius: 5, padding: '4px 9px', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={TX('rgba(139,92,246,0.7)', 6.5, 600)}>DECISION</span>
+            <span style={TX('rgba(255,255,255,0.7)', 7)}>Increase Q2 inventory 18%</span>
+            <span style={{ ...TX('rgba(255,255,255,0.2)', 7), margin: '0 2px' }}>•</span>
+            <span style={TX('rgba(255,255,255,0.7)', 7)}>Approve ₹32L payroll</span>
+            <span style={{ ...TX('rgba(255,255,255,0.2)', 7), margin: '0 2px' }}>•</span>
+            <span style={TX('rgba(255,255,255,0.7)', 7)}>Flag 3 high-value CRM leads</span>
+          </div>
+          {/* Agent status pills */}
+          <div style={{ marginTop: 6, display: 'flex', gap: 5 }}>
+            {AGENTS.map(a => (
+              <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 4, background: `${a.color}15`, border: `1px solid ${a.color}40`, borderRadius: 100, padding: '2px 8px' }}>
+                <div style={{ width: 4, height: 4, borderRadius: '50%', background: a.color, boxShadow: `0 0 4px ${a.color}` }} />
+                <span style={TX(a.color, 6.5, 600)}>{a.source} ✓</span>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* 2×3 ecosystem panel grid */}
-        <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gridTemplateRows: 'repeat(2, 1fr)', gap: 6 }}>
-          {ECOSYSTEM_APPS.map((app) => (
-            <div key={app.name} style={{
-              background: 'rgba(255,255,255,0.025)',
-              border: '1px solid rgba(255,255,255,0.07)',
-              borderLeft: `3px solid ${app.color}`,
-              borderRadius: 5,
-              padding: '7px 8px',
-              display: 'flex', flexDirection: 'column', gap: 3,
+        {/* ── Vertical connector lines (sub-agents report UP to orchestrator) ── */}
+        <div style={{ position: 'relative', height: 28, flexShrink: 0 }}>
+          <svg width="100%" height="28" style={{ display: 'block', overflow: 'visible' }}>
+            {/* 3 vertical lines positioned at centre of each sub-agent column */}
+            {AGENTS.map((agent, idx) => {
+              const x = `${(idx * 33.33 + 16.67)}%`
+              return (
+                <g key={agent.id}>
+                  {/* faint track */}
+                  <line x1={x} y1="0" x2={x} y2="28" stroke="rgba(255,255,255,0.06)" strokeWidth="1.5" />
+                  {/* animated upward flow */}
+                  <line x1={x} y1="28" x2={x} y2="3"
+                    stroke={agent.color} strokeWidth="1.5" strokeDasharray="5 4" strokeLinecap="round"
+                    opacity="0.7"
+                    style={{ animation: `data-flow-up ${0.9 + idx * 0.22}s linear infinite` }}
+                  />
+                  {/* upward arrowhead */}
+                  <polygon
+                    points={`${(idx * 33.33 + 14.67)}%,6 ${(idx * 33.33 + 18.67)}%,6 ${(idx * 33.33 + 16.67)}%,0`}
+                    fill={agent.color} opacity="0.85"
+                  />
+                </g>
+              )
+            })}
+            {/* Horizontal branch connecting the 3 lines */}
+            <line x1="16.67%" y1="0" x2="83.33%" y2="0" stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
+          </svg>
+        </div>
+
+        {/* ── 3 Sub-agent cards ── */}
+        <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, minHeight: 0 }}>
+          {AGENTS.map((agent, idx) => (
+            <div key={agent.id} style={{
+              background: `${agent.color}0a`,
+              border: `1px solid ${agent.color}30`,
+              borderTop: `3px solid ${agent.color}`,
+              borderRadius: '0 0 7px 7px',
+              padding: '7px 9px',
+              display: 'flex', flexDirection: 'column', gap: 4,
               position: 'relative', overflow: 'hidden',
             }}>
-              {/* Color glow wash */}
-              <div style={{
-                position: 'absolute', inset: 0,
-                background: `radial-gradient(ellipse at 0% 50%, ${app.color}18, transparent 65%)`,
-                pointerEvents: 'none',
-              }} />
-              {/* App name row */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <div style={{ width: 5, height: 5, borderRadius: 1, background: app.color, flexShrink: 0 }} />
-                <div style={{ height: 4, width: '52%', background: 'rgba(255,255,255,0.6)', borderRadius: 1 }} />
+              <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(ellipse at 50% 0%, ${agent.color}18, transparent 65%)`, pointerEvents: 'none' }} />
+
+              {/* Agent identity */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <RobotIcon color={agent.color} size={20} />
+                <div>
+                  <span style={{ ...TX(agent.color, 7.5, 700), textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block' }}>Agent {agent.id}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 3, marginTop: 1 }}>
+                    <div style={{ width: 4, height: 4, borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 4px #4ade80' }} />
+                    <span style={TX('rgba(74,222,128,0.8)', 6.5)}>Active</span>
+                  </div>
+                </div>
               </div>
-              {/* Primary metric */}
-              <div style={{ height: 5, width: '72%', background: 'rgba(255,255,255,0.75)', borderRadius: 1 }} />
-              {/* Secondary metric */}
-              <div style={{ height: 3, width: '48%', background: `${app.color}90`, borderRadius: 1 }} />
+
+              {/* Source label */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 4 }}>
+                <div style={{ width: 5, height: 5, borderRadius: 1, background: agent.color, flexShrink: 0 }} />
+                <span style={{ ...TX(agent.color, 7.5, 600) }}>{agent.source}</span>
+              </div>
+
+              {/* Metrics */}
+              <span style={TX('rgba(255,255,255,0.88)', 8.5, 700)}>{agent.metric1}</span>
+              <span style={TX(`${agent.color}cc`, 6.5)}>{agent.metric2}</span>
+
               {/* Mini bar chart */}
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 2, height: 14, marginTop: 1 }}>
-                {app.bars.map((h, bi) => (
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 2, height: 10, marginTop: 1 }}>
+                {agent.bars.map((h, bi) => (
                   <div key={bi} style={{
-                    flex: 1,
-                    height: `${h * 100}%`,
-                    background: bi === app.bars.length - 1 ? `${app.color}dd` : `${app.color}55`,
+                    flex: 1, height: `${h * 100}%`,
+                    background: bi === agent.bars.length - 1 ? `${agent.color}ee` : `${agent.color}48`,
                     borderRadius: '1px 1px 0 0',
                   }} />
                 ))}
               </div>
-              {/* Flow tags */}
-              <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap', marginTop: 1 }}>
-                {app.flows.map(f => (
-                  <div key={f} style={{
-                    display: 'flex', alignItems: 'center', gap: 2,
-                    background: 'rgba(255,255,255,0.06)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: 100,
-                    padding: '1px 5px',
-                  }}>
-                    <div style={{ width: 3, height: 3, borderRadius: '50%', background: app.color }} />
-                    <div style={{ height: 2, width: 20, background: 'rgba(255,255,255,0.4)', borderRadius: 1 }} />
-                  </div>
-                ))}
+
+              {/* Progress */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <div style={{ flex: 1, height: 2, background: 'rgba(255,255,255,0.07)', borderRadius: 1, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${agent.progress}%`, background: `linear-gradient(90deg, ${agent.color}60, ${agent.color})`, borderRadius: 1 }} />
+                </div>
+                <span style={TX('rgba(255,255,255,0.35)', 6)}>{agent.progress}%</span>
+              </div>
+
+              {/* Reporting tag */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                <span style={TX('rgba(255,255,255,0.25)', 6)}>↑ Reporting to Orchestrator</span>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Bottom connected-apps strip */}
+        {/* Bottom strip */}
         <div style={{
-          display: 'flex', alignItems: 'center', gap: 5,
-          padding: '5px 8px',
-          background: 'rgba(255,255,255,0.025)',
+          display: 'flex', alignItems: 'center', gap: 5, marginTop: 7,
+          padding: '4px 8px',
+          background: 'rgba(255,255,255,0.018)',
           border: '1px solid rgba(255,255,255,0.05)',
-          borderRadius: 4,
+          borderRadius: 4, flexShrink: 0,
         }}>
           <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 4px #4ade80', flexShrink: 0 }} />
-          <div style={{ height: 3, width: 55, background: 'rgba(255,255,255,0.4)', borderRadius: 1 }} />
-          <div style={{ width: 1, height: 10, background: 'rgba(255,255,255,0.1)', flexShrink: 0, margin: '0 2px' }} />
-          {EXTRA_APPS.map((name, i) => (
-            <div key={name} style={{
-              display: 'flex', alignItems: 'center',
-              background: 'rgba(255,255,255,0.05)',
-              border: '1px solid rgba(255,255,255,0.08)',
-              borderRadius: 100, padding: '2px 7px',
-            }}>
-              <div style={{ height: 3, width: EXTRA_WIDTHS[i], background: 'rgba(255,255,255,0.35)', borderRadius: 1 }} />
+          <span style={TX('rgba(255,255,255,0.4)', 7)}>Connected Apps</span>
+          <div style={{ width: 1, height: 10, background: 'rgba(255,255,255,0.1)', margin: '0 2px' }} />
+          {['HRMS', 'Projects', 'Flowtilla', 'ESOP', 'B2C CRM'].map((name) => (
+            <div key={name} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 100, padding: '2px 8px' }}>
+              <span style={TX('rgba(255,255,255,0.45)', 6.5)}>{name}</span>
             </div>
           ))}
-          <div style={{ marginLeft: 'auto', height: 3, width: 55, background: 'rgba(255,255,255,0.18)', borderRadius: 1 }} />
+          <span style={{ ...TX('rgba(255,255,255,0.2)', 6.5), marginLeft: 'auto' }}>5 more apps</span>
         </div>
       </div>
     </motion.div>
@@ -312,6 +445,8 @@ function DashboardMock() {
 
 // ─── Shared keyframes ──────────────────────────────────────────────────────────
 const PROJECTOR_STYLES = `
+  @keyframes data-flow      { to { stroke-dashoffset: -9; } }
+  @keyframes data-flow-up   { to { stroke-dashoffset:  9; } }
   @keyframes pp-float       { 0%,100%{ transform:translateY(0px) }  50%{ transform:translateY(-6px) } }
   @keyframes pp-lens-glow   {
     0%,100%{ box-shadow:0 0 0 3px rgba(36,59,110,0.95), 0 0 18px 5px rgba(46,79,140,0.9), 0 0 44px 10px rgba(36,59,110,0.6), 0 0 90px 20px rgba(27,46,90,0.35) }

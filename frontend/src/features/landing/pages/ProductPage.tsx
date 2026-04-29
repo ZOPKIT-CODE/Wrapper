@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from '@tanstack/react-router';
 import { useKindeAuth } from '@kinde-oss/kinde-auth-react';
 import { ProductData } from '@/types/products';
-import { Check, Star, X, Zap, XCircle, CheckCircle, Minus, AlertCircle, Sparkles, LayoutGrid, ChevronRight, Maximize2, ArrowRight, Play, Calendar } from 'lucide-react';
+import { Check, X, Zap, XCircle, CheckCircle, Minus, AlertCircle, Sparkles, LayoutGrid, ChevronRight, Maximize2, ArrowRight, Play, Calendar } from 'lucide-react';
 import { MiniSparkline } from '@/components/common/MiniSparkline';
 import { productPagesData, productInfo } from '@/data/productPages';
 import {
@@ -1881,35 +1881,6 @@ const ProductPage: React.FC = () => {
             {/* 7. TESTIMONIAL & FINAL CTA */}
             <section className="py-24 bg-gradient-to-b from-blue-50 to-white">
                 <div className="container mx-auto px-4">
-                    <div className="max-w-4xl mx-auto text-center mb-24">
-                        <div className="inline-block p-3 rounded-2xl bg-white shadow-xl mb-12 border border-slate-100">
-                            <div className="flex text-yellow-400 gap-1 mb-2 justify-center">
-                                {[1, 2, 3, 4, 5].map(i => <Star key={i} className="fill-current" size={20} />)}
-                            </div>
-                            <h3 className="text-2xl lg:text-3xl font-bold text-[#1B2E5A] mb-6 leading-snug px-4">
-                                "{data.socialProof.testimonial.quote}"
-                            </h3>
-                            <div className="flex items-center justify-center gap-4">
-                                <div className="h-12 w-12 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-xl">
-                                    {data.socialProof.testimonial.author.charAt(0)}
-                                </div>
-                                <div className="text-left">
-                                    <div className="font-bold text-[#1B2E5A]">{data.socialProof.testimonial.author}</div>
-                                    <div className="text-sm text-slate-500">{data.socialProof.testimonial.title}, {data.socialProof.testimonial.company}</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-3 gap-8 border-t border-slate-200 pt-12">
-                            {data.socialProof.stats.map((stat, i) => (
-                                <div key={i}>
-                                    <div className="text-3xl lg:text-4xl font-bold text-[#1B2E5A] mb-1">{stat.value}</div>
-                                    <div className="text-sm text-slate-500 uppercase tracking-wide">{stat.label}</div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
                     <div className="relative bg-slate-900 rounded-[2.5rem] p-12 lg:p-24 text-center overflow-hidden shadow-2xl">
                         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
                         <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 bg-blue-500/30 rounded-full blur-[80px]"></div>
