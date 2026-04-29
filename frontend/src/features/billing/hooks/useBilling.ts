@@ -17,9 +17,9 @@ import {
   api
 } from '@/lib/api'
 import { useSubscriptionCurrent } from '@/hooks/useSharedQueries'
-import { applicationPlansFallback, creditTopups } from '../constants/billingPlans'
+import { applicationPlansFallback } from '../constants/billingPlans'
 import { mapSubscriptionPlansResponse } from '../utils/mapSubscriptionPlansResponse'
-import type { ApplicationPlan, CreditTopup, CheckoutCurrency } from '@/types/pricing'
+import type { ApplicationPlan, CheckoutCurrency, CreditPricing } from '@/types/pricing'
 
 /** Display subscription shape — subscription table fields only. Credit data comes from useCreditStatusQuery. */
 export interface DisplaySubscription {
@@ -53,7 +53,7 @@ const defaultDisplaySubscription: DisplaySubscription = {
 
 const BILLING_PRICE_CURRENCY_KEY = 'wrapper.billing.price-currency'
 
-const BILLING_PAGE_TABS = ['subscription', 'topups', 'plans', 'history'] as const
+const BILLING_PAGE_TABS = ['subscription', 'topups', 'plans', 'history', 'expiry'] as const
 
 function readStoredCheckoutCurrency(): CheckoutCurrency {
   try {
@@ -171,11 +171,15 @@ export function useBilling() {
   const applicationPlans: ApplicationPlan[] =
     plansFromApi && plansFromApi.length > 0 ? plansFromApi : applicationPlansFallback
 
-  const { data: packagesData } = useQuery({
-    queryKey: ['credit', 'packages'],
-    queryFn: async () => creditTopups,
-    enabled: !mockMode,
-    retry: 1
+  const { data: creditPricing } = useQuery<CreditPricing>({
+    queryKey: ['credit', 'pricing'],
+    queryFn: async () => {
+      const response = await creditAPI.getCreditPricing()
+      return response.data.data
+    },
+    enabled: isAuthenticated && !mockMode,
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
   })
 
   const {
@@ -196,6 +200,38 @@ export function useBilling() {
     retry: 1
   })
 
+  const { data: creditAllocations, isLoading: creditAllocationsLoading } = useQuery({
+    queryKey: ['credit', 'allocations'],
+    queryFn: async () => {
+      try {
+        const response = await creditAPI.getTenantAllocations()
+        return response.data.data ?? []
+      } catch (error: unknown) {
+        console.warn('Failed to fetch credit allocations:', error)
+        return []
+      }
+    },
+    enabled: isAuthenticated && !mockMode,
+    staleTime: 2 * 60 * 1000,
+    retry: 1,
+  })
+
+  const { data: entityBalances, isLoading: entityBalancesLoading } = useQuery({
+    queryKey: ['credit', 'entity-balances'],
+    queryFn: async () => {
+      try {
+        const response = await creditAPI.getEntityBalances()
+        return response.data.data ?? []
+      } catch (error: unknown) {
+        console.warn('Failed to fetch entity balances:', error)
+        return []
+      }
+    },
+    enabled: isAuthenticated && !mockMode,
+    staleTime: 2 * 60 * 1000,
+    retry: 1,
+  })
+
   const { data: billingHistory, isLoading: billingHistoryLoading } = useQuery({
     queryKey: ['subscription', 'billing-history'],
     queryFn: async () => {
@@ -214,7 +250,6 @@ export function useBilling() {
   const displaySubscription: DisplaySubscription =
     ensureValidSubscription(subscription as DisplaySubscription) ?? defaultDisplaySubscription
   const displayBillingHistory = billingHistory ?? []
-  const displayCreditTopups: CreditTopup[] = packagesData ?? creditTopups
 
   const createCheckoutMutation = useMutation({
     mutationFn: async ({ planId, currency }: { planId: string; currency: CheckoutCurrency }) => {
@@ -305,23 +340,20 @@ export function useBilling() {
     }
   }
 
-  const handleCreditPurchase = async (packageId: string) => {
+  const handleCreditPurchase = async (creditAmount: number) => {
     if (!isAuthenticated) {
       const googleConnectionId = import.meta.env.VITE_KINDE_GOOGLE_CONNECTION_ID
       if (googleConnectionId) login({ connectionId: googleConnectionId })
       else login()
       return
     }
-    setSelectedPlan(packageId)
+    setSelectedPlan(`credits_${creditAmount}`)
     setIsUpgrading(true)
     try {
-      const pkg = displayCreditTopups.find((p) => p.id === packageId)
-      if (!pkg) throw new Error('Selected credit top-up not found')
       const response = await creditAPI.purchaseCredits({
-        creditAmount: pkg.credits,
+        creditAmount,
         paymentMethod: 'stripe',
-        currency: pkg.currency,
-        notes: `Purchase of ${pkg.name} package`
+        currency: 'USD',
       })
       if (response.data.data?.checkoutUrl) {
         window.location.href = response.data.data.checkoutUrl
@@ -330,8 +362,9 @@ export function useBilling() {
         queryClient.invalidateQueries({ queryKey: ['credit'] })
         queryClient.invalidateQueries({ queryKey: ['subscription'] })
       }
-    } catch (error: unknown & { response?: { data?: { message?: string } } }) {
-      toast.error((error as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Failed to purchase credits')
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } }
+      toast.error(err?.response?.data?.message ?? 'Failed to purchase credits')
     } finally {
       setIsUpgrading(false)
       setSelectedPlan(null)
@@ -358,8 +391,23 @@ export function useBilling() {
             billingCycle: 'yearly',
             currency: checkoutCurrency
           })
-          if (response.data.data?.checkoutUrl) {
-            window.location.href = response.data.data.checkoutUrl
+          const data = response.data.data
+          if (data?.upgraded) {
+            // In-place upgrade with prorated payment — redirect to success page
+            queryClient.invalidateQueries({ queryKey: ['subscription'] })
+            queryClient.invalidateQueries({ queryKey: ['credit'] })
+            const params = new URLSearchParams({
+              type: 'plan_upgrade',
+              plan: data.plan || planId,
+              previousPlan: data.previousPlan || '',
+              previousPlanName: data.previousPlanName || '',
+              amount: String(data.proratedAmount || 0),
+              currency: data.currency || 'USD',
+              prorated: 'true',
+            })
+            navigate({ to: `/payment-success?${params.toString()}` })
+          } else if (data?.checkoutUrl) {
+            window.location.href = data.checkoutUrl
           } else {
             toast.success('Plan changed successfully!')
             queryClient.invalidateQueries({ queryKey: ['subscription'] })
@@ -447,12 +495,17 @@ export function useBilling() {
     // Data
     displaySubscription,
     displayBillingHistory,
-    displayCreditTopups,
+    creditPricing: creditPricing ?? null,
     applicationPlans,
     creditBalance,
     // Loading
     subscriptionLoading,
     billingHistoryLoading,
+    creditAllocationsLoading,
+    // Credit allocations (expiry schedule)
+    creditAllocations,
+    entityBalances,
+    entityBalancesLoading,
     // Mutations
     createCheckoutMutation,
     changePlanMutation,

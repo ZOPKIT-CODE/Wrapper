@@ -1,5 +1,5 @@
 import { systemDbConnection } from '../../../db/index.js';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { applications, organizationApplications, applicationModules } from '../../../db/schema/core/suite-schema.js';
 import { v4 as uuidv4 } from 'uuid';
 import { publishTenantApplicationSyncEvent } from '../../messaging/services/tenant-application-event-service.js';
@@ -83,15 +83,15 @@ class OnboardingOrganizationSetupService {
       expiryDate.setFullYear(expiryDate.getFullYear() + 1);
 
       const applicationsToInsert: Record<string, unknown>[] = [];
+      const applicationsToUpdate: { appId: string; appCode: string; enabledModules: string[]; }[] = [];
+
       for (const appCode of appCodes) {
         const appId = resolveAppId(appCode, appCodeToIdMap);
         if (!appId) {
           console.warn(`⚠️ Application code "${appCode}" not found in applications table. Skipping. Available: ${Object.keys(appCodeToIdMap).join(', ')}`);
           continue;
         }
-        if (existingAppIds.has(appId)) {
-          continue;
-        }
+
         let enabledModules = modulesByApp[appCode] || [];
         if (enabledModules === '*') {
           const allModules = await systemDbConnection
@@ -100,25 +100,82 @@ class OnboardingOrganizationSetupService {
             .where(eq(applicationModules.appId, appId));
           enabledModules = allModules.map(m => m.moduleCode);
         }
-        applicationsToInsert.push({
-          id: uuidv4(),
-          tenantId,
-          appId,
-          subscriptionTier: planId,
-          isEnabled: true,
-          enabledModules: Array.isArray(enabledModules) ? enabledModules : [],
-          expiresAt: expiryDate
-        });
-        console.log(`✅ Will assign application ${appCode} (${appId}) to tenant ${tenantId}`);
+        const resolvedModules = Array.isArray(enabledModules) ? enabledModules : [];
+
+        if (existingAppIds.has(appId)) {
+          // Existing app — update tier, modules, and expiry to match the new plan
+          applicationsToUpdate.push({ appId, appCode, enabledModules: resolvedModules });
+        } else {
+          // New app — insert
+          applicationsToInsert.push({
+            id: uuidv4(),
+            tenantId,
+            appId,
+            subscriptionTier: planId,
+            isEnabled: true,
+            enabledModules: resolvedModules,
+            expiresAt: expiryDate
+          });
+          console.log(`✅ Will assign application ${appCode} (${appId}) to tenant ${tenantId}`);
+        }
+      }
+
+      // Update existing apps with new plan's tier, modules, and re-enable if in plan
+      for (const app of applicationsToUpdate) {
+        await systemDbConnection
+          .update(organizationApplications)
+          .set({
+            isEnabled: true,
+            subscriptionTier: planId,
+            enabledModules: app.enabledModules,
+            expiresAt: expiryDate,
+            updatedAt: new Date(),
+          })
+          .where(and(
+            eq(organizationApplications.tenantId, tenantId),
+            eq(organizationApplications.appId, app.appId)
+          ));
+        console.log(`🔄 Updated application ${app.appCode} to ${planId} tier with ${app.enabledModules.length} modules (enabled)`);
       }
 
       if (applicationsToInsert.length > 0) {
         await systemDbConnection
           .insert(organizationApplications)
           .values(applicationsToInsert);
-        console.log(`✅ Assigned ${applicationsToInsert.length} application(s) for plan ${planId} to tenant ${tenantId}`);
+        console.log(`✅ Assigned ${applicationsToInsert.length} new application(s) for plan ${planId} to tenant ${tenantId}`);
+      }
+
+      // Disable apps that are NOT in the new plan (e.g., downgrade from Enterprise to Starter)
+      const planAppIds = new Set(
+        appCodes.map(code => resolveAppId(code, appCodeToIdMap)).filter(Boolean) as string[]
+      );
+      const appsToDisable = existing.filter(r => r.appId && !planAppIds.has(r.appId));
+
+      for (const app of appsToDisable) {
+        await systemDbConnection
+          .update(organizationApplications)
+          .set({
+            isEnabled: false,
+            subscriptionTier: planId,
+            updatedAt: new Date(),
+          })
+          .where(and(
+            eq(organizationApplications.tenantId, tenantId),
+            eq(organizationApplications.appId as any, app.appId)
+          ));
+      }
+
+      if (appsToDisable.length > 0) {
+        const disabledCodes = appsToDisable.map(a => {
+          return Object.entries(appCodeToIdMap).find(([, id]) => id === a.appId)?.[0] ?? a.appId;
+        });
+        console.log(`🔒 Disabled ${appsToDisable.length} app(s) not in ${planId} plan: ${disabledCodes.join(', ')}`);
+      }
+
+      if (applicationsToInsert.length === 0 && applicationsToUpdate.length === 0 && appsToDisable.length === 0) {
+        console.log(`ℹ️ No application changes needed for plan ${planId} (tenant already has all plan apps at correct tier).`);
       } else {
-        console.log(`ℹ️ No new applications to assign for plan ${planId} (tenant already has plan apps).`);
+        console.log(`✅ Plan change complete: ${applicationsToUpdate.length} updated, ${applicationsToInsert.length} added, ${appsToDisable.length} disabled`);
       }
 
       // ── Publish thin tenant.app.provisioned for EACH newly granted app ──
@@ -169,19 +226,13 @@ class OnboardingOrganizationSetupService {
         }
       }
 
-      // ── Also publish the existing fat tenant.applications.updated ──────────
-      // This keeps existing downstream permission-sync logic working.
-      // (Role permissions + entitlement flags update via this event.)
-      try {
-        await publishTenantApplicationSyncEvent({
-          tenantId,
-          reason: 'plan_change',
-          planId,
-          actorId: 'system',
-        });
-      } catch (publishError: unknown) {
-        console.error('❌ Failed to publish tenant application sync event for plan change:', (publishError as Error).message);
-      }
+      // Skip tenant.applications.updated for plan changes — subscription.upgraded
+      // (published by handleSubscriptionUpdated / handleCheckoutCompleted) already
+      // carries the per-app modules and triggers the same role permission sync in
+      // downstream apps. Publishing both causes redundant processing and 11× MQ
+      // messages (one per active app) with identical fat payloads.
+      // tenant.applications.updated is still published for manual admin operations
+      // (module_assignment, permission_update, etc.) via application-assignment routes.
 
       return {
         success: true,

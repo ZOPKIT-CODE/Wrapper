@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useParams, useNavigate } from '@tanstack/react-router';
+import { TenantCreditPanel } from '../components/seasonal-credits/TenantCreditPanel';
 import {
   ArrowLeft,
   Users,
@@ -30,10 +31,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AnimatedLoader from '@/components/common/feedback/AnimatedLoader';
 import { AlertCircle } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
+import { useActiveBatches, useExpiredHistory } from '../hooks/useSeasonalCredits';
 
 interface TenantUser {
   userId: string;
@@ -156,6 +159,60 @@ export function TenantDetailsPage() {
     enabled: !!tenantId,
   });
 
+  const { data: activeBatchesData, isLoading: activeBatchesLoading } = useActiveBatches(
+    tenantId ? { tenantId, limit: 100 } : undefined
+  );
+  const { data: expiredBatchesData, isLoading: expiredBatchesLoading } = useExpiredHistory(
+    tenantId ? { tenantId, limit: 100 } : undefined
+  );
+
+  const activeBatches = activeBatchesData?.batches ?? [];
+  const expiredBatches = expiredBatchesData?.batches ?? [];
+  const allKnownBatches = [...activeBatches, ...expiredBatches];
+
+  const allocationSummaryByApp = useMemo(() => {
+    const aggregate = new Map<string, {
+      count: number;
+      allocated: number;
+      used: number;
+      remaining: number;
+      expiredCount: number;
+      expiring7dCount: number;
+    }>();
+    const now = Date.now();
+    const next7Days = now + 7 * 24 * 60 * 60 * 1000;
+
+    for (const batch of allKnownBatches) {
+      const app = batch.targetApplication || 'Org pool';
+      const bucket = aggregate.get(app) ?? {
+        count: 0,
+        allocated: 0,
+        used: 0,
+        remaining: 0,
+        expiredCount: 0,
+        expiring7dCount: 0,
+      };
+
+      const allocated = Number(batch.totalCredits ?? 0);
+      const used = Number(batch.usedCredits ?? 0);
+      const remaining = Number(batch.remainingCredits ?? 0);
+      const expiryTs = batch.expiresAt ? new Date(batch.expiresAt).getTime() : null;
+
+      bucket.count += 1;
+      bucket.allocated += allocated;
+      bucket.used += used;
+      bucket.remaining += remaining;
+      if (batch.isExpired || (expiryTs !== null && expiryTs <= now)) bucket.expiredCount += 1;
+      if (expiryTs !== null && expiryTs > now && expiryTs <= next7Days) bucket.expiring7dCount += 1;
+
+      aggregate.set(app, bucket);
+    }
+
+    return Array.from(aggregate.entries())
+      .map(([application, values]) => ({ application, ...values }))
+      .sort((a, b) => b.allocated - a.allocated);
+  }, [allKnownBatches]);
+
   if (isLoading) {
     return (
       <Container className="dashboard-actionable-cursors">
@@ -259,12 +316,12 @@ export function TenantDetailsPage() {
     <Container className="dashboard-actionable-cursors">
       <div className="space-y-6 pb-8">
         {/* ── Section 1: Header ── */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 rounded-2xl bg-gradient-to-br from-[#11254d] via-[#1B2E5A] to-[#0f1f40] p-5 text-white shadow-xl">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => navigate({ to: '/company-admin' })}
-            className="gap-2 shrink-0"
+            className="gap-2 shrink-0 text-white hover:bg-white/10"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Admin
@@ -276,17 +333,17 @@ export function TenantDetailsPage() {
               </h1>
               {getStatusBadge()}
               {tenant.industry && (
-                <Badge variant="outline" className="text-xs font-normal">
+                <Badge variant="outline" className="text-xs font-normal border-white/30 text-white">
                   {tenant.industry}
                 </Badge>
               )}
               {tenant.organizationSize && (
-                <Badge variant="outline" className="text-xs font-normal">
+                <Badge variant="outline" className="text-xs font-normal border-white/30 text-white">
                   {tenant.organizationSize}
                 </Badge>
               )}
             </div>
-            <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
+            <div className="flex items-center gap-4 mt-1 text-sm text-blue-100/80">
               <span className="flex items-center gap-1">
                 <Globe className="h-3.5 w-3.5" />
                 {tenant.subdomain}
@@ -299,7 +356,7 @@ export function TenantDetailsPage() {
               )}
             </div>
           </div>
-          <Button variant="outline" size="sm" onClick={handleExport} className="gap-2 shrink-0">
+          <Button variant="outline" size="sm" onClick={handleExport} className="gap-2 shrink-0 border-white/30 bg-white/10 text-white hover:bg-white/20">
             <Download className="h-4 w-4" />
             Export
           </Button>
@@ -444,6 +501,24 @@ export function TenantDetailsPage() {
             </CardContent>
           </Card>
 
+          {/* ── Section 4b: Credit Batch Management ── */}
+          {tenantId && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base font-semibold flex items-center gap-2">
+                  <CreditCard className="h-4 w-4 text-indigo-600" />
+                  Credit Batches
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <TenantCreditPanel
+                  tenantId={tenantId}
+                  tenantName={tenantData?.tenant?.companyName}
+                />
+              </CardContent>
+            </Card>
+          )}
+
           {/* ── Section 5: Credit Analytics ── */}
           <Card>
             <CardHeader className="pb-3">
@@ -483,6 +558,138 @@ export function TenantDetailsPage() {
                 <InfoRow label="Active Entities" value={String(creditSummary.activeEntities)} />
                 <InfoRow label="Avg per Entity" value={avgCredits.toLocaleString(undefined, { maximumFractionDigits: 2 })} />
               </div>
+            </CardContent>
+          </Card>
+
+          {/* ── Section 5b: Application Allocations ── */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <Layers className="h-4 w-4 text-indigo-600" />
+                Application Allocations
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-3 gap-3">
+                <MiniStat icon={<Layers className="h-4 w-4 text-indigo-600" />} value={allKnownBatches.length} label="Allocations" />
+                <MiniStat
+                  icon={<TrendingUp className="h-4 w-4 text-purple-600" />}
+                  value={Math.round(allocationSummaryByApp.reduce((sum, row) => sum + row.allocated, 0))}
+                  label="Allocated"
+                />
+                <MiniStat
+                  icon={<Clock className="h-4 w-4 text-amber-600" />}
+                  value={allocationSummaryByApp.reduce((sum, row) => sum + row.expiring7dCount, 0)}
+                  label="Expiring 7d"
+                />
+              </div>
+
+              <div className="grid grid-cols-3 gap-3 text-xs">
+                <div className="rounded-md border p-2">
+                  <div className="text-muted-foreground">Total Used</div>
+                  <div className="font-semibold">
+                    {allocationSummaryByApp.reduce((sum, row) => sum + row.used, 0).toFixed(2)}
+                  </div>
+                </div>
+                <div className="rounded-md border p-2">
+                  <div className="text-muted-foreground">Total Remaining</div>
+                  <div className="font-semibold">
+                    {allocationSummaryByApp.reduce((sum, row) => sum + row.remaining, 0).toFixed(2)}
+                  </div>
+                </div>
+                <div className="rounded-md border p-2">
+                  <div className="text-muted-foreground">Expired Batches</div>
+                  <div className="font-semibold">
+                    {allocationSummaryByApp.reduce((sum, row) => sum + row.expiredCount, 0)}
+                  </div>
+                </div>
+              </div>
+
+              {allocationSummaryByApp.length > 0 ? (
+                <div className="space-y-2">
+                  {allocationSummaryByApp.slice(0, 8).map((row) => (
+                    <div key={row.application} className="flex items-center justify-between rounded-md border p-2 text-sm">
+                      <span className="font-medium capitalize">{row.application}</span>
+                      <span className="text-muted-foreground">
+                        {row.remaining.toFixed(2)} remaining / {row.used.toFixed(2)} used / {row.allocated.toFixed(2)} allocated ({row.count})
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-4 text-sm text-muted-foreground">
+                  No application allocations found for this tenant yet.
+                </div>
+              )}
+
+              {(activeBatchesLoading || expiredBatchesLoading) && (
+                <div className="text-xs text-muted-foreground">Loading detailed allocation rows...</div>
+              )}
+
+              {activeBatches.length > 0 && (
+                <div className="rounded-md border">
+                  <div className="px-3 py-2 text-xs font-semibold text-muted-foreground border-b">Active Allocation Batches</div>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Application</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Allocated</TableHead>
+                        <TableHead>Used</TableHead>
+                        <TableHead>Remaining</TableHead>
+                        <TableHead>Expires</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {activeBatches.slice(0, 12).map((batch) => (
+                        <TableRow key={batch.allocationId}>
+                          <TableCell className="capitalize">{batch.targetApplication || 'Org pool'}</TableCell>
+                          <TableCell><Badge variant="outline" className="capitalize">{batch.creditType}</Badge></TableCell>
+                          <TableCell>{Number(batch.totalCredits || 0).toFixed(2)}</TableCell>
+                          <TableCell>{Number(batch.usedCredits || 0).toFixed(2)}</TableCell>
+                          <TableCell>{Number(batch.remainingCredits || 0).toFixed(2)}</TableCell>
+                          <TableCell>{formatDate(batch.expiresAt)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+
+              {expiredBatches.length > 0 && (
+                <div className="rounded-md border">
+                  <div className="px-3 py-2 text-xs font-semibold text-muted-foreground border-b">Recently Expired Batches</div>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Application</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Allocated</TableHead>
+                        <TableHead>Used Before Expiry</TableHead>
+                        <TableHead>Unused Expired</TableHead>
+                        <TableHead>Expired On</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {expiredBatches.slice(0, 10).map((batch) => {
+                        const allocated = Number(batch.totalCredits || 0);
+                        const used = Number(batch.usedCredits || 0);
+                        const expiredUnused = Math.max(0, allocated - used);
+                        return (
+                          <TableRow key={batch.allocationId}>
+                            <TableCell className="capitalize">{batch.targetApplication || 'Org pool'}</TableCell>
+                            <TableCell><Badge variant="outline" className="capitalize">{batch.creditType}</Badge></TableCell>
+                            <TableCell>{allocated.toFixed(2)}</TableCell>
+                            <TableCell>{used.toFixed(2)}</TableCell>
+                            <TableCell className="text-red-600">{expiredUnused.toFixed(2)}</TableCell>
+                            <TableCell>{formatDate(batch.expiresAt)}</TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
             </CardContent>
           </Card>
 

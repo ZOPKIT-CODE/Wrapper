@@ -232,6 +232,8 @@ export interface OrbitalEcosystemProps {
   appIds?: readonly string[] | null;
   /** Landing hero: larger ring, labels, and hub for readability. */
   variant?: 'default' | 'hero';
+  /** Dark background mode — inverts SVG and node colors for use on dark hero sections. */
+  theme?: 'light' | 'dark';
 }
 
 export const OrbitalEcosystem: React.FC<OrbitalEcosystemProps> = ({
@@ -243,7 +245,9 @@ export const OrbitalEcosystem: React.FC<OrbitalEcosystemProps> = ({
   showMobileStrip = true,
   appIds = null,
   variant = 'default',
+  theme = 'light',
 }) => {
+  const isDark = theme === 'dark';
   const isHero = variant === 'hero';
   const orbitRadius = isHero ? HERO_ORBITAL_R : DEFAULT_ORBITAL_R;
   const curveBulge = isHero ? 16 : 13;
@@ -256,6 +260,7 @@ export const OrbitalEcosystem: React.FC<OrbitalEcosystemProps> = ({
   );
 
   const [internalActive, setInternalActive] = useState<Product>(() => visibleProducts[0] ?? products[0]);
+  const [hoveredEdge, setHoveredEdge] = useState<{ label: string; lx: number; ly: number } | null>(null);
   const isControlled = controlledActive !== undefined && setControlled !== undefined;
   const activeProduct = isControlled ? controlledActive : internalActive;
   const setActiveProduct = isControlled ? setControlled : setInternalActive;
@@ -307,9 +312,24 @@ export const OrbitalEcosystem: React.FC<OrbitalEcosystemProps> = ({
     });
   }, [depsInView, orbitApps, activeProduct.id]);
 
+  /** Pre-computed geometry for each active edge — path data + midpoint for hover tooltip. */
+  const activeEdgeGeometry = useMemo(() => {
+    const n = activeEdges.length;
+    return activeEdges.map(([from, to, label], i) => {
+      const fromApp = orbitApps[from];
+      const toApp = orbitApps[to];
+      const { d, lx, ly } = depCurveAndLabel(orbitApps, from, to, curveBulge, {
+        index: i,
+        total: n,
+        hero: isHero,
+      });
+      return { fromApp, toApp, label, d, lx, ly };
+    });
+  }, [activeEdges, orbitApps, curveBulge, isHero]);
+
   const orbitFrameClass = isHero
-    ? 'relative aspect-square w-full max-w-[min(100%,520px)] sm:max-w-[500px] lg:max-w-[600px] xl:max-w-[640px] mx-auto overflow-visible px-4 sm:px-8 py-5 sm:py-7'
-    : 'relative aspect-square w-full max-w-[260px] sm:max-w-[360px] lg:max-w-none mx-auto overflow-visible px-1';
+    ? 'relative isolate aspect-square w-full max-w-[min(100%,520px)] sm:max-w-[500px] lg:max-w-[600px] xl:max-w-[640px] mx-auto overflow-visible px-4 sm:px-8 py-5 sm:py-7'
+    : 'relative isolate aspect-square w-full max-w-[260px] sm:max-w-[360px] lg:max-w-none mx-auto overflow-visible px-1';
 
   const orbit = (
     <motion.div
@@ -320,7 +340,7 @@ export const OrbitalEcosystem: React.FC<OrbitalEcosystemProps> = ({
     >
       <div className={orbitFrameClass}>
         <svg
-          className="absolute inset-0 w-full h-full overflow-visible"
+          className="absolute inset-0 w-full h-full overflow-visible z-0"
           viewBox="-14 -14 128 128"
           preserveAspectRatio="xMidYMid meet"
           aria-hidden="true"
@@ -337,9 +357,10 @@ export const OrbitalEcosystem: React.FC<OrbitalEcosystemProps> = ({
             cy="50"
             r={orbitRadius}
             fill="none"
-            stroke="#cbd5e1"
+            stroke={isDark ? 'rgba(255,255,255,0.18)' : '#cbd5e1'}
             strokeWidth={isHero ? 0.28 : 0.35}
-            opacity={isHero ? 0.14 : 0.9}
+            opacity={isHero ? (isDark ? 0.7 : 0.14) : 0.9}
+            style={{ pointerEvents: 'none' }}
           />
 
           {orbitApps.map((app) => {
@@ -352,127 +373,66 @@ export const OrbitalEcosystem: React.FC<OrbitalEcosystemProps> = ({
                 y1="50"
                 x2={app.x}
                 y2={app.y}
-                stroke={isActive ? '#334155' : '#e2e8f0'}
+                stroke={isDark
+                  ? (isActive ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.1)')
+                  : (isActive ? '#334155' : '#e2e8f0')}
                 strokeWidth={isActive ? 0.45 : 0.18}
                 opacity={isActive ? 1 : 0.55}
                 className="transition-all duration-300"
+                style={{ pointerEvents: 'none' }}
               />
             );
           })}
 
-          {activeEdges.map(([from, to, label], i) => {
-            const fromApp = orbitApps[from];
-            const toApp = orbitApps[to];
-            const n = activeEdges.length;
-            const { d, lx, ly } = depCurveAndLabel(orbitApps, from, to, curveBulge, {
-              index: i,
-              total: n,
-              hero: isHero,
-            });
-            const labelFont =
-              n > 4 ? 2.05 : n > 2 && isHero ? 2.35 : isHero ? 2.55 : 2.75;
-            const labelStroke = n > 3 ? 0.38 : isHero ? 0.45 : 0.5;
-            const tw = Math.max(10, label.length * labelFont * 0.52);
-            const th = labelFont * 1.35;
-            return (
-              <g key={`dep-${fromApp.id}-${toApp.id}-${i}`} className="pointer-events-none">
-                {!isHero ? (
-                  <path
-                    d={d}
-                    fill="none"
-                    stroke="#1B2E5A"
-                    strokeWidth="0.68"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    opacity={0.1}
-                  />
-                ) : null}
+          {/* Dashed connection paths — non-interactive, painted first */}
+          {activeEdgeGeometry.map(({ fromApp, toApp, d }, i) => (
+            <g key={`dep-path-${fromApp.id}-${toApp.id}-${i}`} style={{ pointerEvents: 'none' }}>
+              {!isHero ? (
                 <path
                   d={d}
                   fill="none"
-                  stroke="#1B2E5A"
-                  strokeWidth={isHero ? 0.48 : 0.48}
-                  strokeDasharray="2.2 2.8"
+                  stroke={isDark ? 'rgba(255,255,255,0.08)' : '#1B2E5A'}
+                  strokeWidth="0.68"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  opacity={isHero ? 0.72 : 0.78}
-                  className="dep-flow"
+                  opacity={0.1}
                 />
-                <rect
-                  x={lx - tw / 2}
-                  y={ly - th / 2}
-                  width={tw}
-                  height={th}
-                  rx={1.4}
-                  ry={1.4}
-                  fill="#ffffff"
-                  fillOpacity={0.94}
-                />
-                <text
-                  x={lx}
-                  y={ly}
-                  textAnchor="middle"
-                  dominantBaseline="central"
-                  fill="#1B2E5A"
-                  stroke="#ffffff"
-                  strokeWidth={labelStroke}
-                  paintOrder="stroke fill"
-                  strokeLinejoin="round"
-                  fontSize={labelFont}
-                  fontWeight="700"
-                  fontFamily="system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
-                  letterSpacing="0.02em"
-                >
-                  {label}
-                </text>
-              </g>
-            );
-          })}
+              ) : null}
+              <path
+                d={d}
+                fill="none"
+                stroke={isDark ? 'rgba(255,255,255,0.35)' : 'rgba(15,23,42,0.18)'}
+                strokeWidth={isHero ? 0.48 : 0.48}
+                strokeDasharray="2.2 2.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                opacity={1}
+                className="dep-flow"
+              />
+            </g>
+          ))}
 
-          {orbitApps.map((app) => {
-            const hubLabel = HUB_PRODUCT_LABELS[app.id];
-            if (!hubLabel || activeProduct.id !== app.id) return null;
-            const lx = Math.min(94, Math.max(6, 50 + (app.x - 50) * 0.55));
-            const ly = Math.min(94, Math.max(6, 50 + (app.y - 50) * 0.55));
-            return (
-              <g key={`hub-flow-${app.id}`}>
-                <line
-                  x1="50"
-                  y1="50"
-                  x2={app.x}
-                  y2={app.y}
-                  stroke="#1B2E5A"
-                  strokeWidth="0.3"
-                  strokeDasharray="2 2.5"
-                  strokeLinecap="round"
-                  className="dep-flow"
-                />
-                <text
-                  x={lx}
-                  y={ly - 1.5}
-                  textAnchor="middle"
-                  fill="#1B2E5A"
-                  stroke="#ffffff"
-                  strokeWidth="0.45"
-                  paintOrder="stroke fill"
-                  fontSize={isHero ? '2.85' : '2.4'}
-                  fontWeight="700"
-                  fontFamily="system-ui, -apple-system, sans-serif"
-                  className="hidden sm:block"
-                >
-                  {hubLabel}
-                </text>
-              </g>
-            );
-          })}
+          {/* Wide transparent hit areas — interactive, painted on top of paths */}
+          {activeEdgeGeometry.map(({ fromApp, toApp, label, d, lx, ly }, i) => (
+            <path
+              key={`dep-hit-${fromApp.id}-${toApp.id}-${i}`}
+              d={d}
+              fill="none"
+              stroke="transparent"
+              strokeWidth={8}
+              style={{ pointerEvents: 'all', cursor: 'default' }}
+              onMouseEnter={() => setHoveredEdge({ label, lx, ly })}
+              onMouseLeave={() => setHoveredEdge(null)}
+            />
+          ))}
         </svg>
 
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 text-center">
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-30 text-center">
           <div
             className={
               isHero
-                ? 'w-14 h-14 sm:w-[4.5rem] sm:h-[4.5rem] lg:w-24 lg:h-24 rounded-full bg-[#1B2E5A] flex items-center justify-center mx-auto overflow-hidden ring-[3px] sm:ring-4 ring-white shadow-lg'
-                : 'w-11 h-11 sm:w-16 sm:h-16 lg:w-20 lg:h-20 rounded-full bg-[#1B2E5A] flex items-center justify-center mx-auto overflow-hidden ring-2 sm:ring-4 ring-white'
+                ? `w-14 h-14 sm:w-[4.5rem] sm:h-[4.5rem] lg:w-24 lg:h-24 rounded-full bg-[#1B2E5A] flex items-center justify-center mx-auto overflow-hidden ring-[3px] sm:ring-4 shadow-lg ${isDark ? 'ring-white/25 shadow-blue-500/20' : 'ring-white'}`
+                : `w-11 h-11 sm:w-16 sm:h-16 lg:w-20 lg:h-20 rounded-full bg-[#1B2E5A] flex items-center justify-center mx-auto overflow-hidden ring-2 sm:ring-4 ${isDark ? 'ring-white/20' : 'ring-white'}`
             }
           >
             <img
@@ -499,7 +459,7 @@ export const OrbitalEcosystem: React.FC<OrbitalEcosystemProps> = ({
                 if (matchingProduct) setActiveProduct(matchingProduct);
               }}
               className={`absolute z-30 group flex flex-col items-center justify-center cursor-pointer focus:outline-none min-w-0 ${
-                isHero ? 'gap-4 sm:gap-[1.125rem]' : 'gap-2.5'
+                isHero ? 'gap-[1.375rem] sm:gap-[1.5rem]' : 'gap-3'
               }`}
               style={{
                 left: `${app.x}%`,
@@ -521,8 +481,12 @@ export const OrbitalEcosystem: React.FC<OrbitalEcosystemProps> = ({
                     }
                     ${
                       isActive
-                        ? 'bg-[#1B2E5A] ring-2 ring-[#1B2E5A] ring-offset-2 ring-offset-white scale-110 shadow-md'
-                        : 'bg-slate-50 border border-slate-200 group-hover:border-slate-300 group-hover:bg-white group-hover:shadow-sm group-hover:scale-105'
+                        ? isDark
+                          ? 'bg-white ring-2 ring-white/40 ring-offset-2 ring-offset-transparent scale-110 shadow-lg shadow-white/10'
+                          : 'bg-[#0F1B3D] ring-2 ring-[#0F1B3D] ring-offset-2 ring-offset-white scale-110 shadow-md'
+                        : isDark
+                          ? 'bg-white/10 border border-white/15 backdrop-blur-sm group-hover:bg-white/20 group-hover:border-white/30 group-hover:scale-105'
+                          : 'bg-slate-50 border border-slate-200 group-hover:border-slate-300 group-hover:bg-white group-hover:shadow-sm group-hover:scale-105'
                     }
                   `}
               >
@@ -532,7 +496,11 @@ export const OrbitalEcosystem: React.FC<OrbitalEcosystemProps> = ({
                     isHero
                       ? 'w-4 h-4 sm:w-[22px] sm:h-[22px] lg:w-6 lg:h-6'
                       : 'w-3.5 h-3.5 sm:w-[18px] sm:h-[18px] lg:w-5 lg:h-5'
-                  } ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-slate-700'}`}
+                  } ${
+                    isActive
+                      ? isDark ? 'text-[#1B2E5A]' : 'text-white'
+                      : isDark ? 'text-white/55 group-hover:text-white/90' : 'text-slate-500 group-hover:text-slate-700'
+                  }`}
                 />
               </div>
               <p
@@ -541,26 +509,40 @@ export const OrbitalEcosystem: React.FC<OrbitalEcosystemProps> = ({
                 } ${
                   isActive
                     ? isHero
-                      ? 'text-[8px] sm:text-[11px] lg:text-[12px] font-bold text-[#1B2E5A]'
-                      : 'text-[7px] sm:text-[10px] lg:text-[11px] font-bold text-[#1B2E5A]'
+                      ? `text-[8px] sm:text-[11px] lg:text-[12px] font-bold ${isDark ? 'text-white' : 'text-[#1B2E5A]'}`
+                      : `text-[7px] sm:text-[10px] lg:text-[11px] font-bold ${isDark ? 'text-white' : 'text-[#1B2E5A]'}`
                     : isHero
-                      ? 'text-[7px] sm:text-[10px] lg:text-[11px] font-medium text-slate-600 group-hover:text-slate-700'
-                      : 'text-[6px] sm:text-[9px] lg:text-[10px] font-medium text-slate-600 group-hover:text-slate-700'
+                      ? `text-[7px] sm:text-[10px] lg:text-[11px] font-medium ${isDark ? 'text-white/50 group-hover:text-white/80' : 'text-slate-600 group-hover:text-slate-700'}`
+                      : `text-[6px] sm:text-[9px] lg:text-[10px] font-medium ${isDark ? 'text-white/50 group-hover:text-white/80' : 'text-slate-600 group-hover:text-slate-700'}`
                 }`}
               >
-                <span className="sm:hidden">{app.short}</span>
-                <span className="hidden sm:inline">{displayLabel}</span>
+                <span className={`sm:hidden px-1.5 py-0.5 rounded-md ${isDark ? 'bg-transparent' : 'bg-white/90'}`}>{app.short}</span>
+                <span className={`hidden sm:inline px-1.5 py-0.5 rounded-md ${isDark ? 'bg-transparent' : 'bg-white/90'}`}>{displayLabel}</span>
               </p>
             </button>
           );
         })}
+
+        {/* Hover tooltip — appears above the hovered connection line's midpoint */}
+        {hoveredEdge && (
+          <div
+            className="absolute z-50 px-2 py-1 rounded-md bg-[#0F1B3D] text-white text-[11px] font-medium shadow-[0_4px_12px_rgba(15,23,42,0.15)] pointer-events-none whitespace-nowrap"
+            style={{
+              left: `${hoveredEdge.lx}%`,
+              top: `${hoveredEdge.ly}%`,
+              transform: 'translate(-50%, calc(-100% - 8px))',
+            }}
+          >
+            {hoveredEdge.label}
+          </div>
+        )}
       </div>
     </motion.div>
   );
 
   const mobileStrip = showMobileStrip ? (
     <div className={layout === 'grid' ? 'col-span-full lg:hidden mt-4' : 'lg:hidden mt-4'}>
-      <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-2">Explore the ecosystem</p>
+      <p className={`text-[10px] font-semibold uppercase tracking-widest mb-2 ${isDark ? 'text-white/35' : 'text-slate-400'}`}>Explore the ecosystem</p>
       <div ref={scrollContainerRef} className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
         {orbitApps.map((app) => {
           const isActive = activeProduct.id === app.id;
@@ -575,11 +557,19 @@ export const OrbitalEcosystem: React.FC<OrbitalEcosystemProps> = ({
               }}
               className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs transition-all cursor-pointer font-sans ${
                 isActive
-                  ? 'bg-[#1B2E5A] text-white font-bold shadow-sm'
-                  : 'bg-slate-100 text-slate-600 font-medium hover:bg-slate-200'
+                  ? isDark
+                    ? 'bg-white text-[#0C1829] font-bold shadow-sm'
+                    : 'bg-[#1B2E5A] text-white font-bold shadow-sm'
+                  : isDark
+                    ? 'bg-white/10 text-white/65 font-medium hover:bg-white/18'
+                    : 'bg-slate-100 text-slate-600 font-medium hover:bg-slate-200'
               }`}
             >
-              <DynamicIcon name={app.icon} className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+              <DynamicIcon name={app.icon} className={`w-3.5 h-3.5 ${
+                isActive
+                  ? isDark ? 'text-[#0C1829]' : 'text-white'
+                  : isDark ? 'text-white/40' : 'text-slate-400'
+              }`} />
               {displayLabel}
             </button>
           );

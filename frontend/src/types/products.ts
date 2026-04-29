@@ -35,6 +35,7 @@ export interface Feature {
     title: string;
     description: string;
     benefits?: string[];
+    subFeatures?: string[];
 }
 
 export interface UseCase {

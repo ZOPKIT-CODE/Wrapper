@@ -133,12 +133,16 @@ export async function getCurrentBalance(tenantId: string, entityType = 'organiza
     const { seasonalCreditAllocations } = await import('../../../db/schema/billing/seasonal-credits.js');
 
     const [subscriptionResult, purchaseTransactionsResult, activeAllocationsResult] = await Promise.all([
-      // Single subscription query that covers both currentPeriodEnd (expiry) and plan
+      // Single subscription query that covers currentPeriodEnd (expiry), plan, and canceledAt
+      // canceledAt is used to scope credit categorization to the current subscription lifecycle
+      // (avoids counting stale purchase transactions from before a cancel+resubscribe)
       // Order by updated_at desc so we use the same subscription row as source of truth (matches Supabase data)
       db
         .select({
           currentPeriodEnd: subscriptions.currentPeriodEnd,
-          plan: subscriptions.plan
+          plan: subscriptions.plan,
+          canceledAt: subscriptions.canceledAt,
+          updatedAt: subscriptions.updatedAt
         })
         .from(subscriptions)
         .where(and(
@@ -149,7 +153,7 @@ export async function getCurrentBalance(tenantId: string, entityType = 'organiza
         .limit(1)
         .catch((err: unknown) => {
           console.warn('⚠️ Error fetching subscription:', (err as Error).message);
-          return [] as { currentPeriodEnd: Date | null; plan: string }[];
+          return [] as { currentPeriodEnd: Date | null; plan: string; canceledAt: Date | null; updatedAt: Date | null }[];
         }),
 
       // Purchase transactions for credit categorization
@@ -204,9 +208,28 @@ export async function getCurrentBalance(tenantId: string, entityType = 'organiza
       actualPlan = subscription.plan;
     }
 
+    // Determine lifecycle boundary: after a cancel+resubscribe, only count transactions
+    // from the current subscription lifecycle to avoid phantom credit categorization.
+    // If the subscription was previously canceled (canceledAt is set) and has since been
+    // reactivated (updatedAt > canceledAt), use canceledAt as the cutoff — any purchase
+    // transactions before cancellation belong to the old lifecycle and were already expired.
+    let lifecycleBoundary: Date | null = null;
+    if (subscription?.canceledAt && subscription?.updatedAt) {
+      const canceledTime = new Date(subscription.canceledAt).getTime();
+      const updatedTime = new Date(subscription.updatedAt).getTime();
+      if (updatedTime > canceledTime) {
+        lifecycleBoundary = new Date(subscription.canceledAt);
+        console.log(`📊 Credit categorization: using lifecycle boundary ${lifecycleBoundary.toISOString()} (subscription was canceled then reactivated)`);
+      }
+    }
+
     // Categorize credits based on operation_code and source
     try {
       for (const transaction of purchaseTransactionsResult) {
+        // Skip transactions from before the current subscription lifecycle
+        if (lifecycleBoundary && transaction.createdAt && new Date(transaction.createdAt) < lifecycleBoundary) {
+          continue;
+        }
         const amount = parseFloat(String(transaction.amount ?? 0));
         const operationCode = (transaction.operationCode ?? '') as string;
 
@@ -226,8 +249,10 @@ export async function getCurrentBalance(tenantId: string, entityType = 'organiza
                  operationCode === 'stripe' ||
                  operationCode === 'manual_purchase') {
           paidCredits += amount;
-          // Paid credits never expire (null expiry)
-          paidCreditsExpiry = null;
+          // Paid credits expire with subscription period (same as free credits)
+          if (!paidCreditsExpiry && subscriptionExpiry) {
+            paidCreditsExpiry = subscriptionExpiry;
+          }
         }
       }
     } catch (err: unknown) {
@@ -268,9 +293,13 @@ export async function getCurrentBalance(tenantId: string, entityType = 'organiza
     const totalAvailable = parseFloat(String((creditBalance as CreditBalanceRow).availableCredits ?? 0));
     const categorizedTotal = freeCredits + paidCredits + seasonalCredits;
 
-    // If we couldn't categorize from transactions, use total as free credits (onboarding scenario)
-    if (freeCredits === 0 && paidCredits === 0 && seasonalCredits === 0 && totalAvailable > 0) {
-      // Likely onboarding credits - categorize as free
+    // If balance is zero, all categories must be zero regardless of transaction history
+    if (totalAvailable <= 0) {
+      freeCredits = 0;
+      paidCredits = 0;
+      seasonalCredits = 0;
+    } else if (freeCredits === 0 && paidCredits === 0 && seasonalCredits === 0 && totalAvailable > 0) {
+      // Couldn't categorize from transactions — use total as free credits (onboarding scenario)
       freeCredits = totalAvailable;
       if (subscriptionExpiry) {
         freeCreditsExpiry = subscriptionExpiry;
@@ -289,13 +318,12 @@ export async function getCurrentBalance(tenantId: string, entityType = 'organiza
 
       console.log(`📊 Credit categorization: Found ${uncategorizedCredits} uncategorized credits, assigning to free credits`);
     } else if (totalAvailable < categorizedTotal) {
-      // Categorized credits exceed available (shouldn't happen, but handle gracefully)
-      console.warn(`⚠️ Credit categorization mismatch: Available (${totalAvailable}) < Categorized (${categorizedTotal})`);
-      // Adjust free credits to match available total
-      const adjustment = totalAvailable - categorizedTotal;
-      if (freeCredits > 0) {
-        freeCredits = Math.max(0, freeCredits + adjustment);
-      }
+      // Categorized credits exceed available (credits were consumed/expired)
+      // Scale down each category proportionally to match the actual balance
+      const ratio = categorizedTotal > 0 ? totalAvailable / categorizedTotal : 0;
+      paidCredits = Math.round(paidCredits * ratio);
+      seasonalCredits = Math.round(seasonalCredits * ratio);
+      freeCredits = Math.max(0, totalAvailable - paidCredits - seasonalCredits);
     }
 
     return {
@@ -311,7 +339,7 @@ export async function getCurrentBalance(tenantId: string, entityType = 'organiza
       lastPurchase: creditBalance.lastUpdatedAt,
       creditExpiry: earliestExpiry || freeCreditsExpiry, // Overall earliest expiry
       freeCreditsExpiry: freeCreditsExpiry, // Free credits expiry (subscription expiry)
-      paidCreditsExpiry: paidCreditsExpiry, // Paid credits expiry (null = never expires)
+      paidCreditsExpiry: paidCreditsExpiry, // Paid credits expiry (subscription period end)
       seasonalCreditsExpiry: seasonalCreditsExpiry, // Seasonal credits expiry
       subscriptionExpiry: subscriptionExpiry, // Subscription plan expiry
       applicationExpiryDates: applicationExpiryDates,

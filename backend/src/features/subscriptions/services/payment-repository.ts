@@ -32,8 +32,23 @@ const safeColumns = {
   updatedAt: payments.updatedAt,
 };
 
+/**
+ * Normalize payment status to match DB constraint chk_payment_status:
+ * pending, completed, failed, refunded, processing, cancelled
+ */
+function normalizeStatus(status: string): string {
+  switch (status) {
+    case 'succeeded': case 'paid': return 'completed';
+    case 'canceled': return 'cancelled';
+    default: return status;
+  }
+}
+
 export class PaymentRepository {
   static async create(paymentValues: Record<string, unknown>): Promise<typeof payments.$inferSelect> {
+    if (typeof paymentValues.status === 'string') {
+      paymentValues.status = normalizeStatus(paymentValues.status);
+    }
     const [payment] = await db.insert(payments).values(paymentValues as any).returning();
     return payment;
   }
@@ -51,6 +66,9 @@ export class PaymentRepository {
     paymentIntentId: string,
     updates: Record<string, unknown>
   ): Promise<typeof payments.$inferSelect | undefined> {
+    if (typeof updates.status === 'string') {
+      updates.status = normalizeStatus(updates.status);
+    }
     const [updatedPayment] = await db
       .update(payments)
       .set(updates as any)

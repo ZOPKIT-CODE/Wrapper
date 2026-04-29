@@ -9,6 +9,7 @@ import { authenticateToken } from '../../../middleware/auth/auth.js';
 import { db } from '../../../db/index.js';
 import { tenants, subscriptions, tenantUsers } from '../../../db/schema/index.js';
 import { eq, and, sql } from 'drizzle-orm';
+import { normalizeStripeSubscriptionStatus } from '../services/subscription-webhook-handler.js';
 
 const paymentGateway = getPaymentGateway();
 
@@ -742,7 +743,7 @@ async function handleSubscriptionCreated(subscription: any) {
       .set({
         stripeSubscriptionId: subscription.id,
         stripeCustomerId: subscription.customer,
-        status: subscription.status,
+        status: normalizeStripeSubscriptionStatus(subscription.status),
         currentPeriodStart: subscription.current_period_start ? new Date(subscription.current_period_start * 1000) : null,
         currentPeriodEnd: subscription.current_period_end ? new Date(subscription.current_period_end * 1000) : null,
         updatedAt: new Date()
@@ -758,7 +759,7 @@ async function handleSubscriptionUpdated(subscription: any) {
     await db
       .update(subscriptions)
       .set({
-        status: subscription.status,
+        status: normalizeStripeSubscriptionStatus(subscription.status),
         currentPeriodStart: subscription.current_period_start ? new Date(subscription.current_period_start * 1000) : null,
         currentPeriodEnd: subscription.current_period_end ? new Date(subscription.current_period_end * 1000) : null,
         cancelAt: subscription.cancel_at ? new Date(subscription.cancel_at * 1000) : null,

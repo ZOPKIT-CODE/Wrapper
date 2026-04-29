@@ -1,0 +1,264 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="952" viewBox="0 0 1600 952">
+<defs>
+  <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%"   stop-color="#06091A"/>
+    <stop offset="50%"  stop-color="#0D1F45"/>
+    <stop offset="100%" stop-color="#06091A"/>
+  </linearGradient>
+  <linearGradient id="accentGrad" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0%"  stop-color="#60A5FA"/>
+    <stop offset="100%" stop-color="#A78BFA"/>
+  </linearGradient>
+  <clipPath id="frameClip"><rect width="1600" height="952"/></clipPath>
+  <filter id="badgeShadow" x="-20%" y="-40%" width="140%" height="180%">
+    <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000000" flood-opacity="0.5"/>
+  </filter>
+</defs>
+
+<g clip-path="url(#frameClip)">
+<!-- BACKGROUND -->
+<rect width="1600" height="952" fill="url(#bgGrad)"/>
+
+<!-- BROWSER CHROME -->
+<rect x="0" y="0" width="1600" height="52" fill="#111827"/>
+<circle cx="31" cy="26" r="7" fill="#FF5F57"/>
+<circle cx="51" cy="26" r="7" fill="#FEBC2E"/>
+<circle cx="71" cy="26" r="7" fill="#28C840"/>
+<rect x="540" y="12" width="520" height="28" rx="14" fill="#1F2937"/>
+<text x="800" y="31" text-anchor="middle" font-family="ui-monospace,monospace" font-size="12" fill="#9CA3AF">app.zopkit.com/dashboard</text>
+
+<!-- TITLE BLOCK -->
+<text x="290" y="98"  font-family="Georgia,serif" font-size="28" font-weight="700" fill="#FFFFFF">Your CFO Command Center</text>
+<text x="290" y="122" font-family="-apple-system,sans-serif" font-size="13" fill="#9CA3AF">Real-time financial intelligence — receivables, ratios &amp; cash flows, all in one place.</text>
+
+<!-- SIDEBAR -->
+<rect x="40" y="180" width="220" height="720" rx="12" fill="#0B1228" stroke="#1E293B" stroke-width="1"/>
+<text x="60" y="214" font-family="-apple-system,sans-serif" font-size="11" font-weight="600" fill="#93C5FD">FinanceAccounting</text>
+<line x1="52" y1="228" x2="248" y2="228" stroke="#1E293B" stroke-width="1"/>
+<text x="64" y="248" font-family="-apple-system,sans-serif" font-size="13" fill="#9CA3AF">Dashboard</text>
+<text x="64" y="284" font-family="-apple-system,sans-serif" font-size="13" fill="#9CA3AF">Accounts Payable</text>
+<text x="64" y="320" font-family="-apple-system,sans-serif" font-size="13" fill="#9CA3AF">Accounts Receivable</text>
+<text x="64" y="356" font-family="-apple-system,sans-serif" font-size="13" fill="#9CA3AF">Banking &amp; Cash</text>
+<!-- General Ledger highlight -->
+<rect x="44" y="368" width="212" height="28" rx="6" fill="#1D4ED8" fill-opacity="0.3"/>
+<text x="64" y="387" font-family="-apple-system,sans-serif" font-size="13" font-weight="500" fill="#93C5FD">General Ledger</text>
+<text x="64" y="428" font-family="-apple-system,sans-serif" font-size="13" fill="#9CA3AF">Budgeting</text>
+<text x="64" y="464" font-family="-apple-system,sans-serif" font-size="13" fill="#9CA3AF">Tax Management</text>
+<text x="64" y="500" font-family="-apple-system,sans-serif" font-size="13" fill="#9CA3AF">Reports</text>
+<line x1="52" y1="536" x2="248" y2="536" stroke="#1E293B" stroke-width="1"/>
+<text x="64" y="556" font-family="-apple-system,sans-serif" font-size="13" fill="#6B7280">Settings</text>
+<text x="64" y="586" font-family="-apple-system,sans-serif" font-size="13" fill="#6B7280">Help &amp; Support</text>
+
+<!-- DATE FILTER PILL -->
+<rect x="1380" y="186" width="188" height="28" rx="14" fill="#111827" stroke="#1E293B" stroke-width="1"/>
+<text x="1474" y="204" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#D1D5DB">Apr 1, 2026 → Apr 30, 2026</text>
+
+<!-- KPI CARDS -->
+<!-- Card 1: Cash Balance -->
+<rect x="290" y="240" width="250" height="110" rx="10" fill="#0D1B3E" stroke="#1E3A5F" stroke-width="1"/>
+<text x="304" y="257" font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#9CA3AF">Cash Balance</text>
+<text x="304" y="280" font-family="-apple-system,sans-serif" font-size="21" font-weight="700" fill="#FFFFFF">₹42.8L</text>
+<text x="304" y="338" font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#22C55E">+7.8% vs prev</text>
+<!-- sparkline green rising -->
+<rect x="438" y="318" width="9" height="8"  rx="2" fill="#22C55E" fill-opacity="0.85"/>
+<rect x="451" y="314" width="9" height="12" rx="2" fill="#22C55E" fill-opacity="0.85"/>
+<rect x="464" y="316" width="9" height="10" rx="2" fill="#22C55E" fill-opacity="0.85"/>
+<rect x="477" y="308" width="9" height="18" rx="2" fill="#22C55E" fill-opacity="0.85"/>
+<rect x="490" y="310" width="9" height="16" rx="2" fill="#22C55E" fill-opacity="0.85"/>
+<rect x="503" y="304" width="9" height="22" rx="2" fill="#22C55E" fill-opacity="0.85"/>
+<rect x="516" y="300" width="9" height="26" rx="2" fill="#22C55E" fill-opacity="0.85"/>
+
+<!-- Card 2: Total Revenue -->
+<rect x="558" y="240" width="250" height="110" rx="10" fill="#0D1B3E" stroke="#1E3A5F" stroke-width="1"/>
+<text x="572" y="257" font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#9CA3AF">Total Revenue</text>
+<text x="572" y="280" font-family="-apple-system,sans-serif" font-size="21" font-weight="700" fill="#FFFFFF">₹1.24Cr</text>
+<text x="572" y="338" font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#22C55E">+12.3% vs prev</text>
+<!-- sparkline blue rising -->
+<rect x="706" y="318" width="9" height="8"  rx="2" fill="#3B82F6" fill-opacity="0.85"/>
+<rect x="719" y="314" width="9" height="12" rx="2" fill="#3B82F6" fill-opacity="0.85"/>
+<rect x="732" y="316" width="9" height="10" rx="2" fill="#3B82F6" fill-opacity="0.85"/>
+<rect x="745" y="308" width="9" height="18" rx="2" fill="#3B82F6" fill-opacity="0.85"/>
+<rect x="758" y="310" width="9" height="16" rx="2" fill="#3B82F6" fill-opacity="0.85"/>
+<rect x="771" y="304" width="9" height="22" rx="2" fill="#3B82F6" fill-opacity="0.85"/>
+<rect x="784" y="300" width="9" height="26" rx="2" fill="#3B82F6" fill-opacity="0.85"/>
+
+<!-- Card 3: Receivables -->
+<rect x="826" y="240" width="250" height="110" rx="10" fill="#0D1B3E" stroke="#1E3A5F" stroke-width="1"/>
+<text x="840" y="257" font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#9CA3AF">Receivables</text>
+<text x="840" y="280" font-family="-apple-system,sans-serif" font-size="21" font-weight="700" fill="#FFFFFF">₹38.5L</text>
+<text x="840" y="338" font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#F97316">Outstanding</text>
+<!-- sparkline orange mild -->
+<rect x="974" y="312" width="9" height="14" rx="2" fill="#F97316" fill-opacity="0.85"/>
+<rect x="987" y="314" width="9" height="12" rx="2" fill="#F97316" fill-opacity="0.85"/>
+<rect x="1000" y="309" width="9" height="17" rx="2" fill="#F97316" fill-opacity="0.85"/>
+<rect x="1013" y="313" width="9" height="13" rx="2" fill="#F97316" fill-opacity="0.85"/>
+<rect x="1026" y="308" width="9" height="18" rx="2" fill="#F97316" fill-opacity="0.85"/>
+<rect x="1039" y="311" width="9" height="15" rx="2" fill="#F97316" fill-opacity="0.85"/>
+<rect x="1052" y="309" width="9" height="17" rx="2" fill="#F97316" fill-opacity="0.85"/>
+
+<!-- Card 4: Payables -->
+<rect x="1094" y="240" width="250" height="110" rx="10" fill="#0D1B3E" stroke="#1E3A5F" stroke-width="1"/>
+<text x="1108" y="257" font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#9CA3AF">Payables</text>
+<text x="1108" y="280" font-family="-apple-system,sans-serif" font-size="21" font-weight="700" fill="#FFFFFF">₹28.2L</text>
+<text x="1108" y="338" font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#EF4444">Due in 7 days</text>
+<!-- sparkline red declining -->
+<rect x="1242" y="300" width="9" height="26" rx="2" fill="#EF4444" fill-opacity="0.85"/>
+<rect x="1255" y="304" width="9" height="22" rx="2" fill="#EF4444" fill-opacity="0.85"/>
+<rect x="1268" y="306" width="9" height="20" rx="2" fill="#EF4444" fill-opacity="0.85"/>
+<rect x="1281" y="310" width="9" height="16" rx="2" fill="#EF4444" fill-opacity="0.85"/>
+<rect x="1294" y="312" width="9" height="14" rx="2" fill="#EF4444" fill-opacity="0.85"/>
+<rect x="1307" y="315" width="9" height="11" rx="2" fill="#EF4444" fill-opacity="0.85"/>
+<rect x="1320" y="318" width="9" height="8"  rx="2" fill="#EF4444" fill-opacity="0.85"/>
+
+<!-- MAIN CHART AREA -->
+<rect x="290" y="380" width="830" height="320" rx="12" fill="#0B1228" stroke="#1E293B" stroke-width="1"/>
+<text x="310" y="400" font-family="-apple-system,sans-serif" font-size="14" font-weight="600" fill="#FFFFFF">Revenue vs Expenses</text>
+<!-- Legend -->
+<rect x="812" y="390" width="12" height="12" rx="2" fill="#3B82F6"/>
+<text x="828" y="401" font-family="-apple-system,sans-serif" font-size="11" fill="#9CA3AF">Revenue</text>
+<rect x="885" y="390" width="12" height="12" rx="2" fill="#EF4444"/>
+<text x="901" y="401" font-family="-apple-system,sans-serif" font-size="11" fill="#9CA3AF">Expenses</text>
+
+<!-- Y-axis gridlines & labels -->
+<line x1="352" y1="428" x2="1090" y2="428" stroke="#1E293B" stroke-width="1" stroke-opacity="0.8"/>
+<text x="304" y="435" font-family="-apple-system,sans-serif" font-size="10" fill="#6B7280">₹120L</text>
+<line x1="352" y1="469" x2="1090" y2="469" stroke="#1E293B" stroke-width="1" stroke-opacity="0.8"/>
+<text x="304" y="476" font-family="-apple-system,sans-serif" font-size="10" fill="#6B7280">₹100L</text>
+<line x1="352" y1="510" x2="1090" y2="510" stroke="#1E293B" stroke-width="1" stroke-opacity="0.8"/>
+<text x="304" y="517" font-family="-apple-system,sans-serif" font-size="10" fill="#6B7280">₹80L</text>
+<line x1="352" y1="551" x2="1090" y2="551" stroke="#1E293B" stroke-width="1" stroke-opacity="0.8"/>
+<text x="304" y="558" font-family="-apple-system,sans-serif" font-size="10" fill="#6B7280">₹60L</text>
+<line x1="352" y1="592" x2="1090" y2="592" stroke="#1E293B" stroke-width="1" stroke-opacity="0.8"/>
+<text x="304" y="599" font-family="-apple-system,sans-serif" font-size="10" fill="#6B7280">₹40L</text>
+<line x1="352" y1="633" x2="1090" y2="633" stroke="#1E293B" stroke-width="1" stroke-opacity="0.8"/>
+<text x="304" y="640" font-family="-apple-system,sans-serif" font-size="10" fill="#6B7280">₹20L</text>
+<line x1="352" y1="674" x2="1090" y2="674" stroke="#374151" stroke-width="1"/>
+
+<!-- Bar chart: 12 months, gW≈61.5, bW=20, baseline y=674 -->
+<!-- Apr: rev=45→94px, exp=30→62px -->
+<rect x="360" y="580" width="20" height="94" rx="3" fill="#3B82F6"/>
+<rect x="384" y="612" width="20" height="62" rx="3" fill="#EF4444"/>
+<text x="374" y="688" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#6B7280">Apr</text>
+<!-- May: 52→108, 35→73 -->
+<rect x="422" y="566" width="20" height="108" rx="3" fill="#3B82F6"/>
+<rect x="446" y="601" width="20" height="73"  rx="3" fill="#EF4444"/>
+<text x="436" y="688" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#6B7280">May</text>
+<!-- Jun: 48→100, 32→67 -->
+<rect x="483" y="574" width="20" height="100" rx="3" fill="#3B82F6"/>
+<rect x="507" y="607" width="20" height="67"  rx="3" fill="#EF4444"/>
+<text x="497" y="688" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#6B7280">Jun</text>
+<!-- Jul: 62→129, 42→87 -->
+<rect x="545" y="545" width="20" height="129" rx="3" fill="#3B82F6"/>
+<rect x="569" y="587" width="20" height="87"  rx="3" fill="#EF4444"/>
+<text x="559" y="688" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#6B7280">Jul</text>
+<!-- Aug: 58→121, 38→79 -->
+<rect x="607" y="553" width="20" height="121" rx="3" fill="#3B82F6"/>
+<rect x="631" y="595" width="20" height="79"  rx="3" fill="#EF4444"/>
+<text x="621" y="688" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#6B7280">Aug</text>
+<!-- Sep: 65→135, 45→94 -->
+<rect x="668" y="539" width="20" height="135" rx="3" fill="#3B82F6"/>
+<rect x="692" y="580" width="20" height="94"  rx="3" fill="#EF4444"/>
+<text x="682" y="688" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#6B7280">Sep</text>
+<!-- Oct: 70→146, 48→100 -->
+<rect x="730" y="528" width="20" height="146" rx="3" fill="#3B82F6"/>
+<rect x="754" y="574" width="20" height="100" rx="3" fill="#EF4444"/>
+<text x="744" y="688" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#6B7280">Oct</text>
+<!-- Nov: 75→156, 50→104 -->
+<rect x="791" y="518" width="20" height="156" rx="3" fill="#3B82F6"/>
+<rect x="815" y="570" width="20" height="104" rx="3" fill="#EF4444"/>
+<text x="805" y="688" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#6B7280">Nov</text>
+<!-- Dec: 85→177, 55→115 -->
+<rect x="853" y="497" width="20" height="177" rx="3" fill="#3B82F6"/>
+<rect x="877" y="559" width="20" height="115" rx="3" fill="#EF4444"/>
+<text x="867" y="688" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#6B7280">Dec</text>
+<!-- Jan: 68→142, 44→92 -->
+<rect x="914" y="532" width="20" height="142" rx="3" fill="#3B82F6"/>
+<rect x="938" y="582" width="20" height="92"  rx="3" fill="#EF4444"/>
+<text x="928" y="688" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#6B7280">Jan</text>
+<!-- Feb: 72→150, 48→100 -->
+<rect x="976" y="524" width="20" height="150" rx="3" fill="#3B82F6"/>
+<rect x="1000" y="574" width="20" height="100" rx="3" fill="#EF4444"/>
+<text x="990" y="688" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#6B7280">Feb</text>
+<!-- Mar: 80→167, 52→108 -->
+<rect x="1037" y="507" width="20" height="167" rx="3" fill="#3B82F6"/>
+<rect x="1061" y="566" width="20" height="108" rx="3" fill="#EF4444"/>
+<text x="1051" y="688" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#6B7280">Mar</text>
+
+<!-- FINANCIAL HEALTH PANEL -->
+<rect x="1140" y="380" width="420" height="320" rx="12" fill="#0B1228" stroke="#1E293B" stroke-width="1"/>
+<text x="1160" y="402" font-family="-apple-system,sans-serif" font-size="14" font-weight="600" fill="#FFFFFF">Financial Health</text>
+<line x1="1152" y1="418" x2="1548" y2="418" stroke="#1E293B" stroke-width="1"/>
+<!-- Row 1: Current Ratio -->
+<rect x="1152" y="426" width="396" height="50" rx="8" fill="#0D1B3E"/>
+<text x="1168" y="441" font-family="-apple-system,sans-serif" font-size="12" fill="#9CA3AF">Current Ratio</text>
+<text x="1168" y="462" font-family="-apple-system,sans-serif" font-size="17" font-weight="700" fill="#FFFFFF">2.14</text>
+<circle cx="1493" cy="451" r="5" fill="#22C55E"/>
+<text x="1502" y="455" font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#22C55E">Healthy</text>
+<!-- Row 2: Gross Margin -->
+<rect x="1152" y="486" width="396" height="50" rx="8" fill="#0D1B3E"/>
+<text x="1168" y="501" font-family="-apple-system,sans-serif" font-size="12" fill="#9CA3AF">Gross Margin</text>
+<text x="1168" y="522" font-family="-apple-system,sans-serif" font-size="17" font-weight="700" fill="#FFFFFF">64.5%</text>
+<circle cx="1493" cy="511" r="5" fill="#22C55E"/>
+<text x="1502" y="515" font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#22C55E">Good</text>
+<!-- Row 3: Debt/Equity -->
+<rect x="1152" y="546" width="396" height="50" rx="8" fill="#0D1B3E"/>
+<text x="1168" y="561" font-family="-apple-system,sans-serif" font-size="12" fill="#9CA3AF">Debt/Equity</text>
+<text x="1168" y="582" font-family="-apple-system,sans-serif" font-size="17" font-weight="700" fill="#FFFFFF">0.30</text>
+<circle cx="1493" cy="571" r="5" fill="#EAB308"/>
+<text x="1502" y="575" font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#EAB308">Moderate</text>
+<!-- Row 4: Quick Ratio -->
+<rect x="1152" y="606" width="396" height="50" rx="8" fill="#0D1B3E"/>
+<text x="1168" y="621" font-family="-apple-system,sans-serif" font-size="12" fill="#9CA3AF">Quick Ratio</text>
+<text x="1168" y="642" font-family="-apple-system,sans-serif" font-size="17" font-weight="700" fill="#FFFFFF">1.78</text>
+<circle cx="1493" cy="631" r="5" fill="#22C55E"/>
+<text x="1502" y="635" font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#22C55E">Strong</text>
+
+<!-- BOTTOM PANELS -->
+<!-- Panel 1: Financial Alerts -->
+<rect x="290" y="720" width="410" height="184" rx="12" fill="#0B1228" stroke="#1E293B" stroke-width="1"/>
+<text x="308" y="740" font-family="-apple-system,sans-serif" font-size="13" font-weight="600" fill="#FFFFFF">Financial Alerts</text>
+<line x1="308" y1="752" x2="682" y2="752" stroke="#1E293B" stroke-width="1"/>
+<circle cx="316" cy="777" r="6" fill="#EF4444" fill-opacity="0.85"/>
+<text x="330" y="782" font-family="-apple-system,sans-serif" font-size="11" fill="#E2E8F0">Vendor invoice overdue by 45 days</text>
+<circle cx="316" cy="819" r="6" fill="#EF4444" fill-opacity="0.85"/>
+<text x="330" y="824" font-family="-apple-system,sans-serif" font-size="11" fill="#E2E8F0">GST filing due in 3 days</text>
+<circle cx="316" cy="861" r="6" fill="#EF4444" fill-opacity="0.85"/>
+<text x="330" y="866" font-family="-apple-system,sans-serif" font-size="11" fill="#E2E8F0">Bank reconciliation pending</text>
+
+<!-- Panel 2: Upcoming Payments -->
+<rect x="720" y="720" width="410" height="184" rx="12" fill="#0B1228" stroke="#1E293B" stroke-width="1"/>
+<text x="738" y="740" font-family="-apple-system,sans-serif" font-size="13" font-weight="600" fill="#FFFFFF">Upcoming Payments</text>
+<line x1="738" y1="752" x2="1112" y2="752" stroke="#1E293B" stroke-width="1"/>
+<text x="738" y="774" font-family="-apple-system,sans-serif" font-size="12" font-weight="500" fill="#E2E8F0">Office Rent</text>
+<text x="738" y="790" font-family="-apple-system,sans-serif" font-size="10" fill="#6B7280">Apr 30</text>
+<text x="1108" y="782" text-anchor="end" font-family="-apple-system,sans-serif" font-size="12" font-weight="600" fill="#FFFFFF">₹2.5L</text>
+<text x="738" y="816" font-family="-apple-system,sans-serif" font-size="12" font-weight="500" fill="#E2E8F0">Software License</text>
+<text x="738" y="832" font-family="-apple-system,sans-serif" font-size="10" fill="#6B7280">May 1</text>
+<text x="1108" y="824" text-anchor="end" font-family="-apple-system,sans-serif" font-size="12" font-weight="600" fill="#FFFFFF">₹0.8L</text>
+<text x="738" y="858" font-family="-apple-system,sans-serif" font-size="12" font-weight="500" fill="#E2E8F0">Vendor Payment</text>
+<text x="738" y="874" font-family="-apple-system,sans-serif" font-size="10" fill="#6B7280">May 3</text>
+<text x="1108" y="866" text-anchor="end" font-family="-apple-system,sans-serif" font-size="12" font-weight="600" fill="#FFFFFF">₹4.2L</text>
+
+<!-- Panel 3: Recent Transactions -->
+<rect x="1140" y="720" width="410" height="184" rx="12" fill="#0B1228" stroke="#1E293B" stroke-width="1"/>
+<text x="1158" y="740" font-family="-apple-system,sans-serif" font-size="13" font-weight="600" fill="#FFFFFF">Recent Transactions</text>
+<line x1="1158" y1="752" x2="1532" y2="752" stroke="#1E293B" stroke-width="1"/>
+<text x="1158" y="777" font-family="-apple-system,sans-serif" font-size="11" fill="#E2E8F0">Customer Receipt — Zopkit Ltd</text>
+<text x="1528" y="777" text-anchor="end" font-family="-apple-system,sans-serif" font-size="12" font-weight="600" fill="#22C55E">+₹12.4L</text>
+<text x="1158" y="819" font-family="-apple-system,sans-serif" font-size="11" fill="#E2E8F0">Vendor Payment — SupplyPro</text>
+<text x="1528" y="819" text-anchor="end" font-family="-apple-system,sans-serif" font-size="12" font-weight="600" fill="#EF4444">-₹3.2L</text>
+<text x="1158" y="861" font-family="-apple-system,sans-serif" font-size="11" fill="#E2E8F0">Bank Interest Credit</text>
+<text x="1528" y="861" text-anchor="end" font-family="-apple-system,sans-serif" font-size="12" font-weight="600" fill="#22C55E">+₹0.18L</text>
+
+<!-- FLOATING BADGE 1: Accuracy 99.9% (x=1240, y=140) -->
+<rect x="1240" y="140" width="186" height="32" rx="16" fill="#0B1228" fill-opacity="0.92" stroke="#1E3A5F" stroke-width="1" filter="url(#badgeShadow)"/>
+<circle cx="1256" cy="156" r="5" fill="#60A5FA"/>
+<text x="1268" y="161" font-family="-apple-system,sans-serif" font-size="12" font-weight="500" fill="#93C5FD">Accuracy 99.9%</text>
+
+<!-- FLOATING BADGE 2: Entries saved -60% (x=270, y=820) -->
+<rect x="270" y="820" width="202" height="32" rx="16" fill="#0B1228" fill-opacity="0.92" stroke="#1A3A2F" stroke-width="1" filter="url(#badgeShadow)"/>
+<circle cx="286" cy="836" r="5" fill="#4ADE80"/>
+<text x="298" y="841" font-family="-apple-system,sans-serif" font-size="12" font-weight="500" fill="#86EFAC">Entries saved −60%</text>
+
+</g>
+</svg>

@@ -1,0 +1,331 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="952" viewBox="0 0 1600 952">
+<defs>
+  <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%"   stop-color="#06091A"/>
+    <stop offset="50%"  stop-color="#0D1F45"/>
+    <stop offset="100%" stop-color="#06091A"/>
+  </linearGradient>
+  <linearGradient id="accentGrad" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0%"  stop-color="#FB923C"/>
+    <stop offset="100%" stop-color="#FBBF24"/>
+  </linearGradient>
+  <clipPath id="fc"><rect width="1600" height="952"/></clipPath>
+  <filter id="bsh" x="-20%" y="-40%" width="140%" height="180%">
+    <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000" flood-opacity="0.5"/>
+  </filter>
+</defs>
+<g clip-path="url(#fc)">
+
+<!-- BG -->
+<rect width="1600" height="952" fill="url(#bgGrad)"/>
+
+<!-- BROWSER CHROME -->
+<rect x="0" y="0" width="1600" height="52" fill="#111827"/>
+<circle cx="31" cy="26" r="7" fill="#FF5F57"/>
+<circle cx="51" cy="26" r="7" fill="#FEBC2E"/>
+<circle cx="71" cy="26" r="7" fill="#28C840"/>
+<rect x="540" y="12" width="520" height="28" rx="14" fill="#1F2937"/>
+<text x="800" y="31" text-anchor="middle" font-family="ui-monospace,monospace" font-size="12" fill="#9CA3AF">app.zopkit.com/dashboard</text>
+
+<!-- TITLE BLOCK -->
+<text x="290" y="98"  font-family="Georgia,serif" font-size="28" font-weight="700" fill="#FFFFFF">Your CFO Command Center</text>
+<text x="290" y="122" font-family="-apple-system,sans-serif" font-size="13" fill="#9CA3AF">Real-time financial intelligence — receivables, ratios &amp; cash flows, all in one place.</text>
+
+<!-- SIDEBAR -->
+<rect x="40" y="180" width="220" height="720" rx="12" fill="#0B1228" stroke="#1E293B" stroke-width="1"/>
+<text x="60" y="214" font-family="-apple-system,sans-serif" font-size="11" font-weight="600" fill="#FB923C">FinanceAccounting</text>
+<line x1="52" y1="228" x2="248" y2="228" stroke="#1E293B" stroke-width="1"/>
+<text x="64" y="248" font-family="-apple-system,sans-serif" font-size="13" fill="#9CA3AF">Dashboard</text>
+<text x="64" y="284" font-family="-apple-system,sans-serif" font-size="13" fill="#9CA3AF">Accounts Payable</text>
+<text x="64" y="320" font-family="-apple-system,sans-serif" font-size="13" fill="#9CA3AF">Accounts Receivable</text>
+<text x="64" y="356" font-family="-apple-system,sans-serif" font-size="13" fill="#9CA3AF">Banking &amp; Cash</text>
+<text x="64" y="392" font-family="-apple-system,sans-serif" font-size="13" fill="#9CA3AF">General Ledger</text>
+<text x="64" y="428" font-family="-apple-system,sans-serif" font-size="13" fill="#9CA3AF">Budgeting</text>
+<text x="64" y="464" font-family="-apple-system,sans-serif" font-size="13" fill="#9CA3AF">Tax Management</text>
+<text x="64" y="500" font-family="-apple-system,sans-serif" font-size="13" fill="#9CA3AF">Reports</text>
+<!-- Multi-Entity highlight -->
+<rect x="44" y="512" width="212" height="28" rx="6" fill="#FB923C" fill-opacity="0.3"/>
+<text x="64" y="531" font-family="-apple-system,sans-serif" font-size="13" font-weight="600" fill="#FBBF24">Multi-Entity</text>
+<line x1="52" y1="556" x2="248" y2="556" stroke="#1E293B" stroke-width="1"/>
+<text x="64" y="576" font-family="-apple-system,sans-serif" font-size="13" fill="#6B7280">Settings</text>
+<text x="64" y="606" font-family="-apple-system,sans-serif" font-size="13" fill="#6B7280">Help &amp; Support</text>
+
+<!-- DATE FILTER PILL -->
+<rect x="1380" y="186" width="188" height="28" rx="14" fill="#111827" stroke="#1E293B" stroke-width="1"/>
+<text x="1474" y="204" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#D1D5DB">Apr 1, 2026 → Apr 30, 2026</text>
+
+<!-- ── KPI CARDS ──────────────────────────────────────────────── -->
+<!-- Card 1: Entities Managed -->
+<rect x="290" y="240" width="250" height="110" rx="10" fill="#0D1B3E" stroke="#2D1F0A" stroke-width="1"/>
+<text x="304" y="257" font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#9CA3AF">Entities Managed</text>
+<text x="304" y="282" font-family="-apple-system,sans-serif" font-size="26" font-weight="700" fill="#FFFFFF">14</text>
+<text x="304" y="338" font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#FB923C">3 added in Q1</text>
+<!-- orange sparkline rising -->
+<rect x="438" y="320" width="9" height="6"  rx="2" fill="#F97316" fill-opacity="0.85"/>
+<rect x="451" y="316" width="9" height="10" rx="2" fill="#F97316" fill-opacity="0.85"/>
+<rect x="464" y="318" width="9" height="8"  rx="2" fill="#F97316" fill-opacity="0.85"/>
+<rect x="477" y="310" width="9" height="16" rx="2" fill="#F97316" fill-opacity="0.85"/>
+<rect x="490" y="308" width="9" height="18" rx="2" fill="#F97316" fill-opacity="0.85"/>
+<rect x="503" y="303" width="9" height="23" rx="2" fill="#F97316" fill-opacity="0.85"/>
+<rect x="516" y="298" width="9" height="28" rx="2" fill="#F97316" fill-opacity="0.85"/>
+
+<!-- Card 2: Consolidated Revenue -->
+<rect x="558" y="240" width="250" height="110" rx="10" fill="#0D1B3E" stroke="#2D1F0A" stroke-width="1"/>
+<text x="572" y="257" font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#9CA3AF">Consolidated Revenue</text>
+<text x="572" y="282" font-family="-apple-system,sans-serif" font-size="21" font-weight="700" fill="#FFFFFF">₹6.18Cr</text>
+<text x="572" y="338" font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#FBBF24">+18% YoY</text>
+<!-- amber sparkline -->
+<rect x="706" y="320" width="9" height="6"  rx="2" fill="#F59E0B" fill-opacity="0.85"/>
+<rect x="719" y="315" width="9" height="11" rx="2" fill="#F59E0B" fill-opacity="0.85"/>
+<rect x="732" y="318" width="9" height="8"  rx="2" fill="#F59E0B" fill-opacity="0.85"/>
+<rect x="745" y="309" width="9" height="17" rx="2" fill="#F59E0B" fill-opacity="0.85"/>
+<rect x="758" y="311" width="9" height="15" rx="2" fill="#F59E0B" fill-opacity="0.85"/>
+<rect x="771" y="304" width="9" height="22" rx="2" fill="#F59E0B" fill-opacity="0.85"/>
+<rect x="784" y="299" width="9" height="27" rx="2" fill="#F59E0B" fill-opacity="0.85"/>
+
+<!-- Card 3: Inter-company Transactions -->
+<rect x="826" y="240" width="250" height="110" rx="10" fill="#0D1B3E" stroke="#2D1F0A" stroke-width="1"/>
+<text x="840" y="257" font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#9CA3AF">Inter-Co Transactions</text>
+<text x="840" y="282" font-family="-apple-system,sans-serif" font-size="26" font-weight="700" fill="#FFFFFF">428</text>
+<text x="840" y="338" font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#22C55E">All reconciled</text>
+<!-- green check sparkline (flat-ish) -->
+<rect x="974" y="316" width="9" height="10" rx="2" fill="#22C55E" fill-opacity="0.85"/>
+<rect x="987" y="313" width="9" height="13" rx="2" fill="#22C55E" fill-opacity="0.85"/>
+<rect x="1000" y="315" width="9" height="11" rx="2" fill="#22C55E" fill-opacity="0.85"/>
+<rect x="1013" y="313" width="9" height="13" rx="2" fill="#22C55E" fill-opacity="0.85"/>
+<rect x="1026" y="312" width="9" height="14" rx="2" fill="#22C55E" fill-opacity="0.85"/>
+<rect x="1039" y="313" width="9" height="13" rx="2" fill="#22C55E" fill-opacity="0.85"/>
+<rect x="1052" y="311" width="9" height="15" rx="2" fill="#22C55E" fill-opacity="0.85"/>
+
+<!-- Card 4: Currencies in Group -->
+<rect x="1094" y="240" width="250" height="110" rx="10" fill="#0D1B3E" stroke="#2D1F0A" stroke-width="1"/>
+<text x="1108" y="257" font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#9CA3AF">Currencies in Group</text>
+<text x="1108" y="282" font-family="-apple-system,sans-serif" font-size="26" font-weight="700" fill="#FFFFFF">7</text>
+<text x="1108" y="338" font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#22D3EE">Auto-converted to INR</text>
+<!-- cyan sparkline -->
+<rect x="1242" y="316" width="9" height="10" rx="2" fill="#06B6D4" fill-opacity="0.85"/>
+<rect x="1255" y="312" width="9" height="14" rx="2" fill="#06B6D4" fill-opacity="0.85"/>
+<rect x="1268" y="309" width="9" height="17" rx="2" fill="#06B6D4" fill-opacity="0.85"/>
+<rect x="1281" y="311" width="9" height="15" rx="2" fill="#06B6D4" fill-opacity="0.85"/>
+<rect x="1294" y="307" width="9" height="19" rx="2" fill="#06B6D4" fill-opacity="0.85"/>
+<rect x="1307" y="304" width="9" height="22" rx="2" fill="#06B6D4" fill-opacity="0.85"/>
+<rect x="1320" y="300" width="9" height="26" rx="2" fill="#06B6D4" fill-opacity="0.85"/>
+
+<!-- ── HORIZONTAL BAR CHART ──────────────────────────────────── -->
+<rect x="290" y="380" width="830" height="320" rx="12" fill="#0B1228" stroke="#1E293B" stroke-width="1"/>
+<text x="310" y="404" font-family="-apple-system,sans-serif" font-size="14" font-weight="600" fill="#FFFFFF">Revenue by Entity — top 8</text>
+<text x="310" y="420" font-family="-apple-system,sans-serif" font-size="10" fill="#6B7280">Amounts in ₹ Lakhs · Apr 2026</text>
+
+<!-- entities: name, value (max=520L → width scaled to 620px inner) -->
+<!-- inner area x=430..1090 (660px), y=432..686 -->
+<!-- 8 rows, rowH=32, gap=0, start y=434 -->
+<!-- scale: max bar (520L Zopkit India) → 620px, so 1L=1.19px -->
+
+<!-- Zopkit India 520L → 620px -->
+<text x="428" y="452" text-anchor="end" font-family="-apple-system,sans-serif" font-size="11" fill="#D1D5DB">Zopkit India</text>
+<rect x="432" y="438" width="620" height="20" rx="4" fill="url(#accentGrad)" fill-opacity="0.9"/>
+<text x="1058" y="452" font-family="-apple-system,sans-serif" font-size="10" fill="#FBBF24" dx="4">₹520L</text>
+
+<!-- Zopkit US 340L → 405px -->
+<text x="428" y="484" text-anchor="end" font-family="-apple-system,sans-serif" font-size="11" fill="#D1D5DB">Zopkit US</text>
+<rect x="432" y="470" width="405" height="20" rx="4" fill="url(#accentGrad)" fill-opacity="0.85"/>
+<text x="843" y="484" font-family="-apple-system,sans-serif" font-size="10" fill="#FBBF24" dx="4">₹340L</text>
+
+<!-- Zopkit UAE 280L → 333px -->
+<text x="428" y="516" text-anchor="end" font-family="-apple-system,sans-serif" font-size="11" fill="#D1D5DB">Zopkit UAE</text>
+<rect x="432" y="502" width="333" height="20" rx="4" fill="url(#accentGrad)" fill-opacity="0.8"/>
+<text x="771" y="516" font-family="-apple-system,sans-serif" font-size="10" fill="#FBBF24" dx="4">₹280L</text>
+
+<!-- Zopkit SG 210L → 250px -->
+<text x="428" y="548" text-anchor="end" font-family="-apple-system,sans-serif" font-size="11" fill="#D1D5DB">Zopkit SG</text>
+<rect x="432" y="534" width="250" height="20" rx="4" fill="url(#accentGrad)" fill-opacity="0.75"/>
+<text x="688" y="548" font-family="-apple-system,sans-serif" font-size="10" fill="#FBBF24" dx="4">₹210L</text>
+
+<!-- Zopkit UK 175L → 208px -->
+<text x="428" y="580" text-anchor="end" font-family="-apple-system,sans-serif" font-size="11" fill="#D1D5DB">Zopkit UK</text>
+<rect x="432" y="566" width="208" height="20" rx="4" fill="url(#accentGrad)" fill-opacity="0.7"/>
+<text x="646" y="580" font-family="-apple-system,sans-serif" font-size="10" fill="#FBBF24" dx="4">₹175L</text>
+
+<!-- Zopkit AU 140L → 167px -->
+<text x="428" y="612" text-anchor="end" font-family="-apple-system,sans-serif" font-size="11" fill="#D1D5DB">Zopkit AU</text>
+<rect x="432" y="598" width="167" height="20" rx="4" fill="url(#accentGrad)" fill-opacity="0.65"/>
+<text x="605" y="612" font-family="-apple-system,sans-serif" font-size="10" fill="#FBBF24" dx="4">₹140L</text>
+
+<!-- Zopkit DE 98L → 117px -->
+<text x="428" y="644" text-anchor="end" font-family="-apple-system,sans-serif" font-size="11" fill="#D1D5DB">Zopkit DE</text>
+<rect x="432" y="630" width="117" height="20" rx="4" fill="url(#accentGrad)" fill-opacity="0.6"/>
+<text x="555" y="644" font-family="-apple-system,sans-serif" font-size="10" fill="#FBBF24" dx="4">₹98L</text>
+
+<!-- Zopkit ZA 62L → 74px -->
+<text x="428" y="676" text-anchor="end" font-family="-apple-system,sans-serif" font-size="11" fill="#D1D5DB">Zopkit ZA</text>
+<rect x="432" y="662" width="74" height="20" rx="4" fill="url(#accentGrad)" fill-opacity="0.55"/>
+<text x="512" y="676" font-family="-apple-system,sans-serif" font-size="10" fill="#FBBF24" dx="4">₹62L</text>
+
+<!-- baseline -->
+<line x1="432" y1="686" x2="1090" y2="686" stroke="#374151" stroke-width="1"/>
+
+<!-- ── ORG TREE PANEL ──────────────────────────────────────────── -->
+<rect x="1140" y="380" width="420" height="320" rx="12" fill="#0B1228" stroke="#1E293B" stroke-width="1"/>
+<text x="1160" y="404" font-family="-apple-system,sans-serif" font-size="14" font-weight="600" fill="#FFFFFF">Org Tree (mini)</text>
+<line x1="1152" y1="416" x2="1548" y2="416" stroke="#1E293B" stroke-width="1"/>
+
+<!-- Root node: Zopkit Group -->
+<rect x="1270" y="428" width="160" height="38" rx="8" fill="#1C1A0A" stroke="#F97316" stroke-width="1.5"/>
+<text x="1350" y="452" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="12" font-weight="600" fill="#FBBF24">Zopkit Group</text>
+
+<!-- connector lines from root to children -->
+<line x1="1350" y1="466" x2="1350" y2="490" stroke="#F97316" stroke-width="1.5" stroke-opacity="0.7"/>
+<line x1="1176" y1="490" x2="1524" y2="490" stroke="#F97316" stroke-width="1.5" stroke-opacity="0.7"/>
+<line x1="1176" y1="490" x2="1176" y2="506" stroke="#F97316" stroke-width="1.5" stroke-opacity="0.7"/>
+<line x1="1350" y1="490" x2="1350" y2="506" stroke="#F97316" stroke-width="1.5" stroke-opacity="0.7"/>
+<line x1="1437" y1="490" x2="1437" y2="506" stroke="#F97316" stroke-width="1.5" stroke-opacity="0.7"/>
+<line x1="1524" y1="490" x2="1524" y2="506" stroke="#F97316" stroke-width="1.5" stroke-opacity="0.7"/>
+
+<!-- Child nodes row 1: India, US, UAE, SG -->
+<rect x="1152" y="506" width="106" height="36" rx="6" fill="#12100A" stroke="#F97316" stroke-width="1" stroke-opacity="0.6"/>
+<circle cx="1166" cy="518" r="4" fill="#22C55E"/>
+<text x="1178" y="519" font-family="-apple-system,sans-serif" font-size="10" font-weight="500" fill="#E2E8F0">Zopkit India</text>
+<text x="1166" y="532" font-family="-apple-system,sans-serif" font-size="9" fill="#6B7280">INR · Active</text>
+
+<rect x="1327" y="506" width="90" height="36" rx="6" fill="#12100A" stroke="#F97316" stroke-width="1" stroke-opacity="0.6"/>
+<circle cx="1341" cy="518" r="4" fill="#22C55E"/>
+<text x="1353" y="519" font-family="-apple-system,sans-serif" font-size="10" font-weight="500" fill="#E2E8F0">Zopkit US</text>
+<text x="1341" y="532" font-family="-apple-system,sans-serif" font-size="9" fill="#6B7280">USD · Active</text>
+
+<rect x="1414" y="506" width="90" height="36" rx="6" fill="#12100A" stroke="#F97316" stroke-width="1" stroke-opacity="0.6"/>
+<circle cx="1428" cy="518" r="4" fill="#22C55E"/>
+<text x="1440" y="519" font-family="-apple-system,sans-serif" font-size="10" font-weight="500" fill="#E2E8F0">Zopkit UAE</text>
+<text x="1428" y="532" font-family="-apple-system,sans-serif" font-size="9" fill="#6B7280">AED · Active</text>
+
+<!-- second row connectors and nodes -->
+<line x1="1176" y1="542" x2="1176" y2="566" stroke="#F97316" stroke-width="1" stroke-opacity="0.5"/>
+<line x1="1264" y1="566" x2="1420" y2="566" stroke="#F97316" stroke-width="1" stroke-opacity="0.5"/>
+<line x1="1264" y1="566" x2="1264" y2="578" stroke="#F97316" stroke-width="1" stroke-opacity="0.5"/>
+<line x1="1342" y1="566" x2="1342" y2="578" stroke="#F97316" stroke-width="1" stroke-opacity="0.5"/>
+<line x1="1420" y1="566" x2="1420" y2="578" stroke="#F97316" stroke-width="1" stroke-opacity="0.5"/>
+
+<rect x="1240" y="578" width="82" height="32" rx="6" fill="#12100A" stroke="#EAB308" stroke-width="1" stroke-opacity="0.5"/>
+<circle cx="1252" cy="589" r="3" fill="#22C55E"/>
+<text x="1260" y="590" font-family="-apple-system,sans-serif" font-size="10" fill="#E2E8F0">Zopkit SG</text>
+<text x="1252" y="602" font-family="-apple-system,sans-serif" font-size="9" fill="#6B7280">SGD</text>
+
+<rect x="1326" y="578" width="82" height="32" rx="6" fill="#12100A" stroke="#EAB308" stroke-width="1" stroke-opacity="0.5"/>
+<circle cx="1338" cy="589" r="3" fill="#22C55E"/>
+<text x="1346" y="590" font-family="-apple-system,sans-serif" font-size="10" fill="#E2E8F0">Zopkit UK</text>
+<text x="1338" y="602" font-family="-apple-system,sans-serif" font-size="9" fill="#6B7280">GBP</text>
+
+<rect x="1412" y="578" width="82" height="32" rx="6" fill="#12100A" stroke="#EAB308" stroke-width="1" stroke-opacity="0.5"/>
+<circle cx="1424" cy="589" r="3" fill="#EAB308"/>
+<text x="1432" y="590" font-family="-apple-system,sans-serif" font-size="10" fill="#E2E8F0">Zopkit DE</text>
+<text x="1424" y="602" font-family="-apple-system,sans-serif" font-size="9" fill="#6B7280">EUR</text>
+
+<!-- Legend -->
+<circle cx="1160" cy="644" r="4" fill="#22C55E"/>
+<text x="1170" y="648" font-family="-apple-system,sans-serif" font-size="10" fill="#9CA3AF">Active</text>
+<circle cx="1215" cy="644" r="4" fill="#EAB308"/>
+<text x="1225" y="648" font-family="-apple-system,sans-serif" font-size="10" fill="#9CA3AF">Review</text>
+<text x="1160" y="668" font-family="-apple-system,sans-serif" font-size="10" fill="#6B7280">14 entities total · 7 currencies · All consolidated</text>
+
+<!-- ── BOTTOM PANELS ───────────────────────────────────────────── -->
+
+<!-- Panel 1: Inter-Co Eliminations -->
+<rect x="290" y="720" width="410" height="184" rx="12" fill="#0B1228" stroke="#1E293B" stroke-width="1"/>
+<text x="308" y="742" font-family="-apple-system,sans-serif" font-size="13" font-weight="600" fill="#FFFFFF">Inter-Co Eliminations</text>
+<line x1="308" y1="752" x2="682" y2="752" stroke="#1E293B" stroke-width="1"/>
+<!-- row 1 -->
+<text x="316" y="776" font-family="-apple-system,sans-serif" font-size="11" fill="#E2E8F0">India → US Management Fee</text>
+<text x="676" y="776" text-anchor="end" font-family="-apple-system,sans-serif" font-size="11" font-weight="600" fill="#EF4444">−₹18.4L</text>
+<!-- row 2 -->
+<text x="316" y="812" font-family="-apple-system,sans-serif" font-size="11" fill="#E2E8F0">UAE → India Service Charge</text>
+<text x="676" y="812" text-anchor="end" font-family="-apple-system,sans-serif" font-size="11" font-weight="600" fill="#EF4444">−₹9.2L</text>
+<!-- row 3 -->
+<text x="316" y="848" font-family="-apple-system,sans-serif" font-size="11" fill="#E2E8F0">SG ↔ UK Royalty Offset</text>
+<text x="676" y="848" text-anchor="end" font-family="-apple-system,sans-serif" font-size="11" font-weight="600" fill="#22C55E">Balanced</text>
+<!-- net -->
+<line x1="308" y1="862" x2="682" y2="862" stroke="#1E293B" stroke-width="1"/>
+<text x="316" y="880" font-family="-apple-system,sans-serif" font-size="11" font-weight="600" fill="#9CA3AF">Net eliminated</text>
+<text x="676" y="880" text-anchor="end" font-family="-apple-system,sans-serif" font-size="12" font-weight="700" fill="#FBBF24">₹27.6L</text>
+
+<!-- Panel 2: Permission Matrix -->
+<rect x="720" y="720" width="410" height="184" rx="12" fill="#0B1228" stroke="#1E293B" stroke-width="1"/>
+<text x="738" y="742" font-family="-apple-system,sans-serif" font-size="13" font-weight="600" fill="#FFFFFF">Permission Matrix</text>
+<line x1="738" y1="752" x2="1112" y2="752" stroke="#1E293B" stroke-width="1"/>
+<!-- column headers -->
+<text x="838" y="770" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="9" fill="#6B7280">India</text>
+<text x="890" y="770" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="9" fill="#6B7280">US</text>
+<text x="942" y="770" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="9" fill="#6B7280">UAE</text>
+<text x="994" y="770" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="9" fill="#6B7280">SG</text>
+<!-- row: CFO -->
+<text x="820" y="790" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#9CA3AF">CFO</text>
+<rect x="824" y="778" width="28" height="18" rx="3" fill="#22C55E" fill-opacity="0.3"/>
+<text x="838" y="791" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="9" fill="#22C55E">✓</text>
+<rect x="876" y="778" width="28" height="18" rx="3" fill="#22C55E" fill-opacity="0.3"/>
+<text x="890" y="791" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="9" fill="#22C55E">✓</text>
+<rect x="928" y="778" width="28" height="18" rx="3" fill="#22C55E" fill-opacity="0.3"/>
+<text x="942" y="791" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="9" fill="#22C55E">✓</text>
+<rect x="980" y="778" width="28" height="18" rx="3" fill="#22C55E" fill-opacity="0.3"/>
+<text x="994" y="791" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="9" fill="#22C55E">✓</text>
+<!-- row: Controller -->
+<text x="820" y="816" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#9CA3AF">Controller</text>
+<rect x="824" y="804" width="28" height="18" rx="3" fill="#22C55E" fill-opacity="0.3"/>
+<text x="838" y="817" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="9" fill="#22C55E">✓</text>
+<rect x="876" y="804" width="28" height="18" rx="3" fill="#22C55E" fill-opacity="0.3"/>
+<text x="890" y="817" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="9" fill="#22C55E">✓</text>
+<rect x="928" y="804" width="28" height="18" rx="3" fill="#1E293B" fill-opacity="0.5"/>
+<text x="942" y="817" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="9" fill="#4B5563">—</text>
+<rect x="980" y="804" width="28" height="18" rx="3" fill="#1E293B" fill-opacity="0.5"/>
+<text x="994" y="817" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="9" fill="#4B5563">—</text>
+<!-- row: Analyst -->
+<text x="820" y="842" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#9CA3AF">Analyst</text>
+<rect x="824" y="830" width="28" height="18" rx="3" fill="#22C55E" fill-opacity="0.3"/>
+<text x="838" y="843" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="9" fill="#22C55E">✓</text>
+<rect x="876" y="830" width="28" height="18" rx="3" fill="#1E293B" fill-opacity="0.5"/>
+<text x="890" y="843" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="9" fill="#4B5563">—</text>
+<rect x="928" y="830" width="28" height="18" rx="3" fill="#1E293B" fill-opacity="0.5"/>
+<text x="942" y="843" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="9" fill="#4B5563">—</text>
+<rect x="980" y="830" width="28" height="18" rx="3" fill="#1E293B" fill-opacity="0.5"/>
+<text x="994" y="843" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="9" fill="#4B5563">—</text>
+<!-- row: Auditor -->
+<text x="820" y="868" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#9CA3AF">Auditor</text>
+<rect x="824" y="856" width="28" height="18" rx="3" fill="#EAB308" fill-opacity="0.2"/>
+<text x="838" y="869" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="9" fill="#EAB308">R</text>
+<rect x="876" y="856" width="28" height="18" rx="3" fill="#EAB308" fill-opacity="0.2"/>
+<text x="890" y="869" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="9" fill="#EAB308">R</text>
+<rect x="928" y="856" width="28" height="18" rx="3" fill="#EAB308" fill-opacity="0.2"/>
+<text x="942" y="869" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="9" fill="#EAB308">R</text>
+<rect x="980" y="856" width="28" height="18" rx="3" fill="#EAB308" fill-opacity="0.2"/>
+<text x="994" y="869" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="9" fill="#EAB308">R</text>
+
+<!-- Panel 3: Group P&L Preview -->
+<rect x="1140" y="720" width="410" height="184" rx="12" fill="#0B1228" stroke="#1E293B" stroke-width="1"/>
+<text x="1158" y="742" font-family="-apple-system,sans-serif" font-size="13" font-weight="600" fill="#FFFFFF">Group P&amp;L Preview</text>
+<line x1="1158" y1="752" x2="1532" y2="752" stroke="#1E293B" stroke-width="1"/>
+<!-- Revenue pill -->
+<rect x="1158" y="764" width="372" height="44" rx="8" fill="#0D1B3E"/>
+<text x="1172" y="781" font-family="-apple-system,sans-serif" font-size="10" fill="#9CA3AF">Total Revenue</text>
+<text x="1172" y="800" font-family="-apple-system,sans-serif" font-size="18" font-weight="700" fill="#FBBF24">₹6.18 Cr</text>
+<text x="1518" y="795" text-anchor="end" font-family="-apple-system,sans-serif" font-size="11" fill="#22C55E">+18% YoY</text>
+<!-- OpEx pill -->
+<rect x="1158" y="816" width="372" height="44" rx="8" fill="#0D1B3E"/>
+<text x="1172" y="833" font-family="-apple-system,sans-serif" font-size="10" fill="#9CA3AF">Total OpEx</text>
+<text x="1172" y="852" font-family="-apple-system,sans-serif" font-size="18" font-weight="700" fill="#FB923C">₹3.82 Cr</text>
+<text x="1518" y="847" text-anchor="end" font-family="-apple-system,sans-serif" font-size="11" fill="#EF4444">+11% YoY</text>
+<!-- Profit pill -->
+<rect x="1158" y="868" width="372" height="44" rx="8" fill="#0A2A1A"/>
+<text x="1172" y="885" font-family="-apple-system,sans-serif" font-size="10" fill="#9CA3AF">Net Profit</text>
+<text x="1172" y="904" font-family="-apple-system,sans-serif" font-size="18" font-weight="700" fill="#22C55E">₹2.36 Cr</text>
+<text x="1518" y="899" text-anchor="end" font-family="-apple-system,sans-serif" font-size="11" fill="#22C55E">38.2% margin</text>
+
+<!-- ── FLOATING BADGES ────────────────────────────────────────── -->
+<!-- Badge 1: Data sources 50+ -->
+<rect x="1240" y="140" width="192" height="32" rx="16" fill="#0B1228" fill-opacity="0.92" stroke="#2D1F0A" stroke-width="1" filter="url(#bsh)"/>
+<circle cx="1257" cy="156" r="5" fill="#FBBF24"/>
+<text x="1269" y="161" font-family="-apple-system,sans-serif" font-size="12" font-weight="500" fill="#FDE68A">Data sources 50+</text>
+
+<!-- Badge 2: Faster reports 5× -->
+<rect x="270" y="820" width="196" height="32" rx="16" fill="#0B1228" fill-opacity="0.92" stroke="#2D1F0A" stroke-width="1" filter="url(#bsh)"/>
+<circle cx="287" cy="836" r="5" fill="#FB923C"/>
+<text x="299" y="841" font-family="-apple-system,sans-serif" font-size="12" font-weight="500" fill="#FDBA74">Faster reports 5×</text>
+
+</g>
+</svg>

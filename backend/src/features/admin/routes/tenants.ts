@@ -11,6 +11,7 @@ import ErrorResponses from '../../../utils/error-responses.js';
 import { randomUUID } from 'crypto';
 import ActivityLogger, { ACTIVITY_TYPES } from '../../../services/activityLogger.js';
 import { OrganizationAssignmentService } from '../../organizations/index.js';
+import { uploadTenantLogo } from '../../../utils/s3-logo-upload.js';
 
 export default async function tenantRoutes(
   fastify: FastifyInstance,
@@ -520,6 +521,43 @@ export default async function tenantRoutes(
       return reply.code(500).send({ 
         error: 'Failed to update account settings',
         message: error.message 
+      });
+    }
+  });
+
+  // Upload tenant logo to S3
+  fastify.post('/logo', {
+    preHandler: [authenticateToken],
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
+    if (!request.userContext?.isAuthenticated) {
+      return reply.code(401).send({ error: 'Unauthorized' });
+    }
+
+    const tenantId = request.userContext.tenantId;
+    if (!tenantId) {
+      return reply.code(401).send({ error: 'Tenant not found' });
+    }
+
+    try {
+      const file = await request.file();
+      if (!file) {
+        return reply.code(400).send({ success: false, error: 'No file uploaded' });
+      }
+
+      const buffer = await file.toBuffer();
+      const { url } = await uploadTenantLogo(tenantId, buffer, file.mimetype, file.filename);
+
+      // Persist the new URL in the tenants table
+      await TenantService.updateTenant(tenantId, { logoUrl: url, updatedAt: new Date() });
+
+      return reply.code(200).send({ success: true, data: { logoUrl: url } });
+    } catch (err) {
+      const error = err as Error;
+      request.log.error(error, 'Error uploading tenant logo:');
+      const isClientError = error.message.startsWith('File type') || error.message.startsWith('File size');
+      return reply.code(isClientError ? 400 : 500).send({
+        success: false,
+        error: error.message || 'Failed to upload logo',
       });
     }
   });

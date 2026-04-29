@@ -13,24 +13,23 @@ interface KindeProviderProps {
 
 // Component to set up the token getter and silent auth after Kinde is initialized
 function TokenSetupComponent() {
-  const { getToken, isAuthenticated, user, error, isLoading } = useKindeAuth();
-  const tokenGetterSetupRef = useRef(false);
+  const { getToken, isAuthenticated, error, isLoading } = useKindeAuth();
   const lastNoTokenLogAtRef = useRef(0);
   const invalidGrantHandledRef = useRef(false);
 
-  useEffect(() => {
-    // Prevent React StrictMode from setting up token getter multiple times
-    if (tokenGetterSetupRef.current) {
-      return;
-    }
-    tokenGetterSetupRef.current = true;
+  // Always point at the latest getToken from Kinde. A one-time setKindeTokenGetter
+  // closure must not capture an early getToken from before auth finished loading —
+  // that caused API calls (e.g. admin dashboard) to omit the Bearer header (dev: Vite
+  // proxies /api to the backend on :3000; the SPA still needs a valid Bearer for auth).
+  const getTokenRef = useRef(getToken);
+  getTokenRef.current = getToken;
 
-    // Token getter strictly from Kinde SDK only
+  useEffect(() => {
     setKindeTokenGetter(async () => {
       try {
-        logger.debug('🔑 TokenGetter: Called - isAuthenticated:', isAuthenticated, 'user:', !!user);
+        logger.debug('🔑 TokenGetter: Called');
 
-        const token = await getToken();
+        const token = await getTokenRef.current();
 
         if (token) {
           logger.debug('✅ TokenGetter: Successfully retrieved token from Kinde');
@@ -58,7 +57,7 @@ function TokenSetupComponent() {
         return null;
       }
     });
-  }, [getToken, isAuthenticated, user]);
+  }, []);
 
   useEffect(() => {
     if (isLoading || isAuthenticated || !error) return;

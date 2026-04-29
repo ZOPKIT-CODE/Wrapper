@@ -126,7 +126,7 @@ const PricingCard: React.FC<PricingCardProps> = ({
                   "text-[0.7rem] font-medium",
                   isPremium ? "text-[#1B2E5A]/50" : "text-slate-400"
                 )}>
-                  Credits never expire
+                  Credits expire with plan
                 </div>
               </>
             )}

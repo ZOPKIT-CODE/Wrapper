@@ -416,6 +416,84 @@ export class StripePaymentGateway implements PaymentGatewayPort {
     };
   }
 
+  // -----------------------------------------------------------------------
+  // Test Clocks (test mode only)
+  // -----------------------------------------------------------------------
+
+  private ensureTestMode(): Stripe {
+    const s = this.ensureStripe();
+    const key = process.env.STRIPE_SECRET_KEY ?? '';
+    if (!key.startsWith('sk_test_')) {
+      throw new Error('Test Clocks are only available with Stripe test-mode keys (sk_test_*)');
+    }
+    return s;
+  }
+
+  async createTestClock(frozenTime: number, name?: string): Promise<Stripe.TestHelpers.TestClock> {
+    const s = this.ensureTestMode();
+    return s.testHelpers.testClocks.create({
+      frozen_time: frozenTime,
+      name: name ?? `Dev test clock ${new Date(frozenTime * 1000).toISOString()}`,
+    });
+  }
+
+  async advanceTestClock(testClockId: string, frozenTime: number): Promise<Stripe.TestHelpers.TestClock> {
+    const s = this.ensureTestMode();
+    return s.testHelpers.testClocks.advance(testClockId, { frozen_time: frozenTime });
+  }
+
+  async retrieveTestClock(testClockId: string): Promise<Stripe.TestHelpers.TestClock> {
+    const s = this.ensureTestMode();
+    return s.testHelpers.testClocks.retrieve(testClockId);
+  }
+
+  async deleteTestClock(testClockId: string): Promise<Stripe.Response<{ id: string; deleted: boolean }>> {
+    const s = this.ensureTestMode();
+    return s.testHelpers.testClocks.del(testClockId) as unknown as Stripe.Response<{ id: string; deleted: boolean }>;
+  }
+
+  async listTestClocks(limit = 10): Promise<Stripe.ApiList<Stripe.TestHelpers.TestClock>> {
+    const s = this.ensureTestMode();
+    return s.testHelpers.testClocks.list({ limit });
+  }
+
+  async createTestClockCustomer(
+    testClockId: string,
+    params: { email: string; name?: string; metadata?: Record<string, string> },
+  ): Promise<Stripe.Customer> {
+    const s = this.ensureTestMode();
+    return s.customers.create({
+      email: params.email,
+      name: params.name,
+      test_clock: testClockId,
+      metadata: params.metadata,
+    });
+  }
+
+  async createTestClockSubscription(
+    customerId: string,
+    priceId: string,
+    metadata?: Record<string, string>,
+  ): Promise<Stripe.Subscription> {
+    const s = this.ensureTestMode();
+    // Attach a test payment method so the subscription can activate
+    const pm = await s.paymentMethods.create({ type: 'card', card: { token: 'tok_visa' } });
+    await s.paymentMethods.attach(pm.id, { customer: customerId });
+    await s.customers.update(customerId, {
+      invoice_settings: { default_payment_method: pm.id },
+    });
+    return s.subscriptions.create({
+      customer: customerId,
+      items: [{ price: priceId }],
+      metadata,
+      default_payment_method: pm.id,
+    });
+  }
+
+  // -----------------------------------------------------------------------
+  // Internal helpers
+  // -----------------------------------------------------------------------
+
   private mapInvoice(invoice: Stripe.Invoice): GatewayInvoice {
     return {
       id: invoice.id,

@@ -36,6 +36,7 @@ export interface TenantData {
   companyName: string;
   subdomain: string;
   industry: string;
+  logoUrl?: string;
 }
 
 interface UserContextType {
@@ -138,6 +139,7 @@ export const UserContextProvider: React.FC<UserContextProviderProps> = React.mem
             companyName: tenantData.companyName || 'Organization',
             subdomain: tenantData.subdomain || 'unknown',
             industry: tenantData.industry || 'Business',
+            logoUrl: tenantData.logoUrl || undefined,
           };
         }
 
@@ -241,6 +243,7 @@ export const UserContextProvider: React.FC<UserContextProviderProps> = React.mem
         companyName: tenantData.companyName || 'Organization',
         subdomain: tenantData.subdomain || 'unknown',
         industry: tenantData.industry || 'Business',
+        logoUrl: tenantData.logoUrl || undefined,
       });
     }
   }, [tenantIdStable, user?.tenantId]);

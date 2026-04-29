@@ -12,11 +12,12 @@ import {
 } from "@/components/ui/sidebar"
 import { BillingStatusNavbar } from "@/components/common/billing/BillingStatusNavbar"
 import { useSeasonalCreditsCongratulatory } from "@/hooks/useSeasonalCreditsCongratulatory"
-import { Home, Building2, Users, Crown, Shield, Activity, CreditCard, ChevronRight, Settings } from "lucide-react"
+import { useSubscriptionCurrent } from "@/hooks/useSharedQueries"
+import { Home, Building2, Users, Crown, Shield, Activity, CreditCard, ChevronRight, Settings, AlertTriangle } from "lucide-react"
 import { useNavigate, useLocation, useSearch, useParams, Outlet, Link } from "@tanstack/react-router"
 import { useOrganizationHierarchy } from "@/hooks/useOrganizationHierarchy"
 import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
+import { cn, formatDate } from "@/lib/utils"
 import { useTheme } from "@/components/theme/ThemeProvider"
 import { useUserContextSafe } from "@/contexts/UserContextProvider"
 import { useKindeAuth } from "@kinde-oss/kinde-auth-react"
@@ -242,6 +243,11 @@ export function DashboardLayout() {
     dismissCongratulatory
   } = useSeasonalCreditsCongratulatory()
 
+  // Subscription status for cancellation banner
+  const { data: subscription } = useSubscriptionCurrent()
+  const isCancelScheduled = subscription?.status === 'active' && !!subscription?.cancelAt
+  const isCanceled = subscription?.status === 'canceled'
+
   // Handle organization switching for tenant admins
   const handleOrganizationSwitch = (organizationId: string) => {
     // TODO: Implement organization switching logic
@@ -282,6 +288,7 @@ export function DashboardLayout() {
       companyName: tenant?.companyName || 'Organization',
       subdomain: tenant?.subdomain,
       industry: tenant?.industry,
+      logoUrl: tenant?.logoUrl,
     };
   }, [tenant, user])
 
@@ -418,6 +425,47 @@ export function DashboardLayout() {
               <ThemeToggle />
             </div>
           </header>
+
+          {/* Subscription cancellation banners */}
+          {isCancelScheduled && (
+            <div className="flex items-center justify-between gap-3 px-4 py-3 bg-amber-50 border-b border-amber-200 dark:bg-amber-950/30 dark:border-amber-800">
+              <div className="flex items-center gap-2 text-sm text-amber-800 dark:text-amber-200">
+                <AlertTriangle className="h-4 w-4 shrink-0" />
+                <span>
+                  Your subscription is scheduled to end on{' '}
+                  <strong>{formatDate(subscription.cancelAt)}</strong>.
+                  You will retain full access until then.
+                </span>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="shrink-0 border-amber-300 text-amber-800 hover:bg-amber-100 dark:border-amber-700 dark:text-amber-200 dark:hover:bg-amber-900"
+                onClick={() => navigate({ to: '/dashboard/billing', search: { tab: 'plans' } })}
+              >
+                Resubscribe
+              </Button>
+            </div>
+          )}
+          {isCanceled && (
+            <div className="flex items-center justify-between gap-3 px-4 py-3 bg-red-50 border-b border-red-200 dark:bg-red-950/30 dark:border-red-800">
+              <div className="flex items-center gap-2 text-sm text-red-800 dark:text-red-200">
+                <AlertTriangle className="h-4 w-4 shrink-0" />
+                <span>
+                  Your subscription has expired. Your data is safe but write access is restricted.
+                </span>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="shrink-0 border-red-300 text-red-800 hover:bg-red-100 dark:border-red-700 dark:text-red-200 dark:hover:bg-red-900"
+                onClick={() => navigate({ to: '/dashboard/billing', search: { tab: 'plans' } })}
+              >
+                Resubscribe Now
+              </Button>
+            </div>
+          )}
+
           <main className="flex-1 relative overflow-y-auto bg-slate-50 dark:bg-slate-900 p-6 min-h-0">
             <ErrorBoundary>
               {/* pathname only: ?tab= and other search updates must not remount the route (e.g. Account Settings tabs). */}
@@ -434,6 +482,7 @@ export function DashboardLayout() {
             onClose={dismissCongratulatory}
             creditsAmount={seasonalCreditsData.totalCredits}
             campaignName={seasonalCreditsData.campaignName}
+            modalConfig={seasonalCreditsData.modalConfig}
           />
         </Suspense>
       )}

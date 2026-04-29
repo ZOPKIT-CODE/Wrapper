@@ -49,10 +49,31 @@ export default async function seasonalCreditsRoutes(fastify: FastifyInstance, _o
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
     try {
+      // Extract top-level fields that need special handling
+      const { modalConfig, minutesUntilExpiry, expiresAt: bodyExpiresAt, notifyTenants, ...rest } = body;
+
+      // If minutesUntilExpiry is provided (dev mode), compute expiresAt server-side
+      // so the server's clock is used — avoids client timezone / clock-skew issues.
+      let expiresAt: unknown = bodyExpiresAt;
+      if (minutesUntilExpiry != null && Number(minutesUntilExpiry) > 0) {
+        expiresAt = new Date(Date.now() + Number(minutesUntilExpiry) * 60_000).toISOString();
+      }
+
+      const existingMeta = (typeof rest.metadata === 'object' && rest.metadata !== null
+        ? rest.metadata
+        : {}) as Record<string, unknown>;
+
       const campaignData = {
-        ...body,
-        createdBy: (request as any).userContext?.userId,
-        tenantId: (request as any).userContext?.tenantId
+        ...rest,
+        expiresAt,
+        // Map frontend `notifyTenants` → DB column `sendNotifications`
+        sendNotifications: notifyTenants !== undefined ? Boolean(notifyTenants) : true,
+        createdBy: (request as any).userContext?.internalUserId ?? null,
+        tenantId: (request as any).userContext?.tenantId,
+        metadata: {
+          ...existingMeta,
+          ...(modalConfig ? { modalConfig } : {}),
+        },
       };
       
       const campaign = await SeasonalCreditService.createDistributionCampaign(campaignData);
@@ -313,6 +334,60 @@ export default async function seasonalCreditsRoutes(fastify: FastifyInstance, _o
     }
   });
   
+  /**
+   * GET /admin/seasonal-credits/campaigns/:campaignId/tenant-breakdown
+   * Per-tenant distribution status: who got credits, how many, expiry health, and who failed.
+   */
+  fastify.get('/campaigns/:campaignId/tenant-breakdown', {
+    preHandler: [authenticateToken, requirePermission(PERMISSIONS.ADMIN_CREDITS_MANAGE)],
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
+    const params = request.params as Record<string, string>;
+    try {
+      const breakdown = await SeasonalCreditService.getCampaignTenantBreakdown(params.campaignId ?? '');
+      reply.send({ success: true, data: breakdown });
+    } catch (err: unknown) {
+      const error = err as Error;
+      request.log.error(error, 'Error fetching campaign tenant breakdown:');
+      reply.code(404).send({ success: false, error: error.message });
+    }
+  });
+
+  /**
+   * POST /admin/seasonal-credits/campaigns/:campaignId/cancel
+   * Cancel a campaign (marks pending batches inactive).
+   */
+  fastify.post('/campaigns/:campaignId/cancel', {
+    preHandler: [authenticateToken, requirePermission(PERMISSIONS.ADMIN_CREDITS_MANAGE)],
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
+    const params = request.params as Record<string, string>;
+    try {
+      const result = await SeasonalCreditService.cancelCampaign(params.campaignId ?? '');
+      reply.send({ success: true, data: result });
+    } catch (err: unknown) {
+      const error = err as Error;
+      request.log.error(error, 'Error cancelling campaign');
+      reply.code(400).send({ success: false, error: error.message });
+    }
+  });
+
+  /**
+   * POST /admin/seasonal-credits/campaigns/:campaignId/rerun-failed
+   * Rerun failed distributions for a campaign.
+   */
+  fastify.post('/campaigns/:campaignId/rerun-failed', {
+    preHandler: [authenticateToken, requirePermission(PERMISSIONS.ADMIN_CREDITS_MANAGE)],
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
+    const params = request.params as Record<string, string>;
+    try {
+      const result = await SeasonalCreditService.rerunFailedDistributions(params.campaignId ?? '');
+      reply.send({ success: true, data: result });
+    } catch (err: unknown) {
+      const error = err as Error;
+      request.log.error(error, 'Error rerunning failed distributions');
+      reply.code(400).send({ success: false, error: error.message });
+    }
+  });
+
   /**
    * GET /admin/seasonal-credits/types
    * Get available credit types

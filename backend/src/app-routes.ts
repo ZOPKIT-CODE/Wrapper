@@ -23,6 +23,7 @@ import {
   adminApplicationAssignmentRoutes,
   adminOperationCostRoutes,
   seasonalCreditsRoutes,
+  seasonalCreditBatchesRoutes,
   adminNotificationRoutes
 } from './features/admin/index.js';
 import invitationRoutes from './features/organizations/routes/invitations.js';
@@ -42,6 +43,9 @@ import notificationRoutes from './features/notifications/routes/notifications.js
 import entityScopeRoutes from './features/organizations/routes/entity-scope.js';
 import platformStaffManagementRoutes from './features/admin/routes/platform-staff-management.js';
 import userRoutes from './features/users/routes/user-routes.js';
+import devCreditTestRoutes from './routes/dev-credit-test.js';
+import devTestClockRoutes from './routes/dev-test-clocks.js';
+import emailPreviewRoutes from './routes/email-preview.js';
 
 import { authMiddleware, csrfProtection } from './middleware/auth/auth.js';
 import { errorHandler } from './middleware/error-handler.js';
@@ -101,6 +105,7 @@ export async function registerRoutes(fastify: FastifyInstance): Promise<void> {
   await fastify.register(adminEntityManagementRoutes, { prefix: '/api/admin/entities' });
   await fastify.register(adminCreditOverviewRoutes, { prefix: '/api/admin/credits' });
   await fastify.register(seasonalCreditsRoutes, { prefix: '/api/admin/seasonal-credits' });
+  await fastify.register(seasonalCreditBatchesRoutes, { prefix: '/api/admin/seasonal-credit-batches' });
   await fastify.register(adminNotificationRoutes, { prefix: '/api/admin/notifications' });
 
   await fastify.register(suiteRoutes, { prefix: '/api/suite' });
@@ -128,4 +133,11 @@ export async function registerRoutes(fastify: FastifyInstance): Promise<void> {
 
   await fastify.register(invitationRoutes, { prefix: '/api/invitations' });
   await fastify.register(userRoutes, { prefix: '/api/users' });
+
+  // ── Dev-only routes (not available in production) ────────────────────────
+  if (process.env.NODE_ENV !== 'production') {
+    await fastify.register(devCreditTestRoutes, { prefix: '/api/dev/credits' });
+    await fastify.register(devTestClockRoutes, { prefix: '/api/dev/test-clocks' });
+    await fastify.register(emailPreviewRoutes, { prefix: '/api/email-preview' });
+  }
 }

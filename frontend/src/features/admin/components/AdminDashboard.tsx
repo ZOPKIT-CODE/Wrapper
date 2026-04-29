@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useDashboardTabParam } from '@/hooks/useDashboardTabParam';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -51,7 +52,19 @@ const AdminDashboard: React.FC = () => {
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useDashboardTabParam({
+    allowed: [
+      'overview',
+      'tenants-entities',
+      'credits',
+      'applications',
+      'clients',
+      'operation-costs',
+      'seasonal-credits',
+    ] as const,
+    defaultTab: 'overview',
+  });
+  const [tenantEntityTab, setTenantEntityTab] = useState<'tenants' | 'entities'>('tenants');
 
   const fetchDashboardData = async () => {
     try {
@@ -124,27 +137,27 @@ const AdminDashboard: React.FC = () => {
   }
 
   return (
-    <Container wide className="bg-transparent dashboard-actionable-cursors">
-      <div className="mb-6">
+    <Container wide className="dashboard-actionable-cursors">
+      <div className="rounded-2xl bg-gradient-to-br from-[#11254d] via-[#1B2E5A] to-[#0f1f40] p-6 text-white shadow-2xl mb-6">
 
         <div className="flex items-center justify-between">
           <div>
             <nav className="mb-4">
-              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+              <div className="flex items-center space-x-2 text-sm text-blue-100/80">
                 <span>Admin Dashboard</span>
               </div>
             </nav>
             <h1 className="text-3xl font-bold tracking-tight">Company Admin Dashboard</h1>
-            <p className="text-muted-foreground">
+            <p className="text-blue-100/85">
               Comprehensive overview of all tenants, entities, and credits
             </p>
           </div>
           <div className="flex gap-2">
-            <Button onClick={handleRefresh} variant="outline" size="sm">
+            <Button onClick={handleRefresh} variant="outline" size="sm" className="border-white/30 bg-white/10 text-white hover:bg-white/20">
               <RefreshCw className="h-4 w-4 mr-2" />
               Refresh
             </Button>
-            <Button onClick={handleExportData} variant="outline" size="sm">
+            <Button onClick={handleExportData} variant="outline" size="sm" className="border-white/30 bg-white/10 text-white hover:bg-white/20">
               <Download className="h-4 w-4 mr-2" />
               Export
             </Button>
@@ -153,10 +166,9 @@ const AdminDashboard: React.FC = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-8">
+        <TabsList className="grid w-full grid-cols-7 bg-[#1B2E5A] text-white">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="tenants">Tenants</TabsTrigger>
-          <TabsTrigger value="entities">Entities</TabsTrigger>
+          <TabsTrigger value="tenants-entities">Tenants & Entities</TabsTrigger>
           <TabsTrigger value="credits">Credits</TabsTrigger>
           <TabsTrigger value="applications">Applications</TabsTrigger>
           <TabsTrigger value="clients">Clients</TabsTrigger>
@@ -248,12 +260,21 @@ const AdminDashboard: React.FC = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="tenants">
-          <TenantManagement />
-        </TabsContent>
+        <TabsContent value="tenants-entities" className="space-y-4">
+          <Tabs value={tenantEntityTab} onValueChange={(value) => setTenantEntityTab(value as 'tenants' | 'entities')}>
+            <TabsList className="grid w-full grid-cols-2 max-w-md">
+              <TabsTrigger value="tenants">Tenants</TabsTrigger>
+              <TabsTrigger value="entities">Entities</TabsTrigger>
+            </TabsList>
 
-        <TabsContent value="entities">
-          <EntityManagement />
+            <TabsContent value="tenants" className="mt-4">
+              <TenantManagement />
+            </TabsContent>
+
+            <TabsContent value="entities" className="mt-4">
+              <EntityManagement />
+            </TabsContent>
+          </Tabs>
         </TabsContent>
 
         <TabsContent value="credits">

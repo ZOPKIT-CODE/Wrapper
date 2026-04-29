@@ -41,7 +41,7 @@ function readStoredCheckoutCurrency(): CheckoutCurrency {
 const HOW_IT_WORKS = [
   { step: 1, title: 'Choose a plan', desc: 'Starter, Professional, or Enterprise—annual billing, credits included for the year.' },
   { step: 2, title: 'Use across apps', desc: 'Each plan unlocks a defined set of applications and modules—see the matrix for coverage by tier.' },
-  { step: 3, title: 'Top up credits', desc: 'Need more? Buy credit packs anytime; they never expire.' },
+  { step: 3, title: 'Top up credits', desc: 'Need more? Buy credit packs anytime; they expire with your plan.' },
   { step: 4, title: 'Scale when ready', desc: 'Upgrade your application plan or add credits from your billing workspace when you need to grow.' },
 ];
 
@@ -462,7 +462,7 @@ export function PublicPricingSection({ variant = 'page' }: PublicPricingSectionP
       <section className="mb-16" aria-label="Credit top-ups">
         <h2 className={`text-xl sm:text-2xl text-center ${headingClass} mb-3`}>Credit top-ups</h2>
         <p className={`text-center ${metaClass} max-w-2xl mx-auto mb-8`}>
-          One-time purchase bundles—same options as in-app billing. Credits never expire.
+          One-time purchase bundles—same options as in-app billing. Credits expire with your plan.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-7 items-stretch">
           {creditTopups.map((topup) => {

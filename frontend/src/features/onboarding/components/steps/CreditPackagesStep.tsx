@@ -283,7 +283,7 @@ export const CreditPackagesStep: React.FC<CreditPackagesStepProps> = ({ form }) 
                   Free Credits Included
                 </p>
                 <p className="text-sm text-green-700">
-                  All new accounts receive <strong>1,000 free credits</strong> to get started. These credits never expire and can be used for any operation.
+                  All new accounts receive <strong>1,000 free credits</strong> to get started. These credits are valid until your subscription plan expires and can be used for any operation.
                 </p>
               </div>
             </div>

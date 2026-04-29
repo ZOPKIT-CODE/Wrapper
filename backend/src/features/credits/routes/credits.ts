@@ -3,7 +3,7 @@ import { CreditService } from '../services/credit-service.js';
 import { authenticateToken, requirePermission } from '../../../middleware/auth/auth.js';
 import { PERMISSIONS } from '../../../constants/permissions.js';
 import { db } from '../../../db/index.js';
-import { creditPurchases, tenantUsers, entities, eventTracking } from '../../../db/schema/index.js';
+import { credits, creditPurchases, tenantUsers, entities, eventTracking } from '../../../db/schema/index.js';
 import { eq, and, asc } from 'drizzle-orm';
 import ErrorResponses from '../../../utils/error-responses.js';
 
@@ -160,50 +160,53 @@ export default async function creditRoutes(
       if (organizationEntities.length > 0) {
         console.log('✅ Credit API: Found organization entities:', organizationEntities.length);
 
-        // Try to find credits on any organization entity for this tenant
-        // Start with the default entity if available, otherwise try all entities
         const primaryEntity = organizationEntities[0];
-        const entitiesToCheck = organizationEntities;
 
-        for (const entity of entitiesToCheck) {
-          console.log('🔍 Checking credits for entity:', entity.entityId, entity.entityName);
-
-          try {
-            const entityCreditBalance = await CreditService.getCurrentBalance(tenantId, 'organization', entity.entityId);
-
-            // If we found credits (not the default "no credits" response), use this balance
-            if (entityCreditBalance && entityCreditBalance.availableCredits > 0) {
-              console.log('💰 Credit API: Found credits on entity:', entity.entityId, entity.entityName);
-              creditBalance = entityCreditBalance;
-              creditBalance.entityId = entity.entityId; // Ensure correct entity ID is returned
-              break; // Use the first entity that has credits
-            }
-          } catch (entityError) {
-            console.error(`❌ Error checking credits for entity ${entity.entityId}:`, entityError);
-            // Continue to next entity instead of failing
-          }
+        // Always get the primary org's balance first — it carries the subscription
+        // metadata (plan, expiry dates, alerts) that the billing UI needs.
+        try {
+          creditBalance = await CreditService.getCurrentBalance(tenantId, 'organization', primaryEntity.entityId);
+          creditBalance.entityId = primaryEntity.entityId;
+        } catch (entityError) {
+          console.error(`❌ Error getting balance for primary entity ${primaryEntity.entityId}:`, entityError);
         }
 
-        // If no entity has credits, use the default entity for consistent API response
-        if (!creditBalance && primaryEntity) {
-          console.log('⚠️ Credit API: No credits found, using primary entity for response');
-          try {
-            creditBalance = await CreditService.getCurrentBalance(tenantId, 'organization', primaryEntity.entityId);
-            creditBalance.entityId = primaryEntity.entityId;
-          } catch (entityError) {
-            console.error(`❌ Error getting balance for primary entity ${primaryEntity.entityId}:`, entityError);
-            // Will fall through to default response
+        // Aggregate availableCredits across ALL entities so the billing header
+        // shows the tenant's total balance, not just one entity's balance.
+        // The primary org's balance already provides subscription metadata (plan,
+        // expiry dates, alerts) — we only need to sum the raw credit numbers.
+        if (creditBalance && organizationEntities.length > 1) {
+          let totalAvailable = 0;
+          for (const entity of organizationEntities) {
+            try {
+              const [entityCredits] = await db
+                .select({ available: credits.availableCredits })
+                .from(credits)
+                .where(and(
+                  eq(credits.tenantId, tenantId),
+                  eq(credits.entityId, entity.entityId)
+                ))
+                .limit(1);
+              if (entityCredits) {
+                totalAvailable += parseFloat(String(entityCredits.available ?? 0));
+              }
+            } catch {
+              // skip entities we can't read
+            }
           }
-        } else if (!creditBalance && organizationEntities.length > 0) {
-          // Fallback to first entity if no default
-          console.log('⚠️ Credit API: No credits found, using first entity for response');
-          try {
-            creditBalance = await CreditService.getCurrentBalance(tenantId, 'organization', organizationEntities[0].entityId);
-            creditBalance.entityId = organizationEntities[0].entityId;
-          } catch (entityError) {
-            console.error(`❌ Error getting balance for first entity ${organizationEntities[0].entityId}:`, entityError);
-            // Will fall through to default response
-          }
+
+          // Override the single-entity balance with the tenant-wide total.
+          // Keep the subscription metadata (plan, expiry, alerts) from the primary org.
+          creditBalance.availableCredits = totalAvailable;
+
+          // Re-categorize: freeCredits = totalAvailable minus paid/seasonal
+          // (paid and seasonal are already computed correctly from transactions/batches)
+          const paidCredits = creditBalance.paidCredits ?? 0;
+          const seasonalCredits = creditBalance.seasonalCredits ?? 0;
+          const categorized = paidCredits + seasonalCredits;
+          creditBalance.freeCredits = Math.max(0, totalAvailable - categorized);
+
+          console.log(`💰 Credit API: Aggregated balance across ${organizationEntities.length} entities: ${totalAvailable}`);
         }
 
         console.log('💰 Credit API: Final credit balance:', creditBalance);
@@ -268,6 +271,55 @@ export default async function creditRoutes(
     }
   });
 
+  // Get credit balances for ALL entities in the tenant (for billing Credit Expiry tab)
+  fastify.get('/entity-balances', {
+    preHandler: authenticateToken
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const userContext = request.userContext as { tenantId: string | null };
+      const tenantId = userContext.tenantId;
+      if (!tenantId) {
+        return reply.code(400).send({ success: false, error: 'No tenant' });
+      }
+
+      // Fetch all org entities and left-join their credit balances
+      const rows = await db
+        .select({
+          entityId: entities.entityId,
+          entityName: entities.entityName,
+          entityType: entities.entityType,
+          entityLevel: entities.entityLevel,
+          parentEntityId: entities.parentEntityId,
+          availableCredits: credits.availableCredits,
+        })
+        .from(entities)
+        .leftJoin(credits, and(
+          eq(credits.entityId, entities.entityId),
+          eq(credits.tenantId, entities.tenantId)
+        ))
+        .where(and(
+          eq(entities.tenantId, tenantId),
+          eq(entities.entityType, 'organization'),
+          eq(entities.isActive, true)
+        ))
+        .orderBy(asc(entities.entityLevel), asc(entities.createdAt));
+
+      const result = rows.map(r => ({
+        entityId: r.entityId,
+        entityName: r.entityName,
+        entityType: r.entityType,
+        entityLevel: r.entityLevel,
+        parentEntityId: r.parentEntityId,
+        availableCredits: parseFloat(String(r.availableCredits ?? 0)),
+      }));
+
+      return { success: true, data: result };
+    } catch (err: unknown) {
+      console.error('❌ Error fetching entity balances:', err);
+      return reply.code(500).send({ success: false, error: 'Failed to fetch entity balances' });
+    }
+  });
+
   // Get credit transaction history
   fastify.get('/transactions', {
     preHandler: authenticateToken,
@@ -323,6 +375,43 @@ export default async function creditRoutes(
       const error = err as Error;
       request.log.error(error, 'Error fetching credit alerts:');
       return reply.code(500).send({ error: 'Failed to fetch credit alerts' });
+    }
+  });
+
+  // ── Credit pricing info ────────────────────────────────────────────────
+  fastify.get('/pricing', {
+    preHandler: authenticateToken,
+  }, async (_request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const { getOperationConfig } = await import('../services/credit-config-global.js');
+
+      let unitPrice = parseFloat(process.env.CREDIT_UNIT_PRICE || '0.001');
+      try {
+        const config = await getOperationConfig('system.credit_purchase_rate');
+        if (config?.creditCost && !config.isDefault) {
+          const price = parseFloat(String(config.creditCost));
+          if (price > 0) unitPrice = price;
+        }
+      } catch { /* use default */ }
+
+      const minChargeUsd = 0.50;
+      const minCredits = Math.ceil(minChargeUsd / unitPrice);
+
+      return reply.send({
+        success: true,
+        data: {
+          unitPrice,
+          creditsPerDollar: Math.round(1 / unitPrice),
+          currency: 'USD',
+          minimumCredits: minCredits,
+          minimumCharge: minChargeUsd,
+          presets: [1000, 5000, 10000, 25000, 50000, 100000],
+        },
+      });
+    } catch (err: unknown) {
+      const error = err as Error;
+      _request.log.error(error, 'Error fetching credit pricing');
+      return reply.code(500).send({ success: false, error: 'Failed to fetch credit pricing' });
     }
   });
 
@@ -1170,7 +1259,7 @@ export default async function creditRoutes(
             subscription: null, // Credit purchases don't have subscriptions
             features: [
               `${creditsAdded.toLocaleString()} credits added to account`,
-              'Credits never expire',
+              'Credits expire with subscription plan',
               'Use across all applications'
             ],
             credits: creditsAdded,

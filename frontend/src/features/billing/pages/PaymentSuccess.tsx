@@ -220,7 +220,7 @@ const PaymentSuccess: React.FC = () => {
 
   // Determine payment type
   const determinePaymentType = () => {
-    if (urlPaymentType && ['subscription', 'credit_purchase'].includes(urlPaymentType)) {
+    if (urlPaymentType && ['subscription', 'credit_purchase', 'plan_upgrade'].includes(urlPaymentType)) {
       return urlPaymentType;
     }
     if (sessionId) {
@@ -234,8 +234,19 @@ const PaymentSuccess: React.FC = () => {
 
   const paymentType = determinePaymentType();
 
+  // Plan upgrade details from URL params (no checkout session involved)
+  const planUpgradeDetails = paymentType === 'plan_upgrade' ? {
+    plan: search['plan'] || '',
+    previousPlan: search['previousPlan'] || '',
+    previousPlanName: search['previousPlanName'] || search['previousPlan'] || '',
+    amount: parseFloat(search['amount'] || '0'),
+    currency: search['currency'] || 'USD',
+    prorated: search['prorated'] === 'true',
+  } : null;
+
   // Fetch payment details — retry aggressively because the webhook may not have
   // created the payment record yet when we first land on this page.
+  // Skip fetching for plan_upgrade (details come from URL params, not a session).
   const { data: paymentData, isLoading: paymentLoading, error: paymentError } = useQuery({
     queryKey: ['payment', sessionId, paymentType],
     queryFn: async () => {
@@ -246,7 +257,7 @@ const PaymentSuccess: React.FC = () => {
         return await creditAPI.getPaymentDetails(sessionId);
       }
     },
-    enabled: !!sessionId && !timedOut,
+    enabled: !!sessionId && !timedOut && paymentType !== 'plan_upgrade',
     retry: 5,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
   });
@@ -277,12 +288,24 @@ const PaymentSuccess: React.FC = () => {
   // For subscription success, show the plan they just paid for (from receipt) so "Current Plan" is correct
   // even if the webhook hasn't updated the subscription yet.
   const effectivePlan =
-    paymentType === 'subscription' && paymentInfo?.planId
-      ? paymentInfo.planId
-      : subscription?.plan || 'free';
+    paymentType === 'plan_upgrade' && planUpgradeDetails?.plan
+      ? planUpgradeDetails.plan
+      : paymentType === 'subscription' && paymentInfo?.planId
+        ? paymentInfo.planId
+        : subscription?.plan || 'free';
 
   // Store previous state for comparison
   const getPreviousState = () => {
+    if (paymentType === 'plan_upgrade' && planUpgradeDetails) {
+      const currentCredits = Number(creditBalance?.availableCredits || 0);
+      return {
+        credits: currentCredits,
+        paidCredits: Number(creditBalance?.paidCredits || 0),
+        freeCredits: Number(creditBalance?.freeCredits || 0),
+        plan: planUpgradeDetails.previousPlanName || planUpgradeDetails.previousPlan
+      };
+    }
+
     if (!creditBalance || !paymentInfo) return null;
 
     const currentCredits = Number(creditBalance?.availableCredits || 0);
@@ -329,9 +352,20 @@ const PaymentSuccess: React.FC = () => {
     paidCredits: Number(creditsFromPayment),
     freeCredits: 0,
     plan: effectivePlan
+  } : paymentType === 'plan_upgrade' ? {
+    credits: 0,
+    paidCredits: 0,
+    freeCredits: 0,
+    plan: effectivePlan
   } : null;
 
-  const planDetails = paymentInfo && paymentType === 'subscription' ? {
+  const planDetails = paymentType === 'plan_upgrade' && planUpgradeDetails ? {
+    name: planUpgradeDetails.plan.charAt(0).toUpperCase() + planUpgradeDetails.plan.slice(1),
+    price: planUpgradeDetails.amount,
+    billingCycle: 'yearly',
+    features: [],
+    subscription: null,
+  } : paymentInfo && paymentType === 'subscription' ? {
     name: paymentInfo.planName || paymentInfo.planId,
     price: paymentInfo.amount,
     billingCycle: paymentInfo.billingCycle,
@@ -380,13 +414,15 @@ const PaymentSuccess: React.FC = () => {
 
   // Show success if we have payment data OR if we timed out waiting for it.
   // The payment succeeded at Stripe regardless — this page is just a receipt.
+  // For plan_upgrade, we always show success (details come from URL params).
   const isSuccessView = (
-    !!sessionId && (
+    paymentType === 'plan_upgrade' ||
+    (!!sessionId && (
       // Normal path: all data loaded
       (!paymentLoading && !subscriptionLoading && !(paymentType === 'credit_purchase' && creditLoading) && !paymentError && !!paymentData) ||
       // Timeout path: show success anyway (receipt details may be missing)
       timedOut
-    )
+    ))
   );
 
   // Fire confetti once when success content is shown (must be before any return to keep hook order consistent)
@@ -490,7 +526,7 @@ const PaymentSuccess: React.FC = () => {
                 : `Congratulations, ${companyName}!`
               }
             </motion.p>
-            {paymentType === 'subscription' && planDetails?.name && (
+            {(paymentType === 'subscription' || paymentType === 'plan_upgrade') && planDetails?.name && (
               <motion.p
                 className="text-slate-500 font-bold text-sm uppercase tracking-wider mb-3"
                 initial={{ opacity: 0 }}
@@ -833,27 +869,66 @@ const PaymentSuccess: React.FC = () => {
                   <CardContent className="space-y-2.5 px-4 pb-4 relative z-10">
 
                     {/* Primary transaction reference */}
-                    <motion.div
-                      className="p-3 bg-slate-50 rounded-xl border border-slate-100 group-hover:border-[#1B2E5A]/20 transition-colors"
-                      whileHover={{ scale: 1.01 }}
-                    >
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Transaction ID</p>
-                      <p className="font-mono text-[9px] text-slate-600 break-all leading-tight group-hover:text-blue-700 transition-colors">
-                        {paymentInfo?.stripePaymentIntentId || paymentInfo?.transactionId || sessionId}
-                      </p>
-                    </motion.div>
+                    {paymentType !== 'plan_upgrade' && (
+                      <motion.div
+                        className="p-3 bg-slate-50 rounded-xl border border-slate-100 group-hover:border-[#1B2E5A]/20 transition-colors"
+                        whileHover={{ scale: 1.01 }}
+                      >
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Transaction ID</p>
+                        <p className="font-mono text-[9px] text-slate-600 break-all leading-tight group-hover:text-blue-700 transition-colors">
+                          {paymentInfo?.stripePaymentIntentId || paymentInfo?.transactionId || sessionId}
+                        </p>
+                      </motion.div>
+                    )}
+
+                    {/* Plan upgrade proration details */}
+                    {paymentType === 'plan_upgrade' && planUpgradeDetails && (
+                      <motion.div
+                        className="p-3 bg-blue-50 rounded-xl border border-blue-100"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 }}
+                      >
+                        <p className="text-[9px] font-black text-blue-600 uppercase tracking-widest mb-2">Proration Summary</p>
+                        <div className="space-y-1.5">
+                          <div className="flex justify-between items-center">
+                            <span className="text-[10px] font-bold text-slate-500">Previous Plan</span>
+                            <span className="text-[10px] font-black text-slate-700 capitalize">{planUpgradeDetails.previousPlanName || planUpgradeDetails.previousPlan}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-[10px] font-bold text-slate-500">New Plan</span>
+                            <span className="text-[10px] font-black text-[#1B2E5A] capitalize">{planUpgradeDetails.plan}</span>
+                          </div>
+                          <div className="border-t border-blue-100 pt-1.5 mt-1.5">
+                            <div className="flex justify-between items-center">
+                              <span className="text-[10px] font-bold text-slate-500">Prorated Amount</span>
+                              <span className="text-[10px] font-black text-[#1B2E5A]">
+                                {formatCurrency(planUpgradeDetails.amount, planUpgradeDetails.currency)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
 
                     {/* Detail rows */}
                     <div className="space-y-2">
-                      {/* Date */}
-                      {(paymentInfo?.paidAt || paymentInfo?.processedAt) && (
+                      {/* Date — for plan upgrade, show current date */}
+                      {paymentType === 'plan_upgrade' ? (
+                        <div className="flex justify-between items-center">
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Upgrade Date</p>
+                          <p className="text-[10px] font-bold text-[#1B2E5A]">
+                            {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                          </p>
+                        </div>
+                      ) : (paymentInfo?.paidAt || paymentInfo?.processedAt) ? (
                         <div className="flex justify-between items-center">
                           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Payment Date</p>
                           <p className="text-[10px] font-bold text-[#1B2E5A]">
                             {new Date(paymentInfo.paidAt || paymentInfo.processedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                           </p>
                         </div>
-                      )}
+                      ) : null}
 
                       {/* Card */}
                       {paymentInfo?.paymentMethodDetails?.card && (
@@ -901,13 +976,17 @@ const PaymentSuccess: React.FC = () => {
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.3 }}
                       >
-                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Total Paid</p>
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">
+                          {paymentType === 'plan_upgrade' ? 'Prorated Charge' : 'Total Paid'}
+                        </p>
                         <motion.p
                           className="text-xl font-black text-[#1B2E5A]"
                           animate={{ scale: [1, 1.05, 1] }}
                           transition={{ duration: 2, repeat: Infinity }}
                         >
-                          {paymentInfo?.amount ? formatCurrency(paymentInfo.amount) : '---'}
+                          {paymentType === 'plan_upgrade' && planUpgradeDetails
+                            ? formatCurrency(planUpgradeDetails.amount, planUpgradeDetails.currency)
+                            : paymentInfo?.amount ? formatCurrency(paymentInfo.amount) : '---'}
                         </motion.p>
                       </motion.div>
                       <motion.div

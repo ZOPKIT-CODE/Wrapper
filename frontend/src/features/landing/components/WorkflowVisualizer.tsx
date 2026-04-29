@@ -2,8 +2,8 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import {
     Briefcase, CheckCircle2, Box, Truck, FileCheck, DollarSign,
     UserPlus, Users, Monitor, GraduationCap, CreditCard, ShoppingCart,
-    Activity, Zap, Server, Database, Globe, Clock,
-    ChevronRight, BarChart3, Lock
+    Activity, Zap, Server, Database,
+    ChevronRight, BarChart3, Clock
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { config } from '@/lib/config';
@@ -33,12 +33,12 @@ const workflows = [
         id: 'hire-to-retire',
         title: 'Hire to Retire',
         description: 'Streamline the entire employee lifecycle.',
-        color: 'purple',
-        accent: 'from-purple-600 to-pink-500',
-        border: 'border-purple-200',
-        text: 'text-purple-600',
-        bg: 'bg-purple-600',
-        lightBg: 'bg-purple-50',
+        color: 'blue',
+        accent: 'from-[#1B2E5A] to-blue-400',
+        border: 'border-blue-200',
+        text: 'text-[#1B2E5A]',
+        bg: 'bg-[#1B2E5A]',
+        lightBg: 'bg-blue-50',
         steps: [
             { id: 'offer', title: 'Offer Signed', app: 'HRMS', icon: UserPlus, action: 'Verifying digital signature', status: 'Signed' },
             { id: 'onboard', title: 'Profile Created', app: 'HRMS', icon: Users, action: 'Creating employee record', status: 'Created' },
@@ -52,12 +52,12 @@ const workflows = [
         id: 'procure-to-pay',
         title: 'Procure to Pay',
         description: 'Optimize supply chain and vendor payments.',
-        color: 'orange',
-        accent: 'from-orange-500 to-amber-500',
-        border: 'border-orange-200',
-        text: 'text-orange-600',
-        bg: 'bg-orange-500',
-        lightBg: 'bg-orange-50',
+        color: 'blue',
+        accent: 'from-[#1B2E5A] to-blue-400',
+        border: 'border-blue-200',
+        text: 'text-[#1B2E5A]',
+        bg: 'bg-[#1B2E5A]',
+        lightBg: 'bg-blue-50',
         steps: [
             { id: 'req', title: 'Requisition', app: 'Operations', icon: FileCheck, action: 'Submitting purchase req', status: 'Pending' },
             { id: 'po', title: 'PO Issued', app: 'Operations', icon: ShoppingCart, action: 'Generating PO document', status: 'Issued' },
@@ -223,17 +223,6 @@ export const WorkflowVisualizer = () => {
                         })}
                     </div>
 
-                    <div className="hidden sm:block p-4 bg-slate-50 border-t border-slate-200">
-                        <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-slate-200 shadow-sm">
-                            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
-                                <Globe className="w-4 h-4" />
-                            </div>
-                            <div>
-                                <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Server Region</div>
-                                <div className="text-xs text-slate-700 font-semibold">US-East (N. Virginia)</div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
                 {/* Main Visualizer Stage */}
@@ -273,7 +262,7 @@ export const WorkflowVisualizer = () => {
                                 className="absolute top-[18px] sm:top-6 md:top-8 lg:top-10 left-[8%] h-0.5 sm:h-1 md:h-1.5 lg:h-2 rounded-full z-0 transition-all duration-1000 ease-in-out shadow-sm lg:shadow-lg shadow-blue-200"
                                 style={{
                                     width: `calc(${(activeStepIndex / (activeWorkflow.steps.length - 1)) * 100}% - ${isMobile ? '2rem' : '4rem'})`,
-                                    background: `linear-gradient(to right, ${activeWorkflowIndex === 0 ? '#2563eb' : activeWorkflowIndex === 1 ? '#9333ea' : '#ea580c'}, ${activeWorkflowIndex === 0 ? '#06b6d4' : activeWorkflowIndex === 1 ? '#db2777' : '#f59e0b'})`
+                                    background: 'linear-gradient(to right, #1B2E5A, #3b82f6)'
                                 }}
                             ></div>
 
@@ -291,7 +280,7 @@ export const WorkflowVisualizer = () => {
                                             <div className={cn(
                                                 "w-9 h-9 sm:w-12 sm:h-12 md:w-16 md:h-16 lg:w-20 lg:h-20 rounded-full flex items-center justify-center border-2 lg:border-[3px] transition-all duration-500 relative bg-white z-10",
                                                 isActive
-                                                    ? cn("border-white shadow-md sm:shadow-lg scale-105 sm:scale-110 ring-1 sm:ring-2 lg:ring-4 ring-offset-1 lg:ring-offset-2 ring-opacity-50", activeWorkflow.text.replace('text-', 'ring-'))
+                                                    ? "border-white shadow-md sm:shadow-lg scale-105 sm:scale-110 ring-1 sm:ring-2 lg:ring-4 ring-offset-1 lg:ring-offset-2 ring-[#1B2E5A]/40"
                                                     : isCompleted
                                                         ? cn("border-white shadow-sm sm:shadow-md text-white scale-100", activeWorkflow.bg)
                                                         : "border-slate-100 text-slate-300 shadow-sm"
@@ -390,27 +379,6 @@ export const WorkflowVisualizer = () => {
                             </div>
                         </div>
 
-                        {/* Business Metrics Panel */}
-                        <div className="w-72 border-l border-slate-200 bg-white p-6 hidden md:flex flex-col gap-6">
-
-                            <div>
-                                <div className="flex items-center gap-2 mb-2">
-                                    <Clock className="w-4 h-4 text-slate-400" />
-                                    <div className="text-xs text-slate-500 uppercase font-bold tracking-wider">Avg. Process Time</div>
-                                </div>
-                                <div className="flex items-end gap-2">
-                                    <span className="text-3xl font-bold text-slate-900">1.2s</span>
-                                    <span className="text-xs text-blue-600 mb-1 font-bold bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">-15%</span>
-                                </div>
-                                <div className="h-1.5 w-full bg-slate-100 rounded-full mt-3 overflow-hidden">
-                                    <div className="h-full bg-blue-500 w-[85%]"></div>
-                                </div>
-                            </div>
-                            <div className="mt-auto pt-4 border-t border-slate-100 flex items-center gap-2 text-xs text-slate-400">
-                                <Lock className="w-3 h-3" />
-                                <span>End-to-End Encrypted</span>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>

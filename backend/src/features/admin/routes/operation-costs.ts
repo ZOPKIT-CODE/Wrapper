@@ -277,21 +277,7 @@ export default async function operationCostRoutes(fastify: FastifyInstance, _opt
       const priority = Number(body.priority) ?? 100;
       const isGlobal = body.isGlobal !== false;
       const tenantId = body.tenantId;
-      const userId = (request as any).userContext?.internalUserId ?? '';
-
-      console.log('📝 Creating operation cost:', {
-        operationCode,
-        operationName,
-        creditCost,
-        unit,
-        unitMultiplier,
-        category,
-        isActive,
-        priority,
-        isGlobal,
-        tenantId,
-        userId
-      });
+      const userId = (request as any).userContext?.internalUserId || null;
 
       // Validate operation code format
       if (!operationCode || typeof operationCode !== 'string') {
@@ -317,89 +303,33 @@ export default async function operationCostRoutes(fastify: FastifyInstance, _opt
         });
       }
 
-      // Check if configuration already exists for this operation (global or tenant-specific)
-      // Use more robust duplicate checking to handle null tenant_id properly
-      let existingConditions = [eq(creditConfigurations.operationCode, operationCode)];
-
-      if (isGlobal) {
-        // For global configurations: check where tenant_id IS NULL
-        existingConditions.push(sql`${creditConfigurations.tenantId} IS NULL`);
-        existingConditions.push(eq(creditConfigurations.isGlobal, true));
-      } else if (tenantId) {
-        // For tenant-specific configurations: check specific tenant_id
-        existingConditions.push(eq(creditConfigurations.tenantId, String(tenantId)));
-        existingConditions.push(eq(creditConfigurations.isGlobal, false));
+      // Resolve a valid createdBy userId — platform staff / super admins may not
+      // have an internalUserId if they aren't in tenant_users. Fall back to
+      // looking up their Kinde user ID in tenant_users.
+      let creatorUserId = userId;
+      if (!creatorUserId) {
+        const kindeUserId = (request as any).userContext?.userId;
+        if (kindeUserId) {
+          const { tenantUsers } = await import('../../../db/schema/index.js');
+          const [kindeUser] = await db
+            .select({ userId: tenantUsers.userId })
+            .from(tenantUsers)
+            .where(eq(tenantUsers.kindeUserId, kindeUserId))
+            .limit(1);
+          creatorUserId = kindeUser?.userId || null;
+        }
       }
 
-      const existing = await (db as any)
-        .select()
-        .from(creditConfigurations)
-        .where(and(...existingConditions))
-        .limit(1);
-
-      console.log('🔍 Duplicate check result:', {
-        operationCode,
-        isGlobal,
-        tenantId,
-        existingCount: existing.length,
-        existingConfig: existing.length > 0 ? {
-          configId: existing[0].configId,
-          tenantId: existing[0].tenantId,
-          isGlobal: existing[0].isGlobal
-        } : null
-      });
-
-      if (existing.length > 0) {
-        // Update existing configuration instead of throwing error
-        console.log('⚙️ Updating existing operation cost configuration');
-
-        const updateData: Record<string, unknown> = {
-          creditCost: String(costNum),
-          unit,
-          unitMultiplier: String(unitMultiplier),
-          isActive,
-          updatedBy: userId,
-          updatedAt: new Date()
-        };
-
-        if (operationName !== undefined) updateData.operationName = operationName;
-        if (category !== undefined) updateData.category = category;
-        if (priority !== undefined) updateData.priority = priority;
-
-        const updatedConfig = await db
-          .update(creditConfigurations)
-          .set(updateData as any)
-          .where(eq(creditConfigurations.configId, existing[0].configId))
-          .returning() as any;
-
-        await publishCreditConfigToTargets(updatedConfig[0] as Record<string, unknown>, 'updated', userId);
-
-        console.log('✅ Operation cost configuration updated successfully:', updatedConfig[0]);
-        return {
-          success: true,
-          data: {
-            configuration: updatedConfig[0],
-            action: 'updated'
-          }
-        };
-      }
-
-      // Validate user exists
-      const { tenantUsers } = await import('../../../db/schema/index.js');
-      const userExists = await db
-        .select()
-        .from(tenantUsers)
-        .where(eq(tenantUsers.userId, userId))
-        .limit(1);
-
-      if (userExists.length === 0) {
+      if (!creatorUserId) {
         return reply.code(400).send({
           success: false,
-          error: 'Invalid user ID'
+          error: 'Could not resolve user identity. Please ensure your account is fully set up.'
         });
       }
 
-      // Prepare configuration data for global or tenant-specific configuration
+      // Upsert: try INSERT, on unique-constraint conflict fall back to UPDATE.
+      // This avoids the race condition where concurrent requests all pass the
+      // duplicate check and then collide on INSERT.
       const configData: Record<string, unknown> = {
         operationCode: String(operationCode),
         operationName,
@@ -411,53 +341,98 @@ export default async function operationCostRoutes(fastify: FastifyInstance, _opt
         isActive,
         priority,
         scope: isGlobal ? 'global' : 'tenant',
-        createdBy: userId,
-        updatedBy: userId
+        createdBy: creatorUserId,
+        updatedBy: creatorUserId
       };
 
       if (!isGlobal && tenantId) {
         configData.tenantId = tenantId;
       }
 
-      // Create configuration
-      console.log('📝 Inserting configuration data:', configData);
-      
-      const newConfig = await db
-        .insert(creditConfigurations)
-        .values(configData as any)
-        .returning();
+      try {
+        const newConfig = await db
+          .insert(creditConfigurations)
+          .values(configData as any)
+          .returning();
 
-      await publishCreditConfigToTargets(newConfig[0] as Record<string, unknown>, 'created', userId);
-        
-      const configType = isGlobal ? 'Global' : 'Tenant-specific';
-      console.log(`✅ Successfully created ${configType.toLowerCase()} configuration:`, newConfig[0]);
+        await publishCreditConfigToTargets(newConfig[0] as Record<string, unknown>, 'created', creatorUserId);
 
-      return {
-        success: true,
-        message: `${configType} operation cost created successfully`,
-        data: {
-          operation: newConfig[0],
-          action: 'created'
+        return {
+          success: true,
+          data: {
+            operation: newConfig[0],
+            action: 'created'
+          }
+        };
+      } catch (insertErr: unknown) {
+        const insertError = insertErr as Error & { code?: string };
+
+        // 23505 = unique_violation — another concurrent request already created this config.
+        // Fall back to an UPDATE instead.
+        if (insertError.code === '23505') {
+          const existingConditions = [eq(creditConfigurations.operationCode, String(operationCode))];
+          if (isGlobal) {
+            existingConditions.push(sql`${creditConfigurations.tenantId} IS NULL`);
+          } else if (tenantId) {
+            existingConditions.push(eq(creditConfigurations.tenantId, String(tenantId)));
+          }
+
+          const updateData: Record<string, unknown> = {
+            creditCost: String(costNum),
+            unit,
+            unitMultiplier: String(unitMultiplier),
+            isActive,
+            updatedBy: creatorUserId,
+            updatedAt: new Date()
+          };
+          if (operationName !== undefined) updateData.operationName = operationName;
+          if (category !== undefined) updateData.category = category;
+          if (priority !== undefined) updateData.priority = priority;
+
+          const updatedConfig = await db
+            .update(creditConfigurations)
+            .set(updateData as any)
+            .where(and(...existingConditions))
+            .returning() as any;
+
+          if (updatedConfig.length > 0) {
+            await publishCreditConfigToTargets(updatedConfig[0] as Record<string, unknown>, 'updated', creatorUserId);
+            return {
+              success: true,
+              data: {
+                configuration: updatedConfig[0],
+                action: 'updated'
+              }
+            };
+          }
+
+          return reply.code(409).send({
+            success: false,
+            error: 'Operation cost configuration already exists'
+          });
         }
-      };
+
+        // Re-throw non-duplicate errors to the outer catch
+        throw insertErr;
+      }
     } catch (err: unknown) {
       const error = err as Error & { code?: string };
       console.error('❌ Error creating operation cost:', err);
       request.log.error(error, 'Error creating operation cost:');
-      
+
       let errorMessage = 'Failed to create operation cost';
-      if (error.code === '23505') {
-        errorMessage = 'Operation cost configuration already exists. Please try updating instead.';
-      } else if (error.code === '23503') {
-        errorMessage = 'Invalid user ID or foreign key constraint violation';
+      let statusCode = 500;
+      if (error.code === '23503') {
+        errorMessage = 'Invalid foreign key reference';
+        statusCode = 400;
       } else if (error?.message) {
         errorMessage = error.message;
       }
-      
-      return reply.code(500).send({ 
-        success: false, 
+
+      return reply.code(statusCode).send({
+        success: false,
         error: errorMessage,
-        details: error?.message ?? '' 
+        details: error?.message ?? ''
       });
     }
   });
@@ -478,9 +453,21 @@ export default async function operationCostRoutes(fastify: FastifyInstance, _opt
     try {
       const configId = params.configId ?? '';
       const updateData = body;
-      const userId = (request as any).userContext?.internalUserId ?? '';
+      let userId = (request as any).userContext?.internalUserId || null;
 
-      console.log('🔄 Updating operation cost:', { configId, updateData, userId });
+      // Resolve userId from Kinde for platform staff without internalUserId
+      if (!userId) {
+        const kindeUserId = (request as any).userContext?.userId;
+        if (kindeUserId) {
+          const { tenantUsers } = await import('../../../db/schema/index.js');
+          const [kindeUser] = await db
+            .select({ userId: tenantUsers.userId })
+            .from(tenantUsers)
+            .where(eq(tenantUsers.kindeUserId, kindeUserId))
+            .limit(1);
+          userId = kindeUser?.userId || null;
+        }
+      }
 
       // Verify configuration exists
       const existing = await db

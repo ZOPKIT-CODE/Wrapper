@@ -38,21 +38,43 @@ type PaymentData = Record<string, unknown> & {
   paidAt?: Date;
 };
 
+/**
+ * Normalize Stripe/gateway payment statuses to DB-allowed values.
+ * DB constraint chk_payment_status allows: pending, completed, failed, refunded, processing, cancelled
+ */
+function normalizePaymentStatus(status: string): string {
+  switch (status) {
+    case 'succeeded':
+    case 'paid':
+      return 'completed';
+    case 'requires_payment_method':
+    case 'requires_confirmation':
+    case 'requires_action':
+      return 'pending';
+    case 'canceled':
+      return 'cancelled';
+    default:
+      // pending, completed, failed, refunded, processing, cancelled pass through
+      return status;
+  }
+}
+
 export class PaymentService {
   // Record a comprehensive payment transaction
   static async recordPayment(paymentData: PaymentData) {
     try {
+      // Only pass fields that exist in the payments table schema.
+      // stripeCustomerId and stripeSubscriptionId are NOT columns —
+      // they should be stored in metadata if needed.
       const payment = await PaymentRepository.create({
         tenantId: paymentData.tenantId,
         subscriptionId: paymentData.subscriptionId,
         stripePaymentIntentId: paymentData.stripePaymentIntentId,
         stripeInvoiceId: paymentData.stripeInvoiceId,
         stripeChargeId: paymentData.stripeChargeId,
-        stripeCustomerId: paymentData.stripeCustomerId,
-        stripeSubscriptionId: paymentData.stripeSubscriptionId,
         amount: String(paymentData.amount),
         currency: paymentData.currency || 'USD',
-        status: paymentData.status,
+        status: normalizePaymentStatus(paymentData.status),
         paymentMethod: paymentData.paymentMethod,
         paymentMethodDetails: (paymentData.paymentMethodDetails || {}) as Record<string, unknown>,
         paymentType: paymentData.paymentType || 'subscription',
@@ -99,13 +121,14 @@ export class PaymentService {
   // Update payment status with comprehensive metadata
   static async updatePaymentStatus(paymentIntentId: string, status: string, metadata: Record<string, unknown> = {}) {
     try {
+      const normalized = normalizePaymentStatus(status);
       return PaymentRepository.updateByPaymentIntentId(paymentIntentId, {
-        status,
+        status: normalized,
         metadata,
         updatedAt: new Date(),
-        ...(status === 'succeeded' && { paidAt: new Date() }),
-        ...(status === 'failed' && { failedAt: new Date() }),
-        ...(status === 'refunded' && { refundedAt: new Date() }),
+        ...((status === 'succeeded' || normalized === 'completed') && { paidAt: new Date() }),
+        ...(normalized === 'failed' && { failedAt: new Date() }),
+        ...(normalized === 'refunded' && { refundedAt: new Date() }),
         ...(status === 'disputed' && { disputedAt: new Date() }),
       });
     } catch (err: unknown) {
@@ -399,7 +422,7 @@ export class PaymentService {
         stripeChargeId: paymentData.stripeChargeId,
         amount: String(paymentData.amount ?? 0),
         currency: String(paymentData.currency ?? 'USD').toUpperCase(),
-        status: paymentData.status as string,
+        status: normalizePaymentStatus(paymentData.status as string),
         paymentMethod: paymentData.paymentMethod || 'card',
         paymentMethodDetails: paymentData.paymentMethodDetails || {},
         paymentType: paymentData.paymentType || 'subscription',

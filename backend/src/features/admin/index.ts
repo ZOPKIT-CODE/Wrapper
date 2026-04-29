@@ -14,6 +14,7 @@ export { default as adminCreditConfigurationRoutes } from './routes/credit-confi
 export { default as adminApplicationAssignmentRoutes } from './routes/application-assignment.js';
 export { default as adminOperationCostRoutes } from './routes/operation-costs.js';
 export { default as seasonalCreditsRoutes } from './routes/seasonal-credits.js';
+export { default as seasonalCreditBatchesRoutes } from './routes/seasonal-credit-batches.js';
 export { default as adminNotificationRoutes } from './routes/admin-notifications.js';
 export { default as tenantRoutes } from './routes/tenants.js';
 export { default as adminPromotionRoutes } from './routes/admin-promotion.js';

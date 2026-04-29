@@ -1,0 +1,343 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="952" viewBox="0 0 1600 952">
+<defs>
+  <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%"   stop-color="#06091A"/>
+    <stop offset="50%"  stop-color="#0D1F45"/>
+    <stop offset="100%" stop-color="#06091A"/>
+  </linearGradient>
+  <linearGradient id="accentGrad" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0%"  stop-color="#34D399"/>
+    <stop offset="100%" stop-color="#22D3EE"/>
+  </linearGradient>
+  <linearGradient id="costBarGrad" x1="1" y1="0" x2="0" y2="0">
+    <stop offset="0%"  stop-color="#F97316"/>
+    <stop offset="100%" stop-color="#EA580C" fill-opacity="0.7"/>
+  </linearGradient>
+  <linearGradient id="revBarGrad" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0%"  stop-color="#10B981"/>
+    <stop offset="100%" stop-color="#14B8A6"/>
+  </linearGradient>
+  <clipPath id="fc"><rect width="1600" height="952"/></clipPath>
+  <filter id="bsh" x="-20%" y="-40%" width="140%" height="180%">
+    <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000" flood-opacity="0.5"/>
+  </filter>
+</defs>
+<g clip-path="url(#fc)">
+
+<!-- BG -->
+<rect width="1600" height="952" fill="url(#bgGrad)"/>
+
+<!-- BROWSER CHROME -->
+<rect x="0" y="0" width="1600" height="52" fill="#111827"/>
+<circle cx="31" cy="26" r="7" fill="#FF5F57"/>
+<circle cx="51" cy="26" r="7" fill="#FEBC2E"/>
+<circle cx="71" cy="26" r="7" fill="#28C840"/>
+<rect x="540" y="12" width="520" height="28" rx="14" fill="#1F2937"/>
+<text x="800" y="31" text-anchor="middle" font-family="ui-monospace,monospace" font-size="12" fill="#9CA3AF">app.zopkit.com/dashboard</text>
+
+<!-- TITLE BLOCK -->
+<text x="290" y="98"  font-family="Georgia,serif" font-size="28" font-weight="700" fill="#FFFFFF">Your CFO Command Center</text>
+<text x="290" y="122" font-family="-apple-system,sans-serif" font-size="13" fill="#9CA3AF">Real-time financial intelligence — receivables, ratios &amp; cash flows, all in one place.</text>
+
+<!-- SIDEBAR -->
+<rect x="40" y="180" width="220" height="720" rx="12" fill="#0B1228" stroke="#1E293B" stroke-width="1"/>
+<text x="60" y="214" font-family="-apple-system,sans-serif" font-size="11" font-weight="600" fill="#34D399">FinanceAccounting</text>
+<line x1="52" y1="228" x2="248" y2="228" stroke="#1E293B" stroke-width="1"/>
+<text x="64" y="248" font-family="-apple-system,sans-serif" font-size="13" fill="#9CA3AF">Dashboard</text>
+<text x="64" y="284" font-family="-apple-system,sans-serif" font-size="13" fill="#9CA3AF">Accounts Payable</text>
+<text x="64" y="320" font-family="-apple-system,sans-serif" font-size="13" fill="#9CA3AF">Accounts Receivable</text>
+<text x="64" y="356" font-family="-apple-system,sans-serif" font-size="13" fill="#9CA3AF">Banking &amp; Cash</text>
+<text x="64" y="392" font-family="-apple-system,sans-serif" font-size="13" fill="#9CA3AF">General Ledger</text>
+<text x="64" y="428" font-family="-apple-system,sans-serif" font-size="13" fill="#9CA3AF">Budgeting</text>
+<text x="64" y="464" font-family="-apple-system,sans-serif" font-size="13" fill="#9CA3AF">Tax Management</text>
+<text x="64" y="500" font-family="-apple-system,sans-serif" font-size="13" fill="#9CA3AF">Reports</text>
+<!-- Cost Accounting highlight -->
+<rect x="44" y="512" width="212" height="28" rx="6" fill="#34D399" fill-opacity="0.25"/>
+<text x="64" y="531" font-family="-apple-system,sans-serif" font-size="13" font-weight="600" fill="#34D399">Cost Accounting</text>
+<line x1="52" y1="556" x2="248" y2="556" stroke="#1E293B" stroke-width="1"/>
+<text x="64" y="576" font-family="-apple-system,sans-serif" font-size="13" fill="#6B7280">Settings</text>
+<text x="64" y="606" font-family="-apple-system,sans-serif" font-size="13" fill="#6B7280">Help &amp; Support</text>
+
+<!-- DATE FILTER PILL -->
+<rect x="1380" y="186" width="188" height="28" rx="14" fill="#111827" stroke="#1E293B" stroke-width="1"/>
+<text x="1474" y="204" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#D1D5DB">Apr 1, 2026 → Apr 30, 2026</text>
+
+<!-- ── KPI CARDS ──────────────────────────────────────────────── -->
+
+<!-- Card 1: Active Projects -->
+<rect x="290" y="240" width="250" height="110" rx="10" fill="#0D1B3E" stroke="#0D3526" stroke-width="1"/>
+<text x="304" y="257" font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#9CA3AF">Active Projects</text>
+<text x="304" y="283" font-family="-apple-system,sans-serif" font-size="26" font-weight="700" fill="#FFFFFF">62</text>
+<text x="304" y="338" font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#F87171">12 over budget</text>
+<!-- emerald sparkline rising -->
+<rect x="438" y="320" width="9" height="7"  rx="2" fill="#10B981" fill-opacity="0.85"/>
+<rect x="451" y="316" width="9" height="11" rx="2" fill="#10B981" fill-opacity="0.85"/>
+<rect x="464" y="318" width="9" height="9"  rx="2" fill="#10B981" fill-opacity="0.85"/>
+<rect x="477" y="311" width="9" height="16" rx="2" fill="#10B981" fill-opacity="0.85"/>
+<rect x="490" y="308" width="9" height="19" rx="2" fill="#10B981" fill-opacity="0.85"/>
+<rect x="503" y="303" width="9" height="24" rx="2" fill="#10B981" fill-opacity="0.85"/>
+<rect x="516" y="299" width="9" height="28" rx="2" fill="#10B981" fill-opacity="0.85"/>
+
+<!-- Card 2: Avg Project Margin -->
+<rect x="558" y="240" width="250" height="110" rx="10" fill="#0D1B3E" stroke="#0D3526" stroke-width="1"/>
+<text x="572" y="257" font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#9CA3AF">Avg Project Margin</text>
+<text x="572" y="283" font-family="-apple-system,sans-serif" font-size="22" font-weight="700" fill="#FFFFFF">31.4%</text>
+<text x="572" y="338" font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#22D3EE">+2.1% QoQ</text>
+<!-- cyan sparkline -->
+<rect x="706" y="321" width="9" height="6"  rx="2" fill="#22D3EE" fill-opacity="0.85"/>
+<rect x="719" y="317" width="9" height="10" rx="2" fill="#22D3EE" fill-opacity="0.85"/>
+<rect x="732" y="319" width="9" height="8"  rx="2" fill="#22D3EE" fill-opacity="0.85"/>
+<rect x="745" y="312" width="9" height="15" rx="2" fill="#22D3EE" fill-opacity="0.85"/>
+<rect x="758" y="310" width="9" height="17" rx="2" fill="#22D3EE" fill-opacity="0.85"/>
+<rect x="771" y="305" width="9" height="22" rx="2" fill="#22D3EE" fill-opacity="0.85"/>
+<rect x="784" y="300" width="9" height="27" rx="2" fill="#22D3EE" fill-opacity="0.85"/>
+
+<!-- Card 3: Cost per Department -->
+<rect x="826" y="240" width="250" height="110" rx="10" fill="#0D1B3E" stroke="#0D3526" stroke-width="1"/>
+<text x="840" y="257" font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#9CA3AF">Cost per Department</text>
+<text x="840" y="283" font-family="-apple-system,sans-serif" font-size="20" font-weight="700" fill="#FFFFFF">₹18.7L avg</text>
+<text x="840" y="338" font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#14B8A6">Engineering tops</text>
+<!-- teal sparkline mild -->
+<rect x="974" y="316" width="9" height="11" rx="2" fill="#14B8A6" fill-opacity="0.85"/>
+<rect x="987" y="313" width="9" height="14" rx="2" fill="#14B8A6" fill-opacity="0.85"/>
+<rect x="1000" y="318" width="9" height="9"  rx="2" fill="#14B8A6" fill-opacity="0.85"/>
+<rect x="1013" y="311" width="9" height="16" rx="2" fill="#14B8A6" fill-opacity="0.85"/>
+<rect x="1026" y="315" width="9" height="12" rx="2" fill="#14B8A6" fill-opacity="0.85"/>
+<rect x="1039" y="309" width="9" height="18" rx="2" fill="#14B8A6" fill-opacity="0.85"/>
+<rect x="1052" y="313" width="9" height="14" rx="2" fill="#14B8A6" fill-opacity="0.85"/>
+
+<!-- Card 4: Profitable Projects % — with progress arc -->
+<rect x="1094" y="240" width="250" height="110" rx="10" fill="#0D1B3E" stroke="#0D3526" stroke-width="1"/>
+<text x="1108" y="257" font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#9CA3AF">Profitable Projects %</text>
+<text x="1108" y="283" font-family="-apple-system,sans-serif" font-size="22" font-weight="700" fill="#FFFFFF">78%</text>
+<text x="1108" y="338" font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#9CA3AF">Goal 80%</text>
+<!-- Progress arc at right side of card: cx=1299 cy=291 r=26 -->
+<!-- Background ring -->
+<circle cx="1299" cy="291" r="26" fill="none" stroke="#1E293B" stroke-width="6"/>
+<!-- 78% arc: circumf=163.4, 78%=127.5, start from top (rotate -90) -->
+<circle cx="1299" cy="291" r="26" fill="none" stroke="#34D399" stroke-width="6"
+  stroke-dasharray="127.5 163.4" stroke-linecap="round"
+  transform="rotate(-90 1299 291)"/>
+<!-- Goal marker at 80%: 80%*360-90=198deg from x-axis = 108deg clockwise from top -->
+<circle cx="1299" cy="291" r="26" fill="none" stroke="#FBBF24" stroke-width="6"
+  stroke-dasharray="1 163.4" stroke-dashoffset="-130.7"
+  transform="rotate(-90 1299 291)"/>
+<text x="1299" y="296" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" font-weight="700" fill="#34D399">78%</text>
+
+<!-- ── BACK-TO-BACK HORIZONTAL BAR CHART ──────────────────────── -->
+<rect x="290" y="380" width="830" height="320" rx="12" fill="#0B1228" stroke="#1E293B" stroke-width="1"/>
+<!-- Header -->
+<text x="310" y="403" font-family="-apple-system,sans-serif" font-size="14" font-weight="600" fill="#FFFFFF">Cost vs Revenue — top 8 projects</text>
+<!-- Legend -->
+<rect x="790" y="392" width="12" height="12" rx="2" fill="#F97316"/>
+<text x="806" y="403" font-family="-apple-system,sans-serif" font-size="11" fill="#9CA3AF">Cost</text>
+<rect x="848" y="392" width="12" height="12" rx="2" fill="#10B981"/>
+<text x="864" y="403" font-family="-apple-system,sans-serif" font-size="11" fill="#9CA3AF">Revenue</text>
+
+<!-- Center divider line -->
+<line x1="705" y1="416" x2="705" y2="666" stroke="#1E293B" stroke-width="1.5"/>
+<!-- Axis labels -->
+<text x="500" y="676" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#4B5563">← Cost (₹ Lakhs)</text>
+<text x="910" y="676" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#4B5563">Revenue (₹ Lakhs) →</text>
+
+<!-- Row 1: Infra Overhaul — C=182L(169px), R=240L(223px) -->
+<rect x="526" y="422" width="169" height="16" rx="3" fill="url(#costBarGrad)"/>
+<text x="522" y="434" text-anchor="end" font-family="-apple-system,sans-serif" font-size="9" fill="#FB923C">₹182L</text>
+<rect x="715" y="422" width="223" height="16" rx="3" fill="url(#revBarGrad)"/>
+<text x="942" y="434" font-family="-apple-system,sans-serif" font-size="9" fill="#34D399" dx="2">₹240L</text>
+<text x="705" y="434" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" font-weight="500" fill="#E2E8F0">Infra Overhaul</text>
+
+<!-- Row 2: Zopkit CRM — C=145L(135px), R=210L(195px) -->
+<rect x="560" y="452" width="135" height="16" rx="3" fill="url(#costBarGrad)"/>
+<text x="556" y="464" text-anchor="end" font-family="-apple-system,sans-serif" font-size="9" fill="#FB923C">₹145L</text>
+<rect x="715" y="452" width="195" height="16" rx="3" fill="url(#revBarGrad)"/>
+<text x="914" y="464" font-family="-apple-system,sans-serif" font-size="9" fill="#34D399" dx="2">₹210L</text>
+<text x="705" y="464" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" font-weight="500" fill="#E2E8F0">Zopkit CRM</text>
+
+<!-- Row 3: Analytics Suite — C=128L(119px), R=196L(182px) -->
+<rect x="576" y="482" width="119" height="16" rx="3" fill="url(#costBarGrad)"/>
+<text x="572" y="494" text-anchor="end" font-family="-apple-system,sans-serif" font-size="9" fill="#FB923C">₹128L</text>
+<rect x="715" y="482" width="182" height="16" rx="3" fill="url(#revBarGrad)"/>
+<text x="901" y="494" font-family="-apple-system,sans-serif" font-size="9" fill="#34D399" dx="2">₹196L</text>
+<text x="705" y="494" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" font-weight="500" fill="#E2E8F0">Analytics Suite</text>
+
+<!-- Row 4: Mobile Platform — C=118L(110px), R=168L(156px) -->
+<rect x="585" y="512" width="110" height="16" rx="3" fill="url(#costBarGrad)"/>
+<text x="581" y="524" text-anchor="end" font-family="-apple-system,sans-serif" font-size="9" fill="#FB923C">₹118L</text>
+<rect x="715" y="512" width="156" height="16" rx="3" fill="url(#revBarGrad)"/>
+<text x="875" y="524" font-family="-apple-system,sans-serif" font-size="9" fill="#34D399" dx="2">₹168L</text>
+<text x="705" y="524" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" font-weight="500" fill="#E2E8F0">Mobile Platform</text>
+
+<!-- Row 5: DevOps Pipeline — C=98L(91px), R=152L(141px) -->
+<rect x="604" y="542" width="91" height="16" rx="3" fill="url(#costBarGrad)"/>
+<text x="600" y="554" text-anchor="end" font-family="-apple-system,sans-serif" font-size="9" fill="#FB923C">₹98L</text>
+<rect x="715" y="542" width="141" height="16" rx="3" fill="url(#revBarGrad)"/>
+<text x="860" y="554" font-family="-apple-system,sans-serif" font-size="9" fill="#34D399" dx="2">₹152L</text>
+<text x="705" y="554" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" font-weight="500" fill="#E2E8F0">DevOps Pipeline</text>
+
+<!-- Row 6: Security Audit — C=88L(82px), R=124L(115px) -->
+<rect x="613" y="572" width="82" height="16" rx="3" fill="url(#costBarGrad)"/>
+<text x="609" y="584" text-anchor="end" font-family="-apple-system,sans-serif" font-size="9" fill="#FB923C">₹88L</text>
+<rect x="715" y="572" width="115" height="16" rx="3" fill="url(#revBarGrad)"/>
+<text x="834" y="584" font-family="-apple-system,sans-serif" font-size="9" fill="#34D399" dx="2">₹124L</text>
+<text x="705" y="584" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" font-weight="500" fill="#E2E8F0">Security Audit</text>
+
+<!-- Row 7: UI Refresh — C=62L(58px), R=88L(82px) -->
+<rect x="637" y="602" width="58" height="16" rx="3" fill="url(#costBarGrad)"/>
+<text x="633" y="614" text-anchor="end" font-family="-apple-system,sans-serif" font-size="9" fill="#FB923C">₹62L</text>
+<rect x="715" y="602" width="82" height="16" rx="3" fill="url(#revBarGrad)"/>
+<text x="801" y="614" font-family="-apple-system,sans-serif" font-size="9" fill="#34D399" dx="2">₹88L</text>
+<text x="705" y="614" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" font-weight="500" fill="#E2E8F0">UI Refresh</text>
+
+<!-- Row 8: Data Migration — C=52L(48px), R=48L(45px) — loss! -->
+<rect x="647" y="632" width="48" height="16" rx="3" fill="url(#costBarGrad)"/>
+<text x="643" y="644" text-anchor="end" font-family="-apple-system,sans-serif" font-size="9" fill="#FB923C">₹52L</text>
+<rect x="715" y="632" width="45" height="16" rx="3" fill="#EF4444" fill-opacity="0.7"/>
+<text x="764" y="644" font-family="-apple-system,sans-serif" font-size="9" fill="#F87171" dx="2">₹48L</text>
+<text x="705" y="644" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" font-weight="500" fill="#E2E8F0">Data Migration</text>
+
+<!-- ── ABC COSTING DONUT — Right Panel ────────────────────────── -->
+<rect x="1140" y="380" width="420" height="320" rx="12" fill="#0B1228" stroke="#1E293B" stroke-width="1"/>
+<text x="1160" y="403" font-family="-apple-system,sans-serif" font-size="14" font-weight="600" fill="#FFFFFF">ABC Costing Breakdown</text>
+<line x1="1152" y1="416" x2="1548" y2="416" stroke="#1E293B" stroke-width="1"/>
+
+<!-- Donut: cx=1255, cy=527, R_outer=78, R_inner=46 -->
+<!-- Segment 1: Setup 22% (0°→79.2°) #10B981 -->
+<path d="M 1255 449 A 78 78 0 0 1 1332 512 L 1302 518 A 46 46 0 0 0 1255 481 Z" fill="#10B981"/>
+<!-- Segment 2: Production 38% (79.2°→216°) #14B8A6 -->
+<path d="M 1332 512 A 78 78 0 0 1 1209 590 L 1228 563 A 46 46 0 0 0 1302 518 Z" fill="#14B8A6"/>
+<!-- Segment 3: QA 14% (216°→266.4°) #22D3EE -->
+<path d="M 1209 590 A 78 78 0 0 1 1177 532 L 1209 530 A 46 46 0 0 0 1228 563 Z" fill="#22D3EE"/>
+<!-- Segment 4: Logistics 16% (266.4°→324°) #059669 -->
+<path d="M 1177 532 A 78 78 0 0 1 1209 464 L 1228 488 A 46 46 0 0 0 1209 530 Z" fill="#059669"/>
+<!-- Segment 5: Support 10% (324°→360°) #67E8F9 -->
+<path d="M 1209 464 A 78 78 0 0 1 1255 449 L 1255 481 A 46 46 0 0 0 1228 488 Z" fill="#67E8F9"/>
+<!-- Donut hole + center label -->
+<circle cx="1255" cy="527" r="42" fill="#0B1228"/>
+<text x="1255" y="523" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#9CA3AF">Cost</text>
+<text x="1255" y="537" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" font-weight="600" fill="#34D399">100%</text>
+
+<!-- Legend (right of donut) -->
+<circle cx="1352" cy="463" r="5" fill="#10B981"/>
+<text x="1362" y="467" font-family="-apple-system,sans-serif" font-size="11" fill="#D1D5DB">Setup</text>
+<text x="1362" y="479" font-family="-apple-system,sans-serif" font-size="10" fill="#6B7280">22% of cost base</text>
+
+<circle cx="1352" cy="499" r="5" fill="#14B8A6"/>
+<text x="1362" y="503" font-family="-apple-system,sans-serif" font-size="11" fill="#D1D5DB">Production</text>
+<text x="1362" y="515" font-family="-apple-system,sans-serif" font-size="10" fill="#6B7280">38% of cost base</text>
+
+<circle cx="1352" cy="535" r="5" fill="#22D3EE"/>
+<text x="1362" y="539" font-family="-apple-system,sans-serif" font-size="11" fill="#D1D5DB">QA</text>
+<text x="1362" y="551" font-family="-apple-system,sans-serif" font-size="10" fill="#6B7280">14% of cost base</text>
+
+<circle cx="1352" cy="571" r="5" fill="#059669"/>
+<text x="1362" y="575" font-family="-apple-system,sans-serif" font-size="11" fill="#D1D5DB">Logistics</text>
+<text x="1362" y="587" font-family="-apple-system,sans-serif" font-size="10" fill="#6B7280">16% of cost base</text>
+
+<circle cx="1352" cy="607" r="5" fill="#67E8F9"/>
+<text x="1362" y="611" font-family="-apple-system,sans-serif" font-size="11" fill="#D1D5DB">Support</text>
+<text x="1362" y="623" font-family="-apple-system,sans-serif" font-size="10" fill="#6B7280">10% of cost base</text>
+
+<!-- ── BOTTOM PANELS ───────────────────────────────────────────── -->
+
+<!-- Panel 1: Cost Center Allocation (stacked bars) -->
+<rect x="290" y="720" width="410" height="184" rx="12" fill="#0B1228" stroke="#1E293B" stroke-width="1"/>
+<text x="308" y="742" font-family="-apple-system,sans-serif" font-size="13" font-weight="600" fill="#FFFFFF">Cost Center Allocation</text>
+<line x1="308" y1="752" x2="682" y2="752" stroke="#1E293B" stroke-width="1"/>
+<!-- Legend -->
+<rect x="506" y="758" width="9" height="9" rx="1" fill="#10B981"/>
+<text x="518" y="767" font-family="-apple-system,sans-serif" font-size="9" fill="#6B7280">Direct</text>
+<rect x="556" y="758" width="9" height="9" rx="1" fill="#14B8A6"/>
+<text x="568" y="767" font-family="-apple-system,sans-serif" font-size="9" fill="#6B7280">Overhead</text>
+<rect x="624" y="758" width="9" height="9" rx="1" fill="#374151"/>
+<text x="636" y="767" font-family="-apple-system,sans-serif" font-size="9" fill="#6B7280">Admin</text>
+
+<!-- Engineering: Direct45% Overhead32% Admin23% — bar=270px -->
+<text x="390" y="789" text-anchor="end" font-family="-apple-system,sans-serif" font-size="11" fill="#D1D5DB">Engineering</text>
+<rect x="394" y="778" width="122" height="14" rx="2" fill="#10B981" fill-opacity="0.85"/>
+<rect x="516" y="778" width="86"  height="14" rx="2" fill="#14B8A6" fill-opacity="0.8"/>
+<rect x="602" y="778" width="62"  height="14" rx="2" fill="#374151" fill-opacity="0.8"/>
+<text x="394" y="803" font-family="-apple-system,sans-serif" font-size="9" fill="#6B7280">45%</text>
+<text x="516" y="803" font-family="-apple-system,sans-serif" font-size="9" fill="#6B7280">32%</text>
+<text x="616" y="803" font-family="-apple-system,sans-serif" font-size="9" fill="#6B7280">23%</text>
+
+<!-- Product: Direct58% Overhead28% Admin14% -->
+<text x="390" y="824" text-anchor="end" font-family="-apple-system,sans-serif" font-size="11" fill="#D1D5DB">Product</text>
+<rect x="394" y="813" width="157" height="14" rx="2" fill="#10B981" fill-opacity="0.85"/>
+<rect x="551" y="813" width="76"  height="14" rx="2" fill="#14B8A6" fill-opacity="0.8"/>
+<rect x="627" y="813" width="37"  height="14" rx="2" fill="#374151" fill-opacity="0.8"/>
+<text x="394" y="838" font-family="-apple-system,sans-serif" font-size="9" fill="#6B7280">58%</text>
+<text x="551" y="838" font-family="-apple-system,sans-serif" font-size="9" fill="#6B7280">28%</text>
+<text x="635" y="838" font-family="-apple-system,sans-serif" font-size="9" fill="#6B7280">14%</text>
+
+<!-- Operations: Direct38% Overhead40% Admin22% -->
+<text x="390" y="859" text-anchor="end" font-family="-apple-system,sans-serif" font-size="11" fill="#D1D5DB">Operations</text>
+<rect x="394" y="848" width="103" height="14" rx="2" fill="#10B981" fill-opacity="0.85"/>
+<rect x="497" y="848" width="108" height="14" rx="2" fill="#14B8A6" fill-opacity="0.8"/>
+<rect x="605" y="848" width="59"  height="14" rx="2" fill="#374151" fill-opacity="0.8"/>
+<text x="394" y="873" font-family="-apple-system,sans-serif" font-size="9" fill="#6B7280">38%</text>
+<text x="497" y="873" font-family="-apple-system,sans-serif" font-size="9" fill="#6B7280">40%</text>
+<text x="619" y="873" font-family="-apple-system,sans-serif" font-size="9" fill="#6B7280">22%</text>
+
+<!-- Sales: Direct62% Overhead22% Admin16% -->
+<text x="390" y="894" text-anchor="end" font-family="-apple-system,sans-serif" font-size="11" fill="#D1D5DB">Sales</text>
+<rect x="394" y="883" width="167" height="14" rx="2" fill="#10B981" fill-opacity="0.85"/>
+<rect x="561" y="883" width="60"  height="14" rx="2" fill="#14B8A6" fill-opacity="0.8"/>
+<rect x="621" y="883" width="43"  height="14" rx="2" fill="#374151" fill-opacity="0.8"/>
+<text x="394" y="906" font-family="-apple-system,sans-serif" font-size="9" fill="#6B7280">62%</text>
+<text x="561" y="906" font-family="-apple-system,sans-serif" font-size="9" fill="#6B7280">22%</text>
+<text x="629" y="906" font-family="-apple-system,sans-serif" font-size="9" fill="#6B7280">16%</text>
+
+<!-- Panel 2: Top Profitable Projects -->
+<rect x="720" y="720" width="410" height="184" rx="12" fill="#0B1228" stroke="#1E293B" stroke-width="1"/>
+<text x="738" y="742" font-family="-apple-system,sans-serif" font-size="13" font-weight="600" fill="#FFFFFF">Top Profitable Projects</text>
+<line x1="738" y1="752" x2="1112" y2="752" stroke="#1E293B" stroke-width="1"/>
+<!-- Row 1 -->
+<text x="738" y="778" font-family="-apple-system,sans-serif" font-size="14" fill="#10B981">↑</text>
+<text x="756" y="778" font-family="-apple-system,sans-serif" font-size="12" font-weight="500" fill="#E2E8F0">DevOps Pipeline</text>
+<text x="1108" y="778" text-anchor="end" font-family="-apple-system,sans-serif" font-size="12" font-weight="700" fill="#34D399">35.5%</text>
+<text x="756" y="793" font-family="-apple-system,sans-serif" font-size="10" fill="#6B7280">Rev ₹152L · Cost ₹98L</text>
+<!-- Row 2 -->
+<text x="738" y="822" font-family="-apple-system,sans-serif" font-size="14" fill="#10B981">↑</text>
+<text x="756" y="822" font-family="-apple-system,sans-serif" font-size="12" font-weight="500" fill="#E2E8F0">Analytics Suite</text>
+<text x="1108" y="822" text-anchor="end" font-family="-apple-system,sans-serif" font-size="12" font-weight="700" fill="#34D399">34.7%</text>
+<text x="756" y="837" font-family="-apple-system,sans-serif" font-size="10" fill="#6B7280">Rev ₹196L · Cost ₹128L</text>
+<!-- Row 3 -->
+<text x="738" y="866" font-family="-apple-system,sans-serif" font-size="14" fill="#10B981">↑</text>
+<text x="756" y="866" font-family="-apple-system,sans-serif" font-size="12" font-weight="500" fill="#E2E8F0">Zopkit CRM</text>
+<text x="1108" y="866" text-anchor="end" font-family="-apple-system,sans-serif" font-size="12" font-weight="700" fill="#34D399">31.0%</text>
+<text x="756" y="881" font-family="-apple-system,sans-serif" font-size="10" fill="#6B7280">Rev ₹210L · Cost ₹145L</text>
+
+<!-- Panel 3: Loss-Making Projects -->
+<rect x="1140" y="720" width="410" height="184" rx="12" fill="#0B1228" stroke="#1E293B" stroke-width="1"/>
+<text x="1158" y="742" font-family="-apple-system,sans-serif" font-size="13" font-weight="600" fill="#FFFFFF">Loss-Making Projects</text>
+<line x1="1158" y1="752" x2="1532" y2="752" stroke="#1E293B" stroke-width="1"/>
+<!-- Row 1 -->
+<text x="1158" y="778" font-family="-apple-system,sans-serif" font-size="14" fill="#EF4444">↓</text>
+<text x="1176" y="778" font-family="-apple-system,sans-serif" font-size="12" font-weight="500" fill="#E2E8F0">Data Migration</text>
+<text x="1528" y="778" text-anchor="end" font-family="-apple-system,sans-serif" font-size="12" font-weight="700" fill="#F87171">−₹4.0L</text>
+<text x="1176" y="793" font-family="-apple-system,sans-serif" font-size="10" fill="#6B7280">Rev ₹48L · Cost ₹52L</text>
+<!-- Row 2 -->
+<text x="1158" y="822" font-family="-apple-system,sans-serif" font-size="14" fill="#EF4444">↓</text>
+<text x="1176" y="822" font-family="-apple-system,sans-serif" font-size="12" font-weight="500" fill="#E2E8F0">Legacy Support</text>
+<text x="1528" y="822" text-anchor="end" font-family="-apple-system,sans-serif" font-size="12" font-weight="700" fill="#F87171">−₹8.2L</text>
+<text x="1176" y="837" font-family="-apple-system,sans-serif" font-size="10" fill="#6B7280">Rev ₹22L · Cost ₹30.2L</text>
+<!-- Row 3 -->
+<text x="1158" y="866" font-family="-apple-system,sans-serif" font-size="14" fill="#EF4444">↓</text>
+<text x="1176" y="866" font-family="-apple-system,sans-serif" font-size="12" font-weight="500" fill="#E2E8F0">Cloud Sync v1</text>
+<text x="1528" y="866" text-anchor="end" font-family="-apple-system,sans-serif" font-size="12" font-weight="700" fill="#F87171">−₹3.6L</text>
+<text x="1176" y="881" font-family="-apple-system,sans-serif" font-size="10" fill="#6B7280">Rev ₹14L · Cost ₹17.6L</text>
+
+<!-- ── FLOATING BADGES ────────────────────────────────────────── -->
+<!-- Badge 1: Time saved 40h/mo -->
+<rect x="1240" y="140" width="198" height="32" rx="16" fill="#0B1228" fill-opacity="0.92" stroke="#0D3A40" stroke-width="1" filter="url(#bsh)"/>
+<circle cx="1257" cy="156" r="5" fill="#22D3EE"/>
+<text x="1269" y="161" font-family="-apple-system,sans-serif" font-size="12" font-weight="500" fill="#67E8F9">Time saved 40h/mo</text>
+
+<!-- Badge 2: Tasks automated +3x -->
+<rect x="270" y="820" width="202" height="32" rx="16" fill="#0B1228" fill-opacity="0.92" stroke="#0D3A1A" stroke-width="1" filter="url(#bsh)"/>
+<circle cx="287" cy="836" r="5" fill="#34D399"/>
+<text x="299" y="841" font-family="-apple-system,sans-serif" font-size="12" font-weight="500" fill="#6EE7B7">Tasks automated +3×</text>
+
+</g>
+</svg>

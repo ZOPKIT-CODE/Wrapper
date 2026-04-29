@@ -1,15 +1,18 @@
 import { db } from '../../../db/index.js';
-import { 
-  seasonalCreditCampaigns, 
-  seasonalCreditAllocations,
+import {
+  seasonalCreditCampaigns,
+  creditBatches,
+  creditExpiryRuns,
   tenants,
   entities,
   credits,
   creditTransactions,
   notifications
 } from '../../../db/schema/index.js';
-import { eq, and, desc, gte, lte } from 'drizzle-orm';
+import { eq, and, desc, asc, gte, lte, isNull, isNotNull, inArray, sql, lt } from 'drizzle-orm';
 import { NOTIFICATION_TYPES, NOTIFICATION_PRIORITIES } from '../../../db/schema/notifications/notifications.js';
+import { addCreditsToEntity } from '../../credits/services/credit-operations.js';
+import { CreditExpiryService } from '../../credits/services/credit-expiry-service.js';
 
 /**
  * Seasonal Credit Service
@@ -41,7 +44,10 @@ export class SeasonalCreditService {
       errors.push('Total credits must be greater than 0');
     }
     
-    if (!expiresAt || new Date(expiresAt as string | Date) < new Date()) {
+    const minutesUntilExpiry = campaignData.minutesUntilExpiry;
+    if (!expiresAt && !minutesUntilExpiry) {
+      errors.push('Expiry date is required');
+    } else if (expiresAt && new Date(expiresAt as string | Date) < new Date()) {
       errors.push('Expiry date must be in the future');
     }
     
@@ -85,6 +91,8 @@ export class SeasonalCreditService {
     const [campaign] = await db.insert(seasonalCreditCampaigns)
       .values({
         ...(campaignData as Record<string, unknown>),
+        expiresAt: new Date(campaignData.expiresAt as string),
+        startsAt: campaignData.startsAt ? new Date(campaignData.startsAt as string) : new Date(),
         targetApplications: normalizedTargetApplications,
         metadata: {
           ...((campaignData.metadata as Record<string, unknown>) || {}),
@@ -218,7 +226,7 @@ export class SeasonalCreditService {
       .values({
         tenantId,
         entityId,
-        transactionType: 'seasonal_campaign',
+        transactionType: 'allocation',
         amount: creditAmount.toString(),
         previousBalance: previousBalance.toString(),
         newBalance: newBalance.toString(),
@@ -243,11 +251,13 @@ export class SeasonalCreditService {
       `You've received {creditAmount} free credits from the {campaignName} campaign!`;
     const campaignName = String(campaign.campaignName ?? '');
     const campaignId = String(campaign.campaignId ?? '');
-    
+
     const message = notificationTemplate
       .replace('{creditAmount}', String(creditAmount))
       .replace('{campaignName}', campaignName);
-    
+
+    const campaignMeta = (campaign.metadata ?? {}) as Record<string, unknown>;
+
     await db.insert(notifications)
       .values({
         tenantId,
@@ -255,13 +265,14 @@ export class SeasonalCreditService {
         priority: NOTIFICATION_PRIORITIES.MEDIUM,
         title: `New Credits Available: ${campaignName}`,
         message,
-        actionUrl: `/credits?campaign=${campaignId}`,
+        actionUrl: `/dashboard/billing?campaign=${campaignId}`,
         actionLabel: 'View Credits',
         metadata: {
           campaignId,
           campaignName,
           creditAmount,
-          expiresAt: campaign.expiresAt
+          expiresAt: campaign.expiresAt,
+          modalConfig: campaignMeta.modalConfig ?? undefined,
         },
         isRead: false,
         isDismissed: false,
@@ -314,21 +325,7 @@ export class SeasonalCreditService {
           console.warn(`⚠️ No primary organization found for tenant ${tenantId}`);
           failedCount++;
           failedTenants.push({ tenantId, error: 'No primary organization found' });
-          
-          // Record failed allocation
-          await db.insert(seasonalCreditAllocations)
-            .values({
-              campaignId: String(campaignId),
-              tenantId,
-              entityId: tenantId, // Use tenantId as fallback
-              allocatedCredits: '0',
-              expiresAt: campaign.expiresAt,
-              distributionStatus: 'failed',
-              distributionError: 'No primary organization found',
-              createdAt: new Date(),
-              updatedAt: new Date()
-            });
-          
+          // Skip batch insert — no valid entityId to use (entityId FK requires a real entity row)
           continue;
         }
         
@@ -355,7 +352,7 @@ export class SeasonalCreditService {
           );
           
           // Create single allocation record for primary org
-          await db.insert(seasonalCreditAllocations)
+          await db.insert(creditBatches)
             .values({
               campaignId: String(campaignId),
               tenantId,
@@ -389,7 +386,7 @@ export class SeasonalCreditService {
           
           // Create separate allocation record for each target application
           for (const targetApp of targetApplications) {
-            await db.insert(seasonalCreditAllocations)
+            await db.insert(creditBatches)
               .values({
                 campaignId: String(campaignId),
                 tenantId,
@@ -423,20 +420,7 @@ export class SeasonalCreditService {
       } catch (err: unknown) {
         const error = err as Error;
         console.error(`❌ Failed to distribute credits to tenant ${tenantId}:`, error);
-        
-        await db.insert(seasonalCreditAllocations)
-          .values({
-            campaignId: String(campaignId),
-            tenantId,
-            entityId: tenantId,
-            allocatedCredits: '0',
-            expiresAt: campaign.expiresAt,
-            distributionStatus: 'failed',
-            distributionError: error.message,
-            createdAt: new Date(),
-            updatedAt: new Date()
-          });
-        
+        // Do not insert a failed batch record — entityId FK requires a real entity row
         failedCount++;
         failedTenants.push({ tenantId, error: error.message });
       }
@@ -444,19 +428,26 @@ export class SeasonalCreditService {
     
     const finalStatus = failedCount === 0 ? 'completed' :
                        distributedCount === 0 ? 'failed' : 'partial_success';
-    
+
+    // Persist failedTenants in campaign metadata so the detail page can surface them
+    const existingMeta = (campaign.metadata ?? {}) as Record<string, unknown>;
     await db.update(seasonalCreditCampaigns)
       .set({
         distributionStatus: finalStatus,
         distributedCount,
         failedCount,
         distributedAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
+        metadata: {
+          ...existingMeta,
+          failedTenants: failedTenants.length > 0 ? failedTenants : [],
+          lastDistributedAt: new Date().toISOString(),
+        },
       })
       .where(eq(seasonalCreditCampaigns.campaignId, String(campaignId)));
-    
+
     console.log(`🎉 Distribution complete: ${distributedCount} successful, ${failedCount} failed`);
-    
+
     return {
       campaignId,
       distributedCount,
@@ -474,15 +465,20 @@ export class SeasonalCreditService {
     
     const allocations = await db
       .select()
-      .from(seasonalCreditAllocations)
-      .where(eq(seasonalCreditAllocations.campaignId, String(campaignId)))
-      .orderBy(desc(seasonalCreditAllocations.allocatedAt));
+      .from(creditBatches)
+      .where(eq(creditBatches.campaignId, String(campaignId)))
+      .orderBy(desc(creditBatches.allocatedAt));
     
-    const totalCreditsDistributed = allocations.reduce((sum: number, a: { allocatedCredits?: string | null }) => 
+    // Filter out app-specific batches — they are internal tracking records created
+    // when credits are allocated to downstream apps. They share the campaign_id
+    // but should not inflate distribution totals.
+    const orgPoolAllocations = allocations.filter(a => !a.targetApplication);
+
+    const totalCreditsDistributed = orgPoolAllocations.reduce((sum: number, a: { allocatedCredits?: string | null }) =>
       sum + parseFloat(String(a.allocatedCredits ?? 0)), 0
     );
-    
-    const totalCreditsUsed = allocations.reduce((sum: number, a: { usedCredits?: string | null }) => 
+
+    const totalCreditsUsed = orgPoolAllocations.reduce((sum: number, a: { usedCredits?: string | null }) =>
       sum + parseFloat(String(a.usedCredits ?? 0)), 0
     );
     
@@ -491,9 +487,9 @@ export class SeasonalCreditService {
       allocations,
       summary: {
         totalTargeted: campaign.targetAllTenants ? 'All Tenants' : campaign.targetTenantIds?.length || 0,
-        successfullyDistributed: allocations.filter(a => a.distributionStatus === 'completed').length,
-        failedDistributions: allocations.filter(a => a.distributionStatus === 'failed').length,
-        pendingDistributions: allocations.filter(a => a.distributionStatus === 'pending').length,
+        successfullyDistributed: orgPoolAllocations.filter(a => a.distributionStatus === 'completed').length,
+        failedDistributions: orgPoolAllocations.filter(a => a.distributionStatus === 'failed').length,
+        pendingDistributions: orgPoolAllocations.filter(a => a.distributionStatus === 'pending').length,
         totalCreditsDistributed,
         totalCreditsUsed,
         utilizationRate: Number(totalCreditsDistributed) > 0 
@@ -506,20 +502,30 @@ export class SeasonalCreditService {
   /**
    * Get tenant's seasonal credit allocations
    */
-  static async getTenantAllocations(tenantId: string): Promise<Array<{ allocation: typeof seasonalCreditAllocations.$inferSelect; campaign: typeof seasonalCreditCampaigns.$inferSelect | null }>> {
+  static async getTenantAllocations(tenantId: string): Promise<Array<{
+    allocation: typeof creditBatches.$inferSelect;
+    campaign: typeof seasonalCreditCampaigns.$inferSelect | null;
+    entity: { entityId: string; entityName: string; entityType: string } | null;
+  }>> {
     const allocations = await db
       .select({
-        allocation: seasonalCreditAllocations,
-        campaign: seasonalCreditCampaigns
+        allocation: creditBatches,
+        campaign: seasonalCreditCampaigns,
+        entity: {
+          entityId: entities.entityId,
+          entityName: entities.entityName,
+          entityType: entities.entityType,
+        },
       })
-      .from(seasonalCreditAllocations)
+      .from(creditBatches)
       .leftJoin(
         seasonalCreditCampaigns,
-        eq(seasonalCreditAllocations.campaignId, seasonalCreditCampaigns.campaignId)
+        eq(creditBatches.campaignId, seasonalCreditCampaigns.campaignId)
       )
-      .where(eq(seasonalCreditAllocations.tenantId, tenantId))
-      .orderBy(desc(seasonalCreditAllocations.allocatedAt));
-    
+      .leftJoin(entities, eq(creditBatches.entityId, entities.entityId))
+      .where(eq(creditBatches.tenantId, tenantId))
+      .orderBy(asc(creditBatches.expiresAt), desc(creditBatches.allocatedAt));
+
     return allocations;
   }
   
@@ -532,21 +538,21 @@ export class SeasonalCreditService {
     
     const expiringAllocations = await db
       .select({
-        allocation: seasonalCreditAllocations,
+        allocation: creditBatches,
         campaign: seasonalCreditCampaigns
       })
-      .from(seasonalCreditAllocations)
+      .from(creditBatches)
       .leftJoin(
         seasonalCreditCampaigns,
-        eq(seasonalCreditAllocations.campaignId, seasonalCreditCampaigns.campaignId)
+        eq(creditBatches.campaignId, seasonalCreditCampaigns.campaignId)
       )
       .where(and(
-        eq(seasonalCreditAllocations.isActive, true),
-        eq(seasonalCreditAllocations.isExpired, false),
-        lte(seasonalCreditAllocations.expiresAt, futureDate),
-        gte(seasonalCreditAllocations.expiresAt, new Date())
+        eq(creditBatches.isActive, true),
+        eq(creditBatches.isExpired, false),
+        lte(creditBatches.expiresAt, futureDate),
+        gte(creditBatches.expiresAt, new Date())
       ))
-      .orderBy(seasonalCreditAllocations.expiresAt);
+      .orderBy(creditBatches.expiresAt);
     
     return expiringAllocations.map(item => {
       const daysUntilExpiry = Math.ceil(
@@ -579,12 +585,12 @@ export class SeasonalCreditService {
       })
       .where(eq(seasonalCreditCampaigns.campaignId, String(campaignId)));
     
-    await db.update(seasonalCreditAllocations)
+    await db.update(creditBatches)
       .set({
         expiresAt: newExpiryDate,
         updatedAt: new Date()
       })
-      .where(eq(seasonalCreditAllocations.campaignId, String(campaignId)));
+      .where(eq(creditBatches.campaignId, String(campaignId)));
     
     console.log(`✅ Extended campaign ${campaignId} expiry by ${additionalDays} days`);
     
@@ -613,7 +619,7 @@ export class SeasonalCreditService {
             priority: NOTIFICATION_PRIORITIES.HIGH,
             title: `Credits Expiring Soon: ${String(allocation.campaignName ?? '')}`,
             message: `Your ${String(allocation.allocatedCredits ?? '')} credits from ${String(allocation.campaignName ?? '')} will expire in ${Number((allocation as Record<string, unknown>).daysUntilExpiry ?? 0)} days. Use them before ${new Date(String(allocation.expiresAt)).toLocaleDateString()}!`,
-            actionUrl: `/credits?campaign=${String(allocation.campaignId)}`,
+            actionUrl: `/dashboard/billing?campaign=${String(allocation.campaignId)}`,
             actionLabel: 'View Credits',
             metadata: {
               campaignId: String(allocation.campaignId ?? ''),
@@ -652,11 +658,11 @@ export class SeasonalCreditService {
     // Find expired allocations
     const expiredAllocations = await db
       .select()
-      .from(seasonalCreditAllocations)
+      .from(creditBatches)
       .where(and(
-        eq(seasonalCreditAllocations.isActive, true),
-        eq(seasonalCreditAllocations.isExpired, false),
-        lte(seasonalCreditAllocations.expiresAt, now)
+        eq(creditBatches.isActive, true),
+        eq(creditBatches.isExpired, false),
+        lte(creditBatches.expiresAt, now)
       ));
     
     let processedCount = 0;
@@ -664,13 +670,13 @@ export class SeasonalCreditService {
     for (const allocation of expiredAllocations) {
       try {
         // Mark allocation as expired
-        await db.update(seasonalCreditAllocations)
+        await db.update(creditBatches)
           .set({
             isExpired: true,
             isActive: false,
             updatedAt: new Date()
           })
-          .where(eq(seasonalCreditAllocations.allocationId, allocation.allocationId));
+          .where(eq(creditBatches.allocationId, allocation.allocationId));
         
         // Deduct unused credits from organization
         const unusedCredits = parseFloat(String(allocation.allocatedCredits)) - parseFloat(String(allocation.usedCredits ?? 0));
@@ -706,7 +712,7 @@ export class SeasonalCreditService {
                 amount: (-unusedCredits).toString(),
                 previousBalance: previousBalance.toString(),
                 newBalance: newBalance.toString(),
-                operationCode: `seasonal_expiry:${String(allocation.campaignId ?? '')}`,
+                operationCode: `expiry:seasonal_campaign:${String(allocation.campaignId ?? '')}`,
                 createdAt: new Date()
               });
           }
@@ -722,10 +728,553 @@ export class SeasonalCreditService {
     }
     
     console.log(`✅ Processed ${processedCount} expired allocations`);
-    
+
     return {
       processedCount,
       totalExpired: expiredAllocations.length
+    };
+  }
+
+  // ─── New admin management methods ────────────────────────────────────────────
+
+  /**
+   * Cancel a campaign by marking all pending batches inactive.
+   * Returns a warning if completed batches exist (those cannot be cancelled).
+   */
+  static async cancelCampaign(campaignId: string): Promise<Record<string, unknown>> {
+    const [campaign] = await db
+      .select()
+      .from(seasonalCreditCampaigns)
+      .where(eq(seasonalCreditCampaigns.campaignId, campaignId));
+
+    if (!campaign) throw new Error('Campaign not found');
+    if (campaign.distributionStatus === 'cancelled') throw new Error('Campaign is already cancelled');
+
+    // Cancel pending batches
+    const result = await db
+      .update(creditBatches)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(and(
+        eq(creditBatches.campaignId, campaignId),
+        eq(creditBatches.distributionStatus, 'pending'),
+        eq(creditBatches.isExpired, false),
+      ))
+      .returning({ allocationId: creditBatches.allocationId });
+
+    // Mark campaign cancelled
+    await db
+      .update(seasonalCreditCampaigns)
+      .set({ distributionStatus: 'cancelled', isActive: false, updatedAt: new Date() })
+      .where(eq(seasonalCreditCampaigns.campaignId, campaignId));
+
+    return {
+      cancelled: result.length,
+      campaignId,
+      message: result.length > 0
+        ? `Cancelled ${result.length} pending batch(es).`
+        : 'Campaign cancelled; no pending batches to deactivate.',
+    };
+  }
+
+  /**
+   * Delete failed batches for a campaign and re-distribute to those tenants.
+   */
+  static async rerunFailedDistributions(campaignId: string): Promise<Record<string, unknown>> {
+    const [campaign] = await db
+      .select()
+      .from(seasonalCreditCampaigns)
+      .where(eq(seasonalCreditCampaigns.campaignId, campaignId));
+
+    if (!campaign) throw new Error('Campaign not found');
+
+    // Find batches with distribution errors
+    const failedBatches = await db
+      .select()
+      .from(creditBatches)
+      .where(and(
+        eq(creditBatches.campaignId, campaignId),
+        eq(creditBatches.distributionStatus, 'failed'),
+      ));
+
+    if (!failedBatches.length) {
+      return { requeued: 0, message: 'No failed batches to rerun.' };
+    }
+
+    // Reset to pending so the next distribute call picks them up
+    const ids = failedBatches.map((b) => b.allocationId);
+    await db
+      .update(creditBatches)
+      .set({ distributionStatus: 'pending', distributionError: null, updatedAt: new Date() })
+      .where(inArray(creditBatches.allocationId, ids));
+
+    // Reset campaign status so distribute() can proceed
+    await db
+      .update(seasonalCreditCampaigns)
+      .set({ distributionStatus: 'pending', updatedAt: new Date() })
+      .where(eq(seasonalCreditCampaigns.campaignId, campaignId));
+
+    return {
+      requeued: ids.length,
+      message: `Re-queued ${ids.length} failed batch(es). Call distribute to retry.`,
+    };
+  }
+
+  /**
+   * Paginated, filterable list of all active credit batches across all tenants.
+   */
+  static async getAllActiveBatches(filters: {
+    creditType?: string;
+    expiresWithin?: number; // days
+    tenantId?: string;
+    campaignId?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<{ batches: unknown[]; total: number }> {
+    const limit = filters.limit ?? 50;
+    const offset = filters.offset ?? 0;
+    const now = new Date();
+
+    const conditions = [
+      eq(creditBatches.isActive, true),
+      eq(creditBatches.isExpired, false),
+    ];
+
+    if (filters.creditType) conditions.push(eq(creditBatches.creditType, filters.creditType));
+    if (filters.tenantId) conditions.push(eq(creditBatches.tenantId, filters.tenantId));
+    if (filters.campaignId) conditions.push(eq(creditBatches.campaignId, filters.campaignId));
+    if (filters.expiresWithin) {
+      const cutoff = new Date(now.getTime() + filters.expiresWithin * 86_400_000);
+      conditions.push(lte(creditBatches.expiresAt, cutoff));
+    }
+
+    const [{ count }] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(creditBatches)
+      .where(and(...conditions));
+
+    const rows = await db
+      .select({
+        allocationId: creditBatches.allocationId,
+        tenantId: creditBatches.tenantId,
+        tenantName: tenants.companyName,
+        creditType: creditBatches.creditType,
+        totalCredits: creditBatches.allocatedCredits,
+        usedCredits: creditBatches.usedCredits,
+        campaignId: creditBatches.campaignId,
+        campaignName: seasonalCreditCampaigns.campaignName,
+        targetApplication: creditBatches.targetApplication,
+        expiresAt: creditBatches.expiresAt,
+        isActive: creditBatches.isActive,
+        isExpired: creditBatches.isExpired,
+        createdAt: creditBatches.createdAt,
+      })
+      .from(creditBatches)
+      .leftJoin(tenants, eq(creditBatches.tenantId, tenants.tenantId))
+      .leftJoin(seasonalCreditCampaigns, eq(creditBatches.campaignId, seasonalCreditCampaigns.campaignId))
+      .where(and(...conditions))
+      .orderBy(asc(creditBatches.expiresAt))
+      .limit(limit)
+      .offset(offset);
+
+    return {
+      batches: rows.map((r) => ({
+        ...r,
+        remainingCredits: Math.max(0, parseFloat(String(r.totalCredits ?? 0)) - parseFloat(String(r.usedCredits ?? 0))),
+      })),
+      total: count,
+    };
+  }
+
+  /**
+   * Paginated expired batch history with optional date range.
+   */
+  static async getExpiredBatchHistory(filters: {
+    tenantId?: string;
+    campaignId?: string;
+    creditType?: string;
+    from?: string;
+    to?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<{ batches: unknown[]; total: number }> {
+    const limit = filters.limit ?? 50;
+    const offset = filters.offset ?? 0;
+
+    const conditions = [eq(creditBatches.isExpired, true)];
+    if (filters.creditType) conditions.push(eq(creditBatches.creditType, filters.creditType));
+    if (filters.tenantId) conditions.push(eq(creditBatches.tenantId, filters.tenantId));
+    if (filters.campaignId) conditions.push(eq(creditBatches.campaignId, filters.campaignId));
+    if (filters.from) conditions.push(gte(creditBatches.expiresAt, new Date(filters.from)));
+    if (filters.to) conditions.push(lte(creditBatches.expiresAt, new Date(filters.to)));
+
+    const [{ count }] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(creditBatches)
+      .where(and(...conditions));
+
+    const rows = await db
+      .select({
+        allocationId: creditBatches.allocationId,
+        tenantId: creditBatches.tenantId,
+        tenantName: tenants.companyName,
+        creditType: creditBatches.creditType,
+        totalCredits: creditBatches.allocatedCredits,
+        usedCredits: creditBatches.usedCredits,
+        campaignId: creditBatches.campaignId,
+        campaignName: seasonalCreditCampaigns.campaignName,
+        targetApplication: creditBatches.targetApplication,
+        expiresAt: creditBatches.expiresAt,
+        isActive: creditBatches.isActive,
+        isExpired: creditBatches.isExpired,
+        createdAt: creditBatches.createdAt,
+      })
+      .from(creditBatches)
+      .leftJoin(tenants, eq(creditBatches.tenantId, tenants.tenantId))
+      .leftJoin(seasonalCreditCampaigns, eq(creditBatches.campaignId, seasonalCreditCampaigns.campaignId))
+      .where(and(...conditions))
+      .orderBy(desc(creditBatches.expiresAt))
+      .limit(limit)
+      .offset(offset);
+
+    return {
+      batches: rows.map((r) => ({
+        ...r,
+        remainingCredits: Math.max(0, parseFloat(String(r.totalCredits ?? 0)) - parseFloat(String(r.usedCredits ?? 0))),
+      })),
+      total: count,
+    };
+  }
+
+  /**
+   * Force-expire a list of allocation IDs by delegating to the expiry service.
+   */
+  static async bulkExpireBatches(
+    allocationIds: string[],
+    triggeredBy: string,
+  ): Promise<Record<string, unknown>> {
+    let processedCount = 0;
+    let errorCount = 0;
+
+    const batches = await db
+      .select()
+      .from(creditBatches)
+      .where(inArray(creditBatches.allocationId, allocationIds));
+
+    for (const batch of batches) {
+      try {
+        await CreditExpiryService.processExpiredAllocation(batch);
+        processedCount++;
+      } catch (err: unknown) {
+        errorCount++;
+        console.error('[SeasonalCreditService.bulkExpireBatches] Error:', err);
+      }
+    }
+
+    return { processedCount, errorCount, triggeredBy };
+  }
+
+  /**
+   * Full credit summary for a specific tenant: breakdown by type + active batch list.
+   */
+  static async getTenantCreditSummary(tenantId: string): Promise<Record<string, unknown>> {
+    const activeBatches = await db
+      .select({
+        allocationId: creditBatches.allocationId,
+        creditType: creditBatches.creditType,
+        totalCredits: creditBatches.allocatedCredits,
+        usedCredits: creditBatches.usedCredits,
+        targetApplication: creditBatches.targetApplication,
+        expiresAt: creditBatches.expiresAt,
+        isActive: creditBatches.isActive,
+        isExpired: creditBatches.isExpired,
+        createdAt: creditBatches.createdAt,
+      })
+      .from(creditBatches)
+      .where(and(
+        eq(creditBatches.tenantId, tenantId),
+        eq(creditBatches.isActive, true),
+        eq(creditBatches.isExpired, false),
+      ))
+      .orderBy(asc(creditBatches.expiresAt));
+
+    const sevenDaysLater = new Date(Date.now() + 7 * 86_400_000);
+
+    // Build per-type summary
+    const summary: Record<string, { total: number; available: number; expiringSoonCount: number }> = {};
+    for (const b of activeBatches) {
+      const type = b.creditType ?? 'unknown';
+      const allocated = parseFloat(String(b.totalCredits ?? 0));
+      const used = parseFloat(String(b.usedCredits ?? 0));
+      const remaining = Math.max(0, allocated - used);
+      if (!summary[type]) summary[type] = { total: 0, available: 0, expiringSoonCount: 0 };
+      summary[type].total += allocated;
+      summary[type].available += remaining;
+      if (b.expiresAt && new Date(b.expiresAt) <= sevenDaysLater) {
+        summary[type].expiringSoonCount++;
+      }
+    }
+
+    return {
+      summary,
+      activeBatches: activeBatches.map((b) => ({
+        ...b,
+        remainingCredits: Math.max(0, parseFloat(String(b.totalCredits ?? 0)) - parseFloat(String(b.usedCredits ?? 0))),
+      })),
+    };
+  }
+
+  /**
+   * Manually grant seasonal credits to a specific tenant (creates a credit batch + updates balance).
+   */
+  static async grantSeasonalCreditsToTenant(params: {
+    tenantId: string;
+    creditAmount: number;
+    expiresAt: Date;
+    initiatedBy: string;
+    reason?: string;
+  }): Promise<Record<string, unknown>> {
+    const { tenantId, creditAmount, expiresAt, initiatedBy, reason } = params;
+
+    // Find the root entity for this tenant
+    const [rootEntity] = await db
+      .select()
+      .from(entities)
+      .where(and(
+        eq(entities.tenantId, tenantId),
+        isNull(entities.parentEntityId),
+        eq(entities.isActive, true),
+      ))
+      .orderBy(asc(entities.createdAt))
+      .limit(1);
+
+    const entityId = rootEntity?.entityId ?? tenantId;
+
+    // Insert the credit batch
+    const [batch] = await db
+      .insert(creditBatches)
+      .values({
+        tenantId,
+        entityId,
+        entityType: 'organization',
+        creditType: 'seasonal',
+        allocatedCredits: creditAmount.toString(),
+        usedCredits: '0',
+        expiresAt,
+        isActive: true,
+        isExpired: false,
+        distributionStatus: 'completed',
+      })
+      .returning();
+
+    // Update credit balance
+    await addCreditsToEntity({
+      tenantId,
+      entityId,
+      creditAmount,
+      source: 'admin_grant',
+      sourceId: batch.allocationId,
+      description: reason ?? 'Admin seasonal credit grant',
+      initiatedBy,
+    });
+
+    return {
+      allocationId: batch.allocationId,
+      tenantId,
+      creditAmount,
+      expiresAt: expiresAt.toISOString(),
+      reason: reason ?? null,
+    };
+  }
+
+  /**
+   * Returns last N cron run records + aggregate success stats for the admin dashboard.
+   */
+  static async getCronStatus(limit = 20): Promise<Record<string, unknown>> {
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 86_400_000);
+
+    const runs = await db
+      .select()
+      .from(creditExpiryRuns)
+      .where(gte(creditExpiryRuns.ranAt, thirtyDaysAgo))
+      .orderBy(desc(creditExpiryRuns.ranAt))
+      .limit(limit);
+
+    const total = runs.length;
+    const successful = runs.filter((r) => r.status === 'success').length;
+    const partial = runs.filter((r) => r.status === 'partial').length;
+    const failed = runs.filter((r) => r.status === 'error').length;
+    const avgDurationMs = total > 0
+      ? Math.round(runs.reduce((acc, r) => acc + (r.durationMs ?? 0), 0) / total)
+      : 0;
+
+    return {
+      lastRun: runs[0] ?? null,
+      runs,
+      stats: {
+        total,
+        successful,
+        partial,
+        failed,
+        successRate: total > 0 ? Math.round((successful / total) * 100) : 100,
+        avgDurationMs,
+      },
+    };
+  }
+
+  /**
+   * Per-tenant distribution breakdown for a campaign.
+   *
+   * Returns one row per TENANT (not per batch) with:
+   * - Tenant company name
+   * - Aggregated allocated / used / remaining credits
+   * - Expiry date and urgency status (active / expiring_soon / expired)
+   * - Whether the tenant's batch has already expired via the cron
+   *
+   * Also returns the list of tenants that failed during distribution
+   * (sourced from campaign.metadata.failedTenants, persisted on distribute).
+   */
+  static async getCampaignTenantBreakdown(campaignId: string): Promise<Record<string, unknown>> {
+    const campaign = await this.getCampaign(campaignId);
+
+    // Fetch all batches for this campaign, joined with tenant name
+    const rows = await db
+      .select({
+        allocationId: creditBatches.allocationId,
+        tenantId: creditBatches.tenantId,
+        tenantName: tenants.companyName,
+        allocatedCredits: creditBatches.allocatedCredits,
+        usedCredits: creditBatches.usedCredits,
+        expiresAt: creditBatches.expiresAt,
+        isActive: creditBatches.isActive,
+        isExpired: creditBatches.isExpired,
+        distributionStatus: creditBatches.distributionStatus,
+        targetApplication: creditBatches.targetApplication,
+        allocatedAt: creditBatches.allocatedAt,
+      })
+      .from(creditBatches)
+      .leftJoin(tenants, eq(creditBatches.tenantId, tenants.tenantId))
+      .where(eq(creditBatches.campaignId, campaignId))
+      .orderBy(asc(creditBatches.expiresAt));
+
+    const now = Date.now();
+
+    // Group by tenant — one tenant may have multiple batches (app-specific mode)
+    const byTenant = new Map<string, {
+      tenantId: string;
+      tenantName: string | null;
+      allocated: number;
+      used: number;
+      expiresAt: Date;
+      isExpired: boolean;
+      isActive: boolean;
+      distributionStatus: string;
+      batches: number;
+    }>();
+
+    for (const row of rows) {
+      // Skip app-specific batches — these are internal tracking records created
+      // when credits are allocated to downstream apps (e.g. accounting). They
+      // share the campaign_id but should not inflate the campaign's allocated totals.
+      if (row.targetApplication) continue;
+
+      const tid = row.tenantId;
+      const allocated = parseFloat(String(row.allocatedCredits ?? 0));
+      const used = parseFloat(String(row.usedCredits ?? 0));
+      const existing = byTenant.get(tid);
+      if (existing) {
+        existing.allocated += allocated;
+        existing.used += used;
+        existing.batches += 1;
+        // Track the earliest expiry (most urgent)
+        if (row.expiresAt && new Date(row.expiresAt) < existing.expiresAt) {
+          existing.expiresAt = new Date(row.expiresAt);
+        }
+        if (row.isExpired) existing.isExpired = true;
+      } else {
+        byTenant.set(tid, {
+          tenantId: tid,
+          tenantName: row.tenantName ?? null,
+          allocated,
+          used,
+          expiresAt: row.expiresAt ? new Date(row.expiresAt) : new Date(0),
+          isExpired: row.isExpired ?? false,
+          isActive: row.isActive ?? true,
+          distributionStatus: row.distributionStatus ?? 'completed',
+          batches: 1,
+        });
+      }
+    }
+
+    const tenantRows = [...byTenant.values()].map((t) => {
+      const remaining = Math.max(0, t.allocated - t.used);
+      const msUntilExpiry = t.expiresAt.getTime() - now;
+      const daysUntilExpiry = Math.ceil(msUntilExpiry / 86_400_000);
+
+      let expiryStatus: 'expired' | 'expiring_soon' | 'active';
+      if (t.isExpired || msUntilExpiry <= 0) {
+        expiryStatus = 'expired';
+      } else if (daysUntilExpiry <= 7) {
+        expiryStatus = 'expiring_soon';
+      } else {
+        expiryStatus = 'active';
+      }
+
+      return {
+        tenantId: t.tenantId,
+        tenantName: t.tenantName ?? t.tenantId.slice(0, 8) + '…',
+        allocatedCredits: t.allocated,
+        usedCredits: t.used,
+        remainingCredits: remaining,
+        utilizationPct: t.allocated > 0 ? Math.round((t.used / t.allocated) * 100) : 0,
+        expiresAt: t.expiresAt.toISOString(),
+        daysUntilExpiry,
+        expiryStatus,
+        isExpired: t.isExpired,
+        distributionStatus: t.distributionStatus,
+        batchCount: t.batches,
+      };
+    });
+
+    // Sort: expired last, then by expiresAt ascending (most urgent first)
+    tenantRows.sort((a, b) => {
+      if (a.expiryStatus === 'expired' && b.expiryStatus !== 'expired') return 1;
+      if (a.expiryStatus !== 'expired' && b.expiryStatus === 'expired') return -1;
+      return new Date(a.expiresAt).getTime() - new Date(b.expiresAt).getTime();
+    });
+
+    // Pull failed tenants from campaign metadata (saved during distribution)
+    const meta = (campaign.metadata ?? {}) as Record<string, unknown>;
+    const failedTenants = (meta.failedTenants ?? []) as Array<{ tenantId: string; error: string }>;
+
+    // Enrich failed tenants with company names
+    const enrichedFailedTenants = failedTenants.length > 0
+      ? await Promise.all(failedTenants.map(async (ft) => {
+          const [t] = await db
+            .select({ companyName: tenants.companyName })
+            .from(tenants)
+            .where(eq(tenants.tenantId, ft.tenantId));
+          return { ...ft, tenantName: t?.companyName ?? ft.tenantId.slice(0, 8) + '…' };
+        }))
+      : [];
+
+    return {
+      campaignId,
+      campaignName: campaign.campaignName,
+      distributionStatus: campaign.distributionStatus,
+      expiresAt: campaign.expiresAt,
+      totalTenants: tenantRows.length + enrichedFailedTenants.length,
+      successfulTenants: tenantRows.length,
+      failedTenantCount: enrichedFailedTenants.length,
+      tenants: tenantRows,
+      failedTenants: enrichedFailedTenants,
+      summary: {
+        totalAllocated: tenantRows.reduce((s, t) => s + t.allocatedCredits, 0),
+        totalUsed: tenantRows.reduce((s, t) => s + t.usedCredits, 0),
+        totalRemaining: tenantRows.reduce((s, t) => s + t.remainingCredits, 0),
+        expiredCount: tenantRows.filter((t) => t.expiryStatus === 'expired').length,
+        expiringSoonCount: tenantRows.filter((t) => t.expiryStatus === 'expiring_soon').length,
+        activeCount: tenantRows.filter((t) => t.expiryStatus === 'active').length,
+      },
     };
   }
 }

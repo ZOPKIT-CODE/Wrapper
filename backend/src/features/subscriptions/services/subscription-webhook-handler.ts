@@ -25,6 +25,33 @@ import {
 import { updateAdministratorRolesForPlan } from './subscription-plan-roles.js';
 import { PaymentService } from './payment-service.js';
 
+/**
+ * Maps raw Stripe subscription status values to the allowed values in the
+ * `chk_subscription_status` DB constraint:
+ *   'active','inactive','trialing','past_due','canceled','paused','trial'
+ *
+ * Stripe may send statuses (e.g. 'incomplete', 'incomplete_expired', 'unpaid')
+ * that are not in the constraint. This helper normalizes them so inserts/updates
+ * never violate the check constraint.
+ */
+const STRIPE_STATUS_MAP: Record<string, string> = {
+  active: 'active',
+  trialing: 'trialing',
+  trial: 'trial',
+  past_due: 'past_due',
+  canceled: 'canceled',
+  paused: 'paused',
+  inactive: 'inactive',
+  // Stripe-specific statuses that don't exist in our constraint:
+  incomplete: 'inactive',
+  incomplete_expired: 'canceled',
+  unpaid: 'past_due',
+};
+
+export function normalizeStripeSubscriptionStatus(stripeStatus: string): string {
+  return STRIPE_STATUS_MAP[stripeStatus] ?? 'inactive';
+}
+
 // Safe column selection — avoids "column does not exist" when DB is behind the Drizzle schema.
 const safePaymentSelect = {
   paymentId: payments.paymentId,
@@ -567,50 +594,65 @@ export async function handleCheckoutCompleted(session: Record<string, unknown>):
         console.error('❌ Failed to persist checkout audit snapshot:', errAudit);
       }
 
-      // Allocate plan credits — with dedup guard to prevent double allocation
-      // from multiple checkout sessions in the same billing period.
+      // Allocate plan credits — with dedup guard to prevent double allocation.
+      // Both checkout.completed and subscription.created fire for the same Stripe
+      // subscription, so we acquire a tenant-scoped advisory lock THEN check for
+      // an existing credit transaction with operation_code = 'subscription' in
+      // this billing period.  The advisory lock serialises the two concurrent
+      // handlers so the check-then-insert is atomic.
       try {
         const planCredits = Number((plan as Record<string, unknown>).credits) || 0;
         if (planCredits > 0) {
-          // Check if credits were already allocated for this subscription in the current period.
-          // Two different checkout sessions produce two different event IDs, so the webhook
-          // idempotency check (by eventId) won't catch it — we need a business-level dedup.
-          const periodStart = existingSubscription?.currentPeriodStart
-            ? new Date(existingSubscription.currentPeriodStart as string | number)
-            : new Date(Date.now() - 60_000); // 1min ago fallback for brand-new subscriptions
+          // Acquire an advisory lock keyed on the tenant to serialise concurrent
+          // webhook handlers.  hashtext() returns a stable int for the tenant UUID.
+          await db.execute(sql`SELECT pg_advisory_lock(hashtext(${tenantId} || '_plan_credits'))`);
 
-          const [alreadyAllocated] = await db
-            .select({ total: count() })
-            .from(creditTransactions)
-            .where(and(
-              eq(creditTransactions.tenantId, tenantId),
-              eq(creditTransactions.transactionType, 'initialization'),
-              gte(creditTransactions.createdAt, periodStart)
-            ));
+          try {
+            const periodStart = existingSubscription?.currentPeriodStart
+              ? new Date(existingSubscription.currentPeriodStart as string | number)
+              : new Date(Date.now() - 60_000); // 1min ago fallback for brand-new subscriptions
 
-          if ((alreadyAllocated?.total ?? 0) > 0) {
-            console.log(`⏭️ Plan credits already allocated for tenant ${tenantId} in current period — skipping`);
-          } else {
-            const orgEntities = await db
-              .select()
-              .from(entities)
-              .where(and(eq(entities.tenantId, tenantId), eq(entities.entityType, 'organization'), eq(entities.isActive, true)));
+            // The dedup guard must match what addCreditsToEntity actually writes:
+            //   transaction_type = 'purchase', operation_code = 'subscription'
+            const [alreadyAllocated] = await db
+              .select({ total: count() })
+              .from(creditTransactions)
+              .where(and(
+                eq(creditTransactions.tenantId, tenantId),
+                eq(creditTransactions.transactionType, 'purchase'),
+                eq(creditTransactions.operationCode, 'subscription'),
+                gte(creditTransactions.createdAt, periodStart)
+              ));
 
-            const defaultEntity = orgEntities.find((e: { isDefault?: boolean }) => e.isDefault) || orgEntities[0];
+            if ((alreadyAllocated?.total ?? 0) > 0) {
+              console.log(`⏭️ Plan credits already allocated for tenant ${tenantId} in current period — skipping (checkout.completed)`);
+            } else {
+              // Order by entityLevel + createdAt so the onboarding org (first created) is picked
+              const orgEntities = await db
+                .select()
+                .from(entities)
+                .where(and(eq(entities.tenantId, tenantId), eq(entities.entityType, 'organization'), eq(entities.isActive, true)))
+                .orderBy(entities.entityLevel, entities.createdAt);
 
-            if (defaultEntity) {
-              await CreditService.addCreditsToEntity({
-                tenantId,
-                entityType: 'organization',
-                entityId: defaultEntity.entityId,
-                creditAmount: planCredits,
-                source: 'subscription',
-                sourceId: (session as Record<string, unknown>).id || (subscriptionRecord?.subscriptionId as string),
-                description: `${(plan as Record<string, unknown>).name} plan credits (${planCredits.toLocaleString()} annual credits)`,
-                initiatedBy: 'system'
-              });
-              console.log(`✅ Allocated ${planCredits.toLocaleString()} plan credits for tenant ${tenantId}`);
+              const defaultEntity = orgEntities[0];
+
+              if (defaultEntity) {
+                await CreditService.addCreditsToEntity({
+                  tenantId,
+                  entityType: 'organization',
+                  entityId: defaultEntity.entityId,
+                  creditAmount: planCredits,
+                  source: 'subscription',
+                  sourceId: (session as Record<string, unknown>).id || (subscriptionRecord?.subscriptionId as string),
+                  description: `${(plan as Record<string, unknown>).name} plan credits (${planCredits.toLocaleString()} annual credits)`,
+                  initiatedBy: 'system'
+                });
+                console.log(`✅ Allocated ${planCredits.toLocaleString()} plan credits for tenant ${tenantId} (checkout.completed)`);
+              }
             }
+          } finally {
+            // Always release the advisory lock, even if credit allocation fails.
+            await db.execute(sql`SELECT pg_advisory_unlock(hashtext(${tenantId} || '_plan_credits'))`);
           }
         }
       } catch (errCredit: unknown) {
@@ -648,6 +690,48 @@ export async function handleCheckoutCompleted(session: Record<string, unknown>):
         }
       } catch (err: unknown) {
         console.error('❌ Failed to send subscription confirmation email:', err);
+      }
+
+      // Notify downstream apps about the new/reactivated subscription
+      // This is critical for apps like Financial Accounting that need to know
+      // the plan and enabled modules to update their sidebar and permissions.
+      try {
+        const { snsSqsPublisher } = await import('../../messaging/utils/sns-sqs-publisher.js');
+        const { getPlan } = await import('../../../data/plans.js');
+        const targetApps = (process.env.BUSINESS_SUITE_TARGET_APPS || 'crm,accounting,ops').split(',').map(a => a.trim());
+
+        const planDef = getPlan(planId as string);
+        const planModules = planDef?.modules ?? {};
+
+        for (const app of targetApps) {
+          const appModules = planModules[app] ?? [];
+          const isNewApp = (planDef?.applications ?? []).includes(app);
+
+          await snsSqsPublisher.publishInterAppEvent({
+            eventType: 'subscription.upgraded',
+            sourceApplication: 'wrapper',
+            targetApplication: app,
+            tenantId,
+            eventData: {
+              tenantId,
+              previousPlan: 'free',
+              newPlan: planId,
+              previousPlanName: 'Free',
+              newPlanName: planDef?.name ?? planId,
+              status: 'active',
+              effectiveAt: new Date().toISOString(),
+              currentPeriodEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+              isNewApp,
+              modules: appModules === '*' ? ['*'] : appModules,
+              addedModules: appModules === '*' ? ['*'] : appModules,
+              action: 'plan_upgrade',
+            },
+            publishedBy: 'system',
+          });
+        }
+        console.log(`✅ Published subscription.activated to ${targetApps.length} downstream apps for plan ${planId}`);
+      } catch (pubErr: unknown) {
+        console.error('❌ Failed to publish subscription.activated:', (pubErr as Error).message);
       }
     }
   } catch (err: unknown) {
@@ -813,7 +897,12 @@ export async function handlePaymentSucceeded(
         throw new Error(`Subscription not found: ${subscriptionId}`);
       }
 
-      const invoicePriceId = (invoice as Record<string, unknown>).lines?.data?.[0]?.price?.id ?? null;
+      // For proration invoices (subscription_update), the first line item is the
+      // CREDIT for the old plan and the last line item is the CHARGE for the new plan.
+      // Always use the last positive-amount line item to resolve the plan.
+      const invoiceLines = ((invoice as Record<string, unknown>).lines as { data?: Array<{ price?: { id?: string }; amount?: number }> })?.data ?? [];
+      const chargeLine = [...invoiceLines].reverse().find(l => (l.amount ?? 0) > 0) ?? invoiceLines[0];
+      const invoicePriceId = chargeLine?.price?.id ?? null;
       const planId = invoicePriceId ? await getPlanIdFromPriceId(invoicePriceId as string) : null;
       const setPayload: Record<string, unknown> = {
         status: 'active',
@@ -869,7 +958,7 @@ export async function handlePaymentSucceeded(
             stripeChargeId: (invoice as Record<string, unknown>).charge as string | undefined,
             amount: String(amountPaid / 100),
             currency: String(invoiceCurrency).toUpperCase(),
-            status: 'succeeded',
+            status: 'completed',
             paymentMethod: 'card',
             paymentType: 'subscription',
             billingReason: (invoice as Record<string, unknown>).billing_reason as string | undefined,
@@ -1018,7 +1107,7 @@ export async function handleInvoicePaymentPaid(invoicePayment: Record<string, un
           await db
             .update(payments)
             .set({
-              status: 'succeeded',
+              status: 'completed',
               paidAt: paidAt != null ? new Date((paidAt as number) * 1000) : new Date(),
               updatedAt: new Date()
             })
@@ -1323,8 +1412,13 @@ export async function handleSubscriptionUpdated(
   }
 ): Promise<void> {
   try {
+    // Read the CURRENT DB state BEFORE updating — needed to detect plan changes vs renewals
     const [existing] = await db
-      .select({ tenantId: subscriptions.tenantId })
+      .select({
+        tenantId: subscriptions.tenantId,
+        plan: subscriptions.plan,
+        currentPeriodStart: subscriptions.currentPeriodStart,
+      })
       .from(subscriptions)
       .where(eq(subscriptions.stripeSubscriptionId, subscription.id))
       .limit(1);
@@ -1334,11 +1428,23 @@ export async function handleSubscriptionUpdated(
     const planId = priceId ? await getPlanIdFromPriceId(priceId) : null;
 
     const setPayload: Record<string, unknown> = {
-      status: subscription.status,
+      status: normalizeStripeSubscriptionStatus(subscription.status),
       currentPeriodStart: new Date(subscription.current_period_start * 1000),
       currentPeriodEnd: new Date(subscription.current_period_end * 1000),
-      updatedAt: new Date()
+      updatedAt: new Date(),
     };
+
+    // Sync cancellation scheduling from Stripe
+    const cancelAt = (subscription as Record<string, unknown>).cancel_at;
+    const cancelAtPeriodEnd = (subscription as Record<string, unknown>).cancel_at_period_end;
+    if (cancelAt) {
+      setPayload.cancelAt = new Date((cancelAt as number) * 1000);
+    } else if (cancelAtPeriodEnd === true) {
+      setPayload.cancelAt = new Date(subscription.current_period_end * 1000);
+    } else if (cancelAtPeriodEnd === false && !cancelAt) {
+      // Cancellation was revoked (user resubscribed)
+      setPayload.cancelAt = null;
+    }
 
     if (planId) {
       const plans = await getAvailablePlans();
@@ -1349,6 +1455,7 @@ export async function handleSubscriptionUpdated(
       }
     }
 
+    // Now update the DB with the new state from Stripe
     await db
       .update(subscriptions)
       .set(setPayload as Record<string, unknown>)
@@ -1361,6 +1468,272 @@ export async function handleSubscriptionUpdated(
         await onboardingOrgSetup.updateOrganizationApplicationsForPlanChange(existing.tenantId, planId, { skipIfRecentlyUpdated: true });
       } catch (errOrgApp: unknown) {
         console.error('❌ Failed to update organization applications:', (errOrgApp as Error).message);
+      }
+    }
+
+    // ── Detect: plan change (mid-cycle upgrade) vs renewal (period boundary) ──
+    // Uses the DB state captured BEFORE the update above.
+    if (existing?.tenantId) {
+      const dbPlan = existing.plan ?? null;
+      const dbPeriodStart = existing.currentPeriodStart;
+      const newPeriodStart = new Date(subscription.current_period_start * 1000);
+      const newPeriodEnd = new Date(subscription.current_period_end * 1000);
+
+      // Period changed = renewal (start date moved forward by ~1 year)
+      const isRenewal = dbPeriodStart
+        ? Math.abs(newPeriodStart.getTime() - new Date(dbPeriodStart as string | Date).getTime()) > 86_400_000 // > 1 day difference
+        : false;
+      // Plan changed = mid-cycle upgrade/downgrade
+      const isPlanChange = planId && dbPlan && planId !== dbPlan;
+
+      console.log(`📊 Subscription update type: renewal=${isRenewal}, planChange=${isPlanChange} (${dbPlan} → ${planId})`);
+
+      // ── Helper: resolve new plan's credit amount ──
+      const resolveNewPlanCredits = async () => {
+        const items = (subscription as Record<string, unknown>).items as { data?: Array<{ price?: { id?: string } | string }> } | undefined;
+        const newPriceId = items?.data?.[0]?.price
+          ? (typeof items.data[0].price === 'string' ? items.data[0].price : items.data[0].price.id)
+          : null;
+        const newPlanId = newPriceId ? await getPlanIdFromPriceId(newPriceId) : (planId || null);
+        const plans = await getAvailablePlans();
+        const newPlan = plans.find((p: Record<string, unknown>) => p.id === newPlanId);
+        return { newPlanId, newPlan, credits: Number((newPlan as Record<string, unknown>)?.credits) || 0 };
+      };
+
+      // ── Helper: allocate credits to the onboarding org ──
+      const allocateCredits = async (creditAmount: number, planName: string, description: string) => {
+        const orgEntities = await db
+          .select()
+          .from(entities)
+          .where(and(eq(entities.tenantId, existing.tenantId), eq(entities.entityType, 'organization'), eq(entities.isActive, true)))
+          .orderBy(entities.entityLevel, entities.createdAt);
+        const defaultEntity = orgEntities[0];
+        if (defaultEntity) {
+          await CreditService.addCreditsToEntity({
+            tenantId: existing.tenantId,
+            entityType: 'organization',
+            entityId: defaultEntity.entityId,
+            creditAmount,
+            source: 'subscription',
+            sourceId: subscription.id,
+            description,
+            initiatedBy: 'system'
+          });
+          console.log(`✅ Allocated ${creditAmount.toLocaleString()} ${planName} credits for tenant ${existing.tenantId}`);
+        }
+      };
+
+      if (isPlanChange && !isRenewal) {
+        // ── MID-CYCLE PLAN UPGRADE ──
+        // Expire old plan's subscription credits, allocate new plan's full credits.
+        // Stripe handles the prorated payment; we handle the credit swap.
+        console.log(`🔄 Mid-cycle plan change: ${dbPlan} → ${planId} for tenant ${existing.tenantId}`);
+
+        // Expire old plan credits (non-campaign batches for current period)
+        try {
+          const { CreditExpiryService } = await import('../../credits/services/credit-expiry-service.js');
+          await CreditExpiryService.expirePreviousTenureCredits(existing.tenantId, newPeriodStart);
+          console.log(`✅ Expired old plan (${dbPlan}) credits on upgrade`);
+        } catch (syncErr: unknown) {
+          console.error('❌ Failed to expire old plan credits on upgrade:', (syncErr as Error).message);
+        }
+
+        // Allocate new plan credits
+        try {
+          const { newPlan, credits } = await resolveNewPlanCredits();
+          if (credits > 0) {
+            await allocateCredits(credits, (newPlan as Record<string, unknown>)?.name as string ?? planId,
+              `${(newPlan as Record<string, unknown>)?.name ?? planId} plan upgrade credits (${credits.toLocaleString()} annual credits)`);
+          }
+        } catch (errCredit: unknown) {
+          console.error('❌ Failed to allocate upgrade credits:', (errCredit as Error).message);
+        }
+
+        // Notify downstream apps about the plan change
+        try {
+          const { snsSqsPublisher } = await import('../../messaging/utils/sns-sqs-publisher.js');
+          const { getPlan } = await import('../../../data/plans.js');
+          const targetApps = (process.env.BUSINESS_SUITE_TARGET_APPS || 'crm,accounting,ops').split(',').map(a => a.trim());
+
+          const previousPlanDef = getPlan(dbPlan as string);
+          const newPlanDef = getPlan(planId as string);
+
+          // Compute which applications and modules were added in this upgrade
+          const previousApps = new Set(previousPlanDef?.applications ?? []);
+          const newApps = newPlanDef?.applications ?? [];
+          const addedApplications = newApps.filter(app => !previousApps.has(app));
+
+          const previousModules = previousPlanDef?.modules ?? {};
+          const newModules = newPlanDef?.modules ?? {};
+          const addedModules: Record<string, string[]> = {};
+          for (const [app, mods] of Object.entries(newModules)) {
+            const prev = previousModules[app];
+            if (!prev) {
+              // Entire app is new
+              addedModules[app] = mods === '*' ? ['*'] : mods;
+            } else if (mods === '*' && prev !== '*') {
+              addedModules[app] = ['*'];
+            } else if (Array.isArray(mods) && Array.isArray(prev)) {
+              const prevSet = new Set(prev);
+              const added = mods.filter(m => !prevSet.has(m));
+              if (added.length > 0) addedModules[app] = added;
+            }
+          }
+
+          for (const app of targetApps) {
+            // Each app only receives its own modules — not other apps' data
+            const appModules = newModules[app] ?? [];
+            const appAddedModules = addedModules[app] ?? [];
+            const isNewApp = addedApplications.includes(app);
+
+            await snsSqsPublisher.publishInterAppEvent({
+              eventType: 'subscription.upgraded',
+              sourceApplication: 'wrapper',
+              targetApplication: app,
+              tenantId: existing.tenantId,
+              eventData: {
+                tenantId: existing.tenantId,
+                previousPlan: dbPlan,
+                newPlan: planId,
+                previousPlanName: previousPlanDef?.name ?? dbPlan,
+                newPlanName: newPlanDef?.name ?? planId,
+                status: subscription.status,
+                effectiveAt: new Date().toISOString(),
+                currentPeriodEnd: new Date(subscription.current_period_end * 1000).toISOString(),
+                isNewApp,
+                modules: appModules,
+                addedModules: appAddedModules,
+                action: 'plan_upgrade',
+              },
+              publishedBy: 'system',
+            });
+          }
+          console.log(`✅ Published subscription.upgraded to ${targetApps.length} downstream apps`);
+        } catch (pubErr: unknown) {
+          console.error('❌ Failed to publish subscription.upgraded:', (pubErr as Error).message);
+        }
+
+      } else if (cancelAtPeriodEnd === true) {
+        // ── CANCELLATION SCHEDULED ──
+        // User scheduled cancellation — notify downstream apps so they can
+        // show warnings, start data export flows, or prompt retention.
+        const cancelDate = cancelAt
+          ? new Date((cancelAt as number) * 1000)
+          : new Date(subscription.current_period_end * 1000);
+
+        console.log(`📅 Cancellation scheduled for tenant ${existing.tenantId} at ${cancelDate.toISOString()}`);
+
+        try {
+          const { snsSqsPublisher } = await import('../../messaging/utils/sns-sqs-publisher.js');
+          const targetApps = (process.env.BUSINESS_SUITE_TARGET_APPS || 'crm,accounting,ops').split(',').map(a => a.trim());
+          for (const app of targetApps) {
+            await snsSqsPublisher.publishInterAppEvent({
+              eventType: 'subscription.cancel_scheduled',
+              sourceApplication: 'wrapper',
+              targetApplication: app,
+              tenantId: existing.tenantId,
+              entityId: existing.tenantId,
+              eventData: {
+                tenantId: existing.tenantId,
+                plan: planId || dbPlan,
+                status: subscription.status,
+                cancelAt: cancelDate.toISOString(),
+                currentPeriodEnd: new Date(subscription.current_period_end * 1000).toISOString(),
+                action: 'cancel_scheduled',
+              },
+              publishedBy: 'system',
+            });
+          }
+          console.log(`✅ Published subscription.cancel_scheduled to ${targetApps.length} downstream apps`);
+        } catch (pubErr: unknown) {
+          console.error('❌ Failed to publish subscription.cancel_scheduled:', (pubErr as Error).message);
+        }
+
+        // Send cancellation confirmation email to tenant admin
+        try {
+          const paymentsModule = await import('../routes/payments.js');
+          const getTenantAdminEmail = paymentsModule.getTenantAdminEmail || (async () => null);
+          const userInfo = await getTenantAdminEmail(existing.tenantId);
+          if (userInfo?.email) {
+            const { EmailService } = await import('../../../utils/email.js');
+            const emailService = new EmailService();
+            await emailService.sendEmail({
+              to: [{ email: userInfo.email, name: userInfo.name }],
+              subject: 'Subscription Cancellation Scheduled',
+              htmlContent: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background-color: #f8fafc; border-radius: 12px;">
+                  <h2 style="color: #1B2E5A; margin-bottom: 16px;">Subscription Cancellation Scheduled</h2>
+                  <p style="color: #475569; line-height: 1.6;">
+                    Your subscription has been scheduled for cancellation. Here are the details:
+                  </p>
+                  <div style="background: white; border-radius: 8px; padding: 16px; margin: 16px 0; border: 1px solid #e2e8f0;">
+                    <p style="margin: 4px 0;"><strong>Plan:</strong> ${(planId || dbPlan || 'N/A').charAt(0).toUpperCase() + (planId || dbPlan || 'N/A').slice(1)}</p>
+                    <p style="margin: 4px 0;"><strong>Active until:</strong> ${cancelDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                    <p style="margin: 4px 0;"><strong>Status:</strong> Active (no further charges)</p>
+                  </div>
+                  <p style="color: #475569; line-height: 1.6;">
+                    You will continue to have full access to all features until the date above.
+                    If you change your mind, you can resubscribe at any time from your billing page.
+                  </p>
+                </div>
+              `,
+            });
+            console.log(`📧 Sent cancellation confirmation email to ${userInfo.email}`);
+          }
+        } catch (emailErr: unknown) {
+          console.error('❌ Failed to send cancellation confirmation email:', (emailErr as Error).message);
+        }
+
+      } else if (isRenewal) {
+        // ── ANNUAL RENEWAL ──
+        // Expire all old tenure credits, allocate new tenure credits.
+        const previousPeriodEnd = newPeriodStart; // renewal boundary
+
+        try {
+          const { CreditExpiryService } = await import('../../credits/services/credit-expiry-service.js');
+          await CreditExpiryService.expirePreviousTenureCredits(existing.tenantId, previousPeriodEnd);
+          console.log(`✅ Expired previous tenure credits (before ${previousPeriodEnd.toISOString()}) for tenant ${existing.tenantId}`);
+        } catch (syncErr: unknown) {
+          console.error('❌ Failed to expire previous tenure credits:', (syncErr as Error).message);
+        }
+
+        // Allocate new tenure credits
+        try {
+          const { newPlan, credits } = await resolveNewPlanCredits();
+          if (credits > 0) {
+            await allocateCredits(credits, (newPlan as Record<string, unknown>)?.name as string ?? planId,
+              `${(newPlan as Record<string, unknown>)?.name ?? planId} plan renewal credits (${credits.toLocaleString()} annual credits)`);
+          }
+        } catch (errRenewalCredits: unknown) {
+          console.error('❌ Failed to allocate renewal credits:', (errRenewalCredits as Error).message);
+        }
+
+        // Notify downstream apps
+        try {
+          const { snsSqsPublisher } = await import('../../messaging/utils/sns-sqs-publisher.js');
+          const targetApps = (process.env.BUSINESS_SUITE_TARGET_APPS || 'crm,accounting,ops').split(',').map(a => a.trim());
+          for (const app of targetApps) {
+            await snsSqsPublisher.publishInterAppEvent({
+              eventType: 'subscription.renewed',
+              sourceApplication: 'wrapper',
+              targetApplication: app,
+              tenantId: existing.tenantId,
+              entityId: existing.tenantId,
+              eventData: {
+                tenantId: existing.tenantId,
+                plan: planId || subscription.status,
+                previousPeriodEnd: previousPeriodEnd.toISOString(),
+                newPeriodEnd: newPeriodEnd.toISOString(),
+                status: subscription.status,
+                action: 'expire_previous_tenure',
+              },
+              publishedBy: 'system',
+            });
+          }
+          console.log(`✅ Published subscription.renewed to ${targetApps.length} downstream apps`);
+        } catch (pubErr: unknown) {
+          console.error('❌ Failed to publish subscription.renewed:', (pubErr as Error).message);
+        }
       }
     }
 
@@ -1397,7 +1770,7 @@ export async function handleSubscriptionCreated(
         .update(subscriptions)
         .set({
           stripeSubscriptionId: subscription.id,
-          status: subscription.status,
+          status: normalizeStripeSubscriptionStatus(subscription.status),
           currentPeriodStart: new Date(subscription.current_period_start * 1000),
           currentPeriodEnd: new Date(subscription.current_period_end * 1000),
           updatedAt: new Date()
@@ -1405,6 +1778,85 @@ export async function handleSubscriptionCreated(
         .where(eq(subscriptions.subscriptionId, existingSubscription.subscriptionId));
 
       console.log('✅ Updated existing subscription with provider subscription ID');
+
+      // Sync credit batch expiry dates with the new subscription period
+      const newPeriodEnd = new Date(subscription.current_period_end * 1000);
+      try {
+        const { CreditExpiryService } = await import('../../credits/services/credit-expiry-service.js');
+        await CreditExpiryService.syncPaidCreditBatchExpiry(existingSubscription.tenantId, newPeriodEnd);
+      } catch (syncErr: unknown) {
+        console.error('❌ Failed to sync credit batch expiry on create:', (syncErr as Error).message);
+      }
+
+      // Allocate plan credits if not already allocated in this period.
+      // This handles subscriptions created outside the checkout flow (e.g., test clocks,
+      // direct API creation) where handleCheckoutCompleted doesn't fire.
+      // Uses the same advisory-lock + dedup pattern as handleCheckoutCompleted to
+      // prevent double allocation when both webhooks fire for the same subscription.
+      try {
+        // Extract price ID from subscription items
+        const items = (subscription as Record<string, unknown>).items as { data?: Array<{ price?: { id?: string } | string }> } | undefined;
+        const priceId = items?.data?.[0]?.price
+          ? (typeof items.data[0].price === 'string' ? items.data[0].price : items.data[0].price.id)
+          : null;
+        const planId = priceId ? await getPlanIdFromPriceId(priceId) : null;
+        const plans = await getAvailablePlans();
+        const plan = plans.find((p: Record<string, unknown>) => p.id === planId);
+        const planCredits = Number((plan as Record<string, unknown>)?.credits) || 0;
+
+        if (planCredits > 0) {
+          // Acquire an advisory lock keyed on the tenant to serialise concurrent
+          // webhook handlers.  hashtext() returns a stable int for the tenant UUID.
+          await db.execute(sql`SELECT pg_advisory_lock(hashtext(${existingSubscription.tenantId} || '_plan_credits'))`);
+
+          try {
+            const periodStart = new Date(subscription.current_period_start * 1000);
+
+            // The dedup guard must match what addCreditsToEntity actually writes:
+            //   transaction_type = 'purchase', operation_code = 'subscription'
+            const [alreadyAllocated] = await db
+              .select({ total: count() })
+              .from(creditTransactions)
+              .where(and(
+                eq(creditTransactions.tenantId, existingSubscription.tenantId),
+                eq(creditTransactions.transactionType, 'purchase'),
+                eq(creditTransactions.operationCode, 'subscription'),
+                gte(creditTransactions.createdAt, periodStart)
+              ));
+
+            if ((alreadyAllocated?.total ?? 0) > 0) {
+              console.log(`⏭️ Plan credits already allocated for tenant ${existingSubscription.tenantId} — skipping (subscription.created)`);
+            } else {
+              // Order by entityLevel + createdAt so the onboarding org (first created) is picked
+              const orgEntities = await db
+                .select()
+                .from(entities)
+                .where(and(eq(entities.tenantId, existingSubscription.tenantId), eq(entities.entityType, 'organization'), eq(entities.isActive, true)))
+                .orderBy(entities.entityLevel, entities.createdAt);
+
+              const defaultEntity = orgEntities[0];
+              if (defaultEntity) {
+                await CreditService.addCreditsToEntity({
+                  tenantId: existingSubscription.tenantId,
+                  entityType: 'organization',
+                  entityId: defaultEntity.entityId,
+                  creditAmount: planCredits,
+                  source: 'subscription',
+                  sourceId: subscription.id,
+                  description: `${(plan as Record<string, unknown>).name} plan credits (${planCredits.toLocaleString()} annual credits)`,
+                  initiatedBy: 'system'
+                });
+                console.log(`✅ Allocated ${planCredits.toLocaleString()} plan credits for tenant ${existingSubscription.tenantId} via subscription.created`);
+              }
+            }
+          } finally {
+            // Always release the advisory lock, even if credit allocation fails.
+            await db.execute(sql`SELECT pg_advisory_unlock(hashtext(${existingSubscription.tenantId} || '_plan_credits'))`);
+          }
+        }
+      } catch (errCredit: unknown) {
+        console.error('❌ Failed to allocate plan credits on subscription.created:', (errCredit as Error).message);
+      }
     }
   } catch (err: unknown) {
     const error = err as Error;
@@ -1554,7 +2006,7 @@ export async function handleCreditPurchase(session: Record<string, unknown>): Pr
         await PaymentService.recordPayment({
           tenantId: tenantId!,
           stripePaymentIntentId: paymentIntentId,
-          stripeCustomerId: (session.customer != null ? String(session.customer) : undefined) as string | undefined,
+          // stripeCustomerId is NOT a column in the payments table — store in metadata instead
           amount: paymentAmount.toString(),
           currency: String(session.currency ?? 'USD').toUpperCase(),
           status: session.payment_status === 'paid' ? 'succeeded' : 'pending',
@@ -1567,6 +2019,7 @@ export async function handleCreditPurchase(session: Record<string, unknown>): Pr
             entityId: entityId ?? tenantId!,
             purchaseId: (purchaseResult as Record<string, unknown>)?.purchaseId,
             provider: gateway.providerName,
+            stripeCustomerId: session.customer != null ? String(session.customer) : undefined,
             ...(typeof session.metadata === 'object' && session.metadata !== null ? (session.metadata as Record<string, unknown>) : {})
           },
           paidAt: (session.payment_status === 'paid' ? new Date() : undefined) as Date | undefined
@@ -1602,6 +2055,20 @@ export async function handleCreditPurchase(session: Record<string, unknown>): Pr
 // Handle subscription deleted webhook
 export async function handleSubscriptionDeleted(subscription: Record<string, unknown> & { id: string }): Promise<void> {
   try {
+    // 1. Find the tenant and subscription details before updating
+    const [existing] = await db
+      .select({
+        tenantId: subscriptions.tenantId,
+        plan: subscriptions.plan,
+        currentPeriodStart: subscriptions.currentPeriodStart,
+        currentPeriodEnd: subscriptions.currentPeriodEnd,
+        cancelAt: subscriptions.cancelAt,
+      })
+      .from(subscriptions)
+      .where(eq(subscriptions.stripeSubscriptionId, subscription.id))
+      .limit(1);
+
+    // 2. Mark subscription as canceled
     await db
       .update(subscriptions)
       .set({
@@ -1611,10 +2078,95 @@ export async function handleSubscriptionDeleted(subscription: Record<string, unk
       })
       .where(eq(subscriptions.stripeSubscriptionId, subscription.id));
 
+    // 3. Expire all credit batches for this tenant
+    let expiredCredits = { expiredCount: 0, totalBatches: 0 };
+    if (existing?.tenantId) {
+      try {
+        const { CreditExpiryService } = await import('../../credits/services/credit-expiry-service.js');
+        expiredCredits = await CreditExpiryService.expireAllActiveBatches(existing.tenantId);
+        console.log(`🗑️ Expired ${expiredCredits.expiredCount}/${expiredCredits.totalBatches} credit batches for canceled subscription`);
+      } catch (expiryErr: unknown) {
+        console.error('❌ Failed to expire credits on subscription deletion:', (expiryErr as Error).message);
+      }
+
+      // 4. Notify downstream apps with full context
+      try {
+        const { snsSqsPublisher } = await import('../../messaging/utils/sns-sqs-publisher.js');
+        const targetApps = (process.env.BUSINESS_SUITE_TARGET_APPS || 'crm,accounting,ops').split(',').map(a => a.trim());
+        for (const app of targetApps) {
+          await snsSqsPublisher.publishInterAppEvent({
+            eventType: 'subscription.canceled',
+            sourceApplication: 'wrapper',
+            targetApplication: app,
+            tenantId: existing.tenantId,
+            entityId: existing.tenantId,
+            eventData: {
+              tenantId: existing.tenantId,
+              stripeSubscriptionId: subscription.id,
+              plan: existing.plan,
+              canceledAt: new Date().toISOString(),
+              wasScheduled: !!existing.cancelAt,
+              periodStart: existing.currentPeriodStart ? new Date(existing.currentPeriodStart).toISOString() : null,
+              periodEnd: existing.currentPeriodEnd ? new Date(existing.currentPeriodEnd).toISOString() : null,
+              creditBatchesExpired: expiredCredits.expiredCount,
+              totalCreditBatches: expiredCredits.totalBatches,
+              action: 'expire_all_credits',
+            },
+            publishedBy: 'system',
+          });
+        }
+        console.log(`✅ Published subscription.canceled to ${targetApps.length} downstream apps`);
+      } catch (pubErr: unknown) {
+        console.error('❌ Failed to publish subscription.canceled:', (pubErr as Error).message);
+      }
+
+      // 5. Send subscription expired email to tenant admin
+      try {
+        const paymentsModule = await import('../routes/payments.js');
+        const getTenantAdminEmail = paymentsModule.getTenantAdminEmail || (async () => null);
+        const userInfo = await getTenantAdminEmail(existing.tenantId);
+        if (userInfo?.email) {
+          const { EmailService } = await import('../../../utils/email.js');
+          const emailService = new EmailService();
+          const planName = (existing.plan || 'N/A').charAt(0).toUpperCase() + (existing.plan || 'N/A').slice(1);
+          const billingUrl = `${process.env.FRONTEND_URL || 'https://app.wrapper.app'}/dashboard/billing`;
+          await emailService.sendEmail({
+            to: [{ email: userInfo.email, name: userInfo.name }],
+            subject: 'Your Subscription Has Expired',
+            htmlContent: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background-color: #f8fafc; border-radius: 12px;">
+                <h2 style="color: #1B2E5A; margin-bottom: 16px;">Your Subscription Has Expired</h2>
+                <p style="color: #475569; line-height: 1.6;">
+                  Your subscription has expired. Here are the details:
+                </p>
+                <div style="background: white; border-radius: 8px; padding: 16px; margin: 16px 0; border: 1px solid #e2e8f0;">
+                  <p style="margin: 4px 0;"><strong>Plan:</strong> ${planName}</p>
+                  <p style="margin: 4px 0;"><strong>Status:</strong> Expired</p>
+                </div>
+                <p style="color: #475569; line-height: 1.6;">
+                  Your data is safe and fully preserved. You still have read-only access to your account.
+                  To restore full access, please resubscribe from your billing page.
+                </p>
+                <div style="text-align: center; margin: 24px 0;">
+                  <a href="${billingUrl}" style="display: inline-block; background-color: #1B2E5A; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600;">
+                    Resubscribe Now
+                  </a>
+                </div>
+              </div>
+            `,
+          });
+          console.log(`📧 Sent subscription expired email to ${userInfo.email}`);
+        }
+      } catch (emailErr: unknown) {
+        console.error('❌ Failed to send subscription expired email:', (emailErr as Error).message);
+      }
+    }
+
     console.log('🗑️ Subscription deleted:', subscription.id);
   } catch (err: unknown) {
     const error = err as Error;
     console.error('Error handling subscription deleted:', error);
+    Sentry.captureException(error, { tags: { 'payment.handler': 'subscription.deleted' } });
     throw error;
   }
 }

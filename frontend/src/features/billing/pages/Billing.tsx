@@ -9,7 +9,7 @@ import {
   CreditPackagesIcon,
   PaymentHistoryIcon
 } from '@/components/common/billing/BillingIcons'
-import { Crown } from 'lucide-react'
+import { Crown, Timer } from 'lucide-react'
 import { useBilling } from '../hooks/useBilling'
 import {
   BillingAlerts,
@@ -17,6 +17,7 @@ import {
   CreditTopupsTab,
   ApplicationPlansTab,
   HistoryTab,
+  ExpiryBreakdownTab,
   CancelSubscriptionDialog,
   RefundDialog
 } from '../components'
@@ -35,9 +36,13 @@ function BillingContent() {
     setActiveTab,
     displaySubscription,
     displayBillingHistory,
-    displayCreditTopups,
+    creditPricing,
     applicationPlans,
     creditBalance,
+    creditAllocations,
+    creditAllocationsLoading,
+    entityBalances,
+    entityBalancesLoading,
     subscriptionLoading,
     billingHistoryLoading,
     upgradeMode,
@@ -88,7 +93,7 @@ function BillingContent() {
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 gap-1 bg-gray-100 p-1 min-h-12 h-auto sm:h-12 dark:bg-gray-800">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 gap-1 bg-gray-100 p-1 min-h-12 h-auto sm:h-12 dark:bg-gray-800">
           <TabsTrigger
             value="subscription"
             className="flex items-center justify-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:dark:bg-gray-700 transition-all text-xs sm:text-sm px-2"
@@ -121,6 +126,14 @@ function BillingContent() {
             <span className="hidden sm:inline">Purchase History</span>
             <span className="sm:hidden">History</span>
           </TabsTrigger>
+          <TabsTrigger
+            value="expiry"
+            className="flex items-center justify-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:dark:bg-gray-700 transition-all text-xs sm:text-sm px-2"
+          >
+            <Timer className="w-4 h-4 shrink-0" />
+            <span className="hidden sm:inline">Credit Expiry</span>
+            <span className="sm:hidden">Expiry</span>
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="subscription" className="space-y-8">
@@ -130,15 +143,17 @@ function BillingContent() {
             creditBalance={creditBalance}
             setActiveTab={setTab}
             planPriceCurrency={checkoutCurrency}
+            creditAllocations={creditAllocations}
+            creditAllocationsLoading={creditAllocationsLoading}
           />
         </TabsContent>
 
         <TabsContent value="topups" className="space-y-12">
           <CreditTopupsTab
-            creditTopups={displayCreditTopups}
+            creditPricing={creditPricing}
             onCreditPurchase={handleCreditPurchase}
             isUpgrading={isUpgrading}
-            selectedPlan={selectedPlan}
+            currentBalance={creditBalance?.availableCredits}
           />
         </TabsContent>
 
@@ -159,6 +174,15 @@ function BillingContent() {
             billingHistoryLoading={billingHistoryLoading}
             displaySubscription={displaySubscription}
             onOpenCancelDialog={() => setShowCancelDialog(true)}
+          />
+        </TabsContent>
+
+        <TabsContent value="expiry" className="space-y-6">
+          <ExpiryBreakdownTab
+            creditAllocations={creditAllocations}
+            creditBalance={creditBalance}
+            entityBalances={entityBalances}
+            isLoading={creditAllocationsLoading || entityBalancesLoading}
           />
         </TabsContent>
 

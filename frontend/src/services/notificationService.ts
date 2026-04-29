@@ -95,7 +95,7 @@ export class NotificationService {
    */
   static async markAllAsRead(): Promise<{ markedAsRead: number }> {
     try {
-      const response = await api.put('/notifications/read-status');
+      const response = await api.put('/notifications/mark-all-read');
 
       if (response.data.success) {
         return response.data.data;

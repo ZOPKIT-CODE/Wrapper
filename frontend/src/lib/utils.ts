@@ -21,10 +21,28 @@ export function formatDate(date: Date | string | null | undefined) {
   })
 }
 
-export function formatCurrency(amount: number) {
+/** Date and time for ledgers, receipts, and audit-style UI. */
+export function formatDateTime(date: Date | string | null | undefined) {
+  if (!date) return 'N/A'
+
+  const dateObj = typeof date === 'string' ? new Date(date) : date
+
+  if (isNaN(dateObj.getTime())) return 'Invalid date'
+
+  return dateObj.toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  })
+}
+
+export function formatCurrency(amount: number, currency: string = 'USD') {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: 'USD'
+    currency: currency.toUpperCase()
   }).format(amount)
 }
 

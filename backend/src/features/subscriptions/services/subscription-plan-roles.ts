@@ -45,13 +45,20 @@ export async function updateAdministratorRolesForPlan(tenantId: string, newPlanI
         try {
           let updatedPermissions: Record<string, unknown>, updatedRestrictions: Record<string, unknown>, updatedDescription: string;
 
-          if (role.roleName === 'Super Administrator' && role.isSystemRole) {
+          // System roles (Super Administrator, Organization Admin) get full plan permissions.
+          // Custom admin roles get enhanced permissions (additive).
+          const isSystemAdmin = role.isSystemRole && (
+            role.roleName === 'Super Administrator' ||
+            role.roleName === 'Organization Admin'
+          );
+
+          if (isSystemAdmin) {
             const newRoleConfig = createSuperAdminRoleConfig(newPlanId, tenantId, role.createdBy);
             updatedPermissions = newRoleConfig.permissions as Record<string, unknown>;
             updatedRestrictions = newRoleConfig.restrictions as Record<string, unknown>;
             updatedDescription = newRoleConfig.description as string;
 
-            console.log(`   🎯 Updating Super Administrator with full ${newPlanId} plan access`);
+            console.log(`   🎯 Updating ${role.roleName} with full ${newPlanId} plan access`);
           } else {
             updatedPermissions = await enhanceAdminPermissionsForPlan(role.permissions as Record<string, unknown>, newPlanId, planAccess as Record<string, unknown>);
             updatedRestrictions = await updateAdminRestrictionsForPlan(role.restrictions as Record<string, unknown>, newPlanId, planAccess as Record<string, unknown>);
@@ -114,15 +121,25 @@ export async function enhanceAdminPermissionsForPlan(
 
       const appModules = modules[appCode];
       if (appModules === '*') {
+        // All modules — replace the entire app's permissions with the new plan's
         enhancedPermissions[appCode] = (newPlanPermissions[appCode] as Record<string, unknown>) || {};
       } else if (Array.isArray(appModules)) {
         const appPerms = enhancedPermissions[appCode] as Record<string, unknown>;
         const newAppPerms = newPlanPermissions[appCode] as Record<string, unknown> | undefined;
         (appModules as string[]).forEach((moduleCode: string) => {
-          if (!appPerms[moduleCode] && newAppPerms?.[moduleCode]) {
+          // Always set/replace module permissions from the new plan — not just new modules.
+          // On upgrade, existing modules may gain new operations (e.g., Starter accounting.dashboard
+          // might have [view] but Enterprise has [view, customize, export]).
+          if (newAppPerms?.[moduleCode]) {
             appPerms[moduleCode] = newAppPerms[moduleCode];
           }
         });
+        // Remove modules that are no longer in the new plan (downgrade scenario)
+        for (const existingModule of Object.keys(appPerms)) {
+          if (!(appModules as string[]).includes(existingModule)) {
+            delete appPerms[existingModule];
+          }
+        }
       }
     });
 

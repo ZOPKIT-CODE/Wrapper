@@ -2211,7 +2211,7 @@ export const PLAN_ACCESS_MATRIX = {
     applications: ['crm', 'accounting'],
     modules: {
       crm: ['leads', 'contacts', 'dashboard'],
-      accounting: ['dashboard', 'general_ledger', 'chart_of_accounts', 'journal_entries', 'invoices', 'customers', 'payments', 'bills', 'vendors', 'reports']
+      accounting: ['dashboard', 'invoices', 'customers', 'bills', 'vendors', 'expense_reports', 'chart_of_accounts', 'reports']
     },
     permissions: {
       crm: {
@@ -2221,14 +2221,12 @@ export const PLAN_ACCESS_MATRIX = {
       },
       accounting: {
         dashboard: ['view'],
-        general_ledger: ['read', 'create', 'update'],
-        chart_of_accounts: ['read', 'create', 'update'],
-        journal_entries: ['read', 'create', 'update'],
         invoices: ['read', 'create', 'update', 'delete'],
         customers: ['read', 'create', 'update', 'delete'],
-        payments: ['read', 'create', 'update', 'delete'],
         bills: ['read', 'create', 'update', 'delete'],
         vendors: ['read', 'create', 'update', 'delete'],
+        expense_reports: ['read', 'create', 'update'],
+        chart_of_accounts: ['read', 'create', 'update'],
         reports: ['read', 'export']
       }
     },
@@ -2247,10 +2245,8 @@ export const PLAN_ACCESS_MATRIX = {
       hr: ['employees', 'leave', 'dashboard'],
       project_management: ['projects', 'tasks', 'team', 'dashboard'],
       accounting: [
-        'dashboard', 'general_ledger', 'chart_of_accounts', 'journal_entries',
-        'invoices', 'customers', 'credit_notes', 'sales_orders', 'estimates', 'recurring_invoices',
-        'bills', 'vendors', 'purchase_orders', 'expense_reports', 'vendor_credits',
-        'banking', 'tax', 'reports', 'analytics', 'workflows', 'documents',
+        'dashboard', 'invoices', 'customers', 'bills', 'vendors',
+        'expense_reports', 'chart_of_accounts', 'reports',
         'notifications', 'system'
       ]
     },
@@ -2274,29 +2270,16 @@ export const PLAN_ACCESS_MATRIX = {
         dashboard: ['view']
       },
       accounting: {
-        dashboard: ['view', 'customize'],
-        general_ledger: ['read', 'create', 'update', 'delete', 'post', 'export'],
-        chart_of_accounts: ['read', 'create', 'update', 'delete', 'export'],
-        journal_entries: ['read', 'create', 'update', 'delete', 'post', 'export'],
+        dashboard: ['view'],
         invoices: ['read', 'read_all', 'create', 'update', 'delete', 'send', 'export'],
-        customers: ['read', 'read_all', 'create', 'update', 'delete', 'export', 'import'],
-        credit_notes: ['read', 'create', 'update'],
-        sales_orders: ['read', 'create', 'update', 'delete'],
-        estimates: ['read', 'create', 'update', 'delete', 'send'],
-        recurring_invoices: ['read', 'read_all', 'create', 'update', 'delete', 'send'],
+        customers: ['read', 'read_all', 'create', 'update', 'delete', 'export'],
         bills: ['read', 'read_all', 'create', 'update', 'delete', 'pay', 'export'],
-        vendors: ['read', 'read_all', 'create', 'update', 'delete', 'export', 'import'],
-        purchase_orders: ['read', 'create', 'update', 'delete', 'approve'],
+        vendors: ['read', 'read_all', 'create', 'update', 'delete', 'export'],
         expense_reports: ['read', 'create', 'update', 'approve'],
-        vendor_credits: ['read', 'create', 'update'],
-        banking: ['read', 'create', 'update', 'reconcile', 'export'],
-        tax: ['read', 'create', 'update', 'configure'],
-        reports: ['read', 'create', 'export'],
-        analytics: ['read', 'export'],
-        workflows: ['read', 'approve'],
-        documents: ['read', 'create', 'update'],
+        chart_of_accounts: ['read', 'create', 'update', 'export'],
+        reports: ['read', 'export'],
         notifications: ['read', 'update'],
-        system: ['settings_read', 'users_read', 'roles_read', 'audit_read']
+        system: ['settings_read', 'users_read', 'roles_read']
       }
     },
     credits: {
@@ -2313,13 +2296,14 @@ export const PLAN_ACCESS_MATRIX = {
       hr: ['employees', 'payroll', 'leave', 'dashboard'],
       project_management: ['projects', 'tasks', 'sprints', 'time_tracking', 'team', 'backlog', 'documents', 'analytics', 'reports', 'chat', 'calendar', 'kanban', 'dashboard', 'notifications', 'workspace'],
       accounting: [
-        'dashboard', 'general_ledger', 'chart_of_accounts', 'journal_entries',
-        'invoices', 'customers', 'credit_notes', 'sales_orders', 'estimates', 'recurring_invoices',
-        'bills', 'vendors', 'purchase_orders', 'expense_reports', 'vendor_credits',
-        'banking', 'tax', 'reports', 'analytics', 'budgeting', 'cost_accounting',
-        'fixed_assets', 'payroll', 'projects', 'inventory',
-        'compliance', 'workflows', 'documents', 'integrations',
-        'notifications', 'system'
+        // Starter modules
+        'dashboard', 'invoices', 'customers', 'bills', 'vendors',
+        'expense_reports', 'chart_of_accounts', 'reports',
+        'notifications', 'system',
+        // Professional additions
+        'general_ledger', 'journal_entries', 'credit_notes',
+        'estimates', 'sales_orders', 'purchase_orders',
+        'banking', 'tax', 'vendor_credits', 'documents'
       ]
     },
     permissions: {
@@ -2361,35 +2345,26 @@ export const PLAN_ACCESS_MATRIX = {
         workspace: ['read', 'read_all', 'create', 'update', 'delete', 'manage_members', 'manage_roles', 'manage_settings', 'export', 'archive', 'restore']
       },
       accounting: {
+        // Starter modules (expanded permissions)
         dashboard: ['view', 'customize', 'export'],
-        general_ledger: ['read', 'create', 'update', 'delete', 'post', 'approve', 'close_period', 'export'],
-        chart_of_accounts: ['read', 'create', 'update', 'delete', 'import', 'export'],
-        journal_entries: ['read', 'create', 'update', 'delete', 'post', 'approve', 'reverse', 'export'],
         invoices: ['read', 'read_all', 'create', 'update', 'delete', 'send', 'post', 'export', 'import', 'generate_pdf'],
         customers: ['read', 'read_all', 'create', 'update', 'delete', 'export', 'import'],
-        credit_notes: ['read', 'create', 'update', 'delete', 'apply', 'export'],
-        sales_orders: ['read', 'read_all', 'create', 'update', 'delete', 'approve', 'convert', 'export'],
-        estimates: ['read', 'create', 'update', 'delete', 'send', 'convert', 'export', 'generate_pdf'],
-        recurring_invoices: ['read', 'read_all', 'create', 'update', 'delete', 'send', 'post', 'export'],
         bills: ['read', 'read_all', 'create', 'update', 'delete', 'pay', 'approve', 'export'],
         vendors: ['read', 'read_all', 'create', 'update', 'delete', 'export', 'import'],
-        purchase_orders: ['read', 'read_all', 'create', 'update', 'delete', 'approve', 'receive', 'export'],
         expense_reports: ['read', 'read_all', 'create', 'update', 'delete', 'approve', 'reimburse', 'export'],
-        vendor_credits: ['read', 'create', 'update', 'delete', 'apply', 'export'],
+        chart_of_accounts: ['read', 'create', 'update', 'delete', 'import', 'export'],
+        reports: ['read', 'read_all', 'create', 'export', 'schedule', 'generate_pdf'],
+        // Professional additions
+        general_ledger: ['read', 'create', 'update', 'delete', 'post', 'approve', 'close_period', 'export'],
+        journal_entries: ['read', 'create', 'update', 'delete', 'post', 'approve', 'reverse', 'export'],
+        credit_notes: ['read', 'create', 'update', 'delete', 'apply', 'export'],
+        estimates: ['read', 'create', 'update', 'delete', 'send', 'convert', 'export', 'generate_pdf'],
+        sales_orders: ['read', 'read_all', 'create', 'update', 'delete', 'approve', 'convert', 'export'],
+        purchase_orders: ['read', 'read_all', 'create', 'update', 'delete', 'approve', 'receive', 'export'],
         banking: ['read', 'read_all', 'create', 'update', 'delete', 'reconcile', 'import_feeds', 'transfer', 'export'],
         tax: ['read', 'create', 'update', 'delete', 'configure', 'file_returns', 'reconcile', 'export'],
-        reports: ['read', 'read_all', 'create', 'export', 'schedule', 'generate_pdf'],
-        analytics: ['read', 'read_all', 'create', 'export', 'schedule', 'customize_dashboards'],
-        budgeting: ['read', 'read_all', 'create', 'update', 'delete', 'approve', 'forecast', 'export'],
-        cost_accounting: ['read', 'read_all', 'create', 'update', 'delete', 'allocate', 'export'],
-        fixed_assets: ['read', 'read_all', 'create', 'update', 'delete', 'depreciate', 'dispose', 'transfer', 'export'],
-        payroll: ['read', 'read_all', 'create', 'update', 'run', 'approve', 'view_salary', 'export'],
-        projects: ['read', 'read_all', 'create', 'update', 'delete', 'track_time', 'bill', 'allocate_resources', 'export'],
-        inventory: ['read', 'read_all', 'create', 'update', 'delete', 'adjust', 'movement', 'count', 'export', 'import'],
-        compliance: ['read', 'read_all', 'create', 'update', 'manage_controls', 'audit_trail', 'export'],
-        workflows: ['read', 'read_all', 'create', 'update', 'delete', 'approve', 'manage_templates', 'export'],
+        vendor_credits: ['read', 'create', 'update', 'delete', 'apply', 'export'],
         documents: ['read', 'read_all', 'create', 'update', 'delete', 'download', 'export'],
-        integrations: ['read', 'create', 'update', 'delete', 'manage_api_keys', 'manage_webhooks', 'sync'],
         notifications: ['read', 'update', 'manage_preferences'],
         system: [
           'settings_read', 'settings_update',

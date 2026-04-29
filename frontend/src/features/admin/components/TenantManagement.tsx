@@ -309,26 +309,26 @@ export const TenantManagement: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Filters */}
-      <Card>
+      <Card className="border-0 bg-gradient-to-br from-[#11254d] via-[#1B2E5A] to-[#0f1f40] text-white shadow-xl">
         <CardHeader>
           <CardTitle>Tenant Management</CardTitle>
-          <CardDescription>Manage all tenants and their configurations</CardDescription>
+          <CardDescription className="text-blue-100/80">Manage all tenants and their configurations</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex gap-4 mb-6">
             <div className="flex-1">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-200/70 h-4 w-4" />
                 <Input
                   placeholder="Search tenants..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-blue-100/60"
                 />
               </div>
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-48">
+              <SelectTrigger className="w-48 bg-white/10 border-white/20 text-white">
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent>
@@ -345,19 +345,19 @@ export const TenantManagement: React.FC = () => {
           <div className="grid gap-4 md:grid-cols-4 mb-6">
             <div className="text-center">
               <div className="text-2xl font-bold">{pagination.total}</div>
-              <div className="text-sm text-muted-foreground">Total Tenants</div>
+              <div className="text-sm text-blue-100/80">Total Tenants</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-green-600">
                 {tenants.filter(t => t.isActive).length}
               </div>
-              <div className="text-sm text-muted-foreground">Active</div>
+              <div className="text-sm text-blue-100/80">Active</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-blue-600">
                 {tenants.filter(t => t.trialEndsAt && new Date(t.trialEndsAt) > new Date()).length}
               </div>
-              <div className="text-sm text-muted-foreground">On Trial</div>
+              <div className="text-sm text-blue-100/80">On Trial</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-purple-600">
@@ -366,14 +366,14 @@ export const TenantManagement: React.FC = () => {
                   return sum + credits;
                 }, 0).toFixed(2)}
               </div>
-              <div className="text-sm text-muted-foreground">Total Credits</div>
+              <div className="text-sm text-blue-100/80">Total Credits</div>
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Tenants Table */}
-      <Card>
+      <Card className="border-[#1B2E5A]/20 shadow-md">
         <CardContent className="p-0">
           {loading ? (
             <div className="flex items-center justify-center p-8">

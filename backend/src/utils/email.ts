@@ -35,11 +35,13 @@ interface SendEmailParams {
 }
 
 // Shared CSS injected into every template's <style> block
+// NOTE: Email-safe CSS — no gradients, no position:absolute, no filter, no ::before pseudo-elements.
+// Gmail and most email clients strip these properties, causing broken layouts.
 const SHARED_CSS = `
     * { margin:0; padding:0; box-sizing:border-box; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
-      background: #EFF6FF;
+      background-color: #EFF6FF;
       padding: 40px 16px;
       color: #0D1B3E;
     }
@@ -48,11 +50,10 @@ const SHARED_CSS = `
       margin: 0 auto;
       border-radius: 16px;
       overflow: hidden;
-      box-shadow: 0 20px 60px rgba(13,27,62,0.18);
     }
     /* Brand bar */
     .brand-bar {
-      background: linear-gradient(135deg, #0D1B3E 0%, #1B2E5A 100%);
+      background-color: #0D1B3E;
       padding: 22px 36px;
       display: table;
       width: 100%;
@@ -62,7 +63,6 @@ const SHARED_CSS = `
       height: 30px;
       width: auto;
       vertical-align: middle;
-      filter: brightness(0) invert(1);
     }
     .brand-badge {
       display: table-cell;
@@ -73,7 +73,7 @@ const SHARED_CSS = `
       letter-spacing: 1px;
       text-transform: uppercase;
       color: #93C5FD;
-      background: rgba(255,255,255,0.10);
+      background-color: rgba(255,255,255,0.10);
       border: 1px solid rgba(255,255,255,0.15);
       border-radius: 20px;
       padding: 4px 12px;
@@ -81,21 +81,9 @@ const SHARED_CSS = `
     }
     /* Hero */
     .hero {
-      background: linear-gradient(160deg, #0D1B3E 0%, #1B2E5A 55%, #1e3a6e 100%);
+      background-color: #0D1B3E;
       padding: 52px 40px 48px;
       text-align: center;
-      position: relative;
-      overflow: hidden;
-    }
-    .hero-circle-1 {
-      position: absolute; top:-60px; right:-60px;
-      width:240px; height:240px; border-radius:50%;
-      background: radial-gradient(circle, rgba(96,165,250,0.12), transparent);
-    }
-    .hero-circle-2 {
-      position: absolute; bottom:-40px; left:-40px;
-      width:180px; height:180px; border-radius:50%;
-      background: radial-gradient(circle, rgba(147,197,253,0.10), transparent);
     }
     .hero-icon {
       font-size: 44px;
@@ -116,7 +104,7 @@ const SHARED_CSS = `
     }
     /* Body card */
     .body-card {
-      background: #ffffff;
+      background-color: #ffffff;
       padding: 40px 40px 36px;
     }
     /* Section labels */
@@ -136,7 +124,7 @@ const SHARED_CSS = `
     .info-value { font-size:14px; color:#0D1B3E; font-weight:600; }
     /* Highlight box */
     .highlight-box {
-      background: #F8FAFF;
+      background-color: #F8FAFF;
       border: 1px solid #DBEAFE;
       border-radius: 10px;
       padding: 20px 24px;
@@ -154,14 +142,13 @@ const SHARED_CSS = `
     .cta a {
       display: inline-block;
       padding: 16px 48px;
-      background: linear-gradient(135deg, #0D1B3E 0%, #2563EB 100%);
+      background-color: #2563EB;
       color: #ffffff !important;
       text-decoration: none;
       border-radius: 10px;
       font-weight: 700;
       font-size: 15px;
       letter-spacing: 0.2px;
-      box-shadow: 0 8px 24px rgba(37,99,235,0.35);
     }
     .cta-note { margin-top:10px; font-size:12px; color:#94A3B8; text-align:center; }
     /* Alert strip */
@@ -172,25 +159,19 @@ const SHARED_CSS = `
       font-size: 14px;
       font-weight: 500;
     }
-    .alert-warning { background:#FFF7ED; border-left:4px solid #F97316; color:#C2410C; }
-    .alert-danger  { background:#FFF1F2; border-left:4px solid #F43F5E; color:#BE123C; }
-    .alert-success { background:#F0FDF4; border-left:4px solid #22C55E; color:#15803D; }
-    .alert-info    { background:#F0F7FF; border-left:4px solid #2563EB; color:#1B2E5A; }
+    .alert-warning { background-color:#FFF7ED; border-left:4px solid #F97316; color:#C2410C; }
+    .alert-danger  { background-color:#FFF1F2; border-left:4px solid #F43F5E; color:#BE123C; }
+    .alert-success { background-color:#F0FDF4; border-left:4px solid #22C55E; color:#15803D; }
+    .alert-info    { background-color:#F0F7FF; border-left:4px solid #2563EB; color:#1B2E5A; }
     /* Checklist */
     .checklist { list-style:none; margin:16px 0; padding:0; }
     .checklist li {
-      padding: 9px 0 9px 28px;
-      position: relative;
+      padding: 9px 0 9px 0;
       font-size: 14px;
       color: #475569;
       border-bottom: 1px solid #EFF6FF;
     }
     .checklist li:last-child { border-bottom:none; }
-    .checklist li::before {
-      content: "→";
-      position: absolute; left:0;
-      color: #2563EB; font-weight:700;
-    }
     /* Body text */
     .body-card p {
       font-size: 15px;
@@ -201,12 +182,12 @@ const SHARED_CSS = `
     .body-card p strong { color:#0D1B3E; }
     /* Footer */
     .footer {
-      background: linear-gradient(135deg, #0D1B3E 0%, #1B2E5A 100%);
+      background-color: #0D1B3E;
       padding: 28px 36px;
       text-align: center;
     }
-    .footer-logo { height:24px; width:auto; filter:brightness(0) invert(1); opacity:0.7; margin-bottom:14px; }
-    .footer-divider { width:36px; height:2px; background:rgba(255,255,255,0.15); margin:12px auto; border-radius:2px; }
+    .footer-logo { height:24px; width:auto; opacity:0.7; margin-bottom:14px; }
+    .footer-divider { width:36px; height:2px; background-color:rgba(255,255,255,0.15); margin:12px auto; border-radius:2px; }
     .footer p { font-size:13px; color:#93C5FD; line-height:1.8; margin:0; }
     .footer strong { color:#ffffff; }
     .footer-copy { font-size:12px; color:rgba(147,197,253,0.7) !important; margin-top:6px !important; }
@@ -299,22 +280,20 @@ class EmailService {
 <body>
   <div class="wrapper">
     <!-- ① BRAND BAR -->
-    <div class="brand-bar">
-      <img src="${LOGO_URL}" alt="Zopkit" class="brand-logo" style="height:30px;width:auto;filter:brightness(0) invert(1);">
-      <span class="brand-badge">Welcome</span>
+    <div class="brand-bar" style="background-color:#0D1B3E;padding:22px 36px;">
+      <img src="${LOGO_URL}" alt="Zopkit" class="brand-logo" style="height:30px;width:auto;">
+      <span class="brand-badge" style="color:#93C5FD;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">Welcome</span>
     </div>
 
     <!-- ② HERO -->
-    <div class="hero">
-      <div class="hero-circle-1"></div>
-      <div class="hero-circle-2"></div>
-      <div class="hero-icon">🎉</div>
+    <div class="hero" style="background-color:#0D1B3E;padding:52px 40px 48px;text-align:center;">
+      <div class="hero-icon" style="font-size:44px;margin-bottom:20px;">🎉</div>
       <h1>Welcome to Zopkit!</h1>
-      <p class="hero-sub">Your workspace is live and ready</p>
+      <p class="hero-sub" style="font-size:15px;color:#93C5FD;font-weight:500;margin:0;">Your workspace is live and ready</p>
     </div>
 
     <!-- ③ BODY -->
-    <div class="body-card">
+    <div class="body-card" style="background-color:#ffffff;padding:40px 40px 36px;">
       <p>Hi <strong>${name}</strong>, your account for <strong>${companyName}</strong> has been created and is ready to use.</p>
 
       <table class="info-table">
@@ -339,8 +318,8 @@ class EmailService {
         </div>
       </div>
 
-      <div class="cta">
-        <a href="${loginUrl}">Go to Your Dashboard</a>
+      <div class="cta" style="text-align:center;margin:32px 0 24px;">
+        <a style="display:inline-block;padding:16px 48px;background-color:#2563EB;color:#ffffff;text-decoration:none;border-radius:10px;font-weight:700;font-size:15px;" href="${loginUrl}">Go to Your Dashboard</a>
         <div class="cta-note">🔒 Secure SSO login · No password required</div>
       </div>
 
@@ -353,8 +332,8 @@ class EmailService {
     </div>
 
     <!-- ④ FOOTER -->
-    <div class="footer">
-      <img src="${LOGO_URL}" alt="Zopkit" class="footer-logo">
+    <div class="footer" style="background-color:#0D1B3E;padding:28px 36px;text-align:center;">
+      <img src="${LOGO_URL}" alt="Zopkit" class="footer-logo" style="height:24px;width:auto;opacity:0.7;margin-bottom:14px;">
       <div class="footer-divider"></div>
       <p>Questions? We're here to help — reply to this email.</p>
       <p class="footer-copy">Powered by <strong>Zopkit</strong> — Your AI-first business operating system</p>
@@ -418,7 +397,7 @@ class EmailService {
           }
           /* ── Top brand bar ── */
           .brand-bar {
-            background: linear-gradient(135deg, #0D1B3E 0%, #1B2E5A 100%);
+            background-color: #0D1B3E;
             border-radius: 16px 16px 0 0;
             padding: 28px 40px;
             display: table;
@@ -435,7 +414,6 @@ class EmailService {
             height: 36px;
             width: auto;
             display: block;
-            filter: brightness(0) invert(1);
           }
           .brand-badge-cell {
             display: table-cell;
@@ -444,7 +422,7 @@ class EmailService {
           }
           .brand-badge {
             display: inline-block;
-            background: rgba(255,255,255,0.12);
+            background-color: rgba(255,255,255,0.12);
             color: #93C5FD;
             font-size: 11px;
             font-weight: 700;
@@ -456,32 +434,16 @@ class EmailService {
           }
           /* ── Hero section ── */
           .hero {
-            background: linear-gradient(160deg, #0D1B3E 0%, #1B2E5A 50%, #1e3a6e 100%);
+            background-color: #0D1B3E;
             padding: 52px 40px 48px;
             text-align: center;
-            position: relative;
-            overflow: hidden;
-          }
-          .hero-circle-1 {
-            position: absolute;
-            top: -60px; right: -60px;
-            width: 240px; height: 240px;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(96,165,250,0.12), transparent);
-          }
-          .hero-circle-2 {
-            position: absolute;
-            bottom: -40px; left: -40px;
-            width: 180px; height: 180px;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(147,197,253,0.10), transparent);
           }
           .hero-icon {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
+            display: inline-block;
             width: 68px; height: 68px;
-            background: rgba(255,255,255,0.10);
+            line-height: 68px;
+            text-align: center;
+            background-color: rgba(255,255,255,0.10);
             border: 2px solid rgba(255,255,255,0.15);
             border-radius: 20px;
             margin-bottom: 24px;
@@ -506,10 +468,8 @@ class EmailService {
           }
           /* ── Inviter chip ── */
           .inviter-chip {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: #EFF6FF;
+            display: inline-block;
+            background-color: #EFF6FF;
             border: 1px solid #BFDBFE;
             border-radius: 24px;
             padding: 6px 14px 6px 8px;
@@ -517,11 +477,11 @@ class EmailService {
           }
           .inviter-avatar {
             width: 28px; height: 28px;
-            background: linear-gradient(135deg, #0D1B3E, #2563EB);
+            background-color: #0D1B3E;
             border-radius: 50%;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
+            display: inline-block;
+            text-align: center;
+            line-height: 28px;
             color: white;
             font-size: 12px;
             font-weight: 700;
@@ -578,17 +538,16 @@ class EmailService {
           }
           .role-badge {
             display: inline-block;
-            background: linear-gradient(135deg, #0D1B3E, #2563EB);
+            background-color: #0D1B3E;
             color: #ffffff;
             padding: 6px 14px;
             border-radius: 16px;
             font-size: 13px;
             font-weight: 700;
-            display: inline-block;
             letter-spacing: 0.3px;
           }
           .organization-list {
-            background: linear-gradient(135deg, #fafbfc 0%, #f4f6f8 100%);
+            background-color: #fafbfc;
             border: 2px solid #e5e7eb;
             font-size: 11px;
             font-weight: 700;
@@ -681,14 +640,13 @@ class EmailService {
           .cta-button {
             display: inline-block;
             padding: 16px 48px;
-            background: linear-gradient(135deg, #0D1B3E 0%, #2563EB 100%);
+            background-color: #2563EB;
             color: #ffffff !important;
             text-decoration: none;
             border-radius: 10px;
             font-weight: 700;
             font-size: 15px;
             letter-spacing: 0.2px;
-            box-shadow: 0 8px 24px rgba(37, 99, 235, 0.35);
           }
           .cta-note {
             margin-top: 12px;
@@ -711,14 +669,14 @@ class EmailService {
             vertical-align: top;
           }
           .feature-icon-wrap {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
+            display: inline-block;
             width: 40px; height: 40px;
-            background: linear-gradient(135deg, #0D1B3E, #2563EB);
+            background-color: #0D1B3E;
             border-radius: 10px;
             margin-bottom: 8px;
             font-size: 18px;
+            text-align: center;
+            line-height: 40px;
           }
           .feature-label {
             font-size: 12px;
@@ -728,7 +686,7 @@ class EmailService {
           }
           /* ── Footer ── */
           .footer {
-            background: linear-gradient(135deg, #0D1B3E 0%, #1B2E5A 100%);
+            background-color: #0D1B3E;
             border-radius: 0 0 16px 16px;
             padding: 28px 40px;
             text-align: center;
@@ -762,7 +720,7 @@ class EmailService {
         <div class="container">
 
           <!-- Brand bar -->
-          <div class="brand-bar">
+          <div class="brand-bar" style="background-color:#0D1B3E;padding:28px 40px;border-radius:16px 16px 0 0;">
             <div class="brand-bar-inner">
               <div class="brand-logo-cell">
                 <img src="${LOGO_URL}" alt="Zopkit" style="height:32px;width:auto;display:block;">
@@ -774,10 +732,8 @@ class EmailService {
           </div>
 
           <!-- Hero -->
-          <div class="hero">
-            <div class="hero-circle-1"></div>
-            <div class="hero-circle-2"></div>
-            <div class="hero-icon">&#128100;</div>
+          <div class="hero" style="background-color:#0D1B3E;padding:52px 40px 48px;text-align:center;">
+            <div class="hero-icon" style="font-size:44px;margin-bottom:20px;">&#128100;</div>
             <h1>You're Invited!</h1>
             <p>Join <strong style="color:#ffffff;">${tenantName}</strong> on Zopkit</p>
           </div>
@@ -865,7 +821,7 @@ class EmailService {
 
             <!-- CTA -->
             <div class="cta-section">
-              <a href="${acceptUrl}" class="cta-button">Accept Invitation &amp; Join Team</a>
+              <a href="${acceptUrl}" class="cta-button" style="display:inline-block;padding:16px 48px;background-color:#2563EB;color:#ffffff;text-decoration:none;border-radius:10px;font-weight:700;font-size:15px;">Accept Invitation &amp; Join Team</a>
               <div class="cta-note">&#128274; Secure sign-in &bull; No password required &bull; Takes less than 60 seconds</div>
             </div>
 
@@ -892,8 +848,8 @@ class EmailService {
           </div><!-- /card-body -->
 
           <!-- Footer -->
-          <div class="footer">
-            <p>Questions? Reach out to <strong>${invitedByName}</strong> or reply to this email.</p>
+          <div class="footer" style="background-color:#0D1B3E;padding:28px 40px;text-align:center;border-radius:0 0 16px 16px;">
+            <p style="color:#93C5FD;font-size:13px;line-height:1.8;margin:0;">Questions? Reach out to <strong style="color:#ffffff;">${invitedByName}</strong> or reply to this email.</p>
             <div class="footer-divider"></div>
             <p>Powered by <strong>Zopkit</strong> &bull; Your AI-first business operating system</p>
           </div>
@@ -926,22 +882,20 @@ class EmailService {
 <body>
   <div class="wrapper">
     <!-- ① BRAND BAR -->
-    <div class="brand-bar">
-      <img src="${LOGO_URL}" alt="Zopkit" class="brand-logo" style="height:30px;width:auto;filter:brightness(0) invert(1);">
-      <span class="brand-badge">Usage Alert</span>
+    <div class="brand-bar" style="background-color:#0D1B3E;padding:22px 36px;">
+      <img src="${LOGO_URL}" alt="Zopkit" class="brand-logo" style="height:30px;width:auto;">
+      <span class="brand-badge" style="color:#93C5FD;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">Usage Alert</span>
     </div>
 
     <!-- ② HERO -->
-    <div class="hero">
-      <div class="hero-circle-1"></div>
-      <div class="hero-circle-2"></div>
-      <div class="hero-icon">⚠️</div>
+    <div class="hero" style="background-color:#0D1B3E;padding:52px 40px 48px;text-align:center;">
+      <div class="hero-icon" style="font-size:44px;margin-bottom:20px;">⚠️</div>
       <h1>Credit Usage Warning</h1>
-      <p class="hero-sub">Your ${metricType} usage has reached ${percentage}%</p>
+      <p class="hero-sub" style="font-size:15px;color:#93C5FD;font-weight:500;margin:0;">Your ${metricType} usage has reached ${percentage}%</p>
     </div>
 
     <!-- ③ BODY -->
-    <div class="body-card">
+    <div class="body-card" style="background-color:#ffffff;padding:40px 40px 36px;">
       <div class="alert-strip alert-warning">
         <strong>${tenantName}</strong> has used <strong>${percentage}%</strong> of its ${metricType} limit.
       </div>
@@ -974,8 +928,8 @@ class EmailService {
         <div class="hl-value">${percentage}%</div>
       </div>
 
-      <div class="cta">
-        <a href="${process.env.FRONTEND_URL}/dashboard/billing">Manage Plan &amp; Credits</a>
+      <div class="cta" style="text-align:center;margin:32px 0 24px;">
+        <a style="display:inline-block;padding:16px 48px;background-color:#2563EB;color:#ffffff;text-decoration:none;border-radius:10px;font-weight:700;font-size:15px;" href="${process.env.FRONTEND_URL}/dashboard/billing">Manage Plan &amp; Credits</a>
       </div>
 
       <ul class="checklist">
@@ -987,8 +941,8 @@ class EmailService {
     </div>
 
     <!-- ④ FOOTER -->
-    <div class="footer">
-      <img src="${LOGO_URL}" alt="Zopkit" class="footer-logo">
+    <div class="footer" style="background-color:#0D1B3E;padding:28px 36px;text-align:center;">
+      <img src="${LOGO_URL}" alt="Zopkit" class="footer-logo" style="height:24px;width:auto;opacity:0.7;margin-bottom:14px;">
       <div class="footer-divider"></div>
       <p>This alert was sent because usage exceeded a configured threshold.</p>
       <p class="footer-copy">Powered by <strong>Zopkit</strong> — Your AI-first business operating system</p>
@@ -1020,22 +974,20 @@ class EmailService {
 <body>
   <div class="wrapper">
     <!-- ① BRAND BAR -->
-    <div class="brand-bar">
-      <img src="${LOGO_URL}" alt="Zopkit" class="brand-logo" style="height:30px;width:auto;filter:brightness(0) invert(1);">
-      <span class="brand-badge">Plan Change</span>
+    <div class="brand-bar" style="background-color:#0D1B3E;padding:22px 36px;">
+      <img src="${LOGO_URL}" alt="Zopkit" class="brand-logo" style="height:30px;width:auto;">
+      <span class="brand-badge" style="color:#93C5FD;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">Plan Change</span>
     </div>
 
     <!-- ② HERO -->
-    <div class="hero">
-      <div class="hero-circle-1"></div>
-      <div class="hero-circle-2"></div>
-      <div class="hero-icon">📋</div>
+    <div class="hero" style="background-color:#0D1B3E;padding:52px 40px 48px;text-align:center;">
+      <div class="hero-icon" style="font-size:44px;margin-bottom:20px;">📋</div>
       <h1>Subscription Updated</h1>
-      <p class="hero-sub">Your plan change has been confirmed</p>
+      <p class="hero-sub" style="font-size:15px;color:#93C5FD;font-weight:500;margin:0;">Your plan change has been confirmed</p>
     </div>
 
     <!-- ③ BODY -->
-    <div class="body-card">
+    <div class="body-card" style="background-color:#ffffff;padding:40px 40px 36px;">
       <p>Your Zopkit subscription has been successfully changed.</p>
 
       <table class="info-table">
@@ -1059,8 +1011,8 @@ class EmailService {
       </div>
       ` : ''}
 
-      <div class="cta">
-        <a href="${process.env.FRONTEND_URL}/dashboard/billing">View Billing Details</a>
+      <div class="cta" style="text-align:center;margin:32px 0 24px;">
+        <a style="display:inline-block;padding:16px 48px;background-color:#2563EB;color:#ffffff;text-decoration:none;border-radius:10px;font-weight:700;font-size:15px;" href="${process.env.FRONTEND_URL}/dashboard/billing">View Billing Details</a>
       </div>
 
       <ul class="checklist">
@@ -1071,8 +1023,8 @@ class EmailService {
     </div>
 
     <!-- ④ FOOTER -->
-    <div class="footer">
-      <img src="${LOGO_URL}" alt="Zopkit" class="footer-logo">
+    <div class="footer" style="background-color:#0D1B3E;padding:28px 36px;text-align:center;">
+      <img src="${LOGO_URL}" alt="Zopkit" class="footer-logo" style="height:24px;width:auto;opacity:0.7;margin-bottom:14px;">
       <div class="footer-divider"></div>
       <p>Need help choosing the right plan? Contact our team.</p>
       <p class="footer-copy">Powered by <strong>Zopkit</strong> — Your AI-first business operating system</p>
@@ -1112,22 +1064,20 @@ class EmailService {
 <body>
   <div class="wrapper">
     <!-- ① BRAND BAR -->
-    <div class="brand-bar">
-      <img src="${LOGO_URL}" alt="Zopkit" class="brand-logo" style="height:30px;width:auto;filter:brightness(0) invert(1);">
-      <span class="brand-badge">Payment Alert</span>
+    <div class="brand-bar" style="background-color:#0D1B3E;padding:22px 36px;">
+      <img src="${LOGO_URL}" alt="Zopkit" class="brand-logo" style="height:30px;width:auto;">
+      <span class="brand-badge" style="color:#93C5FD;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">Payment Alert</span>
     </div>
 
     <!-- ② HERO -->
-    <div class="hero">
-      <div class="hero-circle-1"></div>
-      <div class="hero-circle-2"></div>
-      <div class="hero-icon">❌</div>
+    <div class="hero" style="background-color:#0D1B3E;padding:52px 40px 48px;text-align:center;">
+      <div class="hero-icon" style="font-size:44px;margin-bottom:20px;">❌</div>
       <h1>Payment Failed</h1>
-      <p class="hero-sub">Action required to maintain your subscription</p>
+      <p class="hero-sub" style="font-size:15px;color:#93C5FD;font-weight:500;margin:0;">Action required to maintain your subscription</p>
     </div>
 
     <!-- ③ BODY -->
-    <div class="body-card">
+    <div class="body-card" style="background-color:#ffffff;padding:40px 40px 36px;">
       <div class="alert-strip alert-danger">
         We were unable to process your payment. Please update your payment method to avoid service interruption.
       </div>
@@ -1147,8 +1097,8 @@ class EmailService {
         </tr>
       </table>
 
-      <div class="cta">
-        <a href="${process.env.FRONTEND_URL}/dashboard/billing">Update Payment Method</a>
+      <div class="cta" style="text-align:center;margin:32px 0 24px;">
+        <a style="display:inline-block;padding:16px 48px;background-color:#2563EB;color:#ffffff;text-decoration:none;border-radius:10px;font-weight:700;font-size:15px;" href="${process.env.FRONTEND_URL}/dashboard/billing">Update Payment Method</a>
       </div>
 
       <ul class="checklist">
@@ -1160,8 +1110,8 @@ class EmailService {
     </div>
 
     <!-- ④ FOOTER -->
-    <div class="footer">
-      <img src="${LOGO_URL}" alt="Zopkit" class="footer-logo">
+    <div class="footer" style="background-color:#0D1B3E;padding:28px 36px;text-align:center;">
+      <img src="${LOGO_URL}" alt="Zopkit" class="footer-logo" style="height:24px;width:auto;opacity:0.7;margin-bottom:14px;">
       <div class="footer-divider"></div>
       <p>Your service will be paused if payment is not resolved within 7 days.</p>
       <p class="footer-copy">Powered by <strong>Zopkit</strong> — Your AI-first business operating system</p>
@@ -1202,22 +1152,20 @@ class EmailService {
 <body>
   <div class="wrapper">
     <!-- ① BRAND BAR -->
-    <div class="brand-bar">
-      <img src="${LOGO_URL}" alt="Zopkit" class="brand-logo" style="height:30px;width:auto;filter:brightness(0) invert(1);">
-      <span class="brand-badge">Dispute Notice</span>
+    <div class="brand-bar" style="background-color:#0D1B3E;padding:22px 36px;">
+      <img src="${LOGO_URL}" alt="Zopkit" class="brand-logo" style="height:30px;width:auto;">
+      <span class="brand-badge" style="color:#93C5FD;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">Dispute Notice</span>
     </div>
 
     <!-- ② HERO -->
-    <div class="hero">
-      <div class="hero-circle-1"></div>
-      <div class="hero-circle-2"></div>
-      <div class="hero-icon">⚖️</div>
+    <div class="hero" style="background-color:#0D1B3E;padding:52px 40px 48px;text-align:center;">
+      <div class="hero-icon" style="font-size:44px;margin-bottom:20px;">⚖️</div>
       <h1>Payment Dispute Filed</h1>
-      <p class="hero-sub">A dispute has been raised on your account</p>
+      <p class="hero-sub" style="font-size:15px;color:#93C5FD;font-weight:500;margin:0;">A dispute has been raised on your account</p>
     </div>
 
     <!-- ③ BODY -->
-    <div class="body-card">
+    <div class="body-card" style="background-color:#ffffff;padding:40px 40px 36px;">
       <div class="alert-strip alert-warning">
         A payment dispute has been filed. Please review the details and provide evidence promptly.
       </div>
@@ -1241,8 +1189,8 @@ class EmailService {
         </tr>
       </table>
 
-      <div class="cta">
-        <a href="${process.env.FRONTEND_URL}/dashboard/billing">Respond to Dispute</a>
+      <div class="cta" style="text-align:center;margin:32px 0 24px;">
+        <a style="display:inline-block;padding:16px 48px;background-color:#2563EB;color:#ffffff;text-decoration:none;border-radius:10px;font-weight:700;font-size:15px;" href="${process.env.FRONTEND_URL}/dashboard/billing">Respond to Dispute</a>
       </div>
 
       <ul class="checklist">
@@ -1254,8 +1202,8 @@ class EmailService {
     </div>
 
     <!-- ④ FOOTER -->
-    <div class="footer">
-      <img src="${LOGO_URL}" alt="Zopkit" class="footer-logo">
+    <div class="footer" style="background-color:#0D1B3E;padding:28px 36px;text-align:center;">
+      <img src="${LOGO_URL}" alt="Zopkit" class="footer-logo" style="height:24px;width:auto;opacity:0.7;margin-bottom:14px;">
       <div class="footer-divider"></div>
       <p>Disputes must be responded to within the deadline to avoid automatic charge reversal.</p>
       <p class="footer-copy">Powered by <strong>Zopkit</strong> — Your AI-first business operating system</p>
@@ -1306,22 +1254,20 @@ class EmailService {
 <body>
   <div class="wrapper">
     <!-- ① BRAND BAR -->
-    <div class="brand-bar">
-      <img src="${LOGO_URL}" alt="Zopkit" class="brand-logo" style="height:30px;width:auto;filter:brightness(0) invert(1);">
-      <span class="brand-badge">Payment Confirmed</span>
+    <div class="brand-bar" style="background-color:#0D1B3E;padding:22px 36px;">
+      <img src="${LOGO_URL}" alt="Zopkit" class="brand-logo" style="height:30px;width:auto;">
+      <span class="brand-badge" style="color:#93C5FD;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">Payment Confirmed</span>
     </div>
 
     <!-- ② HERO -->
-    <div class="hero">
-      <div class="hero-circle-1"></div>
-      <div class="hero-circle-2"></div>
-      <div class="hero-icon">✅</div>
+    <div class="hero" style="background-color:#0D1B3E;padding:52px 40px 48px;text-align:center;">
+      <div class="hero-icon" style="font-size:44px;margin-bottom:20px;">✅</div>
       <h1>Payment Successful</h1>
-      <p class="hero-sub">Thank you for your payment</p>
+      <p class="hero-sub" style="font-size:15px;color:#93C5FD;font-weight:500;margin:0;">Thank you for your payment</p>
     </div>
 
     <!-- ③ BODY -->
-    <div class="body-card">
+    <div class="body-card" style="background-color:#ffffff;padding:40px 40px 36px;">
       <div class="alert-strip alert-success">
         Your payment has been processed successfully. A receipt has been sent to your email.
       </div>
@@ -1362,8 +1308,8 @@ class EmailService {
         </tr>
       </table>
 
-      <div class="cta">
-        <a href="${process.env.FRONTEND_URL}/dashboard">View Dashboard</a>
+      <div class="cta" style="text-align:center;margin:32px 0 24px;">
+        <a style="display:inline-block;padding:16px 48px;background-color:#2563EB;color:#ffffff;text-decoration:none;border-radius:10px;font-weight:700;font-size:15px;" href="${process.env.FRONTEND_URL}/dashboard">View Dashboard</a>
       </div>
 
       ${isSubscription ? `
@@ -1382,8 +1328,8 @@ class EmailService {
     </div>
 
     <!-- ④ FOOTER -->
-    <div class="footer">
-      <img src="${LOGO_URL}" alt="Zopkit" class="footer-logo">
+    <div class="footer" style="background-color:#0D1B3E;padding:28px 36px;text-align:center;">
+      <img src="${LOGO_URL}" alt="Zopkit" class="footer-logo" style="height:24px;width:auto;opacity:0.7;margin-bottom:14px;">
       <div class="footer-divider"></div>
       <p>Keep this email as your receipt. VAT/GST receipts available in billing settings.</p>
       <p class="footer-copy">Powered by <strong>Zopkit</strong> — Your AI-first business operating system</p>
@@ -1452,22 +1398,20 @@ This is an automated confirmation email. Please keep this for your records.
 <body>
   <div class="wrapper">
     <!-- ① BRAND BAR -->
-    <div class="brand-bar">
-      <img src="${LOGO_URL}" alt="Zopkit" class="brand-logo" style="height:30px;width:auto;filter:brightness(0) invert(1);">
-      <span class="brand-badge">Refund Processed</span>
+    <div class="brand-bar" style="background-color:#0D1B3E;padding:22px 36px;">
+      <img src="${LOGO_URL}" alt="Zopkit" class="brand-logo" style="height:30px;width:auto;">
+      <span class="brand-badge" style="color:#93C5FD;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">Refund Processed</span>
     </div>
 
     <!-- ② HERO -->
-    <div class="hero">
-      <div class="hero-circle-1"></div>
-      <div class="hero-circle-2"></div>
-      <div class="hero-icon">💸</div>
+    <div class="hero" style="background-color:#0D1B3E;padding:52px 40px 48px;text-align:center;">
+      <div class="hero-icon" style="font-size:44px;margin-bottom:20px;">💸</div>
       <h1>Refund Confirmed</h1>
-      <p class="hero-sub">Your refund has been processed</p>
+      <p class="hero-sub" style="font-size:15px;color:#93C5FD;font-weight:500;margin:0;">Your refund has been processed</p>
     </div>
 
     <!-- ③ BODY -->
-    <div class="body-card">
+    <div class="body-card" style="background-color:#ffffff;padding:40px 40px 36px;">
       <div class="alert-strip alert-success">
         Your refund has been successfully processed and is on its way.
       </div>
@@ -1498,14 +1442,14 @@ This is an automated confirmation email. Please keep this for your records.
 
       <p>Refunds typically take <strong>5–10 business days</strong> to appear in your account, depending on your bank.</p>
 
-      <div class="cta">
-        <a href="${process.env.FRONTEND_URL}/dashboard/billing">View Billing History</a>
+      <div class="cta" style="text-align:center;margin:32px 0 24px;">
+        <a style="display:inline-block;padding:16px 48px;background-color:#2563EB;color:#ffffff;text-decoration:none;border-radius:10px;font-weight:700;font-size:15px;" href="${process.env.FRONTEND_URL}/dashboard/billing">View Billing History</a>
       </div>
     </div>
 
     <!-- ④ FOOTER -->
-    <div class="footer">
-      <img src="${LOGO_URL}" alt="Zopkit" class="footer-logo">
+    <div class="footer" style="background-color:#0D1B3E;padding:28px 36px;text-align:center;">
+      <img src="${LOGO_URL}" alt="Zopkit" class="footer-logo" style="height:24px;width:auto;opacity:0.7;margin-bottom:14px;">
       <div class="footer-divider"></div>
       <p>If you don't see the refund within 10 business days, contact your bank or reach out to us.</p>
       <p class="footer-copy">Powered by <strong>Zopkit</strong> — Your AI-first business operating system</p>
@@ -1887,17 +1831,17 @@ This is an automated confirmation email. Please keep this for your records.
         <style>
           body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f8fafc; }
           .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; }
-          .header { background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%); color: white; padding: 40px 30px; text-align: center; }
+          .header { background-color: #dc2626; color: white; padding: 40px 30px; text-align: center; }
           .header h1 { margin: 0; font-size: 28px; font-weight: 700; }
           .header p { margin: 10px 0 0 0; font-size: 16px; opacity: 0.9; }
           .content { padding: 40px 30px; }
           .urgency-banner { background-color: #fef2f2; border-left: 4px solid #dc2626; padding: 20px; margin-bottom: 30px; border-radius: 4px; }
           .urgency-banner h2 { color: #dc2626; margin: 0 0 10px 0; font-size: 20px; }
-          .countdown { text-align: center; background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%); color: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
+          .countdown { text-align: center; background-color: #dc2626; color: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
           .countdown .time { font-size: 36px; font-weight: bold; }
           .countdown .label { font-size: 14px; opacity: 0.9; }
           .cta { text-align: center; margin: 30px 0; }
-          .cta-button { display: inline-block; background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3); }
+          .cta-button { display: inline-block; background-color: #dc2626; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; }
           .features { background-color: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0; }
           .features h3 { margin: 0 0 15px 0; color: #1f2937; }
           .features ul { margin: 0; padding-left: 20px; }
@@ -2000,13 +1944,13 @@ This is an automated confirmation email. Please keep this for your records.
         <style>
           body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f8fafc; }
           .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; }
-          .header { background: linear-gradient(135deg, #6b7280 0%, #9ca3af 100%); color: white; padding: 40px 30px; text-align: center; }
+          .header { background-color: #6b7280; color: white; padding: 40px 30px; text-align: center; }
           .header h1 { margin: 0; font-size: 28px; font-weight: 700; }
           .content { padding: 40px 30px; }
           .status-banner { background-color: #fef2f2; border-left: 4px solid #dc2626; padding: 20px; margin-bottom: 30px; border-radius: 4px; }
           .status-banner h2 { color: #dc2626; margin: 0 0 10px 0; font-size: 20px; }
           .cta { text-align: center; margin: 30px 0; }
-          .cta-button { display: inline-block; background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; }
+          .cta-button { display: inline-block; background-color: #2563eb; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; }
           .footer { background-color: #f8fafc; padding: 30px; text-align: center; color: #6b7280; font-size: 14px; }
         </style>
       </head>
@@ -2174,10 +2118,10 @@ This is an automated confirmation email. Please keep this for your records.
         <style>
           body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f8fafc; }
           .container { max-width: 700px; margin: 0 auto; background-color: #ffffff; }
-          .header { background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%); color: white; padding: 40px 30px; text-align: center; }
+          .header { background-color: #2563eb; color: white; padding: 40px 30px; text-align: center; }
           .header h1 { margin: 0; font-size: 28px; font-weight: 700; }
           .content { padding: 40px 30px; }
-          .metrics { display: flex; flex-wrap: wrap; gap: 20px; margin: 20px 0; }
+          .metrics { margin: 20px 0; }
           .metric-card { background-color: #f8fafc; padding: 20px; border-radius: 8px; flex: 1; min-width: 150px; text-align: center; border-left: 4px solid #2563eb; }
           .metric-value { font-size: 24px; font-weight: bold; color: #1f2937; margin-bottom: 5px; }
           .metric-label { font-size: 14px; color: #6b7280; }
@@ -2275,22 +2219,20 @@ This is an automated confirmation email. Please keep this for your records.
 <body>
   <div class="wrapper">
     <!-- ① BRAND BAR -->
-    <div class="brand-bar">
-      <img src="${LOGO_URL}" alt="Zopkit" class="brand-logo" style="height:30px;width:auto;filter:brightness(0) invert(1);">
-      <span class="brand-badge">Trial Reminder</span>
+    <div class="brand-bar" style="background-color:#0D1B3E;padding:22px 36px;">
+      <img src="${LOGO_URL}" alt="Zopkit" class="brand-logo" style="height:30px;width:auto;">
+      <span class="brand-badge" style="color:#93C5FD;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">Trial Reminder</span>
     </div>
 
     <!-- ② HERO -->
-    <div class="hero">
-      <div class="hero-circle-1"></div>
-      <div class="hero-circle-2"></div>
-      <div class="hero-icon">⏰</div>
+    <div class="hero" style="background-color:#0D1B3E;padding:52px 40px 48px;text-align:center;">
+      <div class="hero-icon" style="font-size:44px;margin-bottom:20px;">⏰</div>
       <h1>Your Trial is Ending Soon</h1>
-      <p class="hero-sub">Upgrade now to keep all your features</p>
+      <p class="hero-sub" style="font-size:15px;color:#93C5FD;font-weight:500;margin:0;">Upgrade now to keep all your features</p>
     </div>
 
     <!-- ③ BODY -->
-    <div class="body-card">
+    <div class="body-card" style="background-color:#ffffff;padding:40px 40px 36px;">
       <p>Your <strong>${planName}</strong> trial is ending on <strong>${new Date(expirationDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</strong>.</p>
 
       <div class="alert-strip alert-warning">
@@ -2312,8 +2254,8 @@ This is an automated confirmation email. Please keep this for your records.
         </tr>
       </table>
 
-      <div class="cta">
-        <a href="${process.env.FRONTEND_URL}/dashboard/billing">Upgrade Your Plan</a>
+      <div class="cta" style="text-align:center;margin:32px 0 24px;">
+        <a style="display:inline-block;padding:16px 48px;background-color:#2563EB;color:#ffffff;text-decoration:none;border-radius:10px;font-weight:700;font-size:15px;" href="${process.env.FRONTEND_URL}/dashboard/billing">Upgrade Your Plan</a>
       </div>
 
       <ul class="checklist">
@@ -2325,8 +2267,8 @@ This is an automated confirmation email. Please keep this for your records.
     </div>
 
     <!-- ④ FOOTER -->
-    <div class="footer">
-      <img src="${LOGO_URL}" alt="Zopkit" class="footer-logo">
+    <div class="footer" style="background-color:#0D1B3E;padding:28px 36px;text-align:center;">
+      <img src="${LOGO_URL}" alt="Zopkit" class="footer-logo" style="height:24px;width:auto;opacity:0.7;margin-bottom:14px;">
       <div class="footer-divider"></div>
       <p>Questions about pricing? Reply to this email or visit our pricing page.</p>
       <p class="footer-copy">Powered by <strong>Zopkit</strong> — Your AI-first business operating system</p>
@@ -2358,22 +2300,20 @@ This is an automated confirmation email. Please keep this for your records.
 <body>
   <div class="wrapper">
     <!-- ① BRAND BAR -->
-    <div class="brand-bar">
-      <img src="${LOGO_URL}" alt="Zopkit" class="brand-logo" style="height:30px;width:auto;filter:brightness(0) invert(1);">
-      <span class="brand-badge">Trial Ended</span>
+    <div class="brand-bar" style="background-color:#0D1B3E;padding:22px 36px;">
+      <img src="${LOGO_URL}" alt="Zopkit" class="brand-logo" style="height:30px;width:auto;">
+      <span class="brand-badge" style="color:#93C5FD;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">Trial Ended</span>
     </div>
 
     <!-- ② HERO -->
-    <div class="hero">
-      <div class="hero-circle-1"></div>
-      <div class="hero-circle-2"></div>
-      <div class="hero-icon">🔒</div>
+    <div class="hero" style="background-color:#0D1B3E;padding:52px 40px 48px;text-align:center;">
+      <div class="hero-icon" style="font-size:44px;margin-bottom:20px;">🔒</div>
       <h1>Your Trial Has Ended</h1>
-      <p class="hero-sub">Reactivate to regain full access</p>
+      <p class="hero-sub" style="font-size:15px;color:#93C5FD;font-weight:500;margin:0;">Reactivate to regain full access</p>
     </div>
 
     <!-- ③ BODY -->
-    <div class="body-card">
+    <div class="body-card" style="background-color:#ffffff;padding:40px 40px 36px;">
       <div class="alert-strip alert-danger">
         Your <strong>${planName}</strong> trial has expired. Your data is safe — simply upgrade to regain full access.
       </div>
@@ -2395,8 +2335,8 @@ This is an automated confirmation email. Please keep this for your records.
         </tr>
       </table>
 
-      <div class="cta">
-        <a href="${process.env.FRONTEND_URL}/dashboard/billing">Choose a Plan &amp; Reactivate</a>
+      <div class="cta" style="text-align:center;margin:32px 0 24px;">
+        <a style="display:inline-block;padding:16px 48px;background-color:#2563EB;color:#ffffff;text-decoration:none;border-radius:10px;font-weight:700;font-size:15px;" href="${process.env.FRONTEND_URL}/dashboard/billing">Choose a Plan &amp; Reactivate</a>
       </div>
 
       <ul class="checklist">
@@ -2408,8 +2348,8 @@ This is an automated confirmation email. Please keep this for your records.
     </div>
 
     <!-- ④ FOOTER -->
-    <div class="footer">
-      <img src="${LOGO_URL}" alt="Zopkit" class="footer-logo">
+    <div class="footer" style="background-color:#0D1B3E;padding:28px 36px;text-align:center;">
+      <img src="${LOGO_URL}" alt="Zopkit" class="footer-logo" style="height:24px;width:auto;opacity:0.7;margin-bottom:14px;">
       <div class="footer-divider"></div>
       <p>Your account will remain on free tier until you upgrade.</p>
       <p class="footer-copy">Powered by <strong>Zopkit</strong> — Your AI-first business operating system</p>
@@ -2449,9 +2389,9 @@ This is an automated confirmation email. Please keep this for your records.
         <style>
           body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
           .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-          .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }
-          .button { display: inline-block; padding: 15px 30px; background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%); color: white; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 20px 0; }
+          .header { background-color: #ff9800; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+          .content { background-color: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }
+          .button { display: inline-block; padding: 15px 30px; background-color: #2196f3; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 20px 0; }
           .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 5px; }
           .action-box { background: #e8f5e8; border-left: 4px solid #4caf50; padding: 15px; margin: 20px 0; border-radius: 5px; }
           .option-box { background: #f0f4f8; border: 1px solid #e2e8f0; padding: 20px; margin: 10px 0; border-radius: 8px; }

@@ -759,29 +759,29 @@ export const EntityManagement: React.FC = () => {
                   {entityAllocations ? (
                     <>
                       {/* Summary */}
-                      {entityAllocations.summary.totalAllocations > 0 && (
+                      {(entityAllocations.summary?.totalAllocations ?? 0) > 0 && (
                         <div className="grid gap-4 md:grid-cols-4 mb-6">
                           <div className="text-center">
                             <div className="text-2xl font-bold text-blue-600">
-                              {entityAllocations.summary.totalAllocations}
+                              {entityAllocations.summary?.totalAllocations ?? 0}
                             </div>
                             <div className="text-sm text-gray-600">Active Allocations</div>
                           </div>
                           <div className="text-center">
                             <div className="text-2xl font-bold text-purple-600">
-                              {(entityAllocations.summary.totalAllocatedCredits || 0).toFixed(2)}
+                              {(entityAllocations.summary?.totalAllocatedCredits || 0).toFixed(2)}
                             </div>
                             <div className="text-sm text-gray-600">Total Allocated</div>
                           </div>
                           <div className="text-center">
                             <div className="text-2xl font-bold text-red-600">
-                              {(entityAllocations.summary.totalUsedCredits || 0).toFixed(2)}
+                              {(entityAllocations.summary?.totalUsedCredits || 0).toFixed(2)}
                             </div>
                             <div className="text-sm text-gray-600">Total Used</div>
                           </div>
                           <div className="text-center">
                       <div className="text-2xl font-bold text-green-600">
-                        {(entityAllocations.summary.totalAvailableCredits || 0).toFixed(2)}
+                        {(entityAllocations.summary?.totalAvailableCredits || 0).toFixed(2)}
                       </div>
                             <div className="text-sm text-gray-600">Available</div>
                           </div>
@@ -789,11 +789,11 @@ export const EntityManagement: React.FC = () => {
                       )}
 
                       {/* By Application */}
-                      {entityAllocations.summary.allocationsByApplication.length > 0 ? (
+                      {(entityAllocations.summary?.allocationsByApplication?.length ?? 0) > 0 ? (
                         <div>
                           <h4 className="font-medium mb-3">By Application</h4>
                           <div className="grid gap-3">
-                            {entityAllocations.summary.allocationsByApplication.map((app) => (
+                            {(entityAllocations.summary?.allocationsByApplication ?? []).map((app) => (
                               <div key={app.application} className="flex items-center justify-between p-3 border rounded-lg">
                                 <div className="flex items-center gap-3">
                                   <div className="w-3 h-3 rounded-full bg-blue-500"></div>
@@ -827,11 +827,11 @@ export const EntityManagement: React.FC = () => {
                       )}
 
                       {/* Detailed Allocations */}
-                      {entityAllocations.allocations.length > 0 && (
+                      {(entityAllocations.allocations?.length ?? 0) > 0 && (
                         <div className="mt-6">
                           <h4 className="font-medium mb-3">Detailed Allocations</h4>
                           <div className="space-y-2">
-                            {entityAllocations.allocations.map((allocation) => (
+                            {(entityAllocations.allocations ?? []).map((allocation) => (
                               <div key={allocation.allocationId} className="flex items-center justify-between py-2 border-b last:border-b-0">
                                 <div className="flex items-center gap-3">
                                   <div className="w-2 h-2 rounded-full bg-green-500"></div>

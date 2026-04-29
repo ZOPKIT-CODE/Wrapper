@@ -55,6 +55,10 @@ export const Settings = React.lazy(() => import('@/features/settings/pages/Setti
 export const AdminDashboardPage = React.lazy(() => import('@/features/admin/pages/AdminDashboardPage'))
 export const TenantDetailsPage = React.lazy(() => import('@/features/admin/pages/TenantDetailsPage').then(m => ({ default: m.TenantDetailsPage })))
 export const CampaignDetailsPage = React.lazy(() => import('@/features/admin/pages/CampaignDetailsPage').then(m => ({ default: m.CampaignDetailsPage })))
+export const CreateCampaignPage = React.lazy(() => import('@/features/admin/pages/CreateCampaignPage'))
+
+// Dev
+export const EmailPreviewPage = React.lazy(() => import('@/features/admin/pages/EmailPreviewPage').then(m => ({ default: m.EmailPreviewPage })))
 
 // Misc
 export const NotFound = React.lazy(() => import('@/features/NotFound'))

@@ -1,26 +1,16 @@
 import React, { Suspense, useState, useEffect } from 'react'
+import { PetpoojaHeroSection } from '@/features/landing/components/PetpoojaHeroSection'
 import { useNavigate } from '@tanstack/react-router'
 import { useKindeAuth } from '@kinde-oss/kinde-auth-react'
-import { motion, AnimatePresence } from 'framer-motion'
 import { DynamicIcon } from '@/features/landing/components/Icons'
-import {
-  OrbitalEcosystem,
-  ORBIT_APPS,
-  DEPENDENCIES,
-  HUB_PRODUCT_LABELS,
-  WORKFLOW_ORBIT_APP_IDS,
-} from '@/features/landing/components/OrbitalEcosystem'
-import { ArrowRight, Play, ChevronRight, FileText, GraduationCap, Users, Zap, Mail, Phone, MapPin, LayoutDashboard, Rocket, Workflow } from 'lucide-react'
+import { ArrowRight, FileText, GraduationCap, Users, Zap, Mail, Phone, MapPin, LayoutDashboard, Rocket } from 'lucide-react'
 import api, { createCancelableRequest } from '@/lib/api'
-import { Product } from '@/types'
 import toast from 'react-hot-toast'
 import { consumeSessionRecoveryReason } from '@/lib/auth/session-recovery'
 
 const WorkflowVisualizer = React.lazy(() =>
   import('@/features/landing/components/WorkflowVisualizer').then(m => ({ default: m.WorkflowVisualizer }))
 )
-// VisualHub removed from hero for performance — available for other sections if needed
-import { products } from '@/data/content'
 import { getAllIndustries } from '@/data/industryPages'
 
 import { NavbarButton } from "@/components/ui/resizable-navbar"
@@ -31,7 +21,6 @@ const Landing: React.FC = () => {
   const navigate = useNavigate()
   const { login, isAuthenticated } = useKindeAuth()
   const [isLoading, setIsLoading] = useState(false)
-  const [activeProduct, setActiveProduct] = useState<Product>(products[0])
   const [onboardingCompleted, setOnboardingCompleted] = useState(false)
   const [backendAuthenticated, setBackendAuthenticated] = useState<boolean | null>(null)
   const [authChecked, setAuthChecked] = useState(false)
@@ -164,8 +153,25 @@ const Landing: React.FC = () => {
   return (
     <div className="min-h-screen bg-white text-slate-900 selection:bg-teal-100 selection:text-teal-900 font-sans overflow-x-clip lg:overflow-x-visible relative">
 
-      {/* Gradient top band — fades from slate-100 to transparent */}
-      <div className="absolute top-0 left-0 right-0 h-[500px] z-0 pointer-events-none bg-gradient-to-b from-slate-100/80 via-slate-50/40 to-transparent" />
+      {/* Hero background */}
+      <div className="absolute top-0 left-0 right-0 h-[720px] z-0 pointer-events-none overflow-hidden" aria-hidden="true">
+        {/* Base gradient */}
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, #FAFBFC 0%, #FFFFFF 100%)' }} />
+        {/* Single indigo radial wash */}
+        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 700px 350px at 50% 0%, rgba(99,102,241,0.05) 0%, transparent 70%)' }} />
+        {/* Dot pattern — low opacity, 32px, masked to fade out */}
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: 'radial-gradient(circle, rgba(15,23,42,0.025) 1px, transparent 1px)',
+            backgroundSize: '32px 32px',
+            WebkitMaskImage: 'linear-gradient(to bottom, black 0%, transparent 80%)',
+            maskImage: 'linear-gradient(to bottom, black 0%, transparent 80%)',
+          }}
+        />
+        {/* Hairline separator just below navbar */}
+        <div className="absolute left-0 right-0 h-px" style={{ top: '64px', background: 'linear-gradient(to right, transparent, rgba(148,163,184,0.6), transparent)' }} />
+      </div>
 
       <MarketingNavbar
         desktopRight={
@@ -182,9 +188,7 @@ const Landing: React.FC = () => {
         }
         mobileFooter={
           <NavbarButton
-            onClick={() => {
-              primaryCta.action();
-            }}
+            onClick={() => { primaryCta.action(); }}
             variant={hasAuthenticatedSession ? 'gradient' : 'primary'}
             className="w-full justify-center"
             as="button"
@@ -197,106 +201,12 @@ const Landing: React.FC = () => {
       />
 
       {/* Hero */}
-      <main className="relative pt-24 sm:pt-28 lg:pt-40 pb-16 sm:pb-20 lg:pb-28 max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 xl:gap-16 items-center">
-
-          {/* ── Left column (6 cols) ── */}
-          <div className="lg:col-span-6 flex flex-col order-1 lg:order-1 lg:pt-4">
-
-            {/* Headline block */}
-            <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-              {/* Mixed-weight headline — light intro, bold punchline */}
-              <h1 className="text-[#1B2E5A] tracking-[-0.03em] leading-[1.08]">
-                <span className="block text-base sm:text-lg lg:text-[1.75rem] font-normal text-slate-400">
-                  Your CRM, Finance, HR, Ops &amp; more —
-                </span>
-                <span className="block text-[1.75rem] sm:text-[2.5rem] lg:text-[3.5rem] xl:text-[4rem] font-extrabold mt-1">
-                  finally talking<br className="hidden sm:block" /> to each other.
-                </span>
-              </h1>
-
-              {/* Value prop — short, benefit-focused */}
-              <p className="text-slate-500 text-sm sm:text-base lg:text-[17px] leading-[1.65] max-w-[26rem] mt-4">
-                Zopkit replaces your disconnected stack with 11 integrated apps. One login, one source of truth, zero data entry duplication.
-              </p>
-            </motion.div>
-
-            {/* CTAs */}
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }} className="flex flex-col sm:flex-row items-stretch sm:items-start gap-3 mt-6">
-              <button
-                onClick={primaryCta.action}
-                disabled={primaryCta.disabled}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-lg bg-[#1B2E5A] hover:bg-[#243B6E] active:bg-[#152345] text-white font-semibold text-[15px] cursor-pointer transition-all duration-150 active:scale-[0.97] shadow-sm hover:shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {hasAuthenticatedSession && onboardingCompleted ? <LayoutDashboard className="w-4 h-4" /> : null}
-                {hasAuthenticatedSession && !onboardingCompleted ? <Rocket className="w-4 h-4" /> : null}
-                {primaryCta.label}
-                <ArrowRight className="w-4 h-4" />
-              </button>
-              <button type="button" className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-full text-slate-500 hover:text-[#1B2E5A] font-medium text-[15px] transition-colors active:scale-[0.97] cursor-pointer">
-                <Play className="w-4 h-4 fill-current" />
-                Watch demo
-              </button>
-            </motion.div>
-
-            {/* Product explorer — tighter, more visual */}
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4, delay: 0.2 }} className="mt-8">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={activeProduct.id}
-                  initial={{ opacity: 0, y: 4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -4 }}
-                  transition={{ duration: 0.15 }}
-                  className="group rounded-xl bg-slate-50 hover:bg-slate-100/80 transition-colors p-4 cursor-pointer"
-                  onClick={() => navigate({ to: `/products/${activeProduct.id}` })}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-[#1B2E5A] flex items-center justify-center shrink-0">
-                      <DynamicIcon name={activeProduct.iconName} className="w-[18px] h-[18px] text-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-[#1B2E5A] leading-tight">{activeProduct.name}</p>
-                      <p className="text-xs text-slate-500 mt-0.5 truncate">{activeProduct.tagline}</p>
-                    </div>
-                    <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-slate-600 group-hover:translate-x-0.5 transition-all shrink-0" />
-                  </div>
-                  {/* Connections inline */}
-                  {(() => {
-                    const deps = DEPENDENCIES.filter(([f, t]) =>
-                      ORBIT_APPS[f].id === activeProduct.id || ORBIT_APPS[t].id === activeProduct.id
-                    );
-                    const hubLabel = HUB_PRODUCT_LABELS[activeProduct.id];
-                    const names = [
-                      ...(hubLabel ? ['Zopkit'] : []),
-                      ...deps.map(([f, t]) => {
-                        const other = ORBIT_APPS[f].id === activeProduct.id ? ORBIT_APPS[t] : ORBIT_APPS[f];
-                        return other.label;
-                      }),
-                    ];
-                    if (names.length === 0) return null;
-                    return (
-                      <p className="text-[11px] text-slate-400 mt-2 ml-12">
-                        Connects to {names.join(', ')}
-                      </p>
-                    );
-                  })()}
-                </motion.div>
-              </AnimatePresence>
-            </motion.div>
-          </div>
-
-          {/* ── Right column: orbital (6 cols) + mobile strip — hero variant is larger & clearer ── */}
-          <OrbitalEcosystem
-            layout="grid"
-            variant="hero"
-            appIds={WORKFLOW_ORBIT_APP_IDS}
-            activeProduct={activeProduct}
-            onActiveProductChange={setActiveProduct}
-            motionClassName="lg:col-span-6 order-2 lg:order-2 w-full max-w-[640px] mx-auto lg:mx-0 lg:justify-self-end xl:pr-2"
-          />
-        </div>
-      </main>
+      <PetpoojaHeroSection
+        onBookDemo={() => {
+          const el = document.getElementById('contact')
+          if (el) el.scrollIntoView({ behavior: 'smooth' })
+        }}
+      />
 
       <section id="workflows" className="py-16 sm:py-20 lg:py-24 bg-white" style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 800px' }}>
         <Suspense fallback={<div className="min-h-[400px]" />}>

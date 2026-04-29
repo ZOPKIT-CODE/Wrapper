@@ -28,6 +28,15 @@ export interface CreditTopup {
   recommended?: boolean;
 }
 
+export interface CreditPricing {
+  unitPrice: number;
+  creditsPerDollar: number;
+  currency: string;
+  minimumCredits: number;
+  minimumCharge: number;
+  presets: number[];
+}
+
 export interface PricingCardProps {
   name: string;
   description: string;

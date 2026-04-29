@@ -8,6 +8,7 @@ import { updateAdministratorRolesForPlan } from './subscription-plan-roles.js';
 import { PaymentService } from './payment-service.js';
 import { createCheckoutSession, createBillingPortalSession } from './subscription-checkout.js';
 import { isValidPlanChange, calculateFeatureLoss, calculateDataRetention, calculateUserLimits } from './subscription-plan-change.helpers.js';
+import { stripe } from '../../credits/services/credit-core.js';
 export { isValidPlanChange, calculateFeatureLoss, calculateDataRetention, calculateUserLimits };
 
 /**
@@ -123,8 +124,19 @@ export async function scheduleDowngrade(params: { tenantId: string; planId: stri
 }
 
 /**
- * Process immediate plan changes (downgrades/same-level only).
- * Upgrades must go through Billing Portal or Checkout for payment confirmation.
+ * Process an immediate plan upgrade by updating the existing Stripe subscription
+ * in-place. Stripe calculates the prorated charge automatically and invoices
+ * the customer's default payment method immediately.
+ *
+ * Flow:
+ *   1. Retrieve existing Stripe subscription → get subscription item ID
+ *   2. Resolve the target plan's Stripe price ID (USD/INR based on currency)
+ *   3. Call stripe.subscriptions.update() with the new price + proration_behavior: 'always_invoice'
+ *   4. Stripe fires customer.subscription.updated webhook →
+ *        handleSubscriptionUpdated() detects plan change, expires old credits, allocates new
+ *   5. Return success (no checkout redirect — payment is automatic)
+ *
+ * If no Stripe subscription exists (free plan, no payment method), fall back to checkout.
  */
 export async function processImmediatePlanChange(params: {
   tenantId: string;
@@ -134,28 +146,93 @@ export async function processImmediatePlanChange(params: {
   billingCycle: string;
   currency?: 'usd' | 'inr';
 }): Promise<string | Record<string, unknown>> {
-  const { tenantId, currentSubscription, planId, billingCycle: _billingCycle, currency } = params;
+  const { tenantId, currentSubscription, targetPlan, planId, billingCycle: _billingCycle, currency = 'usd' } = params;
   const gateway = getPaymentGateway();
 
   try {
-    if (currentSubscription.stripeSubscriptionId && gateway.isConfigured()) {
-      const returnUrl = `${process.env.FRONTEND_URL || ''}/billing?payment=success&plan=${planId}`;
-      const portalUrl = await createBillingPortalSession(tenantId, returnUrl);
-      return (portalUrl ?? '') as string;
-    } else {
-      return await createCheckoutSession({
-        tenantId,
-        planId,
-        customerId: (currentSubscription.stripeCustomerId as string) || undefined,
-        successUrl: `${process.env.FRONTEND_URL || ''}/billing?payment=success&plan=${planId}`,
-        cancelUrl: `${process.env.FRONTEND_URL || ''}/billing?payment=cancelled`,
-        billingCycle: 'yearly',
-        currency
+    const stripeSubId = currentSubscription.stripeSubscriptionId as string | undefined;
+
+    // ── In-place upgrade: existing Stripe subscription ────────────────────
+    if (stripeSubId && gateway.isConfigured()) {
+      // 1. Retrieve existing subscription to get the item ID
+      const gatewaySub = await gateway.retrieveSubscription(stripeSubId);
+      const subscriptionItemId = gatewaySub.items?.[0]?.id;
+
+      if (!subscriptionItemId) {
+        throw new Error('Cannot upgrade — subscription has no line items');
+      }
+
+      // 2. Resolve the target price ID based on currency
+      const targetPriceId = currency === 'inr'
+        ? (targetPlan.stripeYearlyPriceIdInr as string)
+        : (targetPlan.stripeYearlyPriceId as string);
+
+      if (!targetPriceId) {
+        throw new Error(`No Stripe price configured for ${planId} plan (${currency.toUpperCase()})`);
+      }
+
+      // 3. Update subscription in-place with prorated invoice
+      //    Stripe charges: (new price × remaining days/365) - (old price credit for remaining days/365)
+      const updatedSub = await gateway.updateSubscription(stripeSubId, {
+        items: [{ id: subscriptionItemId, priceId: targetPriceId }],
+        prorationBehavior: 'always_invoice',
       });
+
+      console.log(`✅ Upgraded subscription ${stripeSubId} to ${planId} (prorated). New period: ${updatedSub.currentPeriodStart.toISOString()} → ${updatedSub.currentPeriodEnd.toISOString()}`);
+
+      // DO NOT update plan/yearlyPrice in the DB here.
+      // The Stripe subscription.updated webhook handles all DB updates, credit
+      // rebalancing (expire old plan credits, allocate new plan credits), role
+      // updates, and downstream notifications. Updating here would cause the
+      // webhook to miss the plan change (dbPlan == webhookPlan → no change detected).
+
+      // Retrieve the prorated invoice amount from Stripe
+      let proratedAmount = 0;
+      let invoiceId: string | null = null;
+      try {
+        const invoiceList = await stripe.invoices.list({
+          subscription: stripeSubId,
+          limit: 1,
+        });
+        const latestInvoice = invoiceList.data[0];
+        if (latestInvoice) {
+          proratedAmount = (latestInvoice.amount_paid ?? 0) / 100;
+          invoiceId = latestInvoice.id;
+        }
+      } catch (err) {
+        console.warn('Could not retrieve prorated invoice amount:', (err as Error).message);
+      }
+
+      const plans = await getAvailablePlans();
+      const currentPlanMeta = plans.find((p: Record<string, unknown>) => p.id === currentSubscription.plan);
+
+      return {
+        upgraded: true,
+        plan: planId,
+        previousPlan: currentSubscription.plan,
+        previousPlanName: (currentPlanMeta?.name as string) || (currentSubscription.plan as string),
+        subscriptionId: stripeSubId,
+        prorated: true,
+        proratedAmount,
+        currency: currency.toUpperCase(),
+        invoiceId,
+        message: `Upgraded to ${(targetPlan.name as string) || planId}. Prorated charge of $${proratedAmount.toFixed(2)} applied.`,
+      };
     }
+
+    // ── Fallback: no existing subscription → create checkout ──────────────
+    return await createCheckoutSession({
+      tenantId,
+      planId,
+      customerId: (currentSubscription.stripeCustomerId as string) || undefined,
+      successUrl: `${process.env.FRONTEND_URL || ''}/billing?payment=success&plan=${planId}`,
+      cancelUrl: `${process.env.FRONTEND_URL || ''}/billing?payment=cancelled`,
+      billingCycle: 'yearly',
+      currency,
+    });
   } catch (err: unknown) {
     const error = err as Error;
-    console.error('Error processing immediate plan change:', error);
+    console.error('❌ Error processing plan upgrade:', error);
     throw error;
   }
 }

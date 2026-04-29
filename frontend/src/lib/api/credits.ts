@@ -49,7 +49,13 @@ export const creditAPI = {
 
   getAvailablePackages: () => api.get('/credits/packages'),
 
+  getCreditPricing: () => api.get('/credits/pricing'),
+
   getCreditStats: () => api.get('/credits/stats'),
 
-  getPaymentDetails: (sessionId: string) => api.get(`/credits/payment/${sessionId}`)
+  getPaymentDetails: (sessionId: string) => api.get(`/credits/payment/${sessionId}`),
+
+  getTenantAllocations: () => api.get('/admin/seasonal-credits/tenant-allocations'),
+
+  getEntityBalances: () => api.get('/credits/entity-balances'),
 }

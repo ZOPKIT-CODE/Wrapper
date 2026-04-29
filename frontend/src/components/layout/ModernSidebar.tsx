@@ -84,15 +84,72 @@ const ADMIN_ONLY_URLS = [
     '/dashboard/settings',
 ]
 
+/**
+ * Fixed-size brand mark for the dark sidebar: works for PNG/JPG/SVG, landscape/portrait,
+ * light or dark artwork. Uses a white canvas so opaque logo backgrounds blend in;
+ * `object-contain` preserves aspect ratio; failed loads fall back to an initial.
+ */
+function SidebarTenantLogo({
+    logoUrl,
+    companyName,
+    isCollapsed,
+}: {
+    logoUrl?: string | null
+    companyName?: string | null
+    /** When true, logo is the only visible brand — use a non-empty alt for screen readers. */
+    isCollapsed?: boolean
+}) {
+    const [imageFailed, setImageFailed] = useState(false)
+    const safeUrl = typeof logoUrl === 'string' ? logoUrl.trim() : ''
+    const initial = (companyName || 'Z').charAt(0).toUpperCase()
+
+    useEffect(() => {
+        setImageFailed(false)
+    }, [safeUrl])
+
+    return (
+        <div
+            className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white p-1.5 shadow-md ring-1 ring-black/10"
+            title={companyName || undefined}
+        >
+            {safeUrl && !imageFailed ? (
+                <img
+                    src={safeUrl}
+                    alt={
+                        isCollapsed
+                            ? companyName
+                                ? `${companyName} logo`
+                                : 'Organization logo'
+                            : ''
+                    }
+                    role={isCollapsed ? undefined : 'presentation'}
+                    decoding="async"
+                    loading="lazy"
+                    referrerPolicy="no-referrer"
+                    onError={() => setImageFailed(true)}
+                    className="max-h-full max-w-full object-contain object-center"
+                />
+            ) : (
+                <span className="select-none text-2xl font-black leading-none text-[#1B2E5A]">
+                    {initial}
+                </span>
+            )}
+        </div>
+    )
+}
+
 export function ModernSidebar({
     navData,
     userData,
+    tenantData,
     isTenantAdmin = false,
     className,
 }: {
     navData?: any
     userData?: any
+    tenantData?: { companyName?: string; logoUrl?: string }
     isTenantAdmin?: boolean
+    onOrganizationSwitch?: (organizationId: string) => void
     className?: string
 }) {
     const { state } = useSidebar()
@@ -152,12 +209,14 @@ export function ModernSidebar({
         >
             {/* Branding Section */}
             <div className="pt-12 pb-10 px-8 flex items-center gap-4 relative z-10 shrink-0">
-                <div className="w-12 h-12 rounded-2xl bg-white/25 flex items-center justify-center shadow-xl border border-white/20">
-                    <span className="text-white font-black text-2xl">Z</span>
-                </div>
+                <SidebarTenantLogo
+                    logoUrl={tenantData?.logoUrl}
+                    companyName={tenantData?.companyName}
+                    isCollapsed={isCollapsed}
+                />
                 {!isCollapsed && (
-                    <h1 className="text-white text-2xl font-black tracking-tight">
-                        Zopkit
+                    <h1 className="text-white text-2xl font-black tracking-tight truncate">
+                        {tenantData?.companyName || 'Zopkit'}
                     </h1>
                 )}
             </div>

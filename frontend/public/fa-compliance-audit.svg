@@ -1,0 +1,313 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 952" width="1600" height="952">
+<defs>
+  <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#06091a"/>
+    <stop offset="50%" stop-color="#0d1f45"/>
+    <stop offset="100%" stop-color="#06091a"/>
+  </linearGradient>
+  <linearGradient id="accentGrad" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0%" stop-color="#fb923c"/>
+    <stop offset="100%" stop-color="#fbbf24"/>
+  </linearGradient>
+  <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#f97316" stop-opacity="0.40"/>
+    <stop offset="100%" stop-color="#f97316" stop-opacity="0.03"/>
+  </linearGradient>
+  <linearGradient id="progressGrad" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0%" stop-color="#fb923c"/>
+    <stop offset="100%" stop-color="#fbbf24"/>
+  </linearGradient>
+</defs>
+
+<!-- Background -->
+<rect width="1600" height="952" fill="url(#bgGrad)"/>
+
+<!-- ── Browser chrome ── -->
+<circle cx="60" cy="32" r="6" fill="#ff5f57"/>
+<circle cx="82" cy="32" r="6" fill="#febc2e"/>
+<circle cx="104" cy="32" r="6" fill="#28c840"/>
+<rect x="550" y="20" width="500" height="24" rx="12" fill="#1f2937"/>
+<text x="800" y="36" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="12" fill="#9ca3af">app.zopkit.com/dashboard</text>
+
+<!-- ── Title block ── -->
+<text x="290" y="122" font-family="Georgia,serif" font-size="28" fill="#ffffff" font-weight="600">Your CFO Command Center</text>
+<text x="290" y="148" font-family="Arial,Helvetica,sans-serif" font-size="14" fill="#9ca3af">Real-time financial intelligence — receivables, ratios &amp; cash flows, all in one place.</text>
+
+<!-- ── Sidebar ── -->
+<rect x="40" y="180" width="220" height="720" rx="12" fill="#0b1228"/>
+<line x1="40" y1="230" x2="260" y2="230" stroke="#1e2d50" stroke-width="1"/>
+<text x="60" y="216" font-family="Arial,Helvetica,sans-serif" font-size="10" fill="#6b7280" font-weight="700" letter-spacing="0.08em">FINANCEACCOUNTING</text>
+<text x="60" y="258" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#9ca3af">Dashboard</text>
+<text x="60" y="288" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#6b7280">Accounts Payable</text>
+<text x="60" y="318" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#6b7280">Accounts Receivable</text>
+<text x="60" y="348" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#6b7280">Banking &amp; Cash</text>
+<text x="60" y="378" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#6b7280">General Ledger</text>
+<text x="60" y="408" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#6b7280">Budgeting</text>
+<text x="60" y="438" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#6b7280">Tax Management</text>
+<text x="60" y="468" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#6b7280">Reports</text>
+<!-- Compliance &amp; Audit — highlighted -->
+<rect x="48" y="477" width="204" height="28" rx="6" fill="#fb923c" fill-opacity="0.18"/>
+<rect x="48" y="477" width="4" height="28" rx="2" fill="#fb923c"/>
+<text x="62" y="496" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#fb923c" font-weight="600">Compliance &amp; Audit</text>
+<!-- Bottom nav -->
+<line x1="40" y1="845" x2="260" y2="845" stroke="#1e2d50" stroke-width="1"/>
+<text x="60" y="864" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#6b7280">Settings</text>
+<text x="60" y="892" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#6b7280">Help &amp; Support</text>
+
+<!-- ── Date filter pill ── -->
+<rect x="1355" y="183" width="210" height="28" rx="14" fill="#111827" stroke="#374151" stroke-width="1"/>
+<text x="1460" y="201" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="12" fill="#d1d5db">Apr 1, 2026 → Apr 30, 2026</text>
+
+<!-- ══ KPI Cards ══ -->
+
+<!-- Card 1: Audit Trail Events -->
+<rect x="290" y="240" width="250" height="110" rx="10" fill="#0f1729" stroke="#1e2d50" stroke-width="1"/>
+<text x="308" y="266" font-family="Arial,Helvetica,sans-serif" font-size="11" fill="#6b7280">Audit Trail Events (30d)</text>
+<text x="308" y="300" font-family="Arial,Helvetica,sans-serif" font-size="32" fill="#ffffff" font-weight="700">48,217</text>
+<text x="308" y="328" font-family="Arial,Helvetica,sans-serif" font-size="11" fill="#6b7280">All immutable</text>
+<circle cx="520" cy="316" r="5" fill="#10b981" fill-opacity="0.2"/>
+<circle cx="520" cy="316" r="3" fill="#10b981"/>
+<polyline points="430,326 445,318 461,322 477,310 493,304 509,308 525,296" fill="none" stroke="#f97316" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+<!-- Card 2: Compliance Score -->
+<rect x="558" y="240" width="250" height="110" rx="10" fill="#0f1729" stroke="#1e2d50" stroke-width="1"/>
+<text x="576" y="266" font-family="Arial,Helvetica,sans-serif" font-size="11" fill="#6b7280">Compliance Score</text>
+<text x="576" y="300" font-family="Arial,Helvetica,sans-serif" font-size="32" fill="#ffffff" font-weight="700">98/100</text>
+<text x="576" y="324" font-family="Arial,Helvetica,sans-serif" font-size="11" fill="#6b7280">GAAP + IFRS</text>
+<!-- Progress bar -->
+<rect x="576" y="334" width="214" height="6" rx="3" fill="#1e2d50"/>
+<rect x="576" y="334" width="210" height="6" rx="3" fill="url(#progressGrad)"/>
+<!-- Score dot indicator -->
+<circle cx="786" cy="337" r="5" fill="#fbbf24" stroke="#0f1729" stroke-width="2"/>
+
+<!-- Card 3: Documents Retained -->
+<rect x="826" y="240" width="250" height="110" rx="10" fill="#0f1729" stroke="#1e2d50" stroke-width="1"/>
+<text x="844" y="266" font-family="Arial,Helvetica,sans-serif" font-size="11" fill="#6b7280">Documents Retained</text>
+<text x="844" y="300" font-family="Arial,Helvetica,sans-serif" font-size="32" fill="#ffffff" font-weight="700">12,481</text>
+<text x="844" y="328" font-family="Arial,Helvetica,sans-serif" font-size="11" fill="#6b7280">7-year policy</text>
+<polyline points="960,326 975,318 990,321 1006,312 1022,308 1038,313 1054,302" fill="none" stroke="#f59e0b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+<!-- Card 4: Open Audit Findings -->
+<rect x="1094" y="240" width="250" height="110" rx="10" fill="#0f1729" stroke="#1e2d50" stroke-width="1"/>
+<text x="1112" y="266" font-family="Arial,Helvetica,sans-serif" font-size="11" fill="#6b7280">Open Audit Findings</text>
+<text x="1112" y="300" font-family="Arial,Helvetica,sans-serif" font-size="32" fill="#ffffff" font-weight="700">3</text>
+<text x="1112" y="328" font-family="Arial,Helvetica,sans-serif" font-size="11" fill="#10b981">−5 vs last cycle</text>
+<polyline points="1232,298 1248,304 1264,310 1280,316 1296,312 1312,318 1328,326" fill="none" stroke="#10b981" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+<!-- ══ Main chart: Audit Activity ══ -->
+<rect x="290" y="380" width="830" height="320" rx="10" fill="#0f1729" stroke="#1e2d50" stroke-width="1"/>
+<text x="310" y="410" font-family="Arial,Helvetica,sans-serif" font-size="14" fill="#ffffff" font-weight="600">Audit Activity — last 7 days</text>
+<text x="1098" y="410" text-anchor="end" font-family="Arial,Helvetica,sans-serif" font-size="11" fill="#6b7280">Events / day</text>
+
+<!-- Chart inner background -->
+<rect x="332" y="424" width="768" height="248" rx="4" fill="#080e1e"/>
+
+<!-- Grid lines -->
+<line x1="332" y1="474" x2="1100" y2="474" stroke="#1e2d50" stroke-width="1" stroke-dasharray="4,4"/>
+<line x1="332" y1="524" x2="1100" y2="524" stroke="#1e2d50" stroke-width="1" stroke-dasharray="4,4"/>
+<line x1="332" y1="574" x2="1100" y2="574" stroke="#1e2d50" stroke-width="1" stroke-dasharray="4,4"/>
+<line x1="332" y1="624" x2="1100" y2="624" stroke="#1e2d50" stroke-width="1" stroke-dasharray="4,4"/>
+<line x1="332" y1="668" x2="1100" y2="668" stroke="#1e2d50" stroke-width="1" stroke-dasharray="4,4"/>
+
+<!-- Y-axis labels -->
+<text x="328" y="478" text-anchor="end" font-family="Arial,Helvetica,sans-serif" font-size="10" fill="#6b7280">12k</text>
+<text x="328" y="528" text-anchor="end" font-family="Arial,Helvetica,sans-serif" font-size="10" fill="#6b7280">9k</text>
+<text x="328" y="578" text-anchor="end" font-family="Arial,Helvetica,sans-serif" font-size="10" fill="#6b7280">6k</text>
+<text x="328" y="628" text-anchor="end" font-family="Arial,Helvetica,sans-serif" font-size="10" fill="#6b7280">3k</text>
+<text x="328" y="672" text-anchor="end" font-family="Arial,Helvetica,sans-serif" font-size="10" fill="#6b7280">0</text>
+
+<!-- Area fill (step-style, closed polygon) -->
+<polygon points="340,572 456,548 572,580 688,468 804,532 920,556 1036,504 1100,516 1100,668 340,668" fill="url(#areaGrad)"/>
+
+<!-- Main area-step polyline (7 days: Apr 12–18) -->
+<polyline points="340,572 456,548 572,580 688,468 804,532 920,556 1036,504 1100,516" fill="none" stroke="#f97316" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+<!-- Data point dots -->
+<circle cx="340" cy="572" r="4" fill="#f97316" stroke="#0f1729" stroke-width="2"/>
+<circle cx="456" cy="548" r="4" fill="#f97316" stroke="#0f1729" stroke-width="2"/>
+<circle cx="572" cy="580" r="4" fill="#f97316" stroke="#0f1729" stroke-width="2"/>
+<circle cx="688" cy="468" r="5" fill="#fbbf24" stroke="#0f1729" stroke-width="2"/>
+<circle cx="804" cy="532" r="4" fill="#f97316" stroke="#0f1729" stroke-width="2"/>
+<circle cx="920" cy="556" r="4" fill="#f97316" stroke="#0f1729" stroke-width="2"/>
+<circle cx="1036" cy="504" r="4" fill="#f97316" stroke="#0f1729" stroke-width="2"/>
+
+<!-- Peak callout: Apr 18 -->
+<line x1="688" y1="468" x2="688" y2="444" stroke="#fbbf24" stroke-width="1" stroke-dasharray="3,3"/>
+<rect x="620" y="424" width="168" height="24" rx="6" fill="#1c1200" stroke="#f59e0b" stroke-width="1"/>
+<text x="704" y="440" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="11" fill="#fde68a" font-weight="600">Apr 18: 9,412 events</text>
+
+<!-- X-axis labels -->
+<text x="340" y="686" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="10" fill="#6b7280">Apr 12</text>
+<text x="456" y="686" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="10" fill="#6b7280">Apr 13</text>
+<text x="572" y="686" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="10" fill="#6b7280">Apr 14</text>
+<text x="688" y="686" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="10" fill="#fbbf24" font-weight="600">Apr 15</text>
+<text x="804" y="686" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="10" fill="#6b7280">Apr 16</text>
+<text x="920" y="686" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="10" fill="#6b7280">Apr 17</text>
+<text x="1036" y="686" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="10" fill="#6b7280">Apr 18</text>
+
+<!-- ══ Right panel: Regulatory Coverage ══ -->
+<rect x="1140" y="380" width="420" height="320" rx="10" fill="#0f1729" stroke="#1e2d50" stroke-width="1"/>
+<text x="1160" y="410" font-family="Arial,Helvetica,sans-serif" font-size="14" fill="#ffffff" font-weight="600">Regulatory Coverage</text>
+<rect x="1460" y="396" width="82" height="20" rx="10" fill="#10b981" fill-opacity="0.15"/>
+<text x="1501" y="410" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="11" fill="#10b981">6 / 6 active</text>
+
+<!-- Row: GAAP -->
+<rect x="1160" y="425" width="360" height="36" rx="6" fill="#0a1a0a" fill-opacity="0.4"/>
+<text x="1178" y="448" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#d1d5db" font-weight="600">GAAP</text>
+<text x="1290" y="448" font-family="Arial,Helvetica,sans-serif" font-size="11" fill="#6b7280">Last reviewed: Mar 31, 2026</text>
+<text x="1512" y="448" text-anchor="end" font-family="Arial,Helvetica,sans-serif" font-size="14" fill="#10b981">✓</text>
+
+<!-- Row: IFRS -->
+<rect x="1160" y="468" width="360" height="36" rx="6" fill="#0a1a0a" fill-opacity="0.2"/>
+<text x="1178" y="491" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#d1d5db" font-weight="600">IFRS</text>
+<text x="1290" y="491" font-family="Arial,Helvetica,sans-serif" font-size="11" fill="#6b7280">Last reviewed: Mar 31, 2026</text>
+<text x="1512" y="491" text-anchor="end" font-family="Arial,Helvetica,sans-serif" font-size="14" fill="#10b981">✓</text>
+
+<!-- Row: SOX -->
+<rect x="1160" y="511" width="360" height="36" rx="6" fill="#0a1a0a" fill-opacity="0.4"/>
+<text x="1178" y="534" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#d1d5db" font-weight="600">SOX</text>
+<text x="1290" y="534" font-family="Arial,Helvetica,sans-serif" font-size="11" fill="#6b7280">Last reviewed: Apr 1, 2026</text>
+<text x="1512" y="534" text-anchor="end" font-family="Arial,Helvetica,sans-serif" font-size="14" fill="#10b981">✓</text>
+
+<!-- Row: GDPR -->
+<rect x="1160" y="554" width="360" height="36" rx="6" fill="#0a1a0a" fill-opacity="0.2"/>
+<text x="1178" y="577" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#d1d5db" font-weight="600">GDPR</text>
+<text x="1290" y="577" font-family="Arial,Helvetica,sans-serif" font-size="11" fill="#6b7280">Last reviewed: Apr 5, 2026</text>
+<text x="1512" y="577" text-anchor="end" font-family="Arial,Helvetica,sans-serif" font-size="14" fill="#10b981">✓</text>
+
+<!-- Row: HIPAA -->
+<rect x="1160" y="597" width="360" height="36" rx="6" fill="#0a1a0a" fill-opacity="0.4"/>
+<text x="1178" y="620" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#d1d5db" font-weight="600">HIPAA</text>
+<text x="1290" y="620" font-family="Arial,Helvetica,sans-serif" font-size="11" fill="#6b7280">Last reviewed: Apr 10, 2026</text>
+<text x="1512" y="620" text-anchor="end" font-family="Arial,Helvetica,sans-serif" font-size="14" fill="#10b981">✓</text>
+
+<!-- Row: PCI-DSS -->
+<rect x="1160" y="640" width="360" height="36" rx="6" fill="#0a1a0a" fill-opacity="0.2"/>
+<text x="1178" y="663" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#d1d5db" font-weight="600">PCI-DSS</text>
+<text x="1290" y="663" font-family="Arial,Helvetica,sans-serif" font-size="11" fill="#6b7280">Last reviewed: Apr 12, 2026</text>
+<text x="1512" y="663" text-anchor="end" font-family="Arial,Helvetica,sans-serif" font-size="14" fill="#10b981">✓</text>
+
+<!-- Footer note -->
+<text x="1160" y="696" font-family="Arial,Helvetica,sans-serif" font-size="11" fill="#6b7280">Next review cycle:</text>
+<text x="1270" y="696" font-family="Arial,Helvetica,sans-serif" font-size="11" fill="#fb923c" font-weight="600">Jun 30, 2026</text>
+<text x="1400" y="696" font-family="Arial,Helvetica,sans-serif" font-size="11" fill="#6b7280">Export →</text>
+
+<!-- ══ Bottom Row ══ -->
+
+<!-- Panel 1: Recent Changes (x=290) -->
+<rect x="290" y="720" width="410" height="180" rx="10" fill="#0f1729" stroke="#1e2d50" stroke-width="1"/>
+<text x="310" y="748" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#ffffff" font-weight="600">Recent Changes</text>
+<text x="686" y="748" text-anchor="end" font-family="Arial,Helvetica,sans-serif" font-size="11" fill="#6b7280">Immutable log</text>
+
+<!-- Header -->
+<text x="310" y="768" font-family="Arial,Helvetica,sans-serif" font-size="10" fill="#6b7280" font-weight="600">USER</text>
+<text x="430" y="768" font-family="Arial,Helvetica,sans-serif" font-size="10" fill="#6b7280" font-weight="600">ACTION</text>
+<text x="686" y="768" text-anchor="end" font-family="Arial,Helvetica,sans-serif" font-size="10" fill="#6b7280" font-weight="600">TIME</text>
+<line x1="310" y1="773" x2="686" y2="773" stroke="#1e2d50" stroke-width="1"/>
+
+<!-- Row 1 -->
+<circle cx="316" cy="790" r="4" fill="#f97316"/>
+<text x="328" y="794" font-family="Arial,Helvetica,sans-serif" font-size="11" fill="#d1d5db">priya.k</text>
+<text x="430" y="794" font-family="Arial,Helvetica,sans-serif" font-size="11" fill="#9ca3af">Modified journal JE-4421</text>
+<text x="686" y="794" text-anchor="end" font-family="Arial,Helvetica,sans-serif" font-size="10" fill="#6b7280">09:14 AM</text>
+<line x1="310" y1="802" x2="686" y2="802" stroke="#1e2d50" stroke-width="1"/>
+
+<!-- Row 2 -->
+<circle cx="316" cy="820" r="4" fill="#f59e0b"/>
+<text x="328" y="824" font-family="Arial,Helvetica,sans-serif" font-size="11" fill="#d1d5db">rahul.m</text>
+<text x="430" y="824" font-family="Arial,Helvetica,sans-serif" font-size="11" fill="#9ca3af">Approved vendor INV-9903</text>
+<text x="686" y="824" text-anchor="end" font-family="Arial,Helvetica,sans-serif" font-size="10" fill="#6b7280">10:02 AM</text>
+<line x1="310" y1="832" x2="686" y2="832" stroke="#1e2d50" stroke-width="1"/>
+
+<!-- Row 3 -->
+<circle cx="316" cy="850" r="4" fill="#6b7280"/>
+<text x="328" y="854" font-family="Arial,Helvetica,sans-serif" font-size="11" fill="#d1d5db">system</text>
+<text x="430" y="854" font-family="Arial,Helvetica,sans-serif" font-size="11" fill="#9ca3af">Auto-reconciled 312 txns</text>
+<text x="686" y="854" text-anchor="end" font-family="Arial,Helvetica,sans-serif" font-size="10" fill="#6b7280">11:30 AM</text>
+<line x1="310" y1="862" x2="686" y2="862" stroke="#1e2d50" stroke-width="1"/>
+
+<text x="310" y="882" font-family="Arial,Helvetica,sans-serif" font-size="11" fill="#fb923c">View full audit trail →</text>
+
+<!-- Panel 2: Document Retention Status (x=720) -->
+<rect x="720" y="720" width="410" height="180" rx="10" fill="#0f1729" stroke="#1e2d50" stroke-width="1"/>
+<text x="740" y="748" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#ffffff" font-weight="600">Document Retention Status</text>
+
+<!-- Donut chart (SVG arc approximation using stroked circles) -->
+<!-- Base circle -->
+<circle cx="840" cy="820" r="52" fill="none" stroke="#1e2d50" stroke-width="18"/>
+<!-- Active 84% = 302.4 deg, orange -->
+<!-- We use stroke-dasharray trick: circumference = 2*pi*52 ≈ 326.7 -->
+<!-- Active: 84% * 326.7 = 274.4 -->
+<circle cx="840" cy="820" r="52" fill="none" stroke="#f97316" stroke-width="18"
+  stroke-dasharray="274 327" stroke-dashoffset="82" transform="rotate(-90 840 820)"/>
+<!-- Archived 14% * 326.7 = 45.7 -->
+<circle cx="840" cy="820" r="52" fill="none" stroke="#f59e0b" stroke-width="18"
+  stroke-dasharray="46 327" stroke-dashoffset="-192" transform="rotate(-90 840 820)"/>
+<!-- Expiring 2% * 326.7 = 6.5 -->
+<circle cx="840" cy="820" r="52" fill="none" stroke="#ef4444" stroke-width="18"
+  stroke-dasharray="7 327" stroke-dashoffset="-238" transform="rotate(-90 840 820)"/>
+
+<!-- Center label -->
+<text x="840" y="814" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="18" fill="#ffffff" font-weight="700">12,481</text>
+<text x="840" y="832" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="10" fill="#6b7280">documents</text>
+
+<!-- Legend -->
+<circle cx="912" cy="784" r="5" fill="#f97316"/>
+<text x="922" y="788" font-family="Arial,Helvetica,sans-serif" font-size="12" fill="#d1d5db">Active</text>
+<text x="1098" y="788" text-anchor="end" font-family="Arial,Helvetica,sans-serif" font-size="12" fill="#fb923c" font-weight="600">84%</text>
+
+<circle cx="912" cy="810" r="5" fill="#f59e0b"/>
+<text x="922" y="814" font-family="Arial,Helvetica,sans-serif" font-size="12" fill="#d1d5db">Archived</text>
+<text x="1098" y="814" text-anchor="end" font-family="Arial,Helvetica,sans-serif" font-size="12" fill="#fbbf24" font-weight="600">14%</text>
+
+<circle cx="912" cy="836" r="5" fill="#ef4444"/>
+<text x="922" y="840" font-family="Arial,Helvetica,sans-serif" font-size="12" fill="#d1d5db">Expiring soon</text>
+<text x="1098" y="840" text-anchor="end" font-family="Arial,Helvetica,sans-serif" font-size="12" fill="#ef4444" font-weight="600">2%</text>
+
+<text x="912" y="872" font-family="Arial,Helvetica,sans-serif" font-size="11" fill="#6b7280">Expiring:</text>
+<text x="970" y="872" font-family="Arial,Helvetica,sans-serif" font-size="11" fill="#ef4444" font-weight="600">243 docs</text>
+<text x="1060" y="872" font-family="Arial,Helvetica,sans-serif" font-size="11" fill="#6b7280">within 30d</text>
+
+<!-- Panel 3: Audit Queue (x=1140) -->
+<rect x="1140" y="720" width="420" height="180" rx="10" fill="#0f1729" stroke="#1e2d50" stroke-width="1"/>
+<text x="1160" y="748" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#ffffff" font-weight="600">Audit Queue</text>
+<rect x="1468" y="734" width="62" height="20" rx="10" fill="#f97316" fill-opacity="0.15"/>
+<text x="1499" y="748" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="11" fill="#f97316">3 open</text>
+
+<!-- Row 1: High priority -->
+<rect x="1158" y="757" width="6" height="28" rx="3" fill="#ef4444"/>
+<text x="1172" y="769" font-family="Arial,Helvetica,sans-serif" font-size="12" fill="#fca5a5">⚠</text>
+<text x="1190" y="769" font-family="Arial,Helvetica,sans-serif" font-size="12" fill="#d1d5db" font-weight="600">AP reconciliation gap — Q1</text>
+<text x="1190" y="782" font-family="Arial,Helvetica,sans-serif" font-size="10" fill="#6b7280">Assigned: audit.team  ·  Due Apr 30</text>
+<rect x="1470" y="758" width="58" height="18" rx="9" fill="#ef4444" fill-opacity="0.2"/>
+<text x="1499" y="771" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="10" fill="#ef4444" font-weight="600">HIGH</text>
+<line x1="1160" y1="793" x2="1538" y2="793" stroke="#1e2d50" stroke-width="1"/>
+
+<!-- Row 2: Medium -->
+<rect x="1158" y="800" width="6" height="28" rx="3" fill="#f97316"/>
+<text x="1172" y="812" font-family="Arial,Helvetica,sans-serif" font-size="12" fill="#fdba74">⚠</text>
+<text x="1190" y="812" font-family="Arial,Helvetica,sans-serif" font-size="12" fill="#d1d5db" font-weight="600">Missing approval — PO-7741</text>
+<text x="1190" y="825" font-family="Arial,Helvetica,sans-serif" font-size="10" fill="#6b7280">Assigned: priya.k  ·  Due May 5</text>
+<rect x="1462" y="801" width="66" height="18" rx="9" fill="#f97316" fill-opacity="0.2"/>
+<text x="1495" y="814" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="10" fill="#f97316" font-weight="600">MEDIUM</text>
+<line x1="1160" y1="836" x2="1538" y2="836" stroke="#1e2d50" stroke-width="1"/>
+
+<!-- Row 3: Low -->
+<rect x="1158" y="843" width="6" height="28" rx="3" fill="#f59e0b"/>
+<text x="1172" y="855" font-family="Arial,Helvetica,sans-serif" font-size="12" fill="#fde68a">⚠</text>
+<text x="1190" y="855" font-family="Arial,Helvetica,sans-serif" font-size="12" fill="#d1d5db" font-weight="600">Document expiry alert — Q4</text>
+<text x="1190" y="868" font-family="Arial,Helvetica,sans-serif" font-size="10" fill="#6b7280">Assigned: rahul.m  ·  Due May 15</text>
+<rect x="1474" y="844" width="54" height="18" rx="9" fill="#f59e0b" fill-opacity="0.2"/>
+<text x="1501" y="857" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="10" fill="#f59e0b" font-weight="600">LOW</text>
+
+<!-- ══ Floating badge 1: Data sources 50+ ══ -->
+<rect x="1240" y="132" width="210" height="32" rx="16" fill="#0b1228" fill-opacity="0.93" stroke="#fbbf24" stroke-opacity="0.35" stroke-width="1"/>
+<circle cx="1260" cy="148" r="4" fill="#fbbf24"/>
+<text x="1272" y="153" font-family="Arial,Helvetica,sans-serif" font-size="12" fill="#fde68a">Data sources 50+</text>
+
+<!-- ══ Floating badge 2: Faster reports 5× ══ -->
+<rect x="270" y="820" width="206" height="32" rx="16" fill="#0b1228" fill-opacity="0.93" stroke="#fb923c" stroke-opacity="0.3" stroke-width="1"/>
+<circle cx="290" cy="836" r="4" fill="#fb923c"/>
+<text x="302" y="841" font-family="Arial,Helvetica,sans-serif" font-size="12" fill="#fdba74">Faster reports 5×</text>
+
+</svg>

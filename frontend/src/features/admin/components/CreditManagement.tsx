@@ -53,6 +53,8 @@ const CreditManagement: React.FC = () => {
   const [activeTab, setActiveTab] = useState('global');
   const { actualTheme } = useTheme();
   const isDark = actualTheme === 'dark';
+  /** Glassmorphism backdrop on the matrix panel (CompactMatrix) */
+  const glass = true;
 
   // Changes State
   const [costChanges, setCostChanges] = useState<CostChanges>({});

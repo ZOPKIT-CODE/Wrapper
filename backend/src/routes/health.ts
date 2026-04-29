@@ -191,6 +191,37 @@ export default async function healthRoutes(fastify: FastifyInstance, _options?: 
         }
       }
 
+      // Credit expiry cron health check
+      try {
+        const { db: dbConn } = await import('../db/index.js');
+        const { creditExpiryRuns } = await import('../db/schema/billing/credit-expiry-runs.js');
+        const { desc } = await import('drizzle-orm');
+        const recentRuns = await dbConn
+          .select()
+          .from(creditExpiryRuns)
+          .orderBy(desc(creditExpiryRuns.ranAt))
+          .limit(5);
+
+        const lastRun = recentRuns[0];
+        const consecutiveErrors = recentRuns.findIndex(r => r.status !== 'error');
+        (detailedHealth.services as Record<string, unknown>).creditExpiryCron = {
+          status: !lastRun ? 'unknown' : lastRun.status === 'error' ? 'degraded' : 'healthy',
+          lastRanAt: lastRun?.ranAt ?? null,
+          lastStatus: lastRun?.status ?? null,
+          consecutiveErrors: consecutiveErrors === -1 ? recentRuns.length : consecutiveErrors,
+          lastBatchesProcessed: lastRun?.batchesProcessed ?? null,
+          lastDurationMs: lastRun?.durationMs ?? null,
+          timestamp: new Date().toISOString()
+        };
+      } catch (err: unknown) {
+        const error = err as Error;
+        (detailedHealth.services as Record<string, unknown>).creditExpiryCron = {
+          status: 'unknown',
+          error: error.message,
+          timestamp: new Date().toISOString()
+        };
+      }
+
       // Check overall health
       const unhealthyServices = Object.values(detailedHealth.services as Record<string, { status?: string }>)
         .filter((service: { status?: string }) => service.status === 'unhealthy');

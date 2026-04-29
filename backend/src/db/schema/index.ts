@@ -12,6 +12,8 @@ export * from './billing/credits.js';
 export * from './billing/credit_purchases.js';
 export * from './billing/credit_configurations.js';
 export * from './billing/seasonal-credits.js';
+export { creditBatches } from './billing/credit-batches.js';
+export * from './billing/credit-expiry-runs.js';
 export * from './billing/tenant_banking_details.js';
 
 // Organizations

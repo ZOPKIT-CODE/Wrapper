@@ -26,8 +26,11 @@ class CreditExpiryManager {
     console.log('🚀 Starting credit expiry monitoring system...');
 
     try {
-      // Process expired credits every hour (at minute 0)
-      const expiryJob = cron.schedule('0 * * * *', async () => {
+      // Process expired credits — schedule configurable via CREDIT_EXPIRY_CRON_SCHEDULE env var.
+      // Default: every hour. For dev testing set to '* * * * *' (every minute).
+      const expirySchedule = process.env.CREDIT_EXPIRY_CRON ?? '0 * * * *';
+      console.log(`📅 [CreditExpiryManager] Expiry cron schedule: ${expirySchedule}`);
+      const expiryJob = cron.schedule(expirySchedule, async () => {
         try {
           console.log('⏰ [CreditExpiryManager] Running scheduled expiry check...');
           const result = await CreditExpiryService.processExpiredCredits();
@@ -40,6 +43,16 @@ class CreditExpiryManager {
           if (this.errorCount >= this.maxErrors) {
             console.error('🚨 [CreditExpiryManager] Too many consecutive errors, stopping expiry monitoring');
             this.stopExpiryMonitoring();
+            // Emit a structured alert — picked up by Elasticsearch/Winston alerting.
+            // The /health/detailed endpoint also surfaces this via credit_expiry_runs.
+            console.error(JSON.stringify({
+              level: 'ALERT',
+              service: 'CreditExpiryManager',
+              event: 'cron_stopped',
+              message: `Credit expiry cron stopped after ${this.maxErrors} consecutive failures. Manual intervention required.`,
+              consecutiveErrors: this.maxErrors,
+              timestamp: new Date().toISOString(),
+            }));
           }
         }
       });

@@ -236,10 +236,10 @@ export function useNotifications(options: {
       throw new Error('Failed to fetch notifications')
     },
     enabled: !!isAuthenticated && !!user,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
-    refetchInterval: 5 * 60 * 1000,
-    refetchOnWindowFocus: false, // prevents a refetch on every tab switch (was the main source of excess calls)
+    staleTime: 30_000,
+    gcTime: 5 * 60 * 1000,
+    refetchInterval: 60_000, // poll every 60s so expiry warnings appear promptly
+    refetchOnWindowFocus: true, // re-fetch when user returns to the tab
     retry: (failureCount, error: any) => {
       if (error?.response?.status === 401) return false
       return failureCount < 2

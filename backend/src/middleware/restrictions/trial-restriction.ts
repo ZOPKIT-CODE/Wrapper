@@ -3,6 +3,9 @@ import type { FastifyRequest, FastifyReply } from 'fastify';
 import Logger from '../../utils/logger.js';
 import { CreditService } from '../../features/credits/index.js';
 import { shouldLogVerbose } from '../../utils/verbose-log.js';
+import { eq, desc } from 'drizzle-orm';
+import { db } from '../../db/index.js';
+import { subscriptions } from '../../db/schema/index.js';
 
 // Middleware to check if trial is expired and restrict operations
 export async function trialRestrictionMiddleware(request: FastifyRequest, reply: FastifyReply): Promise<void | ReturnType<FastifyReply['send']>> {
@@ -59,6 +62,50 @@ export async function trialRestrictionMiddleware(request: FastifyRequest, reply:
 
   const requestId = Logger.generateRequestId('trial-restriction');
   const tenantId = request.userContext.tenantId;
+
+  // ── Canceled subscription check ──────────────────────────────────────────
+  // Block write operations for tenants with canceled subscriptions.
+  // Read operations (GET/HEAD/OPTIONS) are allowed for read-only access.
+  try {
+    const [latestSub] = await db
+      .select({ status: subscriptions.status })
+      .from(subscriptions)
+      .where(eq(subscriptions.tenantId, tenantId))
+      .orderBy(desc(subscriptions.createdAt))
+      .limit(1);
+
+    if (latestSub?.status === 'canceled') {
+      const isWriteOperation = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method);
+
+      if (isWriteOperation) {
+        // Allow paths needed to resubscribe or manage billing
+        const allowedWritePaths = [
+          '/api/subscriptions/',
+          '/api/auth/',
+          '/api/payments/',
+          '/api/credits/purchase',
+          '/health',
+        ];
+        const isAllowedWritePath = allowedWritePaths.some(path => request.url.startsWith(path));
+
+        if (!isAllowedWritePath) {
+          if (shouldLogVerbose()) {
+            console.log(`[${requestId}] Blocked write operation for canceled subscription: ${request.method} ${request.url}`);
+          }
+          return reply.code(403).send({
+            error: 'Subscription expired',
+            message: 'Your subscription has expired. Please resubscribe to continue.',
+            action: 'resubscribe',
+          });
+        }
+      }
+
+      // GET/HEAD/OPTIONS pass through — read-only access allowed
+    }
+  } catch (subErr: unknown) {
+    // Non-blocking: if subscription check fails, continue to credit check
+    console.error(`[${requestId}] Subscription status check failed:`, (subErr as Error).message);
+  }
 
   try {
     const creditBalance = await CreditService.getCurrentBalance(tenantId);

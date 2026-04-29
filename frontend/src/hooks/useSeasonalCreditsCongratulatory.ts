@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useUserContext } from '@/contexts/UserContextProvider';
 import { useNotifications } from '@/hooks/useNotifications';
+import type { ModalConfig } from '@/features/notifications/SeasonalCreditsCongratulatoryModal';
 
 // Store shown campaigns instead of a single flag
 const getShownCampaigns = () => {
@@ -40,6 +41,7 @@ interface SeasonalCreditsData {
   totalCredits: number;
   campaignName: string;
   hasSeasonalCredits: boolean;
+  modalConfig?: ModalConfig;
 }
 
 export const useSeasonalCreditsCongratulatory = () => {
@@ -107,9 +109,12 @@ export const useSeasonalCreditsCongratulatory = () => {
     let totalCredits = 0;
     let campaignName = 'Seasonal Credits'; // Default name
 
+    let modalConfig: ModalConfig | undefined;
+
     unseenCampaigns.forEach(notification => {
-      if (notification.metadata?.allocatedCredits) {
-        totalCredits += notification.metadata.allocatedCredits;
+      const amount = notification.metadata?.creditAmount ?? notification.metadata?.allocatedCredits;
+      if (amount) {
+        totalCredits += Number(amount);
       }
       // Use the first available campaign name
       if (notification.metadata?.campaignName && campaignName === 'Seasonal Credits') {
@@ -117,10 +122,16 @@ export const useSeasonalCreditsCongratulatory = () => {
       }
     });
 
+    // Extract modalConfig from the latest campaign's metadata
+    if (latestCampaign.metadata?.modalConfig) {
+      modalConfig = latestCampaign.metadata.modalConfig as ModalConfig;
+    }
+
     setSeasonalCreditsData({
       totalCredits,
       campaignName,
-      hasSeasonalCredits: true
+      hasSeasonalCredits: true,
+      modalConfig,
     });
 
     setShouldShowCongratulatory(true);

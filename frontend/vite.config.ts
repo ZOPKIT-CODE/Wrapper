@@ -135,8 +135,6 @@ export default defineConfig(({ mode }) => {
           '**/tsconfig.*.json',
           '**/index.html',
           '**/main.tsx',
-          // Shared data/mock files: often touched by tooling; rarely edited. Ignore to avoid reload cascades.
-          '**/src/data/**',
         ],
       },
     },

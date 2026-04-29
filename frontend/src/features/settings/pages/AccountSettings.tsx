@@ -178,11 +178,7 @@ export const AccountSettings: React.FC = () => {
         return;
       }
       setLogoFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setLogoPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      setLogoPreview(URL.createObjectURL(file));
     }
   };
 
@@ -190,14 +186,19 @@ export const AccountSettings: React.FC = () => {
     try {
       setIsSaving(true);
 
-      let logoUrl = data.logoUrl;
+      // If a new logo file was selected, upload it to S3 first
       if (logoFile) {
-        const reader = new FileReader();
-        logoUrl = await new Promise<string>((resolve, reject) => {
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.onerror = reject;
-          reader.readAsDataURL(logoFile);
+        const formData = new FormData();
+        formData.append('logo', logoFile);
+        const uploadResponse = await api.post('/tenants/logo', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
         });
+        const newLogoUrl: string = uploadResponse.data?.data?.logoUrl;
+        if (newLogoUrl) {
+          setLogoPreview(newLogoUrl);
+          form.setValue('logoUrl', newLogoUrl);
+        }
+        setLogoFile(null);
       }
 
       const updateData: Partial<AccountSettingsData> = {
@@ -217,20 +218,15 @@ export const AccountSettings: React.FC = () => {
         }
       });
 
-      if (logoUrl) {
-        updateData.logoUrl = logoUrl;
-      }
-
       await api.patch('/tenants/current', updateData);
       addToast('Account settings updated successfully', { type: 'success' });
-      setLogoFile(null);
     } catch (error: any) {
       console.error('Failed to save account settings:', error);
-      addToast(error.response?.data?.message || 'Failed to save account settings. Please try again.', { type: 'error' });
+      addToast(error.response?.data?.error || 'Failed to save account settings. Please try again.', { type: 'error' });
     } finally {
       setIsSaving(false);
     }
-  }, [logoFile, addToast]);
+  }, [logoFile, addToast, form]);
 
   if (isLoading) {
     return (

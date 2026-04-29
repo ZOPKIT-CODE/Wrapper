@@ -1037,150 +1037,172 @@ export const productPagesData: ProductsMap = {
     // Placeholder for remaining products - will add in next file update
     'financial-accounting': {
         hero: {
-            headline: 'Complete Financial Accounting Solution',
-            subheadline: 'General ledger, accounts payable/receivable, bank reconciliation, tax compliance, and financial reporting. Multi-entity support and advanced analytics.',
-            valueProposition: 'Manage your entire financial operations with our comprehensive accounting system. Automate reconciliations, ensure compliance, and generate real-time financial reports.',
+            headline: 'The Complete Accounting Suite',
+            subheadline: 'General ledger, AP/AR, banking, fixed assets, cost accounting, GST & TDS, and consolidated reporting — 11 modules, one ledger.',
+            valueProposition: 'From journal entry to period-locked close, every transaction is field-audited, every entity consolidated server-side, and every GST/TDS obligation tracked automatically.',
             primaryCTA: 'Start Free Trial',
             secondaryCTA: 'Watch Demo',
             stats: [
-                { label: 'Transactions/Month', value: '1M+' },
-                { label: 'Companies', value: '5,000+' },
-                { label: 'Accuracy', value: '99.9%' },
-                { label: 'Time Saved', value: '50%' },
+                { label: 'Accounting Modules', value: '11' },
+                { label: 'Audit Trail', value: 'Field-level' },
+                { label: 'Consolidation', value: 'Server-side' },
+                { label: 'Close Control', value: 'Period-locked' },
             ],
         },
         problem: {
             headline: 'Struggling with Manual Accounting?',
             painPoints: [
                 { icon: FileStack, text: 'Manual journal entries and bookkeeping' },
-                { icon: Clock, text: 'Time-consuming reconciliations' },
-                { icon: AlertTriangle, text: 'Accounting errors and discrepancies' },
-                { icon: DollarSign, text: 'Poor cash flow visibility' },
-                { icon: Unlink, text: 'Disconnected financial systems' },
-                { icon: TrendingDown, text: 'Delayed financial reporting' },
+                { icon: Clock, text: 'Time-consuming bank reconciliations' },
+                { icon: AlertTriangle, text: 'GST/TDS errors that surface only at filing time' },
+                { icon: DollarSign, text: 'No single cash position across bank accounts' },
+                { icon: Unlink, text: 'Separate books per entity with no consolidation' },
+                { icon: TrendingDown, text: 'Delayed financial reporting at period end' },
             ],
         },
         solution: {
-            headline: 'Automate Your Financial Operations',
-            description: 'Our accounting platform handles everything from journal entries to financial statements. Automate reconciliations, track cash flow, ensure tax compliance, and generate reports—all in real-time with multi-entity support.',
+            headline: 'One Ledger. Every Module. Always Audit-Ready.',
+            description: 'Zopkit Financial Accounting covers the full transactional cycle — from chart of accounts to consolidated statements — with built-in GST/TDS compliance, period-locked close, and field-level audit trail across every entity.',
             differentiators: [
-                { icon: Calculator, text: 'Complete Accounting: GL, AP, AR, and more' },
-                { icon: RefreshCw, text: 'Auto Reconciliation: Bank and credit cards' },
-                { icon: BarChart3, text: 'Real-Time Reports: Financial statements instantly' },
-                { icon: Shield, text: 'Compliance: Tax and regulatory compliance (GAAP, IFRS)' },
-                { icon: Database, text: 'Multi-Entity: Consolidated reporting for holding companies' },
-                { icon: Smartphone, text: 'Mobile Access: Approve on-the-go' },
+                { icon: Calculator, text: 'Complete Accounting: GL, AP, AR, banking, assets & costs' },
+                { icon: RefreshCw, text: 'Bank Reconciliation: Rule-based matching, statement import' },
+                { icon: BarChart3, text: 'Financial Reports: P&L, balance sheet, cash flow, custom' },
+                { icon: Shield, text: 'India Tax: GST (CGST/SGST/IGST), TDS, e-invoice (IRN)' },
+                { icon: Database, text: 'Multi-Entity: Server-side consolidation, IC elimination' },
+                { icon: PieChart, text: 'Cost Accounting: Cost centres, allocation rules, dept P&L' },
             ],
         },
         features: [
-            { 
-                icon: Calculator, 
-                title: 'General Ledger', 
-                description: 'Complete chart of accounts, journal entries, automated posting workflows, and multi-currency support. Real-time financial data with complete audit trail.',
-                benefits: [
-                    'Reduce journal entry time by 60% with automation',
-                    'Maintain accurate books with real-time updates',
-                    'Support multiple currencies automatically'
+            {
+                icon: Calculator,
+                title: 'General Ledger',
+                description: 'The double-entry core — chart of accounts, journal workflows, period-locked close, and a real-time trial balance that never goes stale.',
+                subFeatures: [
+                    'Custom chart of accounts with multi-level hierarchy',
+                    'Journal entry creation with multi-level approval workflows',
+                    'Period-lock controls with admin-only override',
+                    'Real-time trial balance and account-level drill-down',
+                    'Multi-currency posting with manual or imported exchange rates',
                 ]
             },
-            { 
-                icon: ArrowDownLeft, 
-                title: 'Accounts Payable', 
-                description: 'Vendor management, bill tracking, payment processing, approval workflows, and three-way matching. Automate vendor payments and track expenses.',
-                benefits: [
-                    'Process bills 3x faster with automated workflows',
-                    'Prevent duplicate payments with three-way matching',
-                    'Track vendor expenses in real-time'
+            {
+                icon: Building2,
+                title: 'Multi-Entity Management',
+                description: 'Maintain fully independent books per entity while consolidating at the group level — server-side, with inter-company eliminations.',
+                subFeatures: [
+                    'Independent chart of accounts per entity, shared master optional',
+                    'Server-side consolidation across any entity combination',
+                    'Inter-company transaction posting and automatic elimination',
+                    'Role-based access scoped per entity',
+                    'Consolidated P&L and balance sheet at group level',
                 ]
             },
-            { 
-                icon: ArrowUpRight, 
-                title: 'Accounts Receivable', 
-                description: 'Customer invoicing, payment tracking, collections management, aging reports, and automated payment reminders. Improve cash flow.',
-                benefits: [
-                    'Reduce days sales outstanding by 25%',
-                    'Automate invoice generation and delivery',
-                    'Track collections with aging reports'
+            {
+                icon: DollarSign,
+                title: 'Multi-Currency',
+                description: 'Record transactions in any currency, apply entity-level exchange rates, and run revaluation entries at period end.',
+                subFeatures: [
+                    'Transaction-level currency assignment',
+                    'Manual or CSV-imported exchange rates per period',
+                    'Realized and unrealized FX gain/loss calculation',
+                    'Multi-currency bank account register',
+                    'Currency revaluation journal at period close',
                 ]
             },
-            { 
-                icon: Landmark, 
-                title: 'Bank Reconciliation', 
-                description: 'Automated bank feeds via APIs (Plaid, Yodlee), transaction matching, reconciliation workflows, multi-bank support, and cash flow forecasting.',
-                benefits: [
-                    'Reconcile accounts 10x faster with automation',
-                    'Eliminate manual transaction entry',
-                    'Forecast cash flow accurately'
+            {
+                icon: ArrowDownLeft,
+                title: 'Accounts Payable',
+                description: 'Vendor bills flow from entry through approval, three-way matching, and TDS deduction — before a single payment goes out.',
+                subFeatures: [
+                    'Vendor master with payment terms and TDS applicability',
+                    'Bill entry with line-level GL coding and cost centre tagging',
+                    'Configurable multi-level approval workflows',
+                    'Three-way PO–receipt–invoice matching',
+                    'TDS deduction at source with challan tracking',
                 ]
             },
-            { 
-                icon: BarChart3, 
-                title: 'Financial Reporting', 
-                description: 'Balance sheet, P&L, cash flow statements, custom report builder, budget vs. actual reports, and P&L by department/project. Generate reports instantly.',
-                benefits: [
-                    'Generate financial statements in seconds',
-                    'Create custom reports for stakeholders',
-                    'Track budget performance in real-time'
+            {
+                icon: ArrowUpRight,
+                title: 'Accounts Receivable',
+                description: 'GST-compliant customer invoices, aging buckets, automated reminders, and advance receipt application — all in one place.',
+                subFeatures: [
+                    'Customer invoicing with CGST/SGST/IGST line items',
+                    'Aging report with configurable buckets (0-30, 31-60, 61-90, 90+)',
+                    'Automated payment reminder scheduling',
+                    'Receipt application against open invoices and advance management',
+                    'Customer-level credit limit enforcement',
                 ]
             },
-            { 
-                icon: FileText, 
-                title: 'Tax Management & Compliance', 
-                description: 'GST/TDS management (India), VAT management (international), tax calculation automation, e-invoicing support, and tax return preparation. Ensure regulatory compliance.',
-                benefits: [
-                    'Ensure 100% tax compliance automatically',
-                    'Reduce tax preparation time by 70%',
-                    'Generate e-invoices for compliance'
+            {
+                icon: Landmark,
+                title: 'Banking & Cash',
+                description: 'Import bank statements, match transactions with rule-based logic, and see a consolidated cash position across every account.',
+                subFeatures: [
+                    'Multi-bank account register with running balance',
+                    'Bank statement import via CSV or OFX',
+                    'Rule-based transaction matching engine',
+                    'Unreconciled items report with aging',
+                    'Cash position summary across all accounts',
                 ]
             },
-            { 
-                icon: Building2, 
-                title: 'Multi-Entity Management', 
-                description: 'Consolidated reporting, inter-company transactions, entity-level permissions, cross-entity analytics, and group consolidation. Manage multiple companies from one platform.',
-                benefits: [
-                    'Consolidate financials across entities instantly',
-                    'Track inter-company transactions automatically',
-                    'Maintain separate books with unified reporting'
+            {
+                icon: Database,
+                title: 'Fixed Assets',
+                description: 'Track every asset through its full lifecycle — from capitalisation and depreciation to disposal — with schedule forecasting built in.',
+                subFeatures: [
+                    'Asset register with category, location, and cost centre',
+                    'Straight-line and declining-balance depreciation methods',
+                    'Asset addition, disposal, and inter-entity transfer',
+                    'Depreciation schedule with future-period forecast',
+                    'Asset revaluation journal entries',
                 ]
             },
-            { 
-                icon: DollarSign, 
-                title: 'Multi-Currency', 
-                description: 'Support for multiple currencies with automatic exchange rate updates, currency conversion, and multi-currency reporting. Handle global operations seamlessly.',
-                benefits: [
-                    'Handle transactions in 150+ currencies',
-                    'Auto-update exchange rates daily',
-                    'Generate multi-currency reports instantly'
+            {
+                icon: PieChart,
+                title: 'Cost Accounting',
+                description: 'Tag every transaction to a cost centre, define allocation rules, and read department-wise P&L without any spreadsheet work.',
+                subFeatures: [
+                    'Cost centre hierarchy definition',
+                    'Transaction-level cost centre tagging on every voucher',
+                    'Allocation rules for shared cost distribution',
+                    'Department-wise and project-wise P&L',
+                    'Budget vs. actuals by cost centre',
                 ]
             },
-            { 
-                icon: Database, 
-                title: 'Fixed Assets Management', 
-                description: 'Asset tracking, depreciation calculations (straight-line, declining balance), asset disposal, maintenance scheduling, and asset valuation. Complete asset lifecycle management.',
-                benefits: [
-                    'Track all assets in one place',
-                    'Calculate depreciation automatically',
-                    'Schedule maintenance and renewals'
+            {
+                icon: BarChart3,
+                title: 'Financial Reporting',
+                description: 'Statutory statements — P&L, balance sheet, cash flow — plus a custom report builder that filters by entity, period, or dimension.',
+                subFeatures: [
+                    'Profit & Loss by entity, period, or comparative view',
+                    'Balance sheet as at any historical point in time',
+                    'Cash flow statement (direct and indirect method)',
+                    'Custom report builder with dimension and date filters',
+                    'Scheduled report delivery via email',
                 ]
             },
-            { 
-                icon: PieChart, 
-                title: 'Cost Accounting', 
-                description: 'Project costing, department costing, cost center allocation, activity-based costing, and profitability analysis. Track costs by project, department, or location.',
-                benefits: [
-                    'Track project profitability in real-time',
-                    'Allocate costs accurately by department',
-                    'Identify profitable vs. unprofitable projects'
+            {
+                icon: FileText,
+                title: 'Tax Management',
+                description: 'GST and TDS are embedded in every transaction — calculation, e-invoice generation, and return-preparation data are produced automatically.',
+                subFeatures: [
+                    'CGST / SGST / IGST calculation on each transaction line',
+                    'TDS deduction, challan tracking, and Form 26Q data export',
+                    'GSTR-1 and GSTR-3B preparation data',
+                    'E-invoice generation with IRN and QR code',
+                    'Tax liability ledger and payment tracking',
                 ]
             },
-            { 
-                icon: Shield, 
-                title: 'Compliance & Audit', 
-                description: 'Complete audit trail with user tracking, change history, document retention policies, compliance reporting, and regulatory compliance (GAAP, IFRS). Stay audit-ready.',
-                benefits: [
-                    'Maintain complete audit trail automatically',
-                    'Stay compliant with GAAP and IFRS',
-                    'Generate compliance reports instantly'
+            {
+                icon: Shield,
+                title: 'Compliance & Audit',
+                description: 'An immutable, field-level audit trail captures every change — who, what, when — so you are always audit-ready without extra effort.',
+                subFeatures: [
+                    'Field-level audit trail with user ID and timestamp on every change',
+                    'Immutable transaction log — no silent edits or deletions',
+                    'Document attachment on every voucher for supporting evidence',
+                    'Period-lock controls prevent post-close modifications',
+                    'Compliance report export ready for external auditors',
                 ]
             },
         ],

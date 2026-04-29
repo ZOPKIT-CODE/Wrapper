@@ -358,7 +358,7 @@ class KindeService {
         });
 
         if (shouldLogVerbose()) console.log('getUserInfo: user_profile OK');
-        return cacheAndReturn(response.data as Record<string, unknown>);
+        return cacheAndReturn(normalizeKindePayload(response.data as Record<string, unknown>));
       } catch (profileErr: unknown) {
         const profileError = profileErr as Error & { response?: { status?: number; statusText?: string; data?: unknown } };
         if (shouldLogVerbose()) {

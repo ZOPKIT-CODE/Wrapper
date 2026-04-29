@@ -172,7 +172,10 @@ export async function checkTrialHistory(tenantId: string): Promise<boolean> {
 }
 
 /**
- * Cancel subscription for tenant.
+ * Cancel subscription for tenant at the end of the current billing period.
+ * The subscription stays active until currentPeriodEnd — the user keeps full
+ * access. When the period ends, Stripe fires `customer.subscription.deleted`
+ * and our webhook handler expires all credits and marks it canceled.
  */
 export async function cancelSubscription(
   tenantId: string,
@@ -190,19 +193,25 @@ export async function cancelSubscription(
       throw new Error('Cannot cancel trial plan');
     }
 
+    const subId = (currentSubscription.subscriptionId ?? currentSubscription.id) as string;
+    const periodEnd = currentSubscription.currentPeriodEnd
+      ? new Date(currentSubscription.currentPeriodEnd as string | Date)
+      : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+
     if (currentSubscription.stripeSubscriptionId && gateway.isConfigured()) {
-      await gateway.cancelSubscription(currentSubscription.stripeSubscriptionId as string);
+      // Schedule cancellation at end of billing period (NOT immediate)
+      await gateway.updateSubscription(currentSubscription.stripeSubscriptionId as string, {
+        cancelAtPeriodEnd: true,
+      });
 
       await db
         .update(subscriptions)
         .set({
-          status: 'canceled',
-          canceledAt: new Date(),
-          updatedAt: new Date()
+          cancelAt: periodEnd,
+          updatedAt: new Date(),
         })
-        .where(eq(subscriptions.subscriptionId, (currentSubscription.subscriptionId ?? currentSubscription.id) as string));
+        .where(eq(subscriptions.subscriptionId, subId));
 
-      const subId = (currentSubscription.subscriptionId ?? currentSubscription.id) as string;
       await db.insert(payments).values({
         paymentId: uuidv4(),
         tenantId: tenantId,
@@ -210,43 +219,47 @@ export async function cancelSubscription(
         stripeInvoiceId: null,
         amount: '0.00',
         currency: 'USD',
-        status: 'canceled',
+        status: 'cancelled',
         paymentMethod: 'subscription_cancel',
-        description: `Subscription canceled for ${currentSubscription.plan} plan`,
+        description: `Subscription scheduled to cancel on ${periodEnd.toLocaleDateString()} for ${currentSubscription.plan} plan`,
         metadata: {
           canceledStripeSubscriptionId: currentSubscription.stripeSubscriptionId,
           cancelReason: reason,
-          refundEligible: false
+          cancelAt: periodEnd.toISOString(),
+          refundEligible: false,
         },
-        createdAt: new Date()
+        createdAt: new Date(),
       });
+
+      console.log(`📅 Subscription ${subId} scheduled to cancel at ${periodEnd.toISOString()}`);
 
       return {
         subscriptionId: subId,
         stripeSubscriptionId: currentSubscription.stripeSubscriptionId,
-        status: 'canceled',
-        canceledAt: new Date()
+        status: 'active',
+        cancelAt: periodEnd,
+        message: `Your subscription will remain active until ${periodEnd.toLocaleDateString()}. You will not be charged again.`,
       };
     } else {
-      const subIdElse = (currentSubscription.subscriptionId ?? currentSubscription.id) as string;
+      // No Stripe subscription — schedule cancellation at period end in DB only
       await db
         .update(subscriptions)
         .set({
-          status: 'canceled',
-          canceledAt: new Date(),
-          updatedAt: new Date()
+          cancelAt: periodEnd,
+          updatedAt: new Date(),
         })
-        .where(eq(subscriptions.subscriptionId, subIdElse));
+        .where(eq(subscriptions.subscriptionId, subId));
 
       return {
-        subscriptionId: subIdElse,
-        status: 'canceled',
-        canceledAt: new Date()
+        subscriptionId: subId,
+        status: 'active',
+        cancelAt: periodEnd,
+        message: `Your subscription will remain active until ${periodEnd.toLocaleDateString()}.`,
       };
     }
   } catch (err: unknown) {
     const error = err as Error;
-    console.error('Error canceling subscription:', error);
+    console.error('Error scheduling subscription cancellation:', error);
     throw error;
   }
 }

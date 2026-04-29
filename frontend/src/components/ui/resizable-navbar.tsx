@@ -6,7 +6,7 @@ import {
     useMotionTemplate,
     useMotionValue,
 } from "framer-motion";
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState } from "react";
 import { config } from "@/lib/config";
 
 // Types
@@ -48,47 +48,12 @@ interface MobileNavMenuProps {
     onClose: () => void;
 }
 
-// Hysteresis thresholds (wider band = less toggling)
-const SCROLL_SHOW_THRESHOLD = 48;
-const SCROLL_HIDE_THRESHOLD = 12;
-
-// Main Navbar Container - native scroll + RAF for smooth shrink/expand
+// Main Navbar Container — always pill shape, no scroll resizing
 export const Navbar = ({ children, className }: NavbarProps) => {
     const ref = useRef<HTMLDivElement>(null);
-    const [visible, setVisible] = useState<boolean>(false);
-    const lastVisibleRef = useRef<boolean>(false);
-    const rafRef = useRef<number | null>(null);
-
-    useEffect(() => {
-        const checkScroll = () => {
-            rafRef.current = null;
-            const px = typeof window !== "undefined" ? (window.scrollY ?? document.documentElement.scrollTop) : 0;
-            const shouldShow = px > SCROLL_SHOW_THRESHOLD;
-            const shouldHide = px <= SCROLL_HIDE_THRESHOLD;
-            if (shouldShow && !lastVisibleRef.current) {
-                lastVisibleRef.current = true;
-                setVisible(true);
-            } else if (shouldHide && lastVisibleRef.current) {
-                lastVisibleRef.current = false;
-                setVisible(false);
-            }
-        };
-
-        const onScroll = () => {
-            if (rafRef.current != null) return;
-            rafRef.current = requestAnimationFrame(checkScroll);
-        };
-
-        checkScroll();
-        window.addEventListener("scroll", onScroll, { passive: true });
-        return () => {
-            window.removeEventListener("scroll", onScroll);
-            if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
-        };
-    }, []);
 
     return (
-        <motion.div
+        <div
             ref={ref}
             className={cn("fixed inset-x-0 top-0 z-[100] w-full pointer-events-none", className)}
         >
@@ -96,32 +61,27 @@ export const Navbar = ({ children, className }: NavbarProps) => {
                 React.isValidElement(child)
                     ? React.cloneElement(
                         child as React.ReactElement<{ visible?: boolean }>,
-                        { visible },
+                        { visible: true },
                     )
                     : child,
             )}
-        </motion.div>
+        </div>
     );
 };
 
-// Desktop Nav Body - CSS transitions only (no Framer) for smooth resize
-const navBodyTransition = "transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]";
-
-export const NavBody = ({ children, className, visible }: NavBodyProps) => {
+// Desktop Nav Body — always pill/capsule shape
+export const NavBody = ({ children, className }: NavBodyProps) => {
     return (
         <div
             className={cn(
                 "pointer-events-auto relative mx-auto hidden flex-row items-center justify-between lg:flex z-50",
-                navBodyTransition,
-                visible
-                    ? "mt-5 w-[90%] max-w-[1200px] rounded-full border border-black/[0.08] bg-white/80 py-2.5 pl-3 pr-3 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.05),0_0_0_1px_rgba(0,0,0,0.02)] backdrop-blur-[20px] saturate-[1.8]"
-                    : "mt-0 w-full max-w-full rounded-none border border-transparent bg-white py-[18px] pl-8 pr-8 shadow-[0_1px_0_0_rgba(0,0,0,0.05)] backdrop-blur-0 saturate-100",
+                "mt-4 w-[92%] max-w-[1280px] rounded-full border border-black/[0.08] bg-[#ebebeb] py-2 pl-2 pr-2 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.10),0_0_0_1px_rgba(0,0,0,0.04)]",
                 className,
             )}
         >
             {React.Children.map(children, (child) => {
                 if (React.isValidElement(child) && (child.type as any)?.__isNavbarLogo) {
-                    return React.cloneElement(child as React.ReactElement<{ visible?: boolean }>, { visible });
+                    return React.cloneElement(child as React.ReactElement<{ visible?: boolean }>, { visible: true });
                 }
                 return child;
             })}
@@ -169,18 +129,13 @@ export const NavItems = ({ items, className, onItemClick }: NavItemsProps) => {
     );
 };
 
-// Mobile Nav Container - CSS transitions only (no Framer) for smooth resize
-const mobileNavTransition = "transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]";
-
-export const MobileNav = ({ children, className, visible }: MobileNavProps) => {
+// Mobile Nav Container — always pill shape
+export const MobileNav = ({ children, className }: MobileNavProps) => {
     return (
         <div
             className={cn(
                 "pointer-events-auto relative z-50 mx-auto flex flex-col items-center justify-between backdrop-blur-xl lg:hidden",
-                mobileNavTransition,
-                visible
-                    ? "mt-4 w-[95%] rounded-3xl border border-transparent bg-white/90 shadow-[0_8px_32px_rgba(0,0,0,0.1),0_0_0_1px_rgba(0,0,0,0.05)]"
-                    : "mt-0 w-full rounded-none border-b border-neutral-100 bg-white shadow-none",
+                "mt-3 w-[95%] rounded-3xl border border-black/[0.08] bg-[#ebebeb] shadow-[0_4px_24px_-4px_rgba(0,0,0,0.10)]",
                 className,
             )}
         >
@@ -209,7 +164,7 @@ export const MobileNavMenu = ({
     children,
     className,
     isOpen,
-    onClose,
+    onClose: _onClose,
 }: MobileNavMenuProps) => {
     return (
         <AnimatePresence>
@@ -233,23 +188,17 @@ export const MobileNavMenu = ({
     );
 };
 
-export const NavbarLogo = ({ visible }: { visible?: boolean }) => {
+export const NavbarLogo = ({ visible: _visible }: { visible?: boolean }) => {
     (NavbarLogo as any).__isNavbarLogo = true;
     return (
         <a
             href="/"
-            className={cn(
-                "relative z-20 flex shrink-0 items-center gap-2 pl-4 transition-all duration-300",
-                visible ? "scale-90" : "scale-100"
-            )}
+            className="relative z-20 flex shrink-0 items-center gap-2 pl-2"
         >
-             <img
+            <img
                 src={config.FULL_LOGO_URL}
                 alt="Zopkit"
-                className={cn(
-                    "block w-auto object-cover transition-all rounded-3xl duration-300",
-                    visible ? "h-14" : "h-18"
-                )}
+                className="block h-12 w-auto object-cover rounded-2xl"
             />
         </a>
     );
@@ -266,8 +215,6 @@ const SpotlightButton = ({
 }: any) => {
     const mouseX = useMotionValue(0);
     const mouseY = useMotionValue(0);
-    const [isHovered, setIsHovered] = useState(false);
-
     function handleMouseMove({ currentTarget, clientX, clientY }: React.MouseEvent) {
         let { left, top } = currentTarget.getBoundingClientRect();
         mouseX.set(clientX - left);
@@ -279,8 +226,6 @@ const SpotlightButton = ({
             href={href}
             onClick={onClick}
             onMouseMove={handleMouseMove}
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
             className={cn(
                 "group relative inline-flex items-center justify-center overflow-hidden rounded-full bg-neutral-950 px-6 py-2.5 font-medium text-neutral-50 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-neutral-500/20 active:scale-95",
                 className
@@ -308,8 +253,7 @@ const SpotlightButton = ({
     );
 };
 
-// New Innovative Magnetic/Ghost Button
-const MagneticButton = ({ children, as: Tag = "button", href, className, ...props }: any) => {
+export const MagneticButton = ({ children, as: Tag = "button", href, className, ...props }: any) => {
     return (
         <Tag
             href={href}
