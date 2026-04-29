@@ -45,5 +45,12 @@
   "fix_timestamps_to_timestamptz.sql",
   "hierarchy_triggers.sql",
   "multi_entity_invitations.sql",
-  "perf_001_auth_indexes.sql"
+  "perf_001_auth_indexes.sql",
+  "0018_perf_onboarding_indexes.sql",
+  "add_credit_expiry_runs.sql",
+  "add_credit_type_to_credit_batches.sql",
+  "credit_expiry_tracking.sql",
+  "credit_type_column.sql",
+  "fix_expires_at_timestamptz.sql",
+  "rename_seasonal_allocations_to_credit_batches.sql"
 ]
