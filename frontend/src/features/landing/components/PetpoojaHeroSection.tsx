@@ -113,7 +113,7 @@ function Headline() {
   )
 }
 
-// ─── Agent data (3 agents, each fetching from one source) ─────────────────────
+// ─── Agent data (5 agents, each fetching from one source) ─────────────────────
 const AGENTS = [
   {
     id: 1, label: 'Agent 1', source: 'B2B CRM',
@@ -135,6 +135,20 @@ const AGENTS = [
     metric1: '1,247 SKUs', metric2: '34 Orders today',
     bars: [0.7, 0.5, 0.85, 0.6, 0.45],
     progress: 72,
+  },
+  {
+    id: 4, label: 'Agent 4', source: 'HRMS',
+    color: '#8b5cf6',
+    metric1: '284 Employees', metric2: '98% Attendance',
+    bars: [0.6, 0.75, 0.65, 0.7, 0.9],
+    progress: 91,
+  },
+  {
+    id: 5, label: 'Agent 5', source: 'Project Mgmt',
+    color: '#06b6d4',
+    metric1: '47 Projects', metric2: '12 Due this week',
+    bars: [0.45, 0.6, 0.8, 0.55, 0.75],
+    progress: 68,
   },
 ] as const
 
@@ -268,7 +282,7 @@ function DashboardMock() {
             <span style={TX('rgba(255,255,255,0.9)', 9, 600)}>AI Agent Orchestrator</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(74,222,128,0.12)', border: '1px solid rgba(74,222,128,0.28)', borderRadius: 100, padding: '2px 8px' }}>
               <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 5px #4ade80' }} />
-              <span style={TX('rgba(74,222,128,0.9)', 7, 600)}>3 Agents Running</span>
+              <span style={TX('rgba(74,222,128,0.9)', 7, 600)}>5 Agents Running</span>
             </div>
           </div>
           <span style={TX('rgba(255,255,255,0.3)', 7)}>Live Sync</span>
@@ -315,7 +329,9 @@ function DashboardMock() {
             <span style={{ ...TX('rgba(255,255,255,0.2)', 7), margin: '0 2px' }}>•</span>
             <span style={TX('rgba(255,255,255,0.7)', 7)}>Approve ₹32L payroll</span>
             <span style={{ ...TX('rgba(255,255,255,0.2)', 7), margin: '0 2px' }}>•</span>
-            <span style={TX('rgba(255,255,255,0.7)', 7)}>Flag 3 high-value CRM leads</span>
+            <span style={TX('rgba(255,255,255,0.7)', 7)}>Flag 3 CRM leads</span>
+            <span style={{ ...TX('rgba(255,255,255,0.2)', 7), margin: '0 2px' }}>•</span>
+            <span style={TX('rgba(255,255,255,0.7)', 7)}>Reschedule 2 sprints</span>
           </div>
           {/* Agent status pills */}
           <div style={{ marginTop: 6, display: 'flex', gap: 5 }}>
@@ -328,12 +344,13 @@ function DashboardMock() {
           </div>
         </div>
 
-        {/* ── Vertical connector lines (sub-agents report UP to orchestrator) ── */}
+        {/* ── Vertical connector lines (5 sub-agents report UP to orchestrator) ── */}
         <div style={{ position: 'relative', height: 28, flexShrink: 0 }}>
           <svg width="100%" height="28" style={{ display: 'block', overflow: 'visible' }}>
-            {/* 3 vertical lines positioned at centre of each sub-agent column */}
+            {/* 5 vertical lines positioned at centre of each sub-agent column: 10%,30%,50%,70%,90% */}
             {AGENTS.map((agent, idx) => {
-              const x = `${(idx * 33.33 + 16.67)}%`
+              const pct = 10 + idx * 20
+              const x = `${pct}%`
               return (
                 <g key={agent.id}>
                   {/* faint track */}
@@ -342,31 +359,31 @@ function DashboardMock() {
                   <line x1={x} y1="28" x2={x} y2="3"
                     stroke={agent.color} strokeWidth="1.5" strokeDasharray="5 4" strokeLinecap="round"
                     opacity="0.7"
-                    style={{ animation: `data-flow-up ${0.9 + idx * 0.22}s linear infinite` }}
+                    style={{ animation: `data-flow-up ${0.9 + idx * 0.18}s linear infinite` }}
                   />
                   {/* upward arrowhead */}
                   <polygon
-                    points={`${(idx * 33.33 + 14.67)}%,6 ${(idx * 33.33 + 18.67)}%,6 ${(idx * 33.33 + 16.67)}%,0`}
+                    points={`${pct - 2}%,6 ${pct + 2}%,6 ${pct}%,0`}
                     fill={agent.color} opacity="0.85"
                   />
                 </g>
               )
             })}
-            {/* Horizontal branch connecting the 3 lines */}
-            <line x1="16.67%" y1="0" x2="83.33%" y2="0" stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
+            {/* Horizontal branch connecting the 5 lines */}
+            <line x1="10%" y1="0" x2="90%" y2="0" stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
           </svg>
         </div>
 
-        {/* ── 3 Sub-agent cards ── */}
-        <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, minHeight: 0 }}>
+        {/* ── 5 Sub-agent cards ── */}
+        <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 5, minHeight: 0 }}>
           {AGENTS.map((agent, idx) => (
             <div key={agent.id} style={{
               background: `${agent.color}0a`,
               border: `1px solid ${agent.color}30`,
               borderTop: `3px solid ${agent.color}`,
               borderRadius: '0 0 7px 7px',
-              padding: '7px 9px',
-              display: 'flex', flexDirection: 'column', gap: 4,
+              padding: '6px 7px',
+              display: 'flex', flexDirection: 'column', gap: 3,
               position: 'relative', overflow: 'hidden',
             }}>
               <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(ellipse at 50% 0%, ${agent.color}18, transparent 65%)`, pointerEvents: 'none' }} />
@@ -390,8 +407,8 @@ function DashboardMock() {
               </div>
 
               {/* Metrics */}
-              <span style={TX('rgba(255,255,255,0.88)', 8.5, 700)}>{agent.metric1}</span>
-              <span style={TX(`${agent.color}cc`, 6.5)}>{agent.metric2}</span>
+              <span style={TX('rgba(255,255,255,0.88)', 7.5, 700)}>{agent.metric1}</span>
+              <span style={TX(`${agent.color}cc`, 6)}>{agent.metric2}</span>
 
               {/* Mini bar chart */}
               <div style={{ display: 'flex', alignItems: 'flex-end', gap: 2, height: 10, marginTop: 1 }}>
@@ -420,24 +437,6 @@ function DashboardMock() {
           ))}
         </div>
 
-        {/* Bottom strip */}
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 5, marginTop: 7,
-          padding: '4px 8px',
-          background: 'rgba(255,255,255,0.018)',
-          border: '1px solid rgba(255,255,255,0.05)',
-          borderRadius: 4, flexShrink: 0,
-        }}>
-          <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 4px #4ade80', flexShrink: 0 }} />
-          <span style={TX('rgba(255,255,255,0.4)', 7)}>Connected Apps</span>
-          <div style={{ width: 1, height: 10, background: 'rgba(255,255,255,0.1)', margin: '0 2px' }} />
-          {['HRMS', 'Projects', 'Flowtilla', 'ESOP', 'B2C CRM'].map((name) => (
-            <div key={name} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 100, padding: '2px 8px' }}>
-              <span style={TX('rgba(255,255,255,0.45)', 6.5)}>{name}</span>
-            </div>
-          ))}
-          <span style={{ ...TX('rgba(255,255,255,0.2)', 6.5), marginLeft: 'auto' }}>5 more apps</span>
-        </div>
       </div>
     </motion.div>
   )
