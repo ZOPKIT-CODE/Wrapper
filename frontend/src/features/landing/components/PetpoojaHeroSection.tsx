@@ -743,11 +743,6 @@ export function PetpoojaHeroSection({ onBookDemo }: { onBookDemo?: () => void })
         <Headline />
       </div>
 
-      {/* CTAs */}
-      <div style={{ paddingLeft: isMobile ? 24 : 0, paddingRight: isMobile ? 24 : 0 }}>
-        <HeroCTAs onBookDemo={onBookDemo} />
-      </div>
-
       {/* ── Desktop: [left cards] [screen] [right cards] ── */}
       {!isMobile && (
         <div style={{ position: 'relative', marginTop: 'clamp(12px, 2vh, 28px)', width: '100%', maxWidth: 1320, display: 'flex', flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'center' }}>
