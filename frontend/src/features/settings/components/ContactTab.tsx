@@ -21,50 +21,118 @@ interface ContactTabProps {
 export const ContactTab: React.FC<ContactTabProps> = ({ form }) => {
   return (
     <TabsContent value="contact" className="space-y-6">
-      <Card>
+      <Card style={{ border: '1px solid var(--zk-line)' }}>
         <CardHeader>
-          <CardTitle>Contact Information</CardTitle>
-          <CardDescription>
+          <CardTitle
+            style={{
+              fontFamily: 'var(--zk-display)',
+              letterSpacing: '-0.025em',
+              color: 'var(--zk-ink)',
+            }}
+          >
+            Contact Information
+          </CardTitle>
+          <CardDescription
+            style={{
+              fontFamily: 'var(--zk-font)',
+              color: 'var(--zk-muted)',
+              fontSize: 13,
+            }}
+          >
             Manage additional contact details and preferences
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="billingEmail">Billing Email</Label>
+              <Label
+                htmlFor="billingEmail"
+                style={{
+                  fontSize: 12,
+                  fontWeight: 500,
+                  color: 'var(--zk-muted)',
+                  fontFamily: 'var(--zk-font)',
+                }}
+              >
+                Billing Email
+              </Label>
               <Input
                 id="billingEmail"
                 type="email"
                 {...form.register('billingEmail')}
                 placeholder="billing@company.com"
+                style={{ fontSize: 13, fontFamily: 'var(--zk-font)', color: 'var(--zk-ink)' }}
               />
-              <p className="text-sm text-muted-foreground">
+              <p
+                style={{
+                  fontSize: 12,
+                  color: 'var(--zk-muted-2)',
+                  fontFamily: 'var(--zk-font)',
+                }}
+              >
                 Separate email for invoices and billing
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="supportEmail">Support Email</Label>
+              <Label
+                htmlFor="supportEmail"
+                style={{
+                  fontSize: 12,
+                  fontWeight: 500,
+                  color: 'var(--zk-muted)',
+                  fontFamily: 'var(--zk-font)',
+                }}
+              >
+                Support Email
+              </Label>
               <Input
                 id="supportEmail"
                 type="email"
                 {...form.register('supportEmail')}
                 placeholder="support@company.com"
+                style={{ fontSize: 13, fontFamily: 'var(--zk-font)', color: 'var(--zk-ink)' }}
               />
-              <p className="text-sm text-muted-foreground">
+              <p
+                style={{
+                  fontSize: 12,
+                  color: 'var(--zk-muted-2)',
+                  fontFamily: 'var(--zk-font)',
+                }}
+              >
                 Email address for customer support
               </p>
             </div>
           </div>
 
-          <Separator />
+          <Separator style={{ borderColor: 'var(--zk-line)' }} />
 
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Primary Contact Details</h3>
+            <h3
+              style={{
+                fontSize: 14,
+                fontFamily: 'var(--zk-display)',
+                fontWeight: 600,
+                letterSpacing: '-0.02em',
+                color: 'var(--zk-ink)',
+              }}
+            >
+              Primary Contact Details
+            </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="contactSalutation">Salutation</Label>
+                <Label
+                  htmlFor="contactSalutation"
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 500,
+                    color: 'var(--zk-muted)',
+                    fontFamily: 'var(--zk-font)',
+                  }}
+                >
+                  Salutation
+                </Label>
                 <Select
                   value={form.watch('contactSalutation') || ''}
                   onValueChange={(value) => form.setValue('contactSalutation', value)}
@@ -83,36 +151,79 @@ export const ContactTab: React.FC<ContactTabProps> = ({ form }) => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="contactMiddleName">Middle Name</Label>
+                <Label
+                  htmlFor="contactMiddleName"
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 500,
+                    color: 'var(--zk-muted)',
+                    fontFamily: 'var(--zk-font)',
+                  }}
+                >
+                  Middle Name
+                </Label>
                 <Input
                   id="contactMiddleName"
                   {...form.register('contactMiddleName')}
                   placeholder="Middle name"
+                  style={{ fontSize: 13, fontFamily: 'var(--zk-font)', color: 'var(--zk-ink)' }}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="contactDepartment">Department</Label>
+                <Label
+                  htmlFor="contactDepartment"
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 500,
+                    color: 'var(--zk-muted)',
+                    fontFamily: 'var(--zk-font)',
+                  }}
+                >
+                  Department
+                </Label>
                 <Input
                   id="contactDepartment"
                   {...form.register('contactDepartment')}
                   placeholder="Department name"
+                  style={{ fontSize: 13, fontFamily: 'var(--zk-font)', color: 'var(--zk-ink)' }}
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="contactJobTitle">Job Title</Label>
+                <Label
+                  htmlFor="contactJobTitle"
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 500,
+                    color: 'var(--zk-muted)',
+                    fontFamily: 'var(--zk-font)',
+                  }}
+                >
+                  Job Title
+                </Label>
                 <Input
                   id="contactJobTitle"
                   {...form.register('contactJobTitle')}
                   placeholder="e.g., CEO, Manager"
+                  style={{ fontSize: 13, fontFamily: 'var(--zk-font)', color: 'var(--zk-ink)' }}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="contactAuthorityLevel">Authority Level</Label>
+                <Label
+                  htmlFor="contactAuthorityLevel"
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 500,
+                    color: 'var(--zk-muted)',
+                    fontFamily: 'var(--zk-font)',
+                  }}
+                >
+                  Authority Level
+                </Label>
                 <Select
                   value={form.watch('contactAuthorityLevel') || ''}
                   onValueChange={(value) => form.setValue('contactAuthorityLevel', value)}
@@ -132,14 +243,32 @@ export const ContactTab: React.FC<ContactTabProps> = ({ form }) => {
             </div>
           </div>
 
-          <Separator />
+          <Separator style={{ borderColor: 'var(--zk-line)' }} />
 
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Phone Numbers</h3>
+            <h3
+              style={{
+                fontSize: 14,
+                fontFamily: 'var(--zk-display)',
+                fontWeight: 600,
+                letterSpacing: '-0.02em',
+                color: 'var(--zk-ink)',
+              }}
+            >
+              Phone Numbers
+            </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="contactDirectPhone">
+                <Label
+                  htmlFor="contactDirectPhone"
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 500,
+                    color: 'var(--zk-muted)',
+                    fontFamily: 'var(--zk-font)',
+                  }}
+                >
                   <Phone className="h-4 w-4 inline mr-1" />
                   Direct Phone
                 </Label>
@@ -148,11 +277,20 @@ export const ContactTab: React.FC<ContactTabProps> = ({ form }) => {
                   type="tel"
                   {...form.register('contactDirectPhone')}
                   placeholder="+1 555-123-4567"
+                  style={{ fontSize: 13, fontFamily: 'var(--zk-font)', color: 'var(--zk-ink)' }}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="contactMobilePhone">
+                <Label
+                  htmlFor="contactMobilePhone"
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 500,
+                    color: 'var(--zk-muted)',
+                    fontFamily: 'var(--zk-font)',
+                  }}
+                >
                   <Phone className="h-4 w-4 inline mr-1" />
                   Mobile Phone
                 </Label>
@@ -161,19 +299,40 @@ export const ContactTab: React.FC<ContactTabProps> = ({ form }) => {
                   type="tel"
                   {...form.register('contactMobilePhone')}
                   placeholder="+1 555-987-6543"
+                  style={{ fontSize: 13, fontFamily: 'var(--zk-font)', color: 'var(--zk-ink)' }}
                 />
               </div>
             </div>
           </div>
 
-          <Separator />
+          <Separator style={{ borderColor: 'var(--zk-line)' }} />
 
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Contact Preferences</h3>
+            <h3
+              style={{
+                fontSize: 14,
+                fontFamily: 'var(--zk-display)',
+                fontWeight: 600,
+                letterSpacing: '-0.02em',
+                color: 'var(--zk-ink)',
+              }}
+            >
+              Contact Preferences
+            </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="preferredContactMethod">Preferred Contact Method</Label>
+                <Label
+                  htmlFor="preferredContactMethod"
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 500,
+                    color: 'var(--zk-muted)',
+                    fontFamily: 'var(--zk-font)',
+                  }}
+                >
+                  Preferred Contact Method
+                </Label>
                 <Select
                   value={form.watch('preferredContactMethod') || ''}
                   onValueChange={(value) => form.setValue('preferredContactMethod', value)}
@@ -192,7 +351,17 @@ export const ContactTab: React.FC<ContactTabProps> = ({ form }) => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="contactPreferredContactMethod">Contact's Preferred Method</Label>
+                <Label
+                  htmlFor="contactPreferredContactMethod"
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 500,
+                    color: 'var(--zk-muted)',
+                    fontFamily: 'var(--zk-font)',
+                  }}
+                >
+                  Contact's Preferred Method
+                </Label>
                 <Select
                   value={form.watch('contactPreferredContactMethod') || ''}
                   onValueChange={(value) => form.setValue('contactPreferredContactMethod', value)}

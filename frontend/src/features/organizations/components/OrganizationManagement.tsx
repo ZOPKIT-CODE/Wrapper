@@ -1076,7 +1076,7 @@ export function OrganizationTreeManagement({
                   L{level + 1}
                 </Badge>
               )}
-              <span className="font-semibold text-[#1B2E5A] dark:text-slate-100 truncate text-sm sm:text-base">
+              <span className="dark:text-slate-100 truncate text-sm sm:text-base" style={{ fontFamily: 'var(--zk-display)', fontWeight: 600, letterSpacing: '-0.025em', color: 'var(--zk-ink)' }}>
                 {org.entityName}
               </span>
               <Badge variant={org.isActive !== false ? "outline" : "destructive"} className="text-[10px] px-1.5 py-0 h-5">
@@ -1102,12 +1102,12 @@ export function OrganizationTreeManagement({
               {/* Always show credits - they're now always numbers (default to 0) */}
               <span className="flex items-center gap-1" title={`Available: ${typeof (org as any).availableCredits === 'string' ? parseFloat((org as any).availableCredits) || 0 : (typeof (org as any).availableCredits === 'number' ? (org as any).availableCredits : 0)}, Reserved: ${typeof (org as any).reservedCredits === 'string' ? parseFloat((org as any).reservedCredits) || 0 : (typeof (org as any).reservedCredits === 'number' ? (org as any).reservedCredits : 0)}`}>
                 <CreditCard className="w-3 h-3" />
-                <span className="font-medium text-slate-700 dark:text-slate-300">
+                <span className="dark:text-slate-300" style={{ fontFamily: 'var(--zk-mono)', fontWeight: 600, letterSpacing: '-0.02em', color: 'var(--zk-ink)' }}>
                   {(typeof (org as any).availableCredits === 'string'
                     ? parseFloat((org as any).availableCredits) || 0
                     : (typeof (org as any).availableCredits === 'number' ? (org as any).availableCredits : 0)).toLocaleString(undefined, { maximumFractionDigits: 2 })}
                 </span>
-                <span className="text-slate-500 dark:text-slate-400">Credits</span>
+                <span className="dark:text-slate-400" style={{ fontFamily: 'var(--zk-font)', fontSize: 12, color: 'var(--zk-muted)' }}>Credits</span>
               </span>
             </div>
           </div>
@@ -1216,15 +1216,15 @@ export function OrganizationTreeManagement({
     <div className="space-y-6">
 
       {/* Header Stats & Tools */}
-      <div className="flex flex-col xl:flex-row gap-4 justify-between items-start xl:items-center bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+      <div className="flex flex-col xl:flex-row gap-4 justify-between items-start xl:items-center dark:bg-slate-900 dark:border-slate-800 p-4 rounded-xl shadow-sm" style={{ backgroundColor: 'var(--zk-paper)', border: '1px solid var(--zk-line)' }}>
 
         <div className="flex items-center gap-3 w-full xl:w-auto">
-          <div className="p-2 bg-[#1B2E5A]/10 dark:bg-[#1B2E5A]/10 rounded-lg text-[#1B2E5A] dark:text-blue-400">
+          <div className="p-2 rounded-lg dark:bg-blue-900/20 dark:text-blue-400" style={{ backgroundColor: 'color-mix(in srgb, var(--zk-navy) 10%, transparent)', color: 'var(--zk-navy)' }}>
             <Network className="w-6 h-6" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-[#1B2E5A]">Hierarchy</h2>
-            <div className="text-xs text-slate-500 flex gap-2">
+            <h2 className="text-lg" style={{ fontFamily: 'var(--zk-display)', fontWeight: 600, letterSpacing: '-0.025em', color: 'var(--zk-ink)' }}>Hierarchy</h2>
+            <div className="flex gap-2" style={{ fontFamily: 'var(--zk-mono)', fontSize: 11, color: 'var(--zk-muted-2)' }}>
               <span>{hierarchy?.totalOrganizations || 0} Organizations</span>
               <span>•</span>
               <span>{locations.length} Locations</span>
@@ -1300,8 +1300,8 @@ export function OrganizationTreeManagement({
           ) : (
             <div className="text-center py-12 bg-slate-50 dark:bg-slate-900 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">
               <TreePine className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-              <h3 className="text-[#1B2E5A] dark:text-white font-medium">No results found</h3>
-              <p className="text-slate-500 text-sm mt-1">Try adjusting your filters or search terms.</p>
+              <h3 className="dark:text-white" style={{ fontFamily: 'var(--zk-display)', fontWeight: 600, letterSpacing: '-0.025em', color: 'var(--zk-ink)' }}>No results found</h3>
+              <p className="text-sm mt-1" style={{ fontFamily: 'var(--zk-font)', color: 'var(--zk-muted)' }}>Try adjusting your filters or search terms.</p>
             </div>
           )}
         </div>
@@ -1309,13 +1309,13 @@ export function OrganizationTreeManagement({
         {/* Right: Quick Actions / Unassigned */}
         <div className="space-y-6">
           {parentOrg && (
-            <Card className="border-[#1B2E5A]/10 dark:border-[#1B2E5A]/20 bg-white dark:from-slate-900 dark:to-blue-950/20 shadow-sm">
+            <Card className="dark:border-blue-900/20 dark:from-slate-900 dark:to-blue-950/20 shadow-sm" style={{ borderColor: 'var(--zk-line)', backgroundColor: 'var(--zk-paper)' }}>
               <CardHeader className="pb-2">
-                <CardTitle className="text-base text-blue-900 dark:text-blue-100">Actions</CardTitle>
+                <CardTitle className="text-base dark:text-blue-100" style={{ fontFamily: 'var(--zk-display)', fontWeight: 600, letterSpacing: '-0.025em', color: 'var(--zk-ink)' }}>Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
                 <Button
-                  className="w-full justify-start bg-[#1B2E5A] hover:bg-[#152449]"
+                  className="w-full justify-start bg-[#1B2E5A] hover:opacity-90" style={{ backgroundColor: 'var(--zk-navy)' } as React.CSSProperties}
                   onClick={() =>
                     navigate({
                       to: '/dashboard/organization/create',
@@ -1326,7 +1326,7 @@ export function OrganizationTreeManagement({
                   <Plus className="w-4 h-4 mr-2" /> Add Sub Organization
                 </Button>
                 <Button
-                  className="w-full justify-start bg-[#1B2E5A] hover:bg-[#152449]"
+                  className="w-full justify-start bg-[#1B2E5A] hover:opacity-90" style={{ backgroundColor: 'var(--zk-navy)' } as React.CSSProperties}
                   onClick={() =>
                     navigate({
                       to: '/dashboard/organization/create',
@@ -1425,8 +1425,8 @@ export function OrganizationTreeManagement({
           </DialogHeader>
 
           <div className="space-y-3 border-b border-slate-100 pb-5 dark:border-slate-800">
-            <div className="flex items-center gap-2 text-lg font-semibold text-[#1B2E5A] dark:text-slate-100">
-              <Building className="h-5 w-5 shrink-0 text-[#1B2E5A] dark:text-[#1B2E5A]/60" aria-hidden />
+            <div className="flex items-center gap-2 dark:text-slate-100" style={{ fontFamily: 'var(--zk-display)', fontSize: 18, fontWeight: 600, letterSpacing: '-0.025em', color: 'var(--zk-ink)' }}>
+              <Building className="h-5 w-5 shrink-0 dark:text-blue-400" style={{ color: 'var(--zk-navy)' }} aria-hidden />
               {ORGANIZATION_CREATE_STEPS[createFormStep].title}
             </div>
             <p className="text-sm text-muted-foreground">
@@ -1637,7 +1637,7 @@ export function OrganizationTreeManagement({
           className="flex h-full min-h-0 w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-lg [&>button]:text-white [&>button]:hover:bg-white/15"
         >
           <SheetHeader className="shrink-0 space-y-2 border-b border-white/10 bg-[#1B2E5A] px-6 pb-5 pt-8 text-white">
-            <SheetTitle className="flex items-center gap-2 text-lg font-semibold text-white">
+            <SheetTitle className="flex items-center gap-2 text-white" style={{ fontFamily: 'var(--zk-display)', fontSize: 18, fontWeight: 600, letterSpacing: '-0.025em' }}>
               <CreditCard className="h-5 w-5 shrink-0" aria-hidden />
               Transfer Credits
             </SheetTitle>
@@ -1780,7 +1780,7 @@ export function OrganizationTreeManagement({
             <PearlButton
               onClick={handleTransferCredits}
               disabled={isTransferringCredits || !creditTransferForm.destinationEntityId || !creditTransferForm.amount || creditTransferForm.destinationEntityId === 'no-orgs' || creditTransferForm.destinationEntityId === 'no-locations'}
-              className="bg-[#1B2E5A] text-white hover:bg-[#243A6C]"
+              className="bg-[#1B2E5A] text-white hover:opacity-90" style={{ backgroundColor: 'var(--zk-navy)' } as React.CSSProperties}
             >
               {isTransferringCredits ? (
                 <>
@@ -1805,7 +1805,7 @@ export function OrganizationTreeManagement({
           className="flex h-full min-h-0 w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-lg [&>button]:text-white [&>button]:hover:bg-white/15"
         >
           <SheetHeader className="shrink-0 space-y-2 border-b border-white/10 bg-[#1B2E5A] px-6 pb-5 pt-8 text-white">
-            <SheetTitle className="text-lg font-semibold text-white">Allocate Credits to Application</SheetTitle>
+            <SheetTitle className="text-white" style={{ fontFamily: 'var(--zk-display)', fontSize: 18, fontWeight: 600, letterSpacing: '-0.025em' }}>Allocate Credits to Application</SheetTitle>
             <SheetDescription className="text-sm text-white/85">
               {selectedEntity && (
                 <>
@@ -1881,7 +1881,7 @@ export function OrganizationTreeManagement({
             <PearlButton
               onClick={handleAllocateCredits}
               disabled={allocating || !allocationForm.targetApplication || !allocationForm.creditAmount || allocationForm.creditAmount <= 0}
-              className="bg-[#1B2E5A] text-white hover:bg-[#243A6C]"
+              className="bg-[#1B2E5A] text-white hover:opacity-90" style={{ backgroundColor: 'var(--zk-navy)' } as React.CSSProperties}
             >
               {allocating ? (
                 <>
@@ -1899,7 +1899,7 @@ export function OrganizationTreeManagement({
       {showHierarchyChart && (
         <div className="fixed inset-0 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm flex flex-col">
           <div className="p-4 border-b flex justify-between items-center bg-white dark:bg-slate-900 shrink-0">
-            <h2 className="text-xl font-bold">Visual Hierarchy</h2>
+            <h2 style={{ fontFamily: 'var(--zk-display)', fontSize: 20, fontWeight: 600, letterSpacing: '-0.025em', color: 'var(--zk-ink)' }}>Visual Hierarchy</h2>
             <Button variant="ghost" onClick={closeHierarchyMap}>Close</Button>
           </div>
           <div className="flex-1 min-h-0 overflow-hidden relative" style={{ minHeight: '400px' }}>

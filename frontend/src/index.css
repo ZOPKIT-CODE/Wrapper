@@ -5,6 +5,66 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Zopkit Dashboard Design System */
+:root {
+  --zk-blue-950: #050b1f;
+  --zk-blue-900: #0a1638;
+  --zk-blue-800: #0f2050;
+  --zk-blue-700: #142a6b;
+  --zk-blue-600: #1c3a8f;
+  --zk-blue-500: #2754c5;
+  --zk-blue-400: #4f7bea;
+  --zk-blue-300: #8aa8f5;
+  --zk-blue-200: #bfd0fa;
+  --zk-blue-100: #e4ecfd;
+  --zk-blue-50: #f3f6fe;
+
+  --zk-navy: #0f2050;
+  --zk-navy-2: #0a1638;
+  --zk-navy-muted: #a8b6dc;
+  --zk-navy-line: rgba(255,255,255,0.10);
+
+  --zk-bg: #f8fafc;
+  --zk-bg-2: #f1f5f9;
+  --zk-paper: #ffffff;
+  --zk-paper-2: #f8fafc;
+  --zk-ink: #0a0d18;
+  --zk-ink-2: #0f2050;
+  --zk-muted: #55627a;
+  --zk-muted-2: #8e99ad;
+  --zk-line: #e2e8f0;
+  --zk-line-2: #edf2f7;
+  --zk-line-blue: #dbe6f7;
+
+  --zk-accent: #1c3a8f;
+  --zk-accent-2: #2754c5;
+  --zk-accent-soft: #e4ecfd;
+
+  --zk-font: 'Inter Tight', 'Inter', ui-sans-serif, -apple-system, system-ui, sans-serif;
+  --zk-display: 'Bricolage Grotesque', 'Inter Tight', 'Inter', ui-sans-serif, sans-serif;
+  --zk-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  --zk-shadow-sm: 0 1px 2px rgba(20,34,68,0.04);
+  --zk-shadow: 0 6px 30px -12px rgba(20,34,68,0.18), 0 1px 2px rgba(20,34,68,0.04);
+  --zk-shadow-lg: 0 30px 80px -32px rgba(20,34,68,0.32), 0 6px 20px -6px rgba(20,34,68,0.12);
+}
+
+@keyframes zk-fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes zk-fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes zk-pulseDot {
+  0%,100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.8); }
+}
+@keyframes zk-spin {
+  to { transform: rotate(360deg); }
+}
+
 /* Smooth scrolling optimizations */
 html {
   scroll-behavior: smooth;

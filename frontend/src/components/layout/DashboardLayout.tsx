@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useMemo, Suspense } from "react"
 import { ModernSidebar } from "@/components/layout/ModernSidebar"
-import { RouteBreadcrumb } from "@/components/route-breadcrumb"
-import { Separator } from "@/components/ui/separator"
 import { ThemeToggle } from "@/components/theme/ThemeToggle"
 import { BreadcrumbLabelProvider } from "@/contexts/BreadcrumbLabelContext"
 import { ErrorBoundary } from "@/errors/ErrorBoundary"
@@ -13,7 +11,7 @@ import {
 import { BillingStatusNavbar } from "@/components/common/billing/BillingStatusNavbar"
 import { useSeasonalCreditsCongratulatory } from "@/hooks/useSeasonalCreditsCongratulatory"
 import { useSubscriptionCurrent } from "@/hooks/useSharedQueries"
-import { Home, Building2, Users, Crown, Shield, Activity, CreditCard, ChevronRight, Settings, AlertTriangle } from "lucide-react"
+import { Home, Building2, Users, Crown, Shield, Activity, CreditCard, ChevronRight, Settings, AlertTriangle, LayoutGrid } from "lucide-react"
 import { useNavigate, useLocation, useSearch, useParams, Outlet, Link } from "@tanstack/react-router"
 import { useOrganizationHierarchy } from "@/hooks/useOrganizationHierarchy"
 import { Button } from "@/components/ui/button"
@@ -183,7 +181,8 @@ const defaultSidebarData = {
     {
       title: "Applications",
       url: "/dashboard/applications",
-      icon: Building2,
+      icon: LayoutGrid,
+      badge: 7,
     },
     {
       title: "Organization",
@@ -198,7 +197,7 @@ const defaultSidebarData = {
     {
       title: "Roles",
       url: "/dashboard/roles",
-      icon: Crown,
+      icon: Shield,
     },
     {
       title: "Activity",
@@ -208,12 +207,12 @@ const defaultSidebarData = {
   ],
   bottomNav: [
     {
-      name: "Billing",
+      title: "Billing",
       url: "/dashboard/billing",
       icon: CreditCard,
     },
     {
-      name: "Settings",
+      title: "Settings",
       url: "/dashboard/settings",
       icon: Settings,
     },
@@ -398,7 +397,7 @@ export function DashboardLayout() {
   }, [isOrganizationRoute, orgCode, orgHierarchy, userData, tenantData]);
 
   return (
-    <SidebarProvider className="bg-[#1B2E5A] dashboard-actionable-cursors dashboard-instant-scroll">
+    <SidebarProvider className="dashboard-actionable-cursors dashboard-instant-scroll" style={{ background: 'var(--zk-bg)' }}>
       <ModernSidebar
         navData={sidebarNavData}
         userData={userData}
@@ -407,17 +406,49 @@ export function DashboardLayout() {
         onOrganizationSwitch={handleOrganizationSwitch}
       />
       <BreadcrumbLabelProvider>
-        <SidebarInset className="md:peer-data-[variant=inset]:m-0 md:peer-data-[variant=inset]:rounded-none md:peer-data-[variant=inset]:shadow-none bg-white dark:bg-slate-950 rounded-tl-[30px] rounded-bl-[30px] flex flex-col h-screen overflow-hidden">
-          <header className="flex h-16 shrink-0 items-center gap-2 px-4 group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800">
+        <SidebarInset
+          className="md:peer-data-[variant=inset]:m-0 md:peer-data-[variant=inset]:rounded-none md:peer-data-[variant=inset]:shadow-none flex flex-col h-screen overflow-hidden"
+          style={{ background: 'var(--zk-bg)' }}
+        >
+          <header
+            className="flex shrink-0 items-center gap-2 px-6 group-has-data-[collapsible=icon]/sidebar-wrapper:h-12"
+            style={{
+              position: 'sticky',
+              top: 0,
+              zIndex: 30,
+              height: 60,
+              background: 'rgba(248,250,252,0.85)',
+              backdropFilter: 'saturate(1.5) blur(14px)',
+              WebkitBackdropFilter: 'saturate(1.5) blur(14px)',
+              borderBottom: '1px solid var(--zk-line)',
+              fontFamily: 'var(--zk-font)',
+            }}
+          >
             <div className="flex items-center gap-2">
-              <SidebarTrigger className="-ml-1 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800" />
-              <Separator
-                orientation="vertical"
-                className="mr-2 h-4 bg-slate-300 dark:bg-slate-600"
+              <SidebarTrigger
+                className="-ml-1"
+                style={{
+                  color: 'var(--zk-muted)',
+                  borderRadius: 8,
+                  transition: 'all 140ms ease',
+                }}
               />
-              <RouteBreadcrumb className="mt-0" />
+              <nav style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 7,
+                fontSize: 13,
+                color: 'var(--zk-muted)',
+              }}>
+                <span style={{ fontFamily: 'var(--zk-mono)', fontSize: 11, color: 'var(--zk-muted-2)' }}>~/</span>
+                <span>workspace</span>
+                <ChevronRight size={11} style={{ color: 'var(--zk-muted-2)' }} />
+                <span style={{ color: 'var(--zk-ink)', fontWeight: 500 }}>
+                  {location.pathname.split('/').pop()?.toLowerCase() || 'dashboard'}
+                </span>
+              </nav>
             </div>
-            <div className="ml-auto flex items-center gap-2">
+            <div className="ml-auto flex items-center gap-3">
               <Suspense fallback={null}>
                 <NotificationManager />
               </Suspense>
@@ -466,7 +497,7 @@ export function DashboardLayout() {
             </div>
           )}
 
-          <main className="flex-1 relative overflow-y-auto bg-slate-50 dark:bg-slate-900 p-6 min-h-0">
+          <main className="flex-1 relative overflow-y-auto min-h-0 p-7" style={{ background: 'var(--zk-bg)' }}>
             <ErrorBoundary>
               {/* pathname only: ?tab= and other search updates must not remount the route (e.g. Account Settings tabs). */}
               <Outlet key={location.pathname} />

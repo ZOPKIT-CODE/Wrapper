@@ -35,7 +35,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
-import { Card } from '@/components/ui/card'
 import {
   Select,
   SelectContent,
@@ -108,20 +107,6 @@ import {
   Building2,
   ExternalLink,
 } from 'lucide-react'
-
-// ---------------------------------------------------------------------------
-// Deep blue palette (consistent with sidebar #1B2E5A)
-// ---------------------------------------------------------------------------
-
-const BLUE = {
-  900: '#1B2E5A',
-  800: '#243A6C',
-  700: '#2D4780',
-  600: '#3B5998',
-  500: '#4A6FB5',
-  100: '#E8EDF6',
-  50: '#F0F4FA',
-} as const
 
 // ---------------------------------------------------------------------------
 // Types for API responses — flexible to handle both old & new formats
@@ -342,7 +327,7 @@ function MembershipHierarchyList({
                 style={{ marginLeft: `${depth * 14}px` }}
               >
                 <div className="min-w-0 flex-1">
-                  <span className="font-medium" style={{ color: BLUE[900] }}>
+                  <span className="font-medium" style={{ color: 'var(--zk-ink)' }}>
                     {m.entityName ?? node.entityName}
                   </span>
                   <span className="mt-0.5 block text-xs text-muted-foreground">
@@ -502,7 +487,7 @@ function AssignedOrganizationsBlock({
                 className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-dashed bg-muted/20 px-3 py-2 text-sm"
               >
                 <div className="min-w-0 flex-1">
-                  <span className="font-medium" style={{ color: BLUE[900] }}>
+                  <span className="font-medium" style={{ color: 'var(--zk-ink)' }}>
                     {m.entityName ?? 'Organization'}
                   </span>
                   <span className="mt-0.5 block text-xs text-muted-foreground">
@@ -567,7 +552,11 @@ function StatusBadge({ status }: { status: string }) {
     accepted: 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-400',
   }
   return (
-    <Badge variant="outline" className={cn('capitalize font-medium text-[11px]', styles[status] ?? styles.inactive)}>
+    <Badge
+      variant="outline"
+      className={cn('capitalize font-medium text-[11px]', styles[status] ?? styles.inactive)}
+      style={{ fontFamily: 'var(--zk-font)' }}
+    >
       {status}
     </Badge>
   )
@@ -577,45 +566,55 @@ function StatCard({
   label,
   value,
   icon: Icon,
-  color,
 }: {
   label: string
   value: number | undefined
   icon: React.ElementType
-  color: string
+  color?: string
 }) {
   return (
-    <Card
-      className={cn(
-        'flex items-center gap-4 p-5 shadow-sm',
-        'border border-[#1B2E5A]/12 bg-[#F4F7FC] dark:border-[#1B2E5A]/25 dark:bg-[#121a2e]',
-      )}
+    <article
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 16,
+        padding: '18px 20px',
+        background: 'var(--zk-paper)',
+        border: '1px solid var(--zk-line)',
+        borderRadius: 12,
+        boxShadow: '0 1px 4px rgba(15,32,80,0.05)',
+      }}
     >
-      <div className={cn('flex h-11 w-11 shrink-0 items-center justify-center rounded-xl shadow-inner', color)}>
-        <Icon className="h-5 w-5 text-white" />
+      <div style={{
+        width: 44, height: 44, flexShrink: 0,
+        display: 'grid', placeItems: 'center',
+        borderRadius: 11,
+        background: 'var(--zk-navy)',
+      }}>
+        <Icon style={{ width: 20, height: 20, color: '#ffffff' }} />
       </div>
       <div>
-        <p className="text-[13px] font-medium" style={{ color: `${BLUE[700]}CC` }}>
+        <p style={{ fontSize: 13, color: 'var(--zk-muted)', fontFamily: 'var(--zk-font)', margin: 0 }}>
           {label}
         </p>
         {value !== undefined ? (
-          <p className="text-2xl font-bold tracking-tight" style={{ color: BLUE[900] }}>
+          <p style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-0.04em', color: 'var(--zk-ink)', fontFamily: 'var(--zk-display)', margin: 0 }}>
             {value}
           </p>
         ) : (
-          <Skeleton className="mt-1 h-7 w-12 bg-[#1B2E5A]/10" />
+          <Skeleton className="mt-1 h-7 w-12" style={{ background: 'var(--zk-line)' }} />
         )}
       </div>
-    </Card>
+    </article>
   )
 }
 
 function TableSkeleton({ rows = 5, cols = 6 }: { rows?: number; cols?: number }) {
   return (
-    <div className="rounded-xl border border-gray-100 dark:border-gray-800 overflow-hidden">
+    <div style={{ borderRadius: 12, border: '1px solid var(--zk-line)', overflow: 'hidden' }}>
       <Table>
         <TableHeader>
-          <TableRow className="bg-gray-50/80 dark:bg-gray-800/40">
+          <TableRow style={{ background: 'var(--zk-bg-2)' }}>
             {Array.from({ length: cols }).map((_, i) => (
               <TableHead key={i}><Skeleton className="h-4 w-20" /></TableHead>
             ))}
@@ -648,12 +647,12 @@ function EmptyState({
     <div className="flex flex-col items-center justify-center py-20 text-center">
       <div
         className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl"
-        style={{ backgroundColor: BLUE[50] }}
+        style={{ background: 'var(--zk-bg-2)', border: '1px solid var(--zk-line)' }}
       >
-        <Icon className="h-8 w-8" style={{ color: BLUE[500] }} />
+        <Icon className="h-8 w-8" style={{ color: 'var(--zk-navy)' }} />
       </div>
-      <h3 className="text-lg font-semibold" style={{ color: BLUE[900] }}>{title}</h3>
-      <p className="mt-1.5 max-w-sm text-sm text-muted-foreground">{description}</p>
+      <h3 className="text-lg font-semibold" style={{ color: 'var(--zk-ink)', fontFamily: 'var(--zk-display)' }}>{title}</h3>
+      <p className="mt-1.5 max-w-sm text-sm" style={{ color: 'var(--zk-muted)' }}>{description}</p>
     </div>
   )
 }
@@ -672,9 +671,9 @@ function PaginationControls({
   if (totalPages <= 1) return null
   return (
     <div className="flex items-center justify-between pt-2">
-      <p className="text-sm text-muted-foreground">
-        Page <span className="font-medium">{page}</span> of{' '}
-        <span className="font-medium">{totalPages}</span>
+      <p style={{ fontSize: 12, fontFamily: 'var(--zk-mono)', color: 'var(--zk-muted)' }}>
+        Page <span style={{ fontWeight: 600 }}>{page}</span> of{' '}
+        <span style={{ fontWeight: 600 }}>{totalPages}</span>
         {' '}({total} total)
       </p>
       <div className="flex items-center gap-1.5">
@@ -901,7 +900,7 @@ export default function UserManagementPage() {
             <Button
               onClick={() => setInviteSheetOpen(true)}
               className="gap-2 rounded-lg px-5 text-sm font-semibold shadow-sm"
-              style={{ backgroundColor: BLUE[900] }}
+              style={{ background: 'var(--zk-navy)' }}
             >
               <UserPlus className="h-4 w-4" />
               Invite Member
@@ -911,19 +910,19 @@ export default function UserManagementPage() {
 
         {/* ---- Stats cards ---- */}
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          <StatCard label="Total Members" value={stats?.total} icon={Users} color="bg-[#1B2E5A]" />
-          <StatCard label="Active" value={stats?.active} icon={CheckCircle} color="bg-[#243A6C]" />
-          <StatCard label="Pending Invitations" value={stats?.invited} icon={Mail} color="bg-[#2D4780]" />
-          <StatCard label="Inactive" value={stats?.inactive} icon={UserX} color="bg-[#3B5998]" />
+          <StatCard label="Total Members" value={stats?.total} icon={Users} />
+          <StatCard label="Active" value={stats?.active} icon={CheckCircle} />
+          <StatCard label="Pending Invitations" value={stats?.invited} icon={Mail} />
+          <StatCard label="Inactive" value={stats?.inactive} icon={UserX} />
         </div>
 
         {/* ---- Tabs ---- */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className={DASHBOARD_TABS_LIST_CLASS}>
-            <TabsTrigger value="members" className="gap-1.5 data-[state=active]:shadow-sm">
+            <TabsTrigger value="members" className="gap-1.5 data-[state=active]:shadow-sm" style={{ fontFamily: 'var(--zk-font)', fontSize: 13 }}>
               <Users className="h-4 w-4" /> Members
             </TabsTrigger>
-            <TabsTrigger value="invitations" className="gap-1.5 data-[state=active]:shadow-sm">
+            <TabsTrigger value="invitations" className="gap-1.5 data-[state=active]:shadow-sm" style={{ fontFamily: 'var(--zk-font)', fontSize: 13 }}>
               <Mail className="h-4 w-4" /> Invitations
             </TabsTrigger>
           </TabsList>
@@ -965,17 +964,17 @@ export default function UserManagementPage() {
               />
             ) : (
               <>
-                <div className="rounded-xl border border-gray-100 dark:border-gray-800 overflow-hidden shadow-sm">
+                <div style={{ borderRadius: 12, border: '1px solid var(--zk-line)', overflow: 'hidden', boxShadow: '0 1px 4px rgba(15,32,80,0.05)' }}>
                   <Table>
                     <TableHeader>
-                      <TableRow className="bg-gray-50/80 dark:bg-gray-800/40 hover:bg-gray-50/80">
-                        <TableHead className="w-[240px] min-w-[180px] font-semibold text-[13px]" style={{ color: BLUE[900] }}>User</TableHead>
-                        <TableHead className="hidden md:table-cell font-semibold text-[13px]" style={{ color: BLUE[900] }}>First name</TableHead>
-                        <TableHead className="hidden md:table-cell font-semibold text-[13px]" style={{ color: BLUE[900] }}>Last name</TableHead>
-                        <TableHead className="font-semibold text-[13px]" style={{ color: BLUE[900] }}>Role</TableHead>
-                        <TableHead className="font-semibold text-[13px]" style={{ color: BLUE[900] }}>Status</TableHead>
-                        <TableHead className="hidden md:table-cell font-semibold text-[13px]" style={{ color: BLUE[900] }}>Department</TableHead>
-                        <TableHead className="hidden lg:table-cell font-semibold text-[13px]" style={{ color: BLUE[900] }}>Last Active</TableHead>
+                      <TableRow style={{ background: 'var(--zk-bg-2)' }}>
+                        <TableHead className="w-[240px] min-w-[180px]" style={{ fontSize: 11, fontFamily: 'var(--zk-mono)', fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--zk-muted-2)' }}>User</TableHead>
+                        <TableHead className="hidden md:table-cell" style={{ fontSize: 11, fontFamily: 'var(--zk-mono)', fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--zk-muted-2)' }}>First name</TableHead>
+                        <TableHead className="hidden md:table-cell" style={{ fontSize: 11, fontFamily: 'var(--zk-mono)', fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--zk-muted-2)' }}>Last name</TableHead>
+                        <TableHead style={{ fontSize: 11, fontFamily: 'var(--zk-mono)', fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--zk-muted-2)' }}>Role</TableHead>
+                        <TableHead style={{ fontSize: 11, fontFamily: 'var(--zk-mono)', fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--zk-muted-2)' }}>Status</TableHead>
+                        <TableHead className="hidden md:table-cell" style={{ fontSize: 11, fontFamily: 'var(--zk-mono)', fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--zk-muted-2)' }}>Department</TableHead>
+                        <TableHead className="hidden lg:table-cell" style={{ fontSize: 11, fontFamily: 'var(--zk-mono)', fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--zk-muted-2)' }}>Last Active</TableHead>
                         <TableHead className="w-[50px]" />
                       </TableRow>
                     </TableHeader>
@@ -989,23 +988,23 @@ export default function UserManagementPage() {
                                 <Avatar className="h-9 w-9 shrink-0">
                                   <AvatarFallback
                                     className="text-xs font-semibold text-white"
-                                    style={{ backgroundColor: BLUE[600] }}
+                                    style={{ background: 'var(--zk-navy)' }}
                                   >
                                     {getUserInitials(user)}
                                   </AvatarFallback>
                                 </Avatar>
                                 <div className="min-w-0">
-                                  <p className="truncate text-sm font-semibold" style={{ color: BLUE[900] }}>
+                                  <p className="truncate" style={{ fontSize: 13, fontWeight: 600, fontFamily: 'var(--zk-font)', color: 'var(--zk-ink)' }}>
                                     {displayName(user)}
                                   </p>
-                                  <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+                                  <p className="truncate" style={{ fontSize: 12, color: 'var(--zk-muted-2)', fontFamily: 'var(--zk-font)' }}>{user.email}</p>
                                 </div>
                               </div>
                             </TableCell>
-                            <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
+                            <TableCell className="hidden md:table-cell" style={{ fontSize: 13, color: 'var(--zk-muted)', fontFamily: 'var(--zk-font)' }}>
                               {user.firstName?.trim() || '—'}
                             </TableCell>
-                            <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
+                            <TableCell className="hidden md:table-cell" style={{ fontSize: 13, color: 'var(--zk-muted)', fontFamily: 'var(--zk-font)' }}>
                               {user.lastName?.trim() || '—'}
                             </TableCell>
                             <TableCell>
@@ -1023,12 +1022,12 @@ export default function UserManagementPage() {
                               <StatusBadge status={user.isActive !== false ? 'active' : 'inactive'} />
                             </TableCell>
                             <TableCell className="hidden md:table-cell">
-                              <span className="text-sm text-muted-foreground">{user.department || '-'}</span>
+                              <span style={{ fontSize: 13, color: 'var(--zk-muted)', fontFamily: 'var(--zk-font)' }}>{user.department || '-'}</span>
                             </TableCell>
                             <TableCell className="hidden lg:table-cell">
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                                  <span className="flex items-center gap-1" style={{ fontSize: 11, fontFamily: 'var(--zk-mono)', color: 'var(--zk-muted-2)' }}>
                                     <Clock className="h-3 w-3" />
                                     {relativeTime(user.lastActiveAt)}
                                   </span>
@@ -1112,16 +1111,16 @@ export default function UserManagementPage() {
               />
             ) : (
               <>
-                <div className="rounded-xl border border-gray-100 dark:border-gray-800 overflow-hidden shadow-sm">
+                <div style={{ borderRadius: 12, border: '1px solid var(--zk-line)', overflow: 'hidden', boxShadow: '0 1px 4px rgba(15,32,80,0.05)' }}>
                   <Table>
                     <TableHeader>
-                      <TableRow className="bg-gray-50/80 dark:bg-gray-800/40 hover:bg-gray-50/80">
-                        <TableHead className="w-[260px] font-semibold text-[13px]" style={{ color: BLUE[900] }}>Email</TableHead>
-                        <TableHead className="font-semibold text-[13px]" style={{ color: BLUE[900] }}>Role</TableHead>
-                        <TableHead className="font-semibold text-[13px]" style={{ color: BLUE[900] }}>Status</TableHead>
-                        <TableHead className="min-w-[180px] max-w-[min(100%,22rem)] font-semibold text-[13px] xl:min-w-[220px]" style={{ color: BLUE[900] }}>Invitation URL</TableHead>
-                        <TableHead className="hidden md:table-cell font-semibold text-[13px]" style={{ color: BLUE[900] }}>Invited By</TableHead>
-                        <TableHead className="hidden lg:table-cell font-semibold text-[13px]" style={{ color: BLUE[900] }}>Expires</TableHead>
+                      <TableRow style={{ background: 'var(--zk-bg-2)' }}>
+                        <TableHead className="w-[260px]" style={{ fontSize: 11, fontFamily: 'var(--zk-mono)', fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--zk-muted-2)' }}>Email</TableHead>
+                        <TableHead style={{ fontSize: 11, fontFamily: 'var(--zk-mono)', fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--zk-muted-2)' }}>Role</TableHead>
+                        <TableHead style={{ fontSize: 11, fontFamily: 'var(--zk-mono)', fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--zk-muted-2)' }}>Status</TableHead>
+                        <TableHead className="min-w-[180px] max-w-[min(100%,22rem)] xl:min-w-[220px]" style={{ fontSize: 11, fontFamily: 'var(--zk-mono)', fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--zk-muted-2)' }}>Invitation URL</TableHead>
+                        <TableHead className="hidden md:table-cell" style={{ fontSize: 11, fontFamily: 'var(--zk-mono)', fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--zk-muted-2)' }}>Invited By</TableHead>
+                        <TableHead className="hidden lg:table-cell" style={{ fontSize: 11, fontFamily: 'var(--zk-mono)', fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--zk-muted-2)' }}>Expires</TableHead>
                         <TableHead className="w-[50px]" />
                       </TableRow>
                     </TableHeader>
@@ -1133,10 +1132,10 @@ export default function UserManagementPage() {
                           <TableRow key={inv.invitationId} className="group">
                             <TableCell>
                               <div className="flex items-center gap-2">
-                                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg" style={{ backgroundColor: BLUE[50] }}>
-                                  <Mail className="h-4 w-4" style={{ color: BLUE[500] }} />
+                                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg" style={{ background: 'var(--zk-bg-2)' }}>
+                                  <Mail className="h-4 w-4" style={{ color: 'var(--zk-navy)' }} />
                                 </div>
-                                <span className="truncate text-sm font-medium">{inv.email}</span>
+                                <span className="truncate" style={{ fontSize: 13, fontWeight: 600, fontFamily: 'var(--zk-font)', color: 'var(--zk-ink)' }}>{inv.email}</span>
                               </div>
                             </TableCell>
                             <TableCell>
@@ -1189,14 +1188,14 @@ export default function UserManagementPage() {
                               )}
                             </TableCell>
                             <TableCell className="hidden md:table-cell">
-                              <span className="text-sm text-muted-foreground">{inv.inviterName || inv.inviterEmail || inv.invitedBy || '-'}</span>
+                              <span style={{ fontSize: 13, color: 'var(--zk-muted)', fontFamily: 'var(--zk-font)' }}>{inv.inviterName || inv.inviterEmail || inv.invitedBy || '-'}</span>
                             </TableCell>
                             <TableCell className="hidden lg:table-cell">
                               {inv.expiresAt ? (
-                                <span className={cn('text-xs', isExpired ? 'font-medium text-red-600' : 'text-muted-foreground')}>
+                                <span style={{ fontSize: 11, fontFamily: 'var(--zk-mono)', fontWeight: isExpired ? 600 : 400, color: isExpired ? 'rgb(220 38 38)' : 'var(--zk-muted-2)' }}>
                                   {isExpired ? 'Expired' : relativeTime(inv.expiresAt)}
                                 </span>
-                              ) : <span className="text-xs text-muted-foreground">-</span>}
+                              ) : <span style={{ fontSize: 11, fontFamily: 'var(--zk-mono)', color: 'var(--zk-muted-2)' }}>-</span>}
                             </TableCell>
                             <TableCell>
                               <DropdownMenu modal={false}>
@@ -1243,8 +1242,8 @@ export default function UserManagementPage() {
         <Sheet open={inviteSheetOpen} onOpenChange={handleCloseInviteSheet}>
           <SheetContent className="flex w-full flex-col gap-0 overflow-y-auto px-6 pb-10 pt-5 sm:max-w-xl sm:px-8">
             <SheetHeader className="space-y-2 p-0 pb-5 pr-12 text-left sm:pr-14">
-              <SheetTitle className="text-lg" style={{ color: BLUE[900] }}>Invite Team Member</SheetTitle>
-              <SheetDescription>
+              <SheetTitle style={{ fontFamily: 'var(--zk-display)', letterSpacing: '-0.025em', color: 'var(--zk-ink)', fontSize: 18 }}>Invite Team Member</SheetTitle>
+              <SheetDescription style={{ fontFamily: 'var(--zk-font)', color: 'var(--zk-muted)', fontSize: 13 }}>
                 Send an invitation email. You can select multiple organizations (one role applies to all selected). Only one Organization Admin is allowed per tenant.
               </SheetDescription>
             </SheetHeader>
@@ -1252,7 +1251,7 @@ export default function UserManagementPage() {
             <div className="space-y-5">
               {/* Email */}
               <div className="space-y-2">
-                <Label htmlFor="invite-email" className="text-[13px] font-medium">
+                <Label htmlFor="invite-email" style={{ fontSize: 12, fontWeight: 500, color: 'var(--zk-muted)', fontFamily: 'var(--zk-font)' }}>
                   Email address <span className="text-destructive">*</span>
                 </Label>
                 <Input
@@ -1267,8 +1266,8 @@ export default function UserManagementPage() {
 
               {/* Organizations — hierarchical multi-select */}
               <div className="space-y-2">
-                <Label className="text-[13px] font-medium">
-                  Organizations <span className="text-[11px] font-normal text-muted-foreground">(optional, multi-select)</span>
+                <Label style={{ fontSize: 12, fontWeight: 500, color: 'var(--zk-muted)', fontFamily: 'var(--zk-font)' }}>
+                  Organizations <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--zk-muted-2)' }}>(optional, multi-select)</span>
                 </Label>
                 <p className="text-[12px] text-muted-foreground">
                   Check all orgs/locations this invite applies to. Child items are indented under their parent.
@@ -1294,8 +1293,8 @@ export default function UserManagementPage() {
 
               {/* Role — single */}
               <div className="space-y-2">
-                <Label className="text-[13px] font-medium">
-                  Role <span className="text-[11px] font-normal text-muted-foreground">(optional)</span>
+                <Label style={{ fontSize: 12, fontWeight: 500, color: 'var(--zk-muted)', fontFamily: 'var(--zk-font)' }}>
+                  Role <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--zk-muted-2)' }}>(optional)</span>
                 </Label>
                 {inviteEntityIds.length > 0 ? (
                   <p className="text-[12px] text-muted-foreground">
@@ -1329,8 +1328,8 @@ export default function UserManagementPage() {
 
               {/* Personal message */}
               <div className="space-y-2">
-                <Label htmlFor="invite-message" className="text-[13px] font-medium">
-                  Personal message <span className="text-[11px] font-normal text-muted-foreground">(optional)</span>
+                <Label htmlFor="invite-message" style={{ fontSize: 12, fontWeight: 500, color: 'var(--zk-muted)', fontFamily: 'var(--zk-font)' }}>
+                  Personal message <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--zk-muted-2)' }}>(optional)</span>
                 </Label>
                 <Textarea
                   id="invite-message"
@@ -1354,7 +1353,7 @@ export default function UserManagementPage() {
                 </Button>
                 <Button
                   className="flex-1 rounded-lg"
-                  style={{ backgroundColor: BLUE[900] }}
+                  style={{ background: 'var(--zk-navy)' }}
                   onClick={handleInviteSubmit}
                   disabled={inviteUser.isPending || !inviteEmail.trim()}
                 >
@@ -1372,8 +1371,8 @@ export default function UserManagementPage() {
         <Sheet open={!!selectedUserId} onOpenChange={(open) => !open && setSelectedUserId(null)}>
           <SheetContent className="flex w-full flex-col gap-0 overflow-y-auto px-6 pb-10 pt-5 sm:max-w-2xl sm:px-8 lg:max-w-3xl">
             <SheetHeader className="space-y-2 p-0 pb-5 pr-12 text-left sm:pr-14">
-              <SheetTitle style={{ color: BLUE[900] }}>User Details</SheetTitle>
-              <SheetDescription>View and manage this team member.</SheetDescription>
+              <SheetTitle style={{ fontFamily: 'var(--zk-display)', letterSpacing: '-0.025em', color: 'var(--zk-ink)', fontSize: 18 }}>User Details</SheetTitle>
+              <SheetDescription style={{ fontFamily: 'var(--zk-font)', color: 'var(--zk-muted)', fontSize: 13 }}>View and manage this team member.</SheetDescription>
             </SheetHeader>
 
             {selectedUserId && userDetail ? (() => {
@@ -1382,12 +1381,12 @@ export default function UserManagementPage() {
                 <div className="space-y-6">
                   <div className="flex items-center gap-4">
                     <Avatar className="h-14 w-14">
-                      <AvatarFallback className="text-lg font-semibold text-white" style={{ backgroundColor: BLUE[600] }}>
+                      <AvatarFallback className="text-lg font-semibold text-white" style={{ background: 'var(--zk-navy)' }}>
                         {getUserInitials(ud)}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <h3 className="text-lg font-bold" style={{ color: BLUE[900] }}>{displayName(ud)}</h3>
+                      <h3 className="text-lg font-bold" style={{ color: 'var(--zk-ink)' }}>{displayName(ud)}</h3>
                       <p className="text-sm text-muted-foreground">{ud.email}</p>
                       <div className="mt-1.5 flex gap-2">
                         <StatusBadge status={ud.isActive !== false ? 'active' : 'inactive'} />
@@ -1401,7 +1400,7 @@ export default function UserManagementPage() {
                   <div className="space-y-4 text-sm">
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                       <div className="space-y-2">
-                        <Label htmlFor="detail-first-name" className="text-[13px] font-medium">
+                        <Label htmlFor="detail-first-name" style={{ fontSize: 12, fontWeight: 500, color: 'var(--zk-muted)', fontFamily: 'var(--zk-font)' }}>
                           First name
                         </Label>
                         <Input
@@ -1414,7 +1413,7 @@ export default function UserManagementPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="detail-last-name" className="text-[13px] font-medium">
+                        <Label htmlFor="detail-last-name" style={{ fontSize: 12, fontWeight: 500, color: 'var(--zk-muted)', fontFamily: 'var(--zk-font)' }}>
                           Last name
                         </Label>
                         <Input
@@ -1459,7 +1458,7 @@ export default function UserManagementPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="detail-phone" className="text-[13px] font-medium">
+                      <Label htmlFor="detail-phone" style={{ fontSize: 12, fontWeight: 500, color: 'var(--zk-muted)', fontFamily: 'var(--zk-font)' }}>
                         Phone number
                       </Label>
                       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -1497,11 +1496,11 @@ export default function UserManagementPage() {
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <p className="text-muted-foreground text-[13px]">Last Active</p>
-                        <p className="font-medium" style={{ color: BLUE[900] }}>{relativeTime(ud.lastActiveAt)}</p>
+                        <p className="font-medium" style={{ color: 'var(--zk-ink)' }}>{relativeTime(ud.lastActiveAt)}</p>
                       </div>
                       <div>
                         <p className="text-muted-foreground text-[13px]">Member Since</p>
-                        <p className="font-medium" style={{ color: BLUE[900] }}>
+                        <p className="font-medium" style={{ color: 'var(--zk-ink)' }}>
                           {ud.createdAt ? new Date(ud.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) : '-'}
                         </p>
                       </div>
@@ -1513,7 +1512,7 @@ export default function UserManagementPage() {
                   {ud.memberships && ud.memberships.length > 0 && (
                     <>
                       <div>
-                        <h4 className="mb-3 flex items-center gap-2 text-sm font-bold" style={{ color: BLUE[900] }}>
+                        <h4 className="mb-3 flex items-center gap-2" style={{ fontSize: 16, fontFamily: 'var(--zk-display)', fontWeight: 600, letterSpacing: '-0.025em', color: 'var(--zk-ink)' }}>
                           <Building2 className="h-4 w-4" /> Assigned organizations
                         </h4>
                         <p className="mb-2 text-[12px] text-muted-foreground">
@@ -1533,7 +1532,7 @@ export default function UserManagementPage() {
 
                   <div>
                     <div className="mb-3 flex items-center justify-between">
-                      <h4 className="flex items-center gap-2 text-sm font-bold" style={{ color: BLUE[900] }}>
+                      <h4 className="flex items-center gap-2" style={{ fontSize: 16, fontFamily: 'var(--zk-display)', fontWeight: 600, letterSpacing: '-0.025em', color: 'var(--zk-ink)' }}>
                         <Shield className="h-4 w-4" /> Role Assignments
                       </h4>
                       <Button size="sm" variant="outline" className="rounded-lg" onClick={() => setRoleSheetUserId(selectedUserId)}>
@@ -1548,7 +1547,7 @@ export default function UserManagementPage() {
                         {currentUserRoles.map((ra) => (
                           <div key={ra.assignmentId ?? ra.id} className="flex items-center justify-between rounded-lg border p-3">
                             <div className="min-w-0">
-                              <p className="truncate text-sm font-medium" style={{ color: BLUE[900] }}>{ra.roleName}</p>
+                              <p className="truncate text-sm font-medium" style={{ color: 'var(--zk-ink)' }}>{ra.roleName}</p>
                               {ra.isTemporary && ra.expiresAt && (
                                 <p className="mt-0.5 flex items-center gap-1 text-xs text-amber-600">
                                   <Clock className="h-3 w-3" /> Expires {relativeTime(ra.expiresAt)}
@@ -1614,8 +1613,8 @@ export default function UserManagementPage() {
         >
           <SheetContent className="flex w-full flex-col gap-0 overflow-y-auto px-6 pb-10 pt-5 sm:max-w-2xl sm:px-8 lg:max-w-3xl">
             <SheetHeader className="space-y-2 p-0 pb-5 pr-12 text-left sm:pr-14">
-              <SheetTitle style={{ color: BLUE[900] }}>Assign Role</SheetTitle>
-              <SheetDescription>
+              <SheetTitle style={{ fontFamily: 'var(--zk-display)', letterSpacing: '-0.025em', color: 'var(--zk-ink)', fontSize: 18 }}>Assign Role</SheetTitle>
+              <SheetDescription style={{ fontFamily: 'var(--zk-font)', color: 'var(--zk-muted)', fontSize: 13 }}>
                 Roles apply across the whole tenant. Organization access is managed separately via memberships and invitations.
               </SheetDescription>
             </SheetHeader>
@@ -1623,7 +1622,7 @@ export default function UserManagementPage() {
             <div className="space-y-5">
               {/* Role selector */}
               <div className="space-y-2">
-                <Label className="text-[13px] font-medium">Role <span className="text-destructive">*</span></Label>
+                <Label style={{ fontSize: 12, fontWeight: 500, color: 'var(--zk-muted)', fontFamily: 'var(--zk-font)' }}>Role <span className="text-destructive">*</span></Label>
                 <Select value={assignRoleId} onValueChange={setAssignRoleId}>
                   <SelectTrigger className="rounded-lg">
                     <SelectValue placeholder="Select a role" />
@@ -1657,7 +1656,7 @@ export default function UserManagementPage() {
 
               {assignIsTemporary && (
                 <div className="space-y-2">
-                  <Label className="text-[13px] font-medium">Expiry date</Label>
+                  <Label style={{ fontSize: 12, fontWeight: 500, color: 'var(--zk-muted)', fontFamily: 'var(--zk-font)' }}>Expiry date</Label>
                   <Input
                     type="date"
                     className="rounded-lg"
@@ -1676,7 +1675,7 @@ export default function UserManagementPage() {
                 </Button>
                 <Button
                   className="flex-1 rounded-lg"
-                  style={{ backgroundColor: BLUE[900] }}
+                  style={{ background: 'var(--zk-navy)' }}
                   onClick={handleRoleAssign}
                   disabled={assignRole.isPending || !assignRoleId}
                 >
@@ -1694,7 +1693,7 @@ export default function UserManagementPage() {
         <AlertDialog open={!!removeDialogUserId} onOpenChange={(open) => !open && setRemoveDialogUserId(null)}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle style={{ color: BLUE[900] }}>Remove team member?</AlertDialogTitle>
+              <AlertDialogTitle style={{ fontFamily: 'var(--zk-display)', letterSpacing: '-0.025em', color: 'var(--zk-ink)', fontSize: 18 }}>Remove team member?</AlertDialogTitle>
               <AlertDialogDescription>
                 This will deactivate the user and remove all their role assignments and memberships. This action cannot be easily undone.
               </AlertDialogDescription>
@@ -1716,7 +1715,7 @@ export default function UserManagementPage() {
         <AlertDialog open={!!membershipRemoveTarget} onOpenChange={(open) => !open && setMembershipRemoveTarget(null)}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle style={{ color: BLUE[900] }}>Remove organization assignment?</AlertDialogTitle>
+              <AlertDialogTitle style={{ fontFamily: 'var(--zk-display)', letterSpacing: '-0.025em', color: 'var(--zk-ink)', fontSize: 18 }}>Remove organization assignment?</AlertDialogTitle>
               <AlertDialogDescription>
                 {membershipRemoveTarget ? (
                   <>

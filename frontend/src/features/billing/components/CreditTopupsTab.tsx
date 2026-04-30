@@ -61,10 +61,10 @@ export function CreditTopupsTab({
   return (
     <div className="space-y-8">
       <div className="text-center max-w-2xl mx-auto">
-        <h2 className={cn(DASHBOARD_PAGE_TITLE_CLASS, 'mb-4')}>Purchase Credits</h2>
-        <p className={cn(DASHBOARD_PAGE_DESCRIPTION_CLASS, 'leading-relaxed')}>
+        <h2 className={cn(DASHBOARD_PAGE_TITLE_CLASS, 'mb-4')} style={{ fontFamily: 'var(--zk-display)', letterSpacing: '-0.025em', color: 'var(--zk-ink)', fontWeight: 600 }}>Purchase Credits</h2>
+        <p className={cn(DASHBOARD_PAGE_DESCRIPTION_CLASS, 'leading-relaxed')} style={{ fontFamily: 'var(--zk-font)', color: 'var(--zk-muted)', fontSize: 13 }}>
           Buy any amount of credits at{' '}
-          <span className="font-semibold text-foreground">
+          <span style={{ fontFamily: 'var(--zk-mono)', fontWeight: 600, color: 'var(--zk-ink)' }}>
             {creditPricing.creditsPerDollar.toLocaleString()} credits per $1.00
           </span>
           . Credits are added instantly after payment.
@@ -74,15 +74,15 @@ export function CreditTopupsTab({
       <div className="max-w-lg mx-auto space-y-6">
         {/* Current balance */}
         {currentBalance !== undefined && (
-          <div className="text-center p-4 rounded-xl bg-muted/50 border">
-            <p className="text-sm text-muted-foreground">Current Balance</p>
-            <p className="text-2xl font-bold text-foreground">{currentBalance.toLocaleString()} credits</p>
+          <div className="text-center p-4 rounded-xl border" style={{ background: 'var(--zk-bg-2)' }}>
+            <p style={{ fontFamily: 'var(--zk-font)', fontSize: 13, color: 'var(--zk-muted)' }}>Current Balance</p>
+            <p style={{ fontFamily: 'var(--zk-mono)', fontWeight: 600, fontSize: 24, letterSpacing: '-0.04em', color: 'var(--zk-ink)' }}>{currentBalance.toLocaleString()} <span style={{ fontSize: 13, fontWeight: 400, color: 'var(--zk-muted)' }}>credits</span></p>
           </div>
         )}
 
         {/* Credit amount input */}
         <div className="space-y-2">
-          <label htmlFor="credit-amount" className="text-sm font-medium text-foreground">
+          <label htmlFor="credit-amount" style={{ fontFamily: 'var(--zk-font)', fontSize: 13, color: 'var(--zk-ink)', fontWeight: 500 }}>
             How many credits?
           </label>
           <input
@@ -108,7 +108,7 @@ export function CreditTopupsTab({
 
         {/* Quick-select presets */}
         <div className="space-y-2">
-          <p className="text-sm text-muted-foreground">Quick select</p>
+          <p style={{ fontFamily: 'var(--zk-font)', fontSize: 13, color: 'var(--zk-muted)' }}>Quick select</p>
           <div className="flex flex-wrap gap-2 justify-center">
             {creditPricing.presets.map((preset) => (
               <button
@@ -130,10 +130,10 @@ export function CreditTopupsTab({
         {/* Price display */}
         {pricing && creditAmount && (
           <div className="p-6 rounded-xl border-2 border-primary/20 bg-primary/5 text-center space-y-1">
-            <p className="text-sm text-muted-foreground">Total</p>
-            <p className="text-3xl font-bold text-foreground">{pricing.formattedTotal}</p>
-            <p className="text-sm text-muted-foreground">
-              {Number(creditAmount).toLocaleString()} credits at ${creditPricing.unitPrice}/credit
+            <p style={{ fontFamily: 'var(--zk-font)', fontSize: 13, color: 'var(--zk-muted)' }}>Total</p>
+            <p style={{ fontFamily: 'var(--zk-mono)', fontWeight: 600, fontSize: 30, letterSpacing: '-0.04em', color: 'var(--zk-ink)' }}>{pricing.formattedTotal}</p>
+            <p style={{ fontFamily: 'var(--zk-font)', fontSize: 13, color: 'var(--zk-muted)' }}>
+              <span style={{ fontFamily: 'var(--zk-mono)', fontWeight: 600 }}>{Number(creditAmount).toLocaleString()}</span> credits at <span style={{ fontFamily: 'var(--zk-mono)' }}>${creditPricing.unitPrice}</span>/credit
             </p>
           </div>
         )}
@@ -160,7 +160,7 @@ export function CreditTopupsTab({
           )}
         </button>
 
-        <p className="text-xs text-muted-foreground text-center">
+        <p style={{ fontFamily: 'var(--zk-font)', fontSize: 13, color: 'var(--zk-muted)' }} className="text-center">
           Credits expire with your subscription plan. Payment processed securely via Stripe.
         </p>
       </div>

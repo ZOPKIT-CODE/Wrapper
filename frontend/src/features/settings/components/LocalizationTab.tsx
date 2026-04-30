@@ -47,17 +47,41 @@ export const LocalizationTab: React.FC<LocalizationTabProps> = ({
 }) => {
   return (
     <TabsContent value="localization" className="space-y-6">
-      <Card>
+      <Card style={{ border: '1px solid var(--zk-line)' }}>
         <CardHeader>
-          <CardTitle>Localization & Regional Settings</CardTitle>
-          <CardDescription>
+          <CardTitle
+            style={{
+              fontFamily: 'var(--zk-display)',
+              letterSpacing: '-0.025em',
+              color: 'var(--zk-ink)',
+            }}
+          >
+            Localization & Regional Settings
+          </CardTitle>
+          <CardDescription
+            style={{
+              fontFamily: 'var(--zk-font)',
+              color: 'var(--zk-muted)',
+              fontSize: 13,
+            }}
+          >
             Configure language, currency, timezone, and fiscal year settings
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="defaultLanguage">Default Language</Label>
+              <Label
+                htmlFor="defaultLanguage"
+                style={{
+                  fontSize: 12,
+                  fontWeight: 500,
+                  color: 'var(--zk-muted)',
+                  fontFamily: 'var(--zk-font)',
+                }}
+              >
+                Default Language
+              </Label>
               <Select
                 value={form.watch('defaultLanguage') || 'en'}
                 onValueChange={(value) => form.setValue('defaultLanguage', value)}
@@ -76,7 +100,17 @@ export const LocalizationTab: React.FC<LocalizationTabProps> = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="defaultLocale">Default Locale</Label>
+              <Label
+                htmlFor="defaultLocale"
+                style={{
+                  fontSize: 12,
+                  fontWeight: 500,
+                  color: 'var(--zk-muted)',
+                  fontFamily: 'var(--zk-font)',
+                }}
+              >
+                Default Locale
+              </Label>
               <Select
                 value={form.watch('defaultLocale') || 'en-US'}
                 onValueChange={(value) => form.setValue('defaultLocale', value)}
@@ -95,7 +129,17 @@ export const LocalizationTab: React.FC<LocalizationTabProps> = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="defaultCurrency">Default Currency</Label>
+              <Label
+                htmlFor="defaultCurrency"
+                style={{
+                  fontSize: 12,
+                  fontWeight: 500,
+                  color: 'var(--zk-muted)',
+                  fontFamily: 'var(--zk-font)',
+                }}
+              >
+                Default Currency
+              </Label>
               <Select
                 value={form.watch('defaultCurrency') || 'USD'}
                 onValueChange={(value) => form.setValue('defaultCurrency', value)}
@@ -114,7 +158,17 @@ export const LocalizationTab: React.FC<LocalizationTabProps> = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="defaultTimeZone">Default Timezone</Label>
+              <Label
+                htmlFor="defaultTimeZone"
+                style={{
+                  fontSize: 12,
+                  fontWeight: 500,
+                  color: 'var(--zk-muted)',
+                  fontFamily: 'var(--zk-font)',
+                }}
+              >
+                Default Timezone
+              </Label>
               <Select
                 value={form.watch('defaultTimeZone') || 'UTC'}
                 onValueChange={(value) => form.setValue('defaultTimeZone', value)}
@@ -133,17 +187,36 @@ export const LocalizationTab: React.FC<LocalizationTabProps> = ({
             </div>
           </div>
 
-          <Separator />
+          <Separator style={{ borderColor: 'var(--zk-line)' }} />
 
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold flex items-center gap-2">
+            <h3
+              className="flex items-center gap-2"
+              style={{
+                fontSize: 14,
+                fontFamily: 'var(--zk-display)',
+                fontWeight: 600,
+                letterSpacing: '-0.02em',
+                color: 'var(--zk-ink)',
+              }}
+            >
               <Calendar className="h-5 w-5" />
               Fiscal Year Settings
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="fiscalYearStartMonth">Fiscal Year Start Month</Label>
+                <Label
+                  htmlFor="fiscalYearStartMonth"
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 500,
+                    color: 'var(--zk-muted)',
+                    fontFamily: 'var(--zk-font)',
+                  }}
+                >
+                  Fiscal Year Start Month
+                </Label>
                 <Select
                   value={form.watch('fiscalYearStartMonth')?.toString() || '1'}
                   onValueChange={(value) => form.setValue('fiscalYearStartMonth', parseInt(value))}
@@ -162,7 +235,17 @@ export const LocalizationTab: React.FC<LocalizationTabProps> = ({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="fiscalYearStartDay">Fiscal Year Start Day</Label>
+                <Label
+                  htmlFor="fiscalYearStartDay"
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 500,
+                    color: 'var(--zk-muted)',
+                    fontFamily: 'var(--zk-font)',
+                  }}
+                >
+                  Fiscal Year Start Day
+                </Label>
                 <Input
                   id="fiscalYearStartDay"
                   type="number"
@@ -170,11 +253,22 @@ export const LocalizationTab: React.FC<LocalizationTabProps> = ({
                   max="31"
                   {...form.register('fiscalYearStartDay', { valueAsNumber: true })}
                   placeholder="1"
+                  style={{ fontSize: 13, fontFamily: 'var(--zk-font)', color: 'var(--zk-ink)' }}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="fiscalYearEndMonth">Fiscal Year End Month</Label>
+                <Label
+                  htmlFor="fiscalYearEndMonth"
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 500,
+                    color: 'var(--zk-muted)',
+                    fontFamily: 'var(--zk-font)',
+                  }}
+                >
+                  Fiscal Year End Month
+                </Label>
                 <Select
                   value={form.watch('fiscalYearEndMonth')?.toString() || '12'}
                   onValueChange={(value) => form.setValue('fiscalYearEndMonth', parseInt(value))}
@@ -193,7 +287,17 @@ export const LocalizationTab: React.FC<LocalizationTabProps> = ({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="fiscalYearEndDay">Fiscal Year End Day</Label>
+                <Label
+                  htmlFor="fiscalYearEndDay"
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 500,
+                    color: 'var(--zk-muted)',
+                    fontFamily: 'var(--zk-font)',
+                  }}
+                >
+                  Fiscal Year End Day
+                </Label>
                 <Input
                   id="fiscalYearEndDay"
                   type="number"
@@ -201,13 +305,24 @@ export const LocalizationTab: React.FC<LocalizationTabProps> = ({
                   max="31"
                   {...form.register('fiscalYearEndDay', { valueAsNumber: true })}
                   placeholder="31"
+                  style={{ fontSize: 13, fontFamily: 'var(--zk-font)', color: 'var(--zk-ink)' }}
                 />
               </div>
             </div>
 
             {fiscalYearStartMonth && fiscalYearEndMonth && (
-              <div className="p-4 bg-muted rounded-lg">
-                <p className="text-sm font-medium">
+              <div
+                className="p-4 rounded-lg"
+                style={{ background: 'var(--zk-bg-2)' }}
+              >
+                <p
+                  style={{
+                    fontSize: 13,
+                    fontFamily: 'var(--zk-font)',
+                    fontWeight: 500,
+                    color: 'var(--zk-ink)',
+                  }}
+                >
                   Fiscal Year: {new Date(2024, (fiscalYearStartMonth || 1) - 1, fiscalYearStartDay || 1).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })} - {new Date(2024, (fiscalYearEndMonth || 12) - 1, fiscalYearEndDay || 31).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
                 </p>
               </div>

@@ -4,7 +4,7 @@ import AccountSettings from './AccountSettings'
 
 export const Settings: React.FC = () => {
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-8">
+    <div style={{ maxWidth: 1480, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 28 }}>
       <DashboardPageHeader
         title="Settings"
         description="Manage your company profile, contacts, banking, tax, localization, and branding."
@@ -12,6 +12,7 @@ export const Settings: React.FC = () => {
 
       <AccountSettings />
     </div>
+
   )
 }
 

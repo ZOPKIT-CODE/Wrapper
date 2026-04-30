@@ -1,80 +1,17 @@
-import { cn } from "@/lib/utils"
 import { Link, useLocation } from "@tanstack/react-router"
 import { useSidebar } from "@/components/ui/sidebar"
 import { useKindeAuth } from "@kinde-oss/kinde-auth-react"
 import { useEffect, useState } from "react"
 import {
-    LayoutDashboard,
-    Users,
+    LayoutGrid,
     Building2,
+    Users,
     Shield,
+    Activity,
     CreditCard,
     Settings,
     LogOut,
-    Activity,
 } from "lucide-react"
-import {
-    Avatar,
-    AvatarFallback,
-    AvatarImage,
-} from "@/components/ui/avatar"
-
-// Extract NavItem component OUTSIDE of ModernSidebar to prevent re-mounting
-const NavItem = ({ item, isActive, isCollapsed }: { item: any; isActive: boolean; isCollapsed: boolean }) => {
-    return (
-        <Link
-            to={item.url}
-            className={cn(
-                "relative flex items-center gap-4 px-8 py-4 overflow-visible group"
-            )}
-        >
-            {/* Active Background with cutout effect */}
-            {isActive && (
-                <>
-                    {/* Main white background tab */}
-                    <div
-                        className="absolute inset-0 bg-white rounded-l-[32px]"
-                        style={{
-                            right: '-16px', // Extend to perfectly reach the sidebar edge (compensating for px-4 on parent)
-                        }}
-                    >
-                        {/* Top Cutout Curve (Inverse Border Radius) */}
-                        <div
-                            className="absolute -top-5 right-0 w-5 h-5 bg-white pointer-events-none"
-                        >
-                            <div className="w-full h-full bg-[#1B2E5A] rounded-br-[20px]" />
-                        </div>
-
-                        {/* Bottom Cutout Curve (Inverse Border Radius) */}
-                        <div
-                            className="absolute -bottom-5 right-0 w-5 h-5 bg-white pointer-events-none"
-                        >
-                            <div className="w-full h-full bg-[#1B2E5A] rounded-tr-[20px]" />
-                        </div>
-                    </div>
-                </>
-            )}
-
-            {/* Icon */}
-            <div className={cn(
-                "relative z-10",
-                isActive ? "text-[#1B2E5A]" : "text-white"
-            )}>
-                <item.icon className="size-5" />
-            </div>
-
-            {/* Label */}
-            {!isCollapsed && (
-                <span className={cn(
-                    "relative z-10 font-black text-sm tracking-tight",
-                    isActive ? "text-[#1B2E5A]" : "text-white"
-                )}>
-                    {item.title}
-                </span>
-            )}
-        </Link>
-    )
-}
 
 const ADMIN_ONLY_URLS = [
     '/dashboard/organization',
@@ -84,20 +21,59 @@ const ADMIN_ONLY_URLS = [
     '/dashboard/settings',
 ]
 
-/**
- * Fixed-size brand mark for the dark sidebar: works for PNG/JPG/SVG, landscape/portrait,
- * light or dark artwork. Uses a white canvas so opaque logo backgrounds blend in;
- * `object-contain` preserves aspect ratio; failed loads fall back to an initial.
- */
-function SidebarTenantLogo({
+interface NavItemDef {
+    title: string
+    url: string
+    icon: React.ElementType
+    badge?: number
+}
+
+interface NavGroup {
+    label: string
+    items: NavItemDef[]
+}
+
+function ZopkitLogo({ size = 38 }: { size?: number }) {
+    return (
+        <div style={{
+            width: size,
+            height: size,
+            borderRadius: 10,
+            background: 'var(--zk-navy)',
+            display: 'grid',
+            placeItems: 'center',
+            color: 'white',
+            fontFamily: 'var(--zk-display)',
+            fontSize: size * 0.47,
+            fontWeight: 700,
+            letterSpacing: '-0.04em',
+            position: 'relative',
+            overflow: 'hidden',
+            flexShrink: 0,
+        }}>
+            <span style={{ position: 'relative', zIndex: 1 }}>z</span>
+            <div style={{
+                position: 'absolute',
+                bottom: 4,
+                right: 4,
+                width: 5,
+                height: 5,
+                borderRadius: '50%',
+                background: '#bfd0fa',
+                animation: 'zk-pulseDot 2s ease-in-out infinite',
+            }} />
+        </div>
+    )
+}
+
+function TenantLogo({
     logoUrl,
     companyName,
-    isCollapsed,
+    size = 38,
 }: {
     logoUrl?: string | null
     companyName?: string | null
-    /** When true, logo is the only visible brand — use a non-empty alt for screen readers. */
-    isCollapsed?: boolean
+    size?: number
 }) {
     const [imageFailed, setImageFailed] = useState(false)
     const safeUrl = typeof logoUrl === 'string' ? logoUrl.trim() : ''
@@ -107,34 +83,120 @@ function SidebarTenantLogo({
         setImageFailed(false)
     }, [safeUrl])
 
-    return (
-        <div
-            className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white p-1.5 shadow-md ring-1 ring-black/10"
-            title={companyName || undefined}
-        >
-            {safeUrl && !imageFailed ? (
+    if (safeUrl && !imageFailed) {
+        return (
+            <div style={{
+                width: size, height: size,
+                borderRadius: 10,
+                background: 'var(--zk-paper)',
+                border: '1px solid var(--zk-line)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                overflow: 'hidden',
+                flexShrink: 0,
+            }}>
                 <img
                     src={safeUrl}
-                    alt={
-                        isCollapsed
-                            ? companyName
-                                ? `${companyName} logo`
-                                : 'Organization logo'
-                            : ''
-                    }
-                    role={isCollapsed ? undefined : 'presentation'}
+                    alt=""
+                    role="presentation"
                     decoding="async"
                     loading="lazy"
                     referrerPolicy="no-referrer"
                     onError={() => setImageFailed(true)}
-                    className="max-h-full max-w-full object-contain object-center"
+                    style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
                 />
-            ) : (
-                <span className="select-none text-2xl font-black leading-none text-[#1B2E5A]">
-                    {initial}
-                </span>
-            )}
+            </div>
+        )
+    }
+
+    return (
+        <div style={{
+            width: size, height: size,
+            borderRadius: 10,
+            background: 'linear-gradient(140deg, #1c3a8f 0%, #0a1638 100%)',
+            display: 'grid', placeItems: 'center',
+            color: 'white',
+            fontFamily: 'var(--zk-display)',
+            fontSize: size * 0.47,
+            fontWeight: 700,
+            letterSpacing: '-0.04em',
+            flexShrink: 0,
+        }}>
+            {initial}
         </div>
+    )
+}
+
+function SidebarNavItem({
+    item,
+    isActive,
+    isCollapsed,
+}: {
+    item: NavItemDef
+    isActive: boolean
+    isCollapsed: boolean
+}) {
+    const [hover, setHover] = useState(false)
+    const Ico = item.icon
+
+    return (
+        <Link
+            to={item.url}
+            title={isCollapsed ? item.title : undefined}
+            onMouseEnter={() => setHover(true)}
+            onMouseLeave={() => setHover(false)}
+            style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 11,
+                padding: isCollapsed ? '10px 0' : '8px 12px',
+                justifyContent: isCollapsed ? 'center' : 'flex-start',
+                borderRadius: 9,
+                color: isActive ? '#ffffff' : (hover ? '#ffffff' : 'var(--zk-navy-muted)'),
+                background: isActive ? 'rgba(255,255,255,0.16)' : (hover ? 'rgba(255,255,255,0.08)' : 'transparent'),
+                border: isActive ? '1px solid rgba(255,255,255,0.18)' : '1px solid transparent',
+                boxShadow: isActive ? '0 6px 16px -8px rgba(0,0,0,0.45)' : 'none',
+                fontSize: 13,
+                fontWeight: isActive ? 500 : 400,
+                letterSpacing: '-0.005em',
+                textAlign: 'left',
+                position: 'relative',
+                transition: 'all 160ms ease',
+                textDecoration: 'none',
+                fontFamily: 'var(--zk-font)',
+            }}
+        >
+            {isActive && !isCollapsed && (
+                <span style={{
+                    position: 'absolute',
+                    left: -14,
+                    top: '50%',
+                    width: 3,
+                    height: 18,
+                    transform: 'translateY(-50%)',
+                    background: 'var(--zk-navy)',
+                    borderRadius: '0 3px 3px 0',
+                }} />
+            )}
+            <Ico size={15} strokeWidth={isActive ? 1.9 : 1.65} />
+            {!isCollapsed && (
+                <>
+                    <span style={{ flex: 1 }}>{item.title}</span>
+                    {item.badge !== undefined && (
+                        <span style={{
+                            fontSize: 10,
+                            fontWeight: 500,
+                            padding: '1px 6px',
+                            borderRadius: 4,
+                            background: isActive ? 'rgba(255,255,255,0.12)' : 'transparent',
+                            color: isActive ? '#ffffff' : 'var(--zk-navy-muted)',
+                            fontFamily: 'var(--zk-mono)',
+                        }}>
+                            {item.badge}
+                        </span>
+                    )}
+                </>
+            )}
+        </Link>
     )
 }
 
@@ -157,126 +219,236 @@ export function ModernSidebar({
     const location = useLocation()
     const isCollapsed = state === "collapsed"
 
-    const allMainNavItems = navData?.navMain || [
-        { title: "Applications", url: "/dashboard/applications", icon: LayoutDashboard },
+    const rawNavMain: NavItemDef[] = navData?.navMain || [
+        { title: "Applications", url: "/dashboard/applications", icon: LayoutGrid, badge: 7 },
         { title: "Organization", url: "/dashboard/organization", icon: Building2 },
+        { title: "Team", url: "/dashboard/users", icon: Users },
         { title: "Roles", url: "/dashboard/roles", icon: Shield },
         { title: "Activity", url: "/dashboard/activity", icon: Activity },
     ]
 
-    const allBottomItems = [
+    const rawBottomNav: NavItemDef[] = [
         { title: "Billing", url: "/dashboard/billing", icon: CreditCard },
         { title: "Settings", url: "/dashboard/settings", icon: Settings },
     ]
 
     const mainNavItems = isTenantAdmin
-        ? allMainNavItems
-        : allMainNavItems.filter((item: any) => !ADMIN_ONLY_URLS.some(u => item.url.startsWith(u)))
+        ? rawNavMain
+        : rawNavMain.filter((item) => !ADMIN_ONLY_URLS.some(u => item.url.startsWith(u)))
 
-    const bottomItems = isTenantAdmin
-        ? allBottomItems
-        : allBottomItems.filter((item: any) => !ADMIN_ONLY_URLS.some(u => item.url.startsWith(u)))
+    const bottomNavItems = isTenantAdmin
+        ? rawBottomNav
+        : rawBottomNav.filter((item) => !ADMIN_ONLY_URLS.some(u => item.url.startsWith(u)))
 
-    const [activeItem, setActiveItem] = useState<string>(() => {
-        const allItems = [...mainNavItems, ...bottomItems]
-        const currentItem = allItems.find(item => location.pathname.startsWith(item.url))
-        return currentItem ? currentItem.title : ""
-    })
+    const navGroups: NavGroup[] = [
+        { label: 'Workspace', items: mainNavItems },
+        { label: 'Account', items: bottomNavItems },
+    ]
+
+    const allItems = [...mainNavItems, ...bottomNavItems]
+    const activeItem = allItems.find(item => location.pathname.startsWith(item.url))
 
     const user = {
         name: userData?.name || "User",
         email: userData?.email || "user@example.com",
-        avatar: userData?.avatar || ""
+        avatar: userData?.avatar || "",
     }
 
-    useEffect(() => {
-        const allItems = [...mainNavItems, ...bottomItems]
-        const currentItem = allItems.find(item => location.pathname.startsWith(item.url))
-        if (currentItem) {
-            setActiveItem(currentItem.title)
-        }
-    }, [location.pathname])
+    const companyName = tenantData?.companyName || 'Zopkit'
+    const userInitials = user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) || 'ZO'
+
+    const w = isCollapsed ? 78 : 256
 
     return (
-        <div
-            className={cn(
-                "relative flex flex-col h-screen transition-[width] duration-100 ease-out z-40 will-change-[width]",
-                "bg-[#1B2E5A]",
-                isCollapsed ? "w-[100px]" : "w-[280px]",
-                "rounded-tr-[40px] rounded-br-[40px]",
-                className
-            )}
+        <aside
+            className={className}
+            style={{
+                width: w,
+                flexShrink: 0,
+                background: 'var(--zk-navy)',
+                color: '#ffffff',
+                display: 'flex',
+                flexDirection: 'column',
+                padding: '20px 14px',
+                gap: 22,
+                position: 'sticky',
+                top: 0,
+                height: '100vh',
+                transition: 'width 320ms cubic-bezier(.2,.8,.2,1)',
+                overflow: 'hidden',
+                borderRight: '1px solid var(--zk-navy-line)',
+                fontFamily: 'var(--zk-font)',
+            }}
         >
-            {/* Branding Section */}
-            <div className="pt-12 pb-10 px-8 flex items-center gap-4 relative z-10 shrink-0">
-                <SidebarTenantLogo
-                    logoUrl={tenantData?.logoUrl}
-                    companyName={tenantData?.companyName}
-                    isCollapsed={isCollapsed}
-                />
+            {/* Logo */}
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 11,
+                padding: '0 6px',
+            }}>
+                {tenantData?.logoUrl ? (
+                    <TenantLogo logoUrl={tenantData.logoUrl} companyName={companyName} size={38} />
+                ) : (
+                    <ZopkitLogo size={38} />
+                )}
                 {!isCollapsed && (
-                    <h1 className="text-white text-2xl font-black tracking-tight truncate">
-                        {tenantData?.companyName || 'Zopkit'}
-                    </h1>
+                    <div style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        minWidth: 0,
+                        animation: 'zk-fadeIn 240ms ease both',
+                    }}>
+                        <span style={{
+                            fontSize: 18,
+                            fontWeight: 600,
+                            letterSpacing: '-0.035em',
+                            fontFamily: 'var(--zk-display)',
+                            color: '#ffffff',
+                            lineHeight: 1.2,
+                        }}>
+                            {companyName.toLowerCase()}
+                            <span style={{ color: 'var(--zk-navy-muted)' }}>.</span>
+                        </span>
+                    </div>
                 )}
             </div>
 
-            {/* Top Navigation Bundle */}
-            <div className="flex flex-col gap-1 relative overflow-visible px-4 shrink-0">
-                {mainNavItems.map((item: any) => (
-                    <NavItem key={item.title} item={item} isActive={activeItem === item.title} isCollapsed={isCollapsed} />
+            {/* Nav groups */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 22, flex: 1, minHeight: 0 }}>
+                {navGroups.map((group, gi) => (
+                    <nav key={gi} style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                        {!isCollapsed && group.items.length > 0 && (
+                            <span style={{
+                                fontSize: 9.5,
+                                fontWeight: 500,
+                                color: 'var(--zk-navy-muted)',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.16em',
+                                padding: '4px 12px 10px',
+                                fontFamily: 'var(--zk-mono)',
+                            }}>
+                                {group.label}
+                            </span>
+                        )}
+                        {group.items.map(item => (
+                            <SidebarNavItem
+                                key={item.url}
+                                item={item}
+                                isActive={activeItem?.url === item.url}
+                                isCollapsed={isCollapsed}
+                            />
+                        ))}
+                    </nav>
                 ))}
             </div>
 
-            {/* Flexible Spacer - This pushes bottom items down */}
-            <div className="flex-grow" />
-
-            {/* Bottom Utilities Bundle - Fixed at bottom */}
-            <div className="flex flex-col shrink-0 px-4 pb-4">
-                <div className="flex flex-col gap-1 relative overflow-visible">
-                    {bottomItems.map((item: any) => (
-                        <NavItem key={item.title} item={item} isActive={activeItem === item.title} isCollapsed={isCollapsed} />
-                    ))}
+            {/* Workspace card */}
+            {!isCollapsed && (
+                <div style={{
+                    padding: '12px 14px',
+                    borderRadius: 12,
+                    background: 'rgba(255,255,255,0.08)',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    animation: 'zk-fadeIn 320ms ease both',
+                }}>
+                    <div style={{
+                        fontSize: 10,
+                        fontFamily: 'var(--zk-mono)',
+                        color: 'var(--zk-navy-muted)',
+                        letterSpacing: '0.12em',
+                        marginBottom: 4,
+                    }}>
+                        WORKSPACE
+                    </div>
+                    <div style={{ fontSize: 13, fontWeight: 500, color: '#ffffff', letterSpacing: '-0.01em' }}>
+                        Production
+                    </div>
+                    <div style={{ fontSize: 11.5, color: 'var(--zk-navy-muted)', marginTop: 2 }}>
+                        zopkit.app
+                    </div>
                 </div>
-            </div>
+            )}
 
-            {/* Profile Section */}
-            <div className="p-4 bg-black/15 border-t border-white/5 relative z-10 shrink-0">
-                <div className={cn(
-                    "flex items-center gap-3 p-2 rounded-2xl",
-                    isCollapsed ? "justify-center" : "justify-start"
-                )}>
-                    <Avatar className="h-10 w-10 border-2 border-white/20 shadow-lg">
-                        <AvatarImage src={user.avatar} alt={user.name} />
-                        <AvatarFallback className="bg-sky-400 text-white font-black">
-                            {user.name.substring(0, 2).toUpperCase()}
-                        </AvatarFallback>
-                    </Avatar>
-
-                    {!isCollapsed && (
-                        <div className="grid flex-1 text-left leading-tight overflow-hidden">
-                            <span className="truncate font-black text-white text-xs uppercase tracking-wider">
+            {/* User card */}
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: isCollapsed ? 6 : '8px 10px 8px 8px',
+                borderRadius: 12,
+                background: 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(255,255,255,0.12)',
+                flexShrink: 0,
+            }}>
+                <div style={{
+                    width: 32,
+                    height: 32,
+                    flexShrink: 0,
+                    borderRadius: 9,
+                    background: 'linear-gradient(140deg, #1c3a8f, #0a1638)',
+                    display: 'grid',
+                    placeItems: 'center',
+                    color: 'white',
+                    fontSize: 11,
+                    fontWeight: 700,
+                    letterSpacing: '-0.01em',
+                    fontFamily: 'var(--zk-display)',
+                }}>
+                    {userInitials}
+                </div>
+                {!isCollapsed && (
+                    <>
+                        <div style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            minWidth: 0,
+                            flex: 1,
+                            animation: 'zk-fadeIn 200ms ease both',
+                        }}>
+                            <span style={{
+                                fontSize: 12.5,
+                                fontWeight: 600,
+                                letterSpacing: '-0.005em',
+                                color: '#ffffff',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                            }}>
                                 {user.name}
                             </span>
-                            <span className="truncate text-[10px] text-white/50 font-medium">
+                            <span style={{
+                                fontSize: 10.5,
+                                color: 'var(--zk-navy-muted)',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                            }}>
                                 {user.email}
                             </span>
                         </div>
-                    )}
-
-                    {!isCollapsed && (
                         <button
                             onClick={() => logout()}
-                            className="p-2 text-white/40 hover:text-white"
+                            title="Sign out"
+                            style={{
+                                color: 'var(--zk-navy-muted)',
+                                display: 'grid',
+                                placeItems: 'center',
+                                padding: 4,
+                                borderRadius: 6,
+                                transition: 'color 160ms ease',
+                                background: 'transparent',
+                                border: 'none',
+                                cursor: 'pointer',
+                            }}
+                            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#ffffff' }}
+                            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--zk-navy-muted)' }}
                         >
-                            <LogOut className="size-4" />
+                            <LogOut size={14} />
                         </button>
-                    )}
-                </div>
+                    </>
+                )}
             </div>
-
-            {/* Subtle gloss overlay */}
-            <div className="absolute top-0 left-0 right-0 h-full bg-gradient-to-tr from-white/5 to-transparent pointer-events-none" />
-        </div>
+        </aside>
     )
 }

@@ -60,7 +60,7 @@ export function RoleRow({
   const canDelete = canDeleteRole(role);
 
   return (
-    <div className="grid grid-cols-12 gap-4 p-6 hover:bg-gray-50 transition-colors">
+    <div className="grid grid-cols-12 gap-4 p-6 transition-colors" style={{ '--tw-bg-opacity': '1' } as React.CSSProperties} onMouseEnter={e => (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--zk-bg-2)'} onMouseLeave={e => (e.currentTarget as HTMLElement).style.backgroundColor = ''}>
       <div className="flex items-center">
         <Checkbox
           checked={isSelected}
@@ -76,8 +76,8 @@ export function RoleRow({
           {role.metadata?.icon || '👤'}
         </div>
         <div className="min-w-0 flex-1">
-          <div className="font-semibold text-[#1B2E5A] truncate">{role.roleName}</div>
-          <div className="text-sm text-gray-500 truncate">
+          <div className="truncate" style={{ fontFamily: 'var(--zk-display)', fontWeight: 600, fontSize: 14, letterSpacing: '-0.025em', color: 'var(--zk-ink)' }}>{role.roleName}</div>
+          <div className="text-sm truncate" style={{ fontFamily: 'var(--zk-font)', fontSize: 13, color: 'var(--zk-muted)' }}>
             {role.description}
           </div>
         </div>
@@ -94,9 +94,9 @@ export function RoleRow({
             </div>
             <div className="flex items-center gap-2">
               <Package className="w-4 h-4 text-blue-500" />
-              <span className="font-medium text-[#1B2E5A]">{displayModules}</span>
-              <span className="text-gray-500">modules</span>
-              <span className="text-xs text-gray-400">({displayApps} apps)</span>
+              <span style={{ fontFamily: 'var(--zk-mono)', fontWeight: 600, letterSpacing: '-0.02em', color: 'var(--zk-ink)' }}>{displayModules}</span>
+              <span style={{ color: 'var(--zk-muted)', fontSize: 13 }}>modules</span>
+              <span style={{ fontFamily: 'var(--zk-mono)', fontSize: 11, color: 'var(--zk-muted-2)' }}>({displayApps} apps)</span>
             </div>
           </div>
           
@@ -132,7 +132,7 @@ export function RoleRow({
           </div>
           
           {/* Total Operations */}
-          <div className="text-xs text-gray-400">
+          <div style={{ fontFamily: 'var(--zk-mono)', fontSize: 11, color: 'var(--zk-muted-2)' }}>
             {displayCount} total permissions
           </div>
           
@@ -164,7 +164,7 @@ export function RoleRow({
               <Badge variant="outline">Default</Badge>
             )}
           </div>
-          <div className="text-xs text-gray-500">
+          <div style={{ fontFamily: 'var(--zk-mono)', fontSize: 11, color: 'var(--zk-muted-2)' }}>
             Created: {formatRoleDate(role.createdAt)}
           </div>
         </div>

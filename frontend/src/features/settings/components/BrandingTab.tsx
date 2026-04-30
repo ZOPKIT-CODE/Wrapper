@@ -15,16 +15,40 @@ interface BrandingTabProps {
 export const BrandingTab: React.FC<BrandingTabProps> = ({ form }) => {
   return (
     <TabsContent value="branding" className="space-y-6">
-      <Card>
+      <Card style={{ border: '1px solid var(--zk-line)' }}>
         <CardHeader>
-          <CardTitle>Branding & Customization</CardTitle>
-          <CardDescription>
+          <CardTitle
+            style={{
+              fontFamily: 'var(--zk-display)',
+              letterSpacing: '-0.025em',
+              color: 'var(--zk-ink)',
+            }}
+          >
+            Branding & Customization
+          </CardTitle>
+          <CardDescription
+            style={{
+              fontFamily: 'var(--zk-font)',
+              color: 'var(--zk-muted)',
+              fontSize: 13,
+            }}
+          >
             Customize your company's visual identity and domain
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="primaryColor">Primary Brand Color</Label>
+            <Label
+              htmlFor="primaryColor"
+              style={{
+                fontSize: 12,
+                fontWeight: 500,
+                color: 'var(--zk-muted)',
+                fontFamily: 'var(--zk-font)',
+              }}
+            >
+              Primary Brand Color
+            </Label>
             <div className="flex items-center gap-4">
               <Input
                 id="primaryColor"
@@ -36,17 +60,32 @@ export const BrandingTab: React.FC<BrandingTabProps> = ({ form }) => {
                 {...form.register('primaryColor')}
                 placeholder="#2563eb"
                 className="flex-1"
+                style={{ fontSize: 13, fontFamily: 'var(--zk-font)', color: 'var(--zk-ink)' }}
               />
             </div>
-            <p className="text-sm text-muted-foreground">
+            <p
+              style={{
+                fontSize: 12,
+                color: 'var(--zk-muted-2)',
+                fontFamily: 'var(--zk-font)',
+              }}
+            >
               Choose your primary brand color (used in UI elements)
             </p>
           </div>
 
-          <Separator />
+          <Separator style={{ borderColor: 'var(--zk-line)' }} />
 
           <div className="space-y-2">
-            <Label htmlFor="customDomain">
+            <Label
+              htmlFor="customDomain"
+              style={{
+                fontSize: 12,
+                fontWeight: 500,
+                color: 'var(--zk-muted)',
+                fontFamily: 'var(--zk-font)',
+              }}
+            >
               <Globe className="h-4 w-4 inline mr-1" />
               Custom Domain
             </Label>
@@ -54,14 +93,30 @@ export const BrandingTab: React.FC<BrandingTabProps> = ({ form }) => {
               id="customDomain"
               {...form.register('customDomain')}
               placeholder="app.yourcompany.com"
+              style={{ fontSize: 13, fontFamily: 'var(--zk-font)', color: 'var(--zk-ink)' }}
             />
-            <p className="text-sm text-muted-foreground">
+            <p
+              style={{
+                fontSize: 12,
+                color: 'var(--zk-muted-2)',
+                fontFamily: 'var(--zk-font)',
+              }}
+            >
               Set up a custom domain for your Zopkit workspace
             </p>
-            <div className="mt-2 p-3 bg-muted rounded-lg">
+            <div
+              className="mt-2 p-3 rounded-lg"
+              style={{ background: 'var(--zk-bg-2)' }}
+            >
               <div className="flex items-start gap-2">
-                <AlertCircle className="h-4 w-4 text-muted-foreground mt-0.5" />
-                <p className="text-sm text-muted-foreground">
+                <AlertCircle className="h-4 w-4 mt-0.5" style={{ color: 'var(--zk-muted-2)' }} />
+                <p
+                  style={{
+                    fontSize: 12,
+                    color: 'var(--zk-muted-2)',
+                    fontFamily: 'var(--zk-font)',
+                  }}
+                >
                   After adding your domain, you'll need to configure DNS records.
                   Our support team will guide you through the process.
                 </p>

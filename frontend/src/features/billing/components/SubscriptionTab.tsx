@@ -99,15 +99,15 @@ export function SubscriptionTab({
                 <Crown className="h-7 w-7" />
               </div>
               <div>
-                <CardTitle className="text-xl font-semibold tracking-tight text-[#1B2E5A]">
-                  {getPlanDisplayName(planId)} Plan
+                <CardTitle style={{ fontFamily: 'var(--zk-display)', letterSpacing: '-0.025em', color: 'var(--zk-ink)', fontWeight: 600 }} className="text-xl tracking-tight">
+                  <span style={{ fontFamily: 'var(--zk-display)', fontWeight: 600 }}>{getPlanDisplayName(planId)}</span> Plan
                 </CardTitle>
-                <CardDescription className="flex items-center gap-2 mt-1">
+                <CardDescription style={{ fontFamily: 'var(--zk-font)', color: 'var(--zk-muted)', fontSize: 13 }} className="flex items-center gap-2 mt-1">
                   <span className={cn(
                     'inline-block h-2 w-2 rounded-full',
                     displaySubscription.status === 'active' ? 'bg-emerald-500' : 'bg-slate-400'
                   )} />
-                  <span className="text-xs font-semibold uppercase tracking-widest text-slate-400">
+                  <span style={{ fontFamily: 'var(--zk-mono)', fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase' as const, color: 'var(--zk-muted-2)' }}>
                     {displaySubscription.status ? displaySubscription.status.toUpperCase() : 'ACTIVE'}
                   </span>
                 </CardDescription>
@@ -118,24 +118,24 @@ export function SubscriptionTab({
               {!isFree ? (
                 <>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-2xl font-bold tracking-tight text-[#1B2E5A]">
+                    <span style={{ fontFamily: 'var(--zk-mono)', fontWeight: 600, color: 'var(--zk-ink)' }} className="text-2xl tracking-tight">
                       {showInr
                         ? formatMonthlyInrDisplay(annualInrForDisplay)
                         : formatMonthlyUsdDisplay(annualUsdForDisplay)}
                     </span>
-                    <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest">
+                    <span style={{ fontFamily: 'var(--zk-mono)', fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase' as const, color: 'var(--zk-muted-2)' }}>
                       {showInr ? '/ mo INR' : '/ mo USD'}
                     </span>
                   </div>
                   {displaySubscription.currentPeriodEnd && (
-                    <p className="text-[11px] text-slate-400 mt-1 flex items-center gap-1 font-medium">
+                    <p style={{ fontFamily: 'var(--zk-font)', fontSize: 11, color: 'var(--zk-muted-2)' }} className="mt-1 flex items-center gap-1">
                       <Clock className="w-3 h-3" />
                       Renews {formatDate(displaySubscription.currentPeriodEnd)}
                     </p>
                   )}
                 </>
               ) : (
-                <span className="text-3xl font-bold tracking-tight text-[#1B2E5A]/60">Free</span>
+                <span style={{ fontFamily: 'var(--zk-display)', fontWeight: 600, letterSpacing: '-0.025em', color: 'var(--zk-ink)', opacity: 0.5 }} className="text-3xl">Free</span>
               )}
             </div>
           </div>
@@ -147,7 +147,8 @@ export function SubscriptionTab({
               <Button
                 onClick={() => setActiveTab('plans')}
                 size="sm"
-                className="bg-[#1B2E5A] hover:bg-[#152449] text-white shadow-lg shadow-[#1B2E5A]/15 rounded-full px-6 font-semibold transition-all hover:scale-[1.02] active:scale-95"
+                style={{ background: 'var(--zk-navy)' }}
+                className="hover:bg-[#152449] text-white shadow-lg shadow-[#1B2E5A]/15 rounded-full px-6 font-semibold transition-all hover:scale-[1.02] active:scale-95"
               >
                 Upgrade Now <ArrowRight className="w-4 h-4 ml-1" />
               </Button>
@@ -168,8 +169,8 @@ export function SubscriptionTab({
                   <Layers className="w-5 h-5 text-[#1B2E5A]" />
                 </div>
                 <div>
-                  <CardTitle className="text-base font-bold tracking-tight text-[#1B2E5A]">Subscription Details</CardTitle>
-                  <CardDescription className="text-[11px] font-medium text-slate-400 tracking-wide">Your plan configuration</CardDescription>
+                  <CardTitle style={{ fontFamily: 'var(--zk-display)', letterSpacing: '-0.025em', color: 'var(--zk-ink)', fontWeight: 600 }} className="text-base tracking-tight">Subscription Details</CardTitle>
+                  <CardDescription style={{ fontFamily: 'var(--zk-font)', color: 'var(--zk-muted)', fontSize: 13 }} className="tracking-wide">Your plan configuration</CardDescription>
                 </div>
               </div>
             </CardHeader>
@@ -179,22 +180,22 @@ export function SubscriptionTab({
                 <div className="group rounded-2xl border border-[#1B2E5A]/5 bg-white p-4 transition-all hover:border-[#1B2E5A]/10 hover:shadow-md hover:shadow-[#1B2E5A]/[0.04]">
                   <div className="flex items-center gap-2 mb-1.5">
                     <Crown className="w-4 h-4 text-[#1B2E5A]/50" />
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.15em]">Tier</span>
+                    <span style={{ fontFamily: 'var(--zk-mono)', fontSize: 10, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: 'var(--zk-muted-2)', fontWeight: 500 }}>Tier</span>
                   </div>
-                  <div className="text-lg font-bold tracking-tight text-[#1B2E5A]">{getPlanDisplayName(planId)}</div>
+                  <div style={{ fontFamily: 'var(--zk-display)', fontWeight: 600, color: 'var(--zk-ink)', letterSpacing: '-0.025em' }} className="text-lg tracking-tight">{getPlanDisplayName(planId)}</div>
                 </div>
                 {/* Billing */}
                 <div className="group rounded-2xl border border-[#1B2E5A]/5 bg-white p-4 transition-all hover:border-[#1B2E5A]/10 hover:shadow-md hover:shadow-[#1B2E5A]/[0.04]">
                   <div className="flex items-center gap-2 mb-1.5">
                     <CreditCardLucide className="w-4 h-4 text-[#1B2E5A]/50" />
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.15em]">Billing</span>
+                    <span style={{ fontFamily: 'var(--zk-mono)', fontSize: 10, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: 'var(--zk-muted-2)', fontWeight: 500 }}>Billing</span>
                   </div>
-                  <div className="text-lg font-bold tracking-tight text-[#1B2E5A]">
+                  <div style={{ fontFamily: 'var(--zk-mono)', fontWeight: 600, color: 'var(--zk-ink)' }} className="text-lg tracking-tight">
                     {!isFree && displaySubscription.plan !== 'credit_based' ? (
                       <span>
                         {showInr ? formatMonthlyInrDisplay(annualInrForDisplay) : formatMonthlyUsdDisplay(annualUsdForDisplay)}
-                        <span className="text-sm font-medium text-slate-400"> / month</span>
-                        <span className="block text-[11px] font-medium text-slate-300 mt-0.5">Billed annually</span>
+                        <span style={{ fontFamily: 'var(--zk-font)', fontSize: 13, color: 'var(--zk-muted)', fontWeight: 400 }}> / month</span>
+                        <span style={{ display: 'block', fontFamily: 'var(--zk-font)', fontSize: 11, color: 'var(--zk-muted-2)', fontWeight: 400 }} className="mt-0.5">Billed annually</span>
                       </span>
                     ) : (
                       'Free'
@@ -206,11 +207,11 @@ export function SubscriptionTab({
                   <div className="group rounded-2xl border border-[#1B2E5A]/5 bg-white p-4 transition-all hover:border-[#1B2E5A]/10 hover:shadow-md hover:shadow-[#1B2E5A]/[0.04]">
                     <div className="flex items-center gap-2 mb-1.5">
                       <Calendar className="w-4 h-4 text-[#1B2E5A]/50" />
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.15em]">
+                      <span style={{ fontFamily: 'var(--zk-mono)', fontSize: 10, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: 'var(--zk-muted-2)', fontWeight: 500 }}>
                         {isFree ? 'Expiration' : 'Renewal'}
                       </span>
                     </div>
-                    <div className="text-lg font-bold tracking-tight text-[#1B2E5A]">
+                    <div style={{ fontFamily: 'var(--zk-mono)', fontWeight: 600, color: 'var(--zk-ink)' }} className="text-lg tracking-tight">
                       {formatDate(displaySubscription.currentPeriodEnd)}
                     </div>
                   </div>
@@ -220,11 +221,11 @@ export function SubscriptionTab({
                   <div className="rounded-2xl border border-[#1B2E5A]/10 bg-gradient-to-br from-[#1B2E5A]/[0.03] to-white p-4">
                     <div className="flex items-center gap-2 mb-1.5">
                       <Zap className="w-4 h-4 text-[#1B2E5A]/60" />
-                      <span className="text-[10px] font-bold text-[#1B2E5A]/40 uppercase tracking-[0.15em]">Plan Credits</span>
+                      <span style={{ fontFamily: 'var(--zk-mono)', fontSize: 10, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: 'var(--zk-muted-2)', fontWeight: 500 }}>Plan Credits</span>
                     </div>
-                    <div className="text-lg font-bold tracking-tight text-[#1B2E5A]">
+                    <div style={{ fontFamily: 'var(--zk-mono)', fontWeight: 600, color: 'var(--zk-ink)' }} className="text-lg tracking-tight">
                       {(currentPlan?.freeCredits ?? 0).toLocaleString()}
-                      <span className="text-sm font-medium text-[#1B2E5A]/50"> credits</span>
+                      <span style={{ fontFamily: 'var(--zk-font)', fontSize: 13, color: 'var(--zk-muted)', fontWeight: 400 }}> credits</span>
                     </div>
                   </div>
                 )}
@@ -251,17 +252,17 @@ export function SubscriptionTab({
                   </Badge>
                 )}
               </div>
-              <CardTitle className="text-sm font-semibold text-white/50 uppercase tracking-[0.15em]">Available Credits</CardTitle>
+              <CardTitle style={{ fontFamily: 'var(--zk-mono)', fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase' as const, fontWeight: 600, color: 'rgba(255,255,255,0.5)' }}>Available Credits</CardTitle>
             </CardHeader>
 
             <CardContent className="relative z-10 pt-3 pb-5 flex-grow flex flex-col justify-end">
               <div className="mb-5">
-                <div className="text-5xl font-bold tracking-tighter text-white mb-2">
+                <div style={{ fontFamily: 'var(--zk-mono)', fontWeight: 600, letterSpacing: '-0.04em', color: '#ffffff' }} className="text-5xl mb-2">
                   {availableCredits.toLocaleString()}
                 </div>
                 <div className="flex items-center gap-2 text-sm text-white/40">
                   <Activity className="w-4 h-4 text-emerald-400/80" />
-                  <span className="font-medium">Total usage: {(creditBalance as any)?.usageThisPeriod ?? 0}</span>
+                  <span style={{ fontFamily: 'var(--zk-font)', fontWeight: 500 }}>Total usage: {(creditBalance as any)?.usageThisPeriod ?? 0}</span>
                 </div>
               </div>
 
@@ -270,16 +271,16 @@ export function SubscriptionTab({
                 <div className="flex items-center justify-between p-3 rounded-xl bg-white/[0.04] border border-white/[0.06]">
                   <div className="flex items-center gap-3">
                     <div className="w-1.5 h-1.5 rounded-full bg-blue-400 shadow-[0_0_6px_rgba(96,165,250,0.4)]" />
-                    <span className="text-sm font-medium text-white/70">Paid Credits</span>
+                    <span style={{ fontFamily: 'var(--zk-font)', fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>Paid Credits</span>
                   </div>
-                  <span className="font-bold text-white tabular-nums">{creditBalance?.paidCredits ?? 0}</span>
+                  <span style={{ fontFamily: 'var(--zk-mono)', fontWeight: 600, color: '#ffffff' }} className="tabular-nums">{creditBalance?.paidCredits ?? 0}</span>
                 </div>
                 <div className="flex items-center justify-between p-3 rounded-xl bg-white/[0.04] border border-white/[0.06]">
                   <div className="flex items-center gap-3">
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.4)]" />
-                    <span className="text-sm font-medium text-white/70">Free Credits</span>
+                    <span style={{ fontFamily: 'var(--zk-font)', fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>Free Credits</span>
                   </div>
-                  <span className="font-bold text-white tabular-nums">{creditBalance?.freeCredits ?? 0}</span>
+                  <span style={{ fontFamily: 'var(--zk-mono)', fontWeight: 600, color: '#ffffff' }} className="tabular-nums">{creditBalance?.freeCredits ?? 0}</span>
                 </div>
               </div>
 
@@ -293,7 +294,7 @@ export function SubscriptionTab({
               </Button>
 
               {freeCreditsExpiry && (
-                <p className="text-[10px] text-center text-white/30 mt-3 font-medium tracking-wide">
+                <p style={{ fontFamily: 'var(--zk-font)', fontSize: 10, color: 'rgba(255,255,255,0.3)', fontWeight: 500, letterSpacing: '0.03em' }} className="text-center mt-3">
                   Free credits expire on {formatDate(freeCreditsExpiry)}
                 </p>
               )}

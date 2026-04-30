@@ -286,14 +286,15 @@ function CreditExpiryBatchRow({ batch }: { batch: NormalizedBatch }) {
 
       <div className="shrink-0 text-right pl-2">
         <div
+          style={{ fontFamily: 'var(--zk-mono)', fontWeight: 600, letterSpacing: '-0.04em' }}
           className={cn(
-            'text-xl font-bold tabular-nums tracking-tight',
+            'text-xl tabular-nums',
             isApp ? 'text-blue-600' : 'text-[#1B2E5A]',
           )}
         >
           {batch.available.toLocaleString()}
         </div>
-        <div className="text-[10px] font-semibold text-slate-300 uppercase tracking-widest">credits</div>
+        <div style={{ fontFamily: 'var(--zk-mono)', fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase' as const, color: 'var(--zk-muted-2)' }}>credits</div>
       </div>
     </div>
   )
@@ -532,24 +533,24 @@ export function ExpiryBreakdownTab({ creditAllocations, creditBalance, entityBal
         <div className="rounded-3xl border border-[#1B2E5A]/10 bg-white p-5 animate-pulse">
           <div className="flex gap-4 mb-5">
             {[1, 2, 3, 4].map(i => (
-              <div key={i} className="h-20 flex-1 rounded-2xl bg-slate-100/80" />
+              <div key={i} className="h-20 flex-1 rounded-2xl" style={{ background: 'var(--zk-bg-2)' }} />
             ))}
           </div>
         </div>
         {[1, 2].map(i => (
-          <div key={i} className="rounded-3xl border border-slate-100 animate-pulse">
-            <div className="p-5 border-b border-slate-50">
+          <div key={i} className="rounded-3xl animate-pulse" style={{ border: '1px solid var(--zk-line)' }}>
+            <div className="p-5 border-b" style={{ borderColor: 'var(--zk-line)' }}>
               <div className="flex items-center gap-3">
-                <div className="h-11 w-11 rounded-2xl bg-slate-100" />
+                <div className="h-11 w-11 rounded-2xl" style={{ background: 'var(--zk-bg-2)' }} />
                 <div className="space-y-2 flex-1">
-                  <div className="h-4 w-40 rounded-lg bg-slate-100" />
-                  <div className="h-3 w-28 rounded-lg bg-slate-100" />
+                  <div className="h-4 w-40 rounded-lg" style={{ background: 'var(--zk-bg-2)' }} />
+                  <div className="h-3 w-28 rounded-lg" style={{ background: 'var(--zk-bg-2)' }} />
                 </div>
               </div>
             </div>
             <div className="p-4 space-y-3">
               {[1, 2].map(j => (
-                <div key={j} className="h-16 rounded-2xl bg-slate-50" />
+                <div key={j} className="h-16 rounded-2xl" style={{ background: 'var(--zk-bg)' }} />
               ))}
             </div>
           </div>
@@ -565,8 +566,8 @@ export function ExpiryBreakdownTab({ creditAllocations, creditBalance, entityBal
         <div className="h-16 w-16 rounded-full bg-[#1B2E5A]/5 flex items-center justify-center mb-5">
           <Shield className="h-8 w-8 text-[#1B2E5A]/40" />
         </div>
-        <p className="text-base font-semibold tracking-tight text-[#1B2E5A]">No Active Credit Pools</p>
-        <p className="text-sm text-slate-400 mt-1.5 max-w-sm">
+        <p style={{ fontFamily: 'var(--zk-display)', fontWeight: 600, letterSpacing: '-0.025em', color: 'var(--zk-ink)', fontSize: 16 }}>No Active Credit Pools</p>
+        <p style={{ fontFamily: 'var(--zk-font)', fontSize: 13, color: 'var(--zk-muted)' }} className="mt-1.5 max-w-sm">
           Credits and their expiry schedules will appear here once campaigns are distributed to your organization.
         </p>
       </div>
@@ -586,9 +587,9 @@ export function ExpiryBreakdownTab({ creditAllocations, creditBalance, entityBal
                 <div className="h-7 w-7 rounded-lg bg-[#1B2E5A]/[0.06] flex items-center justify-center">
                   <Building2 className="h-3.5 w-3.5 text-[#1B2E5A]" />
                 </div>
-                <span className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">Entities</span>
+                <span style={{ fontFamily: 'var(--zk-mono)', fontSize: 11, fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: 'var(--zk-muted-2)' }}>Entities</span>
               </div>
-              <p className="text-2xl font-bold tracking-tight text-[#1B2E5A]">{totalEntities}</p>
+              <p style={{ fontFamily: 'var(--zk-mono)', fontWeight: 600, letterSpacing: '-0.04em', color: 'var(--zk-ink)' }} className="text-2xl">{totalEntities}</p>
             </div>
             {/* Credit Pools */}
             <div className="p-4 sm:p-5">
@@ -596,9 +597,9 @@ export function ExpiryBreakdownTab({ creditAllocations, creditBalance, entityBal
                 <div className="h-7 w-7 rounded-lg bg-[#1B2E5A]/[0.06] flex items-center justify-center">
                   <Gift className="h-3.5 w-3.5 text-[#1B2E5A]" />
                 </div>
-                <span className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">Credit Pools</span>
+                <span style={{ fontFamily: 'var(--zk-mono)', fontSize: 11, fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: 'var(--zk-muted-2)' }}>Credit Pools</span>
               </div>
-              <p className="text-2xl font-bold tracking-tight text-[#1B2E5A]">{totalBatches}</p>
+              <p style={{ fontFamily: 'var(--zk-mono)', fontWeight: 600, letterSpacing: '-0.04em', color: 'var(--zk-ink)' }} className="text-2xl">{totalBatches}</p>
             </div>
             {/* Total Credits */}
             <div className="p-4 sm:p-5">
@@ -606,9 +607,9 @@ export function ExpiryBreakdownTab({ creditAllocations, creditBalance, entityBal
                 <div className="h-7 w-7 rounded-lg bg-[#1B2E5A]/[0.06] flex items-center justify-center">
                   <TrendingUp className="h-3.5 w-3.5 text-[#1B2E5A]" />
                 </div>
-                <span className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">Total Credits</span>
+                <span style={{ fontFamily: 'var(--zk-mono)', fontSize: 11, fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: 'var(--zk-muted-2)' }}>Total Credits</span>
               </div>
-              <p className="text-2xl font-bold tracking-tight text-[#1B2E5A]">{totalCredits.toLocaleString()}</p>
+              <p style={{ fontFamily: 'var(--zk-mono)', fontWeight: 600, letterSpacing: '-0.04em', color: 'var(--zk-ink)' }} className="text-2xl">{totalCredits.toLocaleString()}</p>
             </div>
             {/* Expiry alerts */}
             <div className="p-4 sm:p-5">
@@ -622,10 +623,10 @@ export function ExpiryBreakdownTab({ creditAllocations, creditBalance, entityBal
                     : <CheckCircle className="h-3.5 w-3.5 text-emerald-500" />
                   }
                 </div>
-                <span className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">Expiring Soon</span>
+                <span style={{ fontFamily: 'var(--zk-mono)', fontSize: 11, fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: 'var(--zk-muted-2)' }}>Expiring Soon</span>
               </div>
-              <p className={cn(
-                'text-2xl font-bold tracking-tight',
+              <p style={{ fontFamily: 'var(--zk-mono)', fontWeight: 600, letterSpacing: '-0.04em' }} className={cn(
+                'text-2xl',
                 urgentBatches > 0 ? 'text-rose-600' : 'text-emerald-600'
               )}>
                 {urgentBatches}
@@ -667,7 +668,7 @@ export function ExpiryBreakdownTab({ creditAllocations, creditBalance, entityBal
                     {entityIcon(group.entityType)}
                   </div>
                   <div>
-                    <CardTitle className="text-[15px] font-bold tracking-tight text-[#1B2E5A] capitalize">
+                    <CardTitle style={{ fontFamily: 'var(--zk-display)', letterSpacing: '-0.025em', color: 'var(--zk-ink)', fontWeight: 600, fontSize: 15, textTransform: 'capitalize' as const }}>
                       {group.entityName}
                     </CardTitle>
                     <div className="flex items-center gap-2 mt-0.5">

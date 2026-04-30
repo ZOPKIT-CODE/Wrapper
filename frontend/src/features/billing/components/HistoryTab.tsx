@@ -292,7 +292,7 @@ function PaymentCard({
                 ? 'bg-red-50 border-red-100'
                 : 'bg-[#1B2E5A]/5 border-[#1B2E5A]/10'
           }`}>
-            <div className={`text-base font-bold ${
+            <div style={{ fontFamily: 'var(--zk-mono)', fontWeight: 600 }} className={`text-base ${
               isPlanUpgrade
                 ? 'text-violet-700'
                 : payment.status === 'failed'
@@ -301,7 +301,7 @@ function PaymentCard({
             }`}>
               {formatCurrency(payment.amount)}
             </div>
-            <div className="text-[10px] text-slate-400 mt-0.5">
+            <div style={{ fontFamily: 'var(--zk-mono)', fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase' as const, color: 'var(--zk-muted-2)' }} className="mt-0.5">
               {isPlanUpgrade
                 ? payment.billingCycle === 'yearly' ? 'Annual Plan' : 'Monthly Plan'
                 : payment.type === 'credit_purchase' ? 'Purchase' : 'Total'}
@@ -348,7 +348,8 @@ function PaymentCard({
               size="sm"
               onClick={() => onDownload(payment)}
               disabled={isDownloading}
-              className="h-8 text-xs bg-[#1B2E5A] hover:bg-[#152449] text-white shadow-sm min-w-[130px]"
+              style={{ background: 'var(--zk-navy)' }}
+              className="h-8 text-xs hover:bg-[#152449] text-white shadow-sm min-w-[130px]"
             >
               {isDownloading ? (
                 <>
@@ -439,8 +440,8 @@ export function HistoryTab({
             <ReceiptText className="h-5 w-5 text-[#1B2E5A]" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-[#1B2E5A]">Payment History</h3>
-            <p className="text-sm text-slate-500">All transactions and invoices for your account</p>
+            <h3 style={{ fontFamily: 'var(--zk-display)', letterSpacing: '-0.025em', color: 'var(--zk-ink)', fontWeight: 600, fontSize: 18 }}>Payment History</h3>
+            <p style={{ fontFamily: 'var(--zk-font)', fontSize: 13, color: 'var(--zk-muted)' }}>All transactions and invoices for your account</p>
           </div>
         </div>
       </div>
@@ -469,8 +470,8 @@ export function HistoryTab({
                 <TrendingUp className="h-4 w-4 text-[#1B2E5A]" />
               </div>
               <div>
-                <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">Total Spent</p>
-                <p className="text-lg font-bold text-[#1B2E5A]">{formatCurrency(stats.totalSpent)}</p>
+                <p style={{ fontFamily: 'var(--zk-mono)', fontSize: 11, fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: 'var(--zk-muted-2)' }}>Total Spent</p>
+                <p style={{ fontFamily: 'var(--zk-mono)', fontWeight: 600, color: 'var(--zk-ink)' }} className="text-lg">{formatCurrency(stats.totalSpent)}</p>
               </div>
             </div>
             <div className="rounded-2xl border border-slate-100 bg-white p-4 flex items-center gap-3 shadow-sm">
@@ -478,8 +479,8 @@ export function HistoryTab({
                 <ReceiptText className="h-4 w-4 text-[#1B2E5A]" />
               </div>
               <div>
-                <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">Transactions</p>
-                <p className="text-lg font-bold text-[#1B2E5A]">{stats.txCount}</p>
+                <p style={{ fontFamily: 'var(--zk-mono)', fontSize: 11, fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: 'var(--zk-muted-2)' }}>Transactions</p>
+                <p style={{ fontFamily: 'var(--zk-mono)', fontWeight: 600, color: 'var(--zk-ink)' }} className="text-lg">{stats.txCount}</p>
               </div>
             </div>
             <div className="rounded-2xl border border-slate-100 bg-white p-4 flex items-center gap-3 shadow-sm">
@@ -487,8 +488,8 @@ export function HistoryTab({
                 <Coins className="h-4 w-4 text-emerald-600" />
               </div>
               <div>
-                <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">Credits Purchased</p>
-                <p className="text-lg font-bold text-[#1B2E5A]">{stats.creditsTotal.toLocaleString()}</p>
+                <p style={{ fontFamily: 'var(--zk-mono)', fontSize: 11, fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: 'var(--zk-muted-2)' }}>Credits Purchased</p>
+                <p style={{ fontFamily: 'var(--zk-mono)', fontWeight: 600, color: 'var(--zk-ink)' }} className="text-lg">{stats.creditsTotal.toLocaleString()}</p>
               </div>
             </div>
           </div>
@@ -549,8 +550,8 @@ export function HistoryTab({
                 <Settings className="h-5 w-5 text-[#1B2E5A]" />
               </div>
               <div>
-                <CardTitle className="text-base font-bold text-[#1B2E5A]">Plan Management</CardTitle>
-                <p className="text-xs text-slate-500 mt-0.5">Manage your active subscription</p>
+                <CardTitle style={{ fontFamily: 'var(--zk-display)', letterSpacing: '-0.025em', color: 'var(--zk-ink)', fontWeight: 600 }} className="text-base">Plan Management</CardTitle>
+                <p style={{ fontFamily: 'var(--zk-font)', fontSize: 13, color: 'var(--zk-muted)' }} className="mt-0.5">Manage your active subscription</p>
               </div>
             </div>
           </CardHeader>

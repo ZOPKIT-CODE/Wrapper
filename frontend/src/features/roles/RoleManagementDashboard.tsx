@@ -488,9 +488,9 @@ export function RoleManagementDashboard() {
             <div
               className={cn(
                 "w-11 h-11 rounded-xl flex items-center justify-center shrink-0 shadow-sm ring-1 ring-black/5",
-                !role.color && "bg-[#1B2E5A]/10 text-[#1B2E5A] dark:bg-[#1B2E5A]/20 dark:text-[#4A6FA5]"
+                !role.color && "dark:bg-blue-900/20 dark:text-blue-400"
               )}
-              style={role.color ? { backgroundColor: `${role.color}18`, color: role.color, border: `1px solid ${role.color}25` } : undefined}
+              style={role.color ? { backgroundColor: `${role.color}18`, color: role.color, border: `1px solid ${role.color}25` } : { backgroundColor: 'color-mix(in srgb, var(--zk-navy) 10%, transparent)', color: 'var(--zk-navy)' }}
             >
               {role.metadata?.icon ? (
                 <span className="text-base">{role.metadata.icon}</span>
@@ -500,16 +500,17 @@ export function RoleManagementDashboard() {
             </div>
             <div className="min-w-0 flex-1">
               <div className={cn(
-                "font-semibold truncate text-sm",
-                actualTheme === 'dark' ? "text-white" : actualTheme === 'monochrome' ? "text-gray-100" : "text-[#1B2E5A]"
-              )} title={role.roleName}>
+                "truncate text-sm",
+                actualTheme === 'dark' ? "text-white" : actualTheme === 'monochrome' ? "text-gray-100" : ""
+              )} style={{ fontFamily: 'var(--zk-display)', fontWeight: 600, letterSpacing: '-0.025em', color: (actualTheme !== 'dark' && actualTheme !== 'monochrome') ? 'var(--zk-ink)' : undefined }} title={role.roleName}>
                 {role.roleName}
               </div>
               <div
                 className={cn(
                   "text-xs truncate max-w-[220px]",
-                  actualTheme === 'dark' ? "text-slate-400" : actualTheme === 'monochrome' ? "text-gray-400" : "text-slate-500"
+                  actualTheme === 'dark' ? "text-slate-400" : actualTheme === 'monochrome' ? "text-gray-400" : ""
                 )}
+                style={{ fontFamily: 'var(--zk-font)', color: (actualTheme !== 'dark' && actualTheme !== 'monochrome') ? 'var(--zk-muted)' : undefined }}
                 title={role.description || 'No description provided'}
               >
                 {role.description || 'No description provided'}
@@ -520,11 +521,10 @@ export function RoleManagementDashboard() {
 
         <td className="px-5 py-4 align-middle text-center">
           <Badge variant="outline" className={cn(
-            "font-mono font-medium",
             actualTheme === 'dark' ? "bg-purple-500/10 border-purple-500/30 text-purple-200" :
               actualTheme === 'monochrome' ? "bg-gray-500/10 border-gray-500/30 text-gray-200" :
                 "bg-slate-100 border-slate-200 text-slate-700"
-          )}>
+          )} style={{ fontFamily: 'var(--zk-mono)', fontWeight: 500, letterSpacing: '-0.02em' }}>
             {role.userCount || 0}
           </Badge>
         </td>
@@ -532,13 +532,13 @@ export function RoleManagementDashboard() {
         <td className="px-5 py-4 align-middle text-center">
           <div className="flex items-center justify-center gap-2">
             <div className="flex flex-col items-center">
-              <span className="text-[10px] uppercase tracking-wider opacity-50 font-bold">Apps</span>
-              <span className="text-sm font-bold">{displayApps}</span>
+              <span className="opacity-50" style={{ fontFamily: 'var(--zk-mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase' }}>Apps</span>
+              <span style={{ fontFamily: 'var(--zk-mono)', fontSize: 14, fontWeight: 700, letterSpacing: '-0.02em' }}>{displayApps}</span>
             </div>
             <div className="w-px h-6 bg-slate-200 dark:bg-slate-700 mx-1"></div>
             <div className="flex flex-col items-center">
-              <span className="text-[10px] uppercase tracking-wider opacity-50 font-bold">Modules</span>
-              <span className="text-sm font-bold">{displayModules}</span>
+              <span className="opacity-50" style={{ fontFamily: 'var(--zk-mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase' }}>Modules</span>
+              <span style={{ fontFamily: 'var(--zk-mono)', fontSize: 14, fontWeight: 700, letterSpacing: '-0.02em' }}>{displayModules}</span>
             </div>
           </div>
         </td>
@@ -548,22 +548,22 @@ export function RoleManagementDashboard() {
             {permissionSummary.admin > 0 && (
               <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-rose-50 border border-rose-100 dark:bg-rose-500/10 dark:border-rose-500/20" title="Admin Permissions">
                 <div className="w-1.5 h-1.5 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.6)]" />
-                <span className="text-[10px] font-bold text-rose-700 dark:text-rose-400">{permissionSummary.admin}</span>
+                <span className="text-rose-700 dark:text-rose-400" style={{ fontFamily: 'var(--zk-mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.06em' }}>{permissionSummary.admin}</span>
               </div>
             )}
             {permissionSummary.write > 0 && (
               <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-50 border border-amber-100 dark:bg-amber-500/10 dark:border-amber-500/20" title="Write Permissions">
                 <div className="w-1.5 h-1.5 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)]" />
-                <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400">{permissionSummary.write}</span>
+                <span className="text-amber-700 dark:text-amber-400" style={{ fontFamily: 'var(--zk-mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.06em' }}>{permissionSummary.write}</span>
               </div>
             )}
             {permissionSummary.read > 0 && (
               <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-100 dark:bg-emerald-500/10 dark:border-emerald-500/20" title="Read Permissions">
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
-                <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400">{permissionSummary.read}</span>
+                <span className="text-emerald-700 dark:text-emerald-400" style={{ fontFamily: 'var(--zk-mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.06em' }}>{permissionSummary.read}</span>
               </div>
             )}
-            <div className="text-[10px] text-slate-400 dark:text-slate-500 font-medium ml-1">
+            <div className="ml-1 text-slate-400 dark:text-slate-500" style={{ fontFamily: 'var(--zk-mono)', fontSize: 10, fontWeight: 500 }}>
               {displayCount} total
             </div>
           </div>
@@ -574,15 +574,16 @@ export function RoleManagementDashboard() {
             <Badge
               variant={role.isSystemRole ? "default" : "secondary"}
               className={cn(
-                "text-[10px] h-5 uppercase tracking-tighter font-medium",
+                "h-5 uppercase",
                 actualTheme === 'dark'
                   ? role.isSystemRole ? "bg-[#1B2E5A]/30 text-blue-300 border-blue-500/40" : "bg-slate-700 text-slate-300 border-slate-600"
                   : "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600"
               )}
+              style={{ fontFamily: 'var(--zk-mono)', fontSize: 10, letterSpacing: '0.06em', fontWeight: 500 }}
             >
               {role.isSystemRole ? 'System' : 'Custom'}
             </Badge>
-            <span className="text-[9px] font-medium opacity-50 whitespace-nowrap">
+            <span className="opacity-50 whitespace-nowrap" style={{ fontFamily: 'var(--zk-mono)', fontSize: 10, fontWeight: 500 }}>
               {new Date(role.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
             </span>
           </div>
@@ -636,7 +637,7 @@ export function RoleManagementDashboard() {
   };
 
   return (
-    <div className="space-y-8 text-[#1B2E5A]">
+    <div className="space-y-8" style={{ color: 'var(--zk-ink)' }}>
         {/* Header */}
         <DashboardPageHeader
           title="Role Management"
@@ -651,7 +652,7 @@ export function RoleManagementDashboard() {
         />
 
         {/* Enhanced Filters and Search */}
-        <Card className="rounded-2xl border border-[#1B2E5A]/10 bg-white shadow-sm">
+        <Card className="rounded-2xl bg-white shadow-sm" style={{ borderColor: 'var(--zk-line)' }}>
           <CardContent className="p-6 space-y-6">
             {/* Search Bar */}
             <div className="flex flex-col lg:flex-row gap-4">
@@ -925,12 +926,12 @@ export function RoleManagementDashboard() {
                   ? "bg-slate-800/95 border-b border-slate-700"
                   : actualTheme === 'monochrome'
                     ? "bg-gray-800 border-b border-gray-700"
-                    : "bg-gradient-to-r from-slate-50 via-blue-50/30 to-slate-50 border-b border-slate-200"
-              )}>
+                    : "border-b"
+              )} style={(actualTheme !== 'dark' && actualTheme !== 'monochrome') ? { backgroundColor: 'var(--zk-bg-2)', borderColor: 'var(--zk-line)' } : undefined}>
                 <tr className={cn(
-                  "text-[11px] uppercase tracking-widest font-bold",
-                  actualTheme === 'dark' ? "text-slate-300" : actualTheme === 'monochrome' ? "text-gray-300" : "text-slate-600"
-                )}>
+                  "text-[11px] uppercase tracking-widest font-medium",
+                  actualTheme === 'dark' ? "text-slate-300" : actualTheme === 'monochrome' ? "text-gray-300" : ""
+                )} style={{ fontFamily: 'var(--zk-mono)', letterSpacing: '0.07em', color: (actualTheme !== 'dark' && actualTheme !== 'monochrome') ? 'var(--zk-muted-2)' : undefined }}>
                   <th className="px-5 py-4 text-left w-12">
                     <Checkbox
                       checked={selectedRoles.size === roles.length && roles.length > 0}
@@ -976,7 +977,7 @@ export function RoleManagementDashboard() {
                   <tr>
                     <td colSpan={7} className="p-12 text-center">
                       <Shield className={cn("w-12 h-12 mx-auto text-gray-400", actualTheme === 'dark' && "text-white")} />
-                      <h3 className={cn("text-lg font-semibold mt-4", actualTheme === 'dark' ? "text-white" : actualTheme === 'monochrome' ? "text-gray-100" : "text-[#1B2E5A]")}>No roles found</h3>
+                      <h3 className={cn("text-lg mt-4", actualTheme === 'dark' ? "text-white" : actualTheme === 'monochrome' ? "text-gray-100" : "")} style={{ fontFamily: 'var(--zk-display)', fontWeight: 600, letterSpacing: '-0.025em', color: (actualTheme !== 'dark' && actualTheme !== 'monochrome') ? 'var(--zk-ink)' : undefined }}>No roles found</h3>
                       <p className={cn("mt-2 text-gray-600", actualTheme === 'dark' ? "text-white" : actualTheme === 'monochrome' ? "text-gray-300" : "")}>
                         {searchQuery || typeFilter !== 'all' ? 'Try adjusting your filters.' : 'Get started by creating your first role.'}
                       </p>

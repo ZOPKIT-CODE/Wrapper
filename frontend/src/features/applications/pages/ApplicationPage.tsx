@@ -1,5 +1,3 @@
-import { Container } from "@/components/common/Page";
-import { Section } from "@/components/common/Page/Section";
 import { useApplications } from "@/hooks/useApplications";
 import { ApplicationHeader } from "@/features/applications/components/ApplicationHeader";
 import { ApplicationGrid } from "@/features/applications/components/ApplicationGrid";
@@ -77,7 +75,7 @@ export function ApplicationPage() {
     }
 
     return (
-        <Container>
+        <div style={{ maxWidth: 1480, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
             <ApplicationHeader
                 applicationCount={applications.length}
                 isLoading={isLoading}
@@ -92,6 +90,6 @@ export function ApplicationPage() {
                     onViewApplication={handleViewAppWithTracking}
                 />
             )}
-        </Container>
+        </div>
     );
 }

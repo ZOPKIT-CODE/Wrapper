@@ -3,6 +3,7 @@ import { useInfiniteQuery } from '@tanstack/react-query'
 import { useKindeAuth } from '@kinde-oss/kinde-auth-react'
 import { tenantAPI } from '@/lib/api'
 import { TimelineTab } from '@/features/billing/components/TimelineTab'
+import { DashboardPageHeader } from '@/components/dashboard/DashboardPageHeader'
 
 const TIMELINE_PAGE_SIZE = 20
 
@@ -79,7 +80,11 @@ export function ActivityPage() {
   }, [timelinePages])
 
   return (
-    <div className="space-y-6">
+    <div style={{ maxWidth: 1480, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 24 }}>
+      <DashboardPageHeader
+        title="Activity"
+        description="A chronological view of your workspace events, subscriptions, and usage."
+      />
       <TimelineTab
         timelineData={timelineData}
         timelineLoading={timelineLoading}
@@ -88,6 +93,7 @@ export function ActivityPage() {
         onLoadMore={() => loadMore()}
       />
     </div>
+
   )
 }
 

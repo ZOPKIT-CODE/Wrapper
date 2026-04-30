@@ -1,54 +1,71 @@
-import React, { memo, useMemo } from 'react';
-import { Database, CreditCard, Package, ShieldCheck, ExternalLink, ArrowRight, Layers, Layout, Cpu, Zap, Activity, Shield, Settings } from 'lucide-react';
-import { Application, AppThemeConfig, ThemeType } from '@/types/application';
-import { useTheme } from '@/components/theme/ThemeProvider';
-import { cn } from '@/lib/utils';
+import React, { memo, useMemo, useState } from 'react';
+import { Application } from '@/types/application';
 import { config } from '@/lib/config';
-import { ApplicationCardDecoration } from './ApplicationCardDecoration';
-import { PearlButton } from '@/components/ui/pearl-button';
+import { Settings, ChevronRight, Users2 } from 'lucide-react';
+import { FaMoneyBillTransfer } from 'react-icons/fa6';
+import { IoSettings } from 'react-icons/io5';
+import { IoIosPeople } from 'react-icons/io';
+import { MdOutlineConnectWithoutContact } from 'react-icons/md';
 
-// Static class maps — full literal strings so Tailwind JIT includes them in the build
-const THEME_STATIC: Record<ThemeType, { colorClass: string; bgGradient: string; glowClass: string }> = {
-  cyan:    { colorClass: 'text-cyan-500',    bgGradient: 'from-cyan-500/20 via-cyan-500/5 to-transparent',    glowClass: 'group-hover:shadow-cyan-500/40' },
-  indigo:  { colorClass: 'text-indigo-500',  bgGradient: 'from-indigo-500/20 via-indigo-500/5 to-transparent',  glowClass: 'group-hover:shadow-indigo-500/40' },
-  emerald: { colorClass: 'text-emerald-500', bgGradient: 'from-emerald-500/20 via-emerald-500/5 to-transparent', glowClass: 'group-hover:shadow-emerald-500/40' },
-  rose:    { colorClass: 'text-rose-500',    bgGradient: 'from-rose-500/20 via-rose-500/5 to-transparent',    glowClass: 'group-hover:shadow-rose-500/40' },
-  amber:   { colorClass: 'text-amber-500',   bgGradient: 'from-amber-500/20 via-amber-500/5 to-transparent',   glowClass: 'group-hover:shadow-amber-500/40' },
-  purple:  { colorClass: 'text-purple-500',  bgGradient: 'from-purple-500/20 via-purple-500/5 to-transparent',  glowClass: 'group-hover:shadow-purple-500/40' },
-  red:     { colorClass: 'text-red-500',     bgGradient: 'from-red-500/20 via-red-500/5 to-transparent',     glowClass: 'group-hover:shadow-red-500/40' },
-  blue:    { colorClass: 'text-blue-500',    bgGradient: 'from-blue-500/20 via-blue-500/5 to-transparent',    glowClass: 'group-hover:shadow-blue-500/40' },
-  violet:  { colorClass: 'text-violet-500',  bgGradient: 'from-violet-500/20 via-violet-500/5 to-transparent',  glowClass: 'group-hover:shadow-violet-500/40' },
-  orange:  { colorClass: 'text-orange-500',  bgGradient: 'from-orange-500/20 via-orange-500/5 to-transparent',  glowClass: 'group-hover:shadow-orange-500/40' },
-  yellow:  { colorClass: 'text-yellow-500',  bgGradient: 'from-yellow-500/20 via-yellow-500/5 to-transparent',  glowClass: 'group-hover:shadow-yellow-500/40' },
-};
-
-const THEME_POOL: { type: ThemeType; color: string; icon: React.ReactNode }[] = [
-  { type: 'cyan',    color: 'cyan',    icon: <Zap className="w-8 h-8" /> },
-  { type: 'indigo',  color: 'indigo',  icon: <Layers className="w-8 h-8" /> },
-  { type: 'emerald', color: 'emerald', icon: <Activity className="w-8 h-8" /> },
-  { type: 'rose',    color: 'rose',    icon: <Shield className="w-8 h-8" /> },
-  { type: 'amber',   color: 'amber',   icon: <Cpu className="w-8 h-8" /> },
-  { type: 'purple',  color: 'purple',  icon: <Layout className="w-8 h-8" /> },
-  { type: 'red',     color: 'red',     icon: <Package className="w-8 h-8" /> },
-  { type: 'blue',    color: 'blue',    icon: <Database className="w-8 h-8" /> },
-  { type: 'violet',  color: 'violet',  icon: <ShieldCheck className="w-8 h-8" /> },
-  { type: 'orange',  color: 'orange',  icon: <Zap className="w-8 h-8" /> },
-  { type: 'yellow',  color: 'yellow',  icon: <Activity className="w-8 h-8" /> },
-];
-
-const getAppThemeByIndex = (index: number): AppThemeConfig => {
-  const theme = THEME_POOL[index % THEME_POOL.length];
-  const statics = THEME_STATIC[theme.type];
-
-  return {
-    type: theme.type,
-    color: theme.color,
-    colorClass: statics.colorClass,
-    bgGradient: statics.bgGradient,
-    glowClass: statics.glowClass,
-    icon: theme.icon
-  };
-};
+function AppIcon({ index, size = 44 }: { index: number; size?: number }) {
+  const stroke = 'var(--zk-navy)';
+  const icons = [
+    /* CRM */
+    <IoIosPeople
+      key="crm"
+      size={size}
+      style={{ color: stroke }}
+    />,
+    /* HR */
+    <Users2 key="hr" size={size} color={stroke} strokeWidth={2.2} />,
+    /* PM */
+    <svg key="pm" width={size} height={size} viewBox="0 0 48 48" fill="none" stroke={stroke} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="8" y="10" width="32" height="28" rx="3" />
+      <path d="M8 18h32" />
+      <path d="M14 26h12" stroke={stroke} />
+      <path d="M14 32h20" stroke={stroke} />
+      <circle cx="36" cy="26" r="2" fill={stroke} stroke="none" />
+    </svg>,
+    /* Affiliate */
+    <MdOutlineConnectWithoutContact
+      key="affiliate"
+      size={size}
+      style={{ color: stroke }}
+    />,
+    /* Ops */
+    <IoSettings key="ops" size={size} style={{ color: stroke }} />,
+    /* Finance */
+    <FaMoneyBillTransfer
+      key="finance"
+      size={size}
+      style={{ color: stroke }}
+    />,
+    /* Analytics */
+    <svg key="analytics" width={size} height={size} viewBox="0 0 48 48" fill="none" stroke={stroke} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="8" y="22" width="6" height="18" rx="1" />
+      <rect x="20" y="14" width="6" height="26" rx="1" fill={stroke} stroke="none" />
+      <rect x="32" y="6" width="6" height="34" rx="1" />
+      <path d="M11 22 L23 14 L35 6" stroke={stroke} strokeWidth="1.8" />
+    </svg>,
+    /* Settings/Config */
+    <svg key="settings" width={size} height={size} viewBox="0 0 48 48" fill="none" stroke={stroke} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="24" cy="24" r="6" />
+      <path d="M24 4v4M24 40v4M4 24h4M40 24h4M8.7 8.7l2.8 2.8M36.5 36.5l2.8 2.8M36.5 11.5l-2.8 2.8M11.5 36.5l-2.8 2.8" />
+    </svg>,
+    /* Database */
+    <svg key="db" width={size} height={size} viewBox="0 0 48 48" fill="none" stroke={stroke} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+      <ellipse cx="24" cy="12" rx="14" ry="5" />
+      <path d="M38 12v12c0 2.8-6.3 5-14 5s-14-2.2-14-5V12" />
+      <path d="M38 24v12c0 2.8-6.3 5-14 5s-14-2.2-14-5V24" />
+    </svg>,
+    /* Shield */
+    <svg key="shield" width={size} height={size} viewBox="0 0 48 48" fill="none" stroke={stroke} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M24 4l16 6v12c0 10-8 16-16 20C16 38 8 32 8 22V10z" />
+      <path d="M17 24l5 5 9-10" stroke={stroke} strokeWidth="2.8" />
+    </svg>,
+  ];
+  return icons[index % icons.length];
+}
 
 const getApplicationUrl = (application: Application): string => {
   const apiBaseUrl =
@@ -75,23 +92,17 @@ interface ApplicationCardProps {
 }
 
 export const ApplicationCard = memo(function ApplicationCard({ application, onView, index }: ApplicationCardProps) {
-  const { actualTheme } = useTheme();
-  const isDark = actualTheme === 'dark';
-  const theme = useMemo(() => getAppThemeByIndex(index), [index]);
+  const [hover, setHover] = useState(false);
+  const [launching, setLaunching] = useState(false);
 
   const handleLaunch = (e: React.MouseEvent) => {
     e.stopPropagation();
+    setLaunching(true);
     const url = getApplicationUrl(application);
-    if (url) {
-      window.open(url, '_blank', 'noopener,noreferrer');
-    }
-  };
-
-  const handleCardClick = () => {
-    const url = getApplicationUrl(application);
-    if (url) {
-      window.location.href = url;
-    }
+    setTimeout(() => {
+      setLaunching(false);
+      if (url) window.open(url, '_blank', 'noopener,noreferrer');
+    }, 600);
   };
 
   const handleOpenSettings = (e: React.MouseEvent) => {
@@ -99,103 +110,165 @@ export const ApplicationCard = memo(function ApplicationCard({ application, onVi
     onView(application);
   };
 
-  const handleExternalLink = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    const url = getApplicationUrl(application);
-    if (url) window.open(url, '_blank', 'noopener,noreferrer');
-  };
+  const isOperational = application.isActive !== false;
 
   return (
-    <div className="w-full h-[280px]">
-      <div
-        onClick={handleCardClick}
-        className={cn(
-          "card-inner group relative h-full w-full rounded-[32px] p-8 cursor-pointer overflow-hidden border",
-          isDark
-            ? "bg-slate-900/80 border-white/10 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)]"
-            : "bg-white border-slate-200 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.08)]",
-          theme.glowClass
-        )}
+    <article
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        position: 'relative',
+        background: hover ? 'var(--zk-paper-2)' : 'var(--zk-paper)',
+        borderRadius: 14,
+        border: `1px solid ${hover ? 'rgba(15,32,80,0.18)' : 'var(--zk-line)'}`,
+        padding: '24px 24px 22px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 14,
+        minHeight: 200,
+        transition: 'all 240ms cubic-bezier(.2,.8,.2,1)',
+        transform: hover ? 'translateY(-3px)' : 'translateY(0)',
+        boxShadow: hover ? '0 14px 40px -18px rgba(15,32,80,0.18)' : 'none',
+        cursor: 'pointer',
+        animation: `zk-fadeUp 500ms cubic-bezier(.2,.8,.2,1) ${index * 40}ms both`,
+        fontFamily: 'var(--zk-font)',
+      }}
+    >
+      {/* Settings button top-right */}
+      <button
+        onClick={handleOpenSettings}
+        title="Application settings"
+        style={{
+          position: 'absolute',
+          top: 14,
+          right: 14,
+          opacity: hover ? 1 : 0,
+          width: 28,
+          height: 28,
+          borderRadius: 7,
+          display: 'grid',
+          placeItems: 'center',
+          background: 'rgba(15,32,80,0.06)',
+          color: 'var(--zk-muted)',
+          border: 'none',
+          cursor: 'pointer',
+          transition: 'opacity 160ms ease',
+        }}
       >
-        {/* Persistent background gradient */}
-        <div className={cn(
-          "absolute inset-0 opacity-20 pointer-events-none",
-          "bg-[radial-gradient(circle_at_50%_120%,var(--tw-gradient-from),transparent_70%)]",
-          theme.bgGradient
-        )} />
+        <Settings size={13} />
+      </button>
 
-        {/* Decoration */}
-        <ApplicationCardDecoration
-          type={theme.type}
-          className="opacity-80 origin-bottom-right"
-        />
-
-        {/* Content Container */}
-        <div className="relative z-10 h-full flex flex-col items-center justify-between">
-          {/* Header */}
-          <div className="flex justify-between items-start w-full mb-4">
-            <div className={cn(
-              "relative w-20 h-20 rounded-[24px] flex items-center justify-center",
-              isDark ? "bg-slate-800/90 shadow-xl" : "bg-slate-50 shadow-sm",
-              theme.colorClass
-            )}>
-              {theme.icon}
-              <div className={cn("absolute inset-0 rounded-[24px] opacity-15 blur-xl", theme.colorClass.replace('text-', 'bg-'))} />
-            </div>
-
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={handleOpenSettings}
-                className={cn(
-                  "w-9 h-9 rounded-full border flex items-center justify-center opacity-60 hover:opacity-100",
-                  isDark ? "border-white/10 text-slate-400 hover:bg-white/10" : "border-slate-200 text-slate-500 hover:bg-slate-100",
-                  "group-hover:opacity-100 group-hover:bg-white dark:group-hover:bg-slate-800"
-                )}
-                title="Application settings"
-              >
-                <Settings className="w-4 h-4" />
-              </button>
-              <button
-                type="button"
-                onClick={handleExternalLink}
-                className={cn(
-                  "w-9 h-9 rounded-full border flex items-center justify-center opacity-60 hover:opacity-100",
-                  isDark ? "border-white/10 text-slate-400 hover:bg-white/10" : "border-slate-200 text-slate-500 hover:bg-slate-100",
-                  "group-hover:opacity-100 group-hover:bg-white dark:group-hover:bg-slate-800"
-                )}
-                title="Open in new tab"
-              >
-                <ExternalLink className="w-4 h-4" />
-              </button>
-            </div>
+      {/* Logo + name */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+        <AppIcon index={index} size={44} />
+        <div style={{ flex: 1, minWidth: 0, paddingTop: 2 }}>
+          <div style={{
+            fontSize: 11,
+            fontFamily: 'var(--zk-mono)',
+            color: 'var(--zk-muted-2)',
+            letterSpacing: '0.04em',
+            marginBottom: 1,
+          }}>
+            zopkit
           </div>
-
-          {/* Body - Centered Icon-like Layout */}
-          <div className="flex-1 flex flex-col items-center justify-center w-full space-y-3">
-            <h3 className={cn(
-              "text-xl font-black tracking-tight leading-tight uppercase text-center",
-              isDark ? "text-white" : "text-[#1B2E5A]"
-            )}>
-              {application.appName}
-            </h3>
-          </div>
-
-          {/* Launch Button */}
-          <div className="mt-4 flex items-center justify-center w-full">
-            <PearlButton
-              onClick={handleLaunch}
-              size="sm"
-              color={theme.color as any}
-              className="w-full text-sm font-bold uppercase tracking-wider gap-2"
-            >
-              Launch
-              <ArrowRight className="w-4 h-4" />
-            </PearlButton>
-          </div>
+          <h3 style={{
+            margin: 0,
+            fontSize: 18,
+            fontWeight: 600,
+            letterSpacing: '-0.03em',
+            color: 'var(--zk-ink)',
+            fontFamily: 'var(--zk-display)',
+            lineHeight: 1.1,
+          }}>
+            {application.appName}
+          </h3>
         </div>
-
       </div>
-    </div>
+
+      {/* Description */}
+      <p style={{
+        margin: 0,
+        fontSize: 13,
+        color: 'var(--zk-muted)',
+        letterSpacing: '-0.005em',
+        lineHeight: 1.55,
+        flex: 1,
+      }}>
+        {application.description || 'Access and manage this application from your workspace.'}
+      </p>
+
+      {/* Footer */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginTop: 4,
+      }}>
+        <button
+          onClick={handleLaunch}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            color: 'var(--zk-navy)',
+            fontSize: 12,
+            fontWeight: 600,
+            letterSpacing: '0.06em',
+            textTransform: 'uppercase',
+            fontFamily: 'var(--zk-mono)',
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            padding: 0,
+          }}
+        >
+          {launching ? (
+            <>
+              OPENING
+              <span style={{
+                width: 10,
+                height: 10,
+                borderRadius: '50%',
+                border: '1.5px solid var(--zk-navy)',
+                borderTopColor: 'transparent',
+                animation: 'zk-spin 700ms linear infinite',
+                display: 'inline-block',
+              }} />
+            </>
+          ) : (
+            <>
+              TRY NOW
+              <ChevronRight
+                size={12}
+                strokeWidth={2.4}
+                style={{
+                  transform: hover ? 'translateX(3px)' : 'translateX(0)',
+                  transition: 'transform 200ms ease',
+                }}
+              />
+            </>
+          )}
+        </button>
+
+        <span style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 5,
+          fontSize: 10.5,
+          fontFamily: 'var(--zk-mono)',
+          color: isOperational ? '#16a34a' : '#d97706',
+          letterSpacing: '0.06em',
+        }}>
+          <span style={{
+            width: 5,
+            height: 5,
+            borderRadius: '50%',
+            background: 'currentColor',
+            animation: 'zk-pulseDot 2s ease-in-out infinite',
+          }} />
+          {isOperational ? 'OPERATIONAL' : 'ATTENTION'}
+        </span>
+      </div>
+    </article>
   );
 });

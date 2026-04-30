@@ -9,7 +9,7 @@ export const Container = ({
   className?: string
 }) => {
   return (
-    <div className={cn("space-y-8 px-4", className)}>
+    <div className={cn("space-y-7 max-w-[1480px] mx-auto", className)}>
       {children}
     </div>
   )

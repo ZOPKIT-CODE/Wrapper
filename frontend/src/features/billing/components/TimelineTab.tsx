@@ -2,6 +2,7 @@
  * Timeline tab: user journey and activity events.
  */
 
+import React from 'react'
 import {
   ListOrdered,
   Clock,
@@ -73,25 +74,27 @@ function getEventIcon(type: string) {
 // Styling helper for the icon container
 function getEventStyles(type: string, isToday: boolean, isActivity: boolean) {
   if (isToday) return {
-      container: 'bg-[#1B2E5A] ring-4 ring-indigo-50 text-white shadow-md shadow-indigo-200',
-      line: 'bg-[#1B2E5A]/30'
+      container: 'ring-4 ring-indigo-50 text-white shadow-md shadow-indigo-200',
+      containerStyle: { backgroundColor: 'var(--zk-navy)' } as React.CSSProperties,
+      line: ''
   }
   if (isActivity) return {
-      container: 'bg-white border-2 border-slate-200 text-slate-400',
-      line: 'bg-slate-100'
+      container: 'border-2 border-slate-200 text-slate-400',
+      containerStyle: { backgroundColor: 'var(--zk-paper)' } as React.CSSProperties,
+      line: ''
   }
-  
+
   switch (type) {
     case 'account_created':
-      return { container: 'bg-[#1B2E5A] ring-4 ring-[#1B2E5A]/10 text-white', line: 'bg-[#1B2E5A]/15' }
+      return { container: 'ring-4 ring-indigo-50/10 text-white', containerStyle: { backgroundColor: 'var(--zk-navy)' } as React.CSSProperties, line: '' }
     case 'onboarding_completed':
-      return { container: 'bg-emerald-500 ring-4 ring-emerald-50 text-white', line: 'bg-emerald-100' }
+      return { container: 'bg-emerald-500 ring-4 ring-emerald-50 text-white', containerStyle: {} as React.CSSProperties, line: '' }
     case 'plan_started':
-      return { container: 'bg-violet-500 ring-4 ring-violet-50 text-white', line: 'bg-violet-100' }
+      return { container: 'bg-violet-500 ring-4 ring-violet-50 text-white', containerStyle: {} as React.CSSProperties, line: '' }
     case 'credit_purchase':
-      return { container: 'bg-amber-500 ring-4 ring-amber-50 text-white', line: 'bg-amber-100' }
+      return { container: 'bg-amber-500 ring-4 ring-amber-50 text-white', containerStyle: {} as React.CSSProperties, line: '' }
     default:
-      return { container: 'bg-slate-200 text-slate-500', line: 'bg-slate-100' }
+      return { container: 'bg-slate-200 text-slate-500', containerStyle: {} as React.CSSProperties, line: '' }
   }
 }
 
@@ -99,11 +102,11 @@ export function TimelineTab({ timelineData, timelineLoading, hasMore, isLoadingM
   const events = timelineData?.events ?? []
 
   return (
-    <div className="font-sans text-slate-900">
-      <Card className="rounded-3xl border border-[#1B2E5A]/15 bg-white shadow-sm overflow-hidden">
-        <CardHeader className="pb-8 border-b border-slate-50 bg-slate-50/30">
+    <div style={{ fontFamily: 'var(--zk-font)', color: 'var(--zk-ink)' }}>
+      <Card className="rounded-3xl overflow-hidden shadow-sm" style={{ border: '1px solid color-mix(in srgb, var(--zk-navy) 15%, transparent)', backgroundColor: 'var(--zk-paper)' }}>
+        <CardHeader className="pb-8" style={{ borderBottom: '1px solid var(--zk-line)', backgroundColor: 'var(--zk-bg-2)' }}>
           <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white border border-[#1B2E5A]/15 shadow-sm text-[#1B2E5A]">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl shadow-sm" style={{ backgroundColor: 'var(--zk-paper)', border: '1px solid color-mix(in srgb, var(--zk-navy) 15%, transparent)', color: 'var(--zk-navy)' }}>
               <ListOrdered className="w-6 h-6" />
             </div>
             <div>
@@ -119,24 +122,24 @@ export function TimelineTab({ timelineData, timelineLoading, hasMore, isLoadingM
           {timelineLoading ? (
             <div className="flex flex-col items-center justify-center py-20">
                 <ZopkitRoundLoader size="lg" className="mb-4" />
-                <p className="text-sm font-medium text-slate-500">Loading your history...</p>
+                <p style={{ fontFamily: 'var(--zk-font)', fontSize: 13, fontWeight: 500, color: 'var(--zk-muted)' }}>Loading your history...</p>
             </div>
           ) : events.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center">
               <div className="h-20 w-20 rounded-full bg-slate-50 flex items-center justify-center mb-4">
                 <Clock className="h-10 w-10 text-slate-300" />
               </div>
-              <h4 className="text-lg font-bold text-[#1B2E5A] mb-1">
+              <h4 className="mb-1" style={{ fontFamily: 'var(--zk-display)', fontSize: 18, fontWeight: 600, letterSpacing: '-0.025em', color: 'var(--zk-ink)' }}>
                 No events recorded
               </h4>
-              <p className="text-slate-500 max-w-xs mx-auto text-sm">
+              <p className="max-w-xs mx-auto" style={{ fontFamily: 'var(--zk-font)', fontSize: 13, color: 'var(--zk-muted)' }}>
                 Activities will appear here once you start using the platform.
               </p>
             </div>
           ) : (
             <div className="relative p-6 sm:p-10">
               {/* Continuous vertical line connecting everything */}
-              <div className="absolute left-[2.85rem] sm:left-[3.85rem] top-10 bottom-10 w-px bg-slate-200" />
+              <div className="absolute left-[2.85rem] sm:left-[3.85rem] top-10 bottom-10 w-px" style={{ backgroundColor: 'var(--zk-line)' }} />
 
               <div className="space-y-8">
                 {events.map((event, index) => {
@@ -147,29 +150,25 @@ export function TimelineTab({ timelineData, timelineLoading, hasMore, isLoadingM
                   return (
                     <div key={index} className="relative flex gap-6 sm:gap-8 group">
                       {/* Icon Bubble */}
-                      <div className={`relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition-all duration-300 group-hover:scale-110 ${styles.container}`}>
+                      <div className={`relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition-all duration-300 group-hover:scale-110 ${styles.container}`} style={styles.containerStyle}>
                         {getEventIcon(event.type)}
                       </div>
 
                       {/* Content Card */}
                       <div className="flex-1 min-w-0 pt-1">
                          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2">
-                            <h4 className={`text-sm font-bold ${isToday ? 'text-[#1B2E5A]' : 'text-[#1B2E5A]'}`}>
+                            <h4 style={{ fontFamily: 'var(--zk-font)', fontSize: 13, fontWeight: 500, color: 'var(--zk-ink)' }}>
                                 {event.label}
                             </h4>
-                            <span className="text-xs font-medium text-slate-400 whitespace-nowrap">
+                            <span className="whitespace-nowrap" style={{ fontFamily: 'var(--zk-mono)', fontSize: 11, color: 'var(--zk-muted-2)' }}>
                                 {formatDate(event.date)}
                             </span>
                          </div>
                          
-                         <div className={`rounded-2xl p-4 transition-all duration-300 ${
-                            isToday 
-                              ? 'bg-[#1B2E5A]/5 border border-[#1B2E5A]/10'
-                              : 'bg-white border border-slate-100 group-hover:border-[#1B2E5A]/15 group-hover:shadow-md group-hover:shadow-[#1B2E5A]/5'
-                         }`}>
+                         <div className="rounded-2xl p-4 transition-all duration-300" style={isToday ? { backgroundColor: 'color-mix(in srgb, var(--zk-navy) 5%, transparent)', border: '1px solid color-mix(in srgb, var(--zk-navy) 10%, transparent)' } : { backgroundColor: 'var(--zk-paper)', border: '1px solid var(--zk-line)' }}>
                              {/* Metadata rendering logic */}
                              {(!event.metadata || Object.keys(event.metadata).length === 0) ? (
-                                <p className="text-xs text-slate-500 italic">No additional details</p>
+                                <p className="italic" style={{ fontFamily: 'var(--zk-font)', fontSize: 12, color: 'var(--zk-muted)' }}>No additional details</p>
                              ) : (
                                 <div className="space-y-2">
                                    {/* Plan Badge */}
@@ -198,12 +197,12 @@ export function TimelineTab({ timelineData, timelineLoading, hasMore, isLoadingM
                                    
                                    {/* Activity Details */}
                                    {isActivity && event.metadata.appName && (
-                                      <div className="flex flex-wrap items-center gap-2 text-sm">
-                                         <span className="font-medium text-slate-700">{event.metadata.appName}</span>
+                                      <div className="flex flex-wrap items-center gap-2">
+                                         <span style={{ fontFamily: 'var(--zk-font)', fontSize: 13, fontWeight: 500, color: 'var(--zk-ink)' }}>{event.metadata.appName}</span>
                                          {event.metadata.action && (
                                             <>
-                                                <ArrowRight className="w-3 h-3 text-slate-300" />
-                                                <span className="text-slate-500">{event.metadata.action}</span>
+                                                <ArrowRight className="w-3 h-3" style={{ color: 'var(--zk-line)' }} />
+                                                <span style={{ fontFamily: 'var(--zk-font)', fontSize: 12, color: 'var(--zk-muted)' }}>{event.metadata.action}</span>
                                             </>
                                          )}
                                       </div>
@@ -223,7 +222,7 @@ export function TimelineTab({ timelineData, timelineLoading, hasMore, isLoadingM
                     type="button"
                     onClick={onLoadMore}
                     disabled={isLoadingMore}
-                    className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold transition-all duration-200 bg-slate-100 text-slate-700 hover:bg-[#1B2E5A]/5 hover:text-[#1B2E5A] disabled:opacity-50 disabled:cursor-not-allowed border border-slate-200 hover:border-[#1B2E5A]/20"
+                    className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed" style={{ fontFamily: 'var(--zk-font)', fontSize: 13, backgroundColor: 'var(--zk-bg-2)', color: 'var(--zk-muted)', border: '1px solid var(--zk-line)' }}
                   >
                     {isLoadingMore ? (
                       <>

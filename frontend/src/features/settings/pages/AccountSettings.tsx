@@ -240,32 +240,60 @@ export const AccountSettings: React.FC = () => {
     <div className="space-y-6">
       <form onSubmit={form.handleSubmit(handleSubmit)}>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7">
-            <TabsTrigger value="company">
+          <TabsList
+            className="grid w-full grid-cols-7"
+            style={{
+              background: 'var(--zk-paper)',
+              border: '1px solid var(--zk-line)',
+              display: 'flex',
+            }}
+          >
+            <TabsTrigger
+              value="company"
+              style={{ fontFamily: 'var(--zk-font)', fontSize: 13 }}
+            >
               <Building2 className="h-4 w-4 mr-2" />
               Company
             </TabsTrigger>
-            <TabsTrigger value="contact">
+            <TabsTrigger
+              value="contact"
+              style={{ fontFamily: 'var(--zk-font)', fontSize: 13 }}
+            >
               <Mail className="h-4 w-4 mr-2" />
               Contact
             </TabsTrigger>
-            <TabsTrigger value="mailing">
+            <TabsTrigger
+              value="mailing"
+              style={{ fontFamily: 'var(--zk-font)', fontSize: 13 }}
+            >
               <MapPin className="h-4 w-4 mr-2" />
               Mailing
             </TabsTrigger>
-            <TabsTrigger value="banking">
+            <TabsTrigger
+              value="banking"
+              style={{ fontFamily: 'var(--zk-font)', fontSize: 13 }}
+            >
               <CreditCard className="h-4 w-4 mr-2" />
               Banking
             </TabsTrigger>
-            <TabsTrigger value="tax">
+            <TabsTrigger
+              value="tax"
+              style={{ fontFamily: 'var(--zk-font)', fontSize: 13 }}
+            >
               <FileText className="h-4 w-4 mr-2" />
               Tax & Compliance
             </TabsTrigger>
-            <TabsTrigger value="localization">
+            <TabsTrigger
+              value="localization"
+              style={{ fontFamily: 'var(--zk-font)', fontSize: 13 }}
+            >
               <Languages className="h-4 w-4 mr-2" />
               Localization
             </TabsTrigger>
-            <TabsTrigger value="branding">
+            <TabsTrigger
+              value="branding"
+              style={{ fontFamily: 'var(--zk-font)', fontSize: 13 }}
+            >
               <Palette className="h-4 w-4 mr-2" />
               Branding
             </TabsTrigger>
@@ -301,15 +329,27 @@ export const AccountSettings: React.FC = () => {
           />
           <BrandingTab form={form} />
 
-          <div className="flex justify-end gap-4 pt-6 border-t">
+          <div
+            className="flex justify-end gap-4 pt-6"
+            style={{ borderTop: '1px solid var(--zk-line)' }}
+          >
             <Button
               type="button"
               variant="outline"
               onClick={() => form.reset()}
+              style={{ fontFamily: 'var(--zk-font)', fontWeight: 600 }}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSaving}>
+            <Button
+              type="submit"
+              disabled={isSaving}
+              style={{
+                background: 'var(--zk-navy)',
+                fontFamily: 'var(--zk-font)',
+                fontWeight: 600,
+              }}
+            >
               {isSaving ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
