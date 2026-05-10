@@ -69,6 +69,277 @@ const workflows = [
     }
 ];
 
+// ── Design-system tokens (matches design file) ──────────────────────────────
+const M = {
+    bg: '#FFFFFF', bgSoft: '#F5F7FA', white: '#FFFFFF',
+    ink: '#13204A', inkSoft: '#3A4674', muted: '#7C84A0',
+    line: 'rgba(19,32,74,0.10)',
+    green: '#4DC18A', blue: '#3D7AE8',
+};
+
+// ── Mobile workflow section (vertical timeline design) ───────────────────────
+interface MobileWorkflowProps {
+    workflows: typeof workflows;
+    activeWorkflowIndex: number;
+    activeStepIndex: number;
+    executionId: string;
+    logs: string[];
+    onSelectWorkflow: (idx: number) => void;
+}
+
+function MobileWorkflowSection({
+    workflows: wfs, activeWorkflowIndex, activeStepIndex, executionId, logs, onSelectWorkflow,
+}: MobileWorkflowProps) {
+    const wf = wfs[activeWorkflowIndex];
+
+    return (
+        <div style={{ background: M.bg, padding: '28px 18px 40px' }}>
+            {/* section eyebrow */}
+            <div style={{
+                fontFamily: 'JetBrains Mono, monospace', fontSize: 10,
+                color: M.muted, letterSpacing: '0.22em', textAlign: 'center',
+                textTransform: 'uppercase', marginBottom: 10,
+            }}>— Workflow Engine —</div>
+
+            <h2 style={{
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Inter", sans-serif',
+                fontWeight: 800, fontSize: 28, lineHeight: 1.1,
+                color: M.ink, margin: 0, textAlign: 'center', letterSpacing: '-0.025em',
+            }}>
+                Intelligent Workflow<br />Orchestration
+            </h2>
+
+            <p style={{
+                fontFamily: 'Inter, sans-serif', fontSize: 13, color: M.inkSoft,
+                margin: '10px 0 0', textAlign: 'center', lineHeight: 1.5,
+            }}>
+                Automate complex business processes across your entire Zopkit ecosystem.
+            </p>
+
+            {/* card */}
+            <div style={{
+                marginTop: 20, background: M.white,
+                border: `1px solid ${M.line}`, borderRadius: 18, overflow: 'hidden',
+                boxShadow: '0 1px 2px rgba(19,32,74,0.04), 0 18px 50px rgba(19,32,74,0.06)',
+            }}>
+                {/* Automation Hub header */}
+                <div style={{
+                    padding: '18px 18px 16px', borderBottom: `1px solid ${M.line}`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <div style={{
+                            width: 38, height: 38, borderRadius: 10, background: M.bgSoft,
+                            border: `1px solid ${M.line}`, display: 'grid', placeItems: 'center',
+                        }}>
+                            <svg width="22" height="22" viewBox="0 0 40 40">
+                                <defs>
+                                    <linearGradient id="mwgrad" x1="0" y1="0" x2="1" y2="1">
+                                        <stop offset="0%" stopColor="#6B5BD6"/>
+                                        <stop offset="50%" stopColor="#3D8FE8"/>
+                                        <stop offset="100%" stopColor="#3FC9A4"/>
+                                    </linearGradient>
+                                </defs>
+                                <g transform="translate(20 20)">
+                                    {[0,1,2,3,4].map(i => {
+                                        const a = (i * 72 - 90) * Math.PI / 180;
+                                        const x = Math.cos(a) * 11, y = Math.sin(a) * 11;
+                                        return (
+                                            <path key={i}
+                                                d={`M0 0 Q${x*0.6} ${y*0.6 - 3}, ${x} ${y} Q${x*0.4} ${y*1.4}, 0 0 Z`}
+                                                fill="url(#mwgrad)" opacity={0.85}
+                                                transform={`rotate(${i*72})`}
+                                            />
+                                        );
+                                    })}
+                                    <circle r="3.2" fill={M.ink}/>
+                                    <circle r="1.4" fill="#fff"/>
+                                </g>
+                            </svg>
+                        </div>
+                        <div>
+                            <div style={{ fontFamily: 'Inter, sans-serif', fontWeight: 700, fontSize: 16, color: M.ink }}>Automation Hub</div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                                <span style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: 5,
+                                    padding: '2px 8px', borderRadius: 999,
+                                    background: 'rgba(77,193,138,0.14)',
+                                    fontFamily: 'Inter, sans-serif', fontSize: 10.5, fontWeight: 600, color: '#2E9B6A',
+                                }}>
+                                    <span style={{ width: 5, height: 5, borderRadius: 99, background: M.green, display: 'inline-block' }}/>
+                                    System Active
+                                </span>
+                                <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10.5, color: M.muted }}>v3.1</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: M.inkSoft }}>
+                        <svg width="13" height="13" viewBox="0 0 14 14">
+                            <circle cx="7" cy="7" r="6" stroke={M.inkSoft} strokeWidth="1.2" fill="none"/>
+                            <path d="M7 4v3.2l2 1.4" stroke={M.inkSoft} strokeWidth="1.2" strokeLinecap="round" fill="none"/>
+                        </svg>
+                        {(activeStepIndex * 0.5).toFixed(1)}s
+                    </div>
+                </div>
+
+                {/* workflow tabs (horizontal scroll) */}
+                <div style={{
+                    display: 'flex', gap: 8, padding: '14px 14px 4px', overflowX: 'auto',
+                    WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none',
+                }}>
+                    {wfs.map((w, idx) => {
+                        const isActive = activeWorkflowIndex === idx;
+                        return (
+                            <button key={w.id} onClick={() => onSelectWorkflow(idx)} style={{
+                                flex: '0 0 auto', textAlign: 'left', cursor: 'pointer',
+                                padding: '12px 14px', borderRadius: 12, width: 200,
+                                border: isActive ? `1.5px solid ${M.ink}` : `1px solid ${M.line}`,
+                                background: isActive ? M.white : M.bgSoft,
+                                boxShadow: isActive ? '0 4px 14px rgba(19,32,74,0.08)' : 'none',
+                                outline: 'none',
+                            }}>
+                                <div style={{ fontFamily: 'Inter, sans-serif', fontWeight: 700, fontSize: 13, color: M.ink }}>{w.title}</div>
+                                <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: M.muted, marginTop: 4, lineHeight: 1.4 }}>{w.description}</div>
+                            </button>
+                        );
+                    })}
+                </div>
+
+                {/* vertical step timeline */}
+                <div style={{
+                    margin: '14px 14px 0', padding: '16px 14px',
+                    background: M.bgSoft, border: `1px solid ${M.line}`, borderRadius: 12,
+                }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                        <span style={{ fontFamily: 'Inter, sans-serif', fontWeight: 700, fontSize: 14, color: M.ink }}>{wf.title}</span>
+                        <span style={{
+                            padding: '3px 8px', borderRadius: 999, background: M.bg, border: `1px solid ${M.line}`,
+                            fontFamily: 'JetBrains Mono, monospace', fontSize: 9.5, color: M.inkSoft,
+                        }}>ID: {executionId}</span>
+                    </div>
+
+                    {wf.steps.map((step, i) => {
+                        const isCompleted = i < activeStepIndex;
+                        const isActiveStep = i === activeStepIndex;
+                        const isPending = i > activeStepIndex;
+                        const Icon = step.icon;
+                        return (
+                            <div key={step.id} style={{ display: 'grid', gridTemplateColumns: '54px 1fr', alignItems: 'flex-start' }}>
+                                {/* timeline rail + node */}
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                    <div style={{
+                                        width: 44, height: 44, borderRadius: 99, position: 'relative', zIndex: 1,
+                                        background: isCompleted ? M.ink : M.white,
+                                        border: isCompleted
+                                            ? `1.5px solid ${M.ink}`
+                                            : isActiveStep
+                                                ? `2px solid ${M.blue}`
+                                                : `1.5px solid ${M.line}`,
+                                        display: 'grid', placeItems: 'center',
+                                        boxShadow: isActiveStep ? `0 0 0 6px rgba(61,122,232,0.10)` : 'none',
+                                        flex: '0 0 auto',
+                                    }}>
+                                        <Icon size={18} color={isCompleted ? '#fff' : isActiveStep ? M.ink : M.muted}/>
+                                        {isCompleted && (
+                                            <span style={{
+                                                position: 'absolute', bottom: -2, right: -2,
+                                                width: 14, height: 14, borderRadius: 99, background: '#fff',
+                                                border: `1.5px solid ${M.green}`, display: 'grid', placeItems: 'center',
+                                            }}>
+                                                <svg width="8" height="8" viewBox="0 0 8 8">
+                                                    <path d="M1.5 4l1.5 1.5L6.5 2" stroke={M.green} strokeWidth="1.3" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                                                </svg>
+                                            </span>
+                                        )}
+                                    </div>
+                                    {i < wf.steps.length - 1 && (
+                                        <div style={{
+                                            width: 2, flex: 1, minHeight: 26, marginTop: 2,
+                                            background: isCompleted
+                                                ? M.ink
+                                                : isActiveStep
+                                                    ? `linear-gradient(to bottom, ${M.blue}, ${M.line})`
+                                                    : `repeating-linear-gradient(to bottom, ${M.line} 0 3px, transparent 3px 7px)`,
+                                        }}/>
+                                    )}
+                                </div>
+                                {/* step content */}
+                                <div style={{ paddingLeft: 12, paddingTop: 6, paddingBottom: 18 }}>
+                                    <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: M.muted, letterSpacing: '0.1em' }}>
+                                        STEP {String(i + 1).padStart(2, '0')}
+                                    </div>
+                                    <div style={{ fontFamily: 'Inter, sans-serif', fontWeight: 700, fontSize: 15, color: isPending ? M.muted : M.ink, marginTop: 2 }}>
+                                        {step.title}
+                                    </div>
+                                    <div style={{
+                                        display: 'inline-flex', marginTop: 6, padding: '3px 10px',
+                                        borderRadius: 999, background: M.bg, border: `1px solid ${M.line}`,
+                                        fontFamily: 'Inter, sans-serif', fontSize: 11, color: M.inkSoft, fontWeight: 500,
+                                    }}>{step.app}</div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+
+                {/* activity log */}
+                <div style={{ borderTop: `1px solid ${M.line}`, marginTop: 16, padding: '14px 18px 18px', background: M.bgSoft }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <svg width="14" height="14" viewBox="0 0 14 14">
+                                <path d="M1 7h2l1.5-3 2 6 1.5-3h5" stroke={M.blue} strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                            <span style={{ fontFamily: 'Inter, sans-serif', fontWeight: 700, fontSize: 13, color: M.ink }}>Activity</span>
+                        </div>
+                        <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: M.muted }}>Real-time</span>
+                    </div>
+                    <div style={{ borderTop: `1px solid ${M.line}`, paddingTop: 6 }}>
+                        {logs.slice(-6).map((log, i) => (
+                            <div key={i} style={{
+                                display: 'grid', gridTemplateColumns: '24px 18px 1fr', gap: 10,
+                                alignItems: 'flex-start', padding: '5px 0',
+                                fontFamily: 'JetBrains Mono, monospace', fontSize: 10.5,
+                                color: M.inkSoft, lineHeight: 1.5,
+                            }}>
+                                <span style={{ color: M.muted }}>{String(i + 1).padStart(2, '0')}</span>
+                                <span style={{ marginTop: 2 }}>
+                                    {log.includes('ACTION') && <span style={{ color: M.muted }}>›</span>}
+                                    {log.includes('COMPLETED') && (
+                                        <svg width="13" height="13" viewBox="0 0 14 14">
+                                            <circle cx="7" cy="7" r="6" stroke={M.green} strokeWidth="1.3" fill="none"/>
+                                            <path d="M4.5 7.2l1.7 1.7L9.5 5.4" stroke={M.green} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                                        </svg>
+                                    )}
+                                    {log.includes('STARTED') && (
+                                        <span style={{ display: 'inline-block', width: 7, height: 7, borderRadius: 99, background: M.blue }}/>
+                                    )}
+                                    {log.includes('SUCCESSFULLY') && (
+                                        <svg width="13" height="13" viewBox="0 0 14 14">
+                                            <circle cx="7" cy="7" r="6" stroke={M.green} strokeWidth="1.3" fill="none"/>
+                                            <path d="M4.5 7.2l1.7 1.7L9.5 5.4" stroke={M.green} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                                        </svg>
+                                    )}
+                                </span>
+                                <span style={{
+                                    color: log.includes('COMPLETED') || log.includes('SUCCESSFULLY') ? M.green
+                                        : log.includes('STARTED') ? M.ink
+                                        : M.inkSoft,
+                                    wordBreak: 'break-word',
+                                }}>{log}</span>
+                            </div>
+                        ))}
+                        {logs.length === 0 && (
+                            <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10.5, color: M.muted, padding: '4px 0' }}>
+                                Waiting for workflow to start…
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 export const WorkflowVisualizer = () => {
     const [activeWorkflowIndex, setActiveWorkflowIndex] = useState(0);
     const [activeStepIndex, setActiveStepIndex] = useState(0);
@@ -157,6 +428,17 @@ export const WorkflowVisualizer = () => {
             clearTimeout(initialDelay);
         };
     }, [activeStepIndex, activeWorkflowIndex]);
+
+    if (isMobile) {
+        return <MobileWorkflowSection
+            workflows={workflows}
+            activeWorkflowIndex={activeWorkflowIndex}
+            activeStepIndex={activeStepIndex}
+            executionId={executionId}
+            logs={logs}
+            onSelectWorkflow={(idx) => { setActiveWorkflowIndex(idx); setActiveStepIndex(0); setLogs([]); }}
+        />;
+    }
 
     return (
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

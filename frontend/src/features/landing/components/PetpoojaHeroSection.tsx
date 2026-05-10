@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import { MobileHeroSection } from './MobileHeroSection'
 
 // ─── Mobile detection ──────────────────────────────────────────────────────────
 function useMobile() {
@@ -200,7 +201,7 @@ function RobotBall({ size = 90 }: { size?: number }) {
 }
 
 // ─── Holographic Dashboard ─────────────────────────────────────────────────────
-function DashboardMock({ isMobile }: { isMobile: boolean }) {
+function DashboardMock({ isMobile, mobileScale = 1 }: { isMobile: boolean; mobileScale?: number }) {
   const BALL_DELAY   = 0.82
   const BALL_DUR     = 1.15
   const SCREEN_DELAY = 1.80
@@ -216,7 +217,7 @@ function DashboardMock({ isMobile }: { isMobile: boolean }) {
     : 'drop-shadow(0 0 10px rgba(100,180,255,0.95)) drop-shadow(0 0 22px rgba(60,120,220,0.70)) drop-shadow(0 0 44px rgba(36,80,160,0.40))'
 
   return (
-    <div style={{ position: 'relative', padding: 2, borderRadius: 'clamp(10px, 1vw, 16px)', zIndex: 4 }}>
+    <div style={{ position: 'relative', padding: 2, borderRadius: 'clamp(10px, 1vw, 16px)', zIndex: 4, width: isMobile ? '100%' : 'auto' }}>
       {/* Frame glow */}
       <motion.div
         initial={{ opacity: 0 }}
@@ -291,7 +292,7 @@ function DashboardMock({ isMobile }: { isMobile: boolean }) {
       {/* Screen */}
       <div style={{
         position: 'relative',
-        width: isMobile ? 'min(800px, 93vw)' : 'min(800px, 72vw)',
+        width: isMobile ? '100%' : 'min(800px, 72vw)',
         aspectRatio: '16 / 10',
         borderRadius: 'clamp(8px, 0.8vw, 14px)',
         overflow: 'hidden',
@@ -301,7 +302,7 @@ function DashboardMock({ isMobile }: { isMobile: boolean }) {
           initial={{ clipPath: 'circle(0px at 50% 52%)' }}
           animate={{ clipPath: 'circle(150% at 50% 52%)' }}
           transition={{ duration: SCREEN_DUR, delay: SCREEN_DELAY, ease: SCREEN_EASE }}
-          style={{ position: 'absolute', inset: 0, display: 'flex', background: 'linear-gradient(180deg, #0d1726 0%, #080f1a 100%)' }}
+          style={{ position: 'absolute', top: 0, left: 0, width: isMobile ? 800 : '100%', height: isMobile ? 500 : '100%', display: 'flex', background: 'linear-gradient(180deg, #0d1726 0%, #080f1a 100%)', ...(isMobile ? { zoom: mobileScale } : {}) }}
         >
           <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(90deg, transparent, rgba(36,59,110,0.6), rgba(255,255,255,0.3), rgba(36,59,110,0.6), transparent)', zIndex: 10 }} />
           <div style={{ position: 'absolute', left: 0, right: 0, height: '4%', background: 'linear-gradient(to bottom, transparent, rgba(36,59,110,0.04), transparent)', animation: 'pp-scan 4s linear infinite', pointerEvents: 'none', zIndex: 8 }} />
@@ -566,66 +567,74 @@ const SIDE_RIGHT = [
   { source: 'Projects', color: '#06b6d4', metric1: '47 Active Projects', metric2: '12 Due this week', desc: 'Monitoring sprint health, detecting blockers & reallocating bandwidth', activity: 'Rescheduled 2 sprints · 4 blockers auto-escalated', bars: [0.45,0.6,0.8,0.55,0.75] as number[], progress: 68 },
 ]
 
-function SideAgentCard({ source, color, metric1, metric2, desc, activity, bars, progress }: typeof SIDE_LEFT[0]) {
+function SideAgentCard({ source, color, metric1, metric2, desc, activity, bars, progress, isMobile = false }: typeof SIDE_LEFT[0] & { isMobile?: boolean }) {
+  const m = isMobile
+  const pad     = m ? '4px 5px'   : '12px 14px'
+  const iconSz  = m ? 10          : 20
+  const nameSz  = m ? 5           : 8
+  const dotSz   = m ? 2.5         : 5
+  const activeSz= m ? 4           : 7
+  const descSz  = m ? 4.5         : 7
+  const metricSz= m ? 5.5         : 10
+  const metric2Sz=m ? 5.5         : 9
+  const subSz   = m ? 4           : 6.5
+  const barH    = m ? 7           : 16
+  const barGap  = m ? 1           : 3
+  const progH   = m ? 2           : 3
+  const progSz  = m ? 4           : 7
+  const actDotSz= m ? 3           : 5
+  const actSz   = m ? 4.5         : 7
+
   return (
-    <div style={{ background: 'linear-gradient(160deg, #0d1726 0%, #080f1a 100%)', border: `1px solid ${color}45`, borderTop: `2px solid ${color}`, borderRadius: '0 0 10px 10px', padding: '12px 14px', position: 'relative', overflow: 'hidden', boxShadow: `0 4px 24px rgba(0,0,0,0.35), inset 0 0 0 1px rgba(255,255,255,0.03)` }}>
+    <div style={{ background: 'linear-gradient(160deg, #0d1726 0%, #080f1a 100%)', border: `1px solid ${color}45`, borderTop: `2px solid ${color}`, borderRadius: '0 0 10px 10px', padding: pad, position: 'relative', overflow: 'hidden', boxShadow: `0 4px 24px rgba(0,0,0,0.35), inset 0 0 0 1px rgba(255,255,255,0.03)` }}>
       <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(ellipse at 50% 0%, ${color}15, transparent 60%)`, pointerEvents: 'none' }} />
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-        <RobotIcon color={color} size={20} />
+
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: m ? 3 : 8, marginBottom: m ? 3 : 8 }}>
+        <RobotIcon color={color} size={iconSz} />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <span style={{ ...TX(color, 8, 700), textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block' }}>{source}</span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
-            <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 5px #4ade80', flexShrink: 0 }} />
-            <span style={TX('rgba(74,222,128,0.8)', 7)}>Agent Active</span>
+          <span style={{ ...TX(color, nameSz, 700), textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block' }}>{source}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: m ? 2 : 4, marginTop: 1 }}>
+            <div style={{ width: dotSz, height: dotSz, borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 4px #4ade80', flexShrink: 0 }} />
+            <span style={{ ...TX('rgba(74,222,128,0.8)', activeSz), display: 'block' }}>Agent Active</span>
           </div>
         </div>
       </div>
-      <p style={{ ...TX('rgba(255,255,255,0.5)', 7), margin: '0 0 10px', lineHeight: 1.5 }}>{desc}</p>
-      <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
-        <div style={{ flex: 1, background: `rgba(255,255,255,0.05)`, border: `1px solid ${color}35`, borderRadius: 6, padding: '5px 8px' }}>
-          <span style={{ ...TX('rgba(255,255,255,0.95)', 10, 700), display: 'block' }}>{metric1}</span>
-          <span style={{ ...TX(`${color}cc`, 6.5), display: 'block', marginTop: 1 }}>Primary KPI</span>
+
+      {/* Description — always visible */}
+      <p style={{ ...TX('rgba(255,255,255,0.5)', descSz), margin: m ? '0 0 5px' : '0 0 10px', lineHeight: 1.4 }}>{desc}</p>
+
+      {/* Metrics — always two boxes */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: m ? 2 : 8, marginBottom: m ? 4 : 10 }}>
+        <div style={{ background: `rgba(255,255,255,0.05)`, border: `1px solid ${color}35`, borderRadius: m ? 3 : 6, padding: m ? '2px 4px' : '5px 8px' }}>
+          <span style={{ ...TX('rgba(255,255,255,0.95)', metricSz, 700), display: 'block' }}>{metric1}</span>
+          <span style={{ ...TX(`${color}cc`, subSz), display: 'block', marginTop: 1 }}>Primary KPI</span>
         </div>
-        <div style={{ flex: 1, background: `rgba(255,255,255,0.05)`, border: `1px solid ${color}35`, borderRadius: 6, padding: '5px 8px' }}>
-          <span style={{ ...TX('rgba(255,255,255,0.95)', 9, 700), display: 'block' }}>{metric2}</span>
-          <span style={{ ...TX(`${color}cc`, 6.5), display: 'block', marginTop: 1 }}>Status</span>
+        <div style={{ background: `rgba(255,255,255,0.05)`, border: `1px solid ${color}35`, borderRadius: m ? 3 : 6, padding: m ? '2px 4px' : '5px 8px' }}>
+          <span style={{ ...TX('rgba(255,255,255,0.95)', metric2Sz, 700), display: 'block' }}>{metric2}</span>
+          <span style={{ ...TX(`${color}cc`, subSz), display: 'block', marginTop: 1 }}>Status</span>
         </div>
       </div>
-      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 16, marginBottom: 8 }}>
+
+      {/* Bar chart */}
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: barGap, height: barH, marginBottom: m ? 3 : 8 }}>
         {bars.map((h, bi) => <div key={bi} style={{ flex: 1, height: `${h * 100}%`, background: bi === bars.length - 1 ? `${color}ee` : `${color}50`, borderRadius: '2px 2px 0 0' }} />)}
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
-        <div style={{ flex: 1, height: 3, background: 'rgba(255,255,255,0.08)', borderRadius: 2, overflow: 'hidden' }}>
+
+      {/* Progress bar */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: m ? 2 : 6, marginBottom: m ? 4 : 10 }}>
+        <div style={{ flex: 1, height: progH, background: 'rgba(255,255,255,0.08)', borderRadius: 2, overflow: 'hidden' }}>
           <div style={{ height: '100%', width: `${progress}%`, background: `linear-gradient(90deg, ${color}60, ${color})`, borderRadius: 2 }} />
         </div>
-        <span style={{ ...TX(`${color}dd`, 7, 600), flexShrink: 0 }}>{progress}%</span>
+        <span style={{ ...TX(`${color}dd`, progSz, 600), flexShrink: 0 }}>{progress}%</span>
       </div>
-      <div style={{ background: 'rgba(0,0,0,0.25)', border: `1px solid ${color}20`, borderRadius: 6, padding: '6px 8px', display: 'flex', alignItems: 'flex-start', gap: 6 }}>
-        <div style={{ width: 5, height: 5, borderRadius: '50%', background: color, boxShadow: `0 0 6px ${color}`, marginTop: 2, flexShrink: 0 }} />
-        <span style={{ ...TX('rgba(255,255,255,0.6)', 7), lineHeight: 1.4 }}>{activity}</span>
+
+      {/* Activity note — always visible */}
+      <div style={{ background: 'rgba(0,0,0,0.25)', border: `1px solid ${color}20`, borderRadius: m ? 4 : 6, padding: m ? '3px 5px' : '6px 8px', display: 'flex', alignItems: 'flex-start', gap: m ? 3 : 6 }}>
+        <div style={{ width: actDotSz, height: actDotSz, borderRadius: '50%', background: color, boxShadow: `0 0 5px ${color}`, marginTop: m ? 1 : 2, flexShrink: 0 }} />
+        <span style={{ ...TX('rgba(255,255,255,0.6)', actSz), lineHeight: 1.4 }}>{activity}</span>
       </div>
     </div>
-  )
-}
-
-// ─── Mobile agent strip (horizontal scroll below screen) ──────────────────────
-function MobileAgentStrip() {
-  const all = [...SIDE_LEFT, ...SIDE_RIGHT]
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 2.75, ease: [0.22, 1, 0.36, 1] }}
-      style={{ width: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch' as React.CSSProperties['WebkitOverflowScrolling'], paddingBottom: 8 }}
-    >
-      <div style={{ display: 'flex', gap: 10, paddingLeft: 16, paddingRight: 16, width: 'max-content' }}>
-        {all.map(card => (
-          <div key={card.source} style={{ width: 200, flexShrink: 0 }}>
-            <SideAgentCard {...card} />
-          </div>
-        ))}
-      </div>
-    </motion.div>
   )
 }
 
@@ -646,7 +655,7 @@ function FloorGlow() {
 }
 
 // ─── Headline ──────────────────────────────────────────────────────────────────
-function Headline() {
+function Headline({ isMobile }: { isMobile: boolean }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -654,17 +663,17 @@ function Headline() {
       transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
       style={{ textAlign: 'center', position: 'relative', zIndex: 3, maxWidth: 860, margin: '0 auto', width: '100%' }}
     >
-      <h1 style={{ margin: 0, fontFamily: '"Palatino Linotype","Book Antiqua",Palatino,Georgia,serif', fontStyle: 'italic', lineHeight: 1.15, letterSpacing: '-0.01em' }}>
+      <h1 style={{ margin: 0, fontFamily: '"Palatino Linotype","Book Antiqua",Palatino,Georgia,serif', fontStyle: 'italic', lineHeight: isMobile ? 1.1 : 1.15, letterSpacing: '-0.01em' }}>
         <motion.span initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-          style={{ display: 'block', fontSize: 'clamp(26px, 5vw, 40px)', fontWeight: 700, color: '#0f1b3d' }}>
+          style={{ display: 'block', fontSize: isMobile ? 'clamp(20px, 5.5vw, 26px)' : 'clamp(26px, 5vw, 40px)', fontWeight: 700, color: '#0f1b3d' }}>
           Intelligent agents
         </motion.span>
         <motion.span initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
-          style={{ display: 'block', fontSize: 'clamp(22px, 4.5vw, 36px)', fontWeight: 700, color: '#1b2e5a' }}>
+          style={{ display: 'block', fontSize: isMobile ? 'clamp(17px, 4.8vw, 22px)' : 'clamp(22px, 4.5vw, 36px)', fontWeight: 700, color: '#1b2e5a' }}>
           driving influential decisions
         </motion.span>
         <motion.span initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
-          style={{ display: 'block', fontSize: 'clamp(13px, 2.5vw, 20px)', fontWeight: 400, color: '#64748b', marginTop: 'clamp(4px, 0.6vw, 8px)' }}>
+          style={{ display: 'block', fontSize: isMobile ? 'clamp(11px, 3vw, 13px)' : 'clamp(13px, 2.5vw, 20px)', fontWeight: 400, color: '#64748b', marginTop: isMobile ? 4 : 'clamp(4px, 0.6vw, 8px)' }}>
           across interconnected applications
         </motion.span>
       </h1>
@@ -672,7 +681,7 @@ function Headline() {
         initial={{ scaleX: 0, opacity: 0 }}
         animate={{ scaleX: 1, opacity: 1 }}
         transition={{ duration: 0.6, delay: 0.55, ease: 'easeOut' }}
-        style={{ width: 40, height: 1, borderRadius: 1, background: 'linear-gradient(90deg, transparent, rgba(36,59,110,0.5), transparent)', margin: 'clamp(10px, 1.5vw, 16px) auto 0' }}
+        style={{ width: 40, height: 1, borderRadius: 1, background: 'linear-gradient(90deg, transparent, rgba(36,59,110,0.5), transparent)', margin: isMobile ? '8px auto 0' : 'clamp(10px, 1.5vw, 16px) auto 0' }}
       />
     </motion.div>
   )
@@ -707,9 +716,16 @@ function HeroCTAs({ onBookDemo }: { onBookDemo?: () => void }) {
 }
 
 // ─── Main export ───────────────────────────────────────────────────────────────
-export function PetpoojaHeroSection({ onBookDemo }: { onBookDemo?: () => void }) {
+export function PetpoojaHeroSection({ onBookDemo: _onBookDemo }: { onBookDemo?: () => void }) {
   const isMobile = useMobile()
   const PUCK_H = isMobile ? 'clamp(50px, 14vw, 80px)' : 'clamp(76px, 10.1vw, 126px)'
+  const dashboardScale = isMobile && typeof window !== 'undefined'
+    ? Math.max(0.18, (window.innerWidth - 8 - 2 * Math.min(130, Math.max(80, 0.22 * window.innerWidth))) / 800)
+    : 1
+
+  if (isMobile) {
+    return <MobileHeroSection />
+  }
 
   return (
     <section
@@ -726,12 +742,12 @@ export function PetpoojaHeroSection({ onBookDemo }: { onBookDemo?: () => void })
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'flex-start',
-        paddingTop: 'clamp(96px, 11vh, 124px)',
+        paddingTop: isMobile ? 'clamp(96px, 13vh, 124px)' : 'clamp(96px, 11vh, 124px)',
         paddingBottom: isMobile ? 40 : 32,
-        paddingLeft: isMobile ? 0 : 24,
-        paddingRight: isMobile ? 0 : 24,
+        paddingLeft: isMobile ? 4 : 24,
+        paddingRight: isMobile ? 4 : 24,
         boxSizing: 'border-box',
-        gap: isMobile ? 16 : 0,
+        gap: isMobile ? 10 : 0,
       }}
     >
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '50%', background: 'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(36,59,110,0.06), transparent 70%)', pointerEvents: 'none', zIndex: 0 }} />
@@ -739,41 +755,69 @@ export function PetpoojaHeroSection({ onBookDemo }: { onBookDemo?: () => void })
       <FloorGlow />
 
       {/* Headline */}
-      <div style={{ paddingLeft: isMobile ? 24 : 0, paddingRight: isMobile ? 24 : 0, width: '100%' }}>
-        <Headline />
+      <div style={{ paddingLeft: isMobile ? 16 : 0, paddingRight: isMobile ? 16 : 0, width: '100%' }}>
+        <Headline isMobile={isMobile} />
       </div>
 
-      {/* ── Desktop: [left cards] [screen] [right cards] ── */}
-      {!isMobile && (
-        <div style={{ position: 'relative', marginTop: 'clamp(12px, 2vh, 28px)', width: '100%', maxWidth: 1320, display: 'flex', flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'center' }}>
-          {/* LEFT cards */}
-          <motion.div
-            initial={{ opacity: 0, x: -22 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 2.75, ease: [0.22, 1, 0.36, 1] }}
-            style={{ width: 'clamp(150px, 14vw, 200px)', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 10, paddingTop: 'clamp(80px, 10vw, 130px)', zIndex: 5 }}
-          >
-            {SIDE_LEFT.map(card => <SideAgentCard key={card.source} {...card} />)}
-          </motion.div>
+      {/* ── [left cards] [screen] [right cards] — same layout on all screens ── */}
+      <div style={{
+        position: 'relative',
+        marginTop: isMobile ? 8 : 'clamp(12px, 2vh, 28px)',
+        width: '100%',
+        maxWidth: 1320,
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        justifyContent: 'center',
+        paddingLeft: isMobile ? 4 : 0,
+        paddingRight: isMobile ? 4 : 0,
+        boxSizing: 'border-box',
+      }}>
+        {/* LEFT cards */}
+        <motion.div
+          initial={{ opacity: 0, x: -22 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, delay: 2.75, ease: [0.22, 1, 0.36, 1] }}
+          style={{
+            width: isMobile ? 'clamp(80px, 22vw, 130px)' : 'clamp(150px, 14vw, 200px)',
+            flexShrink: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: isMobile ? 5 : 10,
+            paddingTop: isMobile ? 'clamp(16px, 4vw, 32px)' : 'clamp(80px, 10vw, 130px)',
+            zIndex: 5,
+          }}
+        >
+          {SIDE_LEFT.map(card => <SideAgentCard key={card.source} {...card} isMobile={isMobile} />)}
+        </motion.div>
 
-          {/* CENTER */}
-          <div style={{ flex: '1 1 auto', minWidth: 0, position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(8px, 1.5vw, 16px)' }}>
-            <DashboardMock isMobile={false} />
-            <LightCone />
-            <div style={{ width: 'clamp(180px, 24vw, 300px)', height: PUCK_H, flexShrink: 0 }} />
-          </div>
+        {/* CENTER */}
+        <div style={{ flex: '1 1 auto', minWidth: 0, position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: isMobile ? 8 : 'clamp(8px, 1.5vw, 16px)' }}>
+          <DashboardMock isMobile={isMobile} mobileScale={dashboardScale} />
+          <LightCone />
+          <div style={{ width: isMobile ? 'clamp(90px, 22vw, 160px)' : 'clamp(180px, 24vw, 300px)', height: PUCK_H, flexShrink: 0 }} />
+        </div>
 
-          {/* RIGHT cards */}
-          <motion.div
-            initial={{ opacity: 0, x: 22 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 2.85, ease: [0.22, 1, 0.36, 1] }}
-            style={{ width: 'clamp(150px, 14vw, 200px)', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 10, paddingTop: 'clamp(80px, 10vw, 130px)', zIndex: 5 }}
-          >
-            {SIDE_RIGHT.map(card => <SideAgentCard key={card.source} {...card} />)}
-          </motion.div>
+        {/* RIGHT cards */}
+        <motion.div
+          initial={{ opacity: 0, x: 22 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, delay: 2.85, ease: [0.22, 1, 0.36, 1] }}
+          style={{
+            width: isMobile ? 'clamp(80px, 22vw, 130px)' : 'clamp(150px, 14vw, 200px)',
+            flexShrink: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: isMobile ? 5 : 10,
+            paddingTop: isMobile ? 'clamp(16px, 4vw, 32px)' : 'clamp(80px, 10vw, 130px)',
+            zIndex: 5,
+          }}
+        >
+          {SIDE_RIGHT.map(card => <SideAgentCard key={card.source} {...card} isMobile={isMobile} />)}
+        </motion.div>
 
-          {/* SVG connectors */}
+        {/* SVG connectors — desktop only */}
+        {!isMobile && (
           <motion.svg
             initial={{ opacity: 0 }} animate={{ opacity: 1 }}
             transition={{ duration: 0.3, delay: 2.72 }}
@@ -811,20 +855,8 @@ export function PetpoojaHeroSection({ onBookDemo }: { onBookDemo?: () => void })
             <motion.circle cx="1060" cy="408" r="3.5" fill="#06b6d4" opacity="0.7" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 0.7 }} transition={{ duration: 0.3, delay: 3.6 }} />
             <motion.circle cx="1120" cy="410" r="4.5" fill="#06b6d4" opacity="0.9" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 0.9 }} transition={{ duration: 0.3, delay: 2.95, type: 'spring', stiffness: 300 }} />
           </motion.svg>
-        </div>
-      )}
-
-      {/* ── Mobile: stacked layout ── */}
-      {isMobile && (
-        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, position: 'relative' }}>
-          {/* Screen */}
-          <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0 }}>
-            <DashboardMock isMobile={true} />
-          </div>
-          {/* Agent cards horizontal strip */}
-          <MobileAgentStrip />
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Puck — falls from above */}
       <motion.div

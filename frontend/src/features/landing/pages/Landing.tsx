@@ -208,7 +208,7 @@ const Landing: React.FC = () => {
         }}
       />
 
-      <section id="workflows" className="py-16 sm:py-20 lg:py-24 bg-white" style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 800px' }}>
+      <section id="workflows" className="sm:py-20 lg:py-24 bg-white" style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 800px' }}>
         <Suspense fallback={<div className="min-h-[400px]" />}>
           <WorkflowVisualizer />
         </Suspense>
