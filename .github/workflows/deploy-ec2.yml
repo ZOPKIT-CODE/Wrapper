@@ -302,6 +302,10 @@ jobs:
           set -e
           cd "${APP_DIR}/backend"
 
+          # Stamp the deployed commit SHA into the PM2 process env so the
+          # /api/version endpoint can return it at runtime without needing git.
+          export GITHUB_SHA="${{ github.sha }}"
+
           # Use reload (graceful) if already running, start fresh if not
           if pm2 show wrapper-api > /dev/null 2>&1; then
             pm2 reload wrapper-api --update-env

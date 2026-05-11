@@ -1,19 +1,24 @@
 import type { FastifyInstance } from 'fastify';
-import { execSync } from 'node:child_process';
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 
-// Resolved once at startup — avoids forking a child process on every request.
-function resolveGitSha(): string {
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// GITHUB_SHA is exported into the PM2 process env by the deploy workflow.
+// Falls back to package.json semver when running outside CI (dev, staging).
+function resolveVersion(): string {
   if (process.env.GITHUB_SHA) return process.env.GITHUB_SHA.slice(0, 7);
   try {
-    return execSync('git rev-parse --short HEAD', { stdio: ['pipe', 'pipe', 'pipe'] })
-      .toString()
-      .trim();
+    const pkg = JSON.parse(readFileSync(join(__dirname, '../../package.json'), 'utf-8')) as { version?: string };
+    return pkg.version ?? 'dev';
   } catch {
     return 'dev';
   }
 }
 
-const BUILD_VERSION = resolveGitSha();
+const BUILD_VERSION = resolveVersion();
 const BUILD_TIME = new Date().toISOString();
 
 export async function versionRoutes(fastify: FastifyInstance) {
@@ -22,8 +27,6 @@ export async function versionRoutes(fastify: FastifyInstance) {
     return {
       version: BUILD_VERSION,
       buildTime: BUILD_TIME,
-      // Set MIN_FRONTEND_VERSION env var to a specific SHA when a deploy
-      // contains breaking changes that require every open tab to reload.
       minRequiredVersion: process.env.MIN_FRONTEND_VERSION ?? null,
     };
   });
