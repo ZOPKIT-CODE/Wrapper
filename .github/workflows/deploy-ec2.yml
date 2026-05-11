@@ -319,6 +319,31 @@ jobs:
           pm2 status
           EOF
 
+      # ── Step 4b: Capture PM2 logs immediately after reload (always visible) ─
+      - name: Capture PM2 startup logs
+        if: always()
+        env:
+          EC2_USER: ${{ secrets.EC2_USER || 'ec2-user' }}
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+        run: |
+          echo "Waiting 8s for process to start/crash..."
+          sleep 8
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
+            ${EC2_USER}@${EC2_HOST} bash <<'EOF'
+          echo "=== pm2 status ==="
+          pm2 status
+          echo ""
+          echo "=== pm2 logs wrapper-api (last 80 lines) ==="
+          pm2 logs wrapper-api --lines 80 --nostream 2>&1 || true
+          echo ""
+          echo "=== node version ==="
+          node --version
+          echo "=== disk usage ==="
+          df -h / | tail -1
+          echo "=== memory ==="
+          free -m | head -2
+          EOF
+
       # ── Step 5: Health check — actually fails the pipeline ────────────────
       - name: Health check
         id: healthcheck
@@ -326,8 +351,6 @@ jobs:
           EC2_USER: ${{ secrets.EC2_USER || 'ec2-user' }}
           EC2_HOST: ${{ secrets.EC2_HOST }}
         run: |
-          echo "Waiting for service to stabilise..."
-          sleep 10
           echo "Checking health endpoint from inside EC2 via localhost:3000"
 
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
@@ -345,6 +368,30 @@ jobs:
           done
           echo "❌ Health check failed after 5 attempts"
           exit 1
+          EOF
+
+      # ── Step 5b: Dump PM2 logs on health check failure (before rollback) ──
+      - name: Dump PM2 logs on failure
+        if: failure() && steps.healthcheck.outcome == 'failure'
+        env:
+          EC2_USER: ${{ secrets.EC2_USER || 'ec2-user' }}
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+        run: |
+          echo "=== DIAGNOSTIC: PM2 logs at time of health check failure ==="
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
+            ${EC2_USER}@${EC2_HOST} bash <<'EOF'
+          echo "--- pm2 status ---"
+          pm2 status
+          echo ""
+          echo "--- pm2 logs wrapper-api (last 150 lines) ---"
+          pm2 logs wrapper-api --lines 150 --nostream 2>&1 || true
+          echo ""
+          echo "--- /proc/meminfo ---"
+          head -5 /proc/meminfo
+          echo "--- disk ---"
+          df -h /
+          echo "--- listening ports ---"
+          ss -tlnp 2>/dev/null | grep -E '3000|LISTEN' || netstat -tlnp 2>/dev/null | grep 3000 || true
           EOF
 
       # ── Step 6: Auto-rollback if health check failed ──────────────────────
