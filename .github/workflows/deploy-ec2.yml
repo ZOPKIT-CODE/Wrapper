@@ -240,32 +240,23 @@ jobs:
           set -e
           FRONTEND_DIST="${APP_DIR}/frontend/dist"
 
-          # Replace the placeholder in the config with the real path
+          # wrapper.conf — primary config (certbot SSL + cache headers for zopkit.com)
+          # This is the config that actually handles HTTPS traffic.
+          sed "s|FRONTEND_DIST_PATH|\${FRONTEND_DIST}|g" \
+            "${APP_DIR}/infra/nginx/wrapper.conf" \
+            > /tmp/wrapper.conf
+          sudo cp /tmp/wrapper.conf /etc/nginx/conf.d/wrapper.conf
+
+          # zopkit.conf — kept as a port-80 default catch-all (harmless)
           sed "s|FRONTEND_DIST_PATH|\${FRONTEND_DIST}|g" \
             "${APP_DIR}/infra/nginx/zopkit.conf" \
             > /tmp/zopkit.conf
-
-          # Support both Debian/Ubuntu and Amazon Linux/RHEL nginx layouts
-          if [ -d /etc/nginx/sites-available ] && [ -d /etc/nginx/sites-enabled ]; then
-            sudo cp /tmp/zopkit.conf /etc/nginx/sites-available/zopkit
-
-            # Enable site if not already linked
-            if [ ! -L /etc/nginx/sites-enabled/zopkit ]; then
-              sudo ln -s /etc/nginx/sites-available/zopkit /etc/nginx/sites-enabled/zopkit
-            fi
-
-            # Remove default nginx site to avoid conflicts
-            sudo rm -f /etc/nginx/sites-enabled/default
-          else
-            sudo cp /tmp/zopkit.conf /etc/nginx/conf.d/zopkit.conf
-            # Remove default nginx site config if present
-            sudo rm -f /etc/nginx/conf.d/default.conf
-          fi
+          sudo cp /tmp/zopkit.conf /etc/nginx/conf.d/zopkit.conf
 
           # Validate config before reloading
           sudo nginx -t
           sudo systemctl reload nginx
-          echo "✅ Nginx config deployed and reloaded"
+          echo "✅ Nginx configs deployed and reloaded"
           EOF
 
       # ── Step 4: Install deps + run DB migrations ──────────────────────────
