@@ -319,7 +319,7 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(({ f
                         </div>
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent className="rounded-lg border-slate-200 shadow-xl max-h-[300px] bg-white/95 backdrop-blur-xl">
+                    <SelectContent position="popper" className="rounded-lg border-slate-200 shadow-xl max-h-[300px] bg-white/95 backdrop-blur-xl">
                       {COMPANY_TYPES.map((type) => (
                         <SelectItem key={type.id} value={type.id} className="py-2.5 cursor-pointer focus:bg-slate-50 hover:bg-slate-50 ">
                           {type.name}

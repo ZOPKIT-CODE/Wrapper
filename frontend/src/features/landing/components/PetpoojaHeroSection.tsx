@@ -20,47 +20,58 @@ function useMobile() {
 // ─── Shared keyframes ──────────────────────────────────────────────────────────
 const PROJECTOR_STYLES = `
   @keyframes data-flow-up   { to { stroke-dashoffset: 9; } }
-  @keyframes pp-float       { 0%,100%{ transform:translateY(0px) }  50%{ transform:translateY(-5px) } }
-  @keyframes pp-lens-glow   {
-    0%,100%{ box-shadow:0 0 0 3px rgba(27,46,90,1), 0 0 24px 8px rgba(36,59,110,0.95), 0 0 60px 16px rgba(27,46,90,0.55), 0 0 110px 26px rgba(15,27,61,0.25) }
-    50%{     box-shadow:0 0 0 5px rgba(46,79,140,1), 0 0 38px 14px rgba(46,79,140,1),   0 0 90px 24px rgba(36,59,110,0.70), 0 0 170px 38px rgba(27,46,90,0.38) }
-  }
-  @keyframes pp-hotspot     { 0%,100%{ opacity:0.85; filter:blur(1px); transform:scale(1) } 50%{ opacity:1; filter:blur(0px); transform:scale(1.18) } }
-  @keyframes pp-ring-out    { 0%{ transform:scale(0.5); opacity:0.8 } 100%{ transform:scale(4.5); opacity:0 } }
+  @keyframes pp-float       { 0%,100%{ transform:translateY(0px) }  50%{ transform:translateY(-4px) } }
+  @keyframes pp-lens-pulse  { 0%,100%{ opacity:0.85 } 50%{ opacity:1 } }
+  @keyframes pp-hotspot     { 0%,100%{ opacity:0.85; transform:scale(1) } 50%{ opacity:1; transform:scale(1.15) } }
+  @keyframes pp-ring-out    { 0%{ transform:scale(0.5); opacity:0.7 } 100%{ transform:scale(4); opacity:0 } }
   @keyframes pp-cone-breath { 0%,100%{ opacity:1 } 50%{ opacity:0.82 } }
   @keyframes pp-floor-pulse { 0%,100%{ opacity:0.6 } 50%{ opacity:1 } }
-  @keyframes pp-scan        { 0%{ top:-6% } 100%{ top:106% } }
   @keyframes conn-flow      { from { stroke-dashoffset: 18 } to { stroke-dashoffset: 0 } }
-  @keyframes rb-lens-pulse  {
-    0%,100% { opacity:1; }
-    50%     { opacity:0.72; }
-  }
+  @keyframes rb-lens-pulse  { 0%,100% { opacity:1 } 50% { opacity:0.72 } }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
   }
 `
 
 // ─── Agent data ────────────────────────────────────────────────────────────────
+const BLUE = '#1b2e5a'
+
 const AGENTS = [
-  { id: 1, source: 'B2B CRM',     color: '#3b82f6', metric1: '342 Leads',     metric2: '₹12.4M pipeline', bars: [0.5,0.7,0.55,0.85,0.65], progress: 87 },
-  { id: 2, source: 'Finance',     color: '#10b981', metric1: '₹84.2L Rev',    metric2: '100% GST filed',  bars: [0.4,0.65,0.8,0.9,0.75],  progress: 94 },
-  { id: 3, source: 'Operations',  color: '#f59e0b', metric1: '1,247 SKUs',    metric2: '34 Orders today', bars: [0.7,0.5,0.85,0.6,0.45],  progress: 72 },
-  { id: 4, source: 'HRMS',        color: '#8b5cf6', metric1: '284 Employees', metric2: '98% Attendance',  bars: [0.6,0.75,0.65,0.7,0.9],  progress: 91 },
-  { id: 5, source: 'Projects',    color: '#06b6d4', metric1: '47 Projects',   metric2: '12 Due this week',bars: [0.45,0.6,0.8,0.55,0.75], progress: 68 },
+  { id: 1, source: 'B2B CRM',     color: BLUE, metric1: '342 Leads',     metric2: '₹12.4M pipeline', bars: [0.5,0.7,0.55,0.85,0.65], progress: 87 },
+  { id: 2, source: 'Finance',     color: BLUE, metric1: '₹84.2L Rev',    metric2: '100% GST filed',  bars: [0.4,0.65,0.8,0.9,0.75],  progress: 94 },
+  { id: 3, source: 'Operations',  color: BLUE, metric1: '1,247 SKUs',    metric2: '34 Orders today', bars: [0.7,0.5,0.85,0.6,0.45],  progress: 72 },
+  { id: 4, source: 'HRMS',        color: BLUE, metric1: '284 Employees', metric2: '98% Attendance',  bars: [0.6,0.75,0.65,0.7,0.9],  progress: 91 },
+  { id: 5, source: 'Projects',    color: BLUE, metric1: '47 Projects',   metric2: '12 Due this week',bars: [0.45,0.6,0.8,0.55,0.75], progress: 68 },
+] as const
+
+const AGENT_FEEDS = [
+  ['Lead scored: Sharma & Co ₹8.4L', 'Follow-up queued: 12 accts', 'Pipeline updated: +18%'],
+  ['GST R1 filed: Aug 2025', 'Invoice #1247 reconciled', 'Cash flow projection synced'],
+  ['PO #847 approved: ₹2.3L', 'SKU-224 low stock alert', 'Vendor pmt queued: 3 items'],
+  ['Payroll: 284 emp processed', 'Leave approved: 7 requests', 'Compliance check: Clear'],
+  ['Sprint 14: 3 blockers fixed', 'Alpha delivery: updated ETA', 'Budget utilised: 82%'],
+] as const
+
+const AGENT_INTEGRATIONS = [
+  [{ label: 'CRM', c: BLUE }, { label: 'Email', c: BLUE }, { label: 'WhatsApp', c: BLUE }],
+  [{ label: 'Tally', c: BLUE }, { label: 'GST Portal', c: BLUE }, { label: 'Banking', c: BLUE }],
+  [{ label: 'POS', c: BLUE }, { label: 'Inventory', c: BLUE }, { label: 'Warehouse', c: BLUE }],
+  [{ label: 'ESIC', c: BLUE }, { label: 'PF Portal', c: BLUE }, { label: 'Attendance', c: BLUE }],
+  [{ label: 'Tasks', c: BLUE }, { label: 'Git', c: BLUE }, { label: 'Time Track', c: BLUE }],
 ] as const
 
 const SIDEBAR_ITEMS = [
-  { color: '#3b82f6', active: false },
-  { color: '#10b981', active: false },
-  { color: '#f59e0b', active: false },
-  { color: '#8b5cf6', active: true  },
-  { color: '#06b6d4', active: false },
-  { color: '#6366f1', active: false },
-  { color: '#ec4899', active: false },
-  { color: '#14b8a6', active: false },
-  { color: '#f97316', active: false },
-  { color: '#ef4444', active: false },
-  { color: '#a3e635', active: false },
+  { color: BLUE, active: false },
+  { color: BLUE, active: false },
+  { color: BLUE, active: false },
+  { color: BLUE, active: true  },
+  { color: BLUE, active: false },
+  { color: BLUE, active: false },
+  { color: BLUE, active: false },
+  { color: BLUE, active: false },
+  { color: BLUE, active: false },
+  { color: BLUE, active: false },
+  { color: BLUE, active: false },
 ]
 
 function RobotIcon({ color, size = 24 }: { color: string; size?: number }) {
@@ -217,7 +228,7 @@ function DashboardMock({ isMobile, mobileScale = 1 }: { isMobile: boolean; mobil
     : 'drop-shadow(0 0 10px rgba(100,180,255,0.95)) drop-shadow(0 0 22px rgba(60,120,220,0.70)) drop-shadow(0 0 44px rgba(36,80,160,0.40))'
 
   return (
-    <div style={{ position: 'relative', padding: 2, borderRadius: 'clamp(10px, 1vw, 16px)', zIndex: 4, width: isMobile ? '100%' : 'auto' }}>
+    <div style={{ position: 'relative', padding: 2, borderRadius: 'clamp(10px, 1vw, 16px)', zIndex: 4, width: isMobile ? '100%' : 'min(760px, 100%)' }}>
       {/* Frame glow */}
       <motion.div
         initial={{ opacity: 0 }}
@@ -225,8 +236,8 @@ function DashboardMock({ isMobile, mobileScale = 1 }: { isMobile: boolean; mobil
         transition={{ duration: 0.12, delay: SCREEN_DELAY }}
         style={{
           position: 'absolute', inset: 0, pointerEvents: 'none', borderRadius: 'inherit',
-          background: 'linear-gradient(180deg, rgba(36,59,110,0.55) 0%, rgba(27,46,90,0.22) 50%, rgba(36,59,110,0.10) 100%)',
-          boxShadow: '0 0 0 1px rgba(36,59,110,0.28),0 0 40px 10px rgba(27,46,90,0.16),0 0 80px 24px rgba(36,59,110,0.09),0 24px 50px rgba(15,27,61,0.15)',
+          background: 'transparent',
+          boxShadow: '0 0 0 1px rgba(19,32,74,0.08), 0 8px 32px rgba(19,32,74,0.10), 0 24px 50px rgba(19,32,74,0.06)',
         }}
       />
 
@@ -292,7 +303,7 @@ function DashboardMock({ isMobile, mobileScale = 1 }: { isMobile: boolean; mobil
       {/* Screen */}
       <div style={{
         position: 'relative',
-        width: isMobile ? '100%' : 'min(800px, 72vw)',
+        width: '100%',
         aspectRatio: '16 / 10',
         borderRadius: 'clamp(8px, 0.8vw, 14px)',
         overflow: 'hidden',
@@ -302,25 +313,20 @@ function DashboardMock({ isMobile, mobileScale = 1 }: { isMobile: boolean; mobil
           initial={{ clipPath: 'circle(0px at 50% 52%)' }}
           animate={{ clipPath: 'circle(150% at 50% 52%)' }}
           transition={{ duration: SCREEN_DUR, delay: SCREEN_DELAY, ease: SCREEN_EASE }}
-          style={{ position: 'absolute', top: 0, left: 0, width: isMobile ? 800 : '100%', height: isMobile ? 500 : '100%', display: 'flex', background: 'linear-gradient(180deg, #0d1726 0%, #080f1a 100%)', ...(isMobile ? { zoom: mobileScale } : {}) }}
+          style={{ position: 'absolute', top: 0, left: 0, width: isMobile ? 800 : '100%', height: isMobile ? 500 : '100%', display: 'flex', background: '#FFFFFF', ...(isMobile ? { zoom: mobileScale } : {}) }}
         >
-          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(90deg, transparent, rgba(36,59,110,0.6), rgba(255,255,255,0.3), rgba(36,59,110,0.6), transparent)', zIndex: 10 }} />
-          <div style={{ position: 'absolute', left: 0, right: 0, height: '4%', background: 'linear-gradient(to bottom, transparent, rgba(36,59,110,0.04), transparent)', animation: 'pp-scan 4s linear infinite', pointerEvents: 'none', zIndex: 8 }} />
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(90deg, transparent, rgba(19,32,74,0.12), rgba(19,32,74,0.06), rgba(19,32,74,0.12), transparent)', zIndex: 10 }} />
           <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '30%', background: 'linear-gradient(to top, rgba(27,46,90,0.07), transparent)', pointerEvents: 'none', zIndex: 9 }} />
 
           {/* Sidebar */}
-          <div style={{ width: '19%', background: '#060c16', borderRight: '1px solid rgba(36,59,110,0.08)', padding: '10px 7px', display: 'flex', flexDirection: 'column', gap: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '3px 5px', marginBottom: 10 }}>
-              <div style={{ width: 14, height: 14, borderRadius: 3, background: 'linear-gradient(135deg, #1b2e5a, #0f2456)', flexShrink: 0 }} />
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <div style={{ height: 4, width: '75%', background: 'rgba(255,255,255,0.7)', borderRadius: 1 }} />
-                <div style={{ height: 3, width: '50%', background: 'rgba(255,255,255,0.25)', borderRadius: 1 }} />
-              </div>
+          <div style={{ width: '19%', background: '#F5F7FA', borderRight: '1px solid rgba(19,32,74,0.08)', padding: '10px 7px', display: 'flex', flexDirection: 'column', gap: 0 }}>
+            <div style={{ padding: '4px 5px', marginBottom: 10, display: 'flex', justifyContent: 'center' }}>
+              <img src="https://res.cloudinary.com/dr9vzaa7u/image/upload/v1771698937/Zopkit-full_n7lm0f.png" alt="Zopkit" style={{ height: 30, width: 'auto', display: 'block' }} />
             </div>
             {SIDEBAR_ITEMS.map((item, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 5px', background: item.active ? 'rgba(27,46,90,0.4)' : 'transparent', borderRadius: 3, borderLeft: `2px solid ${item.active ? item.color : 'transparent'}`, marginBottom: 2 }}>
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 5px', background: item.active ? 'rgba(19,32,74,0.08)' : 'transparent', borderRadius: 3, borderLeft: `2px solid ${item.active ? item.color : 'transparent'}`, marginBottom: 2 }}>
                 <div style={{ width: 5, height: 5, borderRadius: '50%', background: item.color, flexShrink: 0, boxShadow: item.active ? `0 0 6px ${item.color}` : 'none' }} />
-                <div style={{ height: 3, flex: 1, background: item.active ? 'rgba(255,255,255,0.65)' : 'rgba(255,255,255,0.22)', borderRadius: 1 }} />
+                <div style={{ height: 3, flex: 1, background: item.active ? 'rgba(19,32,74,0.7)' : 'rgba(19,32,74,0.18)', borderRadius: 1 }} />
               </div>
             ))}
           </div>
@@ -329,107 +335,141 @@ function DashboardMock({ isMobile, mobileScale = 1 }: { isMobile: boolean; mobil
           <div style={{ flex: 1, padding: '9px 12px', display: 'flex', flexDirection: 'column', gap: 0 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 7 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={TX('rgba(255,255,255,0.9)', 9, 600)}>AI Agent Orchestrator</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(46,79,140,0.12)', border: '1px solid rgba(46,79,140,0.28)', borderRadius: 100, padding: '2px 8px' }}>
-                  <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 5px #4ade80' }} />
+                <span style={TX('#13204A', 9, 600)}>AI Agent Orchestrator</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(19,32,74,0.06)', border: '1px solid rgba(19,32,74,0.15)', borderRadius: 100, padding: '2px 8px' }}>
+                  <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#1b2e5a' }} />
                   <span style={TX('rgba(46,79,140,0.9)', 7, 600)}>5 Agents Running</span>
                 </div>
               </div>
-              <span style={TX('rgba(255,255,255,0.3)', 7)}>Live Sync</span>
+              <span style={TX('rgba(19,32,74,0.35)', 7)}>Live Sync</span>
             </div>
 
             {/* Orchestrator card */}
-            <div style={{ background: 'rgba(139,92,246,0.09)', border: '1px solid rgba(139,92,246,0.45)', borderRadius: 8, padding: '8px 12px', position: 'relative', overflow: 'hidden' }}>
-              <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 50% 0%, rgba(139,92,246,0.18), transparent 65%)', pointerEvents: 'none' }} />
+            <div style={{ background: 'rgba(27,71,180,0.06)', border: '1px solid rgba(27,71,180,0.22)', borderRadius: 8, padding: '8px 12px', position: 'relative', overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 50% 0%, rgba(27,71,180,0.10), transparent 65%)', pointerEvents: 'none' }} />
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <div style={{ position: 'relative', flexShrink: 0 }}>
-                  <RobotIcon color="#a78bfa" size={26} />
+                  <RobotIcon color={BLUE} size={26} />
                   <div style={{ position: 'absolute', top: -4, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 2 }}>
-                    {[0,1,2].map(i => <div key={i} style={{ width: 2, height: i === 1 ? 4 : 3, background: '#a78bfa', borderRadius: 1 }} />)}
+                    {[0,1,2].map(i => <div key={i} style={{ width: 2, height: i === 1 ? 4 : 3, background: BLUE, borderRadius: 1 }} />)}
                   </div>
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ ...TX('#a78bfa', 9, 700), textTransform: 'uppercase', letterSpacing: '0.12em' }}>Orchestrator</span>
+                    <span style={{ ...TX(BLUE, 9, 700), textTransform: 'uppercase', letterSpacing: '0.12em' }}>Orchestrator</span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                      <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 5px #4ade80' }} />
-                      <span style={TX('rgba(46,79,140,0.85)', 7, 500)}>Decision Engine Active</span>
+                      <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#1b2e5a' }} />
+                      <span style={TX('rgba(27,71,180,0.75)', 7, 500)}>Decision Engine Active</span>
                     </div>
                   </div>
-                  <span style={TX('rgba(255,255,255,0.35)', 6.5)}>Aggregating sub-agent reports • Taking cross-system decisions</span>
+                  <span style={TX('rgba(19,32,74,0.45)', 6.5)}>Aggregating sub-agent reports • Taking cross-system decisions</span>
                 </div>
-                <div style={{ background: 'rgba(139,92,246,0.18)', border: '1px solid rgba(139,92,246,0.4)', borderRadius: 5, padding: '3px 8px', flexShrink: 0 }}>
-                  <span style={TX('#c4b5fd', 6.5, 600)}>⟳ Analyzing…</span>
+                <div style={{ background: 'rgba(27,71,180,0.10)', border: `1px solid rgba(27,71,180,0.28)`, borderRadius: 5, padding: '3px 8px', flexShrink: 0 }}>
+                  <span style={TX(BLUE, 6.5, 600)}>⟳ Analyzing…</span>
                 </div>
               </div>
-              <div style={{ marginTop: 7, background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(139,92,246,0.2)', borderRadius: 5, padding: '4px 9px', display: 'flex', alignItems: 'center', gap: 8, overflow: 'hidden' }}>
+              <div style={{ marginTop: 7, background: 'rgba(19,32,74,0.04)', border: '1px solid rgba(139,92,246,0.2)', borderRadius: 5, padding: '4px 9px', display: 'flex', alignItems: 'center', gap: 8, overflow: 'hidden' }}>
                 <span style={TX('rgba(139,92,246,0.7)', 6.5, 600)}>DECISION</span>
-                <span style={TX('rgba(255,255,255,0.7)', 7)}>Increase Q2 inventory 18%</span>
-                <span style={{ ...TX('rgba(255,255,255,0.2)', 7), margin: '0 2px' }}>•</span>
-                <span style={TX('rgba(255,255,255,0.7)', 7)}>Approve ₹32L payroll</span>
-                <span style={{ ...TX('rgba(255,255,255,0.2)', 7), margin: '0 2px' }}>•</span>
-                <span style={TX('rgba(255,255,255,0.7)', 7)}>Flag 3 CRM leads</span>
-              </div>
-              <div style={{ marginTop: 6, display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-                {AGENTS.map(a => (
-                  <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 4, background: `${a.color}15`, border: `1px solid ${a.color}40`, borderRadius: 100, padding: '2px 8px' }}>
-                    <div style={{ width: 4, height: 4, borderRadius: '50%', background: a.color, boxShadow: `0 0 4px ${a.color}` }} />
-                    <span style={TX(a.color, 6.5, 600)}>{a.source} ✓</span>
-                  </div>
-                ))}
+                <span style={TX('#13204A', 7)}>Increase Q2 inventory 18%</span>
+                <span style={{ ...TX('rgba(19,32,74,0.3)', 7), margin: '0 2px' }}>•</span>
+                <span style={TX('#13204A', 7)}>Approve ₹32L payroll</span>
+                <span style={{ ...TX('rgba(19,32,74,0.3)', 7), margin: '0 2px' }}>•</span>
+                <span style={TX('#13204A', 7)}>Flag 3 CRM leads</span>
               </div>
             </div>
 
-            {/* Connector lines */}
-            <div style={{ position: 'relative', height: 24, flexShrink: 0 }}>
-              <svg width="100%" height="24" style={{ display: 'block', overflow: 'visible' }}>
+            {/* App labels + Connector lines */}
+            <div style={{ position: 'relative', height: 44, flexShrink: 0, marginTop: 6 }}>
+              {/* App name label chips — one above each column */}
+              {AGENTS.map((agent, idx) => {
+                const pct = 10 + idx * 20
+                return (
+                  <div key={agent.id} style={{
+                    position: 'absolute', left: `${pct}%`, transform: 'translateX(-50%)',
+                    top: 0, display: 'inline-flex', alignItems: 'center', gap: 3,
+                    background: `${BLUE}0f`, border: `1px solid ${BLUE}30`,
+                    borderRadius: 100, padding: '2px 7px', whiteSpace: 'nowrap',
+                  }}>
+                    <div style={{ width: 3.5, height: 3.5, borderRadius: '50%', background: '#1b2e5a', flexShrink: 0 }} />
+                    <span style={{ ...TX(BLUE, 6, 600) }}>{agent.source} ✓</span>
+                  </div>
+                )
+              })}
+              {/* Connector lines */}
+              <svg width="100%" height="20" style={{ display: 'block', overflow: 'visible', position: 'absolute', bottom: 0 }}>
                 {AGENTS.map((agent, idx) => {
                   const pct = 10 + idx * 20
                   const x = `${pct}%`
                   return (
                     <g key={agent.id}>
-                      <line x1={x} y1="0" x2={x} y2="24" stroke="rgba(255,255,255,0.05)" strokeWidth="1.5" />
-                      <line x1={x} y1="24" x2={x} y2="3" stroke={agent.color} strokeWidth="1.5" strokeDasharray="5 4" strokeLinecap="round" opacity="0.7"
-                        style={{ animation: `data-flow-up ${0.9 + idx * 0.18}s linear infinite` }} />
-                      <polygon points={`${pct - 2}%,6 ${pct + 2}%,6 ${pct}%,0`} fill={agent.color} opacity="0.85" />
+                      <line x1={x} y1="0" x2={x} y2="20" stroke={BLUE} strokeWidth="1.2" strokeDasharray="4 3" strokeLinecap="round" opacity="0.45" />
+                      <polygon points={`${pct - 1.2}%,4 ${pct + 1.2}%,4 ${pct}%,0`} fill={BLUE} opacity="0.55" />
                     </g>
                   )
                 })}
-                <line x1="10%" y1="0" x2="90%" y2="0" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
               </svg>
             </div>
 
             {/* Sub-agent cards */}
             <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 5, minHeight: 0 }}>
-              {AGENTS.map(agent => (
-                <div key={agent.id} style={{ background: `${agent.color}0a`, border: `1px solid ${agent.color}30`, borderTop: `3px solid ${agent.color}`, borderRadius: '0 0 7px 7px', padding: '6px 7px', display: 'flex', flexDirection: 'column', gap: 3, position: 'relative', overflow: 'hidden' }}>
-                  <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(ellipse at 50% 0%, ${agent.color}15, transparent 65%)`, pointerEvents: 'none' }} />
+              {AGENTS.map((agent, agentIdx) => (
+                <div key={agent.id} style={{ background: `#FFFFFF`, border: `1px solid ${agent.color}25`, borderTop: `3px solid ${agent.color}`, borderRadius: '0 0 7px 7px', padding: '6px 7px', display: 'flex', flexDirection: 'column', gap: 3, position: 'relative', overflow: 'hidden' }}>
+                  <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(ellipse at 50% 0%, ${agent.color}08, transparent 55%)`, pointerEvents: 'none' }} />
+                  {/* Agent header */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                     <RobotIcon color={agent.color} size={18} />
                     <div>
                       <span style={{ ...TX(agent.color, 7, 700), textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block' }}>Agent {agent.id}</span>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 3, marginTop: 1 }}>
-                        <div style={{ width: 4, height: 4, borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 4px #4ade80' }} />
-                        <span style={TX('rgba(46,79,140,0.8)', 6)}>Active</span>
+                        <div style={{ width: 4, height: 4, borderRadius: '50%', background: '#1b2e5a' }} />
+                        <span style={TX('rgba(19,32,74,0.55)', 6)}>Active</span>
                       </div>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 3 }}>
+                  {/* Source + primary metrics */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, borderTop: '1px solid rgba(19,32,74,0.07)', paddingTop: 3 }}>
                     <div style={{ width: 5, height: 5, borderRadius: 1, background: agent.color, flexShrink: 0 }} />
                     <span style={TX(agent.color, 7, 600)}>{agent.source}</span>
                   </div>
-                  <span style={TX('rgba(255,255,255,0.88)', 7, 700)}>{agent.metric1}</span>
-                  <span style={TX(`${agent.color}cc`, 6)}>{agent.metric2}</span>
+                  <span style={TX('#13204A', 7, 700)}>{agent.metric1}</span>
+                  <span style={TX(`${agent.color}bb`, 6)}>{agent.metric2}</span>
+                  {/* Mini bar chart */}
                   <div style={{ display: 'flex', alignItems: 'flex-end', gap: 2, height: 10, marginTop: 1 }}>
                     {agent.bars.map((h, bi) => (
                       <div key={bi} style={{ flex: 1, height: `${h * 100}%`, background: bi === agent.bars.length - 1 ? `${agent.color}ee` : `${agent.color}44`, borderRadius: '1px 1px 0 0' }} />
                     ))}
                   </div>
+                  {/* Progress bar */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <div style={{ flex: 1, height: 2, background: 'rgba(255,255,255,0.07)', borderRadius: 1, overflow: 'hidden' }}>
+                    <div style={{ flex: 1, height: 2, background: 'rgba(19,32,74,0.07)', borderRadius: 1, overflow: 'hidden' }}>
                       <div style={{ height: '100%', width: `${agent.progress}%`, background: `linear-gradient(90deg, ${agent.color}60, ${agent.color})`, borderRadius: 1 }} />
                     </div>
-                    <span style={TX('rgba(255,255,255,0.3)', 6)}>{agent.progress}%</span>
+                    <span style={TX('rgba(19,32,74,0.4)', 6)}>{agent.progress}%</span>
+                  </div>
+                  {/* Live activity feed */}
+                  <div style={{ borderTop: '1px solid rgba(19,32,74,0.07)', paddingTop: 4, marginTop: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 3, marginBottom: 4 }}>
+                      <div style={{ width: 4, height: 4, borderRadius: '50%', background: '#1b2e5a' }} />
+                      <span style={{ ...TX('rgba(19,32,74,0.35)', 5.5, 600), textTransform: 'uppercase', letterSpacing: '0.08em' }}>Live Feed</span>
+                    </div>
+                    {AGENT_FEEDS[agentIdx].map((item, fi) => (
+                      <div key={fi} style={{ display: 'flex', alignItems: 'flex-start', gap: 4, marginBottom: 3 }}>
+                        <div style={{ width: 3, height: 3, borderRadius: '50%', background: agent.color, opacity: 1 - fi * 0.25, flexShrink: 0, marginTop: 2 }} />
+                        <span style={{ ...TX('rgba(19,32,74,0.6)', 5.5), lineHeight: 1.35 }}>{item}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Connected integrations */}
+                  <div style={{ borderTop: '1px solid rgba(19,32,74,0.07)', paddingTop: 4, marginTop: 1 }}>
+                    <span style={{ ...TX('rgba(19,32,74,0.35)', 5.5, 600), textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: 4 }}>Integrations</span>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+                      {AGENT_INTEGRATIONS[agentIdx].map((intg, ii) => (
+                        <div key={ii} style={{ display: 'flex', alignItems: 'center', gap: 2.5, background: `${intg.c}10`, border: `1px solid ${intg.c}30`, borderRadius: 3, padding: '1.5px 5px' }}>
+                          <div style={{ width: 3.5, height: 3.5, borderRadius: '50%', background: intg.c, flexShrink: 0 }} />
+                          <span style={{ ...TX(intg.c, 5.5, 600) }}>{intg.label}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -460,32 +500,32 @@ function LightCone() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.6, delay: 2.7, ease: 'easeIn' }}
-      style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 3 }}
+      style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 3, willChange: 'opacity', transform: 'translateZ(0)' }}
     >
       <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none"
         style={{ display: 'block', animation: 'pp-cone-breath 3.5s ease-in-out infinite' }}>
         <defs>
-          <linearGradient id="pp-cone-core" x1="50" y1="90" x2="50" y2="68" gradientUnits="userSpaceOnUse">
-            <stop offset="0%"  stopColor="rgba(46,79,140,0.65)" />
-            <stop offset="30%" stopColor="rgba(36,59,110,0.30)" />
-            <stop offset="100%" stopColor="rgba(27,46,90,0.06)" />
+          <linearGradient id="pp-cone-core" x1="50" y1="100" x2="50" y2="68" gradientUnits="userSpaceOnUse">
+            <stop offset="0%"  stopColor="rgba(46,79,140,0.80)" />
+            <stop offset="30%" stopColor="rgba(36,59,110,0.42)" />
+            <stop offset="100%" stopColor="rgba(27,46,90,0.08)" />
           </linearGradient>
-          <linearGradient id="pp-cone-wide" x1="50" y1="90" x2="50" y2="65" gradientUnits="userSpaceOnUse">
-            <stop offset="0%"  stopColor="rgba(36,59,110,0.40)" />
-            <stop offset="50%" stopColor="rgba(27,46,90,0.15)" />
-            <stop offset="100%" stopColor="rgba(15,27,61,0.03)" />
+          <linearGradient id="pp-cone-wide" x1="50" y1="100" x2="50" y2="65" gradientUnits="userSpaceOnUse">
+            <stop offset="0%"  stopColor="rgba(36,59,110,0.55)" />
+            <stop offset="50%" stopColor="rgba(27,46,90,0.22)" />
+            <stop offset="100%" stopColor="rgba(15,27,61,0.04)" />
           </linearGradient>
-          <linearGradient id="pp-ray-l" x1="50" y1="90" x2="17" y2="68" gradientUnits="userSpaceOnUse">
-            <stop offset="0%"  stopColor="rgba(96,130,190,1)" />
-            <stop offset="45%" stopColor="rgba(46,79,140,0.65)" />
-            <stop offset="100%" stopColor="rgba(27,46,90,0.18)" />
+          <linearGradient id="pp-ray-l" x1="50" y1="100" x2="12" y2="68" gradientUnits="userSpaceOnUse">
+            <stop offset="0%"  stopColor="rgba(120,160,220,1)" />
+            <stop offset="45%" stopColor="rgba(46,79,140,0.75)" />
+            <stop offset="100%" stopColor="rgba(27,46,90,0.20)" />
           </linearGradient>
-          <linearGradient id="pp-ray-r" x1="50" y1="90" x2="83" y2="68" gradientUnits="userSpaceOnUse">
-            <stop offset="0%"  stopColor="rgba(96,130,190,1)" />
-            <stop offset="45%" stopColor="rgba(46,79,140,0.65)" />
-            <stop offset="100%" stopColor="rgba(27,46,90,0.18)" />
+          <linearGradient id="pp-ray-r" x1="50" y1="100" x2="88" y2="68" gradientUnits="userSpaceOnUse">
+            <stop offset="0%"  stopColor="rgba(120,160,220,1)" />
+            <stop offset="45%" stopColor="rgba(46,79,140,0.75)" />
+            <stop offset="100%" stopColor="rgba(27,46,90,0.20)" />
           </linearGradient>
-          <radialGradient id="pp-src-halo" cx="50" cy="90" r="10" gradientUnits="userSpaceOnUse">
+          <radialGradient id="pp-src-halo" cx="50" cy="100" r="12" gradientUnits="userSpaceOnUse">
             <stop offset="0%"  stopColor="rgba(140,180,240,0.90)" />
             <stop offset="40%" stopColor="rgba(46,79,140,0.55)" />
             <stop offset="100%" stopColor="rgba(15,27,61,0.00)" />
@@ -504,17 +544,24 @@ function LightCone() {
           <filter id="pp-f-edge"  x="-20%" y="-200%" width="140%" height="500%"><feGaussianBlur stdDeviation="0.8 2.5" /></filter>
           <filter id="pp-f-halo"  x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="3 2" /></filter>
         </defs>
-        <polygon points="50,90 2,68 98,68"  fill="url(#pp-cone-wide)" filter="url(#pp-f-wide)" opacity="0.7" />
-        <polygon points="50,90 17,68 83,68" fill="url(#pp-cone-core)" filter="url(#pp-f-soft)" />
-        <polygon points="50,90 36,68 64,68" fill="url(#pp-cone-core)" filter="url(#pp-f-soft)" opacity="0.6" />
-        <line x1="50" y1="90" x2="17" y2="68" stroke="url(#pp-ray-l)" strokeWidth="0.5" filter="url(#pp-f-ray)" />
-        <line x1="50" y1="90" x2="17" y2="68" stroke="url(#pp-ray-l)" strokeWidth="3"   filter="url(#pp-f-glow)" opacity="0.6" />
-        <line x1="50" y1="90" x2="83" y2="68" stroke="url(#pp-ray-r)" strokeWidth="0.5" filter="url(#pp-f-ray)" />
-        <line x1="50" y1="90" x2="83" y2="68" stroke="url(#pp-ray-r)" strokeWidth="3"   filter="url(#pp-f-glow)" opacity="0.6" />
-        <ellipse cx="50" cy="90" rx="8" ry="3" fill="url(#pp-src-halo)" filter="url(#pp-f-halo)" />
-        <line x1="17" y1="68" x2="83" y2="68" stroke="url(#pp-screen-glow)" strokeWidth="1.2" filter="url(#pp-f-edge)" />
-        <circle cx="17" cy="68" r="1.5" fill="rgba(36,59,110,0.6)" filter="url(#pp-f-soft)" />
-        <circle cx="83" cy="68" r="1.5" fill="rgba(36,59,110,0.6)" filter="url(#pp-f-soft)" />
+        {/* Outer wide ambient cone — narrower to match slimmer puck */}
+        <polygon points="50,100 10,68 90,68"  fill="url(#pp-cone-wide)" filter="url(#pp-f-wide)" opacity="0.85" />
+        {/* Core beam */}
+        <polygon points="50,100 20,68 80,68" fill="url(#pp-cone-core)" filter="url(#pp-f-soft)" opacity="0.9" />
+        <polygon points="50,100 33,68 67,68" fill="url(#pp-cone-core)" filter="url(#pp-f-soft)" opacity="0.75" />
+        {/* Inner bright center column */}
+        <polygon points="50,100 43,68 57,68" fill="url(#pp-cone-core)" filter="url(#pp-f-soft)" opacity="0.9" />
+        {/* Edge rays */}
+        <line x1="50" y1="100" x2="20" y2="68" stroke="url(#pp-ray-l)" strokeWidth="0.7" filter="url(#pp-f-ray)" />
+        <line x1="50" y1="100" x2="20" y2="68" stroke="url(#pp-ray-l)" strokeWidth="4"   filter="url(#pp-f-glow)" opacity="0.75" />
+        <line x1="50" y1="100" x2="80" y2="68" stroke="url(#pp-ray-r)" strokeWidth="0.7" filter="url(#pp-f-ray)" />
+        <line x1="50" y1="100" x2="80" y2="68" stroke="url(#pp-ray-r)" strokeWidth="4"   filter="url(#pp-f-glow)" opacity="0.75" />
+        {/* Source halo at projector lens */}
+        <ellipse cx="50" cy="100" rx="7" ry="2.5" fill="url(#pp-src-halo)" filter="url(#pp-f-halo)" />
+        {/* Screen edge glow where beam hits dashboard bottom */}
+        <line x1="20" y1="68" x2="80" y2="68" stroke="url(#pp-screen-glow)" strokeWidth="1.5" filter="url(#pp-f-edge)" />
+        <circle cx="20" cy="68" r="1.5" fill="rgba(36,59,110,0.7)" filter="url(#pp-f-soft)" />
+        <circle cx="80" cy="68" r="1.5" fill="rgba(36,59,110,0.7)" filter="url(#pp-f-soft)" />
       </svg>
     </motion.div>
   )
@@ -528,13 +575,14 @@ function Projector({ isMobile }: { isMobile: boolean }) {
       <div
         style={{
           position: 'relative',
-          width: isMobile ? 'clamp(120px, 36vw, 180px)' : 'clamp(180px, 24vw, 300px)',
+          width: isMobile ? 'clamp(120px, 36vw, 180px)' : 'clamp(110px, 14vw, 175px)',
           aspectRatio: '10 / 4.2',
           zIndex: 5,
           // Skip float animation on mobile — it's expensive and barely visible
           animation: isMobile ? 'none' : 'pp-float 5.5s ease-in-out infinite',
-          filter: 'drop-shadow(0 32px 48px rgba(0,0,0,0.85)) drop-shadow(0 0 60px rgba(36,59,110,0.30))',
+          filter: 'drop-shadow(0 16px 32px rgba(0,0,0,0.55)) drop-shadow(0 0 20px rgba(36,59,110,0.22))',
           willChange: 'transform',
+          transform: 'translateZ(0)',
         }}
       >
         <div style={{ position: 'absolute', top: '22%', left: 0, right: 0, bottom: 0, background: 'linear-gradient(to bottom, #1c1c24 0%, #111118 30%, #08080e 70%, #040408 100%)', borderRadius: '0 0 50% 50% / 0 0 24% 24%', boxShadow: 'inset 8px 0 24px rgba(255,255,255,0.05),inset -8px 0 24px rgba(0,0,0,0.5),inset 0 -14px 30px rgba(0,0,0,0.8),inset 0 3px 8px rgba(255,255,255,0.03)', overflow: 'hidden' }}>
@@ -545,7 +593,7 @@ function Projector({ isMobile }: { isMobile: boolean }) {
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '44%', background: 'radial-gradient(ellipse at 46% 36%, #28282e 0%, #181820 45%, #0c0c14 80%, #060610 100%)', borderRadius: '50%', zIndex: 2, boxShadow: 'inset 0 10px 24px rgba(255,255,255,0.06),inset 0 -6px 16px rgba(0,0,0,0.7),0 8px 24px rgba(0,0,0,0.7)' }}>
           <div style={{ position: 'absolute', top: '6%', left: '6%', right: '6%', bottom: '6%', borderRadius: '50%', boxShadow: 'inset 0 0 0 1.5px rgba(255,255,255,0.06), inset 0 0 12px rgba(0,0,0,0.7)' }} />
           <div style={{ position: 'absolute', top: '18%', left: '18%', right: '18%', bottom: '18%', borderRadius: '50%', background: 'radial-gradient(ellipse at 50% 42%, #1a1a22 0%, #0a0a12 100%)', boxShadow: 'inset 0 6px 16px rgba(0,0,0,0.95), inset 0 0 0 1px rgba(255,255,255,0.03)' }} />
-          <div style={{ position: 'absolute', top: '22%', left: '22%', right: '22%', bottom: '22%', borderRadius: '50%', background: 'transparent', animation: 'pp-lens-glow 2.6s ease-in-out infinite' }} />
+          <div style={{ position: 'absolute', top: '22%', left: '22%', right: '22%', bottom: '22%', borderRadius: '50%', background: 'transparent', animation: 'pp-lens-pulse 2.6s ease-in-out infinite' }} />
           <div style={{ position: 'absolute', top: '22%', left: '22%', right: '22%', bottom: '22%', borderRadius: '50%', boxShadow: '0 0 0 2px rgba(27,46,90,0.5)', animation: 'pp-ring-out 2.6s ease-out infinite', pointerEvents: 'none' }} />
           <div style={{ position: 'absolute', top: '22%', left: '22%', right: '22%', bottom: '22%', borderRadius: '50%', boxShadow: '0 0 0 1.5px rgba(27,46,90,0.3)', animation: 'pp-ring-out 2.6s ease-out 1.3s infinite', pointerEvents: 'none' }} />
           <div style={{ position: 'absolute', top: '30%', left: '30%', right: '30%', bottom: '30%', borderRadius: '50%', background: 'radial-gradient(circle at 44% 38%, #c8d8f0 0%, #6080b0 14%, #243b6e 38%, #1b2e5a 65%, #0f1b3d 100%)', boxShadow: 'inset 0 0 14px rgba(0,0,0,0.6)' }} />
@@ -559,80 +607,87 @@ function Projector({ isMobile }: { isMobile: boolean }) {
 
 // ─── Side agent cards ──────────────────────────────────────────────────────────
 const SIDE_LEFT = [
-  { source: 'B2B CRM', color: '#3b82f6', metric1: '342 Leads', metric2: '₹12.4M pipeline', desc: 'Scoring inbound leads & auto-assigning follow-ups based on deal size', activity: 'Flagged 3 high-value leads for Q2 review', bars: [0.5,0.7,0.55,0.85,0.65] as number[], progress: 87 },
-  { source: 'Fin. Accounting', color: '#10b981', metric1: '₹84.2L Revenue', metric2: '100% GST filed', desc: 'Reconciling transactions, filing GST returns & projecting cash flow', activity: 'Auto-reconciled 218 entries · ₹2.1L variance resolved', bars: [0.4,0.65,0.8,0.9,0.75] as number[], progress: 94 },
+  {
+    source: 'B2B CRM Agent', color: BLUE,
+    feeds: ['Lead scored: Sharma & Co ₹8.4L', 'Follow-up queued: 12 accts', 'Pipeline updated: +18%'],
+    integrations: ['CRM', 'Email', 'WApp', 'LinkedIn'],
+  },
+  {
+    source: 'Finance Agent', color: BLUE,
+    feeds: ['GST R1 filed: Aug 2025', 'Invoice #1247 reconciled', 'Cash flow: on track'],
+    integrations: ['Tally', 'GST', 'Banking', 'RazorPay'],
+  },
 ]
 const SIDE_RIGHT = [
-  { source: 'HRMS', color: '#8b5cf6', metric1: '284 Employees', metric2: '98% Attendance', desc: 'Tracking attendance, running payroll & surfacing compliance alerts', activity: 'Payroll processed for 284 employees · 2 alerts pending', bars: [0.6,0.75,0.65,0.7,0.9] as number[], progress: 91 },
-  { source: 'Projects', color: '#06b6d4', metric1: '47 Active Projects', metric2: '12 Due this week', desc: 'Monitoring sprint health, detecting blockers & reallocating bandwidth', activity: 'Rescheduled 2 sprints · 4 blockers auto-escalated', bars: [0.45,0.6,0.8,0.55,0.75] as number[], progress: 68 },
+  {
+    source: 'HRMS Agent', color: BLUE,
+    feeds: ['Payroll: 284 emp processed', 'Leave approved: 7 requests', 'Compliance check: Clear'],
+    integrations: ['ESIC', 'PF', 'Attd', 'Slack'],
+  },
+  {
+    source: 'Projects Agent', color: BLUE,
+    feeds: ['Sprint 14: 3 blockers fixed', 'Alpha delivery: updated ETA', 'Budget utilised: 82%'],
+    integrations: ['Tasks', 'Git', 'Time', 'Jira'],
+  },
 ]
 
-function SideAgentCard({ source, color, metric1, metric2, desc, activity, bars, progress, isMobile = false }: typeof SIDE_LEFT[0] & { isMobile?: boolean }) {
-  const m = isMobile
-  const pad     = m ? '4px 5px'   : '12px 14px'
-  const iconSz  = m ? 10          : 20
-  const nameSz  = m ? 5           : 8
-  const dotSz   = m ? 2.5         : 5
-  const activeSz= m ? 4           : 7
-  const descSz  = m ? 4.5         : 7
-  const metricSz= m ? 5.5         : 10
-  const metric2Sz=m ? 5.5         : 9
-  const subSz   = m ? 4           : 6.5
-  const barH    = m ? 7           : 16
-  const barGap  = m ? 1           : 3
-  const progH   = m ? 2           : 3
-  const progSz  = m ? 4           : 7
-  const actDotSz= m ? 3           : 5
-  const actSz   = m ? 4.5         : 7
+type SideCard = { source: string; color: string; feeds: string[]; integrations: string[] }
+
+function SideAgentCard({ source, color, feeds, integrations, isMobile = false }: SideCard & { isMobile?: boolean }) {
+  if (isMobile) {
+    return (
+      <div style={{ background: '#FFFFFF', border: `1px solid ${color}25`, borderTop: `2px solid ${color}`, borderRadius: '0 0 8px 8px', padding: '4px 5px', overflow: 'hidden' }}>
+        <span style={{ ...TX(color, 4.5, 700), textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 3 }}>{source}</span>
+        {feeds.slice(0, 2).map((f, i) => (
+          <div key={i} style={{ display: 'flex', gap: 2, marginBottom: 1.5 }}>
+            <span style={{ ...TX(`${color}cc`, 4), flexShrink: 0 }}>■</span>
+            <span style={{ ...TX('rgba(19,32,74,0.6)', 4), lineHeight: 1.3 }}>{f}</span>
+          </div>
+        ))}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 2, marginTop: 3 }}>
+          {integrations.slice(0, 3).map((tag, i) => (
+            <span key={i} style={{ ...TX(color, 4, 600), border: `1px solid ${color}35`, borderRadius: 3, padding: '1px 3px', background: `${color}08` }}>{tag}</span>
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div style={{ background: 'linear-gradient(160deg, #0d1726 0%, #080f1a 100%)', border: `1px solid ${color}45`, borderTop: `2px solid ${color}`, borderRadius: '0 0 10px 10px', padding: pad, position: 'relative', overflow: 'hidden', boxShadow: `0 4px 24px rgba(0,0,0,0.35), inset 0 0 0 1px rgba(255,255,255,0.03)` }}>
-      <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(ellipse at 50% 0%, ${color}15, transparent 60%)`, pointerEvents: 'none' }} />
+    <div style={{ background: '#FFFFFF', border: `1px solid ${color}20`, borderTop: `2px solid ${color}`, borderRadius: '0 0 12px 12px', padding: '10px 12px', overflow: 'hidden', boxShadow: '0 2px 20px rgba(19,32,74,0.08)' }}>
+      {/* Card title */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 9 }}>
+        <div style={{ width: 20, height: 20, borderRadius: 5, overflow: 'hidden', flexShrink: 0 }}>
+          <img src="https://res.cloudinary.com/dr9vzaa7u/image/upload/v1765126845/Zopkit_Simple_Logo_glohfr.jpg" alt="Zopkit" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+        </div>
+        <span style={{ ...TX(color, 8, 700), textTransform: 'uppercase', letterSpacing: '0.07em', flex: 1 }}>{source}</span>
+      </div>
 
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: m ? 3 : 8, marginBottom: m ? 3 : 8 }}>
-        <RobotIcon color={color} size={iconSz} />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <span style={{ ...TX(color, nameSz, 700), textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block' }}>{source}</span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: m ? 2 : 4, marginTop: 1 }}>
-            <div style={{ width: dotSz, height: dotSz, borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 4px #4ade80', flexShrink: 0 }} />
-            <span style={{ ...TX('rgba(74,222,128,0.8)', activeSz), display: 'block' }}>Agent Active</span>
+      {/* LIVE FEED */}
+      <div style={{ marginBottom: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 5 }}>
+          <div style={{ width: 5, height: 5, borderRadius: '50%', background: color, flexShrink: 0 }} />
+          <span style={{ ...TX('rgba(19,32,74,0.38)', 6, 600), textTransform: 'uppercase', letterSpacing: '0.10em' }}>Live Feed</span>
+        </div>
+        {feeds.map((item, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 5, marginBottom: i < feeds.length - 1 ? 4 : 0 }}>
+            <span style={{ ...TX(`${color}bb`, 7.5, 700), flexShrink: 0, lineHeight: 1.4 }}>■</span>
+            <span style={{ ...TX('rgba(19,32,74,0.62)', 7.5), lineHeight: 1.4 }}>{item}</span>
           </div>
-        </div>
+        ))}
       </div>
 
-      {/* Description — always visible */}
-      <p style={{ ...TX('rgba(255,255,255,0.5)', descSz), margin: m ? '0 0 5px' : '0 0 10px', lineHeight: 1.4 }}>{desc}</p>
+      {/* Divider */}
+      <div style={{ height: 1, background: 'rgba(19,32,74,0.07)', margin: '0 0 8px' }} />
 
-      {/* Metrics — always two boxes */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: m ? 2 : 8, marginBottom: m ? 4 : 10 }}>
-        <div style={{ background: `rgba(255,255,255,0.05)`, border: `1px solid ${color}35`, borderRadius: m ? 3 : 6, padding: m ? '2px 4px' : '5px 8px' }}>
-          <span style={{ ...TX('rgba(255,255,255,0.95)', metricSz, 700), display: 'block' }}>{metric1}</span>
-          <span style={{ ...TX(`${color}cc`, subSz), display: 'block', marginTop: 1 }}>Primary KPI</span>
+      {/* INTEGRATIONS */}
+      <div>
+        <span style={{ ...TX('rgba(19,32,74,0.38)', 6, 600), textTransform: 'uppercase', letterSpacing: '0.10em', display: 'block', marginBottom: 5 }}>Integrations</span>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+          {integrations.map((tag, i) => (
+            <span key={i} style={{ ...TX(color, 7, 600), border: `1px solid ${color}35`, borderRadius: 4, padding: '2px 7px', background: `${color}08`, letterSpacing: '0.03em' }}>{tag}</span>
+          ))}
         </div>
-        <div style={{ background: `rgba(255,255,255,0.05)`, border: `1px solid ${color}35`, borderRadius: m ? 3 : 6, padding: m ? '2px 4px' : '5px 8px' }}>
-          <span style={{ ...TX('rgba(255,255,255,0.95)', metric2Sz, 700), display: 'block' }}>{metric2}</span>
-          <span style={{ ...TX(`${color}cc`, subSz), display: 'block', marginTop: 1 }}>Status</span>
-        </div>
-      </div>
-
-      {/* Bar chart */}
-      <div style={{ display: 'flex', alignItems: 'flex-end', gap: barGap, height: barH, marginBottom: m ? 3 : 8 }}>
-        {bars.map((h, bi) => <div key={bi} style={{ flex: 1, height: `${h * 100}%`, background: bi === bars.length - 1 ? `${color}ee` : `${color}50`, borderRadius: '2px 2px 0 0' }} />)}
-      </div>
-
-      {/* Progress bar */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: m ? 2 : 6, marginBottom: m ? 4 : 10 }}>
-        <div style={{ flex: 1, height: progH, background: 'rgba(255,255,255,0.08)', borderRadius: 2, overflow: 'hidden' }}>
-          <div style={{ height: '100%', width: `${progress}%`, background: `linear-gradient(90deg, ${color}60, ${color})`, borderRadius: 2 }} />
-        </div>
-        <span style={{ ...TX(`${color}dd`, progSz, 600), flexShrink: 0 }}>{progress}%</span>
-      </div>
-
-      {/* Activity note — always visible */}
-      <div style={{ background: 'rgba(0,0,0,0.25)', border: `1px solid ${color}20`, borderRadius: m ? 4 : 6, padding: m ? '3px 5px' : '6px 8px', display: 'flex', alignItems: 'flex-start', gap: m ? 3 : 6 }}>
-        <div style={{ width: actDotSz, height: actDotSz, borderRadius: '50%', background: color, boxShadow: `0 0 5px ${color}`, marginTop: m ? 1 : 2, flexShrink: 0 }} />
-        <span style={{ ...TX('rgba(255,255,255,0.6)', actSz), lineHeight: 1.4 }}>{activity}</span>
       </div>
     </div>
   )
@@ -718,7 +773,7 @@ function HeroCTAs({ onBookDemo }: { onBookDemo?: () => void }) {
 // ─── Main export ───────────────────────────────────────────────────────────────
 export function PetpoojaHeroSection({ onBookDemo: _onBookDemo }: { onBookDemo?: () => void }) {
   const isMobile = useMobile()
-  const PUCK_H = isMobile ? 'clamp(50px, 14vw, 80px)' : 'clamp(76px, 10.1vw, 126px)'
+  const PUCK_H = isMobile ? 'clamp(50px, 14vw, 80px)' : 'clamp(40px, 5vw, 60px)'
   const dashboardScale = isMobile && typeof window !== 'undefined'
     ? Math.max(0.18, (window.innerWidth - 8 - 2 * Math.min(130, Math.max(80, 0.22 * window.innerWidth))) / 800)
     : 1
@@ -732,18 +787,19 @@ export function PetpoojaHeroSection({ onBookDemo: _onBookDemo }: { onBookDemo?: 
       style={{
         position: 'relative',
         width: '100%',
-        minHeight: isMobile ? 'auto' : 680,
+        minHeight: isMobile ? 'auto' : 480,
         background: '#ffffff',
         color: '#0f172a',
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif',
         overflowX: 'clip',
         overflowY: 'visible',
+        contain: 'layout style',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'flex-start',
-        paddingTop: isMobile ? 'clamp(96px, 13vh, 124px)' : 'clamp(96px, 11vh, 124px)',
-        paddingBottom: isMobile ? 40 : 32,
+        paddingTop: isMobile ? 'clamp(80px, 11vh, 104px)' : 'clamp(100px, 11vh, 124px)',
+        paddingBottom: isMobile ? 40 : 90,
         paddingLeft: isMobile ? 4 : 24,
         paddingRight: isMobile ? 4 : 24,
         boxSizing: 'border-box',
@@ -762,13 +818,14 @@ export function PetpoojaHeroSection({ onBookDemo: _onBookDemo }: { onBookDemo?: 
       {/* ── [left cards] [screen] [right cards] — same layout on all screens ── */}
       <div style={{
         position: 'relative',
-        marginTop: isMobile ? 8 : 'clamp(12px, 2vh, 28px)',
+        marginTop: isMobile ? 8 : 'clamp(6px, 1vh, 14px)',
         width: '100%',
         maxWidth: 1320,
         display: 'flex',
         flexDirection: 'row',
         alignItems: 'flex-start',
         justifyContent: 'center',
+        gap: isMobile ? 8 : 64,
         paddingLeft: isMobile ? 4 : 0,
         paddingRight: isMobile ? 4 : 0,
         boxSizing: 'border-box',
@@ -779,12 +836,12 @@ export function PetpoojaHeroSection({ onBookDemo: _onBookDemo }: { onBookDemo?: 
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, delay: 2.75, ease: [0.22, 1, 0.36, 1] }}
           style={{
-            width: isMobile ? 'clamp(80px, 22vw, 130px)' : 'clamp(150px, 14vw, 200px)',
+            width: isMobile ? 'clamp(80px, 22vw, 130px)' : 'clamp(175px, 14vw, 210px)',
             flexShrink: 0,
             display: 'flex',
             flexDirection: 'column',
-            gap: isMobile ? 5 : 10,
-            paddingTop: isMobile ? 'clamp(16px, 4vw, 32px)' : 'clamp(80px, 10vw, 130px)',
+            gap: isMobile ? 5 : 14,
+            paddingTop: isMobile ? 'clamp(16px, 4vw, 32px)' : 'clamp(36px, 4vw, 56px)',
             zIndex: 5,
           }}
         >
@@ -804,12 +861,12 @@ export function PetpoojaHeroSection({ onBookDemo: _onBookDemo }: { onBookDemo?: 
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, delay: 2.85, ease: [0.22, 1, 0.36, 1] }}
           style={{
-            width: isMobile ? 'clamp(80px, 22vw, 130px)' : 'clamp(150px, 14vw, 200px)',
+            width: isMobile ? 'clamp(80px, 22vw, 130px)' : 'clamp(175px, 14vw, 210px)',
             flexShrink: 0,
             display: 'flex',
             flexDirection: 'column',
-            gap: isMobile ? 5 : 10,
-            paddingTop: isMobile ? 'clamp(16px, 4vw, 32px)' : 'clamp(80px, 10vw, 130px)',
+            gap: isMobile ? 5 : 14,
+            paddingTop: isMobile ? 'clamp(16px, 4vw, 32px)' : 'clamp(36px, 4vw, 56px)',
             zIndex: 5,
           }}
         >
@@ -822,7 +879,7 @@ export function PetpoojaHeroSection({ onBookDemo: _onBookDemo }: { onBookDemo?: 
             initial={{ opacity: 0 }} animate={{ opacity: 1 }}
             transition={{ duration: 0.3, delay: 2.72 }}
             style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 4, overflow: 'visible' }}
-            viewBox="0 0 1320 620" preserveAspectRatio="none"
+            viewBox="0 0 1320 720" preserveAspectRatio="none"
           >
             <defs>
               <filter id="conn-glow-blue"   x="-200%" y="-200%" width="500%" height="500%"><feGaussianBlur stdDeviation="3" result="blur" /><feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
@@ -830,46 +887,46 @@ export function PetpoojaHeroSection({ onBookDemo: _onBookDemo }: { onBookDemo?: 
               <filter id="conn-glow-purple" x="-200%" y="-200%" width="500%" height="500%"><feGaussianBlur stdDeviation="3" result="blur" /><feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
               <filter id="conn-glow-cyan"   x="-200%" y="-200%" width="500%" height="500%"><feGaussianBlur stdDeviation="3" result="blur" /><feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
             </defs>
-            {/* B2B CRM */}
-            <motion.path d="M 200,220 C 230,220 248,298 260,308" stroke="#3b82f6" strokeWidth="5" fill="none" strokeOpacity="0.18" pathLength={1} strokeDasharray={1} initial={{ strokeDashoffset: 1 }} animate={{ strokeDashoffset: 0 }} transition={{ duration: 0.6, delay: 2.85, ease: [0.22, 1, 0.36, 1] }} />
-            <motion.path d="M 200,220 C 230,220 248,298 260,308" stroke="#3b82f6" strokeWidth="1.5" fill="none" strokeOpacity="0.7" pathLength={1} strokeDasharray={1} initial={{ strokeDashoffset: 1 }} animate={{ strokeDashoffset: 0 }} transition={{ duration: 0.6, delay: 2.85, ease: [0.22, 1, 0.36, 1] }} />
-            <motion.path d="M 200,220 C 230,220 248,298 260,308" stroke="#3b82f6" strokeWidth="1" fill="none" strokeOpacity="0.45" strokeDasharray="4 8" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.1, delay: 3.45 }} style={{ animation: 'conn-flow 1.4s linear 3.45s infinite' }} />
-            <motion.circle cx="200" cy="220" r="4.5" fill="#3b82f6" opacity="0.9" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 0.9 }} transition={{ duration: 0.3, delay: 2.8, type: 'spring', stiffness: 300 }} />
-            <motion.circle cx="260" cy="308" r="3.5" fill="#3b82f6" opacity="0.7" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 0.7 }} transition={{ duration: 0.3, delay: 3.45 }} />
-            {/* Fin. Accounting */}
-            <motion.path d="M 200,410 C 230,410 248,398 260,408" stroke="#10b981" strokeWidth="5" fill="none" strokeOpacity="0.18" pathLength={1} strokeDasharray={1} initial={{ strokeDashoffset: 1 }} animate={{ strokeDashoffset: 0 }} transition={{ duration: 0.6, delay: 2.95, ease: [0.22, 1, 0.36, 1] }} />
-            <motion.path d="M 200,410 C 230,410 248,398 260,408" stroke="#10b981" strokeWidth="1.5" fill="none" strokeOpacity="0.7" pathLength={1} strokeDasharray={1} initial={{ strokeDashoffset: 1 }} animate={{ strokeDashoffset: 0 }} transition={{ duration: 0.6, delay: 2.95, ease: [0.22, 1, 0.36, 1] }} />
-            <motion.path d="M 200,410 C 230,410 248,398 260,408" stroke="#10b981" strokeWidth="1" fill="none" strokeOpacity="0.45" strokeDasharray="4 8" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.1, delay: 3.55 }} style={{ animation: 'conn-flow 1.6s linear 3.55s infinite' }} />
-            <motion.circle cx="200" cy="410" r="4.5" fill="#10b981" opacity="0.9" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 0.9 }} transition={{ duration: 0.3, delay: 2.9, type: 'spring', stiffness: 300 }} />
-            <motion.circle cx="260" cy="408" r="3.5" fill="#10b981" opacity="0.7" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 0.7 }} transition={{ duration: 0.3, delay: 3.55 }} />
-            {/* HRMS */}
-            <motion.path d="M 1060,308 C 1072,298 1090,220 1120,220" stroke="#8b5cf6" strokeWidth="5" fill="none" strokeOpacity="0.18" pathLength={1} strokeDasharray={1} initial={{ strokeDashoffset: 1 }} animate={{ strokeDashoffset: 0 }} transition={{ duration: 0.6, delay: 2.9, ease: [0.22, 1, 0.36, 1] }} />
-            <motion.path d="M 1060,308 C 1072,298 1090,220 1120,220" stroke="#8b5cf6" strokeWidth="1.5" fill="none" strokeOpacity="0.7" pathLength={1} strokeDasharray={1} initial={{ strokeDashoffset: 1 }} animate={{ strokeDashoffset: 0 }} transition={{ duration: 0.6, delay: 2.9, ease: [0.22, 1, 0.36, 1] }} />
-            <motion.path d="M 1060,308 C 1072,298 1090,220 1120,220" stroke="#8b5cf6" strokeWidth="1" fill="none" strokeOpacity="0.45" strokeDasharray="4 8" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.1, delay: 3.5 }} style={{ animation: 'conn-flow 1.5s linear 3.5s infinite' }} />
-            <motion.circle cx="1060" cy="308" r="3.5" fill="#8b5cf6" opacity="0.7" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 0.7 }} transition={{ duration: 0.3, delay: 3.5 }} />
-            <motion.circle cx="1120" cy="220" r="4.5" fill="#8b5cf6" opacity="0.9" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 0.9 }} transition={{ duration: 0.3, delay: 2.85, type: 'spring', stiffness: 300 }} />
-            {/* Projects */}
-            <motion.path d="M 1060,408 C 1072,398 1090,410 1120,410" stroke="#06b6d4" strokeWidth="5" fill="none" strokeOpacity="0.18" pathLength={1} strokeDasharray={1} initial={{ strokeDashoffset: 1 }} animate={{ strokeDashoffset: 0 }} transition={{ duration: 0.6, delay: 3.0, ease: [0.22, 1, 0.36, 1] }} />
-            <motion.path d="M 1060,408 C 1072,398 1090,410 1120,410" stroke="#06b6d4" strokeWidth="1.5" fill="none" strokeOpacity="0.7" pathLength={1} strokeDasharray={1} initial={{ strokeDashoffset: 1 }} animate={{ strokeDashoffset: 0 }} transition={{ duration: 0.6, delay: 3.0, ease: [0.22, 1, 0.36, 1] }} />
-            <motion.path d="M 1060,408 C 1072,398 1090,410 1120,410" stroke="#06b6d4" strokeWidth="1" fill="none" strokeOpacity="0.45" strokeDasharray="4 8" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.1, delay: 3.6 }} style={{ animation: 'conn-flow 1.7s linear 3.6s infinite' }} />
-            <motion.circle cx="1060" cy="408" r="3.5" fill="#06b6d4" opacity="0.7" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 0.7 }} transition={{ duration: 0.3, delay: 3.6 }} />
-            <motion.circle cx="1120" cy="410" r="4.5" fill="#06b6d4" opacity="0.9" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 0.9 }} transition={{ duration: 0.3, delay: 2.95, type: 'spring', stiffness: 300 }} />
+            {/* B2B CRM Agent (top-left) → dashboard left edge, uniform curve */}
+            <motion.path d="M 175,190 C 230,190 258,220 279,220" stroke={BLUE} strokeWidth="5" fill="none" strokeOpacity="0.10" pathLength={1} strokeDasharray={1} initial={{ strokeDashoffset: 1 }} animate={{ strokeDashoffset: 0 }} transition={{ duration: 0.6, delay: 2.85, ease: [0.22, 1, 0.36, 1] }} />
+            <motion.path d="M 175,190 C 230,190 258,220 279,220" stroke={BLUE} strokeWidth="1.5" fill="none" strokeOpacity="0.55" pathLength={1} strokeDasharray={1} initial={{ strokeDashoffset: 1 }} animate={{ strokeDashoffset: 0 }} transition={{ duration: 0.6, delay: 2.85, ease: [0.22, 1, 0.36, 1] }} />
+            <motion.path d="M 175,190 C 230,190 258,220 279,220" stroke={BLUE} strokeWidth="1" fill="none" strokeOpacity="0.30" strokeDasharray="4 8" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.1, delay: 3.45 }} style={{ animation: 'conn-flow 1.4s linear 3.45s infinite' }} />
+            <motion.circle cx="175" cy="190" r="4.5" fill={BLUE} opacity="0.9" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 0.9 }} transition={{ duration: 0.3, delay: 2.8, type: 'spring', stiffness: 300 }} />
+            <motion.circle cx="279" cy="220" r="3.5" fill={BLUE} opacity="0.65" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 0.65 }} transition={{ duration: 0.3, delay: 3.45 }} />
+            {/* Finance Agent (bottom-left) → dashboard left edge, uniform curve */}
+            <motion.path d="M 175,355 C 230,355 258,370 279,370" stroke={BLUE} strokeWidth="5" fill="none" strokeOpacity="0.08" pathLength={1} strokeDasharray={1} initial={{ strokeDashoffset: 1 }} animate={{ strokeDashoffset: 0 }} transition={{ duration: 0.6, delay: 2.95, ease: [0.22, 1, 0.36, 1] }} />
+            <motion.path d="M 175,355 C 230,355 258,370 279,370" stroke={BLUE} strokeWidth="1.5" fill="none" strokeOpacity="0.45" pathLength={1} strokeDasharray={1} initial={{ strokeDashoffset: 1 }} animate={{ strokeDashoffset: 0 }} transition={{ duration: 0.6, delay: 2.95, ease: [0.22, 1, 0.36, 1] }} />
+            <motion.path d="M 175,355 C 230,355 258,370 279,370" stroke={BLUE} strokeWidth="1" fill="none" strokeOpacity="0.25" strokeDasharray="4 8" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.1, delay: 3.55 }} style={{ animation: 'conn-flow 1.6s linear 3.55s infinite' }} />
+            <motion.circle cx="175" cy="355" r="4.5" fill={BLUE} opacity="0.82" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 0.82 }} transition={{ duration: 0.3, delay: 2.9, type: 'spring', stiffness: 300 }} />
+            <motion.circle cx="279" cy="370" r="3.5" fill={BLUE} opacity="0.58" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 0.58 }} transition={{ duration: 0.3, delay: 3.55 }} />
+            {/* HRMS Agent (top-right) → dashboard right edge, mirrored uniform curve */}
+            <motion.path d="M 1039,220 C 1060,220 1090,190 1145,190" stroke={BLUE} strokeWidth="5" fill="none" strokeOpacity="0.10" pathLength={1} strokeDasharray={1} initial={{ strokeDashoffset: 1 }} animate={{ strokeDashoffset: 0 }} transition={{ duration: 0.6, delay: 2.9, ease: [0.22, 1, 0.36, 1] }} />
+            <motion.path d="M 1039,220 C 1060,220 1090,190 1145,190" stroke={BLUE} strokeWidth="1.5" fill="none" strokeOpacity="0.55" pathLength={1} strokeDasharray={1} initial={{ strokeDashoffset: 1 }} animate={{ strokeDashoffset: 0 }} transition={{ duration: 0.6, delay: 2.9, ease: [0.22, 1, 0.36, 1] }} />
+            <motion.path d="M 1039,220 C 1060,220 1090,190 1145,190" stroke={BLUE} strokeWidth="1" fill="none" strokeOpacity="0.30" strokeDasharray="4 8" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.1, delay: 3.5 }} style={{ animation: 'conn-flow 1.5s linear 3.5s infinite' }} />
+            <motion.circle cx="1039" cy="220" r="3.5" fill={BLUE} opacity="0.65" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 0.65 }} transition={{ duration: 0.3, delay: 3.5 }} />
+            <motion.circle cx="1145" cy="190" r="4.5" fill={BLUE} opacity="0.9" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 0.9 }} transition={{ duration: 0.3, delay: 2.85, type: 'spring', stiffness: 300 }} />
+            {/* Projects Agent (bottom-right) → dashboard right edge, mirrored uniform curve */}
+            <motion.path d="M 1039,370 C 1060,370 1090,355 1145,355" stroke={BLUE} strokeWidth="5" fill="none" strokeOpacity="0.08" pathLength={1} strokeDasharray={1} initial={{ strokeDashoffset: 1 }} animate={{ strokeDashoffset: 0 }} transition={{ duration: 0.6, delay: 3.0, ease: [0.22, 1, 0.36, 1] }} />
+            <motion.path d="M 1039,370 C 1060,370 1090,355 1145,355" stroke={BLUE} strokeWidth="1.5" fill="none" strokeOpacity="0.45" pathLength={1} strokeDasharray={1} initial={{ strokeDashoffset: 1 }} animate={{ strokeDashoffset: 0 }} transition={{ duration: 0.6, delay: 3.0, ease: [0.22, 1, 0.36, 1] }} />
+            <motion.path d="M 1039,370 C 1060,370 1090,355 1145,355" stroke={BLUE} strokeWidth="1" fill="none" strokeOpacity="0.25" strokeDasharray="4 8" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.1, delay: 3.6 }} style={{ animation: 'conn-flow 1.7s linear 3.6s infinite' }} />
+            <motion.circle cx="1039" cy="370" r="3.5" fill={BLUE} opacity="0.58" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 0.58 }} transition={{ duration: 0.3, delay: 3.6 }} />
+            <motion.circle cx="1145" cy="355" r="4.5" fill={BLUE} opacity="0.82" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 0.82 }} transition={{ duration: 0.3, delay: 2.95, type: 'spring', stiffness: 300 }} />
           </motion.svg>
         )}
       </div>
 
-      {/* Puck — falls from above */}
+      {/* Puck — fades in immediately */}
       <motion.div
-        initial={{ y: '-105vh' }}
-        animate={{ y: 0 }}
-        transition={{ y: { type: 'spring', stiffness: 280, damping: 36, mass: 1.4, restDelta: 0.5 } }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.35, ease: 'easeOut' }}
         style={{
           position: 'absolute',
-          bottom: isMobile ? 16 : 32,
+          bottom: isMobile ? 16 : 18,
           left: '50%',
           x: '-50%',
           zIndex: 10,
-          willChange: 'transform',
+          willChange: 'opacity, transform',
         }}
       >
         <Projector isMobile={isMobile} />

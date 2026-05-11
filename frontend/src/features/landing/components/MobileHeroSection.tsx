@@ -4,6 +4,8 @@
 const HD_W = 1440;
 const HD_H = 1280;
 
+const BLUE = '#1b2e5a';
+
 const T = {
   ink: '#13204A',
   inkSoft: '#3A4674',
@@ -15,11 +17,11 @@ const T = {
 };
 
 const AGENTS = [
-  { label: 'B2B CRM',    accent: '#5B8DEF', kpi: '342 Leads',     status: '₹12.4M pipeline', pct: 87 },
-  { label: 'Finance',    accent: '#4DC18A', kpi: '₹84.2L Rev',    status: '100% GST filed',  pct: 94 },
-  { label: 'Operations', accent: '#E9A24B', kpi: '1,247 SKUs',    status: '34 Orders today', pct: 72 },
-  { label: 'HRMS',       accent: '#9B7BE0', kpi: '284 Employees', status: '98% Attendance',  pct: 91 },
-  { label: 'Projects',   accent: '#4ED4D4', kpi: '47 Projects',   status: '12 Due this week',pct: 68 },
+  { label: 'B2B CRM',    accent: BLUE, kpi: '342 Leads',     status: '₹12.4M pipeline', pct: 87 },
+  { label: 'Finance',    accent: BLUE, kpi: '₹84.2L Rev',    status: '100% GST filed',  pct: 94 },
+  { label: 'Operations', accent: BLUE, kpi: '1,247 SKUs',    status: '34 Orders today', pct: 72 },
+  { label: 'HRMS',       accent: BLUE, kpi: '284 Employees', status: '98% Attendance',  pct: 91 },
+  { label: 'Projects',   accent: BLUE, kpi: '47 Projects',   status: '12 Due this week',pct: 68 },
 ];
 
 interface SideCardProps {
@@ -28,10 +30,10 @@ interface SideCardProps {
 }
 
 const SIDE_CARDS: SideCardProps[] = [
-  { label: 'B2B CRM',  accent: '#5B8DEF', kpi: '342 Leads',      status: '₹12.4M pipeline',  pct: 87, top: 440, left: 20 },
-  { label: 'Finance',  accent: '#4DC18A', kpi: '₹84.2L Revenue', status: '100% GST filed',   pct: 94, top: 810, left: 20 },
-  { label: 'HRMS',     accent: '#9B7BE0', kpi: '284 Employees',  status: '98% Attendance',   pct: 91, top: 440, right: 20 },
-  { label: 'Projects', accent: '#4ED4D4', kpi: '47 Projects',    status: '12 Due this week', pct: 68, top: 810, right: 20 },
+  { label: 'B2B CRM',  accent: BLUE, kpi: '342 Leads',      status: '₹12.4M pipeline',  pct: 87, top: 440, left: 20 },
+  { label: 'Finance',  accent: BLUE, kpi: '₹84.2L Revenue', status: '100% GST filed',   pct: 94, top: 810, left: 20 },
+  { label: 'HRMS',     accent: BLUE, kpi: '284 Employees',  status: '98% Attendance',   pct: 91, top: 440, right: 20 },
+  { label: 'Projects', accent: BLUE, kpi: '47 Projects',    status: '12 Due this week', pct: 68, top: 810, right: 20 },
 ];
 
 const DESC: Record<string, string> = {
@@ -75,20 +77,20 @@ function HDConnectors() {
     <svg width={HD_W} height={HD_H} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
       <defs>
         <linearGradient id="mhc1" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#5B8DEF" stopOpacity="0.85"/>
-          <stop offset="100%" stopColor="#5B8DEF" stopOpacity="0.15"/>
+          <stop offset="0%" stopColor={BLUE} stopOpacity="0.7"/>
+          <stop offset="100%" stopColor={BLUE} stopOpacity="0.10"/>
         </linearGradient>
         <linearGradient id="mhc2" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#4DC18A" stopOpacity="0.85"/>
-          <stop offset="100%" stopColor="#4DC18A" stopOpacity="0.15"/>
+          <stop offset="0%" stopColor={BLUE} stopOpacity="0.7"/>
+          <stop offset="100%" stopColor={BLUE} stopOpacity="0.10"/>
         </linearGradient>
         <linearGradient id="mhc3" x1="1" y1="0" x2="0" y2="0">
-          <stop offset="0%" stopColor="#9B7BE0" stopOpacity="0.85"/>
-          <stop offset="100%" stopColor="#9B7BE0" stopOpacity="0.15"/>
+          <stop offset="0%" stopColor={BLUE} stopOpacity="0.7"/>
+          <stop offset="100%" stopColor={BLUE} stopOpacity="0.10"/>
         </linearGradient>
         <linearGradient id="mhc4" x1="1" y1="0" x2="0" y2="0">
-          <stop offset="0%" stopColor="#4ED4D4" stopOpacity="0.85"/>
-          <stop offset="100%" stopColor="#4ED4D4" stopOpacity="0.15"/>
+          <stop offset="0%" stopColor={BLUE} stopOpacity="0.7"/>
+          <stop offset="100%" stopColor={BLUE} stopOpacity="0.10"/>
         </linearGradient>
       </defs>
       {/* TL card → monitor */}
@@ -99,10 +101,10 @@ function HDConnectors() {
       <path d="M 1220 540 C 1160 540 1140 600 1100 600" stroke="url(#mhc3)" strokeWidth="2.5" fill="none"/>
       {/* BR card → monitor */}
       <path d="M 1220 910 C 1160 910 1140 850 1100 850" stroke="url(#mhc4)" strokeWidth="2.5" fill="none"/>
-      <circle cx="220" cy="540" r="4" fill="#5B8DEF"/>
-      <circle cx="220" cy="910" r="4" fill="#4DC18A"/>
-      <circle cx="1220" cy="540" r="4" fill="#9B7BE0"/>
-      <circle cx="1220" cy="910" r="4" fill="#4ED4D4"/>
+      <circle cx="220" cy="540" r="4" fill={BLUE}/>
+      <circle cx="220" cy="910" r="4" fill={BLUE}/>
+      <circle cx="1220" cy="540" r="4" fill={BLUE}/>
+      <circle cx="1220" cy="910" r="4" fill={BLUE}/>
     </svg>
   );
 }
@@ -230,7 +232,7 @@ function HDMonitor() {
           }}>
             <div style={{ height: 12, borderRadius: 3, background: 'rgba(19,32,74,0.10)' }}/>
             <div style={{ height: 1, background: T.borderLight }}/>
-            {['#5B8DEF','#4DC18A','#E9A24B','#9B7BE0','#4ED4D4','#F47878','#7AE0B0'].map((c, i) => (
+            {[BLUE,BLUE,BLUE,BLUE,BLUE,BLUE,BLUE].map((c, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                 <div style={{ width: 5, height: 5, borderRadius: 99, background: c }}/>
                 <div style={{ flex: 1, height: 8, borderRadius: 2.5, background: i === 1 ? 'rgba(19,32,74,0.18)' : 'rgba(19,32,74,0.07)' }}/>
@@ -242,25 +244,25 @@ function HDMonitor() {
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 12 }}>
             {/* orchestrator card */}
             <div style={{
-              background: 'linear-gradient(135deg, rgba(155,123,224,0.10), rgba(91,141,239,0.06))',
-              border: '1px solid rgba(155,123,224,0.30)', borderRadius: 11, padding: '12px 14px',
+              background: 'rgba(27,71,180,0.05)',
+              border: '1px solid rgba(27,71,180,0.20)', borderRadius: 11, padding: '12px 14px',
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div style={{ display: 'flex', gap: 10 }}>
                   <div style={{
                     width: 34, height: 34, borderRadius: 7,
-                    background: 'rgba(155,123,224,0.16)', border: '1px solid rgba(155,123,224,0.40)',
+                    background: 'rgba(27,71,180,0.10)', border: '1px solid rgba(27,71,180,0.25)',
                     display: 'grid', placeItems: 'center',
                   }}>
                     <svg width="18" height="18" viewBox="0 0 20 20">
-                      <rect x="3" y="6" width="14" height="10" rx="2" fill="none" stroke="#7B5FC8" strokeWidth="1.4"/>
-                      <circle cx="7" cy="11" r="1.2" fill="#7B5FC8"/>
-                      <circle cx="13" cy="11" r="1.2" fill="#7B5FC8"/>
-                      <path d="M10 2v4" stroke="#7B5FC8" strokeWidth="1.4"/>
+                      <rect x="3" y="6" width="14" height="10" rx="2" fill="none" stroke={BLUE} strokeWidth="1.4"/>
+                      <circle cx="7" cy="11" r="1.2" fill={BLUE}/>
+                      <circle cx="13" cy="11" r="1.2" fill={BLUE}/>
+                      <path d="M10 2v4" stroke={BLUE} strokeWidth="1.4"/>
                     </svg>
                   </div>
                   <div>
-                    <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 13, fontWeight: 700, color: '#7B5FC8', letterSpacing: '0.1em' }}>
+                    <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 13, fontWeight: 700, color: BLUE, letterSpacing: '0.1em' }}>
                       ORCHESTRATOR
                       <span style={{ color: '#2E9B6A', marginLeft: 9, fontSize: 10, fontWeight: 500, letterSpacing: '0.04em' }}>● Decision Engine Active</span>
                     </div>
@@ -271,8 +273,8 @@ function HDMonitor() {
                 </div>
                 <div style={{
                   padding: '4px 9px', borderRadius: 5,
-                  background: 'rgba(155,123,224,0.16)', border: '1px solid rgba(155,123,224,0.30)',
-                  fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: '#7B5FC8',
+                  background: 'rgba(27,71,180,0.08)', border: '1px solid rgba(27,71,180,0.22)',
+                  fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: BLUE,
                 }}>◔ Analyzing…</div>
               </div>
               <div style={{
@@ -281,7 +283,7 @@ function HDMonitor() {
                 fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: T.inkSoft,
                 display: 'flex', flexWrap: 'wrap', gap: 7, alignItems: 'center',
               }}>
-                <span style={{ color: '#C77E1F', fontWeight: 700 }}>DECISION</span>
+                <span style={{ color: BLUE, fontWeight: 700 }}>DECISION</span>
                 <span>Increase Q2 inventory 18%</span>
                 <span style={{ opacity: 0.4 }}>·</span>
                 <span>Approve ₹32L payroll</span>

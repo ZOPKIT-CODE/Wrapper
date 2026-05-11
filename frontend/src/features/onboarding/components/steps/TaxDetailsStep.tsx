@@ -10,9 +10,12 @@ import { Switch } from '@/components/ui/switch';
 import { UserClassification } from '../FlowSelector';
 import { getStateFieldConfig, getCountryConfig } from '../../config/countryConfig';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Info, CheckCircle2, XCircle, Loader2, ShieldCheck } from 'lucide-react';
+import { Info, CheckCircle2, XCircle, Loader2, ShieldCheck, ChevronsUpDown, Check } from 'lucide-react';
 import { useWatch } from 'react-hook-form';
 import { memo, useState } from 'react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { cn } from '@/lib/utils';
 import { onboardingAPI } from '@/lib/api';
 import { useToast } from '../Toast';
 
@@ -39,6 +42,8 @@ export const TaxDetailsStep = memo(({ form, userClassification }: TaxDetailsStep
   // Verification states
   const [gstinVerificationStatus, setGstinVerificationStatus] = useState<'idle' | 'verifying' | 'verified' | 'error'>('idle');
   const [gstinVerificationMessage, setGstinVerificationMessage] = useState<string>('');
+  // State combobox open state
+  const [stateComboOpen, setStateComboOpen] = useState(false);
 
   const { addToast } = useToast();
 
@@ -491,25 +496,56 @@ export const TaxDetailsStep = memo(({ form, userClassification }: TaxDetailsStep
                       </TooltipContent>
                     </Tooltip>
                   </FormLabel>
-                  <Select onValueChange={(value) => {
-                    field.onChange(value);
-                    // Also set incorporationState
-                    form.setValue('incorporationState' as any, value, { shouldValidate: false });
-                    form.setValue('billingState' as any, value, { shouldValidate: false });
-                  }} value={field.value || ''}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={`Select ${stateFieldConfig.label.toLowerCase()}`} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent className="max-h-[300px] overflow-y-auto">
-                      {STATES.map((state) => (
-                        <SelectItem key={state.id} value={state.id}>
-                          {state.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Popover open={stateComboOpen} onOpenChange={setStateComboOpen}>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={stateComboOpen}
+                          className={cn(
+                            'w-full justify-between font-normal',
+                            !field.value && 'text-muted-foreground'
+                          )}
+                        >
+                          {field.value
+                            ? STATES.find((s) => s.id === field.value)?.name ?? field.value
+                            : `Select ${stateFieldConfig.label.toLowerCase()}`}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="Search state…" />
+                        <CommandList>
+                          <CommandEmpty>No state found.</CommandEmpty>
+                          <CommandGroup>
+                            {STATES.map((state) => (
+                              <CommandItem
+                                key={state.id}
+                                value={state.name}
+                                onSelect={() => {
+                                  field.onChange(state.id);
+                                  form.setValue('incorporationState' as any, state.id, { shouldValidate: false });
+                                  form.setValue('billingState' as any, state.id, { shouldValidate: false });
+                                  setStateComboOpen(false);
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    'mr-2 h-4 w-4',
+                                    field.value === state.id ? 'opacity-100' : 'opacity-0'
+                                  )}
+                                />
+                                {state.name}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                   <FormMessage />
                 </FormItem>
               )}

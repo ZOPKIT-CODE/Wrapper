@@ -19,7 +19,7 @@ import {
   CreditCard,
   ShieldCheck,
 } from 'lucide-react';
-import { newBusinessData, existingBusinessData, COUNTRIES, ORGANIZATION_SIZES, COMPANY_TYPES } from '../../schemas';
+import { newBusinessData, existingBusinessData, COUNTRIES, ORGANIZATION_SIZES, COMPANY_TYPES, STATES } from '../../schemas';
 import { UserClassification } from '../FlowSelector';
 import { ONBOARDING_CONFETTI_COLORS } from '../../constants';
 // Note: Make sure canvas-confetti is installed: npm install canvas-confetti
@@ -174,6 +174,7 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({ form, onEditStep, userCl
   const getCountryName = (code?: string) => COUNTRIES.find(c => c.id === code)?.name || code || 'N/A';
   const getSizeName = (id?: string) => ORGANIZATION_SIZES.find(s => s.id === id)?.name || id || 'N/A';
   const getCompanyTypeName = (id?: string) => COMPANY_TYPES.find(t => t.id === id)?.name || id || 'N/A';
+  const getStateName = (code?: string) => STATES.find(s => s.id === code)?.name || code || 'N/A';
 
   return (
     <div className="min-h-screen pb-20 relative">
@@ -240,7 +241,7 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({ form, onEditStep, userCl
                   <p className="text-sm text-slate-600 pl-6 leading-relaxed">
                     {values.billingStreet || values.billingAddress || 'N/A'}
                     <br />
-                    {[values.billingCity, values.billingState || values.state, values.billingZip].filter(Boolean).join(', ')}
+                    {[values.billingCity, getStateName(values.billingState || values.state), values.billingZip].filter(v => v && v !== 'N/A').join(', ')}
                     <br />
                     {getCountryName(values.billingCountry || values.businessDetails?.country || values.country)}
                   </p>

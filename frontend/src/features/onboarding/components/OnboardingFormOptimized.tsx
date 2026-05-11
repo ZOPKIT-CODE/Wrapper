@@ -404,8 +404,15 @@ export const OnboardingFormOptimized = () => {
         onboardingLogger.info('Onboarding submit success', { responseData: response.data });
         sonnerToast.dismiss(loadingToastId);
         clearFormData();
-        // Invalidate auth-status so dashboard gets fresh isTenantAdmin and permissions
-        queryClient.invalidateQueries({ queryKey: queryKeys.authStatus });
+        // Invalidate and immediately refetch all queries that feed the sidebar so
+        // isTenantAdmin, permissions, and tenant data are fresh before the dashboard loads.
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: queryKeys.authStatus }),
+          queryClient.invalidateQueries({ queryKey: queryKeys.entityScope }),
+          queryClient.invalidateQueries({ queryKey: queryKeys.tenant }),
+          queryClient.invalidateQueries({ queryKey: queryKeys.onboardingStatus }),
+          queryClient.refetchQueries({ queryKey: queryKeys.authStatus }),
+        ]);
         const baseUrl = response.data?.data?.redirectUrl || '/dashboard/applications';
         const url = baseUrl.startsWith('/dashboard') && !baseUrl.includes('onboarding=complete')
           ? (baseUrl.includes('?') ? `${baseUrl}&onboarding=complete` : `${baseUrl}?onboarding=complete`)
@@ -414,7 +421,7 @@ export const OnboardingFormOptimized = () => {
         setCompanyName(companyName); // Use the extracted companyName from above
         sonnerToast.success('🎉 Organization Created Successfully!', {
           description: 'Setting up your workspace...',
-          duration: 2000,
+          duration: 4000,
         });
         setIsSubmitted(true);
       } else {

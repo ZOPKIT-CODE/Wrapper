@@ -129,33 +129,14 @@ function MobileWorkflowSection({
                 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                         <div style={{
-                            width: 38, height: 38, borderRadius: 10, background: M.bgSoft,
-                            border: `1px solid ${M.line}`, display: 'grid', placeItems: 'center',
+                            width: 38, height: 38, borderRadius: 10, overflow: 'hidden',
+                            border: `1px solid ${M.line}`, flexShrink: 0,
                         }}>
-                            <svg width="22" height="22" viewBox="0 0 40 40">
-                                <defs>
-                                    <linearGradient id="mwgrad" x1="0" y1="0" x2="1" y2="1">
-                                        <stop offset="0%" stopColor="#6B5BD6"/>
-                                        <stop offset="50%" stopColor="#3D8FE8"/>
-                                        <stop offset="100%" stopColor="#3FC9A4"/>
-                                    </linearGradient>
-                                </defs>
-                                <g transform="translate(20 20)">
-                                    {[0,1,2,3,4].map(i => {
-                                        const a = (i * 72 - 90) * Math.PI / 180;
-                                        const x = Math.cos(a) * 11, y = Math.sin(a) * 11;
-                                        return (
-                                            <path key={i}
-                                                d={`M0 0 Q${x*0.6} ${y*0.6 - 3}, ${x} ${y} Q${x*0.4} ${y*1.4}, 0 0 Z`}
-                                                fill="url(#mwgrad)" opacity={0.85}
-                                                transform={`rotate(${i*72})`}
-                                            />
-                                        );
-                                    })}
-                                    <circle r="3.2" fill={M.ink}/>
-                                    <circle r="1.4" fill="#fff"/>
-                                </g>
-                            </svg>
+                            <img
+                                src="https://res.cloudinary.com/dr9vzaa7u/image/upload/v1765126845/Zopkit_Simple_Logo_glohfr.jpg"
+                                alt="Zopkit"
+                                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                            />
                         </div>
                         <div>
                             <div style={{ fontFamily: 'Inter, sans-serif', fontWeight: 700, fontSize: 16, color: M.ink }}>Automation Hub</div>

@@ -564,14 +564,10 @@ export class UnifiedOnboardingService {
    *
    * Publishes provisioning events after onboarding completes:
    *
-   *  - accounting: ONE consolidated `tenant.onboarded` event that merges the
-   *    thin provisioning metadata (plan, enabledModules, expiresAt) WITH the
-   *    full bootstrap snapshot (users, orgs, roles, assignments, credits).
-   *    Downstream accounting app needs only this single event — no lazy pull
-   *    required on first login.
-   *
-   *  - all other apps (crm, hr, ops, …): thin `tenant.app.provisioned` signal
-   *    as before. They bootstrap lazily via POST /api/sync/tenants/:id/bootstrap.
+   *  - ALL enabled apps: one `tenant.onboarded` event per app containing the
+   *    full bootstrap snapshot (tenant, orgs, users, roles, assignments, credits)
+   *    assembled with that app's appCode so role/credit scoping is correct.
+   *    No lazy bootstrap pull required on first login for any app.
    *
    * Called after onboarding verification passes. Non-fatal if MQ is down.
    */
@@ -607,12 +603,17 @@ export class UnifiedOnboardingService {
 
     console.log(`[Onboarding] Publishing provisioning events for ${enabledApps.length} app(s), tenant ${tenantId}`);
 
-    // ── Non-accounting apps: thin provisioning signal (lazy bootstrap on first login) ──
-    const nonAccountingApps = enabledApps.filter((a) => a.appCode !== 'accounting');
-    const thinResults = await Promise.allSettled(
-      nonAccountingApps.map(async (app) => {
+    // ── All apps: full tenant.onboarded with per-app bootstrap snapshot ──
+    // Each app gets its own snapshot (assembled with its appCode so roles,
+    // creditConfigs, and entityCredits are scoped correctly). tenant.app.provisioned
+    // is dropped — no app needs a lazy-bootstrap hint when it already has the snapshot.
+    const results = await Promise.allSettled(
+      enabledApps.map(async (app) => {
+        const bootstrapService = new BootstrapService();
+        const bootstrapPayload = await bootstrapService.assemble(tenantId, app.appCode);
+
         await InterAppEventService.publishEvent({
-          eventType:         'tenant.app.provisioned',
+          eventType:         'tenant.onboarded',
           sourceApplication: 'wrapper',
           targetApplication: app.appCode,
           tenantId,
@@ -625,45 +626,9 @@ export class UnifiedOnboardingService {
             subscriptionTier: app.subscriptionTier ?? null,
             enabledModules:   Array.isArray(app.enabledModules) ? app.enabledModules : [],
             expiresAt:        app.expiresAt ? new Date(app.expiresAt).toISOString() : null,
-            onboardedAt:      new Date().toISOString(),
-            bootstrapHint:    'lazy — call POST /api/sync/tenants/:id/bootstrap on first user login',
-          },
-        });
-        console.log(`  ✅ Published tenant.app.provisioned → ${app.appCode} (tenant: ${tenantId})`);
-      })
-    );
-    for (const [i, result] of thinResults.entries()) {
-      if (result.status === 'rejected') {
-        const appCode = nonAccountingApps[i]?.appCode ?? 'unknown';
-        console.warn(`  ⚠️ Failed to publish tenant.app.provisioned → ${appCode}:`, (result.reason as Error).message);
-      }
-    }
-
-    // ── Accounting: ONE consolidated tenant.onboarded event ──
-    // Merges provisioning metadata + full bootstrap snapshot so the accounting
-    // app never needs to make a separate API call on first login.
-    const accountingApp = enabledApps.find((a) => a.appCode === 'accounting');
-    if (accountingApp) {
-      try {
-        const bootstrapService = new BootstrapService();
-        const bootstrapPayload = await bootstrapService.assemble(tenantId, 'accounting');
-
-        await InterAppEventService.publishEvent({
-          eventType:         'tenant.onboarded',
-          sourceApplication: 'wrapper',
-          targetApplication: 'accounting',
-          tenantId,
-          entityId:          tenantId,
-          publishedBy,
-          eventData: {
-            appCode:        'accounting',
-            tenantId,
-            plan,
-            enabledModules: Array.isArray(accountingApp.enabledModules) ? accountingApp.enabledModules : [],
-            expiresAt:      accountingApp.expiresAt ? new Date(accountingApp.expiresAt).toISOString() : null,
-            tenantName:     bootstrapPayload.tenant?.tenantName ?? '',
-            adminEmail:     bootstrapPayload.users?.find((u) => u.isTenantAdmin)?.email ?? null,
-            kindeOrgId:     bootstrapPayload.tenant?.kindeOrgId ?? null,
+            tenantName:       bootstrapPayload.tenant?.tenantName ?? '',
+            adminEmail:       bootstrapPayload.users?.find((u) => u.isTenantAdmin)?.email ?? null,
+            kindeOrgId:       bootstrapPayload.tenant?.kindeOrgId ?? null,
             snapshot: {
               tenant:              bootstrapPayload.tenant,
               organizations:       bootstrapPayload.organizations,
@@ -676,10 +641,14 @@ export class UnifiedOnboardingService {
             },
           },
         });
-        console.log(`  ✅ Published consolidated tenant.onboarded → accounting (tenant: ${tenantId})`);
-      } catch (err: unknown) {
-        // Non-fatal: accounting falls back to auth-flow bootstrap on first login.
-        console.warn(`  ⚠️ Failed to publish consolidated tenant.onboarded → accounting:`, (err as Error).message);
+        console.log(`  ✅ Published tenant.onboarded → ${app.appCode} (tenant: ${tenantId})`);
+      })
+    );
+
+    for (const [i, result] of results.entries()) {
+      if (result.status === 'rejected') {
+        const appCode = enabledApps[i]?.appCode ?? 'unknown';
+        console.warn(`  ⚠️ Failed to publish tenant.onboarded → ${appCode}:`, (result.reason as Error).message);
       }
     }
   }

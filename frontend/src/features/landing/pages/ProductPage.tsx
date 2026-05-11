@@ -12,6 +12,7 @@ import {
 import { NavbarButton } from "@/components/ui/resizable-navbar";
 import { LandingFooter } from '@/components/layout/LandingFooter';
 import { MarketingNavbar } from '@/components/layout/MarketingNavbar';
+import { FAMobileProductPage } from './FAMobileProductPage';
 
 interface FeatureCardProps {
     feature: {
@@ -1178,7 +1179,14 @@ const ProductPage: React.FC = () => {
     }
 
     return (
-        <div className="w-full bg-white text-slate-900 font-sans selection:bg-blue-100 selection:text-blue-900">
+        <>
+        {/* FA Mobile — shown only on mobile for financial-accounting */}
+        {productId === 'financial-accounting' && (
+            <div className="md:hidden">
+                <FAMobileProductPage />
+            </div>
+        )}
+        <div className={`w-full bg-white text-slate-900 font-sans selection:bg-blue-100 selection:text-blue-900 ${productId === 'financial-accounting' ? 'hidden md:block' : ''}`}>
             <style>{`
                 @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;600&display=swap');
                 .custom-scrollbar::-webkit-scrollbar { width: 6px; }
@@ -1927,6 +1935,7 @@ const ProductPage: React.FC = () => {
 
             <LandingFooter />
         </div>
+        </>
     );
 };
 
