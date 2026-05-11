@@ -499,19 +499,14 @@ export default async function healthRoutes(fastify: FastifyInstance, _options?: 
     }
   });
 
-  // Version endpoint - minimal endpoint for version checking
+  // Version endpoint - used by the frontend to detect stale SPA builds
   fastify.get('/version', async (_request: FastifyRequest, reply: FastifyReply) => {
-    try {
-      reply.code(200).send({
-        version: APP_VERSION
-      });
-    } catch (err: unknown) {
-      const error = err as Error;
-      reply.code(500).send({
-        timestamp: new Date().toISOString(),
-        error: error.message
-      });
-    }
+    reply.header('Cache-Control', 'no-store');
+    return {
+      version: process.env.GITHUB_SHA ? process.env.GITHUB_SHA.slice(0, 7) : APP_VERSION,
+      buildTime: new Date().toISOString(),
+      minRequiredVersion: process.env.MIN_FRONTEND_VERSION ?? null,
+    };
   });
 
   // Hierarchical RLS Test endpoint
