@@ -4,11 +4,19 @@ import { VitePWA } from 'vite-plugin-pwa'
 import { visualizer } from 'rollup-plugin-visualizer'
 import path from 'path'
 import tailwindcss from "@tailwindcss/vite"
+import { execSync } from 'node:child_process'
 
 // Read version from package.json + unique build timestamp for version detection
 import { readFileSync } from 'fs';
 const PKG_VERSION = JSON.parse(readFileSync('./package.json', 'utf-8')).version;
 const BUILD_HASH = `${PKG_VERSION}+${Date.now()}`;
+
+// Git SHA for runtime version comparison — GitHub Actions sets GITHUB_SHA in CI
+const gitSha = (() => {
+  if (process.env.GITHUB_SHA) return process.env.GITHUB_SHA.slice(0, 7);
+  try { return execSync('git rev-parse --short HEAD', { stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim(); }
+  catch { return 'dev'; }
+})();
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
@@ -26,7 +34,8 @@ export default defineConfig(({ mode }) => {
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
+      injectRegister: false,
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
         name: 'Wrapper Frontend',
@@ -52,11 +61,7 @@ export default defineConfig(({ mode }) => {
         ]
       },
       workbox: {
-        // New service worker takes over immediately without waiting for tabs to close.
-        // This is the main fix for "users must hard-refresh after deploy".
-        skipWaiting: true,
-        clientsClaim: true,
-        // Remove stale caches from previous deploys automatically.
+        // cleanupOutdatedCaches removes stale caches from previous deploys.
         cleanupOutdatedCaches: true,
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
         runtimeCaching: [
@@ -175,7 +180,8 @@ export default defineConfig(({ mode }) => {
     },
     define: {
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
-      __APP_VERSION__: JSON.stringify(process.env.npm_package_version),
+      __APP_VERSION__: JSON.stringify(gitSha),
+      __APP_BUILD_TIME__: JSON.stringify(new Date().toISOString()),
       __BUILD_HASH__: JSON.stringify(BUILD_HASH),
     },
   }

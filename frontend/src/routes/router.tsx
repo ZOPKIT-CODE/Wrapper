@@ -4,7 +4,6 @@ import { useKindeAuth } from '@kinde-oss/kinde-auth-react'
 import { useUserContextSafe } from '@/contexts/UserContextProvider'
 
 import { ZopkitRoundLoader } from '@/components/common/feedback/ZopkitRoundLoader'
-import { NewVersionBanner } from '@/components/NewVersionBanner'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import ProtectedRoute from '@/components/auth/ProtectedRoute'
 import { PermissionGuard } from '@/components/auth/PermissionGuard'
@@ -102,7 +101,6 @@ function RootLayout() {
       <UserContextProvider>
         <EntityScopeProvider>
           <div className="App">
-            <NewVersionBanner />
             <Suspense fallback={<LoadingScreen />}>
               <Outlet />
             </Suspense>

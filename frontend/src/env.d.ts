@@ -1,4 +1,5 @@
 /// <reference types="vite/client" />
+/// <reference types="vite-plugin-pwa/client" />
 
 interface ImportMetaEnv {
   // API
@@ -39,4 +40,5 @@ interface ImportMeta {
 }
 
 declare const __APP_VERSION__: string;
+declare const __APP_BUILD_TIME__: string;
 declare const __BUILD_HASH__: string;

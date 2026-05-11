@@ -33,6 +33,7 @@ import adminPromotionRoutes from './features/admin/routes/admin-promotion.js';
 import permissionMatrixRoutes from './features/roles/routes/permission-matrix.js';
 import appSyncRoutes from './features/app-sync/routes/sync-routes.js';
 import healthRoutes from './routes/health.js';
+import versionRoutes from './routes/version.js';
 import permissionSyncRoutes from './features/roles/routes/permission-sync.js';
 import { locationsRoutes, entitiesRoutes } from './features/organizations/index.js';
 import { creditsRoutes, creditExpiryRoutes } from './features/credits/index.js';
@@ -127,6 +128,7 @@ export async function registerRoutes(fastify: FastifyInstance): Promise<void> {
   // Canonical external-app sync prefix
   await fastify.register(appSyncRoutes, { prefix: '/api/sync' });
   await fastify.register(healthRoutes, { prefix: '/api' });
+  await fastify.register(versionRoutes, { prefix: '/api' });
   await fastify.register(entityScopeRoutes, { prefix: '/api/admin' });
   // Canonical mount for platform staff administration
   await fastify.register(platformStaffManagementRoutes, { prefix: '/api/admin/platform-staff' });

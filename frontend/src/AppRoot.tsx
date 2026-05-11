@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/sonner"
 import { ErrorBoundary } from "@/errors/ErrorBoundary"
 import { router } from "@/routes/router"
 import { NetworkQualityBanner } from "@/components/network/NetworkQualityBanner"
+import { UpdateAvailableBanner } from "@/components/UpdateAvailableBanner"
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -34,6 +35,7 @@ export const AppRoot = () => {
           <ThemeProvider defaultTheme="system" storageKey="zopkit-theme">
             <Toaster position="top-right" richColors offset="80px" gap={12} />
             <NetworkQualityBanner />
+            <UpdateAvailableBanner />
             <KindeProvider>
               <RouterProvider router={router} />
             </KindeProvider>
