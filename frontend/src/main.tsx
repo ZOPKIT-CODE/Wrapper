@@ -1,7 +1,8 @@
 import React from "react"
 import { createRoot } from "react-dom/client"
 import "@/index.css"
-import "./lib/pwa/registerSW"
+import { initSW } from "./lib/pwa/registerSW"
+initSW()
 
 // ── Stale chunk recovery ──────────────────────────────────────────────────
 // After a deploy, rsync --delete removes old content-hashed chunks.
