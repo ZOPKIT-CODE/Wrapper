@@ -313,14 +313,16 @@ jobs:
           set -e
           cd "${HOME}/Wrapper/backend"
 
-          echo "🚀 Starting new binary for smoke test..."
-          node --enable-source-maps dist/bootstrap.js &
+          echo "🚀 Starting new binary for smoke test on port 3099..."
+          # Use port 3099 so the smoke binary doesn't collide with the PM2-managed
+          # process already occupying port 3000 (old binary serves live traffic until PM2 reload).
+          PORT=3099 node --enable-source-maps dist/bootstrap.js &
           SMOKE_PID=$!
           trap "kill ${SMOKE_PID} 2>/dev/null; echo 'smoke process killed'" EXIT
 
-          # Wait up to 30s for /health
+          # Wait up to 30s for /health on the smoke port
           for i in $(seq 1 30); do
-            if curl -fsS --connect-timeout 2 http://127.0.0.1:3000/health >/dev/null 2>&1; then
+            if curl -fsS --connect-timeout 2 http://127.0.0.1:3099/health >/dev/null 2>&1; then
               echo "✅ /health responded (attempt ${i})"
               break
             fi
@@ -332,12 +334,12 @@ jobs:
           done
 
           # Check /api/version returns non-empty JSON with a sha field
-          VERSION_RESP=$(curl -fsS http://127.0.0.1:3000/api/version)
+          VERSION_RESP=$(curl -fsS http://127.0.0.1:3099/api/version)
           echo "${VERSION_RESP}" | grep -q '"sha"' || { echo "❌ /api/version missing sha field"; exit 1; }
           echo "✅ /api/version OK: ${VERSION_RESP}"
 
           # Check /api/plans returns all plans
-          PLANS_RESP=$(curl -fsS http://127.0.0.1:3000/api/plans)
+          PLANS_RESP=$(curl -fsS http://127.0.0.1:3099/api/plans)
           echo "${PLANS_RESP}" | grep -q '"starter"' || { echo "❌ /api/plans missing starter plan"; exit 1; }
           echo "✅ /api/plans OK"
 
