@@ -107,13 +107,13 @@ export const PLANS: Record<PlanKey, PlanDefinition> = {
     limits: { users: 2, roles: 2 },
     applications: ['crm'],
     modules: {
-      crm: ['leads', 'contacts', 'dashboard'],
+      crm: ['leads', 'contacts', 'accounts'],
     },
     permissions: {
       crm: {
         leads: [...trialCrmPerms.leads],
         contacts: [...trialCrmPerms.contacts],
-        dashboard: [...trialCrmPerms.dashboard],
+        accounts: [...trialCrmPerms.accounts],
       },
     },
   },
