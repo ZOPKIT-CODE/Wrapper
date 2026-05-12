@@ -46,6 +46,7 @@ import userRoutes from './features/users/routes/user-routes.js';
 import devCreditTestRoutes from './routes/dev-credit-test.js';
 import devTestClockRoutes from './routes/dev-test-clocks.js';
 import emailPreviewRoutes from './routes/email-preview.js';
+import tenantApplicationsReconcileRoutes from './features/admin/routes/tenant-applications-reconcile.js';
 
 import { authMiddleware, csrfProtection } from './middleware/auth/auth.js';
 import { errorHandler } from './middleware/error-handler.js';
@@ -85,7 +86,6 @@ export async function registerRoutes(fastify: FastifyInstance): Promise<void> {
     };
   });
 
-
   await fastify.register(authRoutes, { prefix: '/api/auth' });
   await fastify.register(tenantRoutes, { prefix: '/api/tenants' });
   await fastify.register(subscriptionsRoutes, { prefix: '/api/subscriptions' });
@@ -107,6 +107,7 @@ export async function registerRoutes(fastify: FastifyInstance): Promise<void> {
   await fastify.register(seasonalCreditsRoutes, { prefix: '/api/admin/seasonal-credits' });
   await fastify.register(seasonalCreditBatchesRoutes, { prefix: '/api/admin/seasonal-credit-batches' });
   await fastify.register(adminNotificationRoutes, { prefix: '/api/admin/notifications' });
+  await fastify.register(tenantApplicationsReconcileRoutes, { prefix: '/api/admin/tenant-applications' });
 
   await fastify.register(suiteRoutes, { prefix: '/api/suite' });
   await fastify.register(paymentsRoutes, { prefix: '/api/payments' });

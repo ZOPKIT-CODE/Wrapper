@@ -623,6 +623,7 @@ export class UnifiedOnboardingService {
             appCode:          app.appCode,
             tenantId,
             plan,
+            applications:     enabledApps.map(a => a.appCode),
             subscriptionTier: app.subscriptionTier ?? null,
             enabledModules:   Array.isArray(app.enabledModules) ? app.enabledModules : [],
             expiresAt:        app.expiresAt ? new Date(app.expiresAt).toISOString() : null,
@@ -1458,14 +1459,32 @@ export class UnifiedOnboardingService {
       // STEP 10: CONFIGURE APPLICATIONS WITH MODULES
       // ============================================
       const { PLAN_ACCESS_MATRIX } = await import('../../../data/permission-matrix.js');
-      const planAccess = (PLAN_ACCESS_MATRIX as Record<string, { applications?: string[]; modules?: Record<string, unknown> }>)[selectedPlan];
-      
+      const resolvedPlan = selectedPlan ?? 'free';
+      const planAccess = (PLAN_ACCESS_MATRIX as Record<string, { applications?: string[]; modules?: Record<string, unknown> }>)[resolvedPlan];
+
+      global.logToES('info', '[onboarding] step10.plan_resolved', {
+        tenantId: tenant.tenantId,
+        resolvedPlan,
+        planFound: !!planAccess,
+        applicationsInMatrix: planAccess?.applications ?? [],
+      });
+
       if (!planAccess) {
-        throw new Error(`Plan ${selectedPlan} not found in PLAN_ACCESS_MATRIX`);
+        throw Object.assign(new Error(`Plan ${resolvedPlan} not found in PLAN_ACCESS_MATRIX`), {
+          statusCode: 500,
+          code: 'PLAN_NOT_FOUND',
+        });
       }
 
-      const appCodes = planAccess.applications || [];
-      const modulesByApp = planAccess.modules || {};
+      const appCodes = planAccess.applications ?? [];
+      const modulesByApp = planAccess.modules ?? {};
+
+      if (appCodes.length === 0) {
+        global.logToES('warn', '[onboarding] step10.no_apps_in_plan', {
+          tenantId: tenant.tenantId,
+          resolvedPlan,
+        });
+      }
 
       const { applications, organizationApplications, applicationModules } = await import('../../../db/schema/core/suite-schema.js');
 
@@ -1480,55 +1499,98 @@ export class UnifiedOnboardingService {
         appCodeToIdMap[app.appCode] = app.appId;
       });
 
+      global.logToES('info', '[onboarding] step10.active_apps_in_db', {
+        tenantId: tenant.tenantId,
+        activeAppsInDb: Object.keys(appCodeToIdMap),
+        planAppCodes: appCodes,
+      });
+
+      const normalizeAppCode = (code: string): string => {
+        const codeMap: Record<string, string> = {
+          'affiliateconnect': 'affiliateConnect',
+          'affiliate': 'affiliateConnect',
+        };
+        return codeMap[code.toLowerCase()] || code;
+      };
+
       // Calculate expiry date
       const expiryDate = new Date();
-      const expiryMonths = selectedPlan === 'free' ? 12 : (selectedPlan === 'enterprise' ? 24 : 12);
+      const expiryMonths = resolvedPlan === 'enterprise' ? 24 : 12;
       expiryDate.setMonth(expiryDate.getMonth() + expiryMonths);
 
       // Insert organization applications with enabled modules
       const applicationsToInsert: Array<Record<string, unknown>> = [];
       for (const appCode of appCodes) {
-        const normalizeAppCode = (code: string): string => {
-          const codeMap: Record<string, string> = {
-            'affiliateconnect': 'affiliateConnect',
-            'affiliate': 'affiliateConnect'
-          };
-          return codeMap[code.toLowerCase()] || code;
-        };
-
         const normalizedCode = normalizeAppCode(appCode as string);
         const appId = appCodeToIdMap[normalizedCode];
-        
-        if (appId) {
-          const enabledModules = modulesByApp[appCode] || [];
-          let finalEnabledModules = enabledModules;
-          
-          if (enabledModules === '*') {
-            // Get all modules for this application
-            const allModules = await tx
-              .select({ moduleCode: applicationModules.moduleCode })
-              .from(applicationModules)
-              .where(eq(applicationModules.appId, appId));
-            finalEnabledModules = allModules.map(m => m.moduleCode);
-          }
 
-          applicationsToInsert.push({
-            id: uuidv4(),
+        if (!appId) {
+          global.logToES('warn', '[onboarding] step10.app_not_in_db', {
             tenantId: tenant.tenantId,
-            appId,
-            subscriptionTier: selectedPlan,
-            isEnabled: true,
-            enabledModules: finalEnabledModules,
-            customPermissions: {},
-            expiresAt: expiryDate
+            appCode,
+            normalizedCode,
           });
+          continue;
         }
+
+        const enabledModules = modulesByApp[appCode] || [];
+        let finalEnabledModules: string[] | unknown = enabledModules;
+
+        if (enabledModules === '*') {
+          const allModules = await tx
+            .select({ moduleCode: applicationModules.moduleCode })
+            .from(applicationModules)
+            .where(eq(applicationModules.appId, appId));
+          finalEnabledModules = allModules.map(m => m.moduleCode);
+        }
+
+        applicationsToInsert.push({
+          id: uuidv4(),
+          tenantId: tenant.tenantId,
+          appId,
+          subscriptionTier: resolvedPlan,
+          isEnabled: true,
+          enabledModules: finalEnabledModules,
+          customPermissions: {},
+          expiresAt: expiryDate,
+        });
       }
+
+      global.logToES('info', '[onboarding] step10.inserting_apps', {
+        tenantId: tenant.tenantId,
+        appsToInsert: applicationsToInsert.length,
+        appCodes: applicationsToInsert.map(a => a['appId']),
+      });
 
       if (applicationsToInsert.length > 0) {
         await tx
           .insert(organizationApplications)
           .values(applicationsToInsert);
+      }
+
+      // POST-CONDITION: Verify rows were actually committed within this transaction
+      const { count: countFn } = await import('drizzle-orm');
+      const [{ seededCount }] = await tx
+        .select({ seededCount: countFn() })
+        .from(organizationApplications)
+        .where(eq(organizationApplications.tenantId, tenant.tenantId));
+
+      global.logToES('info', '[onboarding] step10.post_condition', {
+        tenantId: tenant.tenantId,
+        resolvedPlan,
+        expectedApps: applicationsToInsert.length,
+        seededCount: Number(seededCount),
+      });
+
+      if (applicationsToInsert.length > 0 && Number(seededCount) === 0) {
+        throw Object.assign(
+          new Error('ONBOARDING_INTEGRITY_FAIL: organization_applications empty after seed'),
+          {
+            statusCode: 500,
+            code: 'ONBOARDING_INTEGRITY_FAIL',
+            tenantId: tenant.tenantId,
+          }
+        );
       }
 
       // Return all created records

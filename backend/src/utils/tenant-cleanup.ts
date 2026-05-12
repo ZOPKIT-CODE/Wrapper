@@ -1,5 +1,5 @@
 import { db } from '../db/index.js';
-import { 
+import {
   tenants,
   tenantUsers,
   customRoles,
@@ -28,6 +28,7 @@ interface DeletedRecords {
  */
 export const deleteTenantData = async (tenantId: string): Promise<{
   tenantId: string;
+  kindeOrgId: string | null;
   deletedRecords: DeletedRecords;
   startTime: Date;
   endTime: Date | null;
@@ -38,6 +39,7 @@ export const deleteTenantData = async (tenantId: string): Promise<{
 
   const deletionResults: {
     tenantId: string;
+    kindeOrgId: string | null;
     deletedRecords: DeletedRecords;
     startTime: Date;
     endTime: Date | null;
@@ -45,6 +47,7 @@ export const deleteTenantData = async (tenantId: string): Promise<{
     errors: string[];
   } = {
     tenantId,
+    kindeOrgId: null,
     deletedRecords: {},
     startTime: new Date(),
     endTime: null,
@@ -55,7 +58,14 @@ export const deleteTenantData = async (tenantId: string): Promise<{
   try {
     // Start transaction to ensure atomicity
     await db.transaction(async (tx) => {
-      
+
+      // 0. Capture kindeOrgId before deletion so callers can clean up Kinde orgs
+      const [tenantRow] = await tx
+        .select({ kindeOrgId: tenants.kindeOrgId })
+        .from(tenants)
+        .where(eq(tenants.tenantId, tenantId));
+      deletionResults.kindeOrgId = tenantRow?.kindeOrgId ?? null;
+
       // 1. Delete user role assignments first (has FKs to both tenantUsers and customRoles)
       console.log('🔄 Deleting user role assignments...');
       

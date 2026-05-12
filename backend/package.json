@@ -35,6 +35,8 @@
     "db:introspect": "drizzle-kit introspect:pg",
     "delete-tenant": "node src/scripts/delete-tenant-data.js",
     "delete-all-tenants": "node src/scripts/delete-all-tenant-data.js",
+    "reconcile-tenant-apps": "tsx src/scripts/reconcile-tenant-applications.ts",
+    "reconcile-tenant-apps:dry-run": "tsx src/scripts/reconcile-tenant-applications.ts --dry-run",
     "sync-permissions": "tsx src/scripts/sync-permissions.js sync",
     "sync-permissions:validate": "tsx src/scripts/sync-permissions.js validate",
     "sync-permissions:summary": "tsx src/scripts/sync-permissions.js summary",

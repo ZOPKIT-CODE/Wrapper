@@ -646,7 +646,32 @@ export class CustomRoleService {
         eq(organizationApplications.isEnabled, true)
       ));
 
-    console.log(`🏢 Organization has access to ${orgApps.length} applications`);
+    global.logToES('info', '[role-builder] apps_loaded', { tenantId, appCount: orgApps.length });
+
+    if (orgApps.length === 0) {
+      // Check if tenant has any subscription at all (to distinguish "no plan" from "broken provisioning")
+      const { subscriptions } = await import('../../../db/schema/index.js');
+      const [sub] = await db
+        .select({ plan: subscriptions.plan })
+        .from(subscriptions)
+        .where(eq(subscriptions.tenantId, tenantId))
+        .limit(1);
+
+      if (sub) {
+        // Tenant has a plan but no org_apps — provisioning failed
+        throw Object.assign(
+          new Error('Tenant applications not provisioned. Run reconcile to fix.'),
+          {
+            statusCode: 409,
+            code: 'TENANT_APPS_NOT_PROVISIONED',
+            tenantId,
+            plan: sub.plan,
+          }
+        );
+      }
+      // No subscription at all → return empty array (onboarding not finished)
+      return [];
+    }
 
     // Get modules for each app based on credit-based access control
     const appsWithModules = await Promise.all(

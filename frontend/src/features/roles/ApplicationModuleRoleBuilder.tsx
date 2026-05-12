@@ -158,9 +158,16 @@ export function ApplicationModuleRoleBuilder({
           setError('Failed to load applications and modules');
         }
 
-      } catch (err) {
-        console.error('❌ Error loading role builder options:', err);
-        setError('Failed to connect to server');
+      } catch (err: unknown) {
+        const axiosErr = err as { response?: { data?: { code?: string; error?: string }; status?: number }; message?: string };
+        const code = axiosErr?.response?.data?.code;
+        if (code === 'TENANT_APPS_NOT_PROVISIONED') {
+          setError('TENANT_APPS_NOT_PROVISIONED');
+        } else if (axiosErr?.response?.status != null && axiosErr.response.status >= 500) {
+          setError("Couldn't reach the server. Try again.");
+        } else {
+          setError('Failed to load applications and modules');
+        }
       } finally {
         setLoading(false);
       }
@@ -516,14 +523,43 @@ export function ApplicationModuleRoleBuilder({
     return (
       <div className="flex h-screen w-full items-center justify-center bg-slate-50 dark:bg-slate-950">
         <div className="max-w-md text-center p-8 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl">
-          <div className="mx-auto h-16 w-16 bg-red-50 dark:bg-red-900/20 rounded-full flex items-center justify-center mb-6">
-            <AlertCircle className="w-8 h-8 text-red-500" />
-          </div>
-          <h3 className="text-lg font-bold text-[#1B2E5A] dark:text-white mb-2">Connection Error</h3>
-          <p className="text-slate-500 dark:text-slate-400 mb-6">{error}</p>
-          <PearlButton onClick={() => window.location.reload()}>
-            Retry Connection
-          </PearlButton>
+          {error === 'TENANT_APPS_NOT_PROVISIONED' ? (
+            <div className="text-center p-8">
+              <h3 className="text-lg font-semibold mb-2">Applications Not Provisioned</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Your workspace is missing application access. Click Sync now to fix.
+              </p>
+              <button
+                onClick={async () => {
+                  try {
+                    await api.post('/api/admin/tenant-applications/reconcile', { tenantId: undefined });
+                    window.location.reload();
+                  } catch {
+                    /* ignore, user can retry */
+                  }
+                }}
+                className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+              >
+                Sync now
+              </button>
+            </div>
+          ) : error?.includes('server') ? (
+            <div className="text-center p-8">
+              <h3 className="text-lg font-semibold mb-2">Connection Error</h3>
+              <p className="text-sm text-muted-foreground">Couldn&apos;t reach the server. Try again.</p>
+            </div>
+          ) : (
+            <>
+              <div className="mx-auto h-16 w-16 bg-red-50 dark:bg-red-900/20 rounded-full flex items-center justify-center mb-6">
+                <AlertCircle className="w-8 h-8 text-red-500" />
+              </div>
+              <h3 className="text-lg font-bold text-[#1B2E5A] dark:text-white mb-2">Connection Error</h3>
+              <p className="text-slate-500 dark:text-slate-400 mb-6">{error}</p>
+              <PearlButton onClick={() => window.location.reload()}>
+                Retry Connection
+              </PearlButton>
+            </>
+          )}
         </div>
       </div>
     );

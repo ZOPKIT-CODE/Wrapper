@@ -282,6 +282,68 @@ jobs:
           echo "✅ Migrations complete"
           EOF
 
+      # ── Step 4b: Reconcile tenant applications (fill org_apps gaps) ────────────
+      - name: Reconcile tenant applications
+        env:
+          EC2_USER: ${{ secrets.EC2_USER || 'ec2-user' }}
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          MIGRATION_DATABASE_URL: ${{ secrets.MIGRATION_DATABASE_URL }}
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
+            ${EC2_USER}@${EC2_HOST} bash <<EOF
+          set -e
+          cd "${APP_DIR}/backend"
+          echo "🔄 Reconciling tenant applications..."
+          if [ -n "${MIGRATION_DATABASE_URL}" ]; then
+            DATABASE_URL="${MIGRATION_DATABASE_URL}" pnpm run reconcile-tenant-apps
+          else
+            pnpm run reconcile-tenant-apps
+          fi
+          echo "✅ Reconcile complete"
+          EOF
+
+      # ── Step 4c: Boot smoke test (starts new binary, checks /health + key endpoints) ─
+      - name: Boot smoke test
+        env:
+          EC2_USER: ${{ secrets.EC2_USER || 'ec2-user' }}
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
+            ${EC2_USER}@${EC2_HOST} bash <<'SMOKE'
+          set -e
+          cd "${HOME}/Wrapper/backend"
+
+          echo "🚀 Starting new binary for smoke test..."
+          node --enable-source-maps dist/bootstrap.js &
+          SMOKE_PID=$!
+          trap "kill ${SMOKE_PID} 2>/dev/null; echo 'smoke process killed'" EXIT
+
+          # Wait up to 30s for /health
+          for i in $(seq 1 30); do
+            if curl -fsS --connect-timeout 2 http://127.0.0.1:3000/health >/dev/null 2>&1; then
+              echo "✅ /health responded (attempt ${i})"
+              break
+            fi
+            if [ "${i}" -eq 30 ]; then
+              echo "❌ /health never responded after 30s"
+              exit 1
+            fi
+            sleep 1
+          done
+
+          # Check /api/version returns non-empty JSON with a sha field
+          VERSION_RESP=$(curl -fsS http://127.0.0.1:3000/api/version)
+          echo "${VERSION_RESP}" | grep -q '"sha"' || { echo "❌ /api/version missing sha field"; exit 1; }
+          echo "✅ /api/version OK: ${VERSION_RESP}"
+
+          # Check /api/plans returns all plans
+          PLANS_RESP=$(curl -fsS http://127.0.0.1:3000/api/plans)
+          echo "${PLANS_RESP}" | grep -q '"starter"' || { echo "❌ /api/plans missing starter plan"; exit 1; }
+          echo "✅ /api/plans OK"
+
+          echo "✅ Boot smoke test passed"
+          SMOKE
+
       # ── Step 4: Reload PM2 (zero-downtime — old process serves until new is ready) ──
       - name: Reload PM2 with new build
         env:

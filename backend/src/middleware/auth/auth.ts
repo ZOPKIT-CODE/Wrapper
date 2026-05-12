@@ -22,6 +22,7 @@ const PUBLIC_ROUTES: string[] = [
   '/api/auth/validate-token',
   '/api/auth/login/',
   '/api/version',
+  '/api/plans',
   '/api/webhooks',
   '/api/subscriptions/webhook',
   '/api/payments/webhook',

@@ -29,6 +29,7 @@ import { PERMISSIONS } from '../../../constants/permissions.js';
 import Logger from '../../../utils/logger.js';
 import ErrorResponses from '../../../utils/error-responses.js';
 import { deleteTenantData, getTenantDataSummary } from '../../../utils/tenant-cleanup.js';
+import { InterAppEventService } from '../../messaging/index.js';
 
 type ReqWithUser = FastifyRequest & { userContext?: Record<string, unknown> };
 
@@ -266,6 +267,35 @@ export default async function companyTenantSettingsRoutes(fastify: FastifyInstan
       console.log(`🗑️ [${requestId}] Proceeding with tenant deletion...`);
 
       const summary = await deleteTenantData(tenantId as string);
+
+      global.logToES('info', '[admin] tenant.deleted', {
+        tenantId,
+        kindeOrgId: summary.kindeOrgId,
+        requestId,
+        requestedBy: (request as ReqWithUser).userContext?.userId,
+      });
+
+      // Publish tenant.deleted event so downstream apps can clean up orphan data.
+      // Fire-and-forget — local deletion is already committed; MQ failure must not
+      // block the response or surface a misleading error to the caller.
+      void InterAppEventService.publishEvent({
+        eventType: 'tenant.deleted',
+        sourceApplication: 'wrapper',
+        targetApplication: 'broadcast',
+        tenantId: tenantId as string,
+        entityId: tenantId as string,
+        publishedBy: String((request as ReqWithUser).userContext?.userId ?? 'system'),
+        eventData: {
+          tenantId,
+          kindeOrgId: summary.kindeOrgId,
+          deletedAt: new Date().toISOString(),
+        },
+      }).catch((err: unknown) => {
+        global.logToES('error', '[admin] tenant.deleted.publish_failed', {
+          tenantId,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      });
 
       console.log(`✅ [${requestId}] Tenant deletion completed:`, summary);
 

@@ -5,16 +5,22 @@ export function setUpdateAvailableHandler(cb: () => void) {
   onUpdateAvailable = cb;
 }
 
-/** Sends SKIP_WAITING to the waiting SW, then reloads the page. */
 export async function updateSW(reloadPage = false): Promise<void> {
+  if (_registration) {
+    try { await _registration.update(); } catch { /* offline — reload will still happen */ }
+  }
   if (_registration?.waiting) {
     _registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+    await new Promise<void>((resolve) => {
+      const t = setTimeout(resolve, 1500);
+      navigator.serviceWorker.addEventListener(
+        'controllerchange',
+        () => { clearTimeout(t); resolve(); },
+        { once: true },
+      );
+    });
   }
-  if (reloadPage) {
-    // Give the SW a tick to claim clients before reload.
-    await new Promise<void>((resolve) => setTimeout(resolve, 100));
-    window.location.reload();
-  }
+  if (reloadPage) window.location.reload();
 }
 
 function trackUpdateReady(reg: ServiceWorkerRegistration) {

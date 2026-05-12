@@ -499,14 +499,25 @@ export default async function healthRoutes(fastify: FastifyInstance, _options?: 
     }
   });
 
-  // Version endpoint - used by the frontend to detect stale SPA builds
+  // Version endpoint - used by the frontend to detect stale SPA builds and by deploy smoke tests
   fastify.get('/version', async (_request: FastifyRequest, reply: FastifyReply) => {
     reply.header('Cache-Control', 'no-store');
     return {
-      version: process.env.GITHUB_SHA ? process.env.GITHUB_SHA.slice(0, 7) : APP_VERSION,
+      version: APP_VERSION,
+      sha: process.env.GITHUB_SHA ?? 'local',
       buildTime: new Date().toISOString(),
       minRequiredVersion: process.env.MIN_FRONTEND_VERSION ?? null,
     };
+  });
+
+  // Plans endpoint - used by deploy smoke tests to verify plan data is loadable
+  fastify.get('/plans', async (_request: FastifyRequest, reply: FastifyReply) => {
+    const { getAvailablePlans } = await import('../data/plans.js');
+    const plans = getAvailablePlans();
+    return reply.send(plans.map(p => ({
+      id: p.id,
+      name: p.name,
+    })));
   });
 
   // Hierarchical RLS Test endpoint
