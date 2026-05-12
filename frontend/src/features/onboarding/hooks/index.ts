@@ -2,7 +2,7 @@
  * Onboarding Hooks
  */
 
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useForm, UseFormReturn, useFormState, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { newBusinessData, existingBusinessData } from '../schemas';
@@ -12,22 +12,32 @@ import {
   createOnboardingSchemaWithClassification 
 } from '../schemas/onboardingValidation';
 
+interface KindeUserProfile {
+  givenName?: string | null;
+  familyName?: string | null;
+  email?: string | null;
+}
+
 export const useOnboardingForm = (
   _flowType: 'newBusiness' | 'existingBusiness',
-  userClassification?: string
+  userClassification?: string,
+  kindeUser?: KindeUserProfile | null
 ) => {
   // Create schema with user classification if provided
-  const schema = userClassification 
+  const schema = userClassification
     ? createOnboardingSchemaWithClassification(userClassification)
     : onboardingFormSchema;
 
   return useForm<newBusinessData | existingBusinessData>({
     resolver: zodResolver(schema),
-    mode: 'onChange', // FIXED: Changed to onChange for reactive validation
-    reValidateMode: 'onChange', // FIXED: Re-validate on change for better UX
+    mode: 'onChange',
+    reValidateMode: 'onChange',
     shouldUnregister: false,
     shouldFocusError: true,
     defaultValues: {
+      firstName: kindeUser?.givenName ?? '',
+      lastName: kindeUser?.familyName ?? '',
+      adminEmail: kindeUser?.email ?? '',
       teamMembers: [],
       taxRegistered: false,
       vatGstRegistered: false,

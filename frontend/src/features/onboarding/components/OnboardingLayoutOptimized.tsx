@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useWatch } from 'react-hook-form';
 import { StepIndicator } from './StepIndicator';
 import { NavigationButtons } from './NavigationButtons';
 import { StepRenderer } from './StepRenderer';
@@ -54,6 +55,60 @@ export const OnboardingLayoutOptimized = React.memo(({
   const [showSupport, setShowSupport] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const lastStepRef = useRef(currentStep);
+
+  const formValues = useWatch({ control: form.control });
+
+  const fieldCounts = useMemo(() => {
+    const v = formValues ?? {};
+    const isFilled = (val: unknown): boolean => {
+      if (val === null || val === undefined || val === false) return false;
+      if (typeof val === 'string') return val.trim().length > 0;
+      if (typeof val === 'boolean') return val;
+      return true;
+    };
+    return {
+      1: {
+        current: [
+          v.companyType,
+          (v as Record<string, unknown>).businessDetails
+            ? ((v as Record<string, unknown>).businessDetails as Record<string, unknown>)?.companyName
+            : v.businessName,
+          (v as Record<string, unknown>).businessDetails
+            ? ((v as Record<string, unknown>).businessDetails as Record<string, unknown>)?.businessType
+            : v.businessType,
+          (v as Record<string, unknown>).businessDetails
+            ? ((v as Record<string, unknown>).businessDetails as Record<string, unknown>)?.country
+            : v.country,
+          (v as Record<string, unknown>).businessDetails
+            ? ((v as Record<string, unknown>).businessDetails as Record<string, unknown>)?.organizationSize
+            : v.organizationSize,
+        ].filter(isFilled).length,
+        total: 5,
+      },
+      2: {
+        current: [
+          v.billingStreet || v.billingAddress,
+          v.billingCity,
+          v.billingZip,
+          v.state || v.billingState,
+        ].filter(isFilled).length,
+        total: 4,
+      },
+      3: {
+        current: [
+          v.firstName,
+          v.lastName,
+          v.adminEmail,
+          v.adminMobile,
+        ].filter(isFilled).length,
+        total: 4,
+      },
+      4: {
+        current: v.termsAccepted ? 1 : 0,
+        total: 1,
+      },
+    } satisfies Record<number, { current: number; total: number }>;
+  }, [formValues]);
 
   // OPTIMIZED: Scroll to top only when step actually changes (not on re-renders)
   useEffect(() => {
@@ -169,6 +224,7 @@ export const OnboardingLayoutOptimized = React.memo(({
                 getStepStatus={getStepStatus}
                 onStepClick={onStepClick}
                 darkSidebar
+                fieldCounts={fieldCounts}
               />
             </div>
           </div>

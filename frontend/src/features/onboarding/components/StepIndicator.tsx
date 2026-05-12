@@ -10,6 +10,8 @@ interface StepIndicatorProps {
   className?: string;
   /** Deep blue sidebar: light text / frosted chips */
   darkSidebar?: boolean;
+  /** Real filled/total counts per step number derived from form values */
+  fieldCounts?: Record<number, { current: number; total: number }>;
 }
 
 export const StepIndicator: React.FC<StepIndicatorProps> = ({
@@ -19,24 +21,24 @@ export const StepIndicator: React.FC<StepIndicatorProps> = ({
   onStepClick,
   className = '',
   darkSidebar = false,
+  fieldCounts,
 }) => {
   const [hoveredStep, setHoveredStep] = useState<number | null>(null);
 
   if (!stepsConfig || stepsConfig.length === 0) return null;
 
-  // Helper to generate deterministic "fake" field stats for the UI
   const getStepStats = (step: StepConfig, status: string) => {
-    // Generate a fixed total based on char code of title to be consistent
-    const totalFields = 3 + (step.title.length % 3); 
-    
+    if (fieldCounts?.[step.number]) {
+      return fieldCounts[step.number];
+    }
+    // Fallback: deterministic fake count
+    const totalFields = 3 + (step.title.length % 3);
     let completedFields = 0;
     if (status === 'completed') {
       completedFields = totalFields;
     } else if (status === 'active' || status === 'error') {
-      // Arbitrary progress for active step
       completedFields = Math.max(1, Math.floor(totalFields * 0.4));
     }
-    
     return { current: completedFields, total: totalFields };
   };
 

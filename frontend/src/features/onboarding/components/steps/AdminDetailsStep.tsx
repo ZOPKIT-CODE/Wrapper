@@ -16,6 +16,20 @@ import { getCountryConfig } from '../../config/countryConfig';
 import { onboardingAPI } from '@/lib/api';
 import { useToast } from '../Toast';
 
+const PHONE_EXAMPLES: Record<string, string> = {
+  IN: '+91 98765 43210',
+  US: '+1 (555) 123-4567',
+  GB: '+44 7700 900000',
+  UK: '+44 7700 900000',
+  AE: '+971 50 123 4567',
+  SG: '+65 9123 4567',
+  CA: '+1 (555) 123-4567',
+  AU: '+61 412 345 678',
+};
+
+const getPhonePlaceholder = (countryCode: string): string =>
+  PHONE_EXAMPLES[countryCode] ?? '+1 (555) 123-4567';
+
 interface AdminDetailsStepProps {
   form: UseFormReturn<newBusinessData | existingBusinessData>;
   userClassification?: UserClassification;
@@ -86,24 +100,26 @@ export const AdminDetailsStep = memo(({ form, userClassification }: AdminDetails
     if (!currentAdminEmail || (typeof currentAdminEmail === 'string' && !currentAdminEmail.trim())) {
       updates.push({ field: 'adminEmail', value: user.email });
     }
-    if (user.given_name) {
+    if (user.givenName) {
       const currentFirst = form.getValues('firstName');
       if (!currentFirst || (typeof currentFirst === 'string' && !currentFirst.trim())) {
-        updates.push({ field: 'firstName', value: user.given_name });
+        updates.push({ field: 'firstName', value: user.givenName });
       }
     }
-    if (user.family_name) {
+    if (user.familyName) {
       const currentLast = form.getValues('lastName');
       if (!currentLast || (typeof currentLast === 'string' && !currentLast.trim())) {
-        updates.push({ field: 'lastName', value: user.family_name });
+        updates.push({ field: 'lastName', value: user.familyName });
       }
     }
     updates.forEach(({ field, value }) => {
       form.setValue(field as any, value, { shouldValidate: false, shouldDirty: false });
     });
-  }, [user?.email, user?.given_name, user?.family_name, form]);
+  }, [user?.email, user?.givenName, user?.familyName, form]);
 
   // Get personalized content based on user classification
+  const phonePlaceholder = getPhonePlaceholder(country);
+
   const getPersonalizedContent = () => {
     switch (userClassification) {
       case 'aspiringFounder':
@@ -111,7 +127,6 @@ export const AdminDetailsStep = memo(({ form, userClassification }: AdminDetails
           title: 'Admin Account Setup',
           description: 'Set up your administrator account as the company founder.',
           emailPlaceholder: 'founder@yourcompany.com',
-          mobilePlaceholder: '+1 (555) 123-4567',
           showDomainIntegration: false
         };
       case 'corporateEmployee':
@@ -119,7 +134,6 @@ export const AdminDetailsStep = memo(({ form, userClassification }: AdminDetails
           title: 'Corporate Admin Setup',
           description: 'Configure your administrator access for the corporate environment.',
           emailPlaceholder: 'admin@company.com',
-          mobilePlaceholder: '+1 (555) 123-4567',
           showDomainIntegration: true
         };
       case 'withDomainMail':
@@ -127,7 +141,6 @@ export const AdminDetailsStep = memo(({ form, userClassification }: AdminDetails
           title: 'Professional Admin Setup',
           description: 'Complete your professional administrator account configuration.',
           emailPlaceholder: 'admin@yourdomain.com',
-          mobilePlaceholder: '+1 (555) 123-4567',
           showDomainIntegration: true
         };
       case 'enterprise':
@@ -135,7 +148,6 @@ export const AdminDetailsStep = memo(({ form, userClassification }: AdminDetails
           title: 'Enterprise Administrator',
           description: 'Set up your enterprise administrator account with advanced features.',
           emailPlaceholder: 'admin@enterprise.com',
-          mobilePlaceholder: '+1 (555) 123-4567',
           showDomainIntegration: true
         };
       default:
@@ -143,7 +155,6 @@ export const AdminDetailsStep = memo(({ form, userClassification }: AdminDetails
           title: 'Admin Details',
           description: 'Provide administrator contact and account details.',
           emailPlaceholder: 'admin@company.com',
-          mobilePlaceholder: '+1 (555) 123-4567',
           showDomainIntegration: false
         };
     }
@@ -313,7 +324,7 @@ export const AdminDetailsStep = memo(({ form, userClassification }: AdminDetails
                     value={field.value || ''}
                     type="tel"
                     className={inputClasses}
-                    placeholder={personalizedContent.mobilePlaceholder}
+                    placeholder={phonePlaceholder}
                   />
                 </FormControl>
                 <FormMessage />
@@ -563,7 +574,7 @@ export const AdminDetailsStep = memo(({ form, userClassification }: AdminDetails
                     value={field.value || ''}
                     type="tel"
                     className={inputClasses}
-                    placeholder="+1 (555) 123-4567"
+                    placeholder={phonePlaceholder}
                   />
                 </FormControl>
                 <FormMessage />
@@ -593,7 +604,7 @@ export const AdminDetailsStep = memo(({ form, userClassification }: AdminDetails
                     value={field.value || ''}
                     type="tel"
                     className={inputClasses}
-                    placeholder="+1 (555) 987-6543"
+                    placeholder={phonePlaceholder}
                   />
                 </FormControl>
                 <FormMessage />

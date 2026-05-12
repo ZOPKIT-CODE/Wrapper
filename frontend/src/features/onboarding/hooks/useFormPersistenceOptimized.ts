@@ -13,6 +13,47 @@ import { applyIndiaRegionalDefaultsIfMissing, resolveCountryCode } from '../conf
 
 const STORAGE_KEY_PREFIX = 'onboarding_progress_';
 const STORAGE_KEY_FORM_DATA = 'onboarding_form_data';
+const DRAFT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
+const getDraftKey = (userId: string) => `onboarding_draft_${userId}`;
+
+interface LocalDraft {
+  data: Record<string, unknown>;
+  step: number;
+  savedAt: number;
+}
+
+const saveDraftToLocalStorage = (userId: string, data: Record<string, unknown>, step: number): void => {
+  try {
+    const draft: LocalDraft = { data, step, savedAt: Date.now() };
+    localStorage.setItem(getDraftKey(userId), JSON.stringify(draft));
+  } catch {
+    // Quota exceeded or private browsing — silently skip
+  }
+};
+
+const loadDraftFromLocalStorage = (userId: string): LocalDraft | null => {
+  try {
+    const raw = localStorage.getItem(getDraftKey(userId));
+    if (!raw) return null;
+    const draft = JSON.parse(raw) as LocalDraft;
+    if (Date.now() - draft.savedAt > DRAFT_MAX_AGE_MS) {
+      localStorage.removeItem(getDraftKey(userId));
+      return null;
+    }
+    return draft;
+  } catch {
+    return null;
+  }
+};
+
+const clearDraftFromLocalStorage = (userId: string): void => {
+  try {
+    localStorage.removeItem(getDraftKey(userId));
+  } catch {
+    // ignore
+  }
+};
 
 export interface UseFormPersistenceOptions {
   form: UseFormReturn<any>;
@@ -99,28 +140,31 @@ export const useFormPersistenceOptimized = ({
       // This ensures all fields are restored correctly
       const dataToStore = clonedFormData;
 
-      // Save to backend only (DB-only persistence)
-      // This works even when user doesn't exist in database yet
+      // Always persist to localStorage first (synchronous, survives page reload)
+      if (user?.id) {
+        saveDraftToLocalStorage(user.id, dataToStore as Record<string, unknown>, currentStep);
+      }
+
+      // Also save to backend (async, best-effort)
       if (user?.email) {
         try {
           const response = await onboardingAPIOptimized.updateStep(
             `step_${currentStep}`,
-            { 
-              step: currentStep, 
+            {
+              step: currentStep,
               completedAt: new Date().toISOString(),
               flowType: flowType
             },
             user.email,
-            dataToStore, // Send complete form data to backend for persistence
+            dataToStore,
             user.id
           );
-          
+
           if (response?.data?.success) {
             onboardingLogger.debug('Form data saved to backend', { step: currentStep });
           }
-        } catch (error: any) {
-          onboardingLogger.warn('Backend form data save failed', { message: error?.message, step: currentStep });
-          // Show non-blocking error but don't fall back to localStorage
+        } catch (error: unknown) {
+          onboardingLogger.warn('Backend form data save failed', { message: (error as Error)?.message, step: currentStep });
         }
       }
     } catch (error) {
@@ -128,99 +172,90 @@ export const useFormPersistenceOptimized = ({
     }
   }, [form, flowType, currentStep, user]);
 
-  // Restore form data from backend only (DB-only persistence)
+  // Restore form data — tries backend first, falls back to localStorage draft
   const restoreFormData = useCallback(async () => {
     if (hasRestoredRef.current) return 1;
     hasRestoredRef.current = true;
 
     try {
-      let restoredData: any = null;
+      let restoredData: Record<string, unknown> | null = null;
       let restoredStep = 1;
 
-      // Restore from backend only (if authenticated)
       if (user?.email) {
         try {
           const backendResponse = await onboardingAPIOptimized.getDataByEmail(user.email, user.id);
-          
-          // Handle both response shapes: savedFormData (preferred) or onboardingData (legacy)
+
           if (backendResponse?.data?.success && backendResponse?.data?.data?.savedFormData) {
-            const backendFormData = backendResponse.data.data.savedFormData;
+            restoredData = backendResponse.data.data.savedFormData;
             const backendStep = backendResponse.data.data.onboardingStep;
-            
-            restoredData = backendFormData;
             if (backendStep) {
-              const stepNumber = parseInt(String(backendStep).replace('step_', '')) || 1;
-              restoredStep = stepNumber;
+              restoredStep = parseInt(String(backendStep).replace('step_', '')) || 1;
             }
             onboardingLogger.info('Restored form data from backend', { restoredStep });
           } else if (backendResponse?.data?.data?.onboardingData) {
             const onboardingData = backendResponse.data.data.onboardingData;
-            restoredStep = onboardingData.currentStep 
+            restoredStep = onboardingData.currentStep
               ? parseInt(String(onboardingData.currentStep).replace('step_', '')) || 1
               : 1;
-            
             if (onboardingData.formData) {
               restoredData = onboardingData.formData;
             } else if (onboardingData.stepData) {
-              // Merge step data if formData is not available
               restoredData = {};
-              Object.values(onboardingData.stepData).forEach((stepData: any) => {
-                Object.assign(restoredData, stepData);
+              Object.values(onboardingData.stepData).forEach((stepData: unknown) => {
+                Object.assign(restoredData!, stepData as Record<string, unknown>);
               });
             }
             onboardingLogger.info('Restored form data from backend (legacy format)', { restoredStep });
           }
         } catch (error) {
-          onboardingLogger.warn('Failed to restore from backend', { error: String(error) });
-          // Start from step 1 with empty form if API fails
-          return 1;
+          onboardingLogger.warn('Failed to restore from backend — falling back to localStorage draft', { error: String(error) });
         }
-      } else {
-        // User not authenticated - start from step 1
+      }
+
+      // Fallback to localStorage draft when backend has nothing or failed
+      if (!restoredData && user?.id) {
+        const draft = loadDraftFromLocalStorage(user.id);
+        if (draft) {
+          restoredData = draft.data;
+          restoredStep = draft.step;
+          onboardingLogger.info('Restored form data from localStorage draft', { restoredStep });
+        }
+      }
+
+      if (!restoredData) {
         return 1;
       }
 
-      // Restore form data if found
-      if (restoredData) {
-        restoredData = normalizeRestoredData(restoredData);
-        form.reset();
+      restoredData = normalizeRestoredData(restoredData) as Record<string, unknown>;
 
-        // OPTIMIZED: Batch all setValue calls - handle nested objects properly
-        // Restore ALL fields including empty strings and null values
-        const setFormValue = (key: string, val: any, parentKey?: string) => {
-          const fullKey = parentKey ? `${parentKey}.${key}` : key;
-          
-          try {
-            // Handle nested objects (e.g., businessDetails)
-            if (val !== null && typeof val === 'object' && !Array.isArray(val) && val.constructor === Object) {
-              // For nested objects, recursively set each property
-              Object.keys(val).forEach((nestedKey) => {
-                setFormValue(nestedKey, val[nestedKey], fullKey);
-              });
-            } else {
-              // For primitive values, arrays, null, undefined, and empty strings
-              // Restore ALL values including empty strings and null
-              form.setValue(fullKey as any, val === undefined ? '' : val, { 
-                shouldValidate: false, 
-                shouldDirty: false, 
-                shouldTouch: false 
-              });
-            }
-          } catch (error) {
-            // Log but continue - some fields might not exist in schema
-            console.debug(`Skipping field ${fullKey} during restore:`, error);
+      form.reset();
+
+      const setFormValue = (key: string, val: unknown, parentKey?: string) => {
+        const fullKey = parentKey ? `${parentKey}.${key}` : key;
+        try {
+          if (val !== null && typeof val === 'object' && !Array.isArray(val) && val.constructor === Object) {
+            Object.keys(val as Record<string, unknown>).forEach((nestedKey) => {
+              setFormValue(nestedKey, (val as Record<string, unknown>)[nestedKey], fullKey);
+            });
+          } else {
+            form.setValue(fullKey as Parameters<typeof form.setValue>[0], val === undefined ? '' : val, {
+              shouldValidate: false,
+              shouldDirty: false,
+              shouldTouch: false,
+            });
           }
-        };
+        } catch {
+          // field not in schema — skip
+        }
+      };
 
-        // Restore all fields - use setTimeout to ensure form is ready
-        setTimeout(() => {
-          Object.keys(restoredData).forEach((key) => {
-            setFormValue(key, restoredData[key]);
-          });
-        }, 0);
+      setTimeout(() => {
+        Object.keys(restoredData!).forEach((key) => {
+          setFormValue(key, restoredData![key]);
+        });
+      }, 0);
 
-        return restoredStep;
-      }
+      return restoredStep;
     } catch (error) {
       // Silent error handling
     }
@@ -228,20 +263,20 @@ export const useFormPersistenceOptimized = ({
     return 1;
   }, [form, flowType, normalizeRestoredData]);
 
-  // Clear saved form data (backend + cleanup localStorage keys)
+  // Clear saved form data (backend + localStorage draft)
   const clearFormData = useCallback(() => {
     try {
-      // Clear backend data if authenticated
       if (user?.email) {
         onboardingAPIOptimized.updateStep('step_1', {}, user.email, {}, user.id).catch(() => {});
       }
-      
-      // Clean up any remaining localStorage keys (for cleanup, not as source of truth)
+      if (user?.id) {
+        clearDraftFromLocalStorage(user.id);
+      }
       const storageKey = `${STORAGE_KEY_PREFIX}${flowType}`;
       secureClear(storageKey);
       secureClear(STORAGE_KEY_FORM_DATA);
       localStorage.removeItem(`${storageKey}_backend_save`);
-    } catch (error) {
+    } catch {
       // Silent error handling
     }
   }, [flowType, user]);

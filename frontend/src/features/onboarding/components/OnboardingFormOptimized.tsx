@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { useKindeAuth } from '@kinde-oss/kinde-auth-react';
 import { queryKeys } from '@/hooks/useSharedQueries';
 import { useOnboardingForm } from '../hooks';
 import { useFormPersistenceOptimized } from '../hooks/useFormPersistenceOptimized';
@@ -137,6 +138,7 @@ export const determineUserClassification = (
 
 export const OnboardingFormOptimized = () => {
   const queryClient = useQueryClient();
+  const { user: kindeUser } = useKindeAuth();
   const [selectedFlow] = useState<'newBusiness' | 'existingBusiness'>('newBusiness');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
@@ -153,7 +155,7 @@ export const OnboardingFormOptimized = () => {
     return classification || 'aspiringFounder';
   });
 
-  const form = useOnboardingForm(selectedFlow, userClassification);
+  const form = useOnboardingForm(selectedFlow, userClassification, kindeUser);
   const { isRateLimited, recordAttempt, getTimeUntilReset } = useRateLimit({
     maxAttempts: 3,
     windowMs: 60000
@@ -192,9 +194,17 @@ export const OnboardingFormOptimized = () => {
       if (restoredStep && restoredStep > 1 && restoredStep !== currentStep) {
         onboardingLogger.info('Form progress restored', { restoredStep, previousCurrentStep: currentStep });
         setCurrentStep(restoredStep);
-        sonnerToast.info('Your previous progress has been restored', {
-          description: `Continuing from step ${restoredStep}`,
-          duration: 3000,
+        sonnerToast.info('Welcome back — we restored your progress', {
+          description: `Continuing from step ${restoredStep} of 4`,
+          duration: 6000,
+          action: {
+            label: 'Start over',
+            onClick: () => {
+              clearFormData();
+              setCurrentStep(1);
+              form.reset();
+            },
+          },
         });
       } else {
         onboardingLogger.debug('No restore needed or same step', { restoredStep, currentStep });

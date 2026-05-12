@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Link } from '@tanstack/react-router';
 import { UseFormReturn, useWatch } from 'react-hook-form';
 import { motion, Variants } from 'framer-motion';
@@ -21,9 +21,6 @@ import {
 } from 'lucide-react';
 import { newBusinessData, existingBusinessData, COUNTRIES, ORGANIZATION_SIZES, COMPANY_TYPES, STATES } from '../../schemas';
 import { UserClassification } from '../FlowSelector';
-import { ONBOARDING_CONFETTI_COLORS } from '../../constants';
-// Note: Make sure canvas-confetti is installed: npm install canvas-confetti
-import confetti from 'canvas-confetti';
 
 interface ReviewStepProps {
   form: UseFormReturn<newBusinessData | existingBusinessData>;
@@ -82,7 +79,7 @@ const SectionCard = ({ title, icon: Icon, children, stepNumber, index, onEditSte
         </div>
         <h3 className="font-bold text-slate-800 text-lg">{title}</h3>
       </div>
-      {stepNumber && onEditStep && (
+      {!!stepNumber && !!onEditStep && (
         <Button
           variant="ghost"
           size="sm"
@@ -106,69 +103,6 @@ const SectionCard = ({ title, icon: Icon, children, stepNumber, index, onEditSte
 export const ReviewStep: React.FC<ReviewStepProps> = ({ form, onEditStep, userClassification }) => {
   // FIXED: Use useWatch to reactively get form values so data updates when restored
   const values = useWatch({ control: form.control }) || form.getValues();
-  const [hasBlastedConfetti, setHasBlastedConfetti] = useState(false);
-
-  // Fire confetti 3 times with different colors when entering the last step
-  useEffect(() => {
-    const fireConfetti = (colors: string[], delay: number) => {
-      setTimeout(() => {
-        const count = 200;
-        const defaults = {
-          origin: { y: 0.7 },
-          zIndex: 9999,
-          colors: colors
-        };
-
-        function fire(particleRatio: number, opts: any) {
-          if (confetti && typeof confetti === 'function') {
-            confetti(Object.assign({}, defaults, opts, {
-              particleCount: Math.floor(count * particleRatio)
-            }));
-          }
-        }
-
-        fire(0.25, { spread: 26, startVelocity: 55 });
-        fire(0.2, { spread: 60 });
-        fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
-        fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
-        fire(0.1, { spread: 120, startVelocity: 45 });
-      }, delay);
-    };
-
-    fireConfetti([...ONBOARDING_CONFETTI_COLORS], 500);
-    fireConfetti([...ONBOARDING_CONFETTI_COLORS], 1500);
-    fireConfetti([...ONBOARDING_CONFETTI_COLORS], 2500);
-  }, []);
-
-  // Fire confetti when terms are accepted (only once - single blast)
-  useEffect(() => {
-    if (values.termsAccepted && !hasBlastedConfetti) {
-      const fireConfetti = () => {
-        const count = 200;
-        const defaults = {
-          origin: { y: 0.7 },
-          zIndex: 9999,
-          colors: [...ONBOARDING_CONFETTI_COLORS]
-        };
-
-        function fire(particleRatio: number, opts: any) {
-          if (confetti && typeof confetti === 'function') {
-            confetti(Object.assign({}, defaults, opts, {
-              particleCount: Math.floor(count * particleRatio)
-            }));
-          }
-        }
-
-        // Single blast for terms acceptance
-        fire(0.25, { spread: 26, startVelocity: 55 });
-        fire(0.2, { spread: 60 });
-        fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
-      };
-
-      fireConfetti();
-      setHasBlastedConfetti(true);
-    }
-  }, [values.termsAccepted, hasBlastedConfetti]);
 
   // Helper functions
   const getCountryName = (code?: string) => COUNTRIES.find(c => c.id === code)?.name || code || 'N/A';
