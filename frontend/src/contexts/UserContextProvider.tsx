@@ -92,7 +92,6 @@ export const UserContextProvider: React.FC<UserContextProviderProps> = React.mem
   const authDataRef = useRef(authData);
   const tenantDataRef = useRef(tenantData);
   const kindeUserRef = useRef(kindeUser);
-  const hasSyncedForAuthRef = useRef(false);
   authDataRef.current = authData;
   tenantDataRef.current = tenantData;
   kindeUserRef.current = kindeUser;
@@ -213,25 +212,23 @@ export const UserContextProvider: React.FC<UserContextProviderProps> = React.mem
     window.location.href = '/login';
   }, []);
 
-  // Reset sync guard when user logs out so next login syncs again
-  useEffect(() => {
-    if (!isAuthenticated) {
-      hasSyncedForAuthRef.current = false;
-      setLoading(false);
-    }
-  }, [isAuthenticated]);
-
-  // Initial load - run ONCE when auth becomes ready (do not depend on authData/fetchUserContext identity to avoid loop)
+  // Re-sync user state whenever the authenticated identity meaningfully changes.
+  // Using authStatus.tenantId and authStatus.isTenantAdmin as deps catches the
+  // post-onboarding transition (tenantId: null → real id, isTenantAdmin: false → true)
+  // without requiring a hard refresh. The previous sync-once ref guard was set on
+  // first login and never cleared during onboarding, leaving user.isTenantAdmin = false
+  // until the component remounted. Logout naturally triggers this because isAuthenticated
+  // flips to false.
+  const stableAuthTenantId = authData?.authStatus?.tenantId;
+  const stableIsTenantAdmin = authData?.authStatus?.isTenantAdmin;
   useEffect(() => {
     if (!isAuthenticated || authLoading) return;
-    if (hasSyncedForAuthRef.current) return;
     if (!authDataRef.current) {
       if (!authError) setLoading(false);
       return;
     }
-    hasSyncedForAuthRef.current = true;
     fetchUserContext(false);
-  }, [isAuthenticated, authLoading, authError, fetchUserContext]);
+  }, [isAuthenticated, authLoading, authError, stableAuthTenantId, stableIsTenantAdmin, fetchUserContext]);
 
   // Update tenant data when cached tenant data changes (depend on stable tenantId to avoid loop)
   const tenantIdStable = tenantData?.tenantId;
