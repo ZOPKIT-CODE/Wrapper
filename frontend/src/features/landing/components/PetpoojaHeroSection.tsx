@@ -712,29 +712,31 @@ function FloorGlow() {
 // ─── Headline ──────────────────────────────────────────────────────────────────
 function Headline({ isMobile }: { isMobile: boolean }) {
   return (
+    // No opacity in initial — text is immediately visible even before framer-motion
+    // fires its first animation frame. Only y-translate animates in.
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={{ y: 20 }}
+      animate={{ y: 0 }}
       transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
       style={{ textAlign: 'center', position: 'relative', zIndex: 3, maxWidth: 860, margin: '0 auto', width: '100%' }}
     >
       <h1 style={{ margin: 0, fontFamily: '"Palatino Linotype","Book Antiqua",Palatino,Georgia,serif', fontStyle: 'italic', lineHeight: isMobile ? 1.1 : 1.15, letterSpacing: '-0.01em' }}>
-        <motion.span initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+        <motion.span initial={{ y: 14 }} animate={{ y: 0 }} transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
           style={{ display: 'block', fontSize: isMobile ? 'clamp(20px, 5.5vw, 26px)' : 'clamp(26px, 5vw, 40px)', fontWeight: 700, color: '#0f1b3d' }}>
           Intelligent agents
         </motion.span>
-        <motion.span initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+        <motion.span initial={{ y: 14 }} animate={{ y: 0 }} transition={{ duration: 0.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
           style={{ display: 'block', fontSize: isMobile ? 'clamp(17px, 4.8vw, 22px)' : 'clamp(22px, 4.5vw, 36px)', fontWeight: 700, color: '#1b2e5a' }}>
           driving influential decisions
         </motion.span>
-        <motion.span initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        <motion.span initial={{ y: 14 }} animate={{ y: 0 }} transition={{ duration: 0.6, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
           style={{ display: 'block', fontSize: isMobile ? 'clamp(11px, 3vw, 13px)' : 'clamp(13px, 2.5vw, 20px)', fontWeight: 400, color: '#64748b', marginTop: isMobile ? 4 : 'clamp(4px, 0.6vw, 8px)' }}>
           across interconnected applications
         </motion.span>
       </h1>
       <motion.div
-        initial={{ scaleX: 0, opacity: 0 }}
-        animate={{ scaleX: 1, opacity: 1 }}
+        initial={{ scaleX: 0 }}
+        animate={{ scaleX: 1 }}
         transition={{ duration: 0.6, delay: 0.55, ease: 'easeOut' }}
         style={{ width: 40, height: 1, borderRadius: 1, background: 'linear-gradient(90deg, transparent, rgba(36,59,110,0.5), transparent)', margin: isMobile ? '8px auto 0' : 'clamp(10px, 1.5vw, 16px) auto 0' }}
       />
@@ -746,8 +748,8 @@ function Headline({ isMobile }: { isMobile: boolean }) {
 function HeroCTAs({ onBookDemo }: { onBookDemo?: () => void }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 14 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={{ y: 14 }}
+      animate={{ y: 0 }}
       transition={{ duration: 0.5, delay: 0.5, ease: 'easeOut' }}
       style={{ display: 'flex', gap: 12, marginTop: 20, position: 'relative', zIndex: 6, justifyContent: 'center', flexWrap: 'wrap' }}
     >
@@ -793,7 +795,6 @@ export function PetpoojaHeroSection({ onBookDemo: _onBookDemo }: { onBookDemo?: 
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif',
         overflowX: 'clip',
         overflowY: 'visible',
-        contain: 'layout style',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
