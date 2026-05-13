@@ -230,6 +230,16 @@ export const OnboardingFormOptimized = () => {
     };
   }, []);
 
+  // Sync Kinde profile into admin fields once the SDK resolves (it loads async).
+  // Only backfill — don't overwrite values the user has already typed.
+  useEffect(() => {
+    if (!kindeUser) return;
+    const { getValues, setValue } = form;
+    if (!getValues('firstName') && kindeUser.givenName) setValue('firstName', kindeUser.givenName, { shouldValidate: false });
+    if (!getValues('lastName') && kindeUser.familyName) setValue('lastName', kindeUser.familyName, { shouldValidate: false });
+    if (!getValues('adminEmail') && kindeUser.email) setValue('adminEmail', kindeUser.email, { shouldValidate: false });
+  }, [kindeUser, form]);
+
   // Listen for step restoration events
   useEffect(() => {
     const handleStepRestored = (event: CustomEvent) => {
@@ -414,13 +424,53 @@ export const OnboardingFormOptimized = () => {
         onboardingLogger.info('Onboarding submit success', { responseData: response.data });
         sonnerToast.dismiss(loadingToastId);
         clearFormData();
-        // Invalidate and immediately refetch all queries that feed the sidebar so
-        // isTenantAdmin, permissions, and tenant data are fresh before the dashboard loads.
+
+        // POST-ONBOARDING CACHE RESET
+        // ---------------------------
+        // The backend's `createCompleteOnboardingInTransaction` provisions the entire
+        // tenant in a single transaction: tenant record, admin user, default admin
+        // role, role assignment, plan applications (organization_applications), credit
+        // allocation, and subscription. Any TanStack Query cache that ran before this
+        // transaction completed will hold pre-onboarding placeholder data (typically
+        // empty arrays for apps/roles or 4xx error states), and serving that on the
+        // dashboard is exactly the "applications/roles missing after onboarding"
+        // symptom users hit.
+        //
+        // We do TWO things, in order:
+        //
+        //   1. `removeQueries` for the tenant-scoped lists. This evicts the placeholder
+        //      data entirely so the next mount can't render `[]` from cache. Without
+        //      this, `placeholderData: []` on the list hooks would keep masking the
+        //      refetch behind a "loaded but empty" UI for an instant.
+        //
+        //   2. `invalidateQueries` for the auth/identity layer, then refetch the
+        //      auth-status critical path. The sidebar, permission gates, and route
+        //      guards all read from `authStatus`, so it must be fresh BEFORE the
+        //      dashboard mounts — otherwise PermissionGuard renders stale denials.
+        //
+        // We invalidate by query-key PREFIX rather than the parameterized key so we
+        // catch every variant (e.g. `['roles']` covers both `useRoles()` and the
+        // filtered `useRoles({ search, type })`; `['tenantApps']` covers any tenantId).
         await Promise.all([
+          // 1a. Evict stale list data so list pages don't flash empty state.
+          queryClient.removeQueries({ queryKey: ['tenantApps'] }),
+          queryClient.removeQueries({ queryKey: ['roles'] }),
+          queryClient.removeQueries({ queryKey: ['users'] }),
+          queryClient.removeQueries({ queryKey: ['entities'] }),
+          queryClient.removeQueries({ queryKey: ['applicationAllocations'] }),
+
+          // 1b. Invalidate identity + tenant-state queries. These are read by
+          //     route guards, sidebar, billing banner, and credit widgets.
           queryClient.invalidateQueries({ queryKey: queryKeys.authStatus }),
           queryClient.invalidateQueries({ queryKey: queryKeys.entityScope }),
           queryClient.invalidateQueries({ queryKey: queryKeys.tenant }),
           queryClient.invalidateQueries({ queryKey: queryKeys.onboardingStatus }),
+          queryClient.invalidateQueries({ queryKey: queryKeys.subscriptionCurrent }),
+          queryClient.invalidateQueries({ queryKey: queryKeys.creditStatus }),
+          queryClient.invalidateQueries({ queryKey: queryKeys.notifications }),
+
+          // 2. Refetch the critical path so the dashboard renders with real values
+          //    (isTenantAdmin, permissions, tenantId) on first paint.
           queryClient.refetchQueries({ queryKey: queryKeys.authStatus }),
         ]);
         const baseUrl = response.data?.data?.redirectUrl || '/dashboard/applications';
