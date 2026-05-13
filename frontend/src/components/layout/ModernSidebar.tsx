@@ -220,7 +220,7 @@ export function ModernSidebar({
     const isCollapsed = state === "collapsed"
 
     const rawNavMain: NavItemDef[] = navData?.navMain || [
-        { title: "Applications", url: "/dashboard/applications", icon: LayoutGrid, badge: 7 },
+        { title: "Applications", url: "/dashboard/applications", icon: LayoutGrid },
         { title: "Organization", url: "/dashboard/organization", icon: Building2 },
         { title: "Team", url: "/dashboard/users", icon: Users },
         { title: "Roles", url: "/dashboard/roles", icon: Shield },

@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/sidebar"
 import { BillingStatusNavbar } from "@/components/common/billing/BillingStatusNavbar"
 import { useSeasonalCreditsCongratulatory } from "@/hooks/useSeasonalCreditsCongratulatory"
-import { useSubscriptionCurrent } from "@/hooks/useSharedQueries"
+import { useSubscriptionCurrent, useTenantApplications } from "@/hooks/useSharedQueries"
 import { Home, Building2, Users, Crown, Shield, Activity, CreditCard, ChevronRight, Settings, AlertTriangle, LayoutGrid } from "lucide-react"
 import { useNavigate, useLocation, useSearch, useParams, Outlet, Link } from "@tanstack/react-router"
 import { useOrganizationHierarchy } from "@/hooks/useOrganizationHierarchy"
@@ -182,7 +182,6 @@ const defaultSidebarData = {
       title: "Applications",
       url: "/dashboard/applications",
       icon: LayoutGrid,
-      badge: 7,
     },
     {
       title: "Organization",
@@ -266,6 +265,8 @@ export function DashboardLayout() {
   const { hierarchy: orgHierarchy } = useOrganizationHierarchy(
     isOrganizationRoute ? tenantId : undefined
   )
+
+  const { data: tenantApps } = useTenantApplications(tenantId)
 
   // Prepare user data for sidebar
   const userData = useMemo(() => {
@@ -391,10 +392,19 @@ export function DashboardLayout() {
     )
   }
   const sidebarNavData = useMemo(() => {
-    return isOrganizationRoute && orgCode
-      ? getOrganizationSidebarData(orgCode, orgHierarchy || [], userData, tenantData)
-      : defaultSidebarData;
-  }, [isOrganizationRoute, orgCode, orgHierarchy, userData, tenantData]);
+    if (isOrganizationRoute && orgCode) {
+      return getOrganizationSidebarData(orgCode, orgHierarchy || [], userData, tenantData);
+    }
+    const appCount = Array.isArray(tenantApps) ? tenantApps.length : undefined;
+    return {
+      ...defaultSidebarData,
+      navMain: defaultSidebarData.navMain.map((item) =>
+        item.url === '/dashboard/applications'
+          ? { ...item, badge: appCount }
+          : item
+      ),
+    };
+  }, [isOrganizationRoute, orgCode, orgHierarchy, userData, tenantData, tenantApps]);
 
   return (
     <SidebarProvider className="dashboard-actionable-cursors dashboard-instant-scroll" style={{ background: 'var(--zk-bg)' }}>
