@@ -124,10 +124,10 @@ export const MultiStepForm: React.FC<MultiStepFormProps> = ({
 
   const handleNext = useCallback(async () => {
     onboardingLogger.debug('Next clicked', { currentStep, totalSteps: stepsConfig.length });
-    // FIXED: Only change step if validation passes
     const success = await nextStep(handleValidationError);
     if (success) {
       onboardingLogger.info('Next step success', { from: currentStep, to: currentStep + 1 });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       onStepChange?.(currentStep + 1);
     } else {
       onboardingLogger.debug('Next step blocked by validation');
@@ -137,6 +137,7 @@ export const MultiStepForm: React.FC<MultiStepFormProps> = ({
   const handlePrev = useCallback(() => {
     onboardingLogger.info('Prev clicked', { from: currentStep, to: currentStep - 1 });
     prevStep();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     onStepChange?.(currentStep - 1);
   }, [prevStep, onStepChange, currentStep]);
 
