@@ -192,9 +192,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = React.memo(({
         onboardingCompleted: backendAuthStatus?.onboardingCompleted,
         pathname: location.pathname,
       });
-      const searchParams: Record<string, string> = { from: 'protected_route' };
-      if (user?.email) searchParams.email = user.email;
-      navigate({ to: '/onboarding', search: searchParams, replace: true });
+      navigate({ to: '/onboarding', search: { from: 'protected_route' }, replace: true });
     }
   }, [shouldRedirect, needsKindeLogin, needsBackendLogin, needsOnboarding, redirectTo, navigate, location.pathname, backendAuthStatus, user?.email]);
 
