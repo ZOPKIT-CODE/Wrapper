@@ -1,7 +1,45 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useVersionCheck } from '@/hooks/useVersionCheck';
 import { updateSW } from '@/lib/pwa/registerSW';
-import { useLocation } from '@tanstack/react-router';
+
+// We intentionally do NOT import `useLocation` from @tanstack/react-router here.
+// The banner is mounted in `AppRoot.tsx` OUTSIDE the `<RouterProvider>`, so the
+// router context is null at this depth and `useLocation()` crashes with
+// `Cannot read properties of null (reading 'isServer')`. Instead we subscribe
+// to the browser's own navigation events. TanStack Router uses
+// `history.pushState`/`replaceState` under the hood, so patching those (plus
+// the native `popstate`) covers every navigation source.
+function useCurrentPathname(): string {
+  const [pathname, setPathname] = useState<string>(() =>
+    typeof window !== 'undefined' ? window.location.pathname : '/',
+  );
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const update = () => setPathname(window.location.pathname);
+
+    window.addEventListener('popstate', update);
+
+    const origPush = window.history.pushState;
+    const origReplace = window.history.replaceState;
+    window.history.pushState = function (...args: Parameters<typeof window.history.pushState>) {
+      origPush.apply(this, args);
+      update();
+    };
+    window.history.replaceState = function (...args: Parameters<typeof window.history.replaceState>) {
+      origReplace.apply(this, args);
+      update();
+    };
+
+    return () => {
+      window.removeEventListener('popstate', update);
+      window.history.pushState = origPush;
+      window.history.replaceState = origReplace;
+    };
+  }, []);
+
+  return pathname;
+}
 
 // Soft-dismiss ("Later") suppresses the banner for 24h.
 const DISMISS_KEY = 'update_banner_dismissed_until';
@@ -31,7 +69,7 @@ function readPolledVersion(): string | null {
 }
 
 export function UpdateAvailableBanner() {
-  const location = useLocation();
+  const pathname = useCurrentPathname();
   const [show, setShow] = useState(false);
   const [forced, setForced] = useState(false);
   const [isReloading, setIsReloading] = useState(false);
@@ -68,7 +106,7 @@ export function UpdateAvailableBanner() {
   useVersionCheck(handleUpdateAvailable);
 
   // Don't interrupt mid-onboarding with a reload prompt.
-  if (!show || location.pathname.startsWith('/onboarding')) return null;
+  if (!show || pathname.startsWith('/onboarding')) return null;
 
   const handleReload = () => {
     if (reloadInFlight.current) return;
