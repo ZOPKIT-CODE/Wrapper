@@ -89,17 +89,6 @@ const Landing: React.FC = () => {
     }
   }, [isAuthenticated])
 
-  // Auto-redirect: authenticated users with no completed onboarding should never
-  // land on the marketing page — send them straight to /onboarding.
-  useEffect(() => {
-    if (!authChecked) return;
-    if (backendAuthenticated && !onboardingCompleted) {
-      navigate({ to: '/onboarding' });
-    } else if (backendAuthenticated && onboardingCompleted) {
-      navigate({ to: '/dashboard/applications' });
-    }
-  }, [authChecked, backendAuthenticated, onboardingCompleted, navigate]);
-
   const handleLogin = async () => {
     setIsLoading(true)
     try {

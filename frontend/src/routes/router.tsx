@@ -14,6 +14,7 @@ import { UserContextProvider } from '@/contexts/UserContextProvider'
 import { EntityScopeProvider } from '@/contexts/EntityScopeContext'
 
 import { RootRedirect } from './RootRedirect'
+import { OnboardingHintBanner } from '@/components/OnboardingHintBanner'
 import {
   Landing, ProductPage, IndustryPage, PrivacyPolicy, TermsOfService,
   CookiePolicy, RefundPolicy, Security, Pricing, Login, AuthCallback, InviteAccept,
@@ -100,6 +101,7 @@ function RootLayout() {
     <SilentAuthGuard>
       <UserContextProvider>
         <EntityScopeProvider>
+          <OnboardingHintBanner />
           <div className="App">
             <Suspense fallback={<LoadingScreen />}>
               <Outlet />
