@@ -99,9 +99,8 @@ export const OnboardingLayoutOptimized = React.memo(({
           v.firstName,
           v.lastName,
           v.adminEmail,
-          v.adminMobile,
         ].filter(isFilled).length,
-        total: 4,
+        total: 3,
       },
       4: {
         current: v.termsAccepted ? 1 : 0,

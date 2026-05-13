@@ -287,14 +287,7 @@ export const AdminDetailsStep = memo(({ form, userClassification }: AdminDetails
                     value={field.value || user?.email || ''}
                     type="email"
                     readOnly
-                    disabled
-                    onChange={(e) => {
-                      // Prevent manual changes - always use Kinde email
-                      if (user?.email) {
-                        field.onChange(user.email);
-                      }
-                    }}
-                    className={`${inputClasses} bg-slate-50 cursor-not-allowed opacity-75`}
+                    className={`${inputClasses} bg-slate-50 cursor-not-allowed`}
                     placeholder={personalizedContent.emailPlaceholder}
                   />
                 </FormControl>
