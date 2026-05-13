@@ -12,6 +12,26 @@ interface KindeProviderProps {
 }
 
 // Component to set up the token getter and silent auth after Kinde is initialized
+// Token promise cache: collapses concurrent getToken() calls into a single
+// Kinde SDK round-trip. Cleared after TOKEN_CACHE_TTL_MS so a refresh token
+// swap is picked up on the next burst, not stuck on the old value.
+const TOKEN_CACHE_TTL_MS = 45_000; // 45 s — well inside a typical JWT lifetime
+let _tokenPromise: Promise<string | null> | null = null;
+let _tokenExpiresAt = 0;
+
+function getCachedToken(getTokenFn: () => Promise<string | null>): Promise<string | null> {
+  const now = Date.now();
+  if (_tokenPromise && now < _tokenExpiresAt) return _tokenPromise;
+  _tokenExpiresAt = now + TOKEN_CACHE_TTL_MS;
+  _tokenPromise = getTokenFn().catch((err) => {
+    // Evict on error so the next caller retries rather than getting the same rejection.
+    _tokenPromise = null;
+    _tokenExpiresAt = 0;
+    throw err;
+  });
+  return _tokenPromise;
+}
+
 function TokenSetupComponent() {
   const { getToken, isAuthenticated, error, isLoading } = useKindeAuth();
   const lastNoTokenLogAtRef = useRef(0);
@@ -29,7 +49,7 @@ function TokenSetupComponent() {
       try {
         logger.debug('🔑 TokenGetter: Called');
 
-        const token = await getTokenRef.current();
+        const token = await getCachedToken(() => getTokenRef.current());
 
         if (token) {
           logger.debug('✅ TokenGetter: Successfully retrieved token from Kinde');
@@ -46,7 +66,7 @@ function TokenSetupComponent() {
       } catch (error: any) {
         // Handle invalid_grant errors gracefully
         const isInvalidGrant = isInvalidGrantError(error);
-        
+
         if (isInvalidGrant) {
           logger.warn('⚠️ TokenGetter: invalid_grant detected. Clearing stale auth storage.');
           clearStaleAuthStorage();
