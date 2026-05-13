@@ -468,7 +468,7 @@ export const OnboardingFormOptimized = () => {
           queryClient.invalidateQueries({ queryKey: queryKeys.subscriptionCurrent }),
           queryClient.invalidateQueries({ queryKey: queryKeys.creditStatus }),
           queryClient.invalidateQueries({ queryKey: queryKeys.notifications }),
-          queryClient.invalidateQueries({ queryKey: queryKeys.userContext }),
+          queryClient.refetchQueries({ queryKey: queryKeys.userContext }),
           // Evict unread count so it recalculates after notifications initialise.
           queryClient.removeQueries({ queryKey: queryKeys.unreadCount }),
 
