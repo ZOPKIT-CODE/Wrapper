@@ -19,6 +19,7 @@ const ADMIN_ONLY_URLS = [
     '/dashboard/activity',
     '/dashboard/billing',
     '/dashboard/settings',
+    '/dashboard/users',
 ]
 
 interface NavItemDef {

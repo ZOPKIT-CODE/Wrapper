@@ -462,7 +462,7 @@ export function DashboardLayout() {
               <Suspense fallback={null}>
                 <NotificationManager />
               </Suspense>
-              <BillingStatusNavbar />
+              {(user?.isTenantAdmin) && <BillingStatusNavbar />}
               <ThemeToggle />
             </div>
           </header>
