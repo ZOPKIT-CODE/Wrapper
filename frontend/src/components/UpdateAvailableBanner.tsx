@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useVersionCheck } from '@/hooks/useVersionCheck';
 import { updateSW } from '@/lib/pwa/registerSW';
+import { announceReloaded } from '@/lib/pwa/crossTabSync';
 
 // We intentionally do NOT import `useLocation` from @tanstack/react-router here.
 // The banner is mounted in `AppRoot.tsx` OUTSIDE the `<RouterProvider>`, so the
@@ -58,6 +59,10 @@ const ATTEMPTED_VERSION_TTL_MS = 30 * 60 * 1000;
 // this point we fall back to a forced reload so the user is never stranded.
 const RELOAD_FALLBACK_MS = 4_000;
 
+// Forced updates auto-reload after this many seconds so the user is never
+// blocked on a required security patch even if they don't interact.
+const FORCED_COUNTDOWN_S = 10;
+
 /**
  * Read the most-recently-polled remote version from the meta tag we get back
  * from `/api/version`. Stored on `window` by `useVersionCheck` so the banner
@@ -73,9 +78,95 @@ export function UpdateAvailableBanner() {
   const [show, setShow] = useState(false);
   const [forced, setForced] = useState(false);
   const [isReloading, setIsReloading] = useState(false);
-  // Track the click so re-entrant handlers (double-click, keyboard re-fire)
-  // can't kick off two parallel SW handshakes.
+  // Countdown seconds remaining for forced auto-reload. null = not running.
+  const [countdown, setCountdown] = useState<number | null>(null);
+  // Guards against double-click / keyboard re-fire starting two parallel SW handshakes.
   const reloadInFlight = useRef(false);
+  const countdownIntervalRef = useRef<ReturnType<typeof window.setInterval> | null>(null);
+
+  /**
+   * Cache-busting reload. Appending a one-shot query string defeats both the
+   * HTTP cache and any intermediate proxy that ignored `cache: 'no-store'`.
+   */
+  const hardReload = useCallback(() => {
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set('_v', Date.now().toString(36));
+      window.location.replace(url.toString());
+    } catch {
+      window.location.reload();
+    }
+  }, []);
+
+  const handleReload = useCallback(() => {
+    if (reloadInFlight.current) return;
+    reloadInFlight.current = true;
+
+    // Cancel any running countdown so it doesn't fire a second reload.
+    if (countdownIntervalRef.current !== null) {
+      window.clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+    }
+
+    // 1. Immediate visual feedback.
+    setIsReloading(true);
+
+    // 2. Record the attempted version so we don't loop if the reload fails to
+    //    actually swap bundles. Cleared automatically by `useVersionCheck` once
+    //    the local bundle SHA catches up to the targeted SHA.
+    const polled = readPolledVersion();
+    if (polled) {
+      localStorage.setItem(ATTEMPTED_VERSION_KEY, polled);
+      localStorage.setItem(
+        ATTEMPTED_VERSION_EXPIRY_KEY,
+        String(Date.now() + ATTEMPTED_VERSION_TTL_MS),
+      );
+      // Notify other open tabs so they can schedule their own reload rather
+      // than silently drifting on the old bundle.
+      announceReloaded(polled);
+    }
+
+    // 3. Hard fallback: if `updateSW` hangs (SW unresponsive, tab backgrounded
+    //    mid-handshake), force a cache-busting reload after the timeout.
+    const fallbackTimer = window.setTimeout(() => {
+      hardReload();
+    }, RELOAD_FALLBACK_MS);
+
+    updateSW(true)
+      .catch(() => {
+        window.clearTimeout(fallbackTimer);
+        hardReload();
+      });
+  }, [hardReload]);
+
+  // Auto-reload countdown for forced (required) updates. Starts a 10-second
+  // timer the moment the forced banner appears. The user can hit "Reload now"
+  // to skip the wait; if they ignore it, we reload automatically so a required
+  // security patch is never indefinitely blocked.
+  useEffect(() => {
+    if (!show || !forced || isReloading) return;
+
+    setCountdown(FORCED_COUNTDOWN_S);
+    countdownIntervalRef.current = window.setInterval(() => {
+      setCountdown(prev => {
+        if (prev === null) return null;
+        // Return 0 as a terminal signal; the separate effect below fires the reload.
+        return prev <= 1 ? 0 : prev - 1;
+      });
+    }, 1000);
+
+    return () => {
+      if (countdownIntervalRef.current !== null) {
+        window.clearInterval(countdownIntervalRef.current);
+        countdownIntervalRef.current = null;
+      }
+    };
+  }, [show, forced, isReloading]);
+
+  // Trigger reload when the countdown drains to zero.
+  useEffect(() => {
+    if (countdown === 0) handleReload();
+  }, [countdown, handleReload]);
 
   const handleUpdateAvailable = useCallback((isForced: boolean) => {
     // Suppress if user soft-dismissed within the last 24h (not allowed for forced updates).
@@ -108,76 +199,55 @@ export function UpdateAvailableBanner() {
   // Don't interrupt mid-onboarding with a reload prompt.
   if (!show || pathname.startsWith('/onboarding')) return null;
 
-  const handleReload = () => {
-    if (reloadInFlight.current) return;
-    reloadInFlight.current = true;
-
-    // 1. Immediate visual feedback. Don't leave the banner sitting there while
-    //    the SW handshake runs — that's what makes it look "stuck".
-    setIsReloading(true);
-
-    // 2. Record the attempted version so we don't loop if the reload fails to
-    //    actually swap bundles (CDN cache, proxy cache, SW skipped). This is
-    //    cleared automatically by `useVersionCheck` once we detect that the
-    //    local bundle has caught up to the targeted SHA.
-    const polled = readPolledVersion();
-    if (polled) {
-      localStorage.setItem(ATTEMPTED_VERSION_KEY, polled);
-      localStorage.setItem(
-        ATTEMPTED_VERSION_EXPIRY_KEY,
-        String(Date.now() + ATTEMPTED_VERSION_TTL_MS),
-      );
-    }
-
-    // 3. Hard fallback: if `updateSW` is hung (SW unresponsive, browser tab
-    //    backgrounded mid-handshake), force a cache-busting reload after the
-    //    timeout so the user is never stuck on a frozen banner.
-    const fallbackTimer = window.setTimeout(() => {
-      hardReload();
-    }, RELOAD_FALLBACK_MS);
-
-    updateSW(true)
-      .catch(() => {
-        // SW path failed — fall through to a hard reload immediately.
-        window.clearTimeout(fallbackTimer);
-        hardReload();
-      });
-  };
-
-  /**
-   * Cache-busting reload. Appending a one-shot query string defeats both the
-   * HTTP cache and any intermediate proxy that ignored `cache: 'no-store'`.
-   */
-  const hardReload = () => {
-    try {
-      const url = new URL(window.location.href);
-      url.searchParams.set('_v', Date.now().toString(36));
-      window.location.replace(url.toString());
-    } catch {
-      window.location.reload();
-    }
-  };
-
   const handleDismiss = () => {
     if (forced) return;
     localStorage.setItem(DISMISS_KEY, String(Date.now() + 24 * 60 * 60 * 1000));
     setShow(false);
   };
 
+  const bannerText = isReloading
+    ? 'Reloading to apply update…'
+    : forced
+      ? countdown !== null && countdown > 0
+        ? `A required update is available. Reloading in ${countdown}s…`
+        : 'A required update is available. Please reload to continue.'
+      : 'A new version of Zopkit is available.';
+
   return (
     <div
       role="alert"
       aria-live="polite"
-      className="fixed bottom-4 left-4 right-4 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:max-w-md z-50 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3 rounded-lg border border-border bg-background px-4 py-3 shadow-lg"
+      aria-label="Update available — reload to apply"
+      className={[
+        // Position: full-width on mobile, centered pill on sm+.
+        // bottom uses safe-area-inset-bottom so the banner clears iOS home
+        // indicators, Android gesture bars, and the macOS Dock in browser windows.
+        'fixed left-4 right-4',
+        'bottom-[calc(1rem_+_env(safe-area-inset-bottom,_0px))]',
+        'sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:max-w-md',
+        // Stack above sticky headers, modals, and NetworkQualityBanner (z-[110]).
+        'z-[120]',
+        // Layout.
+        'flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3',
+        // Shape + elevation.
+        'rounded-xl border border-border',
+        // Dark theme: lift the border out of the deep-blue background so the
+        // banner reads as a distinct floating surface, not page chrome.
+        'dark:border-white/20',
+        // Background: slightly frosted; falls back to near-opaque for browsers
+        // without backdrop-filter support.
+        'bg-background/95 backdrop-blur-sm',
+        'supports-[backdrop-filter]:bg-background/80',
+        'px-4 py-3',
+        'shadow-xl shadow-black/10',
+      ].join(' ')}
     >
       <span className="text-sm font-medium flex-1">
-        {isReloading
-          ? 'Reloading to apply update…'
-          : forced
-          ? 'A required update is available. Please reload to continue.'
-          : 'A new version of Zopkit is available.'}
+        {bannerText}
       </span>
-      <div className="flex items-center justify-end gap-2 sm:gap-3 shrink-0">
+      {/* flex-wrap ensures buttons never overflow the card on very narrow
+          viewports (<360px); justify-end keeps them right-aligned on wider ones. */}
+      <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3 shrink-0">
         <button
           onClick={handleReload}
           disabled={isReloading}
@@ -188,7 +258,7 @@ export function UpdateAvailableBanner() {
         {!forced && !isReloading && (
           <button
             onClick={handleDismiss}
-            className="text-sm text-muted-foreground hover:text-foreground px-2 py-1"
+            className="text-sm text-muted-foreground hover:text-foreground px-2 py-1.5"
           >
             Later
           </button>
