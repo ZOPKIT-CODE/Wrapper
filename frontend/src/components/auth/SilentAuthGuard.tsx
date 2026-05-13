@@ -70,19 +70,9 @@ export const SilentAuthGuard: React.FC<SilentAuthGuardProps> = ({ children }) =>
       if (authCheckComplete) return;
       initStartedRef.current = true;
 
-      logger.debug('🔄 SilentAuthGuard: Starting initialization...', {
-        isLoading,
-        isAuthenticated,
-        hasChecked,
-        isChecking,
-        pathname: location.pathname,
-        isPublicPath
-      });
-
       try {
         // If user is already authenticated, no need for silent auth
         if (isAuthenticated && userId) {
-          logger.debug('✅ SilentAuthGuard: User already authenticated');
           setAuthCheckComplete(true);
           setInitializationComplete(true);
           return;
@@ -90,21 +80,17 @@ export const SilentAuthGuard: React.FC<SilentAuthGuardProps> = ({ children }) =>
 
         // If on a public path and not authenticated, no need for silent auth
         if (isPublicPath && !isAuthenticated) {
-          logger.debug('ℹ️ SilentAuthGuard: On public path, skipping silent auth');
           setAuthCheckComplete(true);
           setInitializationComplete(true);
           return;
         }
 
         // Attempt silent authentication
-        logger.debug('🔍 SilentAuthGuard: Attempting silent authentication...');
         const silentAuthResult = await checkSilentAuth();
-
-        logger.debug('✅ SilentAuthGuard: Silent auth completed:', silentAuthResult);
 
         // Get the final auth state
         const authState = await getAuthState();
-        logger.debug('📊 SilentAuthGuard: Final auth state:', authState);
+        void silentAuthResult; // consumed via authState
 
         setAuthCheckComplete(true);
 
@@ -139,18 +125,8 @@ export const SilentAuthGuard: React.FC<SilentAuthGuardProps> = ({ children }) =>
   // Handle authenticated user routing
   const handleAuthenticatedUser = async (_authState: any) => {
     try {
-      logger.debug('🔄 SilentAuthGuard: Handling authenticated user...');
-
       // Never auto-redirect from public paths — the landing page handles
       // showing the correct CTA (Dashboard / Onboarding / Sign In).
-      if (isPublicPath) {
-        logger.debug('ℹ️ SilentAuthGuard: On public path, staying put (landing handles CTA)');
-        setInitializationComplete(true);
-        return;
-      }
-
-      // If already on a protected route, stay there
-      logger.debug('ℹ️ SilentAuthGuard: Already on protected route, staying');
       setInitializationComplete(true);
     } catch (error) {
       logger.error('❌ SilentAuthGuard: Error handling authenticated user:', error);
@@ -160,14 +136,10 @@ export const SilentAuthGuard: React.FC<SilentAuthGuardProps> = ({ children }) =>
 
   // Handle unauthenticated user routing
   const handleUnauthenticatedUser = async () => {
-    logger.debug('ℹ️ SilentAuthGuard: Handling unauthenticated user...');
-
     // If on a protected route, redirect to landing
     if (!isPublicPath) {
-      logger.debug('🔄 SilentAuthGuard: On protected route, redirecting to landing');
       navigate({ to: '/landing', replace: true });
     }
-
     setInitializationComplete(true);
   };
 

@@ -47,18 +47,15 @@ function TokenSetupComponent() {
   useEffect(() => {
     setKindeTokenGetter(async () => {
       try {
-        logger.debug('🔑 TokenGetter: Called');
-
         const token = await getCachedToken(() => getTokenRef.current());
 
         if (token) {
-          logger.debug('✅ TokenGetter: Successfully retrieved token from Kinde');
           return token;
         } else {
           // Avoid log spam in dev mode when many unauthenticated requests run.
           const now = Date.now();
           if (now - lastNoTokenLogAtRef.current > 10_000) {
-            logger.debug('❌ TokenGetter: No token from Kinde');
+            logger.debug('TokenGetter: no token from Kinde');
             lastNoTokenLogAtRef.current = now;
           }
           return null;
@@ -262,15 +259,12 @@ function SilentAuthInitializer() {
   useEffect(() => {
     // Only start silent auth check once Kinde is loaded and we haven't started yet
     if (!isLoading && !initStarted && !hasChecked && !isChecking) {
-      logger.debug('🔄 SilentAuth: Initializing silent authentication...');
       setInitStarted(true);
 
       // Add a small delay to ensure everything is properly initialized
       const timer = setTimeout(() => {
-        checkSilentAuth().then((result) => {
-          logger.debug('✅ SilentAuth: Initial silent auth check completed:', result);
-        }).catch((error) => {
-          logger.debug('ℹ️ SilentAuth: Initial silent auth check failed (expected):', error);
+        checkSilentAuth().catch(() => {
+          // Silent auth failure is expected for unauthenticated users.
         });
       }, 200);
 
@@ -334,41 +328,18 @@ export const KindeProvider: React.FC<KindeProviderProps> = ({
     );
   }
 
-  // Let Kinde handle organization management automatically
-  logger.debug('🔄 KindeProvider: Using Kinde built-in organization handling');
-
-  // Validate configuration to prevent OAuth 400 errors
+  // Validate configuration to prevent OAuth 400 errors (errors only — no lifecycle noise)
   useEffect(() => {
-    const validateConfig = () => {
-      logger.debug('🔍 KindeProvider: Validating OAuth configuration...');
-
-      // Check domain format
-      if (!domain.startsWith('https://')) {
-        logger.error('❌ VITE_KINDE_DOMAIN must start with https://');
-      }
-
-      // Check client ID format
-      if (!clientId || clientId.trim() === '') {
-        logger.error('❌ VITE_KINDE_CLIENT_ID is empty or missing');
-      }
-
-      // Check redirect URI format
-      if (!redirectUri || !redirectUri.startsWith('http')) {
-        logger.error('❌ Redirect URI is invalid:', redirectUri);
-      }
-
-      // Log configuration (without sensitive data)
-      logger.debug('✅ OAuth Configuration:', {
-        domain,
-        clientIdLength: clientId?.length,
-        redirectUri, // Log full redirect URI for debugging
-        logoutUri,
-        environment: import.meta.env.MODE
-      });
-    };
-
-    validateConfig();
-  }, [domain, clientId, redirectUri, logoutUri]);
+    if (!domain.startsWith('https://')) {
+      logger.error('❌ VITE_KINDE_DOMAIN must start with https://');
+    }
+    if (!clientId || clientId.trim() === '') {
+      logger.error('❌ VITE_KINDE_CLIENT_ID is empty or missing');
+    }
+    if (!redirectUri || !redirectUri.startsWith('http')) {
+      logger.error('❌ Redirect URI is invalid:', redirectUri);
+    }
+  }, [domain, clientId, redirectUri]);
 
 
   return (

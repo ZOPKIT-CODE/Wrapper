@@ -35,6 +35,14 @@ export const AppRoot = () => {
           <ThemeProvider defaultTheme="system" storageKey="zopkit-theme">
             <Toaster position="top-right" richColors offset="80px" gap={12} />
             <NetworkQualityBanner />
+            {/*
+             * UpdateAvailableBanner is mounted here, ABOVE <RouterProvider>, which means
+             * the TanStack Router context is not yet available at this depth.
+             * Do NOT use useLocation() / useRouterState() inside the banner — they crash
+             * with "Cannot read properties of null (reading 'isServer')".
+             * The banner uses its own useCurrentPathname() hook that subscribes to
+             * popstate and monkey-patches history.pushState/replaceState instead.
+             */}
             <UpdateAvailableBanner />
             <KindeProvider>
               <RouterProvider router={router} />
