@@ -1,12 +1,17 @@
 import { useState, useCallback, useMemo } from "react";
 import useOrganizationAuth from "./useOrganizationAuth";
-import { useTenantApplications } from "./useSharedQueries";
+import { useAuthStatus, useTenantApplications } from "./useSharedQueries";
 import { Application } from "@/types/application";
 import toast from "react-hot-toast";
 
 export function useApplications() {
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
   const [showAppDetails, setShowAppDetails] = useState(false);
+
+  // Auth status loading state — while this is in-flight, tenantId is not yet
+  // available and the applications query will be disabled.  Treat it as a
+  // loading state so we show <LoadingState /> rather than an empty-state card.
+  const { isLoading: authLoading } = useAuthStatus();
 
   const { tenantId } = useOrganizationAuth();
 
@@ -71,8 +76,11 @@ export function useApplications() {
     setSelectedApp(null);
   }, []);
 
-  // Show loading when initially loading or when fetching and we still have no data (e.g. placeholderData)
-  const isInitialLoading = isLoading || (isFetching && applications.length === 0);
+  // Show loading when:
+  //  1. auth-status query is still in flight (tenantId not yet available → apps query disabled)
+  //  2. the apps query itself is loading
+  //  3. refetching with no cached data yet (e.g. after invalidation)
+  const isInitialLoading = authLoading || isLoading || (isFetching && applications.length === 0);
 
   // Memoize the return object to prevent unnecessary re-renders
   const returnValue = useMemo(() => ({

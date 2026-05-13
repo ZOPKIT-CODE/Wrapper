@@ -279,18 +279,21 @@ export function DashboardLayout() {
     };
   }, [user, kindeUser])
 
-  // Prepare tenant data for sidebar
+  // Prepare tenant data for sidebar.
+  // Only populated once the tenant object arrives — avoids showing the misleading
+  // 'Organization' placeholder while auth/tenant queries are still in flight.
+  // ModernSidebar falls back to 'Zopkit' when tenantData is undefined.
   const tenantData = useMemo(() => {
-    if (!tenant && !user) return undefined;
+    if (!tenant) return undefined;
 
     return {
-      tenantId: tenant?.tenantId || user?.tenantId || '',
-      companyName: tenant?.companyName || 'Organization',
-      subdomain: tenant?.subdomain,
-      industry: tenant?.industry,
-      logoUrl: tenant?.logoUrl,
+      tenantId: tenant.tenantId,
+      companyName: tenant.companyName || '',
+      subdomain: tenant.subdomain,
+      industry: tenant.industry,
+      logoUrl: tenant.logoUrl,
     };
-  }, [tenant, user])
+  }, [tenant])
 
   // Check for trial information from URL params or localStorage
   useEffect(() => {
