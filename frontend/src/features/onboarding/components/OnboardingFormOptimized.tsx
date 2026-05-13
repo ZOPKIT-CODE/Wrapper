@@ -468,6 +468,9 @@ export const OnboardingFormOptimized = () => {
           queryClient.invalidateQueries({ queryKey: queryKeys.subscriptionCurrent }),
           queryClient.invalidateQueries({ queryKey: queryKeys.creditStatus }),
           queryClient.invalidateQueries({ queryKey: queryKeys.notifications }),
+          queryClient.invalidateQueries({ queryKey: queryKeys.userContext }),
+          // Evict unread count so it recalculates after notifications initialise.
+          queryClient.removeQueries({ queryKey: queryKeys.unreadCount }),
 
           // 2. Refetch the critical path so the dashboard renders with real values
           //    (isTenantAdmin, permissions, tenantId) on first paint.
