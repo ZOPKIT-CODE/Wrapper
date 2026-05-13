@@ -112,6 +112,7 @@ jobs:
           pnpm run build
         env:
           CI: true
+          VITE_GIT_SHA: ${{ github.sha }}
 
       - name: Build backend (verify TS compiles cleanly)
         working-directory: backend

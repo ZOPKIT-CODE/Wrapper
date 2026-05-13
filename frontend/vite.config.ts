@@ -11,11 +11,13 @@ import { readFileSync } from 'fs';
 const PKG_VERSION = JSON.parse(readFileSync('./package.json', 'utf-8')).version;
 const BUILD_HASH = `${PKG_VERSION}+${Date.now()}`;
 
-// Git SHA for runtime version comparison — GitHub Actions sets GITHUB_SHA in CI
+// Git SHA for runtime version comparison — full 40-char SHA so it matches /api/version response.
+// Priority: VITE_GIT_SHA (set in CI env block) → GITHUB_SHA → local git → dev fallback.
 const gitSha = (() => {
-  if (process.env.GITHUB_SHA) return process.env.GITHUB_SHA.slice(0, 7);
-  try { return execSync('git rev-parse --short HEAD', { stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim(); }
-  catch { return 'dev'; }
+  if (process.env.VITE_GIT_SHA) return process.env.VITE_GIT_SHA;
+  if (process.env.GITHUB_SHA) return process.env.GITHUB_SHA;
+  try { return execSync('git rev-parse HEAD', { stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim(); }
+  catch { return `dev-${Date.now().toString(36)}`; }
 })();
 
 // https://vitejs.dev/config/

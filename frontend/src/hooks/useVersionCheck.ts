@@ -30,16 +30,20 @@ export function useVersionCheck(onUpdateAvailable: (forced: boolean) => void) {
       try {
         const res = await fetch('/api/version', { cache: 'no-store' });
         if (!res.ok) return;
-        const { version, minRequiredVersion } = await res.json();
+        const { sha, minRequiredVersion } = await res.json();
         if (cancelled) return;
 
         const current = __APP_VERSION__;
 
-        // Expose the latest polled version for the banner to read. Used to
-        // record which SHA the user attempted to reload to, so we can suppress
-        // the banner if the reload fails to actually swap bundles.
-        if (version) {
-          window.__ZK_POLLED_VERSION__ = version;
+        // Guard: if __APP_VERSION__ didn't get substituted at build time (dev fallback
+        // starting with "dev-", or literally undefined), don't show the banner.
+        if (!current || current === 'undefined' || current.startsWith('dev-')) return;
+
+        // Expose the latest polled SHA for the banner to read. Used to record which SHA
+        // the user attempted to reload to, so we can suppress the banner if the reload
+        // fails to actually swap bundles.
+        if (sha) {
+          window.__ZK_POLLED_VERSION__ = sha;
         }
 
         // ATTEMPTED_VERSION lifecycle:
@@ -69,7 +73,9 @@ export function useVersionCheck(onUpdateAvailable: (forced: boolean) => void) {
           localStorage.removeItem(ATTEMPTED_VERSION_EXPIRY_KEY);
         }
 
-        if (version && version !== current) {
+        // Compare SHAs. Both are full 40-char SHAs when running in CI; fall back to
+        // startsWith for any edge case where one side is a 7-char short SHA.
+        if (sha && sha !== current && !sha.startsWith(current) && !current.startsWith(sha)) {
           // minRequiredVersion is set by the backend for security patches that
           // make older frontends unsafe. If it's set and our SHA doesn't match,
           // the update is forced (user cannot dismiss).
