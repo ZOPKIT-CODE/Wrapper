@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useWatch } from 'react-hook-form';
 import { StepIndicator } from './StepIndicator';
 import { NavigationButtons } from './NavigationButtons';
 import { StepRenderer } from './StepRenderer';
@@ -53,6 +54,7 @@ export const OnboardingLayout = React.memo(({
 }: OnboardingLayoutProps) => {
   const [showSupport, setShowSupport] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
+  const termsAccepted = useWatch({ control: form.control, name: 'termsAccepted' }) as boolean;
 
   // Scroll to top when step changes (without smooth behavior to prevent lag)
   useEffect(() => {
@@ -301,6 +303,7 @@ export const OnboardingLayout = React.memo(({
               stepsConfig={stepsConfig}
               canProceed={canProceed}
               canSubmit={canSubmit}
+              termsAccepted={!!termsAccepted}
               onPrev={onPrev}
               onNext={onNext}
               onSubmit={onSubmit}

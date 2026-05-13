@@ -4,8 +4,8 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { StepConfig } from '../config/flowConfigs';
-
 import { Rocket, Loader2 } from 'lucide-react';
 
 interface NavigationButtonsProps {
@@ -13,6 +13,8 @@ interface NavigationButtonsProps {
   stepsConfig: StepConfig[];
   canProceed: () => boolean;
   canSubmit: () => boolean;
+  /** Direct value from useWatch — bypasses canSubmit() for reliable button state */
+  termsAccepted?: boolean;
   onPrev: () => void;
   onNext: () => void;
   onSubmit?: () => void;
@@ -25,6 +27,7 @@ export const NavigationButtons: React.FC<NavigationButtonsProps> = ({
   stepsConfig = [],
   canProceed,
   canSubmit,
+  termsAccepted = false,
   onPrev,
   onNext,
   onSubmit,
@@ -33,11 +36,11 @@ export const NavigationButtons: React.FC<NavigationButtonsProps> = ({
 }) => {
   const isFirstStep = currentStep === 1;
   const isLastStep = stepsConfig.length > 0 && currentStep === stepsConfig.length;
-  
-  // FIXED: Call functions directly - they will be reactive due to useWatch in canProceed
-  // The parent component will re-render when form values change, causing this to re-evaluate
+
   const canProceedNow = canProceed();
-  const canSubmitNow = canSubmit() && !isSubmitting;
+  // Gate the Launch button on the live termsAccepted value so it reliably disables
+  // the moment the checkbox is unchecked, independent of canSubmit() closure timing.
+  const canSubmitNow = termsAccepted && canSubmit() && !isSubmitting;
 
   const pct = Math.round((currentStep / (stepsConfig.length || 1)) * 100);
 
@@ -71,26 +74,40 @@ export const NavigationButtons: React.FC<NavigationButtonsProps> = ({
       </div>
 
       {isLastStep ? (
-        <Button
-          type="submit"
-          onClick={onSubmit}
-          disabled={!canSubmitNow}
-          className="h-11 min-w-[180px] rounded-lg bg-gradient-to-b from-blue-800 to-blue-950 px-6 text-sm font-semibold text-white shadow-lg shadow-blue-950/25 transition-[transform,box-shadow] hover:from-blue-700 hover:to-blue-900 hover:shadow-blue-950/35 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100"
-        >
-          <span className="flex items-center gap-2">
-            {isSubmitting ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Submitting…</span>
-              </>
-            ) : (
-              <>
-                <span>Launch workspace</span>
-                <Rocket className="h-4 w-4" />
-              </>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              {/* span needed so tooltip works while button is disabled */}
+              <span className="inline-flex">
+                <Button
+                  type="submit"
+                  onClick={onSubmit}
+                  disabled={!canSubmitNow}
+                  className="h-11 min-w-[180px] rounded-lg bg-gradient-to-b from-blue-800 to-blue-950 px-6 text-sm font-semibold text-white shadow-lg shadow-blue-950/25 transition-[transform,box-shadow] hover:from-blue-700 hover:to-blue-900 hover:shadow-blue-950/35 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100"
+                >
+                  <span className="flex items-center gap-2">
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>Submitting…</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Launch workspace</span>
+                        <Rocket className="h-4 w-4" />
+                      </>
+                    )}
+                  </span>
+                </Button>
+              </span>
+            </TooltipTrigger>
+            {!termsAccepted && !isSubmitting && (
+              <TooltipContent side="top">
+                Accept the Terms and Conditions above to launch your workspace
+              </TooltipContent>
             )}
-          </span>
-        </Button>
+          </Tooltip>
+        </TooltipProvider>
       ) : (
         <Button
           type="button"
