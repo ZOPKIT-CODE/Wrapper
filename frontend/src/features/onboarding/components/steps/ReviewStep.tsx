@@ -29,13 +29,12 @@ interface ReviewStepProps {
 }
 
 const fadeIn: Variants = {
-  hidden: { opacity: 0, y: 20 },
+  hidden: { y: 20 },
   visible: (i: number) => ({
-    opacity: 1,
     y: 0,
     transition: {
       delay: i * 0.1,
-      duration: 0.5,
+      duration: 0.4,
       ease: "easeOut"
     }
   })
@@ -111,7 +110,7 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({ form, onEditStep, userCl
   const getStateName = (code?: string) => STATES.find(s => s.id === code)?.name || code || 'N/A';
 
   return (
-    <div className="min-h-screen pb-20 relative">
+    <div className="pb-20 relative">
       {/* Main Grid Content - Review summary only; welcome/credits screen shows after submit */}
       <div className="relative z-20 pt-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -241,10 +240,10 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({ form, onEditStep, userCl
         </div>
 
         {/* Footer / Terms */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8 }}
+        <motion.div
+          initial={{ y: 20 }}
+          animate={{ y: 0 }}
+          transition={{ delay: 0.4 }}
           className="mb-10 mt-12"
         >
           <div className="mx-auto max-w-3xl rounded-3xl border border-slate-200/80 bg-white/90 p-8 shadow-xl shadow-blue-950/[0.06] backdrop-blur-xl">
