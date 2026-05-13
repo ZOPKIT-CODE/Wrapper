@@ -123,27 +123,22 @@ export const UserContextProvider: React.FC<UserContextProviderProps> = React.mem
           needsOnboarding: authStatus.needsOnboarding || false
         };
 
-        // Use tenant data from shared hook (already cached and optimized)
-        let effectiveTenantData: TenantData = {
-          tenantId: authStatus.tenantId,
-          companyName: 'Organization',
-          subdomain: 'unknown',
-          industry: 'Business'
-        };
+        setUser(userData);
 
-        // Use cached tenant data if available
+        // Only set tenant when real tenant data has arrived. If tenantData is
+        // still loading, leave tenant as null so the sidebar shows 'Zopkit'
+        // instead of the misleading 'Organization' placeholder. The
+        // tenantIdStable effect below will call setTenant once useTenant
+        // resolves with the actual company name.
         if (tenantData) {
-          effectiveTenantData = {
+          setTenant({
             tenantId: tenantData.tenantId || authStatus.tenantId,
-            companyName: tenantData.companyName || 'Organization',
+            companyName: tenantData.companyName || '',
             subdomain: tenantData.subdomain || 'unknown',
             industry: tenantData.industry || 'Business',
             logoUrl: tenantData.logoUrl || undefined,
-          };
+          });
         }
-
-        setUser(userData);
-        setTenant(effectiveTenantData);
         setPermissions(authStatus.userPermissions || authStatus.legacyPermissions || []);
         setRoles(authStatus.userRoles || []);
         setLastRefreshTime(new Date());
@@ -237,7 +232,7 @@ export const UserContextProvider: React.FC<UserContextProviderProps> = React.mem
     if (tenantData && user) {
       setTenant({
         tenantId: tenantData.tenantId || user.tenantId,
-        companyName: tenantData.companyName || 'Organization',
+        companyName: tenantData.companyName || '',
         subdomain: tenantData.subdomain || 'unknown',
         industry: tenantData.industry || 'Business',
         logoUrl: tenantData.logoUrl || undefined,

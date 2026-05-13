@@ -421,12 +421,6 @@ export class UnifiedOnboardingService {
         throw transactionError;
       }
 
-      // Bust auth middleware caches so the very next /admin/auth-status request
-      // hits the DB and finds the newly created tenant + user, rather than
-      // returning the null that was cached during the pre-onboarding page loads.
-      invalidateTenantLookupCache(kindeResult.orgCode as string);
-      invalidateUserCache(kindeResult.userId as string);
-
       // 6+7. MARK ONBOARDING COMPLETE + DELETE STORED FORM DATA (parallel — independent ops)
       logger.onboarding.step(6, 'MARKING_COMPLETE', 'Marking onboarding as complete + cleaning form data in parallel');
       const kindeUserIdForCleanup = kindeResult.userId as string;
@@ -442,6 +436,14 @@ export class UnifiedOnboardingService {
           : Promise.resolve(),
       ]);
       logger.onboarding.success('Onboarding marked as complete in database');
+
+      // Bust auth middleware caches AFTER onboardingCompleted is written to DB, so
+      // the very next authenticated request re-reads tenant_users and sees
+      // onboardingCompleted=true and the correct tenantId — not a stale null entry
+      // from pre-onboarding page loads.
+      invalidateTenantLookupCache(kindeResult.orgCode as string);
+      invalidateUserCache(kindeResult.userId as string);
+      console.log(`[ONBOARDING] Cache busted: kindeUserId="${kindeResult.userId}" orgCode="${kindeResult.orgCode}" tenantId="${dbResult.tenant.tenantId}"`);
 
       // 8. POST-ONBOARDING ASYNC WORK (fire-and-forget — does NOT block the response)
       // All of these are non-critical: failures are logged but never surfaced to the user.
