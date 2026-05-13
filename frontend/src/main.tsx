@@ -12,9 +12,18 @@ initSW()
 const CHUNK_RELOAD_KEY = "chunk_reload_attempted"
 
 function handleChunkError() {
-  if (!sessionStorage.getItem(CHUNK_RELOAD_KEY)) {
-    sessionStorage.setItem(CHUNK_RELOAD_KEY, "1")
-    window.location.reload()
+  if (sessionStorage.getItem(CHUNK_RELOAD_KEY)) return;
+  sessionStorage.setItem(CHUNK_RELOAD_KEY, "1");
+  // A chunk 404 means the user has a stale index.html referencing a hashed
+  // chunk that no longer exists after the latest deploy. A plain reload() can
+  // re-serve the same cached index.html through aggressive CDN/proxy layers.
+  // Appending a one-shot _v param defeats every cache tier.
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.set("_v", Date.now().toString(36));
+    window.location.replace(url.toString());
+  } catch {
+    window.location.reload();
   }
 }
 
