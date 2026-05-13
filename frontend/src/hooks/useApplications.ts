@@ -18,6 +18,11 @@ export function useApplications() {
   // Use shared hook to avoid duplicate API calls
   const { data: tenantApps = [], isLoading, isFetching, refetch } = useTenantApplications(tenantId);
 
+  // useTenantApplications is `enabled: false` when tenantId is null, which
+  // means isLoading=false and data=[] (placeholderData).  We still want to
+  // show LoadingState — not EmptyState — while we're waiting for the tenantId.
+  const hasTenantId = !!tenantId;
+
   /**
    * Normalize applications data to match expected shape (with baseUrl)
    * Also normalize enabledModules to always be an array and enabledModulesPermissions to Record<string, string[]>
@@ -80,7 +85,7 @@ export function useApplications() {
   //  1. auth-status query is still in flight (tenantId not yet available → apps query disabled)
   //  2. the apps query itself is loading
   //  3. refetching with no cached data yet (e.g. after invalidation)
-  const isInitialLoading = authLoading || isLoading || (isFetching && applications.length === 0);
+  const isInitialLoading = authLoading || !hasTenantId || isLoading || (isFetching && applications.length === 0);
 
   // Memoize the return object to prevent unnecessary re-renders
   const returnValue = useMemo(() => ({

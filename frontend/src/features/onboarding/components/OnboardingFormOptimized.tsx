@@ -471,10 +471,31 @@ export const OnboardingFormOptimized = () => {
           // Evict unread count so it recalculates after notifications initialise.
           queryClient.removeQueries({ queryKey: queryKeys.unreadCount }),
 
-          // 2. Refetch the critical path so the dashboard renders with real values
-          //    (isTenantAdmin, permissions, tenantId) on first paint.
+          // 2. Kick off authStatus refetch concurrently with the other invalidations.
+          //    We intentionally do NOT await this inside Promise.all — we need the
+          //    cache to be fully written (not just the HTTP response received) before
+          //    we navigate.  That's handled by the fetchQuery below.
           queryClient.refetchQueries({ queryKey: queryKeys.authStatus }),
         ]);
+
+        // 3. Await the resolved data, not just the in-flight request.
+        //    `refetchQueries` resolves when the HTTP request completes but the
+        //    cache write + observer flush happens on the next microtask.  If we
+        //    call navigate() immediately after Promise.all the dashboard mounts
+        //    with tenantId=null → useTenantApplications is disabled → 0 apps.
+        //    `fetchQuery` with staleTime:0 either re-uses the already-pending
+        //    promise or fires a new request, and resolves to the actual data,
+        //    guaranteeing the cache is populated before we navigate.
+        await queryClient.fetchQuery({
+          queryKey: queryKeys.authStatus,
+          queryFn: async () => {
+            const { default: apiFetcher } = await import('@/lib/apiOptimized');
+            const res = await apiFetcher.get('/admin/auth-status');
+            return res.data;
+          },
+          staleTime: 0,
+        });
+
         const baseUrl = response.data?.data?.redirectUrl || '/dashboard/applications';
         const url = baseUrl.startsWith('/dashboard') && !baseUrl.includes('onboarding=complete')
           ? (baseUrl.includes('?') ? `${baseUrl}&onboarding=complete` : `${baseUrl}?onboarding=complete`)

@@ -127,6 +127,20 @@
       "when": 1762900000000,
       "tag": "0017_drop_credit_purchases_deprecated_col",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "5",
+      "when": 1762950000000,
+      "tag": "0018_perf_onboarding_indexes",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "5",
+      "when": 1763000000000,
+      "tag": "0019_organization_applications_rls",
+      "breakpoints": true
     }
   ]
 }
