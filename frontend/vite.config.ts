@@ -60,8 +60,13 @@ export default defineConfig(({ mode }) => {
         ]
       },
       workbox: {
-        // cleanupOutdatedCaches removes stale caches from previous deploys.
+        // cleanupOutdatedCaches: Workbox deletes stale precache versions on activate.
         cleanupOutdatedCaches: true,
+        // clientsClaim: after the new SW activates (user triggers SKIP_WAITING via
+        // the banner), it immediately controls all open tabs — no "only affects new
+        // tabs" lag. Combined with registerType:'prompt' (skipWaiting:false), the
+        // user explicitly triggers the swap rather than being silently updated mid-session.
+        clientsClaim: true,
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
         runtimeCaching: [
           {
