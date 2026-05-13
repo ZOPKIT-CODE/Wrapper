@@ -66,27 +66,27 @@ export const OnboardingGuard = React.memo(({ children, redirectTo = '/login' }: 
     }
 
     if (justCompletedOnboarding) {
-      logger.debug('🎯 OnboardingGuard: Onboarding just completed, adding delay for auth sync')
-      const timer = setTimeout(() => {
-        const authStatus = authStatusRef.current
-        if (authStatus) {
-          const status: OnboardingStatus = {
-            needsOnboarding: authStatus.needsOnboarding ?? !authStatus.onboardingCompleted,
-            onboardingCompleted: authStatus.onboardingCompleted || false,
-            hasUser: !!authStatus.userId,
-            hasTenant: !!authStatus.tenantId
-          }
-          const isInvitedUser = authStatus.userType === 'INVITED_USER' ||
-            authStatus.isInvitedUser === true ||
-            authStatus.onboardingCompleted === true
-          if (isInvitedUser) {
-            status.needsOnboarding = false
-            status.onboardingCompleted = true
-          }
-          setOnboardingStatus(status)
+      const authStatus = authStatusRef.current
+      if (authStatus) {
+        // fetchQuery in OnboardingFormOptimized guarantees authStatus is fresh in cache
+        // before navigate fires, so we can resolve immediately without any delay.
+        const status: OnboardingStatus = {
+          needsOnboarding: authStatus.needsOnboarding ?? !authStatus.onboardingCompleted,
+          onboardingCompleted: authStatus.onboardingCompleted || false,
+          hasUser: !!authStatus.userId,
+          hasTenant: !!authStatus.tenantId
         }
-      }, 2000)
-      return () => clearTimeout(timer)
+        const isInvitedUser = authStatus.userType === 'INVITED_USER' ||
+          authStatus.isInvitedUser === true ||
+          authStatus.onboardingCompleted === true
+        if (isInvitedUser) {
+          status.needsOnboarding = false
+          status.onboardingCompleted = true
+        }
+        setOnboardingStatus(status)
+      }
+      // If authStatus isn't in cache yet, the effect re-runs when authReady flips true.
+      return
     }
 
     if (onboardingData && backendAuthStatus && !isDashboardPath) {
