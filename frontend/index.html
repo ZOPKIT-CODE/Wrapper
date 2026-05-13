@@ -7,10 +7,18 @@
     <title>Zopkit</title>
     <meta name="description" content="Zopkit - Complete Business Operations Suite. Streamline your CRM, HRMS, Finance, Operations, and more with our unified platform." />
     
-    <!-- Fonts (preconnect already in place; display=swap avoids invisible text) -->
+    <!-- Fonts: async to avoid render-blocking on first load.
+         display=swap means text shows in system fallback while the font downloads.
+         The onload swap-in technique (media=print → all) is the standard non-blocking
+         pattern endorsed by web.dev and PageSpeed Insights. -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600;700;800&family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600;700;800&family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=JetBrains+Mono:wght@400;500;600&display=swap"
+          media="print" onload="this.media='all'">
+    <noscript>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600;700;800&family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=JetBrains+Mono:wght@400;500;600&display=swap">
+    </noscript>
     
     <!-- Favicon -->
     <link rel="manifest" href="/site.webmanifest">
