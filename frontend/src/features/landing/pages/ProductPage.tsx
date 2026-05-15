@@ -13,6 +13,7 @@ import { NavbarButton } from "@/components/ui/resizable-navbar";
 import { LandingFooter } from '@/components/layout/LandingFooter';
 import { MarketingNavbar } from '@/components/layout/MarketingNavbar';
 import { FAMobileProductPage } from './FAMobileProductPage';
+import { getCRMFeatureSvg } from './getCRMFeatureSvg';
 
 interface FeatureCardProps {
     feature: {
@@ -828,6 +829,8 @@ const FeatureCard: React.FC<FeatureCardProps> = ({ feature, i, productId }) => {
                                 {/* Full content — no maxHeight, shows everything */}
                                 {productId === 'financial-accounting' ? (
                                     <div style={{ lineHeight: 0 }}>{getFAFeatureSvg(i)}</div>
+                                ) : productId === 'b2b-crm' ? (
+                                    <div style={{ lineHeight: 0 }}>{getCRMFeatureSvg(i)}</div>
                                 ) : (
                                     <div className="p-8 flex flex-col gap-4 bg-slate-50 min-h-[400px] items-center justify-center">
                                         <span className="text-slate-400 text-sm">No full preview available</span>
@@ -1005,6 +1008,10 @@ const FeatureCard: React.FC<FeatureCardProps> = ({ feature, i, productId }) => {
                                         {productId === 'financial-accounting' ? (
                                             <div style={{ lineHeight: 0, display: 'block' }}>
                                                 {getFAFeatureSvg(i)}
+                                            </div>
+                                        ) : productId === 'b2b-crm' ? (
+                                            <div style={{ lineHeight: 0, display: 'block' }}>
+                                                {getCRMFeatureSvg(i)}
                                             </div>
                                         ) : (
                                             <div className="p-5 flex flex-col gap-3" style={{ background: 'rgba(255,255,255,0.5)', minHeight: '280px' }}>
