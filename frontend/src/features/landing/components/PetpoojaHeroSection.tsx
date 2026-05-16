@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { MobileHeroSection } from './MobileHeroSection'
 
 // ─── Mobile detection ──────────────────────────────────────────────────────────
 function useMobile() {
@@ -23,15 +22,55 @@ const PROJECTOR_STYLES = `
   @keyframes pp-float       { 0%,100%{ transform:translateY(0px) }  50%{ transform:translateY(-4px) } }
   @keyframes pp-lens-pulse  { 0%,100%{ opacity:0.85 } 50%{ opacity:1 } }
   @keyframes pp-hotspot     { 0%,100%{ opacity:0.85; transform:scale(1) } 50%{ opacity:1; transform:scale(1.15) } }
-  @keyframes pp-ring-out    { 0%{ transform:scale(0.5); opacity:0.7 } 100%{ transform:scale(4); opacity:0 } }
-  @keyframes pp-cone-breath { 0%,100%{ opacity:1 } 50%{ opacity:0.82 } }
-  @keyframes pp-floor-pulse { 0%,100%{ opacity:0.6 } 50%{ opacity:1 } }
-  @keyframes conn-flow      { from { stroke-dashoffset: 18 } to { stroke-dashoffset: 0 } }
-  @keyframes rb-lens-pulse  { 0%,100% { opacity:1 } 50% { opacity:0.72 } }
-  @media (prefers-reduced-motion: reduce) {
+  @keyframes zk-caret       { 50% { opacity:0 } }
+  @keyframes zk-cone-in     { from { opacity:0 } to { opacity:1 } }
+@media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
   }
 `
+
+// ─── Typewriter for "Welcome to Zopkit" ───────────────────────────────────────
+const WELCOME_TEXT = 'Welcome to Zopkit'
+
+function WelcomeTypewriter({ isMobile }: { isMobile: boolean }) {
+  const [text, setText] = useState('')
+  const done = text.length >= WELCOME_TEXT.length
+
+  useEffect(() => {
+    let i = 0
+    const id = setInterval(() => {
+      i++
+      setText(WELCOME_TEXT.slice(0, i))
+      if (i >= WELCOME_TEXT.length) clearInterval(id)
+    }, 55)
+    return () => clearInterval(id)
+  }, [])
+
+  return (
+    <span style={{
+      fontFamily: '"Palatino Linotype","Book Antiqua",Palatino,Georgia,serif',
+      fontStyle: 'italic',
+      fontWeight: 500,
+      fontSize: isMobile ? 'clamp(20px, 5vw, 26px)' : 'clamp(28px, 3.6vw, 48px)',
+      color: '#1b2e5a',
+      letterSpacing: '-0.01em',
+      lineHeight: 1.1,
+      whiteSpace: 'nowrap',
+    }}>
+      {text}
+      {!done && (
+        <span style={{
+          borderRight: '0.06em solid #1b2e5a',
+          marginLeft: '0.05em',
+          display: 'inline-block',
+          verticalAlign: 'text-bottom',
+          height: '0.82em',
+          animation: 'zk-caret 0.75s step-start infinite',
+        }} />
+      )}
+    </span>
+  )
+}
 
 // ─── Agent data ────────────────────────────────────────────────────────────────
 const BLUE = '#1b2e5a'
@@ -95,210 +134,32 @@ const TX = (color = 'rgba(255,255,255,0.85)', size = 8, weight = 500) => ({
   lineHeight: 1.3, letterSpacing: '0.02em',
 })
 
-// ─── Robot ball ────────────────────────────────────────────────────────────────
-function RobotBall({ size = 90 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 100 100" style={{ display: 'block', overflow: 'visible' }}>
-      <defs>
-        <radialGradient id="rb-body" cx="36%" cy="28%" r="68%">
-          <stop offset="0%"   stopColor="#5a6070"/>
-          <stop offset="22%"  stopColor="#282e38"/>
-          <stop offset="55%"  stopColor="#181c24"/>
-          <stop offset="100%" stopColor="#080a0e"/>
-        </radialGradient>
-        <radialGradient id="rb-panel-a" cx="50%" cy="40%" r="60%">
-          <stop offset="0%"   stopColor="#20252e"/>
-          <stop offset="100%" stopColor="#0d1016"/>
-        </radialGradient>
-        <radialGradient id="rb-panel-b" cx="50%" cy="60%" r="60%">
-          <stop offset="0%"   stopColor="#1a1e26"/>
-          <stop offset="100%" stopColor="#0a0c12"/>
-        </radialGradient>
-        <radialGradient id="rb-lens-housing" cx="42%" cy="34%" r="60%">
-          <stop offset="0%"   stopColor="#38404e"/>
-          <stop offset="100%" stopColor="#0c0e14"/>
-        </radialGradient>
-        <radialGradient id="rb-iris" cx="40%" cy="35%" r="65%">
-          <stop offset="0%"   stopColor="#4090e0"/>
-          <stop offset="20%"  stopColor="#1050c0"/>
-          <stop offset="50%"  stopColor="#071a60"/>
-          <stop offset="80%"  stopColor="#030d30"/>
-          <stop offset="100%" stopColor="#010510"/>
-        </radialGradient>
-        <radialGradient id="rb-core" cx="45%" cy="38%" r="55%">
-          <stop offset="0%"   stopColor="#a8d4ff"/>
-          <stop offset="30%"  stopColor="#3080ff"/>
-          <stop offset="70%"  stopColor="#0830a0"/>
-          <stop offset="100%" stopColor="#020818"/>
-        </radialGradient>
-        <radialGradient id="rb-sensor" cx="40%" cy="35%" r="60%">
-          <stop offset="0%"   stopColor="#4a6080"/>
-          <stop offset="55%"  stopColor="#162030"/>
-          <stop offset="100%" stopColor="#080e18"/>
-        </radialGradient>
-        <radialGradient id="rb-spec" cx="42%" cy="32%" r="55%">
-          <stop offset="0%"   stopColor="rgba(255,255,255,0.28)"/>
-          <stop offset="60%"  stopColor="rgba(200,220,255,0.06)"/>
-          <stop offset="100%" stopColor="rgba(255,255,255,0)"/>
-        </radialGradient>
-        <filter id="rb-neon" x="-80%" y="-80%" width="260%" height="260%">
-          <feGaussianBlur stdDeviation="1.2" result="blur"/>
-          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-        </filter>
-        <filter id="rb-glow" x="-60%" y="-60%" width="220%" height="220%">
-          <feGaussianBlur stdDeviation="2.5" result="blur"/>
-          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-        </filter>
-        <clipPath id="rb-clip"><circle cx="50" cy="50" r="46"/></clipPath>
-      </defs>
-      <circle cx="50" cy="50" r="46" fill="url(#rb-body)"/>
-      <g clipPath="url(#rb-clip)" opacity="0.92">
-        <path d="M 28,10 Q 50,4 72,10 Q 68,30 60,36 Q 50,28 40,36 Q 32,30 28,10Z" fill="url(#rb-panel-a)" stroke="#06080d" strokeWidth="0.9"/>
-        <path d="M 26,90 Q 50,96 74,90 Q 70,70 62,64 Q 50,72 38,64 Q 30,70 26,90Z" fill="url(#rb-panel-b)" stroke="#06080d" strokeWidth="0.9"/>
-        <path d="M 70,10 Q 92,26 95,50 Q 82,54 74,48 Q 76,34 66,22 Z"            fill="url(#rb-panel-a)" stroke="#06080d" strokeWidth="0.9"/>
-        <path d="M 95,50 Q 92,74 70,90 Q 66,78 74,66 Q 82,60 74,48 Z"            fill="url(#rb-panel-b)" stroke="#06080d" strokeWidth="0.9"/>
-        <path d="M 30,10 Q 8,26 5,50 Q 18,54 26,48 Q 24,34 34,22 Z"             fill="url(#rb-panel-a)" stroke="#06080d" strokeWidth="0.9"/>
-        <path d="M 5,50 Q 8,74 30,90 Q 34,78 26,66 Q 18,60 26,48 Z"             fill="url(#rb-panel-b)" stroke="#06080d" strokeWidth="0.9"/>
-        <path d="M 28,10 Q 50,4 72,10" fill="none" stroke="rgba(130,150,180,0.18)" strokeWidth="0.7"/>
-        <path d="M 70,10 Q 92,26 95,50"  fill="none" stroke="rgba(130,150,180,0.12)" strokeWidth="0.7"/>
-        <path d="M 5,50  Q 8,26  30,10"  fill="none" stroke="rgba(130,150,180,0.12)" strokeWidth="0.7"/>
-      </g>
-      <g filter="url(#rb-neon)" stroke="#1a90ff" strokeWidth="0.75" fill="none" strokeLinecap="square">
-        <path d="M 36,50 L 42,50"/>
-        <path d="M 36,46 L 39,46 L 39,42 L 44,42"/>
-        <path d="M 46,37 L 46,32 L 52,32 L 52,36"/>
-        <path d="M 54,32 L 58,32 L 58,36"/>
-        <path d="M 46,63 L 46,68 L 52,68 L 52,64"/>
-        <path d="M 54,68 L 58,68 L 58,64"/>
-        <path d="M 56,39 L 60,36 L 66,36"/>
-        <path d="M 56,61 L 60,64 L 66,64"/>
-        <circle cx="52" cy="32" r="1.1" fill="#1a90ff" stroke="none"/>
-        <circle cx="58" cy="32" r="0.9" fill="#1a90ff" stroke="none"/>
-        <circle cx="52" cy="68" r="1.1" fill="#1a90ff" stroke="none"/>
-        <circle cx="58" cy="68" r="0.9" fill="#1a90ff" stroke="none"/>
-        <circle cx="39" cy="46" r="0.9" fill="#1a90ff" stroke="none"/>
-        <circle cx="46" cy="42" r="0.9" fill="#1a90ff" stroke="none"/>
-        <circle cx="66" cy="36" r="0.9" fill="#1a90ff" stroke="none"/>
-        <circle cx="66" cy="64" r="0.9" fill="#1a90ff" stroke="none"/>
-      </g>
-      <circle cx="27" cy="50" r="11" fill="url(#rb-sensor)"/>
-      <circle cx="27" cy="50" r="11" fill="none" stroke="#1a2840" strokeWidth="1.8"/>
-      <circle cx="27" cy="50" r="7.5" fill="none" stroke="#243258" strokeWidth="1"/>
-      <circle cx="27" cy="50" r="4.5" fill="#0c1220"/>
-      <circle cx="27" cy="50" r="4.5" fill="none" stroke="#304878" strokeWidth="0.6"/>
-      <circle cx="24.5" cy="47.5" r="1.8" fill="rgba(140,180,230,0.45)"/>
-      <circle cx="62" cy="50" r="21" fill="url(#rb-lens-housing)"/>
-      <circle cx="62" cy="50" r="21" fill="none" stroke="#1e2530" strokeWidth="2.2"/>
-      {([0,45,90,135,180,225,270,315] as const).map((deg, i) => {
-        const r = (deg * Math.PI) / 180
-        return <circle key={i} cx={62 + 19.5 * Math.cos(r)} cy={50 + 19.5 * Math.sin(r)} r="0.9" fill="#2e3848"/>
-      })}
-      <circle cx="62" cy="50" r="16.5" fill="#0a0d14"/>
-      <circle cx="62" cy="50" r="16.5" fill="none" stroke="#182038" strokeWidth="1.4"/>
-      <circle cx="62" cy="50" r="13" fill="url(#rb-iris)"/>
-      <circle cx="62" cy="50" r="13" fill="none" stroke="#0e3080" strokeWidth="0.6"/>
-      <circle cx="62" cy="50" r="8.5" fill="#050e28"/>
-      <circle cx="62" cy="50" r="8.5" fill="none" stroke="#2060e8" strokeWidth="1.2"
-        style={{ animation: 'rb-lens-pulse 2s ease-in-out infinite' }} filter="url(#rb-glow)"/>
-      <circle cx="62" cy="50" r="5.5" fill="url(#rb-core)"
-        style={{ animation: 'rb-lens-pulse 2s ease-in-out infinite' }}/>
-      <circle cx="62" cy="50" r="2.2" fill="#c8e8ff" opacity="0.9"/>
-      <ellipse cx="57.5" cy="44.5" rx="3" ry="1.8" fill="rgba(210,235,255,0.55)" transform="rotate(-22,57.5,44.5)"/>
-      <ellipse cx="36" cy="24" rx="22" ry="13" fill="url(#rb-spec)" transform="rotate(-18,36,24)" clipPath="url(#rb-clip)"/>
-      <circle cx="50" cy="50" r="46" fill="none" stroke="rgba(80,120,200,0.22)" strokeWidth="1.2" clipPath="url(#rb-clip)"/>
-      <path d="M 14,28 Q 8,50 14,72" fill="none" stroke="rgba(100,150,230,0.18)" strokeWidth="1.5" strokeLinecap="round"/>
-    </svg>
-  )
-}
-
 // ─── Holographic Dashboard ─────────────────────────────────────────────────────
 function DashboardMock({ isMobile, mobileScale = 1 }: { isMobile: boolean; mobileScale?: number }) {
-  const BALL_DELAY   = 0.82
-  const BALL_DUR     = 1.15
-  const SCREEN_DELAY = 1.80
-  const SCREEN_DUR   = 0.72
-  const SCREEN_EASE  = [0.04, 0.92, 0.20, 1] as [number,number,number,number]
-
-  // Ball travels less distance on mobile (screen is shorter)
-  const BALL_Y = isMobile ? -110 : -230
-  const BALL_SIZE = isMobile ? 64 : 90
-  // On mobile skip heavy drop-shadow to avoid GPU overload
-  const ballFilter = isMobile
-    ? 'drop-shadow(0 0 8px rgba(100,180,255,0.80))'
-    : 'drop-shadow(0 0 10px rgba(100,180,255,0.95)) drop-shadow(0 0 22px rgba(60,120,220,0.70)) drop-shadow(0 0 44px rgba(36,80,160,0.40))'
-
   return (
     <div style={{ position: 'relative', padding: 2, borderRadius: 'clamp(10px, 1vw, 16px)', zIndex: 4, width: isMobile ? '100%' : 'min(760px, 100%)' }}>
-      {/* Frame glow */}
+      {/* Welcome typewriter — sits in the dashboard space, fades out as dashboard projects in */}
       <motion.div
         initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.12, delay: SCREEN_DELAY }}
+        animate={{ opacity: [0, 1, 1, 0] }}
+        transition={{ duration: 3.0, delay: 0, times: [0, 0.04, 0.78, 1], ease: 'easeInOut' }}
+        style={{
+          position: 'absolute', inset: 0, display: 'flex',
+          alignItems: 'center', justifyContent: 'center',
+          zIndex: 20, pointerEvents: 'none',
+        }}
+      >
+        <WelcomeTypewriter isMobile={isMobile} />
+      </motion.div>
+
+      {/* Frame glow */}
+      <div
         style={{
           position: 'absolute', inset: 0, pointerEvents: 'none', borderRadius: 'inherit',
           background: 'transparent',
           boxShadow: '0 0 0 1px rgba(19,32,74,0.08), 0 8px 32px rgba(19,32,74,0.10), 0 24px 50px rgba(19,32,74,0.06)',
         }}
       />
-
-      {/* Projection energy burst */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: [0, 1, 1, 0] }}
-        transition={{ duration: SCREEN_DUR * 1.3, delay: SCREEN_DELAY, times: [0, 0.05, 0.35, 1], ease: 'easeInOut' }}
-        style={{
-          position: 'absolute', inset: -4, pointerEvents: 'none',
-          borderRadius: 'clamp(14px, 1.3vw, 20px)',
-          boxShadow: '0 0 0 3px rgba(70,120,230,0.75), 0 0 28px 14px rgba(40,70,160,0.55), 0 0 60px 28px rgba(27,46,90,0.28)',
-          zIndex: 10,
-        }}
-      />
-
-      {/* Robot ball */}
-      <motion.div
-        initial={{ scale: 0, opacity: 0 }}
-        animate={{
-          scale:   [0,    1,    1,    1,    1   ],
-          opacity: [0,    1,    1,    0,    0   ],
-          y:       [isMobile ? 44 : 64, isMobile ? 40 : 58, BALL_Y, BALL_Y, BALL_Y],
-        }}
-        transition={{
-          duration: BALL_DUR,
-          delay: BALL_DELAY,
-          times: [0, 0.05, 0.70, 0.86, 1.0],
-          ease: ['easeOut', [0.33, 1, 0.68, 1], 'easeIn', 'linear'],
-        }}
-        style={{
-          position: 'absolute', bottom: -6, left: '50%',
-          x: '-50%', zIndex: 30, pointerEvents: 'none',
-          filter: ballFilter,
-          willChange: 'transform, opacity',
-        }}
-      >
-        <RobotBall size={BALL_SIZE} />
-      </motion.div>
-
-      {/* Charging rings */}
-      {([
-        { t: 0,    color: 'rgba(160,215,255,0.95)', glow: 'rgba(100,180,255,0.55)' },
-        { t: 0.07, color: 'rgba(120,190,255,0.80)', glow: 'rgba(80,150,240,0.40)'  },
-        { t: 0.14, color: 'rgba(80,155,240,0.65)',  glow: 'rgba(60,120,220,0.28)'  },
-      ] as const).map(({ t, color, glow }, i) => (
-        <motion.div
-          key={`ring-${i}`}
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: [0,0,0,0.7,3.2,5.5], opacity: [0,0,0,0.9,0.25,0] }}
-          transition={{ duration: BALL_DUR, delay: BALL_DELAY + t, times: [0,0.62,0.68,0.74,0.90,1.0], ease: 'easeOut' }}
-          style={{
-            position: 'absolute', bottom: -6, left: '50%',
-            x: '-50%', y: BALL_Y,
-            width: BALL_SIZE, height: BALL_SIZE, borderRadius: '50%',
-            border: `1.5px solid ${color}`,
-            boxShadow: `0 0 10px 4px ${glow}`,
-            zIndex: 29, pointerEvents: 'none',
-          }}
-        />
-      ))}
 
       {/* Screen */}
       <div style={{
@@ -308,11 +169,12 @@ function DashboardMock({ isMobile, mobileScale = 1 }: { isMobile: boolean; mobil
         borderRadius: 'clamp(8px, 0.8vw, 14px)',
         overflow: 'hidden',
         display: 'flex',
+        background: '#FFFFFF',
       }}>
         <motion.div
-          initial={{ clipPath: 'circle(0px at 50% 52%)' }}
-          animate={{ clipPath: 'circle(150% at 50% 52%)' }}
-          transition={{ duration: SCREEN_DUR, delay: SCREEN_DELAY, ease: SCREEN_EASE }}
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.55, delay: 3.0, ease: [0.22, 1, 0.36, 1] }}
           style={{ position: 'absolute', top: 0, left: 0, width: isMobile ? 800 : '100%', height: isMobile ? 500 : '100%', display: 'flex', background: '#FFFFFF', ...(isMobile ? { zoom: mobileScale } : {}) }}
         >
           <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(90deg, transparent, rgba(19,32,74,0.12), rgba(19,32,74,0.06), rgba(19,32,74,0.12), transparent)', zIndex: 10 }} />
@@ -477,17 +339,6 @@ function DashboardMock({ isMobile, mobileScale = 1 }: { isMobile: boolean; mobil
           </div>
         </motion.div>
 
-        {/* Flash burst */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: [0, 0, 1, 0.5, 0] }}
-          transition={{ duration: 0.45, delay: SCREEN_DELAY, times: [0, 0.01, 0.06, 0.20, 1], ease: 'easeOut' }}
-          style={{
-            position: 'absolute', top: '20%', bottom: '20%', left: '15%', right: '15%',
-            background: 'radial-gradient(ellipse at 50% 50%, rgba(220,238,255,0.80) 0%, rgba(120,170,255,0.35) 30%, rgba(50,90,200,0.10) 60%, transparent 100%)',
-            pointerEvents: 'none', zIndex: 22,
-          }}
-        />
       </div>
     </div>
   )
@@ -496,14 +347,15 @@ function DashboardMock({ isMobile, mobileScale = 1 }: { isMobile: boolean; mobil
 // ─── Light cone ────────────────────────────────────────────────────────────────
 function LightCone() {
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.6, delay: 2.7, ease: 'easeIn' }}
-      style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 3, willChange: 'opacity', transform: 'translateZ(0)' }}
+    <div
+      style={{
+        position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 2,
+        opacity: 0,
+        animation: 'zk-cone-in 0.55s ease-in 0.9s forwards',
+      }}
     >
       <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none"
-        style={{ display: 'block', animation: 'pp-cone-breath 3.5s ease-in-out infinite' }}>
+        style={{ display: 'block' }}>
         <defs>
           <linearGradient id="pp-cone-core" x1="50" y1="100" x2="50" y2="68" gradientUnits="userSpaceOnUse">
             <stop offset="0%"  stopColor="rgba(46,79,140,0.80)" />
@@ -544,7 +396,7 @@ function LightCone() {
           <filter id="pp-f-edge"  x="-20%" y="-200%" width="140%" height="500%"><feGaussianBlur stdDeviation="0.8 2.5" /></filter>
           <filter id="pp-f-halo"  x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="3 2" /></filter>
         </defs>
-        {/* Outer wide ambient cone — narrower to match slimmer puck */}
+        {/* Outer wide ambient cone */}
         <polygon points="50,100 10,68 90,68"  fill="url(#pp-cone-wide)" filter="url(#pp-f-wide)" opacity="0.85" />
         {/* Core beam */}
         <polygon points="50,100 20,68 80,68" fill="url(#pp-cone-core)" filter="url(#pp-f-soft)" opacity="0.9" />
@@ -563,7 +415,7 @@ function LightCone() {
         <circle cx="20" cy="68" r="1.5" fill="rgba(36,59,110,0.7)" filter="url(#pp-f-soft)" />
         <circle cx="80" cy="68" r="1.5" fill="rgba(36,59,110,0.7)" filter="url(#pp-f-soft)" />
       </svg>
-    </motion.div>
+    </div>
   )
 }
 
@@ -578,7 +430,6 @@ function Projector({ isMobile }: { isMobile: boolean }) {
           width: isMobile ? 'clamp(120px, 36vw, 180px)' : 'clamp(110px, 14vw, 175px)',
           aspectRatio: '10 / 4.2',
           zIndex: 5,
-          // Skip float animation on mobile — it's expensive and barely visible
           animation: isMobile ? 'none' : 'pp-float 5.5s ease-in-out infinite',
           filter: 'drop-shadow(0 16px 32px rgba(0,0,0,0.55)) drop-shadow(0 0 20px rgba(36,59,110,0.22))',
           willChange: 'transform',
@@ -593,11 +444,9 @@ function Projector({ isMobile }: { isMobile: boolean }) {
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '44%', background: 'radial-gradient(ellipse at 46% 36%, #28282e 0%, #181820 45%, #0c0c14 80%, #060610 100%)', borderRadius: '50%', zIndex: 2, boxShadow: 'inset 0 10px 24px rgba(255,255,255,0.06),inset 0 -6px 16px rgba(0,0,0,0.7),0 8px 24px rgba(0,0,0,0.7)' }}>
           <div style={{ position: 'absolute', top: '6%', left: '6%', right: '6%', bottom: '6%', borderRadius: '50%', boxShadow: 'inset 0 0 0 1.5px rgba(255,255,255,0.06), inset 0 0 12px rgba(0,0,0,0.7)' }} />
           <div style={{ position: 'absolute', top: '18%', left: '18%', right: '18%', bottom: '18%', borderRadius: '50%', background: 'radial-gradient(ellipse at 50% 42%, #1a1a22 0%, #0a0a12 100%)', boxShadow: 'inset 0 6px 16px rgba(0,0,0,0.95), inset 0 0 0 1px rgba(255,255,255,0.03)' }} />
-          <div style={{ position: 'absolute', top: '22%', left: '22%', right: '22%', bottom: '22%', borderRadius: '50%', background: 'transparent', animation: 'pp-lens-pulse 2.6s ease-in-out infinite' }} />
-          <div style={{ position: 'absolute', top: '22%', left: '22%', right: '22%', bottom: '22%', borderRadius: '50%', boxShadow: '0 0 0 2px rgba(27,46,90,0.5)', animation: 'pp-ring-out 2.6s ease-out infinite', pointerEvents: 'none' }} />
-          <div style={{ position: 'absolute', top: '22%', left: '22%', right: '22%', bottom: '22%', borderRadius: '50%', boxShadow: '0 0 0 1.5px rgba(27,46,90,0.3)', animation: 'pp-ring-out 2.6s ease-out 1.3s infinite', pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', top: '22%', left: '22%', right: '22%', bottom: '22%', borderRadius: '50%', background: 'transparent', animation: 'pp-lens-pulse 2.6s ease-in-out infinite', willChange: 'opacity' }} />
           <div style={{ position: 'absolute', top: '30%', left: '30%', right: '30%', bottom: '30%', borderRadius: '50%', background: 'radial-gradient(circle at 44% 38%, #c8d8f0 0%, #6080b0 14%, #243b6e 38%, #1b2e5a 65%, #0f1b3d 100%)', boxShadow: 'inset 0 0 14px rgba(0,0,0,0.6)' }} />
-          <div style={{ position: 'absolute', top: '40%', left: '40%', right: '40%', bottom: '40%', borderRadius: '50%', background: 'radial-gradient(circle, #ffffff 0%, #c8d8f8 45%, transparent 100%)', animation: 'pp-hotspot 2.6s ease-in-out infinite' }} />
+          <div style={{ position: 'absolute', top: '40%', left: '40%', right: '40%', bottom: '40%', borderRadius: '50%', background: 'radial-gradient(circle, #ffffff 0%, #c8d8f8 45%, transparent 100%)', animation: 'pp-hotspot 2.6s ease-in-out infinite', willChange: 'opacity, transform' }} />
         </div>
         <div style={{ position: 'absolute', bottom: '-10%', left: '15%', right: '15%', height: '14%', borderRadius: '50%', background: 'rgba(0,0,0,0.7)', filter: 'blur(16px)', zIndex: 0 }} />
       </div>
@@ -697,12 +546,12 @@ function SideAgentCard({ source, color, feeds, integrations, isMobile = false }:
 function FloorGlow() {
   return (
     <>
-      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 280, background: 'radial-gradient(ellipse 65% 100% at 50% 100%, rgba(27,46,90,0.07), transparent 70%)', pointerEvents: 'none', zIndex: 1, animation: 'pp-floor-pulse 3.5s ease-in-out infinite' }} />
-      <div style={{ position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: 'min(280px, 36%)', height: 70, background: 'radial-gradient(ellipse at 50% 100%, rgba(27,46,90,0.14), transparent 65%)', pointerEvents: 'none', zIndex: 2, animation: 'pp-floor-pulse 3.5s ease-in-out 0.7s infinite' }} />
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 280, background: 'radial-gradient(ellipse 65% 100% at 50% 100%, rgba(27,46,90,0.07), transparent 70%)', pointerEvents: 'none', zIndex: 1 }} />
+      <div style={{ position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: 'min(280px, 36%)', height: 70, background: 'radial-gradient(ellipse at 50% 100%, rgba(27,46,90,0.14), transparent 65%)', pointerEvents: 'none', zIndex: 2 }} />
       <motion.div
         initial={{ opacity: 0, scaleX: 0.1 }}
         animate={{ opacity: [0, 0, 0.9, 0], scaleX: [0.1, 0.1, 1.4, 2.2] }}
-        transition={{ duration: 0.6, delay: 0.7, times: [0, 0.01, 0.22, 1], ease: 'easeOut' }}
+        transition={{ duration: 0.6, delay: 0.8, times: [0, 0.01, 0.22, 1], ease: 'easeOut' }}
         style={{ position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: 'min(340px, 44%)', height: 50, background: 'radial-gradient(ellipse at 50% 100%, rgba(46,79,140,0.55), rgba(27,46,90,0.20) 50%, transparent 75%)', pointerEvents: 'none', zIndex: 3, transformOrigin: 'center bottom' }}
       />
     </>
@@ -712,35 +561,30 @@ function FloorGlow() {
 // ─── Headline ──────────────────────────────────────────────────────────────────
 function Headline({ isMobile }: { isMobile: boolean }) {
   return (
-    // No opacity in initial — text is immediately visible even before framer-motion
-    // fires its first animation frame. Only y-translate animates in.
-    <motion.div
-      initial={{ y: 20 }}
-      animate={{ y: 0 }}
-      transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-      style={{ textAlign: 'center', position: 'relative', zIndex: 3, maxWidth: 860, margin: '0 auto', width: '100%' }}
-    >
+    <div style={{ textAlign: 'center', position: 'relative', zIndex: 3, maxWidth: 880, margin: '0 auto', width: '100%' }}>
+      {/* Main headline */}
       <h1 style={{ margin: 0, fontFamily: '"Palatino Linotype","Book Antiqua",Palatino,Georgia,serif', fontStyle: 'italic', lineHeight: isMobile ? 1.1 : 1.15, letterSpacing: '-0.01em' }}>
-        <motion.span initial={{ y: 14 }} animate={{ y: 0 }} transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+        <motion.span initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.18, ease: [0.22, 1, 0.36, 1] }}
           style={{ display: 'block', fontSize: isMobile ? 'clamp(20px, 5.5vw, 26px)' : 'clamp(26px, 5vw, 40px)', fontWeight: 700, color: '#0f1b3d' }}>
           Intelligent agents
         </motion.span>
-        <motion.span initial={{ y: 14 }} animate={{ y: 0 }} transition={{ duration: 0.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+        <motion.span initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.28, ease: [0.22, 1, 0.36, 1] }}
           style={{ display: 'block', fontSize: isMobile ? 'clamp(17px, 4.8vw, 22px)' : 'clamp(22px, 4.5vw, 36px)', fontWeight: 700, color: '#1b2e5a' }}>
           driving influential decisions
         </motion.span>
-        <motion.span initial={{ y: 14 }} animate={{ y: 0 }} transition={{ duration: 0.6, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        <motion.span initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.38, ease: [0.22, 1, 0.36, 1] }}
           style={{ display: 'block', fontSize: isMobile ? 'clamp(11px, 3vw, 13px)' : 'clamp(13px, 2.5vw, 20px)', fontWeight: 400, color: '#64748b', marginTop: isMobile ? 4 : 'clamp(4px, 0.6vw, 8px)' }}>
           across interconnected applications
         </motion.span>
       </h1>
+
       <motion.div
         initial={{ scaleX: 0 }}
         animate={{ scaleX: 1 }}
-        transition={{ duration: 0.6, delay: 0.55, ease: 'easeOut' }}
-        style={{ width: 40, height: 1, borderRadius: 1, background: 'linear-gradient(90deg, transparent, rgba(36,59,110,0.5), transparent)', margin: isMobile ? '8px auto 0' : 'clamp(10px, 1.5vw, 16px) auto 0' }}
+        transition={{ duration: 0.5, delay: 0.6, ease: 'easeOut' }}
+        style={{ width: 40, height: 1, borderRadius: 1, background: 'linear-gradient(90deg, transparent, rgba(36,59,110,0.5), transparent)', margin: isMobile ? '12px auto 0' : 'clamp(12px, 1.5vw, 20px) auto 0' }}
       />
-    </motion.div>
+    </div>
   )
 }
 
@@ -779,10 +623,6 @@ export function PetpoojaHeroSection({ onBookDemo: _onBookDemo }: { onBookDemo?: 
   const dashboardScale = isMobile && typeof window !== 'undefined'
     ? Math.max(0.18, (window.innerWidth - 8 - 2 * Math.min(130, Math.max(80, 0.22 * window.innerWidth))) / 800)
     : 1
-
-  if (isMobile) {
-    return <MobileHeroSection />
-  }
 
   return (
     <section
@@ -835,7 +675,7 @@ export function PetpoojaHeroSection({ onBookDemo: _onBookDemo }: { onBookDemo?: 
         <motion.div
           initial={{ opacity: 0, x: -22 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5, delay: 2.75, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.5, delay: 1.4, ease: [0.22, 1, 0.36, 1] }}
           style={{
             width: isMobile ? 'clamp(80px, 22vw, 130px)' : 'clamp(175px, 14vw, 210px)',
             flexShrink: 0,
@@ -849,10 +689,10 @@ export function PetpoojaHeroSection({ onBookDemo: _onBookDemo }: { onBookDemo?: 
           {SIDE_LEFT.map(card => <SideAgentCard key={card.source} {...card} isMobile={isMobile} />)}
         </motion.div>
 
-        {/* CENTER */}
+        {/* CENTER — LightCone before DashboardMock so z-index stacking is clean */}
         <div style={{ flex: '1 1 auto', minWidth: 0, position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: isMobile ? 8 : 'clamp(8px, 1.5vw, 16px)' }}>
-          <DashboardMock isMobile={isMobile} mobileScale={dashboardScale} />
           <LightCone />
+          <DashboardMock isMobile={isMobile} mobileScale={dashboardScale} />
           <div style={{ width: isMobile ? 'clamp(90px, 22vw, 160px)' : 'clamp(180px, 24vw, 300px)', height: PUCK_H, flexShrink: 0 }} />
         </div>
 
@@ -860,7 +700,7 @@ export function PetpoojaHeroSection({ onBookDemo: _onBookDemo }: { onBookDemo?: 
         <motion.div
           initial={{ opacity: 0, x: 22 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5, delay: 2.85, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.5, delay: 1.5, ease: [0.22, 1, 0.36, 1] }}
           style={{
             width: isMobile ? 'clamp(80px, 22vw, 130px)' : 'clamp(175px, 14vw, 210px)',
             flexShrink: 0,
@@ -878,49 +718,44 @@ export function PetpoojaHeroSection({ onBookDemo: _onBookDemo }: { onBookDemo?: 
         {!isMobile && (
           <motion.svg
             initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            transition={{ duration: 0.3, delay: 2.72 }}
+            transition={{ duration: 0.3, delay: 1.4 }}
             style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 4, overflow: 'visible' }}
             viewBox="0 0 1320 720" preserveAspectRatio="none"
           >
-            <defs>
-              <filter id="conn-glow-blue"   x="-200%" y="-200%" width="500%" height="500%"><feGaussianBlur stdDeviation="3" result="blur" /><feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
-              <filter id="conn-glow-green"  x="-200%" y="-200%" width="500%" height="500%"><feGaussianBlur stdDeviation="3" result="blur" /><feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
-              <filter id="conn-glow-purple" x="-200%" y="-200%" width="500%" height="500%"><feGaussianBlur stdDeviation="3" result="blur" /><feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
-              <filter id="conn-glow-cyan"   x="-200%" y="-200%" width="500%" height="500%"><feGaussianBlur stdDeviation="3" result="blur" /><feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
-            </defs>
-            {/* B2B CRM Agent (top-left) → dashboard left edge, uniform curve */}
-            <motion.path d="M 175,190 C 230,190 258,220 279,220" stroke={BLUE} strokeWidth="5" fill="none" strokeOpacity="0.10" pathLength={1} strokeDasharray={1} initial={{ strokeDashoffset: 1 }} animate={{ strokeDashoffset: 0 }} transition={{ duration: 0.6, delay: 2.85, ease: [0.22, 1, 0.36, 1] }} />
-            <motion.path d="M 175,190 C 230,190 258,220 279,220" stroke={BLUE} strokeWidth="1.5" fill="none" strokeOpacity="0.55" pathLength={1} strokeDasharray={1} initial={{ strokeDashoffset: 1 }} animate={{ strokeDashoffset: 0 }} transition={{ duration: 0.6, delay: 2.85, ease: [0.22, 1, 0.36, 1] }} />
-            <motion.path d="M 175,190 C 230,190 258,220 279,220" stroke={BLUE} strokeWidth="1" fill="none" strokeOpacity="0.30" strokeDasharray="4 8" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.1, delay: 3.45 }} style={{ animation: 'conn-flow 1.4s linear 3.45s infinite' }} />
-            <motion.circle cx="175" cy="190" r="4.5" fill={BLUE} opacity="0.9" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 0.9 }} transition={{ duration: 0.3, delay: 2.8, type: 'spring', stiffness: 300 }} />
-            <motion.circle cx="279" cy="220" r="3.5" fill={BLUE} opacity="0.65" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 0.65 }} transition={{ duration: 0.3, delay: 3.45 }} />
-            {/* Finance Agent (bottom-left) → dashboard left edge, uniform curve */}
-            <motion.path d="M 175,355 C 230,355 258,370 279,370" stroke={BLUE} strokeWidth="5" fill="none" strokeOpacity="0.08" pathLength={1} strokeDasharray={1} initial={{ strokeDashoffset: 1 }} animate={{ strokeDashoffset: 0 }} transition={{ duration: 0.6, delay: 2.95, ease: [0.22, 1, 0.36, 1] }} />
-            <motion.path d="M 175,355 C 230,355 258,370 279,370" stroke={BLUE} strokeWidth="1.5" fill="none" strokeOpacity="0.45" pathLength={1} strokeDasharray={1} initial={{ strokeDashoffset: 1 }} animate={{ strokeDashoffset: 0 }} transition={{ duration: 0.6, delay: 2.95, ease: [0.22, 1, 0.36, 1] }} />
-            <motion.path d="M 175,355 C 230,355 258,370 279,370" stroke={BLUE} strokeWidth="1" fill="none" strokeOpacity="0.25" strokeDasharray="4 8" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.1, delay: 3.55 }} style={{ animation: 'conn-flow 1.6s linear 3.55s infinite' }} />
-            <motion.circle cx="175" cy="355" r="4.5" fill={BLUE} opacity="0.82" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 0.82 }} transition={{ duration: 0.3, delay: 2.9, type: 'spring', stiffness: 300 }} />
-            <motion.circle cx="279" cy="370" r="3.5" fill={BLUE} opacity="0.58" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 0.58 }} transition={{ duration: 0.3, delay: 3.55 }} />
-            {/* HRMS Agent (top-right) → dashboard right edge, mirrored uniform curve */}
-            <motion.path d="M 1039,220 C 1060,220 1090,190 1145,190" stroke={BLUE} strokeWidth="5" fill="none" strokeOpacity="0.10" pathLength={1} strokeDasharray={1} initial={{ strokeDashoffset: 1 }} animate={{ strokeDashoffset: 0 }} transition={{ duration: 0.6, delay: 2.9, ease: [0.22, 1, 0.36, 1] }} />
-            <motion.path d="M 1039,220 C 1060,220 1090,190 1145,190" stroke={BLUE} strokeWidth="1.5" fill="none" strokeOpacity="0.55" pathLength={1} strokeDasharray={1} initial={{ strokeDashoffset: 1 }} animate={{ strokeDashoffset: 0 }} transition={{ duration: 0.6, delay: 2.9, ease: [0.22, 1, 0.36, 1] }} />
-            <motion.path d="M 1039,220 C 1060,220 1090,190 1145,190" stroke={BLUE} strokeWidth="1" fill="none" strokeOpacity="0.30" strokeDasharray="4 8" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.1, delay: 3.5 }} style={{ animation: 'conn-flow 1.5s linear 3.5s infinite' }} />
-            <motion.circle cx="1039" cy="220" r="3.5" fill={BLUE} opacity="0.65" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 0.65 }} transition={{ duration: 0.3, delay: 3.5 }} />
-            <motion.circle cx="1145" cy="190" r="4.5" fill={BLUE} opacity="0.9" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 0.9 }} transition={{ duration: 0.3, delay: 2.85, type: 'spring', stiffness: 300 }} />
-            {/* Projects Agent (bottom-right) → dashboard right edge, mirrored uniform curve */}
-            <motion.path d="M 1039,370 C 1060,370 1090,355 1145,355" stroke={BLUE} strokeWidth="5" fill="none" strokeOpacity="0.08" pathLength={1} strokeDasharray={1} initial={{ strokeDashoffset: 1 }} animate={{ strokeDashoffset: 0 }} transition={{ duration: 0.6, delay: 3.0, ease: [0.22, 1, 0.36, 1] }} />
-            <motion.path d="M 1039,370 C 1060,370 1090,355 1145,355" stroke={BLUE} strokeWidth="1.5" fill="none" strokeOpacity="0.45" pathLength={1} strokeDasharray={1} initial={{ strokeDashoffset: 1 }} animate={{ strokeDashoffset: 0 }} transition={{ duration: 0.6, delay: 3.0, ease: [0.22, 1, 0.36, 1] }} />
-            <motion.path d="M 1039,370 C 1060,370 1090,355 1145,355" stroke={BLUE} strokeWidth="1" fill="none" strokeOpacity="0.25" strokeDasharray="4 8" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.1, delay: 3.6 }} style={{ animation: 'conn-flow 1.7s linear 3.6s infinite' }} />
-            <motion.circle cx="1039" cy="370" r="3.5" fill={BLUE} opacity="0.58" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 0.58 }} transition={{ duration: 0.3, delay: 3.6 }} />
-            <motion.circle cx="1145" cy="355" r="4.5" fill={BLUE} opacity="0.82" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 0.82 }} transition={{ duration: 0.3, delay: 2.95, type: 'spring', stiffness: 300 }} />
+            <defs />
+            {/* B2B CRM Agent (top-left) → dashboard left edge */}
+            <motion.path d="M 175,190 C 230,190 258,220 279,220" stroke={BLUE} strokeWidth="5" fill="none" strokeOpacity="0.10" pathLength={1} strokeDasharray={1} initial={{ strokeDashoffset: 1 }} animate={{ strokeDashoffset: 0 }} transition={{ duration: 0.6, delay: 1.5, ease: [0.22, 1, 0.36, 1] }} />
+            <motion.path d="M 175,190 C 230,190 258,220 279,220" stroke={BLUE} strokeWidth="1.5" fill="none" strokeOpacity="0.55" pathLength={1} strokeDasharray={1} initial={{ strokeDashoffset: 1 }} animate={{ strokeDashoffset: 0 }} transition={{ duration: 0.6, delay: 1.5, ease: [0.22, 1, 0.36, 1] }} />
+            <motion.path d="M 175,190 C 230,190 258,220 279,220" stroke={BLUE} strokeWidth="1" fill="none" strokeOpacity="0.30" strokeDasharray="4 8" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3, delay: 1.65 }} />
+            <motion.circle cx="175" cy="190" r="4.5" fill={BLUE} opacity="0.9" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 0.9 }} transition={{ duration: 0.3, delay: 1.45, type: 'spring', stiffness: 300 }} />
+            <motion.circle cx="279" cy="220" r="3.5" fill={BLUE} opacity="0.65" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 0.65 }} transition={{ duration: 0.3, delay: 1.65 }} />
+            {/* Finance Agent (bottom-left) → dashboard left edge */}
+            <motion.path d="M 175,355 C 230,355 258,370 279,370" stroke={BLUE} strokeWidth="5" fill="none" strokeOpacity="0.08" pathLength={1} strokeDasharray={1} initial={{ strokeDashoffset: 1 }} animate={{ strokeDashoffset: 0 }} transition={{ duration: 0.6, delay: 1.55, ease: [0.22, 1, 0.36, 1] }} />
+            <motion.path d="M 175,355 C 230,355 258,370 279,370" stroke={BLUE} strokeWidth="1.5" fill="none" strokeOpacity="0.45" pathLength={1} strokeDasharray={1} initial={{ strokeDashoffset: 1 }} animate={{ strokeDashoffset: 0 }} transition={{ duration: 0.6, delay: 1.55, ease: [0.22, 1, 0.36, 1] }} />
+            <motion.path d="M 175,355 C 230,355 258,370 279,370" stroke={BLUE} strokeWidth="1" fill="none" strokeOpacity="0.25" strokeDasharray="4 8" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3, delay: 1.7 }} />
+            <motion.circle cx="175" cy="355" r="4.5" fill={BLUE} opacity="0.82" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 0.82 }} transition={{ duration: 0.3, delay: 1.5, type: 'spring', stiffness: 300 }} />
+            <motion.circle cx="279" cy="370" r="3.5" fill={BLUE} opacity="0.58" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 0.58 }} transition={{ duration: 0.3, delay: 1.7 }} />
+            {/* HRMS Agent (top-right) → dashboard right edge */}
+            <motion.path d="M 1039,220 C 1060,220 1090,190 1145,190" stroke={BLUE} strokeWidth="5" fill="none" strokeOpacity="0.10" pathLength={1} strokeDasharray={1} initial={{ strokeDashoffset: 1 }} animate={{ strokeDashoffset: 0 }} transition={{ duration: 0.6, delay: 1.5, ease: [0.22, 1, 0.36, 1] }} />
+            <motion.path d="M 1039,220 C 1060,220 1090,190 1145,190" stroke={BLUE} strokeWidth="1.5" fill="none" strokeOpacity="0.55" pathLength={1} strokeDasharray={1} initial={{ strokeDashoffset: 1 }} animate={{ strokeDashoffset: 0 }} transition={{ duration: 0.6, delay: 1.5, ease: [0.22, 1, 0.36, 1] }} />
+            <motion.path d="M 1039,220 C 1060,220 1090,190 1145,190" stroke={BLUE} strokeWidth="1" fill="none" strokeOpacity="0.30" strokeDasharray="4 8" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3, delay: 1.65 }} />
+            <motion.circle cx="1039" cy="220" r="3.5" fill={BLUE} opacity="0.65" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 0.65 }} transition={{ duration: 0.3, delay: 1.65 }} />
+            <motion.circle cx="1145" cy="190" r="4.5" fill={BLUE} opacity="0.9" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 0.9 }} transition={{ duration: 0.3, delay: 1.45, type: 'spring', stiffness: 300 }} />
+            {/* Projects Agent (bottom-right) → dashboard right edge */}
+            <motion.path d="M 1039,370 C 1060,370 1090,355 1145,355" stroke={BLUE} strokeWidth="5" fill="none" strokeOpacity="0.08" pathLength={1} strokeDasharray={1} initial={{ strokeDashoffset: 1 }} animate={{ strokeDashoffset: 0 }} transition={{ duration: 0.6, delay: 1.6, ease: [0.22, 1, 0.36, 1] }} />
+            <motion.path d="M 1039,370 C 1060,370 1090,355 1145,355" stroke={BLUE} strokeWidth="1.5" fill="none" strokeOpacity="0.45" pathLength={1} strokeDasharray={1} initial={{ strokeDashoffset: 1 }} animate={{ strokeDashoffset: 0 }} transition={{ duration: 0.6, delay: 1.6, ease: [0.22, 1, 0.36, 1] }} />
+            <motion.path d="M 1039,370 C 1060,370 1090,355 1145,355" stroke={BLUE} strokeWidth="1" fill="none" strokeOpacity="0.25" strokeDasharray="4 8" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3, delay: 1.75 }} />
+            <motion.circle cx="1039" cy="370" r="3.5" fill={BLUE} opacity="0.58" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 0.58 }} transition={{ duration: 0.3, delay: 1.75 }} />
+            <motion.circle cx="1145" cy="355" r="4.5" fill={BLUE} opacity="0.82" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 0.82 }} transition={{ duration: 0.3, delay: 1.55, type: 'spring', stiffness: 300 }} />
           </motion.svg>
         )}
       </div>
 
-      {/* Puck — fades in immediately */}
+      {/* Puck — fades in after headline is read */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.35, ease: 'easeOut' }}
+        transition={{ duration: 0.45, delay: 0.6, ease: 'easeOut' }}
         style={{
           position: 'absolute',
           bottom: isMobile ? 16 : 18,

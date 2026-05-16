@@ -1242,6 +1242,8 @@ const ProductPage: React.FC = () => {
                 .pp-hotspot     { animation: ppHotspot  2.8s ease-in-out infinite; }
                 .pp-ring-out    { animation: ppRingOut  2.8s ease-out   infinite; }
                 .pp-ring-out-2  { animation: ppRingOut  2.8s ease-out 1.4s infinite; }
+                @keyframes zkConeIn { from { opacity: 0 } to { opacity: 1 } }
+                .fa-light-cone  { animation: zkConeIn 0.55s ease-in 0.9s forwards; opacity: 0; }
             `}</style>
 
             <MarketingNavbar
@@ -1281,6 +1283,76 @@ const ProductPage: React.FC = () => {
                     {/* Hero — Monitor born from the orb */}
                     <div className="relative flex flex-col items-center" style={{ marginLeft: '-2rem', marginRight: '-2rem' }}>
 
+                        {/* Light cone — sits behind monitor (zIndex 0 < monitor zIndex 1) */}
+                        <div
+                            className="fa-light-cone"
+                            style={{
+                                position: 'absolute',
+                                bottom: '35px',
+                                left: '50%',
+                                transform: 'translateX(-50%)',
+                                width: '720px',
+                                height: '520px',
+                                pointerEvents: 'none',
+                                zIndex: 0,
+                            }}
+                        >
+                            <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={{ display: 'block' }}>
+                                <defs>
+                                    <linearGradient id="fa-cone-core" x1="50" y1="100" x2="50" y2="68" gradientUnits="userSpaceOnUse">
+                                        <stop offset="0%"  stopColor="rgba(46,79,140,0.80)" />
+                                        <stop offset="30%" stopColor="rgba(36,59,110,0.42)" />
+                                        <stop offset="100%" stopColor="rgba(27,46,90,0.08)" />
+                                    </linearGradient>
+                                    <linearGradient id="fa-cone-wide" x1="50" y1="100" x2="50" y2="65" gradientUnits="userSpaceOnUse">
+                                        <stop offset="0%"  stopColor="rgba(36,59,110,0.55)" />
+                                        <stop offset="50%" stopColor="rgba(27,46,90,0.22)" />
+                                        <stop offset="100%" stopColor="rgba(15,27,61,0.04)" />
+                                    </linearGradient>
+                                    <linearGradient id="fa-ray-l" x1="50" y1="100" x2="12" y2="68" gradientUnits="userSpaceOnUse">
+                                        <stop offset="0%"  stopColor="rgba(120,160,220,1)" />
+                                        <stop offset="45%" stopColor="rgba(46,79,140,0.75)" />
+                                        <stop offset="100%" stopColor="rgba(27,46,90,0.20)" />
+                                    </linearGradient>
+                                    <linearGradient id="fa-ray-r" x1="50" y1="100" x2="88" y2="68" gradientUnits="userSpaceOnUse">
+                                        <stop offset="0%"  stopColor="rgba(120,160,220,1)" />
+                                        <stop offset="45%" stopColor="rgba(46,79,140,0.75)" />
+                                        <stop offset="100%" stopColor="rgba(27,46,90,0.20)" />
+                                    </linearGradient>
+                                    <radialGradient id="fa-src-halo" cx="50" cy="100" r="12" gradientUnits="userSpaceOnUse">
+                                        <stop offset="0%"  stopColor="rgba(140,180,240,0.90)" />
+                                        <stop offset="40%" stopColor="rgba(46,79,140,0.55)" />
+                                        <stop offset="100%" stopColor="rgba(15,27,61,0.00)" />
+                                    </radialGradient>
+                                    <linearGradient id="fa-screen-glow" x1="17" y1="68" x2="83" y2="68" gradientUnits="userSpaceOnUse">
+                                        <stop offset="0%"   stopColor="rgba(27,46,90,0.00)" />
+                                        <stop offset="20%"  stopColor="rgba(36,59,110,0.45)" />
+                                        <stop offset="50%"  stopColor="rgba(46,79,140,0.65)" />
+                                        <stop offset="80%"  stopColor="rgba(36,59,110,0.45)" />
+                                        <stop offset="100%" stopColor="rgba(27,46,90,0.00)" />
+                                    </linearGradient>
+                                    <filter id="fa-f-soft"  x="-30%" y="-15%" width="160%" height="145%"><feGaussianBlur stdDeviation="2 1.2" /></filter>
+                                    <filter id="fa-f-wide"  x="-50%" y="-15%" width="200%" height="145%"><feGaussianBlur stdDeviation="6 3.5" /></filter>
+                                    <filter id="fa-f-ray"   x="-200%" y="-30%" width="500%" height="160%"><feGaussianBlur stdDeviation="0.6 0.3" /></filter>
+                                    <filter id="fa-f-glow"  x="-200%" y="-30%" width="500%" height="160%"><feGaussianBlur stdDeviation="1.5 0.8" /></filter>
+                                    <filter id="fa-f-edge"  x="-20%" y="-200%" width="140%" height="500%"><feGaussianBlur stdDeviation="0.8 2.5" /></filter>
+                                    <filter id="fa-f-halo"  x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="3 2" /></filter>
+                                </defs>
+                                <polygon points="50,100 10,68 90,68"  fill="url(#fa-cone-wide)" filter="url(#fa-f-wide)" opacity="0.85" />
+                                <polygon points="50,100 20,68 80,68" fill="url(#fa-cone-core)" filter="url(#fa-f-soft)" opacity="0.9" />
+                                <polygon points="50,100 33,68 67,68" fill="url(#fa-cone-core)" filter="url(#fa-f-soft)" opacity="0.75" />
+                                <polygon points="50,100 43,68 57,68" fill="url(#fa-cone-core)" filter="url(#fa-f-soft)" opacity="0.9" />
+                                <line x1="50" y1="100" x2="20" y2="68" stroke="url(#fa-ray-l)" strokeWidth="0.7" filter="url(#fa-f-ray)" />
+                                <line x1="50" y1="100" x2="20" y2="68" stroke="url(#fa-ray-l)" strokeWidth="4"   filter="url(#fa-f-glow)" opacity="0.75" />
+                                <line x1="50" y1="100" x2="80" y2="68" stroke="url(#fa-ray-r)" strokeWidth="0.7" filter="url(#fa-f-ray)" />
+                                <line x1="50" y1="100" x2="80" y2="68" stroke="url(#fa-ray-r)" strokeWidth="4"   filter="url(#fa-f-glow)" opacity="0.75" />
+                                <ellipse cx="50" cy="100" rx="7" ry="2.5" fill="url(#fa-src-halo)" filter="url(#fa-f-halo)" />
+                                <line x1="20" y1="68" x2="80" y2="68" stroke="url(#fa-screen-glow)" strokeWidth="1.5" filter="url(#fa-f-edge)" />
+                                <circle cx="20" cy="68" r="1.5" fill="rgba(36,59,110,0.7)" filter="url(#fa-f-soft)" />
+                                <circle cx="80" cy="68" r="1.5" fill="rgba(36,59,110,0.7)" filter="url(#fa-f-soft)" />
+                            </svg>
+                        </div>
+
                         {/* Monitor — starts at orb level and rises up */}
                         <div
                             className="relative w-full hero-monitor-born"
@@ -1308,19 +1380,103 @@ const ProductPage: React.FC = () => {
                             {/* Screen content */}
                             <div style={{ borderRadius: '16px', overflow: 'hidden' }}>
                                 {productId === 'financial-accounting' ? (
-                                    <video
-                                        src="/videos/fa-product-showcase.mp4"
-                                        controls
-                                        autoPlay
-                                        muted
-                                        loop
-                                        playsInline
-                                        preload="metadata"
-                                        poster="/fa-dashboard.svg"
-                                        className="w-full block aspect-video"
-                                        style={{ objectFit: 'cover', display: 'block' }}
-                                        aria-label="Financial Accounting product showcase — 11 modules in 72 seconds"
-                                    />
+                                    /* White FA dashboard mock */
+                                    <div style={{ display: 'flex', height: '480px', background: '#FFFFFF', overflow: 'hidden' }}>
+                                        {/* Sidebar */}
+                                        <div style={{ width: '170px', flexShrink: 0, background: '#F5F7FA', borderRight: '1px solid rgba(19,32,74,0.08)', padding: '10px 7px', display: 'flex', flexDirection: 'column' }}>
+                                            <div style={{ padding: '4px 5px', marginBottom: 10, display: 'flex', justifyContent: 'center' }}>
+                                                <img src="https://res.cloudinary.com/dr9vzaa7u/image/upload/v1771698937/Zopkit-full_n7lm0f.png" alt="Zopkit" style={{ height: 26, width: 'auto', display: 'block' }} />
+                                            </div>
+                                            {['General Ledger','Accounts Payable','Accounts Receivable','Banking & Cash','GST & Tax','Fixed Assets','Financial Reports','Audit Trail','Cost Centers','Budgeting','Compliance'].map((item, i) => (
+                                                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 7px', background: i === 0 ? 'rgba(27,46,90,0.08)' : 'transparent', borderRadius: 4, borderLeft: `2px solid ${i === 0 ? '#1b2e5a' : 'transparent'}`, marginBottom: 2 }}>
+                                                    <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#1b2e5a', flexShrink: 0, opacity: i === 0 ? 1 : 0.3 }} />
+                                                    <span style={{ fontSize: 7, color: i === 0 ? '#1b2e5a' : 'rgba(19,32,74,0.45)', fontWeight: i === 0 ? 600 : 400, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        {/* Main content */}
+                                        <div style={{ flex: 1, padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 8, overflow: 'hidden' }}>
+                                            {/* Header */}
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                    <span style={{ fontSize: 10, fontWeight: 700, color: '#1b2e5a' }}>General Ledger</span>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(27,46,90,0.06)', border: '1px solid rgba(27,46,90,0.15)', borderRadius: 100, padding: '2px 8px' }}>
+                                                        <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#1b2e5a' }} />
+                                                        <span style={{ fontSize: 7, color: 'rgba(27,46,90,0.9)', fontWeight: 600 }}>FY 2025-26</span>
+                                                    </div>
+                                                </div>
+                                                <span style={{ fontSize: 7, color: 'rgba(19,32,74,0.35)' }}>Period: Apr–May 2025</span>
+                                            </div>
+                                            {/* Stat cards */}
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 7 }}>
+                                                {[
+                                                    { label: 'Total Revenue', value: '₹84.2L', sub: '+18% YoY', color: '#1b2e5a' },
+                                                    { label: 'GST Filed', value: '100%', sub: 'Aug 2025 ✓', color: '#047857' },
+                                                    { label: 'Payables', value: '₹12.4L', sub: '23 pending', color: '#c2410c' },
+                                                    { label: 'Cash Balance', value: '₹34.6L', sub: 'Updated today', color: '#0369a1' },
+                                                ].map((stat, i) => (
+                                                    <div key={i} style={{ background: '#FFFFFF', border: '1px solid rgba(19,32,74,0.08)', borderTop: `2px solid ${stat.color}`, borderRadius: '0 0 8px 8px', padding: '8px 10px' }}>
+                                                        <div style={{ fontSize: 6.5, color: 'rgba(19,32,74,0.45)', fontWeight: 500, marginBottom: 4 }}>{stat.label}</div>
+                                                        <div style={{ fontSize: 13, fontWeight: 700, color: stat.color }}>{stat.value}</div>
+                                                        <div style={{ fontSize: 6, color: 'rgba(19,32,74,0.35)', marginTop: 3 }}>{stat.sub}</div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            {/* Journal entries table */}
+                                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', borderRadius: 8, overflow: 'hidden', border: '1px solid rgba(19,32,74,0.08)' }}>
+                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 0.7fr 0.7fr 0.6fr 0.6fr', gap: 6, padding: '6px 10px', background: 'rgba(19,32,74,0.04)', borderBottom: '1px solid rgba(19,32,74,0.08)' }}>
+                                                    {['Journal Entry','Date','Account','Debit','Credit'].map((col, j) => (
+                                                        <span key={j} style={{ fontSize: 6, fontWeight: 600, color: 'rgba(19,32,74,0.4)', textTransform: 'uppercase' as const }}>{col}</span>
+                                                    ))}
+                                                </div>
+                                                {[
+                                                    { entry: 'JE-2025-0847', date: '15 May', account: 'Sales A/c',      debit: '₹4.2L',  credit: '—',      status: 'posted' },
+                                                    { entry: 'JE-2025-0846', date: '14 May', account: 'GST Payable',    debit: '—',       credit: '₹0.76L', status: 'posted' },
+                                                    { entry: 'JE-2025-0845', date: '13 May', account: 'Vendor PMT',     debit: '₹1.8L',  credit: '—',      status: 'reconciled' },
+                                                    { entry: 'JE-2025-0844', date: '12 May', account: 'Fixed Asset',    debit: '₹6.0L',  credit: '—',      status: 'pending' },
+                                                    { entry: 'JE-2025-0843', date: '11 May', account: 'TDS Receivable', debit: '—',       credit: '₹0.34L', status: 'posted' },
+                                                    { entry: 'JE-2025-0842', date: '10 May', account: 'Salary Exp',     debit: '₹8.4L',  credit: '—',      status: 'posted' },
+                                                ].map((row, i) => (
+                                                    <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 0.7fr 0.7fr 0.6fr 0.6fr', gap: 6, padding: '5px 10px', borderBottom: '1px solid rgba(19,32,74,0.04)', alignItems: 'center', background: i % 2 === 0 ? 'transparent' : 'rgba(19,32,74,0.015)' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                                                            <div style={{ width: 5, height: 5, borderRadius: '50%', background: row.status === 'posted' ? '#1b2e5a' : row.status === 'reconciled' ? '#047857' : '#d97706', flexShrink: 0 }} />
+                                                            <span style={{ fontSize: 6.5, color: '#1b2e5a', fontWeight: 600 }}>{row.entry}</span>
+                                                        </div>
+                                                        <span style={{ fontSize: 6.5, color: 'rgba(19,32,74,0.5)' }}>{row.date}</span>
+                                                        <span style={{ fontSize: 6.5, color: 'rgba(19,32,74,0.7)', fontWeight: 500 }}>{row.account}</span>
+                                                        <span style={{ fontSize: 6.5, color: row.debit !== '—' ? '#047857' : 'rgba(19,32,74,0.3)', fontWeight: row.debit !== '—' ? 600 : 400 }}>{row.debit}</span>
+                                                        <span style={{ fontSize: 6.5, color: row.credit !== '—' ? '#c2410c' : 'rgba(19,32,74,0.3)', fontWeight: row.credit !== '—' ? 600 : 400 }}>{row.credit}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            {/* Bottom panels */}
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                                                <div style={{ background: '#FFFFFF', border: '1px solid rgba(19,32,74,0.08)', borderRadius: 8, padding: '8px 10px' }}>
+                                                    <div style={{ fontSize: 7.5, fontWeight: 700, color: '#1b2e5a', marginBottom: 6 }}>GST Compliance</div>
+                                                    {[{ name: 'GSTR-1', status: 'Filed', color: '#047857' }, { name: 'GSTR-3B', status: 'Filed', color: '#047857' }, { name: 'E-Invoice', status: 'Active', color: '#1b2e5a' }, { name: 'TDS Return', status: 'Pending', color: '#d97706' }].map((item, i) => (
+                                                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
+                                                            <span style={{ fontSize: 6.5, color: 'rgba(19,32,74,0.6)' }}>{item.name}</span>
+                                                            <span style={{ fontSize: 6, fontWeight: 600, color: item.color, background: `${item.color}18`, padding: '1px 5px', borderRadius: 3 }}>{item.status}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                                <div style={{ background: '#FFFFFF', border: '1px solid rgba(19,32,74,0.08)', borderRadius: 8, padding: '8px 10px' }}>
+                                                    <div style={{ fontSize: 7.5, fontWeight: 700, color: '#1b2e5a', marginBottom: 6 }}>Module Health</div>
+                                                    {[{ name: 'General Ledger', pct: 98 }, { name: 'Accounts Payable', pct: 94 }, { name: 'Accounts Receivable', pct: 87 }, { name: 'Banking & Cash', pct: 100 }].map((mod, i) => (
+                                                        <div key={i} style={{ marginBottom: 5 }}>
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+                                                                <span style={{ fontSize: 6, color: 'rgba(19,32,74,0.55)' }}>{mod.name}</span>
+                                                                <span style={{ fontSize: 6, fontWeight: 600, color: '#1b2e5a' }}>{mod.pct}%</span>
+                                                            </div>
+                                                            <div style={{ height: 3, background: 'rgba(19,32,74,0.08)', borderRadius: 2, overflow: 'hidden' }}>
+                                                                <div style={{ height: '100%', width: `${mod.pct}%`, background: 'linear-gradient(90deg, rgba(27,46,90,0.5), #1b2e5a)', borderRadius: 2 }} />
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 ) : (
                                     /* Dark dashboard mock — sidebar + content matches reference layout */
                                     <div style={{ display: 'flex', height: '480px', background: '#0b0e1a', overflow: 'hidden' }}>
@@ -1401,32 +1557,32 @@ const ProductPage: React.FC = () => {
 
                         {/* Projector puck + beam */}
                         <div style={{ position: 'relative', marginTop: '28px', display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 2 }}>
-                            {/* Volumetric beam from lens upward */}
+                            {/* Flash beam on entry — fades out as puck activates */}
                             <div
                                 className="hero-beam"
                                 style={{
                                     position: 'absolute',
-                                    bottom: '78px',
+                                    bottom: '52px',
                                     left: '50%',
                                     transform: 'translateX(-50%) scaleY(0)',
-                                    width: '300px',
-                                    height: '340px',
+                                    width: '200px',
+                                    height: '240px',
                                     background: 'linear-gradient(to top, rgba(46,79,140,0.60) 0%, rgba(60,100,200,0.28) 35%, transparent 100%)',
-                                    filter: 'blur(20px)',
+                                    filter: 'blur(16px)',
                                     pointerEvents: 'none',
                                     borderRadius: '50% 50% 0 0',
                                 }}
                             />
 
-                            {/* ── 3-D Cylindrical Puck ── */}
+                            {/* ── 3-D Cylindrical Puck (reduced size) ── */}
                             <div
                                 className="pp-puck-float"
                                 style={{
                                     position: 'relative',
-                                    width: '300px',
-                                    height: '105px',
+                                    width: '200px',
+                                    height: '70px',
                                     flexShrink: 0,
-                                    filter: 'drop-shadow(0 24px 38px rgba(0,0,0,0.55)) drop-shadow(0 0 65px rgba(27,46,90,0.45))',
+                                    filter: 'drop-shadow(0 16px 26px rgba(0,0,0,0.55)) drop-shadow(0 0 44px rgba(27,46,90,0.45))',
                                 }}
                             >
                                 {/* Cylinder side */}
@@ -1434,7 +1590,7 @@ const ProductPage: React.FC = () => {
                                     position: 'absolute', top: '20%', left: 0, right: 0, bottom: 0,
                                     background: 'linear-gradient(to bottom, #212128 0%, #161620 28%, #0d0d14 65%, #070710 100%)',
                                     borderRadius: '0 0 50% 50% / 0 0 22% 22%',
-                                    boxShadow: 'inset 7px 0 22px rgba(255,255,255,0.045),inset -7px 0 22px rgba(0,0,0,0.45),inset 0 -12px 28px rgba(0,0,0,0.75)',
+                                    boxShadow: 'inset 5px 0 15px rgba(255,255,255,0.045),inset -5px 0 15px rgba(0,0,0,0.45),inset 0 -8px 20px rgba(0,0,0,0.75)',
                                     overflow: 'hidden',
                                 }}>
                                     <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: '9%', background: 'linear-gradient(to right, rgba(255,255,255,0.07), transparent)' }} />
@@ -1446,25 +1602,19 @@ const ProductPage: React.FC = () => {
                                     position: 'absolute', top: 0, left: 0, right: 0, height: '40%',
                                     background: 'radial-gradient(ellipse at 48% 38%, #2c2c38 0%, #1a1a26 50%, #0e0e18 82%, #08080f 100%)',
                                     borderRadius: '50%', zIndex: 2,
-                                    boxShadow: 'inset 0 9px 22px rgba(255,255,255,0.055),inset 0 -5px 14px rgba(0,0,0,0.65),0 7px 22px rgba(0,0,0,0.65)',
+                                    boxShadow: 'inset 0 6px 15px rgba(255,255,255,0.055),inset 0 -4px 10px rgba(0,0,0,0.65),0 5px 15px rgba(0,0,0,0.65)',
                                 }}>
-                                    {/* Outer groove */}
-                                    <div style={{ position: 'absolute', top: '7%', left: '7%', right: '7%', bottom: '7%', borderRadius: '50%', boxShadow: 'inset 0 0 0 1.5px rgba(255,255,255,0.055),inset 0 0 10px rgba(0,0,0,0.6)' }} />
-                                    {/* Middle recess */}
-                                    <div style={{ position: 'absolute', top: '20%', left: '20%', right: '20%', bottom: '20%', borderRadius: '50%', background: 'radial-gradient(ellipse at 50% 42%, #1e1e2a 0%, #0c0c14 100%)', boxShadow: 'inset 0 5px 14px rgba(0,0,0,0.95)' }} />
-                                    {/* Glow ring */}
+                                    <div style={{ position: 'absolute', top: '7%', left: '7%', right: '7%', bottom: '7%', borderRadius: '50%', boxShadow: 'inset 0 0 0 1.5px rgba(255,255,255,0.055),inset 0 0 8px rgba(0,0,0,0.6)' }} />
+                                    <div style={{ position: 'absolute', top: '20%', left: '20%', right: '20%', bottom: '20%', borderRadius: '50%', background: 'radial-gradient(ellipse at 50% 42%, #1e1e2a 0%, #0c0c14 100%)', boxShadow: 'inset 0 4px 10px rgba(0,0,0,0.95)' }} />
                                     <div className="pp-lens-glow" style={{ position: 'absolute', top: '24%', left: '24%', right: '24%', bottom: '24%', borderRadius: '50%', background: 'transparent' }} />
-                                    {/* Pulse rings */}
                                     <div className="pp-ring-out"   style={{ position: 'absolute', top: '24%', left: '24%', right: '24%', bottom: '24%', borderRadius: '50%', boxShadow: '0 0 0 1.5px rgba(60,105,200,0.5)' }} />
                                     <div className="pp-ring-out-2" style={{ position: 'absolute', top: '24%', left: '24%', right: '24%', bottom: '24%', borderRadius: '50%', boxShadow: '0 0 0 1.5px rgba(60,105,200,0.3)' }} />
-                                    {/* Lens bowl */}
-                                    <div style={{ position: 'absolute', top: '32%', left: '32%', right: '32%', bottom: '32%', borderRadius: '50%', background: 'radial-gradient(circle at 44% 38%, #d0e4ff 0%, #88aef0 14%, #243B6E 36%, #1B2E5A 64%, #0F1B3D 100%)', boxShadow: 'inset 0 0 12px rgba(0,0,0,0.75)' }} />
-                                    {/* Hot-spot */}
+                                    <div style={{ position: 'absolute', top: '32%', left: '32%', right: '32%', bottom: '32%', borderRadius: '50%', background: 'radial-gradient(circle at 44% 38%, #d0e4ff 0%, #88aef0 14%, #243B6E 36%, #1B2E5A 64%, #0F1B3D 100%)', boxShadow: 'inset 0 0 8px rgba(0,0,0,0.75)' }} />
                                     <div className="pp-hotspot" style={{ position: 'absolute', top: '42%', left: '42%', right: '42%', bottom: '42%', borderRadius: '50%', background: 'radial-gradient(circle, #fff 0%, #d2e8ff 55%, transparent 100%)' }} />
                                 </div>
 
                                 {/* Ground shadow */}
-                                <div style={{ position: 'absolute', bottom: '-14%', left: '18%', right: '18%', height: '18%', borderRadius: '50%', background: 'rgba(0,0,0,0.5)', filter: 'blur(14px)' }} />
+                                <div style={{ position: 'absolute', bottom: '-14%', left: '18%', right: '18%', height: '18%', borderRadius: '50%', background: 'rgba(0,0,0,0.5)', filter: 'blur(10px)' }} />
                             </div>
                         </div>
                     </div>
