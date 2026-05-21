@@ -26,6 +26,16 @@ import { updateAdministratorRolesForPlan } from './subscription-plan-roles.js';
 import { PaymentService } from './payment-service.js';
 
 /**
+ * Fallback subscription period in milliseconds.
+ * Used only when Stripe does not provide currentPeriodEnd in the webhook payload.
+ * Stripe fires subscription.updated immediately after checkout.session.completed,
+ * which will overwrite this with the authoritative value.
+ * Override via SUBSCRIPTION_FALLBACK_PERIOD_DAYS (default 365).
+ */
+const SUBSCRIPTION_FALLBACK_PERIOD_MS =
+  Number(process.env.SUBSCRIPTION_FALLBACK_PERIOD_DAYS ?? 365) * 24 * 60 * 60 * 1000;
+
+/**
  * Maps raw Stripe subscription status values to the allowed values in the
  * `chk_subscription_status` DB constraint:
  *   'active','inactive','trialing','past_due','canceled','paused','trial'
@@ -464,7 +474,7 @@ export async function handleCheckoutCompleted(session: Record<string, unknown>):
           yearlyPrice: String((plan as { yearlyPrice?: number }).yearlyPrice ?? 0),
           billingCycle,
           currentPeriodStart: new Date(),
-          currentPeriodEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+          currentPeriodEnd: new Date(Date.now() + SUBSCRIPTION_FALLBACK_PERIOD_MS),
           updatedAt: new Date()
         } as Record<string, unknown>;
 
@@ -508,7 +518,7 @@ export async function handleCheckoutCompleted(session: Record<string, unknown>):
             yearlyPrice: String((plan as { yearlyPrice?: number }).yearlyPrice ?? 0),
             billingCycle,
             currentPeriodStart: new Date(),
-            currentPeriodEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+            currentPeriodEnd: new Date(Date.now() + SUBSCRIPTION_FALLBACK_PERIOD_MS),
             hasEverUpgraded: true,
             isTrialUser: false,
             createdAt: new Date(),
@@ -720,7 +730,7 @@ export async function handleCheckoutCompleted(session: Record<string, unknown>):
               newPlanName: planDef?.name ?? planId,
               status: 'active',
               effectiveAt: new Date().toISOString(),
-              currentPeriodEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+              currentPeriodEnd: new Date(Date.now() + SUBSCRIPTION_FALLBACK_PERIOD_MS).toISOString(),
               isNewApp,
               modules: appModules === '*' ? ['*'] : appModules,
               addedModules: appModules === '*' ? ['*'] : appModules,
