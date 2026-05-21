@@ -305,22 +305,25 @@ class SnsSqsPublisher {
     roleData: Record<string, unknown>,
     publishedBy = 'system'
   ): Promise<Array<{ targetApp: string; success?: boolean; eventId?: string; error?: string }>> {
+    // H-3: Reject empty/missing roleId before touching SNS — prevents phantom events
+    if (!roleId || typeof roleId !== 'string' || roleId.trim().length === 0) {
+      const msg = `[SNS] publishRoleEventToSuite: invalid roleId="${roleId}" for eventType=${eventType} tenantId=${tenantId} — publish aborted`;
+      console.error(msg);
+      return this.businessSuiteApps.map((targetApp) => ({ targetApp, success: false, error: 'invalid roleId' }));
+    }
+
     const results: Array<{ targetApp: string; success?: boolean; eventId?: string; error?: string }> =
       [];
     for (const targetApp of this.businessSuiteApps) {
+      // H-6: Retry each per-app publish up to 2 times with exponential backoff
       try {
-        const result = await this.publishRoleEvent(
-          targetApp,
-          eventType,
-          tenantId,
-          roleId,
-          roleData,
-          publishedBy
+        const result = await this.withRetry(() =>
+          this.publishRoleEvent(targetApp, eventType, tenantId, roleId, roleData, publishedBy)
         );
         results.push({ targetApp, ...result });
       } catch (error: unknown) {
         const err = error as Error;
-        console.error(`❌ Failed to publish role event to ${targetApp}:`, error);
+        console.error(`❌ Failed to publish role event to ${targetApp} after retries:`, error);
         results.push({ targetApp, success: false, error: err.message });
       }
     }
@@ -401,18 +404,13 @@ class SnsSqsPublisher {
       [];
     for (const targetApp of this.businessSuiteApps) {
       try {
-        const result = await this.publishUserEvent(
-          targetApp,
-          eventType,
-          tenantId,
-          userId,
-          userData,
-          publishedBy
+        const result = await this.withRetry(() =>
+          this.publishUserEvent(targetApp, eventType, tenantId, userId, userData, publishedBy)
         );
         results.push({ targetApp, ...result });
       } catch (error: unknown) {
         const err = error as Error;
-        console.error(`❌ Failed to publish user event to ${targetApp}:`, error);
+        console.error(`❌ Failed to publish user event to ${targetApp} after retries:`, error);
         results.push({ targetApp, success: false, error: err.message });
       }
     }
@@ -467,18 +465,13 @@ class SnsSqsPublisher {
       [];
     for (const targetApp of this.businessSuiteApps) {
       try {
-        const result = await this.publishOrgEvent(
-          targetApp,
-          eventType,
-          tenantId,
-          orgId,
-          orgData,
-          publishedBy
+        const result = await this.withRetry(() =>
+          this.publishOrgEvent(targetApp, eventType, tenantId, orgId, orgData, publishedBy)
         );
         results.push({ targetApp, ...result });
       } catch (error: unknown) {
         const err = error as Error;
-        console.error(`❌ Failed to publish org event to ${targetApp}:`, error);
+        console.error(`❌ Failed to publish org event to ${targetApp} after retries:`, error);
         results.push({ targetApp, success: false, error: err.message });
       }
     }
@@ -544,17 +537,13 @@ class SnsSqsPublisher {
       [];
     for (const targetApp of this.businessSuiteApps) {
       try {
-        const result = await this.publishOrgAssignmentEvent(
-          targetApp,
-          eventType,
-          tenantId,
-          assignmentData,
-          publishedBy
+        const result = await this.withRetry(() =>
+          this.publishOrgAssignmentEvent(targetApp, eventType, tenantId, assignmentData, publishedBy)
         );
         results.push({ targetApp, ...result });
       } catch (error: unknown) {
         const err = error as Error;
-        console.error(`❌ Failed to publish org assignment event to ${targetApp}:`, error);
+        console.error(`❌ Failed to publish org assignment event to ${targetApp} after retries:`, error);
         results.push({ targetApp, success: false, error: err.message });
       }
     }
@@ -627,6 +616,29 @@ class SnsSqsPublisher {
       { entityId, userId, amount, operationType, operationId, ...metadata },
       publishedBy
     );
+  }
+
+  /**
+   * Retry helper with exponential backoff (default 2 retries: 500 ms → 1 000 ms).
+   * Used by suite-broadcast methods to retry failed per-app publishes.
+   */
+  private async withRetry<T>(
+    fn: () => Promise<T>,
+    maxRetries = 2,
+    baseDelayMs = 500,
+  ): Promise<T> {
+    let lastErr: unknown;
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        return await fn();
+      } catch (err) {
+        lastErr = err;
+        if (attempt < maxRetries) {
+          await new Promise((r) => setTimeout(r, baseDelayMs * Math.pow(2, attempt)));
+        }
+      }
+    }
+    throw lastErr;
   }
 
   /**
