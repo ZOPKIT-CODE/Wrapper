@@ -187,7 +187,7 @@ class SnsSqsPublisher {
       payload: resolvedEventData,
       correlationId: (eventData as any)?._correlationId ?? randomUUID(),
       causationId: (eventData as any)?._causationId ?? '',
-      schemaVersion: '1.0',
+      schemaVersion: 1,
     };
 
     const messageAttributes = {

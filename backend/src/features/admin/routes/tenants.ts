@@ -609,6 +609,20 @@ export default async function tenantRoutes(
       Logger.log('info', 'user', 'delete-tenant-user', 'Calling TenantService.removeUser', { tenantId, userId });
       const result = await TenantService.removeUser(tenantId, userId, request.userContext.internalUserId ?? '');
 
+      // Notify downstream apps that the user has been removed from this tenant
+      try {
+        const { snsSqsPublisher } = await import('../../messaging/utils/sns-sqs-publisher.js');
+        await snsSqsPublisher.publishUserEventToSuite('user.deleted', tenantId, userId, {
+          userId,
+          tenantId,
+          deletedBy: request.userContext.internalUserId ?? 'system',
+          deletedAt: new Date().toISOString(),
+        });
+        Logger.log('info', 'user', 'delete-tenant-user', 'Published user.deleted event', { userId, tenantId });
+      } catch (pubErr) {
+        Logger.log('warning', 'user', 'delete-tenant-user', 'Failed to publish user.deleted event (non-fatal)', { userId, tenantId, error: (pubErr as Error).message });
+      }
+
       Logger.log('info', 'user', 'delete-tenant-user', 'User removed successfully', { userId, tenantId });
       return { success: true, message: result?.message ?? 'User removed successfully' };
     } catch (err) {

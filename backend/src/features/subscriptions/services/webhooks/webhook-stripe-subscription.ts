@@ -517,6 +517,20 @@ export async function handleSubscriptionDeleted(subscription: Record<string, unk
       {
         const { snsSqsPublisher } = await import('../../../messaging/utils/sns-sqs-publisher.js');
         const targetApps = (process.env.BUSINESS_SUITE_TARGET_APPS || 'crm,accounting,ops').split(',').map(a => a.trim());
+        const wasScheduled = !!existing.cancelAt;
+        const sharedEventData = {
+          tenantId: existing.tenantId,
+          stripeSubscriptionId: subscription.id,
+          plan: existing.plan,
+          canceledAt: new Date().toISOString(),
+          wasScheduled,
+          periodStart: existing.currentPeriodStart ? new Date(existing.currentPeriodStart).toISOString() : null,
+          periodEnd: existing.currentPeriodEnd ? new Date(existing.currentPeriodEnd).toISOString() : null,
+          creditBatchesExpired: expiredCredits.expiredCount,
+          totalCreditBatches: expiredCredits.totalBatches,
+          action: 'expire_all_credits',
+        };
+
         for (const app of targetApps) {
           await snsSqsPublisher.publishInterAppEvent({
             eventType: 'subscription.canceled',
@@ -524,22 +538,26 @@ export async function handleSubscriptionDeleted(subscription: Record<string, unk
             targetApplication: app,
             tenantId: existing.tenantId,
             entityId: existing.tenantId,
-            eventData: {
-              tenantId: existing.tenantId,
-              stripeSubscriptionId: subscription.id,
-              plan: existing.plan,
-              canceledAt: new Date().toISOString(),
-              wasScheduled: !!existing.cancelAt,
-              periodStart: existing.currentPeriodStart ? new Date(existing.currentPeriodStart).toISOString() : null,
-              periodEnd: existing.currentPeriodEnd ? new Date(existing.currentPeriodEnd).toISOString() : null,
-              creditBatchesExpired: expiredCredits.expiredCount,
-              totalCreditBatches: expiredCredits.totalBatches,
-              action: 'expire_all_credits',
-            },
+            eventData: sharedEventData,
             publishedBy: 'system',
           });
+
+          // Natural end-of-period expiry (cancel_at_period_end reached) also publishes
+          // subscription.expired so downstream apps can distinguish expiry from immediate
+          // cancellation. Both events carry the same payload.
+          if (wasScheduled) {
+            await snsSqsPublisher.publishInterAppEvent({
+              eventType: 'subscription.expired',
+              sourceApplication: 'wrapper',
+              targetApplication: app,
+              tenantId: existing.tenantId,
+              entityId: existing.tenantId,
+              eventData: sharedEventData,
+              publishedBy: 'system',
+            });
+          }
         }
-        Logger.log('info', 'billing', 'handle-subscription-deleted', 'Published subscription.canceled to downstream apps', { appCount: targetApps.length });
+        Logger.log('info', 'billing', 'handle-subscription-deleted', 'Published subscription.canceled to downstream apps', { appCount: targetApps.length, alsoPublishedExpired: wasScheduled });
       }
 
       // 5. Send subscription expired email to tenant admin
