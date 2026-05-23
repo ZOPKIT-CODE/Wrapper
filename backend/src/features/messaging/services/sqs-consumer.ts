@@ -8,7 +8,6 @@ import {
 } from '@aws-sdk/client-sqs';
 import * as Sentry from '@sentry/node';
 import { sql } from 'drizzle-orm';
-import { InterAppEventService } from './inter-app-event-service.js';
 import { snsSqsPublisher } from '../utils/sns-sqs-publisher.js';
 import { resolvePayload } from '../utils/large-payload-store.js';
 import { db } from '../../../db/index.js';
@@ -348,28 +347,23 @@ class SqsInterAppConsumer {
   // -------------------------------------------------------------------------
 
   private async handleEventByType(event: InterAppEventPayload): Promise<boolean> {
-    const parsedEventData = (event.eventData ?? {}) as Record<string, unknown>;
-
-    switch (event.eventType) {
-      case 'user.created':
-      case 'user.deactivated':
-        await this.handleUserEvent(event, parsedEventData);
-        return true;
-      case 'credit.allocated':
-        await this.handleCreditEvent(event, parsedEventData);
-        return true;
-      case 'org.created':
-        await this.handleOrgEvent(event, parsedEventData);
-        return true;
-      case 'role.created':
-      case 'role.updated':
-      case 'role.deleted':
-        await this.handleRoleEvent(event, parsedEventData);
-        return true;
-      default:
-        console.log(`[SQS←] Unhandled event type: ${event.eventType}`);
-        return false;
-    }
+    // Wrapper is the source of truth for users, organizations, roles, and the
+    // allocator for credits. None of the corresponding inbound events from
+    // CRM/FA drive any wrapper-side state mutation — they used to land here
+    // as no-op stub handlers, which created the impression of a contract
+    // that didn't exist. They've been removed deliberately.
+    //
+    // Anything that DOES arrive on the queue still lands in `received_events`
+    // for audit (see recordReceivedEvent above) with handler_status='skipped'.
+    // The proper long-term fix is to tighten the SNS subscription filter
+    // policy on wrapper's queue so these event types are never delivered —
+    // that's an infra (IaC / AWS console) change, not a code change.
+    //
+    // Add a case here only for events that actually need to mutate
+    // wrapper-side state (e.g. `event.processing.failed` notifications, ack
+    // signals). Domain events from downstream apps do not belong here.
+    console.log(`[SQS←] Unhandled event type: ${event.eventType}`);
+    return false;
   }
 
   // -------------------------------------------------------------------------
@@ -456,66 +450,6 @@ class SqsInterAppConsumer {
       const error = err as Error;
       console.error('[SQS←ERR] Failed to update received_events status:', error.message);
     }
-  }
-
-  private async handleUserEvent(
-    event: InterAppEventPayload,
-    _parsedEventData: Record<string, unknown>,
-  ): Promise<void> {
-    const { sourceApplication, tenantId, entityId, eventType } = event;
-    console.log(`[SQS←] Processing user event from ${sourceApplication}: ${eventType}`);
-
-    await InterAppEventService.acknowledgeInterAppEvent(event.eventId ?? '', {
-      processedBy: 'wrapper',
-      eventType,
-      tenantId,
-      entityId,
-    });
-  }
-
-  private async handleCreditEvent(
-    event: InterAppEventPayload,
-    _parsedEventData: Record<string, unknown>,
-  ): Promise<void> {
-    const { sourceApplication, tenantId, entityId, eventType } = event;
-    console.log(`[SQS←] Processing credit event from ${sourceApplication}: ${eventType}`);
-
-    await InterAppEventService.acknowledgeInterAppEvent(event.eventId ?? '', {
-      processedBy: 'wrapper',
-      eventType,
-      tenantId,
-      entityId,
-    });
-  }
-
-  private async handleOrgEvent(
-    event: InterAppEventPayload,
-    _parsedEventData: Record<string, unknown>,
-  ): Promise<void> {
-    const { sourceApplication, tenantId, entityId, eventType } = event;
-    console.log(`[SQS←] Processing org event from ${sourceApplication}: ${eventType}`);
-
-    await InterAppEventService.acknowledgeInterAppEvent(event.eventId ?? '', {
-      processedBy: 'wrapper',
-      eventType,
-      tenantId,
-      entityId,
-    });
-  }
-
-  private async handleRoleEvent(
-    event: InterAppEventPayload,
-    _parsedEventData: Record<string, unknown>,
-  ): Promise<void> {
-    const { sourceApplication, tenantId, entityId, eventType } = event;
-    console.log(`[SQS←] Processing role event from ${sourceApplication}: ${eventType}`);
-
-    await InterAppEventService.acknowledgeInterAppEvent(event.eventId ?? '', {
-      processedBy: 'wrapper',
-      eventType,
-      tenantId,
-      entityId,
-    });
   }
 
   // -------------------------------------------------------------------------
