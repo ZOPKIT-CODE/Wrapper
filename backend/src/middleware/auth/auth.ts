@@ -463,7 +463,7 @@ async function processAuthenticatedUser(request: FastifyRequest, reply: FastifyR
           .innerJoin(customRoles, and(eq(userRoleAssignments.roleId, customRoles.roleId), eq(customRoles.tenantId, tenantId)))
           .where(eq(userRoleAssignments.userId, effectiveUserRecord.userId));
 
-        isSuperAdmin = userRoles.some(role => role.roleName === 'Super Administrator' && role.isSystemRole);
+        isSuperAdmin = userRoles.some(role => role.isSystemRole === true);
         await roleCacheByUserId.set(effectiveUserRecord.userId, { isSuperAdmin }, ROLE_CACHE_TTL_MS);
       } catch (error) {
         Logger.log('warning', 'auth', 'process-authenticated-user', '⚠️ Failed to check super admin status', { error });

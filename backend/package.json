@@ -42,7 +42,7 @@
     "sync-permissions:summary": "tsx src/scripts/sync-permissions.js summary",
     "sync-permissions:dry-run": "tsx src/scripts/sync-permissions.js dry-run",
     "sync-permissions:app": "tsx src/scripts/sync-permissions.js app",
-    "temporal:worker": "node temporal/worker.js",
+    "temporal:worker": "tsx temporal/worker.js",
     "temporal:start": "node temporal/start-workflow.js",
     "lint": "eslint src/",
     "ngrok": "ngrok http ${PORT:-3000}"

@@ -434,8 +434,8 @@ class PermissionService {
       throw new Error('Cannot delete system roles');
     }
 
-    // Special protection for Super Administrator role
-    if (existingRole[0].roleName === 'Super Administrator' || (existingRole[0].priority ?? 0) >= 1000) {
+    // Protect high-priority roles (e.g. Super Administrator at priority 1000)
+    if ((existingRole[0].priority ?? 0) >= 1000) {
       throw new Error('Cannot delete Super Administrator role - this is the primary admin role for the organization');
     }
 

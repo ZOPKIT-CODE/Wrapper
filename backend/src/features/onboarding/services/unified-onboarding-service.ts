@@ -21,6 +21,7 @@ import { invalidateTenantLookupCache, invalidateUserCache } from '../../../middl
 
 import { OnboardingDbService } from './onboarding-db-service.js';
 import { OnboardingExternalService } from './onboarding-external-service.js';
+import { getTemporalClient, WRAPPER_TASK_QUEUE } from '../../../services/temporal-client.js';
 
 import type { ValidationResult, OnboardingError, DbOnboardingResult, OnboardingPayload } from './onboarding-types.js';
 
@@ -423,6 +424,22 @@ export class UnifiedOnboardingService {
         Logger.log('warning', 'general', 'completeOnboardingWorkflow', 'Failed to publish app provisioning events (non-fatal)', { error: (err as Error).message });
       });
 
+      // Fire-and-forget: domain verification + 10-day drip email campaign via Temporal.
+      const adminNameForEmail = (firstName && lastName)
+        ? `${String(firstName)} ${String(lastName)}`.trim()
+        : String(adminEmail).split('@')[0];
+      void UnifiedOnboardingService.startTenantOnboardingWorkflow({
+        tenantId:   dbResult.tenant.tenantId,
+        adminEmail: String(adminEmail),
+        adminName:  adminNameForEmail,
+        companyName: String(companyName),
+        subdomain:  finalSubdomain,
+        loginUrl:   `${process.env.FRONTEND_URL || 'http://localhost:3001'}/dashboard`,
+        plan:       selectedPlan ?? 'free',
+      }).catch((err: unknown) => {
+        Logger.log('warning', 'general', 'completeOnboardingWorkflow', 'Failed to start tenant onboarding workflow (non-fatal)', { error: (err as Error).message });
+      });
+
       // Finalize logger with success
       const logResult = await logger.finalize({
         success: true,
@@ -535,7 +552,20 @@ export class UnifiedOnboardingService {
     const results = await Promise.allSettled(
       enabledApps.map(async (app) => {
         const eventData = await buildTenantSnapshot(tenantId, app.appCode, plan, { enabledApps });
-        if (!eventData) return; // defensive — app was just in enabledApps so should not happen
+        if (!eventData) {
+          Logger.log('warning', 'general', 'publishAppProvisioningEvents', 'buildTenantSnapshot returned null — skipping app', { appCode: app.appCode, tenantId });
+          return;
+        }
+
+        // Deterministic ID so a retry of onboarding completion doesn't
+        // re-publish tenant.onboarded for the same (tenant, app).
+        const eventId = deriveEventId({
+          eventType: 'tenant.onboarded',
+          tenantId,
+          entityId: tenantId,
+          domainOpId: tenantId,
+          targetApplication: app.appCode,
+        });
 
         await InterAppEventService.publishEvent({
           eventType:         'tenant.onboarded',
@@ -545,15 +575,7 @@ export class UnifiedOnboardingService {
           entityId:          tenantId,
           publishedBy,
           eventData: eventData as unknown as Record<string, unknown>,
-          // Deterministic ID so a retry of onboarding completion doesn't
-          // re-publish tenant.onboarded for the same (tenant, app).
-          eventId: deriveEventId({
-            eventType: 'tenant.onboarded',
-            tenantId,
-            entityId: tenantId,
-            domainOpId: tenantId,
-            targetApplication: app.appCode,
-          }),
+          eventId,
         });
         Logger.log('info', 'general', 'publishAppProvisioningEvents', 'Published tenant.onboarded event', { appCode: app.appCode, tenantId });
       })
@@ -562,9 +584,37 @@ export class UnifiedOnboardingService {
     for (const [i, result] of results.entries()) {
       if (result.status === 'rejected') {
         const appCode = enabledApps[i]?.appCode ?? 'unknown';
-        Logger.log('warning', 'general', 'publishAppProvisioningEvents', 'Failed to publish tenant.onboarded event', { appCode, error: (result.reason as Error).message });
+        const err = result.reason as Error;
+        Logger.log('error', 'general', 'publishAppProvisioningEvents', 'Failed to publish tenant.onboarded event', {
+          appCode,
+          tenantId,
+          error: err.message,
+          stack: err.stack,
+        });
       }
     }
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Tenant Onboarding Workflow — domain provisioning + 10-day drip emails
+  // ─────────────────────────────────────────────────────────────────────────
+
+  private static async startTenantOnboardingWorkflow(payload: {
+    tenantId: string;
+    adminEmail: string;
+    adminName: string;
+    companyName: string;
+    subdomain: string;
+    loginUrl: string;
+    plan: string;
+  }): Promise<void> {
+    const client = await getTemporalClient();
+    await client.workflow.start('tenantOnboardingWorkflow', {
+      args: [payload],
+      taskQueue:  WRAPPER_TASK_QUEUE,
+      workflowId: `tenant-onboarding-${payload.tenantId}`,
+    });
+    Logger.log('info', 'general', 'startTenantOnboardingWorkflow', 'Started tenantOnboardingWorkflow', { tenantId: payload.tenantId });
   }
 
   // ─────────────────────────────────────────────────────────────────────────

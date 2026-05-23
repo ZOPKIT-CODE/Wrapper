@@ -1,10 +1,11 @@
 import { db, sql } from '../db/index.js';
 import { subscriptions } from '../db/schema/billing/subscriptions.js';
 import { tenants } from '../db/schema/core/tenants.js';
-import { eq, and, lt, gt, or, isNull, sql as drizzleSql } from 'drizzle-orm';
+import { eq, and, lt, ne, gt, or, isNull, sql as drizzleSql } from 'drizzle-orm';
 import { EmailService } from '../utils/email.js';
 import Logger from './logger.js';
 import cron from 'node-cron';
+import { snsSqsPublisher } from '../features/messaging/utils/sns-sqs-publisher.js';
 
 // Schema may have been migrated; trial columns asserted for type compatibility where used
 
@@ -164,6 +165,74 @@ class TrialManager {
     };
   }
 
+  /**
+   * Expire trial subscriptions that have passed their trialEndsAt date.
+   *
+   * Queries for subscriptions where:
+   *   plan = 'trial'  AND  trialEndsAt < NOW()  AND  status != 'expired'
+   *
+   * Each matched row is:
+   *   1. Updated to status = 'expired' in the DB.
+   *   2. Published as a subscription.expired event to all suite apps so
+   *      downstream services (CRM, FA, etc.) can enforce access restrictions.
+   */
+  async expireTrialSubscriptions(): Promise<number> {
+    const now = new Date();
+
+    const expiredTrials = await db
+      .select({
+        subscriptionId: subscriptions.subscriptionId,
+        tenantId: subscriptions.tenantId,
+        plan: subscriptions.plan,
+        trialEndsAt: subscriptions.trialEndsAt,
+      })
+      .from(subscriptions)
+      .where(
+        and(
+          eq(subscriptions.plan, 'trial'),
+          lt(subscriptions.trialEndsAt, now),
+          ne(subscriptions.status, 'expired'),
+        )
+      );
+
+    if (expiredTrials.length === 0) return 0;
+
+    Logger.log('info', 'trial', 'expire-trial-subscriptions', `Found ${expiredTrials.length} trial(s) to expire`, { count: expiredTrials.length });
+
+    let expiredCount = 0;
+
+    for (const sub of expiredTrials) {
+      try {
+        await db
+          .update(subscriptions)
+          .set({ status: 'expired', updatedAt: new Date() })
+          .where(eq(subscriptions.subscriptionId, sub.subscriptionId));
+
+        // Publish subscription.expired to all suite apps.
+        await snsSqsPublisher.publishOrgEventToSuite(
+          'subscription.expired',
+          sub.tenantId,
+          sub.tenantId,
+          {
+            subscriptionId: sub.subscriptionId,
+            plan: sub.plan,
+            trialEndsAt: sub.trialEndsAt?.toISOString() ?? null,
+            expiredAt: now.toISOString(),
+            reason: 'trial_period_ended',
+          }
+        );
+
+        Logger.log('info', 'trial', 'expire-trial-subscriptions', 'Trial subscription expired and event published', { tenantId: sub.tenantId, subscriptionId: sub.subscriptionId });
+        expiredCount++;
+      } catch (err) {
+        const error = err as Error;
+        Logger.log('error', 'trial', 'expire-trial-subscriptions', 'Error expiring trial subscription', { tenantId: sub.tenantId, subscriptionId: sub.subscriptionId, error: error.message });
+      }
+    }
+
+    return expiredCount;
+  }
+
   // Main expiry check - runs every minute for immediate detection
   async checkExpiredTrials() {
     const startTime = Date.now();
@@ -238,6 +307,18 @@ class TrialManager {
       }
 
       Logger.log('info', 'trial', 'expiry-check', `Processed ${processedCount} expired subscriptions`, { requestId, processedCount });
+
+      // Expire any trial-plan subscriptions whose trialEndsAt has passed and
+      // publish subscription.expired events to suite apps.
+      try {
+        const trialExpiredCount = await this.expireTrialSubscriptions();
+        if (trialExpiredCount > 0) {
+          Logger.log('info', 'trial', 'expiry-check', `Expired and published ${trialExpiredCount} trial subscription(s) via trialEndsAt check`, { requestId, trialExpiredCount });
+        }
+      } catch (trialErr) {
+        Logger.log('error', 'trial', 'expiry-check', 'expireTrialSubscriptions failed (non-fatal)', { requestId, error: (trialErr as Error).message });
+      }
+
       Logger.log('info', 'trial', 'expiry-check-end', 'TRIAL EXPIRY CHECK ENDED', { requestId, duration: Logger.getDuration(startTime) });
 
     } catch (error) {

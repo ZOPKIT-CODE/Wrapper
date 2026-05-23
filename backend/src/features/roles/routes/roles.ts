@@ -24,6 +24,8 @@ export async function publishRoleEventToApplications(
   roleData: Record<string, unknown>
 ): Promise<void> {
   try {
+    // NOTE: kindeOrgId translation now happens inside snsSqsPublisher.publishInterAppEvent
+    // (Bug 1/3 chokepoint fix) — callers may pass either wrapper UUID or kindeOrgId.
 
     // Parse permissions if they're stored as JSON string
     let permissions = roleData.permissions as unknown;

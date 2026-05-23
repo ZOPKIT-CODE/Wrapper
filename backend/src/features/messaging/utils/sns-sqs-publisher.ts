@@ -146,6 +146,35 @@ class SnsSqsPublisher {
     }
 
     const t0 = Date.now();
+
+    // Bug 1/3 fix — single chokepoint for tenantId-envelope translation.
+    // Downstream apps (CRM, FA, …) join on `kinde_org_id`, not the wrapper's
+    // internal tenant UUID. Many producers pass the wrapper UUID; translate
+    // here so every convenience method (publishRoleEvent, publishUserEventToSuite,
+    // publishOrgEventToSuite, publishCreditEvent, publishOrgAssignmentEventToSuite,
+    // publishInterAppEvent direct callers) gets the fix without per-callsite churn.
+    // Heuristic: kindeOrgId starts with "org_"; UUIDs look uuid-shaped. Skip the
+    // lookup for already-good values and for empty inputs.
+    if (tenantId && !tenantId.startsWith('org_') && /^[0-9a-f-]{36}$/i.test(tenantId)) {
+      try {
+        const { db: _db } = await import('../../../db/index.js');
+        const { tenants } = await import('../../../db/schema/index.js');
+        const { eq } = await import('drizzle-orm');
+        const [row] = await _db
+          .select({ kindeOrgId: tenants.kindeOrgId })
+          .from(tenants)
+          .where(eq(tenants.tenantId, tenantId))
+          .limit(1);
+        if (row?.kindeOrgId) {
+          tenantId = row.kindeOrgId;
+        } else {
+          Logger.log('warning', 'general', 'publishInterAppEvent', 'kindeOrgId lookup miss — falling back to raw tenantId (downstream lookups will likely fail)', { tenantId, eventType, targetApplication });
+        }
+      } catch (err: unknown) {
+        Logger.log('warning', 'general', 'publishInterAppEvent', 'kindeOrgId lookup failed — falling back to raw tenantId', { tenantId, eventType, error: (err as Error).message });
+      }
+    }
+
     Logger.log('info', 'general', 'publishInterAppEvent', `Publishing event: ${sourceApplication} → ${targetApplication} (${eventType})`, { tenantId, eventType, targetApplication, payloadSize: JSON.stringify(eventData).length });
 
     // Optional schema validation against the shared SDK EVENT_REGISTRY.

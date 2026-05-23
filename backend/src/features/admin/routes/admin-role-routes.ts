@@ -56,6 +56,16 @@ export default async function adminRoleRoutes(fastify: FastifyInstance): Promise
     const tenantId = ((request as ReqWithUser).userContext?.tenantId ?? '') as string;
     const roleName = body.roleName as string; const description = body.description as string; const permissions = body.permissions;
 
+    // Validate priority ceiling — custom roles may not reach or exceed the system-role threshold (100)
+    const incomingPriority = body.priority !== undefined ? Number(body.priority) : undefined;
+    if (incomingPriority !== undefined && incomingPriority >= 100) {
+      return reply.code(400).send({
+        success: false,
+        error: 'Role priority cannot exceed system threshold',
+        requestId
+      });
+    }
+
     try {
       Logger.log('info', 'role', requestId, 'Creating role', { roleName, description, tenantId });
 
@@ -69,6 +79,7 @@ export default async function adminRoleRoutes(fastify: FastifyInstance): Promise
           description,
           permissions: JSON.stringify(permissions as any),
           isSystemRole: false,
+          ...(incomingPriority !== undefined ? { priority: incomingPriority } : {}),
           createdAt: new Date(),
           updatedAt: new Date()
         })
@@ -104,6 +115,16 @@ export default async function adminRoleRoutes(fastify: FastifyInstance): Promise
     const roleId = params.roleId ?? '';
     const tenantId = ((request as ReqWithUser).userContext?.tenantId ?? '') as string;
     const updateData = body as Record<string, unknown>;
+
+    // Validate priority ceiling — custom roles may not reach or exceed the system-role threshold (100)
+    const updatedPriority = updateData.priority !== undefined ? Number(updateData.priority) : undefined;
+    if (updatedPriority !== undefined && updatedPriority >= 100) {
+      return reply.code(400).send({
+        success: false,
+        error: 'Role priority cannot exceed system threshold',
+        requestId
+      });
+    }
 
     try {
       Logger.log('info', 'role', requestId, 'Updating role', { roleId, tenantId });

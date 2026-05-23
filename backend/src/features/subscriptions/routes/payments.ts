@@ -7,7 +7,7 @@ import { RazorpayPaymentGateway } from '../adapters/razorpay.adapter.js';
 import type { NormalizedWebhookEvent } from '../adapters/types.js';
 import { authenticateToken } from '../../../middleware/auth/auth.js';
 import { db } from '../../../db/index.js';
-import { tenants, subscriptions, tenantUsers } from '../../../db/schema/index.js';
+import { tenants, subscriptions, tenantUsers, payments } from '../../../db/schema/index.js';
 import { eq, and, sql } from 'drizzle-orm';
 import { normalizeStripeSubscriptionStatus } from '../services/subscription-webhook-handler.js';
 import Logger from '../../../utils/logger.js';
@@ -256,6 +256,29 @@ export default async function paymentRoutes(
       const tenantId = (request as any).userContext?.tenantId as string | undefined;
       if (!tenantId) {
         return reply.code(400).send({ error: 'Tenant ID required' });
+      }
+
+      // Tenant ownership check: if a pending payment record already exists for this
+      // Razorpay order (created during checkout session creation), verify it belongs
+      // to the authenticated tenant. This prevents a user from replaying another
+      // tenant's razorpay_order_id to activate their own subscription for free.
+      const [existingPayment] = await db
+        .select({ tenantId: payments.tenantId })
+        .from(payments)
+        .where(
+          and(
+            eq(payments.stripePaymentIntentId, razorpay_order_id),
+            eq(payments.paymentMethod, 'razorpay')
+          )
+        )
+        .limit(1);
+
+      if (existingPayment && existingPayment.tenantId !== tenantId) {
+        request.log.warn(
+          { razorpayOrderId: razorpay_order_id, claimedTenantId: tenantId, actualTenantId: existingPayment.tenantId },
+          'Razorpay verify-payment: tenant mismatch — possible replay attack'
+        );
+        return reply.code(403).send({ error: 'Forbidden: payment does not belong to your account' });
       }
 
       // Fetch order from Razorpay to get the real amount + notes/metadata.

@@ -86,7 +86,7 @@ export async function getUserPermissions(userId: string, tenantId: string): Prom
     const aggregatedPermissions: Record<string, Record<string, string[]>> = {};
     
     for (const { role } of userRoles) {
-      if (role.permissions === '*' || role.roleName === 'Super Administrator' || (role.priority ?? 0) >= 1000) {
+      if (role.permissions === '*' || (role.isSystemRole === true) || (role.priority ?? 0) >= 1000) {
         return {
           modules: '*',
           roles: userRoles.map(({ role }) => ({

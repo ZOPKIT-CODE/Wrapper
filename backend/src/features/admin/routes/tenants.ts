@@ -210,7 +210,7 @@ export default async function tenantRoutes(
   });
 
   // Update tenant settings (full update)
-  fastify.put('/current/settings', { schema: {} }, async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.put('/current/settings', { preHandler: [authenticateToken, requirePermission(PERMISSIONS.TENANT_SETTINGS_EDIT)], schema: {} }, async (request: FastifyRequest, reply: FastifyReply) => {
     if (!request.userContext?.isAuthenticated) {
       return reply.code(401).send({ error: 'Unauthorized' });
     }
@@ -259,7 +259,7 @@ export default async function tenantRoutes(
   });
 
   // Update tenant account details (partial update - PATCH)
-  fastify.patch('/current', { schema: {} }, async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.patch('/current', { preHandler: [authenticateToken, requirePermission(PERMISSIONS.TENANT_SETTINGS_EDIT)], schema: {} }, async (request: FastifyRequest, reply: FastifyReply) => {
     if (!request.userContext?.isAuthenticated) {
       return reply.code(401).send({ error: 'Unauthorized' });
     }
@@ -397,7 +397,7 @@ export default async function tenantRoutes(
   });
 
   // Invite user to tenant
-  fastify.post('/current/users/invite', { schema: {} }, async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.post('/current/users/invite', { preHandler: [authenticateToken, requirePermission(PERMISSIONS.USERS_MANAGEMENT_EDIT)], schema: {} }, async (request: FastifyRequest, reply: FastifyReply) => {
     if (!request.userContext?.isAuthenticated) {
       return reply.code(401).send({ error: 'Unauthorized' });
     }
@@ -542,7 +542,7 @@ export default async function tenantRoutes(
   });
 
   // Update user role/permissions
-  fastify.put('/current/users/:userId/role', async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.put('/current/users/:userId/role', { preHandler: [authenticateToken, requirePermission(PERMISSIONS.ROLES_ASSIGNMENT_ASSIGN)] }, async (request: FastifyRequest, reply: FastifyReply) => {
     if (!request.userContext?.isAuthenticated) {
       return reply.code(401).send({ error: 'Unauthorized' });
     }
@@ -937,6 +937,7 @@ export default async function tenantRoutes(
 
   // Remove a user from an organization
   fastify.delete('/current/users/:userId/remove-organization', {
+    preHandler: [authenticateToken, requirePermission(PERMISSIONS.USERS_MANAGEMENT_DELETE)],
     schema: { description: 'Remove a user from an organization within the tenant', tags: ['Tenant', 'Organization Assignment'] }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     if (!request.userContext?.isAuthenticated) return reply.code(401).send({ error: 'Unauthorized' });

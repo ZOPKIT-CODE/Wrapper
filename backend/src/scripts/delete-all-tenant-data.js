@@ -1,24 +1,15 @@
 #!/usr/bin/env node
 /**
- * Deletes all tenant data by running delete-all-tenant-data.sql in a transaction.
+ * Deletes all tenant data by dynamically discovering every public table with a
+ * `tenant_id` column and deleting rows for all tenants. Repeats passes so FK
+ * dependencies resolve themselves, then deletes the `tenants` table.
+ *
  * Run from backend: npm run delete-all-tenants
  */
 import 'dotenv/config';
 import postgres from 'postgres';
-import { readFileSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const SQL_PATH = join(__dirname, 'delete-all-tenant-data.sql');
-
-function getStatements(content) {
-  return content
-    .replace(/--[^\n]*/g, '')
-    .split(';')
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0 && s !== 'BEGIN' && s !== 'COMMIT');
-}
+const MAX_PASSES = 20;
 
 async function main() {
   const databaseUrl = process.env.DATABASE_URL;
@@ -28,38 +19,63 @@ async function main() {
   }
 
   const sql = postgres(databaseUrl, { max: 1 });
-  const sqlContent = readFileSync(SQL_PATH, 'utf8');
-  const statements = getStatements(sqlContent);
-
-  const isEntitiesLeafDelete = (s) =>
-    s.includes('DELETE FROM entities') && s.includes('NOT EXISTS');
 
   try {
-    console.log('Deleting all tenant data...');
-    await sql.begin(async (tx) => {
-      for (const stmt of statements) {
+    const tables = (
+      await sql`
+        SELECT table_name FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND column_name = 'tenant_id'
+          AND table_name <> 'tenants'
+        ORDER BY table_name
+      `
+    ).map((r) => r.table_name);
+
+    console.log(`Deleting tenant data from ${tables.length} tables...`);
+
+    const remaining = new Set(tables);
+    for (let pass = 1; pass <= MAX_PASSES && remaining.size > 0; pass++) {
+      let progress = false;
+      for (const t of [...remaining]) {
+        const ident = `"${t}"`;
+        const baseStmt = `DELETE FROM ${ident} WHERE tenant_id IN (SELECT tenant_id FROM tenants)`;
         try {
-          if (isEntitiesLeafDelete(stmt)) {
-            let total = 0;
-            for (;;) {
-              const r = await tx.unsafe(stmt);
-              const n = r?.count ?? r?.length ?? 0;
-              if (n === 0) break;
-              total += n;
-            }
-            if (total > 0) console.log(`  entities: ${total} rows (leaves-first)`);
-          } else {
-            await tx.unsafe(stmt);
-          }
+          const r = await sql.unsafe(baseStmt);
+          if (r.count > 0) console.log(`  pass ${pass}: ${t} -> ${r.count}`);
+          remaining.delete(t);
+          progress = true;
         } catch (e) {
-          if (e.code === '42P01') continue; // skip missing table
-          throw e;
+          if (e.code === '23503') continue; // FK violation - retry next pass
+          if (e.code === '42883') {
+            // type mismatch (e.g. text vs uuid) - retry with cast
+            try {
+              const castStmt = `DELETE FROM ${ident} WHERE tenant_id::text IN (SELECT tenant_id::text FROM tenants)`;
+              const r = await sql.unsafe(castStmt);
+              if (r.count > 0) console.log(`  pass ${pass}: ${t} -> ${r.count} (cast)`);
+              remaining.delete(t);
+              progress = true;
+            } catch (e2) {
+              if (e2.code === '23503') continue;
+              console.error(`  ${t}: ${e2.message}`);
+              remaining.delete(t);
+            }
+            continue;
+          }
+          console.error(`  ${t}: ${e.message}`);
+          remaining.delete(t);
         }
       }
-    });
-    console.log('✅ All tenant data deleted.');
+      if (!progress) {
+        console.error('No progress this pass; remaining:', [...remaining]);
+        process.exit(1);
+      }
+    }
+
+    const r = await sql.unsafe('DELETE FROM tenants');
+    console.log(`tenants -> ${r.count}`);
+    console.log('All tenant data deleted.');
   } catch (err) {
-    console.error('Error:', err.message);
+    console.error('FATAL:', err.message);
     process.exit(1);
   } finally {
     await sql.end();

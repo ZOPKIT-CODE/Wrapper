@@ -13,7 +13,7 @@
  *   3. Re-exports all named handlers so existing callers continue to work
  *      without any import changes.
  */
-import { eq } from 'drizzle-orm';
+import { eq, and, lt } from 'drizzle-orm';
 import * as Sentry from '@sentry/node';
 import { db } from '../../../db/index.js';
 import { eventTracking } from '../../../db/schema/index.js';
@@ -87,6 +87,30 @@ export async function handleWebhook(
 
   try {
     Logger.log('info', 'billing', 'handle-webhook', 'handleWebhook called', { provider: gateway.providerName });
+
+    // Cleanup sweep: any event that has been stuck in 'processing' for more than
+    // 60 minutes means the previous handler crashed before it could mark it
+    // 'processed' or 'failed'. The payment provider already received a 200 so it
+    // won't retry — we mark these failed so they're visible and retriable.
+    try {
+      const staleThreshold = new Date(Date.now() - 60 * 60 * 1000); // 60 minutes ago
+      await db
+        .update(eventTracking)
+        .set({
+          status: 'failed',
+          errorMessage: 'Marked failed by cleanup sweep: stuck in processing state for >60 minutes',
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(eventTracking.status, 'processing'),
+            lt(eventTracking.createdAt, staleThreshold),
+          )
+        );
+    } catch (cleanupErr) {
+      // Non-fatal: log and continue. A cleanup failure must not block incoming webhooks.
+      Logger.log('warning', 'billing', 'handle-webhook', 'Stale-processing cleanup sweep failed (non-fatal)', { error: (cleanupErr as Error).message });
+    }
 
     if (!gateway.isConfigured()) {
       throw new Error('Payment gateway not properly configured');
