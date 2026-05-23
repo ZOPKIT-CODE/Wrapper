@@ -1,5 +1,13 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+
+import { jwtVerify } from 'jose';
+
+function extractBearerToken(authHeader: string | undefined): string | null {
+  if (!authHeader?.startsWith('Bearer ')) return null;
+  return authHeader.slice(7) || null;
+}
 import { authenticateToken } from '../../../middleware/auth/auth.js';
+import Logger from '../../../utils/logger.js';
 import { WrapperSyncService } from '../services/sync-service.js';
 import { bootstrapService } from '../services/bootstrap-service.js';
 import { db } from '../../../db/index.js';
@@ -9,16 +17,24 @@ import ErrorResponses from '../../../utils/error-responses.js';
 import { BUSINESS_SUITE_MATRIX } from '../../../data/permission-matrix.js';
 import { getAppSyncRepository } from '../adapters/postgres-app-sync-repository.js';
 
-// Combined authentication middleware that accepts both Kinde tokens and service tokens
+// Combined authentication middleware that accepts both Kinde tokens and service tokens.
+//
+// Service-token verification mirrors @zopkit/platform-sdk `verifyServiceToken`
+// semantics (HS256, `type: 'service_token'`, `service` in allowlist) but is
+// inlined here because the SDK helper is a Fastify plugin that hard-rejects on
+// failure — we need to fall through to Kinde auth instead.
+//
+// Zero-downtime secret rotation: the verifier accepts tokens signed with the
+// primary `JWT_SECRET` (or legacy `SERVICE_TOKEN_SECRET`) as well as any
+// previous secrets supplied via `JWT_SECRET_PREVIOUS` (comma-separated). The
+// primary is tried first; each previous secret is tried in order on signature
+// failure. See backend/.env.example for the rotation procedure.
 async function authenticateServiceOrToken(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   try {
     // Try service token validation first
-    const authHeader = request.headers.authorization;
-    if (authHeader && typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.substring(7);
+    const token = extractBearerToken(request.headers.authorization);
+    if (token) {
       try {
-        // Validate service token with strict secret handling
-        const { verify } = await import('jsonwebtoken');
         const secret = process.env.SERVICE_TOKEN_SECRET || process.env.JWT_SECRET;
         if (!secret) {
           throw new Error('SERVICE_TOKEN_SECRET or JWT_SECRET must be configured for service auth');
@@ -27,7 +43,33 @@ async function authenticateServiceOrToken(request: FastifyRequest, reply: Fastif
           .split(',')
           .map((s) => s.trim())
           .filter(Boolean);
-        const decoded = verify(token, secret) as Record<string, unknown>;
+
+        // Build the ordered list of candidate keys: primary first, then any
+        // rotation fallbacks from JWT_SECRET_PREVIOUS.
+        const encoder = new TextEncoder();
+        const candidateKeys: Uint8Array[] = [encoder.encode(secret)];
+        const previousSecretsRaw = process.env.JWT_SECRET_PREVIOUS ?? '';
+        for (const extra of previousSecretsRaw.split(',').map((s) => s.trim()).filter(Boolean)) {
+          candidateKeys.push(encoder.encode(extra));
+        }
+
+        let decoded: unknown;
+        let lastErr: unknown;
+        for (const key of candidateKeys) {
+          try {
+            const verified = await jwtVerify(token, key, { algorithms: ['HS256'] });
+            decoded = verified.payload;
+            break;
+          } catch (err) {
+            lastErr = err;
+            // Try next candidate. If all fail we fall through to Kinde below.
+          }
+        }
+        if (!decoded) {
+          // Throw to be caught by the outer catch below, which falls back to
+          // Kinde auth. We preserve the last verification error for logs.
+          throw lastErr ?? new Error('service-token verification failed');
+        }
 
         if ((decoded as any).type === 'service_token' && allowedServiceNames.includes(String((decoded as any).service || ''))) {
           (request as any).serviceAuth = decoded;
@@ -42,7 +84,7 @@ async function authenticateServiceOrToken(request: FastifyRequest, reply: Fastif
     await authenticateToken(request, reply);
   } catch (err: unknown) {
     const error = err as Error;
-    console.log('❌ Service/Kinde authentication failed');
+    Logger.log('error', 'general', 'authenticateServiceOrToken', 'Service/Kinde authentication failed');
     throw error;
   }
 }
@@ -95,11 +137,7 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
       const forceSync = query.forceSync === 'true';
 
       const userContext = (request as any).userContext;
-      console.log(`🔄 Triggering tenant sync for ${tenantId}`, {
-        skipReferenceData,
-        forceSync,
-        requestedBy: userContext?.email ?? ''
-      });
+      Logger.log('info', 'general', 'trigger-tenant-sync', 'Triggering tenant sync', { tenantId, skipReferenceData, forceSync, requestedBy: userContext?.email ?? '' });
 
       const result = await (WrapperSyncService as any).triggerTenantSync(tenantId, {
         skipReferenceData,
@@ -114,7 +152,7 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error triggering tenant sync:', error);
+      Logger.log('error', 'general', 'trigger-tenant-sync', 'Error triggering tenant sync', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Sync failed',
@@ -145,7 +183,7 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error getting sync status:', error);
+      Logger.log('error', 'general', 'get-sync-status', 'Error getting sync status', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to get sync status',
@@ -169,7 +207,7 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error getting data requirements:', error);
+      Logger.log('error', 'general', 'data-requirements', 'Error getting data requirements', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to get data requirements',
@@ -215,7 +253,7 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error fetching tenant:', error);
+      Logger.log('error', 'general', 'get-tenant', 'Error fetching tenant', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to fetch tenant',
@@ -315,7 +353,7 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error fetching tenant users:', error);
+      Logger.log('error', 'general', 'get-tenant-users', 'Error fetching tenant users', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to fetch users',
@@ -420,7 +458,7 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error fetching tenant organizations:', error);
+      Logger.log('error', 'general', 'get-tenant-organizations', 'Error fetching tenant organizations', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to fetch organizations',
@@ -520,7 +558,7 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error fetching detailed tenant users:', error);
+      Logger.log('error', 'general', 'get-tenant-users-detail', 'Error fetching detailed tenant users', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to fetch tenant users',
@@ -578,7 +616,7 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
             try {
               permissionsObj = JSON.parse(role.permissions) as Record<string, unknown>;
             } catch (_e) {
-              console.log('Failed to parse permissions JSON for role:', role.roleName, role.permissions);
+              Logger.log('warning', 'general', 'get-tenant-roles', 'Failed to parse permissions JSON for role', { roleName: role.roleName });
               permissionsObj = {};
             }
           }
@@ -642,7 +680,7 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error fetching tenant roles:', error);
+      Logger.log('error', 'general', 'get-tenant-roles', 'Error fetching tenant roles', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to fetch roles',
@@ -768,7 +806,7 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error fetching credit configurations:', error);
+      Logger.log('error', 'general', 'get-credit-configs', 'Error fetching credit configurations', { error: error.message });
       const params = request.params as Record<string, string>;
       const tenantId = params.tenantId ?? '';
       return {
@@ -899,7 +937,7 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error fetching global credit configurations:', error);
+      Logger.log('error', 'general', 'get-global-credit-configs', 'Error fetching global credit configurations', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to fetch global credit configurations',
@@ -997,7 +1035,7 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error fetching tenant-specific credit configurations:', error);
+      Logger.log('error', 'general', 'get-tenant-credit-configs', 'Error fetching tenant-specific credit configurations', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to fetch tenant-specific credit configurations',
@@ -1109,7 +1147,7 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error fetching entity credits:', error);
+      Logger.log('error', 'general', 'get-entity-credits', 'Error fetching entity credits', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to fetch entity credits',
@@ -1128,7 +1166,7 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
     const params = request.params as Record<string, string>;
     const query = request.query as Record<string, string>;
     try {
-      console.log('🔐 Received token:', request.headers.authorization);
+      Logger.log('info', 'general', 'get-employee-assignments', 'Received token for employee assignments request');
 
       const tenantId = await appSyncRepository.resolveTenantId(params.tenantId);
       if (!tenantId) return ErrorResponses.notFound(reply, 'Tenant', 'Tenant not found');
@@ -1225,7 +1263,7 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error fetching employee assignments:', error);
+      Logger.log('error', 'general', 'get-employee-assignments', 'Error fetching employee assignments', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to fetch employee assignments',
@@ -1293,6 +1331,30 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
     }
     if (!assertTenantAccess(request, reply, resolvedTenantId)) return;
 
+    // Additional cross-tenant guard for service tokens: assertTenantAccess() short-circuits
+    // for service tokens (M2M), but a service token issued for tenantA must NOT be able to
+    // bootstrap tenantB. The token payload binds the caller to a specific tenant_id; enforce it.
+    const isServiceAuth = !!(request as any).serviceAuth;
+    if (isServiceAuth) {
+      const tokenTenantId =
+        (request as any).serviceAuth?.tenant_id ??
+        (request as any).serviceAuth?.tenantId;
+      if (tokenTenantId && tokenTenantId !== resolvedTenantId) {
+        Logger.log('warning', 'general', 'bootstrap', 'Service token tenantId mismatch — possible cross-tenant access attempt', {
+          tokenTenantId,
+          requestedTenantId: resolvedTenantId,
+          service: (request as any).serviceAuth?.service,
+          appCode,
+        });
+        return reply.code(403).send({
+          success: false,
+          error: 'Service token tenantId mismatch',
+          expected: tokenTenantId,
+          requested: resolvedTenantId,
+        });
+      }
+    }
+
     // Verify tenant has access to this app (entitlement gate on Wrapper side)
     const entitlement = await db
       .select({
@@ -1330,7 +1392,7 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
 
     // Assemble the payload via BootstrapService (single DB transaction)
     try {
-      console.log(`🚀 [Bootstrap] Assembling payload — tenant:${resolvedTenantId} app:${appCode} by:${requestedBy}`);
+      Logger.log('info', 'general', 'bootstrap', 'Assembling payload', { tenantId: resolvedTenantId, appCode, requestedBy });
 
       const payload = await bootstrapService.assemble(resolvedTenantId, appCode);
 
@@ -1357,7 +1419,7 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
       });
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ [Bootstrap] Assembly failed:', error.message, { resolvedTenantId, appCode });
+      Logger.log('error', 'general', 'bootstrap', 'Assembly failed', { error: error.message, tenantId: resolvedTenantId, appCode });
       return reply.code(500).send({
         success: false,
         error:   'Bootstrap assembly failed',
@@ -1501,7 +1563,7 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error fetching role assignments:', error);
+      Logger.log('error', 'general', 'get-role-assignments', 'Error fetching role assignments', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to fetch role assignments',

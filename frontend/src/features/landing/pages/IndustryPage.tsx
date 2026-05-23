@@ -11,7 +11,6 @@ import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion'
 import { getIndustryBySlug } from '@/data/industryPages';
 import { OrbitalEcosystem, WORKFLOW_ORBIT_APP_IDS } from '@/features/landing/components/OrbitalEcosystem';
 import { cn } from '@/lib/utils';
-import { NavbarButton } from "@/components/ui/resizable-navbar";
 import { LandingFooter } from '@/components/layout/LandingFooter';
 import { MarketingNavbar } from '@/components/layout/MarketingNavbar';
 
@@ -431,28 +430,7 @@ const IndustryPage: React.FC = () => {
                 .custom-scrollbar::-webkit-scrollbar-thumb:hover { background-color: rgba(71, 85, 105, 0.5); }
             `}</style>
             
-            <MarketingNavbar
-                desktopRight={
-                    <NavbarButton
-                        variant="gradient"
-                        onClick={() => navigate({ to: '/onboarding' })}
-                        as="button"
-                        className="rounded-xl px-6 py-2.5 shadow-lg shadow-blue-500/20"
-                    >
-                        Sign up
-                    </NavbarButton>
-                }
-                mobileFooter={
-                    <NavbarButton
-                        onClick={() => navigate({ to: '/onboarding' })}
-                        variant="gradient"
-                        className="w-full justify-center rounded-xl"
-                        as="button"
-                    >
-                        Sign up
-                    </NavbarButton>
-                }
-            />
+            <MarketingNavbar />
 
             {/* Hero Section */}
             <section className="relative pt-32 pb-24 px-4 sm:px-6 lg:px-8 overflow-hidden">

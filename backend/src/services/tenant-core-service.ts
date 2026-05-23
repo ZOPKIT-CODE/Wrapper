@@ -17,6 +17,7 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 import { SubscriptionService } from '../features/subscriptions/index.js';
 import { TenantRepository } from './tenant-repository.js';
+import Logger from '../utils/logger.js';
 
 export type CreateTenantData = {
   companyName: string;
@@ -93,7 +94,8 @@ export class TenantCoreService {
       await SubscriptionService.createTrialSubscription(tenantId);
       return result;
     } catch (error) {
-      console.error('Failed to create tenant:', error);
+      const err = error as Error;
+      Logger.log('error', 'tenant', 'create-tenant', 'Failed to create tenant', { error: err.message, stack: err.stack });
       throw new Error('Tenant creation failed');
     }
   }
@@ -202,7 +204,8 @@ export class TenantCoreService {
         subscriptionStatus: sub?.status ?? 'none',
       };
     } catch (error) {
-      console.error('Error getting tenant details:', error);
+      const err = error as Error;
+      Logger.log('error', 'tenant', 'get-tenant-details', 'Error getting tenant details', { error: err.message, stack: err.stack });
       throw error;
     }
   }
@@ -239,7 +242,8 @@ export class TenantCoreService {
         adminUser: tenant.adminUser,
       };
     } catch (error) {
-      console.error('Error getting onboarding status:', error);
+      const err = error as Error;
+      Logger.log('error', 'tenant', 'get-onboarding-status', 'Error getting onboarding status', { error: err.message, stack: err.stack });
       throw error;
     }
   }
@@ -250,7 +254,8 @@ export class TenantCoreService {
       await db.update(tenantUsers).set({ onboardingCompleted: true, updatedAt: new Date() }).where(eq(tenantUsers.userId, userId));
       return { success: true, completedAt: new Date(), message: 'Onboarding completed successfully' };
     } catch (error) {
-      console.error('Error marking onboarding complete:', error);
+      const err = error as Error;
+      Logger.log('error', 'tenant', 'mark-onboarding-complete', 'Error marking onboarding complete', { error: err.message, stack: err.stack });
       throw error;
     }
   }

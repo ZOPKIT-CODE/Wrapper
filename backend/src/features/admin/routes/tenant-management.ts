@@ -27,6 +27,8 @@ import { PERMISSIONS } from '../../../constants/permissions.js';
 import { db } from '../../../db/index.js';
 import { tenants, tenantUsers, entities, credits, auditLogs, subscriptions, tenantInvitations } from '../../../db/schema/index.js';
 import { eq, and, desc, sql, count, gte, lte } from 'drizzle-orm';
+import Logger from '../../../utils/logger.js';
+import { snsSqsPublisher } from '../../messaging/utils/sns-sqs-publisher.js';
 
 type ReqWithUser = FastifyRequest & { userContext?: { userId?: string }; params?: Record<string, string>; query?: Record<string, string | undefined>; body?: Record<string, unknown> };
 
@@ -113,7 +115,7 @@ export default async function adminTenantManagementRoutes(
         }
       };
     } catch (error) {
-      console.error('Error debugging tenant credits:', error);
+      Logger.log('error', 'billing', 'admin-debug-tenant-credits', 'Error debugging tenant credits', { error: (error as Error).message });
       return reply.code(500).send({ error: 'Failed to debug tenant credits' });
     }
   });
@@ -161,7 +163,7 @@ export default async function adminTenantManagementRoutes(
           )`
         ));
 
-      console.log(`Admin ${(request as any).userContext?.userId} cleaned up ${deletedCount} orphaned credit records for tenant ${tenantId}`);
+      Logger.log('info', 'billing', 'admin-clean-orphaned-credits', 'Admin cleaned up orphaned credit records', { userId: (request as any).userContext?.userId, deletedCount, tenantId });
 
       return {
         success: true,
@@ -173,7 +175,7 @@ export default async function adminTenantManagementRoutes(
         }
       };
     } catch (error) {
-      console.error('Error cleaning orphaned credits:', error);
+      Logger.log('error', 'billing', 'admin-clean-orphaned-credits', 'Error cleaning orphaned credits', { error: (error as Error).message });
       return reply.code(500).send({ error: 'Failed to clean orphaned credits' });
     }
   });
@@ -337,7 +339,7 @@ export default async function adminTenantManagementRoutes(
         }
       };
     } catch (error) {
-      console.error('Error fetching tenant details:', error);
+      Logger.log('error', 'general', 'admin-fetch-tenant-details', 'Error fetching tenant details', { error: (error as Error).message });
       return reply.code(500).send({ error: 'Failed to fetch tenant details' });
     }
   });
@@ -365,14 +367,25 @@ export default async function adminTenantManagementRoutes(
         .where(eq(tenants.tenantId, tenantId));
 
       // Log the admin action
-      console.log(`Admin ${(request as any).userContext?.userId} ${isActive ? 'activated' : 'deactivated'} tenant ${tenantId}${reason ? `: ${reason}` : ''}`);
+      Logger.log('info', 'general', 'admin-update-tenant-status', 'Admin updated tenant status', { userId: (request as any).userContext?.userId, isActive, tenantId, reason });
+
+      const eventType = isActive ? 'tenant.reactivated' : 'tenant.suspended';
+      snsSqsPublisher.publishOrgEventToSuite(eventType, tenantId, tenantId, {
+        tenantId,
+        isActive,
+        reason: reason ?? null,
+        updatedBy: (request as any).userContext?.userId ?? 'admin',
+        updatedAt: new Date().toISOString(),
+      }).catch((err: Error) => {
+        Logger.log('warning', 'general', 'admin-update-tenant-status', `Failed to publish ${eventType} event`, { tenantId, error: err.message });
+      });
 
       return {
         success: true,
         message: `Tenant ${isActive ? 'activated' : 'deactivated'} successfully`
       };
     } catch (error) {
-      console.error('Error updating tenant status:', error);
+      Logger.log('error', 'general', 'admin-update-tenant-status', 'Error updating tenant status', { error: (error as Error).message });
       return reply.code(500).send({ error: 'Failed to update tenant status' });
     }
   });
@@ -399,14 +412,28 @@ export default async function adminTenantManagementRoutes(
         .where(sql`${tenants.tenantId} = any(${tenantIds})`);
 
       // Log the bulk operation
-      console.log(`Admin ${(request as any).userContext?.userId} bulk ${isActive ? 'activated' : 'deactivated'} ${tenantIds.length} tenants${reason ? `: ${reason}` : ''}`);
+      Logger.log('info', 'general', 'admin-bulk-update-tenant-status', 'Admin bulk updated tenant status', { userId: (request as any).userContext?.userId, isActive, tenantCount: tenantIds.length, reason });
+
+      const bulkEventType = isActive ? 'tenant.reactivated' : 'tenant.suspended';
+      const adminUserId = (request as any).userContext?.userId ?? 'admin';
+      for (const tid of tenantIds) {
+        snsSqsPublisher.publishOrgEventToSuite(bulkEventType, tid, tid, {
+          tenantId: tid,
+          isActive,
+          reason: reason ?? null,
+          updatedBy: adminUserId,
+          updatedAt: new Date().toISOString(),
+        }).catch((err: Error) => {
+          Logger.log('warning', 'general', 'admin-bulk-update-tenant-status', `Failed to publish ${bulkEventType} event`, { tenantId: tid, error: err.message });
+        });
+      }
 
       return {
         success: true,
         message: `${tenantIds.length} tenants ${isActive ? 'activated' : 'deactivated'} successfully`
       };
     } catch (error) {
-      console.error('Error bulk updating tenant status:', error);
+      Logger.log('error', 'general', 'admin-bulk-update-tenant-status', 'Error bulk updating tenant status', { error: (error as Error).message });
       return reply.code(500).send({ error: 'Failed to bulk update tenant status' });
     }
   });
@@ -542,11 +569,7 @@ export default async function adminTenantManagementRoutes(
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error fetching tenant activity:', error);
-      console.error('Error details:', {
-        message: error.message,
-        stack: error.stack
-      });
+      Logger.log('error', 'general', 'admin-tenant-activity', 'Error fetching tenant activity', { error: error.message });
       return reply.code(500).send({ 
         success: false,
         error: 'Failed to fetch tenant activity',
@@ -601,7 +624,7 @@ export default async function adminTenantManagementRoutes(
 
       return exportData;
     } catch (error) {
-      console.error('Error exporting tenant data:', error);
+      Logger.log('error', 'general', 'admin-export-tenant-data', 'Error exporting tenant data', { error: (error as Error).message });
       return reply.code(500).send({ error: 'Failed to export tenant data' });
     }
   });
@@ -655,7 +678,7 @@ export default async function adminTenantManagementRoutes(
         }
       };
     } catch (error) {
-      console.error('Error fetching tenant stats:', error);
+      Logger.log('error', 'general', 'admin-tenant-stats', 'Error fetching tenant stats', { error: (error as Error).message });
       return reply.code(500).send({ error: 'Failed to fetch tenant statistics' });
     }
   });
@@ -751,7 +774,7 @@ export default async function adminTenantManagementRoutes(
         }
       };
     } catch (error) {
-      console.error('Error fetching comprehensive tenant list:', error);
+      Logger.log('error', 'general', 'admin-comprehensive-tenant-list', 'Error fetching comprehensive tenant list', { error: (error as Error).message });
       return reply.code(500).send({ error: 'Failed to fetch tenant list' });
     }
   });

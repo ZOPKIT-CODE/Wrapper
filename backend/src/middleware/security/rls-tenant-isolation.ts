@@ -3,6 +3,7 @@
 
 import postgres from 'postgres';
 import { eq } from 'drizzle-orm';
+import Logger from '../../utils/logger.js';
 
 type SqlClient = ReturnType<typeof postgres>;
 type PgTableWithColumns = { subdomain: unknown; customDomain: unknown; [k: string]: unknown };
@@ -23,9 +24,9 @@ export class RLSTenantIsolationService {
 
     try {
       await dbClient`SELECT set_config('app.tenant_id', ${tenantId}, false)`;
-      console.log(`✅ Tenant context set: ${tenantId}`);
+      Logger.log('info', 'security', 'set-tenant-context', `✅ Tenant context set: ${tenantId}`);
     } catch (error) {
-      console.error('❌ Failed to set tenant context:', error);
+      Logger.log('error', 'security', 'set-tenant-context', '❌ Failed to set tenant context', { error });
       throw error;
     }
   }
@@ -48,9 +49,9 @@ export class RLSTenantIsolationService {
 
     try {
       await dbClient`SELECT set_config('app.tenant_id', '', false)`;
-      console.log('✅ Tenant context cleared');
+      Logger.log('info', 'security', 'clear-tenant-context', '✅ Tenant context cleared');
     } catch (error) {
-      console.error('❌ Failed to clear tenant context:', error);
+      Logger.log('error', 'security', 'clear-tenant-context', '❌ Failed to clear tenant context', { error });
     }
   }
 
@@ -71,7 +72,7 @@ export class RLSTenantIsolationService {
         userId
       } = context;
 
-      console.log('🎯 Setting multi-level context:', {
+      Logger.log('info', 'security', 'set-multi-level-context', '🎯 Setting multi-level context', {
         tenantId, subOrgId, locationId, userRole, userId
       });
 
@@ -83,9 +84,9 @@ export class RLSTenantIsolationService {
         set_config('app.user_id', ${userId || ''}, false)
       `;
 
-      console.log('✅ Multi-level context set successfully');
+      Logger.log('info', 'security', 'set-multi-level-context', '✅ Multi-level context set successfully');
     } catch (error) {
-      console.error('❌ Failed to set multi-level context:', error);
+      Logger.log('error', 'security', 'set-multi-level-context', '❌ Failed to set multi-level context', { error });
       throw error;
     }
   }
@@ -112,7 +113,7 @@ export class RLSTenantIsolationService {
         userId: context.user_id || null
       };
     } catch (error) {
-      console.error('❌ Failed to get multi-level context:', error);
+      Logger.log('error', 'security', 'get-multi-level-context', '❌ Failed to get multi-level context', { error });
       return null;
     }
   }
@@ -129,9 +130,9 @@ export class RLSTenantIsolationService {
         set_config('app.user_role', '', false),
         set_config('app.user_id', '', false)
       `;
-      console.log('✅ All multi-level context cleared');
+      Logger.log('info', 'security', 'clear-multi-level-context', '✅ All multi-level context cleared');
     } catch (error) {
-      console.error('❌ Failed to clear multi-level context:', error);
+      Logger.log('error', 'security', 'clear-multi-level-context', '❌ Failed to clear multi-level context', { error });
     }
   }
 
@@ -141,9 +142,9 @@ export class RLSTenantIsolationService {
 
     try {
       await dbClient`SELECT set_config(${`app.${key}`}, ${value || ''}, false)`;
-      console.log(`✅ Context variable set: app.${key} = ${value}`);
+      Logger.log('info', 'security', 'set-context-variable', `✅ Context variable set: app.${key} = ${value}`);
     } catch (error) {
-      console.error(`❌ Failed to set context variable ${key}:`, error);
+      Logger.log('error', 'security', 'set-context-variable', `❌ Failed to set context variable ${key}`, { error });
       throw error;
     }
   }
@@ -156,7 +157,7 @@ export class RLSTenantIsolationService {
       const result = await dbClient`SELECT current_setting(${`app.${key}`}, true) as value`;
       return result[0]?.value || null;
     } catch (error) {
-      console.error(`❌ Failed to get context variable ${key}:`, error);
+      Logger.log('error', 'security', 'get-context-variable', `❌ Failed to get context variable ${key}`, { error });
       return null;
     }
   }
@@ -167,9 +168,9 @@ export class RLSTenantIsolationService {
 
     try {
       await dbClient`ALTER TABLE ${dbClient(tableName)} ENABLE ROW LEVEL SECURITY`;
-      console.log(`✅ RLS enabled on table: ${tableName}`);
+      Logger.log('info', 'security', 'enable-rls', `✅ RLS enabled on table: ${tableName}`);
     } catch (error) {
-      console.error(`❌ Failed to enable RLS on ${tableName}:`, error);
+      Logger.log('error', 'security', 'enable-rls', `❌ Failed to enable RLS on ${tableName}`, { error });
     }
   }
 
@@ -189,9 +190,9 @@ export class RLSTenantIsolationService {
 
       // Create new policy
       await dbClient.unsafe(policySQL);
-      console.log(`✅ Tenant policy created: ${policyName}`);
+      Logger.log('info', 'security', 'create-tenant-policy', `✅ Tenant policy created: ${policyName}`);
     } catch (error) {
-      console.error(`❌ Failed to create policy ${policyName}:`, error);
+      Logger.log('error', 'security', 'create-tenant-policy', `❌ Failed to create policy ${policyName}`, { error });
     }
   }
 
@@ -253,9 +254,9 @@ export class RLSTenantIsolationService {
 
       // Create new hierarchical policy
       await dbClient.unsafe(policySQL);
-      console.log(`✅ Hierarchical policy created: ${policyName}`);
+      Logger.log('info', 'security', 'create-hierarchical-policy', `✅ Hierarchical policy created: ${policyName}`);
     } catch (error) {
-      console.error(`❌ Failed to create hierarchical policy ${policyName}:`, error);
+      Logger.log('error', 'security', 'create-hierarchical-policy', `❌ Failed to create hierarchical policy ${policyName}`, { error });
     }
   }
 
@@ -275,9 +276,9 @@ export class RLSTenantIsolationService {
     try {
       await dbClient`DROP POLICY IF EXISTS ${dbClient(policyName)} ON ${dbClient(tableName)}`;
       await dbClient.unsafe(policySQL);
-      console.log(`✅ Sub-org policy created: ${policyName}`);
+      Logger.log('info', 'security', 'create-sub-org-policy', `✅ Sub-org policy created: ${policyName}`);
     } catch (error) {
-      console.error(`❌ Failed to create sub-org policy ${policyName}:`, error);
+      Logger.log('error', 'security', 'create-sub-org-policy', `❌ Failed to create sub-org policy ${policyName}`, { error });
     }
   }
 
@@ -297,9 +298,9 @@ export class RLSTenantIsolationService {
     try {
       await dbClient`DROP POLICY IF EXISTS ${dbClient(policyName)} ON ${dbClient(tableName)}`;
       await dbClient.unsafe(policySQL);
-      console.log(`✅ Location policy created: ${policyName}`);
+      Logger.log('info', 'security', 'create-location-policy', `✅ Location policy created: ${policyName}`);
     } catch (error) {
-      console.error(`❌ Failed to create location policy ${policyName}:`, error);
+      Logger.log('error', 'security', 'create-location-policy', `❌ Failed to create location policy ${policyName}`, { error });
     }
   }
 
@@ -323,9 +324,9 @@ export class RLSTenantIsolationService {
     try {
       await dbClient`DROP POLICY IF EXISTS ${dbClient(policyName)} ON ${dbClient(tableName)}`;
       await dbClient.unsafe(policySQL);
-      console.log(`✅ Role-based policy created: ${policyName}`);
+      Logger.log('info', 'security', 'create-role-based-policy', `✅ Role-based policy created: ${policyName}`);
     } catch (error) {
-      console.error(`❌ Failed to create role-based policy ${policyName}:`, error);
+      Logger.log('error', 'security', 'create-role-based-policy', `❌ Failed to create role-based policy ${policyName}`, { error });
     }
   }
 
@@ -349,18 +350,18 @@ export class RLSTenantIsolationService {
       'subscriptions'
     ];
 
-    console.log('🚀 Setting up RLS for tenant tables...');
+    Logger.log('info', 'security', 'setup-tenant-rls', '🚀 Setting up RLS for tenant tables...');
 
     for (const table of tenantTables) {
       try {
         await this.enableRLS(table, dbClient);
         await this.createTenantPolicy(table, dbClient);
       } catch (error) {
-        console.error(`❌ Failed to setup RLS for ${table}:`, error);
+        Logger.log('error', 'security', 'setup-tenant-rls', `❌ Failed to setup RLS for ${table}`, { error });
       }
     }
 
-    console.log('✅ RLS setup completed for all tenant tables');
+    Logger.log('info', 'security', 'setup-tenant-rls', '✅ RLS setup completed for all tenant tables');
   }
 
   // Execute query within tenant context
@@ -431,7 +432,7 @@ export class RLSTenantIsolationService {
         // Add cleanup function to response
         const originalSend = res.send.bind(res);
         res.send = (data?: unknown): unknown => {
-          void this.clearTenantContext().catch(console.error);
+          void this.clearTenantContext().catch((err) => Logger.log('error', 'security', 'middleware', 'Failed to clear tenant context', { error: err }));
           return originalSend(data);
         };
 
@@ -439,7 +440,7 @@ export class RLSTenantIsolationService {
 
       } catch (err: unknown) {
         const error = err as Error;
-        console.error('RLS middleware error:', error);
+        Logger.log('error', 'security', 'middleware', 'RLS middleware error', { error: error.message, stack: error.stack });
         res.status(500).json({
           error: 'Tenant isolation failed',
           message: 'Failed to establish tenant context'
@@ -462,7 +463,7 @@ export class RLSTenantIsolationService {
       return (tenant as unknown[])[0] ?? null;
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Error resolving tenant:', error);
+      Logger.log('error', 'security', 'resolve-tenant', 'Error resolving tenant', { error: error.message, stack: error.stack });
       return null;
     }
   }
@@ -488,7 +489,7 @@ export class RLSTenantIsolationService {
       return null;
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Error resolving tenant by domain:', error);
+      Logger.log('error', 'security', 'resolve-tenant-by-domain', 'Error resolving tenant by domain', { error: error.message, stack: error.stack });
       return null;
     }
   }

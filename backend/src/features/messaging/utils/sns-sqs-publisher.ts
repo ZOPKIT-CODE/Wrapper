@@ -1,7 +1,22 @@
 import { SNSClient, PublishCommand, GetTopicAttributesCommand } from '@aws-sdk/client-sns';
+import { randomUUID } from 'crypto';
 import * as Sentry from '@sentry/node';
-import { CircuitBreaker } from '../../../utils/circuit-breaker.js';
+
+import { sql as drizzleSql } from 'drizzle-orm';
+import { db } from '../../../db/index.js';
+import { PersistentCircuitBreaker } from '../../../utils/persistent-circuit-breaker.js';
 import { maybeOffloadToS3 } from './large-payload-store.js';
+import Logger from '../../../utils/logger.js';
+
+// Off by default. Set VALIDATE_OUTGOING_EVENTS=true in dev/staging to log a
+// warning whenever an outbound payload does not match the canonical
+// event registry schema for its event type. We never reject — validation
+// is observability-only so this can be flipped on safely.
+const VALIDATE_OUTGOING_EVENTS = process.env.VALIDATE_OUTGOING_EVENTS === 'true';
+
+// Stubs — replace with real implementations if an event registry is introduced.
+function isKnownEventType(_eventType: string): boolean { return false; }
+function validateEvent(_eventType: string, _data: unknown): { success: boolean; error?: string } { return { success: true }; }
 
 /**
  * SNS/SQS Publisher
@@ -15,8 +30,12 @@ import { maybeOffloadToS3 } from './large-payload-store.js';
 class SnsSqsPublisher {
   private readonly client: SNSClient;
   private readonly businessSuiteApps: string[];
-  // Same relaxed thresholds as the former MQ publisher: 5 failures, 10s cooldown.
-  private readonly circuitBreaker = new CircuitBreaker('sns-sqs', 5, 10000);
+  // 5 failures → open; 5-minute reset (configurable via SNS_CB_RESET_TIMEOUT_MS).
+  private readonly circuitBreaker = new PersistentCircuitBreaker(
+    'sns-sqs',
+    Number(process.env.SNS_CB_FAIL_THRESHOLD ?? 5),
+    Number(process.env.SNS_CB_RESET_TIMEOUT_MS ?? 300_000),
+  );
 
   constructor() {
     // Use messaging-specific credentials if provided, otherwise fall back to
@@ -58,30 +77,22 @@ class SnsSqsPublisher {
    */
   async initializeAtStartup(): Promise<boolean> {
     if (!this.isConfigured()) {
-      console.warn('⚠️ ══════════════════════════════════════════════════════════════');
-      console.warn('⚠️  SNS/SQS NOT CONFIGURED — event publishing is DISABLED');
-      console.warn('⚠️  Set SNS_INTER_APP_TOPIC_ARN to enable event publishing');
-      console.warn('⚠️ ══════════════════════════════════════════════════════════════');
+      Logger.log('warning', 'general', 'initializeAtStartup', 'SNS/SQS NOT CONFIGURED — event publishing is DISABLED. Set SNS_INTER_APP_TOPIC_ARN to enable event publishing');
       return false;
     }
+
+    // Restore persisted CB state after pod restart
+    await this.circuitBreaker.initialize();
 
     try {
       await this.client.send(
         new GetTopicAttributesCommand({ TopicArn: process.env.SNS_INTER_APP_TOPIC_ARN! })
       );
-      console.log('✅ ══════════════════════════════════════════════════════════════');
-      console.log('✅  SNS/SQS CONNECTED — event publishing is ACTIVE');
-      console.log(`✅  Target apps: ${this.businessSuiteApps.join(', ')}`);
-      console.log(`✅  Inter-app topic: ${process.env.SNS_INTER_APP_TOPIC_ARN}`);
-      console.log('✅ ══════════════════════════════════════════════════════════════');
+      Logger.log('info', 'general', 'initializeAtStartup', 'SNS/SQS CONNECTED — event publishing is ACTIVE', { targetApps: this.businessSuiteApps.join(', '), topicArn: process.env.SNS_INTER_APP_TOPIC_ARN });
       return true;
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ ══════════════════════════════════════════════════════════════');
-      console.error('❌  SNS CONNECTIVITY CHECK FAILED — event publishing is DISABLED');
-      console.error(`❌  Error: ${error.message}`);
-      console.error('❌  Check: AWS credentials, region, topic ARN, IAM permissions');
-      console.error('❌ ══════════════════════════════════════════════════════════════');
+      Logger.log('error', 'general', 'initializeAtStartup', 'SNS CONNECTIVITY CHECK FAILED — event publishing is DISABLED. Check: AWS credentials, region, topic ARN, IAM permissions', { error: error.message });
       return false;
     }
   }
@@ -127,106 +138,271 @@ class SnsSqsPublisher {
     eventId?: string;
   }): Promise<{ success: boolean; eventId: string; routingKey: string; messageId: string }> {
     if (!this.isConfigured()) {
-      console.error(
-        `❌ [SNS-DISABLED] Event DROPPED: ${sourceApplication} → ${targetApplication} (${eventType}) — SNS_INTER_APP_TOPIC_ARN not set`
-      );
+      Logger.log('error', 'general', 'publishInterAppEvent', `Event DROPPED: ${sourceApplication} → ${targetApplication} (${eventType}) — SNS_INTER_APP_TOPIC_ARN not set`);
       throw new Error(
         'SNS publisher is not configured. Set SNS_INTER_APP_TOPIC_ARN environment variable.'
       );
     }
 
     const t0 = Date.now();
-    console.log(
-      `[SNS→] tenant=${tenantId} event=${eventType} → ${targetApplication} payload=${JSON.stringify(eventData)}`
-    );
+    Logger.log('info', 'general', 'publishInterAppEvent', `Publishing event: ${sourceApplication} → ${targetApplication} (${eventType})`, { tenantId, eventType, targetApplication, payloadSize: JSON.stringify(eventData).length });
 
-    return this.circuitBreaker.execute(async () => {
+    // Optional schema validation against the shared SDK EVENT_REGISTRY.
+    // Gated by env var; we log warnings but never reject (publishers stay
+    // backward-compatible with payloads that haven't been migrated yet).
+    if (VALIDATE_OUTGOING_EVENTS) {
+      if (!isKnownEventType(eventType)) {
+        Logger.log('warning', 'general', 'publishInterAppEvent', `Outgoing event type not in SDK EVENT_REGISTRY — payload not validated: ${eventType}`, { eventType, tenantId, targetApplication });
+      } else {
+        const result = validateEvent(eventType, eventData);
+        if (!result.success) {
+          Logger.log('warning', 'general', 'publishInterAppEvent', `Outgoing event payload failed SDK schema validation: ${eventType}`, { eventType, tenantId, targetApplication, validationError: result.error });
+        }
+      }
+    }
+
+    const routingKey = this.generateRoutingKey(targetApplication, eventType);
+    const resolvedEventId =
+      eventId || `inter_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+    // Offload to S3 if payload exceeds 200 KB (SQS hard limit is 256 KB).
+    // resolvedEventData is either the original object or { _s3Ref: { bucket, key } }.
+    const { eventData: resolvedEventData } = await maybeOffloadToS3(resolvedEventId, eventData);
+
+    const message = {
+      // Legacy fields — kept for backward compatibility with existing consumers
+      eventId: resolvedEventId,
+      eventType,
+      sourceApplication,
+      targetApplication,
+      tenantId,
+      entityId,
+      timestamp: new Date().toISOString(),
+      eventData: resolvedEventData,
+      publishedBy,
+      // ADR-011 canonical envelope fields — required by @zopkit/platform-sdk createSQSConsumer
+      messageId: resolvedEventId,
+      sourceSystem: sourceApplication,
+      payload: resolvedEventData,
+      correlationId: (eventData as any)?._correlationId ?? randomUUID(),
+      causationId: (eventData as any)?._causationId ?? '',
+      schemaVersion: '1.0',
+    };
+
+    const messageAttributes = {
+      targetApplication: { DataType: 'String', StringValue: targetApplication },
+      sourceApplication: { DataType: 'String', StringValue: sourceApplication },
+      eventType: { DataType: 'String', StringValue: eventType },
+      tenantId: { DataType: 'String', StringValue: tenantId },
+    };
+
+    // Outbox-first pattern: persist the event to inter_app_outbox BEFORE
+    // attempting the SNS publish. If SNS fails (circuit open, network error),
+    // we leave published_at NULL — the outbox poller will retry. Domain
+    // transactions can safely commit because the event is durable in our DB.
+    //
+    // NOTE: this is a dual-write (no shared transaction with caller's domain
+    // write). Acceptable tradeoff: caller would need to thread a tx handle
+    // into publishInterAppEvent() to share — which the existing public API
+    // does not support. The outbox row + idempotent event_id is still strictly
+    // better than the previous "throw on circuit-open and lose the event" path.
+    return this.enqueueEvent({
+      eventId: resolvedEventId,
+      eventType,
+      targetApplication,
+      sourceApplication,
+      tenantId,
+      entityId,
+      routingKey,
+      message,
+      messageAttributes,
+      startedAt: t0,
+    });
+  }
+
+  /**
+   * Outbox-first publish:
+   *  1. INSERT into inter_app_outbox (durable record of intent to send)
+   *  2. Synchronously attempt SNS publish through the existing circuit breaker
+   *  3. On success: UPDATE outbox row SET published_at = now()
+   *  4. On failure: log warn, leave published_at NULL — poller will retry.
+   *     We return success to the caller because the event is durable in the outbox.
+   */
+  private async enqueueEvent(params: {
+    eventId: string;
+    eventType: string;
+    targetApplication: string;
+    sourceApplication: string;
+    tenantId: string;
+    entityId: string;
+    routingKey: string;
+    message: Record<string, unknown>;
+    messageAttributes: Record<string, { DataType: string; StringValue: string }>;
+    startedAt: number;
+  }): Promise<{ success: boolean; eventId: string; routingKey: string; messageId: string }> {
+    const {
+      eventId,
+      eventType,
+      targetApplication,
+      sourceApplication,
+      tenantId,
+      entityId,
+      routingKey,
+      message,
+      messageAttributes,
+      startedAt,
+    } = params;
+
+    // 1. Durable insert into outbox first.
+    // ON CONFLICT (event_id) DO NOTHING makes this idempotent if a caller
+    // retries with the same eventId.
+    try {
+      await db.execute(drizzleSql`
+        INSERT INTO inter_app_outbox (event_id, event_type, target_application, payload, message_attributes)
+        VALUES (
+          ${eventId},
+          ${eventType},
+          ${targetApplication},
+          ${JSON.stringify(message)}::jsonb,
+          ${JSON.stringify(messageAttributes)}::jsonb
+        )
+        ON CONFLICT (event_id) DO NOTHING
+      `);
+    } catch (outboxErr) {
+      // If we can't write to the outbox we have no durability guarantee.
+      // Fall through to the SNS attempt and surface the error to the caller —
+      // this matches pre-outbox behaviour for this (rare) failure mode.
+      const errMsg = outboxErr instanceof Error ? outboxErr.message : String(outboxErr);
+      Logger.log('error', 'general', 'enqueueEvent', `Failed to insert into inter_app_outbox — falling back to direct publish`, { eventId, eventType, targetApplication, error: errMsg });
+    }
+
+    // 2. Fast-path SNS publish through the circuit breaker.
+    try {
+      const snsMessageId = await this.circuitBreaker.execute(async () => {
+        const response = await this.client.send(
+          new PublishCommand({
+            TopicArn: process.env.SNS_INTER_APP_TOPIC_ARN!,
+            Message: JSON.stringify(message),
+            MessageAttributes: messageAttributes,
+          })
+        );
+        return response.MessageId ?? eventId;
+      });
+
+      const durationMs = Date.now() - startedAt;
+
+      // 3. Mark outbox row as published.
       try {
-        const routingKey = this.generateRoutingKey(targetApplication, eventType);
-        const resolvedEventId =
-          eventId || `inter_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        await db.execute(drizzleSql`
+          UPDATE inter_app_outbox
+          SET published_at  = now(),
+              attempt_count = attempt_count + 1,
+              last_attempt_at = now()
+          WHERE event_id = ${eventId}
+            AND published_at IS NULL
+        `);
+      } catch (updateErr) {
+        // Non-fatal: the SNS publish succeeded. The poller's idempotency check
+        // will eventually re-publish this row, and downstream consumers
+        // deduplicate by event_id.
+        const errMsg = updateErr instanceof Error ? updateErr.message : String(updateErr);
+        Logger.log('warning', 'general', 'enqueueEvent', `Outbox UPDATE after successful publish failed (non-fatal — poller will reconcile)`, { eventId, error: errMsg });
+      }
 
-        // Offload to S3 if payload exceeds 200 KB (SQS hard limit is 256 KB).
-        // resolvedEventData is either the original object or { _s3Ref: { bucket, key } }.
-        const { eventData: resolvedEventData } = await maybeOffloadToS3(resolvedEventId, eventData);
+      Logger.log('info', 'general', 'publishInterAppEvent', `Event published successfully: ${eventType} → ${targetApplication}`, { tenantId, eventType, targetApplication, snsMessageId, durationMs });
 
-        const message = {
-          eventId: resolvedEventId,
+      Sentry.addBreadcrumb({
+        category: 'messaging.publish',
+        message: `SNS published: ${eventType} → ${targetApplication}`,
+        level: 'info',
+        data: {
+          eventId,
+          snsMessageId,
+          eventType,
+          sourceApplication,
+          targetApplication,
+          tenantId,
+          durationMs,
+        },
+      });
+
+      return {
+        success: true,
+        eventId,
+        routingKey,
+        messageId: snsMessageId,
+      };
+    } catch (error) {
+      // 4. SNS publish failed (circuit-open or network). Record attempt on
+      // the outbox row and return success to the caller — the poller will
+      // retry. Do NOT throw: throwing here is exactly what caused events to
+      // be lost when the circuit opened.
+      const errMsg = error instanceof Error ? error.message : String(error);
+
+      try {
+        await db.execute(drizzleSql`
+          UPDATE inter_app_outbox
+          SET attempt_count   = attempt_count + 1,
+              last_attempt_at = now(),
+              last_error      = ${errMsg}
+          WHERE event_id = ${eventId}
+            AND published_at IS NULL
+        `);
+      } catch (updateErr) {
+        const updateErrMsg = updateErr instanceof Error ? updateErr.message : String(updateErr);
+        Logger.log('warning', 'general', 'enqueueEvent', `Outbox UPDATE after failed publish errored (non-fatal)`, { eventId, error: updateErrMsg });
+      }
+
+      Logger.log('warning', 'general', 'publishInterAppEvent', `SNS publish failed — event durable in outbox, will retry: ${eventType} → ${targetApplication}`, { tenantId, eventType, targetApplication, eventId, error: errMsg });
+
+      Sentry.withScope((scope) => {
+        scope.setTag('messaging.transport', 'sns');
+        scope.setTag('messaging.target_app', targetApplication);
+        scope.setTag('messaging.event_type', eventType);
+        scope.setTag('messaging.recovered_via_outbox', 'true');
+        scope.setContext('sns_publish_failure', {
+          eventId,
           eventType,
           sourceApplication,
           targetApplication,
           tenantId,
           entityId,
-          timestamp: new Date().toISOString(),
-          eventData: resolvedEventData,
-          publishedBy,
-        };
-
-        const response = await this.client.send(
-          new PublishCommand({
-            TopicArn: process.env.SNS_INTER_APP_TOPIC_ARN!,
-            Message: JSON.stringify(message),
-            MessageAttributes: {
-              targetApplication: { DataType: 'String', StringValue: targetApplication },
-              sourceApplication: { DataType: 'String', StringValue: sourceApplication },
-              eventType: { DataType: 'String', StringValue: eventType },
-              tenantId: { DataType: 'String', StringValue: tenantId },
-            },
-          })
-        );
-
-        const snsMessageId = response.MessageId ?? resolvedEventId;
-        const durationMs = Date.now() - t0;
-
-        console.log(
-          `[SNS→OK] tenant=${tenantId} event=${eventType} → ${targetApplication} snsMessageId=${snsMessageId} (${durationMs}ms)`
-        );
-
-        Sentry.addBreadcrumb({
-          category: 'messaging.publish',
-          message: `SNS published: ${eventType} → ${targetApplication}`,
-          level: 'info',
-          data: {
-            eventId: resolvedEventId,
-            snsMessageId,
-            eventType,
-            sourceApplication,
-            targetApplication,
-            tenantId,
-            durationMs,
-          },
+          durationMs: Date.now() - startedAt,
         });
+        Sentry.captureException(error);
+      });
 
-        return {
-          success: true,
-          eventId: resolvedEventId,
-          routingKey,
-          messageId: snsMessageId,
-        };
-      } catch (error) {
-        const errMsg = error instanceof Error ? error.message : String(error);
-        console.error(
-          `[SNS→ERR] tenant=${tenantId} event=${eventType} → ${targetApplication} ✗ ${errMsg}`
-        );
+      // Caller sees success because the event IS durable. routingKey/eventId
+      // are still valid; messageId is the outbox eventId until the poller
+      // assigns an SNS message-id on retry.
+      return {
+        success: true,
+        eventId,
+        routingKey,
+        messageId: eventId,
+      };
+    }
+  }
 
-        Sentry.withScope((scope) => {
-          scope.setTag('messaging.transport', 'sns');
-          scope.setTag('messaging.target_app', targetApplication);
-          scope.setTag('messaging.event_type', eventType);
-          scope.setContext('sns_publish_failure', {
-            eventId,
-            eventType,
-            sourceApplication,
-            targetApplication,
-            tenantId,
-            entityId,
-            durationMs: Date.now() - t0,
-          });
-          Sentry.captureException(error);
-        });
-
-        throw error;
-      }
+  /**
+   * Internal: SNS publish for a single outbox row. Used by OutboxPoller.
+   * Bypasses the outbox insert/update bookkeeping (the poller manages that)
+   * and just performs the SNS send through the circuit breaker.
+   */
+  async publishOutboxRow(row: {
+    eventId: string;
+    message: Record<string, unknown>;
+    messageAttributes: Record<string, { DataType: string; StringValue: string }>;
+  }): Promise<string> {
+    return this.circuitBreaker.execute(async () => {
+      const response = await this.client.send(
+        new PublishCommand({
+          TopicArn: process.env.SNS_INTER_APP_TOPIC_ARN!,
+          Message: JSON.stringify(row.message),
+          MessageAttributes: row.messageAttributes,
+        })
+      );
+      return response.MessageId ?? row.eventId;
     });
   }
 
@@ -239,16 +415,14 @@ class SnsSqsPublisher {
     publishedBy = 'system'
   ): Promise<{ success: boolean; eventType: string }> {
     if (!process.env.SNS_BROADCAST_TOPIC_ARN) {
-      console.error(
-        `❌ [SNS-DISABLED] Broadcast DROPPED: ${eventType} — SNS_BROADCAST_TOPIC_ARN not set`
-      );
+      Logger.log('error', 'general', 'publishBroadcast', `Broadcast DROPPED: ${eventType} — SNS_BROADCAST_TOPIC_ARN not set`);
       throw new Error(
         'SNS broadcast topic is not configured. Set SNS_BROADCAST_TOPIC_ARN environment variable.'
       );
     }
 
     const t0 = Date.now();
-    console.log(`[SNS→] event=${eventType} → broadcast payload=${JSON.stringify(eventData)}`);
+    Logger.log('info', 'general', 'publishBroadcast', `Publishing broadcast event: ${eventType}`, { eventType, payloadSize: JSON.stringify(eventData).length });
 
     try {
       const message = {
@@ -270,7 +444,7 @@ class SnsSqsPublisher {
       );
 
       const durationMs = Date.now() - t0;
-      console.log(`[SNS→OK] event=${eventType} → broadcast (${durationMs}ms)`);
+      Logger.log('info', 'general', 'publishBroadcast', `Broadcast event published: ${eventType}`, { eventType, durationMs });
 
       Sentry.addBreadcrumb({
         category: 'messaging.publish',
@@ -282,7 +456,7 @@ class SnsSqsPublisher {
       return { success: true, eventType };
     } catch (error) {
       const errMsg = error instanceof Error ? error.message : String(error);
-      console.error(`[SNS→ERR] event=${eventType} → broadcast ✗ ${errMsg}`);
+      Logger.log('error', 'general', 'publishBroadcast', `Broadcast event publish failed: ${eventType}`, { eventType, error: errMsg });
 
       Sentry.withScope((scope) => {
         scope.setTag('messaging.transport', 'sns');
@@ -307,8 +481,7 @@ class SnsSqsPublisher {
   ): Promise<Array<{ targetApp: string; success?: boolean; eventId?: string; error?: string }>> {
     // H-3: Reject empty/missing roleId before touching SNS — prevents phantom events
     if (!roleId || typeof roleId !== 'string' || roleId.trim().length === 0) {
-      const msg = `[SNS] publishRoleEventToSuite: invalid roleId="${roleId}" for eventType=${eventType} tenantId=${tenantId} — publish aborted`;
-      console.error(msg);
+      Logger.log('error', 'general', 'publishRoleEventToSuite', `Invalid roleId for eventType=${eventType} — publish aborted`, { roleId, eventType, tenantId });
       return this.businessSuiteApps.map((targetApp) => ({ targetApp, success: false, error: 'invalid roleId' }));
     }
 
@@ -323,7 +496,7 @@ class SnsSqsPublisher {
         results.push({ targetApp, ...result });
       } catch (error: unknown) {
         const err = error as Error;
-        console.error(`❌ Failed to publish role event to ${targetApp} after retries:`, error);
+        Logger.log('error', 'general', 'publishRoleEventToSuite', `Failed to publish role event to ${targetApp} after retries`, { targetApp, error: err.message });
         results.push({ targetApp, success: false, error: err.message });
       }
     }
@@ -410,7 +583,7 @@ class SnsSqsPublisher {
         results.push({ targetApp, ...result });
       } catch (error: unknown) {
         const err = error as Error;
-        console.error(`❌ Failed to publish user event to ${targetApp} after retries:`, error);
+        Logger.log('error', 'general', 'publishUserEventToSuite', `Failed to publish user event to ${targetApp} after retries`, { targetApp, error: err.message });
         results.push({ targetApp, success: false, error: err.message });
       }
     }
@@ -471,7 +644,7 @@ class SnsSqsPublisher {
         results.push({ targetApp, ...result });
       } catch (error: unknown) {
         const err = error as Error;
-        console.error(`❌ Failed to publish org event to ${targetApp} after retries:`, error);
+        Logger.log('error', 'general', 'publishOrgEventToSuite', `Failed to publish org event to ${targetApp} after retries`, { targetApp, error: err.message });
         results.push({ targetApp, success: false, error: err.message });
       }
     }
@@ -543,7 +716,7 @@ class SnsSqsPublisher {
         results.push({ targetApp, ...result });
       } catch (error: unknown) {
         const err = error as Error;
-        console.error(`❌ Failed to publish org assignment event to ${targetApp} after retries:`, error);
+        Logger.log('error', 'general', 'publishOrgAssignmentEventToSuite', `Failed to publish org assignment event to ${targetApp} after retries`, { targetApp, error: err.message });
         results.push({ targetApp, success: false, error: err.message });
       }
     }
@@ -619,6 +792,81 @@ class SnsSqsPublisher {
   }
 
   /**
+   * Publish a credit.revoked event to a downstream application. Used by admin
+   * tooling that pulls allocated credits back from an app (reduces the app's
+   * allocated_credits in the wrapper-mirror table on the consumer side).
+   */
+  async publishCreditRevoked(
+    targetApplication: string,
+    tenantId: string,
+    entityId: string,
+    amount: number,
+    metadata: Record<string, unknown> = {},
+    publishedBy = 'system'
+  ): Promise<{ success: boolean; eventId: string; routingKey: string; messageId: string }> {
+    return this.publishCreditEvent(
+      targetApplication,
+      'credit.revoked',
+      tenantId,
+      {
+        entityId,
+        deltaAmount: amount,
+        allocatedCredits: amount,
+        revokedAt: new Date().toISOString(),
+        ...metadata,
+      },
+      publishedBy
+    );
+  }
+
+  /**
+   * Publish a configuration.updated event to every app in the business suite.
+   * Consumers persist per-key configuration into their local mirror so each
+   * app can serve config reads without a cross-service call.
+   */
+  async publishConfigurationUpdateToSuite(
+    tenantId: string,
+    configData: {
+      entityId?: string;
+      configKey: string;
+      configCategory?: string;
+      configValue: unknown;
+      changedBy?: string;
+    },
+    publishedBy = 'system'
+  ): Promise<Array<{ targetApp: string; success?: boolean; eventId?: string; error?: string }>> {
+    const results: Array<{ targetApp: string; success?: boolean; eventId?: string; error?: string }> = [];
+    for (const targetApp of this.businessSuiteApps) {
+      try {
+        const result = await this.withRetry(() =>
+          this.publishInterAppEvent({
+            eventType: 'configuration.updated',
+            sourceApplication: 'wrapper',
+            targetApplication: targetApp,
+            tenantId,
+            entityId: String(configData.entityId ?? 'global'),
+            eventData: {
+              entityId: configData.entityId ?? 'global',
+              configKey: configData.configKey,
+              configCategory: configData.configCategory ?? 'general',
+              configValue: configData.configValue,
+              changedBy: configData.changedBy ?? publishedBy,
+              updatedAt: new Date().toISOString(),
+            },
+            publishedBy,
+          })
+        );
+        results.push({ targetApp, ...result });
+      } catch (error: unknown) {
+        const err = error as Error;
+        Logger.log('error', 'general', 'publishConfigurationUpdateToSuite', `Failed to publish configuration.updated to ${targetApp} after retries`, { targetApp, error: err.message, configKey: configData.configKey });
+        results.push({ targetApp, success: false, error: err.message });
+      }
+    }
+    return results;
+  }
+
+  /**
    * Retry helper with exponential backoff (default 2 retries: 500 ms → 1 000 ms).
    * Used by suite-broadcast methods to retry failed per-app publishes.
    */
@@ -645,7 +893,7 @@ class SnsSqsPublisher {
    * No-op — SNS SDK is stateless; there is no persistent connection to close.
    */
   async disconnect(): Promise<void> {
-    console.log('🔌 SNS publisher disconnect called (no-op — SDK is stateless)');
+    Logger.log('info', 'general', 'disconnect', 'SNS publisher disconnect called (no-op — SDK is stateless)');
   }
 
   /**

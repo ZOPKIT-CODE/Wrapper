@@ -16,6 +16,7 @@
  */
 
 import { systemDbConnection } from '../../../db/index.js';
+import Logger from '../../../utils/logger.js';
 import { tenants, tenantUsers, customRoles, userRoleAssignments, subscriptions, entities, credits } from '../../../db/schema/index.js';
 // REMOVED: creditAllocations - Application-specific allocations removed (applications manage their own credits)
 import { organizationApplications } from '../../../db/schema/core/suite-schema.js';
@@ -294,7 +295,7 @@ export class OnboardingVerificationService {
         });
       }
       
-      console.error('❌ Onboarding verification SQL error:', errorDetails);
+      Logger.log('error', 'general', 'verifyOnboardingCompletion', 'Onboarding verification SQL error', { errorDetails });
       
       return {
         success: false,

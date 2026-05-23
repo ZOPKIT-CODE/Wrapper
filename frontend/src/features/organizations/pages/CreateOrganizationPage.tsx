@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import toast from 'react-hot-toast'
+import { toast } from 'sonner'
 import { DashboardPageHeader } from '@/components/dashboard/DashboardPageHeader'
 import {
   ORGANIZATION_CREATE_STEPS,

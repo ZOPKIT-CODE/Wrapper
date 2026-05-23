@@ -105,7 +105,7 @@ export default async function dataManagementRoutes(
         .returning({ kindeUserId: tenantUsers.kindeUserId });
 
       if (updatedUser?.kindeUserId) {
-        invalidateUserCache(updatedUser.kindeUserId);
+        void invalidateUserCache(updatedUser.kindeUserId);
       }
 
       return {

@@ -5,6 +5,7 @@ import { db } from '../../../db/index.js';
 import { entities } from '../../../db/schema/organizations/unified-entities.js';
 import { snsSqsPublisher } from '../../messaging/utils/sns-sqs-publisher.js';
 import accountingEntityProvisioningService from '../../messaging/services/accounting-entity-provisioning-service.js';
+import Logger from '../../../utils/logger.js';
 
 type EntityType = 'organization' | 'location' | 'department' | 'team';
 
@@ -139,7 +140,7 @@ class EntityService {
       );
     } catch (streamError: unknown) {
       const e = streamError as Error;
-      console.warn('⚠️ Failed to publish entity creation event:', e.message);
+      Logger.log('warning', 'general', 'create-entity', 'Failed to publish entity creation event', { error: e.message });
     }
 
     // Accounting bridge: request auto-provision for eligible organization subtypes.
@@ -158,7 +159,7 @@ class EntityService {
       });
     } catch (provisionError: unknown) {
       const e = provisionError as Error;
-      console.warn('⚠️ Failed to publish accounting provisioning request:', e.message);
+      Logger.log('warning', 'general', 'create-entity', 'Failed to publish accounting provisioning request', { error: e.message });
     }
 
     return {

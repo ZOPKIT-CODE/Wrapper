@@ -1,6 +1,7 @@
 import sqsJobQueue from '../../messaging/services/sqs-job-queue.js';
 import { NotificationService } from './notification-service.js';
 import { broadcastToTenant } from '../../../utils/websocket-server.js';
+import Logger from '../../../utils/logger.js';
 
 /**
  * Notification Queue Service
@@ -29,7 +30,7 @@ class NotificationQueueService {
     if (isSqsConfigured()) {
       this.initializeWorkers().catch((err: unknown) => {
         const e = err as Error;
-        console.warn('⚠️ [Notification Queue] Could not initialise SQS workers (app running without job queue):', e.message);
+        Logger.log('warning', 'general', 'constructor', 'Could not initialise SQS workers (app running without job queue)', { error: e.message });
       });
     }
   }
@@ -57,7 +58,7 @@ class NotificationQueueService {
     // Initialize workers with processors
     await this.jobQueue.initializeWorkers(processors as Parameters<typeof this.jobQueue.initializeWorkers>[0]);
     this.workersInitialized = true;
-    console.log('✅ Notification queue workers initialized');
+    Logger.log('info', 'general', 'initializeWorkers', 'Notification queue workers initialized');
   }
 
   /**
@@ -76,7 +77,7 @@ class NotificationQueueService {
         broadcastToTenant(tenantId, notification);
       } catch (wsErr: unknown) {
         const wsError = wsErr as Error;
-        console.warn(`WebSocket broadcast failed for tenant ${tenantId}:`, wsError.message);
+        Logger.log('warning', 'general', 'processNotification', 'WebSocket broadcast failed', { tenantId, error: wsError.message });
         // Don't fail the job if WebSocket fails
       }
 
@@ -86,7 +87,7 @@ class NotificationQueueService {
         tenantId
       };
     } catch (err: unknown) {
-      console.error('Error processing notification:', err);
+      Logger.log('error', 'general', 'processNotification', 'Error processing notification', { error: (err as Error).message });
       throw err;
     }
   }
@@ -122,7 +123,7 @@ class NotificationQueueService {
         results
       };
     } catch (err: unknown) {
-      console.error('Error processing bulk notifications:', err);
+      Logger.log('error', 'general', 'processBulkNotifications', 'Error processing bulk notifications', { error: (err as Error).message });
       throw err;
     }
   }
@@ -138,7 +139,7 @@ class NotificationQueueService {
         { priority: options.priority ?? 0, attempts: options.attempts ?? 3 }
       );
     } catch (err: unknown) {
-      console.error('Error adding immediate notification to queue:', err);
+      Logger.log('error', 'general', 'addImmediate', 'Error adding immediate notification to queue', { error: (err as Error).message });
       throw err;
     }
   }
@@ -151,7 +152,7 @@ class NotificationQueueService {
         batchSize: options.batchSize ?? 100
       });
     } catch (err: unknown) {
-      console.error('Error adding bulk notifications to queue:', err);
+      Logger.log('error', 'general', 'addBulk', 'Error adding bulk notifications to queue', { error: (err as Error).message });
       throw err;
     }
   }
@@ -163,7 +164,7 @@ class NotificationQueueService {
         priority: options.priority ?? 0
       });
     } catch (err: unknown) {
-      console.error('Error scheduling notification:', err);
+      Logger.log('error', 'general', 'schedule', 'Error scheduling notification', { error: (err as Error).message });
       throw err;
     }
   }
@@ -172,7 +173,7 @@ class NotificationQueueService {
     try {
       return await this.jobQueue.getJobStatus(queueName, jobId);
     } catch (err: unknown) {
-      console.error('Error getting job status:', err);
+      Logger.log('error', 'general', 'getJobStatus', 'Error getting job status', { error: (err as Error).message });
       throw err;
     }
   }
@@ -181,7 +182,7 @@ class NotificationQueueService {
     try {
       return await this.jobQueue.cancelJob(queueName, jobId);
     } catch (err: unknown) {
-      console.error('Error canceling job:', err);
+      Logger.log('error', 'general', 'cancelJob', 'Error canceling job', { error: (err as Error).message });
       throw err;
     }
   }
@@ -190,7 +191,7 @@ class NotificationQueueService {
     try {
       return await this.jobQueue.getQueueStats(queueName);
     } catch (err: unknown) {
-      console.error('Error getting queue stats:', err);
+      Logger.log('error', 'general', 'getQueueStats', 'Error getting queue stats', { error: (err as Error).message });
       throw err;
     }
   }
@@ -198,9 +199,9 @@ class NotificationQueueService {
   async close(): Promise<void> {
     try {
       await this.jobQueue.close();
-      console.log('✅ All notification queues and workers closed');
+      Logger.log('info', 'general', 'close', 'All notification queues and workers closed');
     } catch (err: unknown) {
-      console.error('Error closing queues:', err);
+      Logger.log('error', 'general', 'close', 'Error closing queues', { error: (err as Error).message });
       throw err;
     }
   }

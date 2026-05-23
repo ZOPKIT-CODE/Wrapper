@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { IconArrowRight } from "@tabler/icons-react";
+import { ArrowRight } from "lucide-react";
 import {
     motion,
     AnimatePresence,
@@ -69,13 +69,13 @@ export const Navbar = ({ children, className }: NavbarProps) => {
     );
 };
 
-// Desktop Nav Body — always pill/capsule shape
+// Desktop Nav Body — full-width rectangle
 export const NavBody = ({ children, className }: NavBodyProps) => {
     return (
         <div
             className={cn(
-                "pointer-events-auto relative mx-auto hidden flex-row items-center justify-between lg:flex z-50",
-                "mt-4 w-[92%] max-w-[1280px] rounded-full border border-black/[0.08] bg-[#ebebeb] py-2 pl-2 pr-2 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.10),0_0_0_1px_rgba(0,0,0,0.04)]",
+                "pointer-events-auto relative hidden flex-row items-center justify-between lg:flex z-50",
+                "w-full border-b border-white/10 bg-white/10 py-3 px-8 backdrop-blur-xl",
                 className,
             )}
         >
@@ -129,13 +129,13 @@ export const NavItems = ({ items, className, onItemClick }: NavItemsProps) => {
     );
 };
 
-// Mobile Nav Container — always pill shape
+// Mobile Nav Container — full-width rectangle
 export const MobileNav = ({ children, className }: MobileNavProps) => {
     return (
         <div
             className={cn(
-                "pointer-events-auto relative z-50 mx-auto flex flex-col items-center justify-between backdrop-blur-xl lg:hidden",
-                "mt-3 w-[95%] rounded-3xl border border-black/[0.08] bg-[#ebebeb] shadow-[0_4px_24px_-4px_rgba(0,0,0,0.10)]",
+                "pointer-events-auto relative z-50 flex flex-col items-center justify-between lg:hidden",
+                "w-full border-b border-white/10 bg-white/10 backdrop-blur-xl",
                 className,
             )}
         >
@@ -151,7 +151,7 @@ export const MobileNavHeader = ({
     return (
         <div
             className={cn(
-                "flex w-full flex-row items-center justify-between px-6 py-4",
+                "flex w-full flex-row items-center justify-between px-6 py-3",
                 className,
             )}
         >
@@ -193,12 +193,12 @@ export const NavbarLogo = ({ visible: _visible }: { visible?: boolean }) => {
     return (
         <a
             href="/"
-            className="relative z-20 flex shrink-0 items-center gap-2 pl-2"
+            className="relative z-20 flex shrink-0 items-center pl-2"
         >
             <img
                 src={config.FULL_LOGO_URL}
                 alt="Zopkit"
-                className="block h-12 w-auto object-cover rounded-2xl"
+                className="h-10 w-auto block"
             />
         </a>
     );
@@ -246,7 +246,7 @@ const SpotlightButton = ({
             />
             <span className="relative z-10 flex items-center gap-2">
                 {children}
-                <IconArrowRight className="h-4 w-4 -translate-x-1 opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100" />
+                <ArrowRight className="h-4 w-4 -translate-x-1 opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100" />
             </span>
             <div className="absolute inset-0 rounded-full ring-1 ring-white/10" />
         </Tag>

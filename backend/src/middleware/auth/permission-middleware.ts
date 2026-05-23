@@ -3,6 +3,7 @@ import { eq, and } from 'drizzle-orm';
 import { userRoleAssignments, customRoles } from '../../db/schema/index.js';
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import type { UserPermissions } from '../../types/common.js';
+import Logger from '../../utils/logger.js';
 
 export function requirePermissions(requiredPermissions: string[]) {
   return async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
@@ -104,7 +105,7 @@ export async function getUserPermissions(userId: string, tenantId: string): Prom
           ? JSON.parse(role.permissions as string) 
           : (role.permissions || {}) as Record<string, unknown>;
       } catch (_parseError) {
-        console.error(`❌ [PermissionMiddleware] Failed to parse permissions for role ${role.roleName}:`, _parseError);
+        Logger.log('error', 'auth', 'get-user-permissions', `❌ [PermissionMiddleware] Failed to parse permissions for role ${role.roleName}`, { error: _parseError });
         rolePermissions = {};
       }
 
@@ -162,8 +163,7 @@ export async function getUserPermissions(userId: string, tenantId: string): Prom
 
     return result;
   } catch (error) {
-    console.error('❌ [PermissionMiddleware] Error fetching user permissions:', error);
-    console.error('❌ [PermissionMiddleware] Error stack:', (error as Error).stack);
+    Logger.log('error', 'auth', 'get-user-permissions', '❌ [PermissionMiddleware] Error fetching user permissions', { error: (error as Error).message, stack: (error as Error).stack });
     return { modules: {}, roles: [] };
   }
 }

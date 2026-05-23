@@ -15,6 +15,8 @@ import {
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useToast } from '@/features/onboarding/components/Toast';
+import { useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/hooks/useSharedQueries';
 import type { AccountSettingsData } from '../types';
 import { CompanyInfoTab } from '../components/CompanyInfoTab';
 import { ContactTab } from '../components/ContactTab';
@@ -40,6 +42,7 @@ export const AccountSettings: React.FC = () => {
     defaultTab: 'company',
   });
   const { addToast } = useToast();
+  const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -219,6 +222,8 @@ export const AccountSettings: React.FC = () => {
       });
 
       await api.patch('/tenants/current', updateData);
+      // Refresh tenant cache so logo/name updates appear in sidebar immediately
+      queryClient.invalidateQueries({ queryKey: queryKeys.tenant });
       addToast('Account settings updated successfully', { type: 'success' });
     } catch (error: any) {
       console.error('Failed to save account settings:', error);

@@ -9,6 +9,7 @@ import { eq } from 'drizzle-orm';
 import { tenants } from '../../../db/schema/index.js';
 import { customRoleService as CustomRoleService } from '../index.js';
 import { PERMISSION_TIERS, type TierKey } from '../../../config/permission-tiers.js';
+import Logger from '../../../utils/logger.js';
 
 export class AutoPermissionSyncService {
   
@@ -17,30 +18,30 @@ export class AutoPermissionSyncService {
    * Main function that syncs permissions and updates all organizations
    */
   static async syncPermissionsWithAutoUpdate() {
-    console.log('🚀 Starting complete permission sync with auto-updates...');
+    Logger.log('info', 'general', 'syncPermissionsWithAutoUpdate', 'Starting complete permission sync with auto-updates');
     
     try {
       // 1. Run the permission matrix sync (your existing sync)
-      console.log('📦 Step 1: Syncing permission matrix...');
+      Logger.log('info', 'general', 'syncPermissionsWithAutoUpdate', 'Step 1: Syncing permission matrix');
       await this.runPermissionMatrixSync();
-      
+
       // 2. Auto-update all organization access based on their tiers
-      console.log('🏢 Step 2: Auto-updating organization access...');
+      Logger.log('info', 'general', 'syncPermissionsWithAutoUpdate', 'Step 2: Auto-updating organization access');
       await this.updateAllOrganizationAccess();
-      
+
       // 3. Send webhook notifications
-      console.log('🔔 Step 3: Sending webhook notifications...');
+      Logger.log('info', 'general', 'syncPermissionsWithAutoUpdate', 'Step 3: Sending webhook notifications');
       await this.notifyPermissionChanges();
-      
+
       // 4. Clear any cached permission data
-      console.log('🧹 Step 4: Clearing permission caches...');
+      Logger.log('info', 'general', 'syncPermissionsWithAutoUpdate', 'Step 4: Clearing permission caches');
       await this.clearPermissionCaches();
-      
-      console.log('🎉 Complete permission sync completed successfully!');
+
+      Logger.log('info', 'general', 'syncPermissionsWithAutoUpdate', 'Complete permission sync completed successfully');
       return { success: true, message: 'Permission sync completed with auto-updates' };
       
     } catch (error) {
-      console.error('❌ Error in complete permission sync:', error);
+      Logger.log('error', 'general', 'syncPermissionsWithAutoUpdate', 'Error in complete permission sync', { error: (error as Error).message });
       throw error;
     }
   }
@@ -61,7 +62,7 @@ export class AutoPermissionSyncService {
    * Automatically updates all organizations based on their subscription tiers
    */
   static async updateAllOrganizationAccess(): Promise<{ updated: number; errors: number }> {
-    console.log('🔄 Updating access for all organizations...');
+    Logger.log('info', 'general', 'updateAllOrganizationAccess', 'Updating access for all organizations');
     
     const allTenants = await db
       .select({
@@ -70,27 +71,27 @@ export class AutoPermissionSyncService {
       })
       .from(tenants);
     
-    console.log(`📊 Found ${allTenants.length} organizations to update`);
+    Logger.log('info', 'general', 'updateAllOrganizationAccess', 'Found organizations to update', { count: allTenants.length });
     
     let updateCount = 0;
     let errorCount = 0;
     
     for (const tenant of allTenants) {
       try {
-        console.log(`🔄 Updating access for ${tenant.companyName})`);
+        Logger.log('info', 'general', 'updateAllOrganizationAccess', 'Updating access for tenant', { companyName: tenant.companyName });
         const tier = 'professional';
         await CustomRoleService.updateOrganizationAccess(tenant.tenantId, tier);
         updateCount++;
-        console.log(`  ✅ Updated ${tenant.companyName}`);
+        Logger.log('info', 'general', 'updateAllOrganizationAccess', 'Updated tenant', { companyName: tenant.companyName });
         
       } catch (err: unknown) {
         const error = err as Error;
         errorCount++;
-        console.error(`  ❌ Error updating ${tenant.companyName}:`, error.message);
+        Logger.log('error', 'general', 'updateAllOrganizationAccess', 'Error updating tenant', { companyName: tenant.companyName, error: error.message });
       }
     }
     
-    console.log(`📈 Organization access update complete: ${updateCount} success, ${errorCount} errors`);
+    Logger.log('info', 'general', 'updateAllOrganizationAccess', 'Organization access update complete', { updated: updateCount, errors: errorCount });
     return { updated: updateCount, errors: errorCount };
   }
   
@@ -99,7 +100,7 @@ export class AutoPermissionSyncService {
    * Notify frontend and other services about permission changes
    */
   static async notifyPermissionChanges() {
-    console.log('🔔 Sending permission change notifications...');
+    Logger.log('info', 'general', 'notifyPermissionChanges', 'Sending permission change notifications');
     
     const notification = {
       event: 'permissions.updated',
@@ -118,7 +119,7 @@ export class AutoPermissionSyncService {
     
     // Here you would send webhooks to your frontend, mobile apps, etc.
     // For now, we'll just log it
-    console.log('📢 Webhook notification:', JSON.stringify(notification, null, 2));
+    Logger.log('info', 'general', 'notifyPermissionChanges', 'Webhook notification', { notification });
     
     // In a real implementation, you might:
     // - Send HTTP webhooks to registered endpoints
@@ -134,7 +135,7 @@ export class AutoPermissionSyncService {
    * Clear any cached permission data that needs refreshing
    */
   static async clearPermissionCaches() {
-    console.log('🧹 Clearing permission caches...');
+    Logger.log('info', 'general', 'clearPermissionCaches', 'Clearing permission caches');
     
     // In a real implementation, you might clear:
     // - Redis cache keys
@@ -149,7 +150,7 @@ export class AutoPermissionSyncService {
       'permission_matrix_*'
     ];
     
-    console.log(`🗑️ Cleared caches: ${cachesCleared.join(', ')}`);
+    Logger.log('info', 'general', 'clearPermissionCaches', 'Cleared caches', { caches: cachesCleared });
     return { caches: cachesCleared };
   }
   
@@ -158,7 +159,7 @@ export class AutoPermissionSyncService {
    * Called when an organization's subscription tier changes
    */
   static async handleSubscriptionTierChange(tenantId: string, newTier: string, oldTier: string): Promise<{ success: boolean }> {
-    console.log(`🔄 Handling subscription change for tenant ${tenantId}: ${oldTier} → ${newTier}`);
+    Logger.log('info', 'general', 'handleSubscriptionTierChange', 'Handling subscription change', { tenantId, oldTier, newTier });
     
     try {
       // 1. Update organization access based on new tier
@@ -170,11 +171,11 @@ export class AutoPermissionSyncService {
       // 3. Send notification about the change
       await this.notifySubscriptionChange(tenantId, newTier, oldTier);
       
-      console.log(`✅ Subscription tier change completed for tenant ${tenantId}`);
+      Logger.log('info', 'general', 'handleSubscriptionTierChange', 'Subscription tier change completed', { tenantId });
       return { success: true };
       
     } catch (error) {
-      console.error(`❌ Error handling subscription change:`, error);
+      Logger.log('error', 'general', 'handleSubscriptionTierChange', 'Error handling subscription change', { error: (error as Error).message });
       throw error;
     }
   }
@@ -184,7 +185,7 @@ export class AutoPermissionSyncService {
    * Check if existing roles are still valid after subscription change
    */
   static async validateRolesAfterTierChange(tenantId: string, newTier: string, oldTier: string): Promise<{ warnings: Array<Record<string, unknown>>; errors: Array<Record<string, unknown>> }> {
-    console.log(`🔍 Validating roles after tier change: ${oldTier} → ${newTier}`);
+    Logger.log('info', 'general', 'validateRolesAfterTierChange', 'Validating roles after tier change', { oldTier, newTier });
     
     // Get current roles for the tenant
     const { customRoles } = await import('../../../db/schema/index.js');
@@ -230,11 +231,11 @@ export class AutoPermissionSyncService {
     }
     
     if (warnings.length > 0) {
-      console.warn(`⚠️ ${warnings.length} role permission warnings after tier change`);
+      Logger.log('warning', 'general', 'validateRolesAfterTierChange', 'Role permission warnings after tier change', { count: warnings.length });
     }
-    
+
     if (errors.length > 0) {
-      console.error(`❌ ${errors.length} role validation errors after tier change`);
+      Logger.log('error', 'general', 'validateRolesAfterTierChange', 'Role validation errors after tier change', { count: errors.length });
     }
     
     return { warnings, errors };
@@ -257,7 +258,7 @@ export class AutoPermissionSyncService {
       }
     };
     
-    console.log('📢 Subscription change notification:', JSON.stringify(notification, null, 2));
+    Logger.log('info', 'general', 'notifySubscriptionChange', 'Subscription change notification', { notification });
     return notification;
   }
   
@@ -301,17 +302,17 @@ export class AutoPermissionSyncService {
    * Run permission sync on a schedule (could be called by cron job)
    */
   static async runScheduledSync() {
-    console.log('⏰ Running scheduled permission sync...');
+    Logger.log('info', 'general', 'runScheduledSync', 'Running scheduled permission sync');
     
     try {
       const result = await this.syncPermissionsWithAutoUpdate();
       
       // Log successful sync
-      console.log('✅ Scheduled permission sync completed successfully');
+      Logger.log('info', 'general', 'runScheduledSync', 'Scheduled permission sync completed successfully');
       return result;
       
     } catch (err: unknown) {
-      console.error('❌ Scheduled permission sync failed:', err);
+      Logger.log('error', 'general', 'runScheduledSync', 'Scheduled permission sync failed', { error: (err as Error).message });
       throw err;
     }
   }

@@ -409,6 +409,19 @@ export function DashboardLayout() {
     };
   }, [isOrganizationRoute, orgCode, orgHierarchy, userData, tenantData, tenantApps]);
 
+  // Applications tab is always the full-page marketplace for every user — admin or
+  // member. Admin console features (Organization, Team, Roles…) remain accessible
+  // on all other /dashboard/* routes where the sidebar renders normally.
+  if (location.pathname === '/dashboard/applications') {
+    return (
+      <BreadcrumbLabelProvider>
+        <ErrorBoundary>
+          <Outlet key={location.pathname} />
+        </ErrorBoundary>
+      </BreadcrumbLabelProvider>
+    )
+  }
+
   return (
     <SidebarProvider className="dashboard-actionable-cursors dashboard-instant-scroll" style={{ background: 'var(--zk-bg)' }}>
       <ModernSidebar

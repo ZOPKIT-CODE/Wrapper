@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { authenticateToken, requirePermission } from '../../../middleware/auth/auth.js';
 import { PERMISSIONS } from '../../../constants/permissions.js';
+import Logger from '../../../utils/logger.js';
 import permissionService from '../services/permission-service.js';
 import { db } from '../../../db/index.js';
 import {
@@ -28,15 +29,11 @@ export default async function permissionRoutes(fastify: FastifyInstance, _option
     preHandler: [authenticateToken, requirePermission(PERMISSIONS.PERMISSIONS_ASSIGNMENT_READ)]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
-      console.log('📡 GET /api/permissions/available - Fetching permission structure');
-      
+      Logger.log('info', 'role', 'get-available-permissions', 'Fetching permission structure');
+
       const permissionData = await permissionService.getAvailablePermissions();
-      
-      console.log('📊 Permission data summary:', {
-        applications: permissionData.summary.applicationCount,
-        modules: permissionData.summary.moduleCount,
-        operations: permissionData.summary.operationCount
-      });
+
+      Logger.log('info', 'role', 'get-available-permissions', 'Permission data summary', { applications: permissionData.summary.applicationCount, modules: permissionData.summary.moduleCount, operations: permissionData.summary.operationCount });
 
       return {
         success: true,
@@ -45,7 +42,7 @@ export default async function permissionRoutes(fastify: FastifyInstance, _option
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error fetching permissions:', error);
+      Logger.log('error', 'role', 'get-available-permissions', 'Error fetching permissions', { error: error.message });
       return reply.code(500).send({
         success: false,
         message: 'Failed to fetch permission structure',
@@ -179,26 +176,16 @@ export default async function permissionRoutes(fastify: FastifyInstance, _option
       // Get tenant ID from user context
       const tenantId = getTenantId(request);
       
-      console.log('🔍 GET /api/permissions/roles - Debug info:', {
-        tenantId,
-        userContext: request.userContext,
-        user: request.user,
-        query: { page, limit, search, type }
-      });
-      
+      Logger.log('info', 'role', 'get-roles', 'GET roles request', { tenantId, page, limit, search, type });
+
       const roles = await permissionService.getTenantRoles(tenantId, {
         page,
         limit,
         search,
         type
       });
-      
-      console.log('📊 Roles fetched from service:', {
-        rolesCount: roles.data?.length || 0,
-        total: roles.total,
-        page: roles.page,
-        limit: roles.limit
-      });
+
+      Logger.log('info', 'role', 'get-roles', 'Roles fetched from service', { count: roles.data?.length || 0, total: roles.total });
       
       return {
         success: true,
@@ -262,7 +249,7 @@ export default async function permissionRoutes(fastify: FastifyInstance, _option
       const transferUsersTo = query.transferUsersTo as string | undefined;
       const tenantId = getTenantId(request);
 
-      console.log('🗑️ Attempting to delete role:', roleId, 'tenantId:', tenantId);
+      Logger.log('info', 'role', 'delete-role', 'Attempting to delete role', { roleId, tenantId });
 
       // Get role data before deletion for event publishing
       const [roleToDelete] = await db
@@ -276,7 +263,7 @@ export default async function permissionRoutes(fastify: FastifyInstance, _option
         )
         .limit(1);
 
-      console.log('Role to delete found:', !!roleToDelete, roleToDelete ? roleToDelete.roleId : 'N/A');
+      Logger.log('info', 'role', 'delete-role', 'Role to delete found', { found: !!roleToDelete, roleId: roleToDelete ? roleToDelete.roleId : null });
 
       if (!roleToDelete) {
         return reply.code(404).send({ error: 'Role not found' });
@@ -314,7 +301,7 @@ export default async function permissionRoutes(fastify: FastifyInstance, _option
         index === self.findIndex(u => u.userId === user.userId)
       );
 
-      console.log('Affected users:', uniqueAffectedUsers.length);
+      Logger.log('info', 'role', 'delete-role', 'Affected users count', { count: uniqueAffectedUsers.length });
 
       // If force is not specified and there are affected users, return confirmation needed
       if (!force && uniqueAffectedUsers.length > 0) {
@@ -332,7 +319,7 @@ export default async function permissionRoutes(fastify: FastifyInstance, _option
         });
       }
 
-      console.log('Calling permissionService.deleteRole...');
+      Logger.log('info', 'role', 'delete-role', 'Calling permissionService.deleteRole');
       const result = await permissionService.deleteRole(
         tenantId,
         roleId,
@@ -342,9 +329,9 @@ export default async function permissionRoutes(fastify: FastifyInstance, _option
           deletedBy: request.userContext.internalUserId ?? undefined
         }
       );
-      console.log('permissionService.deleteRole result:', result);
+      Logger.log('info', 'role', 'delete-role', 'permissionService.deleteRole completed', { usersAffected: result.usersAffected });
 
-      console.log('🔍 DEBUG: About to publish role deletion event, roleToDelete exists:', !!roleToDelete);
+      Logger.log('info', 'general', 'delete-role', 'About to publish role deletion event', { roleToDeleteExists: !!roleToDelete });
 
       // Log role deletion activity
       await ActivityLogger.logActivity(
@@ -364,8 +351,8 @@ export default async function permissionRoutes(fastify: FastifyInstance, _option
 
       // Publish role deletion event to relevant applications (only apps with permissions)
       if (roleToDelete) {
-        console.log('📡 Publishing role deletion event for role:', roleId);
-        console.log('📋 Role data for event:', {
+        Logger.log('info', 'general', 'delete-role', 'Publishing role deletion event for role', { roleId });
+        Logger.log('info', 'general', 'delete-role', 'Role data for event', {
           roleId: roleToDelete.roleId,
           roleName: roleToDelete.roleName,
           permissionsType: typeof roleToDelete.permissions,
@@ -374,9 +361,9 @@ export default async function permissionRoutes(fastify: FastifyInstance, _option
         });
         try {
           // Import the event publishing function
-          console.log('Importing roles.js...');
+          Logger.log('info', 'general', 'delete-role', 'Importing roles.js');
           const { publishRoleEventToApplications } = await import('./roles.js');
-          console.log('Successfully imported publishRoleEventToApplications');
+          Logger.log('info', 'general', 'delete-role', 'Successfully imported publishRoleEventToApplications');
 
           await publishRoleEventToApplications(
             'role.deleted',
@@ -394,15 +381,15 @@ export default async function permissionRoutes(fastify: FastifyInstance, _option
               affectedUsersCount: result.usersAffected || 0
             }
           );
-          console.log('✅ Role deletion event published successfully');
+          Logger.log('info', 'general', 'delete-role', 'Role deletion event published successfully');
         } catch (publishError: unknown) {
           const err = publishError as Error;
-          console.warn('⚠️ Failed to publish role deletion event:', err.message);
-          console.error('Full error:', publishError);
+          Logger.log('warning', 'general', 'delete-role', 'Failed to publish role deletion event', { error: err.message });
+          Logger.log('error', 'general', 'delete-role', 'Full publish error', { error: (publishError as Error).message });
           // Don't fail the deletion if event publishing fails
         }
       } else {
-        console.log('⚠️ No role data found for event publishing');
+        Logger.log('warning', 'general', 'delete-role', 'No role data found for event publishing');
       }
 
       return {
@@ -412,8 +399,7 @@ export default async function permissionRoutes(fastify: FastifyInstance, _option
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Error deleting role:', error.message);
-      console.error('Full error:', error);
+      Logger.log('error', 'general', 'delete-role', 'Error deleting role', { error: error.message });
       fastify.log.error(error, 'Error deleting role:');
       if (error.message.includes('not found')) {
         return reply.code(404).send({ error: error.message });
@@ -720,7 +706,7 @@ export default async function permissionRoutes(fastify: FastifyInstance, _option
     try {
       const tenantId = getTenantId(request);
 
-      console.log(`🚀 Starting role permissions migration for tenant: ${tenantId}`);
+      Logger.log('info', 'general', 'migrate-role-permissions', 'Starting role permissions migration', { tenantId });
 
       // Get all custom roles for this tenant
       const roles = await db
@@ -737,7 +723,7 @@ export default async function permissionRoutes(fastify: FastifyInstance, _option
           not(eq(customRoles.permissions, null))
         ));
 
-      console.log(`📊 Found ${roles.length} custom roles to check`);
+      Logger.log('info', 'general', 'migrate-role-permissions', 'Found custom roles to check', { count: roles.length });
 
       let updatedCount = 0;
       let skippedCount = 0;
@@ -753,7 +739,7 @@ export default async function permissionRoutes(fastify: FastifyInstance, _option
               permissionsData = JSON.parse(role.permissions);
             } catch (parseErr: unknown) {
               const parseError = parseErr as Error;
-              console.warn(`⚠️ Failed to parse permissions for role ${role.roleName}:`, parseError.message);
+              Logger.log('warning', 'general', 'migrate-role-permissions', `Failed to parse permissions for role ${role.roleName}`, { error: parseError.message });
               skippedCount++;
               continue;
             }
@@ -763,7 +749,7 @@ export default async function permissionRoutes(fastify: FastifyInstance, _option
 
           // Check if already in hierarchical format
           if (permissionsData && typeof permissionsData === 'object' && !Array.isArray(permissionsData)) {
-            console.log(`⏭️ Skipping role "${role.roleName}" - already in hierarchical format`);
+            Logger.log('info', 'general', 'migrate-role-permissions', `Skipping role - already in hierarchical format`, { roleName: role.roleName });
             skippedCount++;
             results.push({
               roleId: role.roleId,
@@ -776,7 +762,7 @@ export default async function permissionRoutes(fastify: FastifyInstance, _option
 
           // Check if it's in flat array format
           if (Array.isArray(permissionsData) && permissionsData.length > 0 && typeof permissionsData[0] === 'string') {
-            console.log(`🔄 Converting role "${role.roleName}" from flat array to hierarchical format`);
+            Logger.log('info', 'general', 'migrate-role-permissions', `Converting role from flat array to hierarchical format`, { roleName: role.roleName });
 
             // Convert to hierarchical format
             const hierarchicalPermissions: Record<string, Record<string, string[]>> = {};
@@ -806,7 +792,7 @@ export default async function permissionRoutes(fastify: FastifyInstance, _option
               })
               .where(eq(customRoles.roleId, role.roleId));
 
-            console.log(`✅ Updated role "${role.roleName}" with hierarchical permissions`);
+            Logger.log('info', 'general', 'migrate-role-permissions', `Updated role with hierarchical permissions`, { roleName: role.roleName });
             updatedCount++;
             results.push({
               roleId: role.roleId,
@@ -816,7 +802,7 @@ export default async function permissionRoutes(fastify: FastifyInstance, _option
               newFormat: 'hierarchical'
             });
           } else {
-            console.warn(`⚠️ Unknown permissions format for role "${role.roleName}":`, typeof permissionsData);
+            Logger.log('warning', 'general', 'migrate-role-permissions', `Unknown permissions format for role`, { roleName: role.roleName, permissionsType: typeof permissionsData });
             skippedCount++;
             results.push({
               roleId: role.roleId,
@@ -828,7 +814,7 @@ export default async function permissionRoutes(fastify: FastifyInstance, _option
 
         } catch (err: unknown) {
           const error = err as Error;
-          console.error(`❌ Error processing role "${role.roleName}":`, error.message);
+          Logger.log('error', 'general', 'migrate-role-permissions', `Error processing role`, { roleName: role.roleName, error: error.message });
           skippedCount++;
           results.push({
             roleId: role.roleId,
@@ -839,10 +825,7 @@ export default async function permissionRoutes(fastify: FastifyInstance, _option
         }
       }
 
-      console.log(`\n🎉 Migration completed!`);
-      console.log(`✅ Updated: ${updatedCount} roles`);
-      console.log(`⏭️ Skipped: ${skippedCount} roles`);
-      console.log(`📊 Total processed: ${roles.length} roles`);
+      Logger.log('info', 'general', 'migrate-role-permissions', 'Migration completed', { updated: updatedCount, skipped: skippedCount, total: roles.length });
 
       return {
         success: true,
@@ -857,7 +840,7 @@ export default async function permissionRoutes(fastify: FastifyInstance, _option
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Migration failed:', error);
+      Logger.log('error', 'general', 'migrate-role-permissions', 'Migration failed', { error: error.message });
       return reply.code(500).send({
         success: false,
         message: 'Failed to migrate role permissions',

@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { sql as dbSql } from '../../../db/index.js';
+import Logger from '../../../utils/logger.js';
 
 /**
  * Organization Assignment Redis Streams Service
@@ -56,7 +57,7 @@ export class OrganizationAssignmentService {
       return row ? { userKindeId: row.kinde_user_id || null, userEmail: row.email || null } : {};
     } catch (err: unknown) {
       const e = err as Error;
-      console.warn('⚠️ [ORG-ASSIGNMENT] Could not look up user identifiers:', e.message);
+      Logger.log('warning', 'user', 'org-assignment', 'Could not look up user identifiers', { error: e.message });
       return {};
     }
   }
@@ -89,7 +90,7 @@ export class OrganizationAssignmentService {
   static async publishOrgAssignmentCreated(assignmentData: Record<string, unknown>, options: Record<string, unknown> = {}) {
     const startTime = Date.now();
 
-    console.log(`📡 [ORG-ASSIGNMENT-CREATE] Publishing creation event:`, {
+    Logger.log('info', 'user', 'publish-org-assignment-created', 'Publishing creation event', {
       assignmentId: assignmentData.assignmentId,
       userId: assignmentData.userId,
       organizationId: assignmentData.organizationId,
@@ -138,10 +139,10 @@ export class OrganizationAssignmentService {
 
       // Log success with performance metrics
       const duration = Date.now() - startTime;
-      console.log(`✅ [ORG-ASSIGNMENT-CREATE] Successfully published creation event: ${event.data.assignmentId} (${duration}ms)`, {
-        eventId: event.eventId,
-        streamId: (result as Record<string, unknown>).stream,
-        pubsubSubscribers: (result as Record<string, unknown>).pubsub
+      Logger.log('info', 'user', 'publish-org-assignment-created', 'Successfully published creation event', {
+        assignmentId: event.data.assignmentId,
+        durationMs: duration,
+        eventId: event.eventId
       });
 
       return {
@@ -155,15 +156,13 @@ export class OrganizationAssignmentService {
     } catch (err: unknown) {
       const error = err as Error;
       const duration = Date.now() - startTime;
-      console.error(`❌ [ORG-ASSIGNMENT-CREATE] Failed to publish creation event (${duration}ms):`, {
+      Logger.log('error', 'user', 'publish-org-assignment-created', 'Failed to publish creation event', {
+        durationMs: duration,
         error: error.message,
-        stack: error.stack,
-        assignmentData: { 
-          assignmentId: assignmentData.assignmentId,
-          userId: assignmentData.userId,
-          organizationId: assignmentData.organizationId,
-          tenantId: assignmentData.tenantId
-        }
+        assignmentId: assignmentData.assignmentId,
+        userId: assignmentData.userId,
+        organizationId: assignmentData.organizationId,
+        tenantId: assignmentData.tenantId
       });
 
       return {
@@ -204,7 +203,8 @@ export class OrganizationAssignmentService {
         const firstSuccess = results.find((r: { success?: boolean }) => r.success);
         const result = firstSuccess || results[0];
         const res = result as { eventId?: string; routingKey?: string };
-        console.log(`✅ [ORG-ASSIGNMENT] Published to SNS: ${eventType}`, {
+        Logger.log('info', 'user', 'publish-with-retry', 'Published to SNS', {
+          eventType,
           eventId: res.eventId,
           routingKey: res.routingKey,
           assignmentId: assignmentData.assignmentId,
@@ -222,7 +222,7 @@ export class OrganizationAssignmentService {
       } catch (err: unknown) {
         lastError = err;
         const error = err as Error;
-        console.warn(`⚠️ Publish attempt ${attempt}/${this.MAX_RETRY_ATTEMPTS} failed:`, error.message);
+        Logger.log('warning', 'user', 'publish-with-retry', 'Publish attempt failed', { attempt, maxAttempts: this.MAX_RETRY_ATTEMPTS, error: error.message });
 
         if (attempt < this.MAX_RETRY_ATTEMPTS) {
           // Wait before retry
@@ -287,7 +287,7 @@ export class OrganizationAssignmentService {
 
       // Log success with performance metrics
       const duration = Date.now() - startTime;
-      console.log(`✅ Published org assignment updated: ${event.data.assignmentId} (${duration}ms)`);
+      Logger.log('info', 'user', 'publish-org-assignment-updated', 'Published org assignment updated', { assignmentId: event.data.assignmentId, durationMs: duration });
 
       return {
         success: true,
@@ -300,11 +300,7 @@ export class OrganizationAssignmentService {
     } catch (err: unknown) {
       const error = err as Error;
       const duration = Date.now() - startTime;
-      console.error(`❌ Failed to publish org assignment updated (${duration}ms):`, {
-        error: error.message,
-        assignmentData: { ...assignmentData, metadata: undefined },
-        stack: error.stack
-      });
+      Logger.log('error', 'user', 'publish-org-assignment-updated', 'Failed to publish org assignment updated', { durationMs: duration, error: error.message });
 
       return {
         success: false,
@@ -340,11 +336,11 @@ export class OrganizationAssignmentService {
     try {
       // Use publishWithRetry which now uses RabbitMQ
       const result = await this.publishWithRetry(event, String(assignmentData.tenantId ?? ''));
-      console.log(`📡 Published organization assignment deactivated event: ${event.data.assignmentId}`);
+      Logger.log('info', 'user', 'publish-org-assignment-deactivated', 'Published organization assignment deactivated event', { assignmentId: event.data.assignmentId });
       return result;
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Failed to publish organization assignment deactivated event:', error);
+      Logger.log('error', 'user', 'publish-org-assignment-deactivated', 'Failed to publish organization assignment deactivated event', { error: error.message });
       throw error;
     }
   }
@@ -373,11 +369,11 @@ export class OrganizationAssignmentService {
     try {
       // Use publishWithRetry which now uses RabbitMQ
       const result = await this.publishWithRetry(event, String(assignmentData.tenantId ?? ''));
-      console.log(`📡 Published organization assignment activated event: ${event.data.assignmentId}`);
+      Logger.log('info', 'user', 'publish-org-assignment-activated', 'Published organization assignment activated event', { assignmentId: event.data.assignmentId });
       return result;
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Failed to publish organization assignment activated event:', error);
+      Logger.log('error', 'user', 'publish-org-assignment-activated', 'Failed to publish organization assignment activated event', { error: error.message });
       throw error;
     }
   }
@@ -389,7 +385,7 @@ export class OrganizationAssignmentService {
     const eventId = uuidv4();
     const startTime = Date.now();
 
-    console.log(`📡 [ORG-ASSIGNMENT-DELETE] Publishing deletion event:`, {
+    Logger.log('info', 'user', 'publish-org-assignment-deleted', 'Publishing deletion event', {
       assignmentId: assignmentData.assignmentId,
       userId: assignmentData.userId,
       organizationId: assignmentData.organizationId,
@@ -419,17 +415,12 @@ export class OrganizationAssignmentService {
       // Use publishWithRetry which now uses RabbitMQ
       const result = await this.publishWithRetry(event, String(assignmentData.tenantId ?? ''));
       const duration = Date.now() - startTime;
-      console.log(`✅ [ORG-ASSIGNMENT-DELETE] Successfully published deletion event: ${event.data.assignmentId} (${duration}ms)`);
+      Logger.log('info', 'user', 'publish-org-assignment-deleted', 'Successfully published deletion event', { assignmentId: event.data.assignmentId, durationMs: duration });
       return result;
     } catch (err: unknown) {
       const error = err as Error;
       const duration = Date.now() - startTime;
-      console.error(`❌ [ORG-ASSIGNMENT-DELETE] Failed to publish deletion event (${duration}ms):`, {
-        error: error.message,
-        stack: error.stack,
-        assignmentId: assignmentData.assignmentId,
-        tenantId: assignmentData.tenantId
-      });
+      Logger.log('error', 'user', 'publish-org-assignment-deleted', 'Failed to publish deletion event', { durationMs: duration, error: error.message, assignmentId: assignmentData.assignmentId, tenantId: assignmentData.tenantId });
       throw error;
     }
   }
@@ -450,7 +441,7 @@ export class OrganizationAssignmentService {
     const batchSize = (options.batchSize as number) || 10;
     const delay = (options.delay as number) || this.BATCH_DELAY_MS;
 
-    console.log(`📦 Starting bulk publish of ${assignments.length} ${eventType} events`);
+    Logger.log('info', 'user', 'publish-bulk-assignments', 'Starting bulk publish', { count: assignments.length, eventType });
 
     // Validate event type
     const validEventTypes = ['created', 'updated', 'deactivated', 'activated', 'deleted'];
@@ -492,7 +483,7 @@ export class OrganizationAssignmentService {
 
         // Progress logging for large batches
         if ((i + 1) % batchSize === 0 || i === assignments.length - 1) {
-          console.log(`📊 Bulk publish progress: ${i + 1}/${assignments.length} ${eventType} events`);
+          Logger.log('info', 'user', 'publish-bulk-assignments', 'Bulk publish progress', { completed: i + 1, total: assignments.length, eventType });
         }
 
         // Rate limiting - configurable delay between publishes
@@ -502,7 +493,7 @@ export class OrganizationAssignmentService {
 
       } catch (err: unknown) {
         const error = err as Error;
-        console.error(`❌ Failed to publish ${eventType} event for assignment ${(assignment as Record<string, unknown>).assignmentId || `index-${i}`}:`, error.message);
+        Logger.log('error', 'user', 'publish-bulk-assignments', `Failed to publish ${eventType} event for assignment`, { assignmentId: (assignment as Record<string, unknown>).assignmentId || `index-${i}`, error: error.message });
         results.push({
           success: false,
           assignmentId: (assignment as Record<string, unknown>).assignmentId || `index-${i}`,
@@ -518,7 +509,7 @@ export class OrganizationAssignmentService {
     const successCount = typedResults.filter(r => r.success).length;
     const failureCount = typedResults.filter(r => !r.success).length;
 
-    console.log(`✅ Bulk publish completed: ${successCount} success, ${failureCount} failed (${totalDuration}ms total)`);
+    Logger.log('info', 'user', 'publish-bulk-assignments', 'Bulk publish completed', { successCount, failureCount, durationMs: totalDuration });
 
     return {
       total: assignments.length,

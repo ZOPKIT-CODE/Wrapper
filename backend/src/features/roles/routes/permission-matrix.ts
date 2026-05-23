@@ -5,6 +5,7 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { authenticateToken, requirePermission } from '../../../middleware/auth/auth.js';
 import { PERMISSIONS } from '../../../constants/permissions.js';
 import { permissionMatrixService as PermissionMatrixService } from '../index.js';
+import Logger from '../../../utils/logger.js';
 import { 
   BUSINESS_SUITE_MATRIX, 
   PLAN_ACCESS_MATRIX, 
@@ -37,7 +38,7 @@ export default async function permissionMatrixRoutes(fastify: FastifyInstance, _
     preHandler: [authenticateToken, requirePermission(PERMISSIONS.PERMISSIONS_ASSIGNMENT_READ)]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
-      console.log('📡 GET /api/permission-matrix/matrix - Fetching complete permission matrix');
+      Logger.log('info', 'general', 'get-permission-matrix', 'Fetching complete permission matrix');
       
       return {
         success: true,
@@ -57,7 +58,7 @@ export default async function permissionMatrixRoutes(fastify: FastifyInstance, _
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error fetching permission matrix:', error);
+      Logger.log('error', 'general', 'get-permission-matrix', 'Error fetching permission matrix', { error: error.message });
       return reply.code(500).send({
         success: false,
         message: 'Failed to fetch permission matrix',
@@ -82,11 +83,7 @@ export default async function permissionMatrixRoutes(fastify: FastifyInstance, _
       // Otherwise, fall back to authenticated user (for backward compatibility)
       const userIdToCheck = targetUserId || internalUserId;
       
-      console.log(`📡 GET /api/permission-matrix/user-context - CRM Request:`);
-      console.log(`   Authenticated Admin: ${internalUserId}`);
-      console.log(`   Target User (X-User-Id): ${targetUserId || 'NOT PROVIDED'}`);
-      console.log(`   Final User ID to check: ${userIdToCheck}`);
-      console.log(`   Tenant: ${tenantId}`);
+      Logger.log('info', 'general', 'get-user-context', 'CRM Request for user-context', { authenticatedAdmin: internalUserId, targetUserId: targetUserId || 'NOT PROVIDED', finalUserId: userIdToCheck, tenantId });
       
       // 🔒 SECURITY: Validate that admin has permission to view other users' permissions
       if (targetUserId && targetUserId !== internalUserId) {
@@ -125,26 +122,17 @@ export default async function permissionMatrixRoutes(fastify: FastifyInstance, _
           
           targetUserInSameTenant = targetUser && targetUser.tenantId === tenantId;
           
-          console.log(`🔍 Target user tenant check:`, {
-            targetUserId,
-            targetUserTenantId: targetUser?.tenantId,
-            adminTenantId: tenantId,
-            sameTenant: targetUserInSameTenant
-          });
+          Logger.log('info', 'general', 'get-user-context', 'Target user tenant check', { targetUserId, targetUserTenantId: targetUser?.tenantId, adminTenantId: tenantId, sameTenant: targetUserInSameTenant });
         } catch (err: unknown) {
           const errObj = err as Error;
-          console.log(`⚠️ Could not verify target user tenant:`, errObj.message);
+          Logger.log('warning', 'general', 'get-user-context', 'Could not verify target user tenant', { error: errObj.message });
           // Continue with permission check
         }
         
         const canViewUserPermissions = hasSpecificPermissions || (isTenantAdmin && targetUserInSameTenant);
         
         if (!canViewUserPermissions) {
-          console.log(`❌ Admin ${internalUserId} lacks permission to view user ${targetUserId} permissions`);
-          console.log(`   Admin permissions:`, adminPermissions.permissions);
-          console.log(`   Admin roles:`, adminPermissions.roles);
-          console.log(`   Is tenant admin:`, isTenantAdmin);
-          console.log(`   Target user in same tenant:`, targetUserInSameTenant);
+          Logger.log('warning', 'general', 'get-user-context', 'Admin lacks permission to view user permissions', { adminId: internalUserId, targetUserId, isTenantAdmin, targetUserInSameTenant });
           
           return reply.code(403).send({
             success: false,
@@ -159,16 +147,7 @@ export default async function permissionMatrixRoutes(fastify: FastifyInstance, _
           });
         }
         
-        console.log(`✅ Admin ${internalUserId} authorized to view user ${targetUserId} permissions`);
-        console.log(`   Permission check details:`, {
-          hasSpecificPermissions,
-          isTenantAdmin,
-          targetUserInSameTenant,
-          adminPermissions: {
-            permissions: adminPermissions.permissions,
-            roles: (adminPermissions.roles as Array<{ roleName?: string; name?: string }>)?.map(r => r.roleName ?? r.name)
-          }
-        });
+        Logger.log('info', 'general', 'get-user-context', 'Admin authorized to view user permissions', { adminId: internalUserId, targetUserId, hasSpecificPermissions, isTenantAdmin, targetUserInSameTenant });
       }
       
       // Get permissions for the target user (not the admin)
@@ -182,10 +161,9 @@ export default async function permissionMatrixRoutes(fastify: FastifyInstance, _
         : Array.isArray(rawPermissions) ? rawPermissions : [];
       
       const contextRoles = context.roles as Array<{ roleName?: string; name?: string }> | undefined;
-      console.log(`🔧 Permission flattening result:`, {
+      Logger.log('info', 'general', 'get-user-context', 'Permission flattening result', {
         originalPermissionsCount: typeof rawPermissions === 'object' && !Array.isArray(rawPermissions) ? Object.keys(rawPermissions).length : (Array.isArray(rawPermissions) ? rawPermissions.length : 0),
         flattenedPermissionsCount: flattenedPermissions.length,
-        samplePermissions: flattenedPermissions.slice(0, 10), // Show first 10 for debugging
         userRoles: contextRoles?.map(r => r.roleName ?? r.name) || []
       });
       
@@ -208,7 +186,7 @@ export default async function permissionMatrixRoutes(fastify: FastifyInstance, _
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error fetching user permission context:', error);
+      Logger.log('error', 'general', 'get-user-context', 'Error fetching user permission context', { error: error.message });
       
       // Provide specific error messages for common UUID mapping issues
       let errorMessage = 'Failed to fetch user permission context';
@@ -259,11 +237,7 @@ export default async function permissionMatrixRoutes(fastify: FastifyInstance, _
       const internalUserId = userContext.internalUserId as string;
       const tenantId = userContext.tenantId as string;
       
-      console.log(`🔄 CRM Permission Sync Request:`);
-      console.log(`   Admin: ${internalUserId}`);
-      console.log(`   Target User: ${targetUserId}`);
-      console.log(`   Organization: ${orgCode}`);
-      console.log(`   Force Refresh: ${forceRefresh}`);
+      Logger.log('info', 'general', 'crm-sync', 'CRM Permission Sync Request', { admin: internalUserId, targetUserId, orgCode, forceRefresh });
       
       // 🔒 SECURITY: Validate admin permissions
       const adminPermissions = await PermissionMatrixService.getUserPermissionContext(internalUserId, tenantId);
@@ -293,10 +267,7 @@ export default async function permissionMatrixRoutes(fastify: FastifyInstance, _
       const canSyncUserPermissions = hasSpecificPermissions || isTenantAdmin;
       
       if (!canSyncUserPermissions) {
-        console.log(`❌ Admin ${internalUserId} lacks permission to sync user permissions`);
-        console.log(`   Admin permissions:`, adminPermissions.permissions);
-        console.log(`   Admin roles:`, adminPermissions.roles);
-        console.log(`   Is tenant admin:`, isTenantAdmin);
+        Logger.log('warning', 'general', 'crm-sync', 'Admin lacks permission to sync user permissions', { adminId: internalUserId, isTenantAdmin });
         
         return reply.code(403).send({
           success: false,
@@ -323,7 +294,7 @@ export default async function permissionMatrixRoutes(fastify: FastifyInstance, _
         .limit(1);
       
       if (!targetUser || targetUser.tenantId !== tenantId) {
-        console.log(`❌ Target user ${targetUserId} not found or not in tenant ${tenantId}`);
+        Logger.log('warning', 'general', 'crm-sync', 'Target user not found or not in tenant', { targetUserId, tenantId });
         return reply.code(404).send({
           success: false,
           error: 'User not found',
@@ -334,15 +305,7 @@ export default async function permissionMatrixRoutes(fastify: FastifyInstance, _
       // Get permissions for the target user
       const targetUserContext = await PermissionMatrixService.getUserPermissionContext(targetUserId, tenantId);
       
-      console.log(`✅ CRM Permission Sync successful for user ${targetUserId}`);
-      console.log(`   Permission check details:`, {
-        hasSpecificPermissions,
-        isTenantAdmin,
-        adminPermissions: {
-          permissions: adminPermissions.permissions,
-          roles: (adminPermissions.roles as Array<{ roleName?: string; name?: string }>)?.map(r => r.roleName ?? r.name)
-        }
-      });
+      Logger.log('info', 'general', 'crm-sync', 'CRM Permission Sync successful', { targetUserId, hasSpecificPermissions, isTenantAdmin });
       
       return {
         success: true,
@@ -366,7 +329,7 @@ export default async function permissionMatrixRoutes(fastify: FastifyInstance, _
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error in CRM permission sync:', error);
+      Logger.log('error', 'general', 'crm-sync', 'Error in CRM permission sync', { error: error.message });
       
       let errorMessage = 'Failed to sync user permissions';
       const errorDetails: Record<string, unknown> = {};
@@ -414,11 +377,7 @@ export default async function permissionMatrixRoutes(fastify: FastifyInstance, _
       // 🔍 CRITICAL FIX: Support both body userId and X-User-Id header
       const targetUserId = headers['x-user-id'] || (body.userId as string) || internalUserId;
       
-      console.log(`🔍 Checking permission: ${permission}`);
-      console.log(`   Authenticated Admin: ${internalUserId}`);
-      console.log(`   Target User (X-User-Id): ${headers['x-user-id'] || 'NOT PROVIDED'}`);
-      console.log(`   Target User (Body): ${body.userId || 'NOT PROVIDED'}`);
-      console.log(`   Final User ID to check: ${targetUserId}`);
+      Logger.log('info', 'general', 'check-permission', 'Checking permission', { permission, authenticatedAdmin: internalUserId, targetUserId });
       
       // 🔒 SECURITY: Validate admin permissions if checking other users
       if (targetUserId !== internalUserId) {
@@ -429,7 +388,7 @@ export default async function permissionMatrixRoutes(fastify: FastifyInstance, _
         );
         
         if (!canCheckUserPermissions) {
-          console.log(`❌ Admin ${internalUserId} lacks permission to check user ${targetUserId} permissions`);
+          Logger.log('warning', 'general', 'check-permission', 'Admin lacks permission to check user permissions', { adminId: internalUserId, targetUserId });
           return reply.code(403).send({
             success: false,
             error: 'Insufficient permissions',
@@ -453,7 +412,7 @@ export default async function permissionMatrixRoutes(fastify: FastifyInstance, _
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error checking permission:', error);
+      Logger.log('error', 'general', 'check-permission', 'Error checking permission', { error: error.message });
       return reply.code(500).send({
         success: false,
         message: 'Failed to check permission',
@@ -479,7 +438,7 @@ export default async function permissionMatrixRoutes(fastify: FastifyInstance, _
       const targetUserId = userId || internalUserId;
       const permsList = Array.isArray(permissions) ? permissions : [];
       
-      console.log(`🔍 Checking ${checkType} permissions: ${permsList.join(', ')} for user: ${targetUserId}`);
+      Logger.log('info', 'general', 'check-permissions', 'Checking permissions', { checkType, permissions: permsList, targetUserId });
       
       const hasPermission = checkType === 'all'
         ? await PermissionMatrixService.hasAllPermissions(targetUserId, tenantId, permsList)
@@ -496,7 +455,7 @@ export default async function permissionMatrixRoutes(fastify: FastifyInstance, _
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error checking multiple permissions:', error);
+      Logger.log('error', 'general', 'check-permissions', 'Error checking multiple permissions', { error: error.message });
       return reply.code(500).send({
         success: false,
         message: 'Failed to check permissions',
@@ -514,7 +473,7 @@ export default async function permissionMatrixRoutes(fastify: FastifyInstance, _
       const internalUserId = userContext.internalUserId as string;
       const tenantId = userContext.tenantId as string;
       
-      console.log(`📱 Getting accessible applications for user: ${internalUserId}`);
+      Logger.log('info', 'general', 'user-applications', 'Getting accessible applications for user', { userId: internalUserId });
       
       const applications = await PermissionMatrixService.getUserAccessibleApplications(internalUserId, tenantId);
       
@@ -527,7 +486,7 @@ export default async function permissionMatrixRoutes(fastify: FastifyInstance, _
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error fetching user applications:', error);
+      Logger.log('error', 'general', 'user-applications', 'Error fetching user applications', { error: error.message });
       return reply.code(500).send({
         success: false,
         message: 'Failed to fetch user applications',
@@ -541,7 +500,7 @@ export default async function permissionMatrixRoutes(fastify: FastifyInstance, _
     preHandler: [authenticateToken, requirePermission(PERMISSIONS.PERMISSIONS_ASSIGNMENT_READ)]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
-      console.log('📡 GET /api/permission-matrix/role-templates');
+      Logger.log('info', 'general', 'role-templates', 'Fetching role templates');
       
       const templates = PermissionMatrixService.getAvailableRoleTemplates();
       
@@ -554,7 +513,7 @@ export default async function permissionMatrixRoutes(fastify: FastifyInstance, _
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error fetching role templates:', error);
+      Logger.log('error', 'general', 'role-templates', 'Error fetching role templates', { error: error.message });
       return reply.code(500).send({
         success: false,
         message: 'Failed to fetch role templates',
@@ -576,7 +535,7 @@ export default async function permissionMatrixRoutes(fastify: FastifyInstance, _
       const userContext = request.userContext as unknown as Record<string, unknown>;
       const tenantId = userContext.tenantId as string;
       
-      console.log(`🎯 Assigning template ${templateId} to user ${userId}`);
+      Logger.log('info', 'general', 'assign-template', 'Assigning role template to user', { templateId, userId });
       
       const result = await PermissionMatrixService.assignRoleTemplate(userId, tenantId, templateId, customizations);
       
@@ -587,7 +546,7 @@ export default async function permissionMatrixRoutes(fastify: FastifyInstance, _
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error assigning role template:', error);
+      Logger.log('error', 'general', 'assign-template', 'Error assigning role template', { error: error.message });
       return reply.code(500).send({
         success: false,
         message: 'Failed to assign role template',
@@ -604,7 +563,7 @@ export default async function permissionMatrixRoutes(fastify: FastifyInstance, _
       const userContext = request.userContext as unknown as Record<string, unknown>;
       const tenantId = userContext.tenantId as string;
       
-      console.log(`📊 Getting permission analytics for tenant: ${tenantId}`);
+      Logger.log('info', 'general', 'permission-analytics', 'Getting permission analytics', { tenantId });
       
       const analytics = await PermissionMatrixService.getPermissionAnalytics(tenantId);
       
@@ -614,7 +573,7 @@ export default async function permissionMatrixRoutes(fastify: FastifyInstance, _
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error fetching permission analytics:', error);
+      Logger.log('error', 'general', 'permission-analytics', 'Error fetching permission analytics', { error: error.message });
       return reply.code(500).send({
         success: false,
         message: 'Failed to fetch permission analytics',
@@ -630,7 +589,7 @@ export default async function permissionMatrixRoutes(fastify: FastifyInstance, _
     preHandler: [authenticateToken, requirePermission(PERMISSIONS.ADMIN_SYSTEM_MANAGE)]
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
-      console.log('🔍 Validating permission matrix...');
+      Logger.log('info', 'general', 'validate-matrix', 'Validating permission matrix');
       
       const errors = PermissionMatrixUtils.validateMatrix();
       
@@ -652,7 +611,7 @@ export default async function permissionMatrixRoutes(fastify: FastifyInstance, _
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error validating permission matrix:', error);
+      Logger.log('error', 'general', 'validate-matrix', 'Error validating permission matrix', { error: error.message });
       return reply.code(500).send({
         success: false,
         message: 'Failed to validate permission matrix',
@@ -669,7 +628,7 @@ export default async function permissionMatrixRoutes(fastify: FastifyInstance, _
       const params = request.params as Record<string, string>;
       const planId = params.planId;
       
-      console.log(`📋 Getting plan access for: ${planId}`);
+      Logger.log('info', 'general', 'plan-access', 'Getting plan access', { planId });
       
       const planAccess = (PLAN_ACCESS_MATRIX as Record<string, unknown>)[planId];
       if (!planAccess) {
@@ -692,7 +651,7 @@ export default async function permissionMatrixRoutes(fastify: FastifyInstance, _
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error fetching plan access:', error);
+      Logger.log('error', 'general', 'plan-access', 'Error fetching plan access', { error: error.message });
       return reply.code(500).send({
         success: false,
         message: 'Failed to fetch plan access',
@@ -712,7 +671,7 @@ export default async function permissionMatrixRoutes(fastify: FastifyInstance, _
       const userContext = request.userContext as unknown as Record<string, unknown>;
       const tenantId = userContext.tenantId as string;
       
-      console.log(`🧹 Revoking all permissions for user: ${userId}`);
+      Logger.log('info', 'general', 'revoke-user-permissions', 'Revoking all permissions for user', { userId });
       
       await PermissionMatrixService.revokeAllUserPermissions(userId, tenantId);
       
@@ -722,7 +681,7 @@ export default async function permissionMatrixRoutes(fastify: FastifyInstance, _
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error revoking user permissions:', error);
+      Logger.log('error', 'general', 'revoke-user-permissions', 'Error revoking user permissions', { error: error.message });
       return reply.code(500).send({
         success: false,
         message: 'Failed to revoke user permissions',

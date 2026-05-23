@@ -15,6 +15,7 @@ import type { FastifyRequest, FastifyReply } from 'fastify';
 import { db } from '../../db/index.js';
 import { tenantUsers } from '../../db/schema/index.js';
 import { eq, and } from 'drizzle-orm';
+import Logger from '../../utils/logger.js';
 
 type Preferences = Record<string, unknown>;
 
@@ -47,7 +48,7 @@ async function isInvitedUser(userId: string, tenantId: string): Promise<boolean>
     return isInvited && !user.isTenantAdmin;
   } catch (err: unknown) {
     const error = err as Error;
-    console.error('Error checking if user is invited:', error);
+    Logger.log('error', 'restrictions', 'is-invited-user', 'Error checking if user is invited', { error: error.message, stack: error.stack });
     return false;
   }
 }
@@ -80,7 +81,7 @@ export async function restrictInvitedUsers(request: FastifyRequest, reply: Fasti
     // Expected for onboarding and auth-status; avoid noisy logs
     const url = request?.url || '';
     if (!/\/api\/onboarding\//.test(url) && !/\/api\/admin\/auth-status/.test(url)) {
-      console.log('⚠️ [InvitedUserRestriction] Missing user context:', { userId, tenantId });
+      Logger.log('info', 'restrictions', 'restrict-invited-users', '⚠️ [InvitedUserRestriction] Missing user context', { userId, tenantId });
     }
     return; // Let other middleware handle missing context
   }
@@ -88,7 +89,7 @@ export async function restrictInvitedUsers(request: FastifyRequest, reply: Fasti
   const userIsInvited = await isInvitedUser(userId, tenantId);
 
   if (userIsInvited) {
-    console.log('🚫 [InvitedUserRestriction] Blocked write operation from invited user:', {
+    Logger.log('info', 'restrictions', 'restrict-invited-users', '🚫 [InvitedUserRestriction] Blocked write operation from invited user', {
       method: request.method,
       url: request.url,
       userId,
@@ -105,7 +106,7 @@ export async function restrictInvitedUsers(request: FastifyRequest, reply: Fasti
   }
 
   // User is not invited or is admin - allow operation
-  console.log('✅ [InvitedUserRestriction] Allowing operation:', {
+  Logger.log('info', 'restrictions', 'restrict-invited-users', '✅ [InvitedUserRestriction] Allowing operation', {
     method: request.method,
     url: request.url,
     userId,
@@ -126,7 +127,7 @@ export function requireTenantAdminForWrites(): (request: FastifyRequest, reply: 
 
     // Check if user is tenant admin
     if (!request.userContext?.isTenantAdmin) {
-      console.log('🚫 [RequireTenantAdmin] Blocked write operation - user is not tenant admin:', {
+      Logger.log('info', 'restrictions', 'require-tenant-admin-for-writes', '🚫 [RequireTenantAdmin] Blocked write operation - user is not tenant admin', {
         method: request.method,
         url: request.url,
         userId: request.userContext?.internalUserId || request.userContext?.userId,
@@ -142,7 +143,7 @@ export function requireTenantAdminForWrites(): (request: FastifyRequest, reply: 
       });
     }
 
-    console.log('✅ [RequireTenantAdmin] Tenant admin verified for write operation:', {
+    Logger.log('info', 'restrictions', 'require-tenant-admin-for-writes', '✅ [RequireTenantAdmin] Tenant admin verified for write operation', {
       method: request.method,
       url: request.url,
       userId: request.userContext?.internalUserId || request.userContext?.userId

@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { formatDate } from '@/lib/utils'
 import { subscriptionAPI } from '@/lib/api'
 import { useQueryClient } from '@tanstack/react-query'
-import toast from 'react-hot-toast'
+import { toast } from 'sonner'
 
 export interface CancelSubscriptionDialogProps {
   open: boolean

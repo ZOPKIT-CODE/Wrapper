@@ -2,6 +2,7 @@ import { db } from '../../../db/index.js';
 import { notifications } from '../../../db/schema/index.js';
 import { eq, sql, gte, lte, and } from 'drizzle-orm';
 import { aiServiceFactory } from './ai/ai-service-factory.js';
+import Logger from '../../../utils/logger.js';
 
 export interface NotificationAnalyticsFilters {
   startDate?: string | Date;
@@ -86,7 +87,7 @@ class NotificationAnalyticsService {
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Error getting notification stats:', error);
+      Logger.log('error', 'general', 'getStats', 'Error getting notification stats', { error: error.message });
       throw error;
     }
   }
@@ -134,7 +135,7 @@ class NotificationAnalyticsService {
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Error getting delivery rates:', error);
+      Logger.log('error', 'general', 'getDeliveryRates', 'Error getting delivery rates', { error: error.message });
       throw error;
     }
   }
@@ -178,7 +179,7 @@ class NotificationAnalyticsService {
       }));
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Error getting read rates over time:', error);
+      Logger.log('error', 'general', 'getReadRatesOverTime', 'Error getting read rates over time', { error: error.message });
       throw error;
     }
   }
@@ -224,7 +225,7 @@ class NotificationAnalyticsService {
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Error getting click-through rates:', error);
+      Logger.log('error', 'general', 'getClickThroughRates', 'Error getting click-through rates', { error: error.message });
       throw error;
     }
   }
@@ -266,7 +267,7 @@ class NotificationAnalyticsService {
       }));
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Error getting performance by type:', error);
+      Logger.log('error', 'general', 'getPerformanceByType', 'Error getting performance by type', { error: error.message });
       throw error;
     }
   }
@@ -280,7 +281,7 @@ class NotificationAnalyticsService {
       return costStats;
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Error getting AI cost stats:', error);
+      Logger.log('error', 'general', 'getAICostStats', 'Error getting AI cost stats', { error: error.message });
       return {
         openai: { requests: 0, tokens: 0, cost: 0 },
         anthropic: { requests: 0, tokens: 0, cost: 0 },
@@ -331,7 +332,7 @@ class NotificationAnalyticsService {
       }));
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Error getting application usage stats:', error);
+      Logger.log('error', 'general', 'getApplicationUsageStats', 'Error getting application usage stats', { error: error.message });
       throw error;
     }
   }
@@ -371,7 +372,7 @@ class NotificationAnalyticsService {
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Error getting dashboard data:', error);
+      Logger.log('error', 'general', 'getDashboardData', 'Error getting dashboard data', { error: error.message });
       throw error;
     }
   }

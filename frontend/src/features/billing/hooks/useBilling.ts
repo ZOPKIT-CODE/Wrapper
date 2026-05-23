@@ -8,7 +8,7 @@ import { useNavigate, useSearch } from '@tanstack/react-router'
 import { useDashboardTabParam } from '@/hooks/useDashboardTabParam'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useKindeAuth } from '@kinde-oss/kinde-auth-react'
-import toast from 'react-hot-toast'
+import { toast } from 'sonner'
 
 import {
   subscriptionAPI,

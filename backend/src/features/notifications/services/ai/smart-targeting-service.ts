@@ -3,6 +3,7 @@ import { TenantFilterService } from '../../../../services/tenant-filter-service.
 import { db } from '../../../../db/index.js';
 import { tenants, notifications } from '../../../../db/schema/index.js';
 import { sql } from 'drizzle-orm';
+import Logger from '../../../../utils/logger.js';
 
 interface NotificationContent { title?: string; message?: string; type?: string; [k: string]: unknown }
 interface SuggestOptions { maxSuggestions?: number; includeReasoning?: boolean; useHistoricalData?: boolean }
@@ -71,7 +72,7 @@ class SmartTargetingService {
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Error suggesting targets:', error);
+      Logger.log('error', 'ai', 'suggest-targets', 'Error suggesting targets', { message: error.message, stack: error.stack });
       throw new Error(`Smart targeting failed: ${error.message}`);
     }
   }
@@ -109,7 +110,7 @@ Return JSON: { "dayOfWeek": "Monday", "hour": 10, "timezone": "UTC", "reasoning"
         tenantId
       };
     } catch (err: unknown) {
-      console.error('Error recommending send time:', err);
+      Logger.log('error', 'ai', 'recommend-send-time', 'Error recommending send time', { tenantId, error: err });
       return {
         tenantId,
         dayOfWeek: 'Monday',
@@ -147,7 +148,7 @@ Return JSON format.`;
 
       return this._parseAnalysis(result.text);
     } catch (err: unknown) {
-      console.error('Error analyzing content:', err);
+      Logger.log('error', 'ai', 'analyze-content', 'Error analyzing content', { error: err });
       return {};
     }
   }
@@ -186,7 +187,7 @@ Return JSON format.`;
 
       return tenantReadRates;
     } catch (err: unknown) {
-      console.error('Error getting historical patterns:', err);
+      Logger.log('error', 'ai', 'get-historical-patterns', 'Error getting historical patterns', { error: err });
       return {};
     }
   }
@@ -302,7 +303,7 @@ Return JSON format.`;
 
       return (stats[0] as { total: number; read: number; avgHoursToRead: number | null }) || { total: 0, read: 0, avgHoursToRead: null };
     } catch (err: unknown) {
-      console.error('Error getting tenant engagement:', err);
+      Logger.log('error', 'ai', 'get-tenant-engagement', 'Error getting tenant engagement', { error: err });
       return { total: 0, read: 0, avgHoursToRead: null };
     }
   }
@@ -319,7 +320,7 @@ Return JSON format.`;
       }
       return {};
     } catch (err: unknown) {
-      console.error('Error parsing analysis:', err);
+      Logger.log('error', 'ai', 'parse-analysis', 'Error parsing analysis', { error: err });
       return {};
     }
   }
@@ -340,7 +341,7 @@ Return JSON format.`;
         reasoning: 'Default recommendation'
       };
     } catch (err: unknown) {
-      console.error('Error parsing send time recommendation:', err);
+      Logger.log('error', 'ai', 'parse-send-time-recommendation', 'Error parsing send time recommendation', { error: err });
       return {
         dayOfWeek: 'Monday',
         hour: 10,

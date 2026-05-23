@@ -2,6 +2,8 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { authenticateToken } from '../../../middleware/auth/auth.js';
 import { UserManagementService } from '../services/user-management-service.js';
+import { TenantService } from '../../../services/tenant-service.js';
+import Logger from '../../../utils/logger.js';
 
 // ---------------------------------------------------------------------------
 // Zod schemas
@@ -110,7 +112,7 @@ export default async function userRoutes(fastify: FastifyInstance): Promise<void
 
         return reply.send({ success: true, data });
       } catch (err: unknown) {
-        console.error(`[${reqId}] Error fetching users:`, err);
+        Logger.log('error', 'user', reqId, 'Error fetching users', { error: (err as Error).message });
         return reply.code(500).send({ success: false, error: 'Failed to fetch users' });
       }
     },
@@ -133,7 +135,7 @@ export default async function userRoutes(fastify: FastifyInstance): Promise<void
         const stats = await UserManagementService.getUserStats(tenantId);
         return reply.send({ success: true, data: stats });
       } catch (err: unknown) {
-        console.error(`[${reqId}] Error fetching user stats:`, err);
+        Logger.log('error', 'user', reqId, 'Error fetching user stats', { error: (err as Error).message });
         return reply.code(500).send({ success: false, error: 'Failed to fetch user stats' });
       }
     },
@@ -163,7 +165,7 @@ export default async function userRoutes(fastify: FastifyInstance): Promise<void
 
         return reply.send({ success: true, data });
       } catch (err: unknown) {
-        console.error(`[${reqId}] Error fetching invitations:`, err);
+        Logger.log('error', 'user', reqId, 'Error fetching invitations', { error: (err as Error).message });
         return reply.code(500).send({ success: false, error: 'Failed to fetch invitations' });
       }
     },
@@ -186,7 +188,7 @@ export default async function userRoutes(fastify: FastifyInstance): Promise<void
         const roles = await UserManagementService.getAvailableRoles(tenantId);
         return reply.send({ success: true, data: roles });
       } catch (err: unknown) {
-        console.error(`[${reqId}] Error fetching available roles:`, err);
+        Logger.log('error', 'user', reqId, 'Error fetching available roles', { error: (err as Error).message });
         return reply.code(500).send({ success: false, error: 'Failed to fetch available roles' });
       }
     },
@@ -215,7 +217,7 @@ export default async function userRoutes(fastify: FastifyInstance): Promise<void
 
         return reply.send({ success: true, data });
       } catch (err: unknown) {
-        console.error(`[${reqId}] Error fetching user detail:`, err);
+        Logger.log('error', 'user', reqId, 'Error fetching user detail', { error: (err as Error).message });
         return reply.code(500).send({ success: false, error: 'Failed to fetch user detail' });
       }
     },
@@ -240,7 +242,7 @@ export default async function userRoutes(fastify: FastifyInstance): Promise<void
         return reply.send({ success: true, data: roles });
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : 'Failed to fetch user roles';
-        console.error(`[${reqId}] Error:`, err);
+        Logger.log('error', 'user', reqId, 'Error fetching user roles', { error: message });
         return reply.code(err instanceof Error && message.includes('not found') ? 404 : 500).send({
           success: false,
           error: message,
@@ -293,7 +295,7 @@ export default async function userRoutes(fastify: FastifyInstance): Promise<void
         return reply.code(201).send({ success: true, data: invitation });
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : 'Failed to invite user';
-        console.error(`[${reqId}] Error:`, err);
+        Logger.log('error', 'user', reqId, 'Error inviting user', { error: message });
 
         const statusCode =
           message.includes('already exists') ||
@@ -352,7 +354,7 @@ export default async function userRoutes(fastify: FastifyInstance): Promise<void
         return reply.code(201).send({ success: true, data: assignment });
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : 'Failed to assign role';
-        console.error(`[${reqId}] Error:`, err);
+        Logger.log('error', 'user', reqId, 'Error assigning role', { error: message });
 
         const statusCode = message.includes('not found')
           ? 404
@@ -403,7 +405,7 @@ export default async function userRoutes(fastify: FastifyInstance): Promise<void
         return reply.send({ success: true, data: updated });
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : 'Failed to update profile';
-        console.error(`[${reqId}] Error:`, err);
+        Logger.log('error', 'user', reqId, 'Error updating profile', { error: message });
         return reply.code(message.includes('not found') ? 404 : 500).send({
           success: false,
           error: message,
@@ -448,7 +450,7 @@ export default async function userRoutes(fastify: FastifyInstance): Promise<void
         return reply.send({ success: true, data: updated });
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : 'Failed to update user status';
-        console.error(`[${reqId}] Error:`, err);
+        Logger.log('error', 'user', reqId, 'Error updating user status', { error: message });
         return reply.code(message.includes('not found') ? 404 : 500).send({
           success: false,
           error: message,
@@ -466,9 +468,10 @@ export default async function userRoutes(fastify: FastifyInstance): Promise<void
     async (request: FastifyRequest, reply: FastifyReply) => {
       const reqId = requestId('remove-user');
       try {
-        const { tenantId, isTenantAdmin } = request.userContext as {
+        const { tenantId, isTenantAdmin, internalUserId } = request.userContext as {
           tenantId: string;
           isTenantAdmin: boolean;
+          internalUserId: string | null;
         };
 
         if (!tenantId) {
@@ -480,11 +483,11 @@ export default async function userRoutes(fastify: FastifyInstance): Promise<void
         }
 
         const { userId } = request.params as { userId: string };
-        const removed = await UserManagementService.removeUser(tenantId, userId);
+        const removed = await TenantService.removeUser(tenantId, userId, internalUserId ?? '');
         return reply.send({ success: true, data: removed });
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : 'Failed to remove user';
-        console.error(`[${reqId}] Error:`, err);
+        Logger.log('error', 'user', reqId, 'Error removing user', { error: message });
 
         const statusCode = message.includes('not found')
           ? 404
@@ -523,7 +526,7 @@ export default async function userRoutes(fastify: FastifyInstance): Promise<void
         return reply.send({ success: true, data: removed });
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : 'Failed to remove role assignment';
-        console.error(`[${reqId}] Error:`, err);
+        Logger.log('error', 'user', reqId, 'Error removing role assignment', { error: message });
         return reply.code(message.includes('not found') ? 404 : 500).send({
           success: false,
           error: message,
@@ -562,7 +565,7 @@ export default async function userRoutes(fastify: FastifyInstance): Promise<void
         return reply.send({ success: true, data });
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : 'Failed to remove organization membership';
-        console.error(`[${reqId}] Error:`, err);
+        Logger.log('error', 'user', reqId, 'Error removing organization membership', { error: message });
         const statusCode = message.includes('not found')
           ? 404
           : message.includes('Cannot remove primary')
@@ -600,7 +603,7 @@ export default async function userRoutes(fastify: FastifyInstance): Promise<void
         return reply.send({ success: true, data: updated });
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : 'Failed to resend invitation';
-        console.error(`[${reqId}] Error:`, err);
+        Logger.log('error', 'user', reqId, 'Error resending invitation', { error: message });
         return reply.code(message.includes('not found') ? 404 : 500).send({
           success: false,
           error: message,
@@ -641,7 +644,7 @@ export default async function userRoutes(fastify: FastifyInstance): Promise<void
         return reply.send({ success: true, data: cancelled });
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : 'Failed to cancel invitation';
-        console.error(`[${reqId}] Error:`, err);
+        Logger.log('error', 'user', reqId, 'Error cancelling invitation', { error: message });
         return reply.code(message.includes('not found') ? 404 : 500).send({
           success: false,
           error: message,

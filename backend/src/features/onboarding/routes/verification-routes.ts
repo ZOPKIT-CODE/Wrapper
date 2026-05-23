@@ -5,6 +5,7 @@
  */
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import Logger from '../../../utils/logger.js';
 import VerificationService from '../services/verification-service.js';
 
 export default async function verificationRoutes(
@@ -38,7 +39,7 @@ export default async function verificationRoutes(
       const { pan, name } = body;
       const companyName = (name || body.companyName || body.legalCompanyName) as string | undefined;
 
-      console.log(`🔍 PAN verification request: ${pan}${companyName ? ` for ${companyName}` : ''}`);
+      Logger.log('info', 'general', 'verify-pan', 'PAN verification request', { pan, companyName });
 
       const result = await VerificationService.verifyPAN(pan as string, companyName ?? '');
 
@@ -67,7 +68,7 @@ export default async function verificationRoutes(
       }
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ PAN verification error:', error);
+      Logger.log('error', 'general', 'verify-pan', 'PAN verification error', { error: error.message });
       return reply.code(500).send({
         success: false,
         verified: false,
@@ -90,7 +91,7 @@ export default async function verificationRoutes(
       const { gstin, businessName } = body;
       const companyName = (businessName || body.companyName || body.legalCompanyName) as string | undefined;
 
-      console.log(`🔍 GSTIN verification request: ${gstin}${companyName ? ` for ${companyName}` : ''}`);
+      Logger.log('info', 'general', 'verify-gstin', 'GSTIN verification request', { gstin, companyName });
 
       const result = await VerificationService.verifyGSTIN(gstin as string, companyName ?? '');
 
@@ -134,7 +135,7 @@ export default async function verificationRoutes(
       }
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ GSTIN verification error:', error);
+      Logger.log('error', 'general', 'verify-gstin', 'GSTIN verification error', { error: error.message });
       return reply.code(500).send({
         success: false,
         verified: false,

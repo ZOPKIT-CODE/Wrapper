@@ -1,4 +1,5 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import Logger from '../../utils/logger.js';
 
 interface CacheMetricsData {
   hits: number;
@@ -51,8 +52,8 @@ class CacheMetrics {
       this.metrics.appBreakdown[appCode] = { hits: 0, misses: 0, errors: 0 };
     }
     this.metrics.appBreakdown[appCode].hits++;
-    
-    console.log(`🎯 CACHE HIT: ${key} (${responseTime}ms) [${appCode}]`);
+
+    Logger.log('info', 'cache', 'record-hit', `🎯 CACHE HIT: ${key} (${responseTime}ms) [${appCode}]`);
   }
   
   /**
@@ -67,8 +68,8 @@ class CacheMetrics {
       this.metrics.appBreakdown[appCode] = { hits: 0, misses: 0, errors: 0 };
     }
     this.metrics.appBreakdown[appCode].misses++;
-    
-    console.log(`❌ CACHE MISS: ${key} (${responseTime}ms) [${appCode}]`);
+
+    Logger.log('info', 'cache', 'record-miss', `❌ CACHE MISS: ${key} (${responseTime}ms) [${appCode}]`);
   }
   
   /**
@@ -82,8 +83,8 @@ class CacheMetrics {
       this.metrics.appBreakdown[appCode] = { hits: 0, misses: 0, errors: 0 };
     }
     this.metrics.appBreakdown[appCode].errors++;
-    
-    console.error(`💥 CACHE ERROR: ${key} [${appCode}]`, error);
+
+    Logger.log('error', 'cache', 'record-error', `💥 CACHE ERROR: ${key} [${appCode}]`, { error });
   }
   
   /**
@@ -91,7 +92,7 @@ class CacheMetrics {
    */
   recordWrite(key: string, appCode = 'unknown'): void {
     this.metrics.cacheOperations.write++;
-    console.log(`✍️ CACHE WRITE: ${key} [${appCode}]`);
+    Logger.log('info', 'cache', 'record-write', `✍️ CACHE WRITE: ${key} [${appCode}]`);
   }
   
   /**
@@ -99,7 +100,7 @@ class CacheMetrics {
    */
   recordInvalidation(pattern: string, appCode = 'unknown'): void {
     this.metrics.cacheOperations.invalidate++;
-    console.log(`🗑️ CACHE INVALIDATE: ${pattern} [${appCode}]`);
+    Logger.log('info', 'cache', 'record-invalidation', `🗑️ CACHE INVALIDATE: ${pattern} [${appCode}]`);
   }
   
   /**
@@ -168,7 +169,7 @@ class CacheMetrics {
       userBreakdown: {}
     };
     this.resetTime = new Date();
-    console.log('📊 Cache metrics reset');
+    Logger.log('info', 'cache', 'reset', '📊 Cache metrics reset');
   }
   
   /**
@@ -250,7 +251,7 @@ export function cacheMetricsMiddleware(appCode = 'wrapper') {
           try {
             return await fallbackFn();
           } catch (fallbackError) {
-            console.error('Fallback also failed:', fallbackError);
+            Logger.log('error', 'cache', 'measure-cache-operation', 'Fallback also failed', { error: fallbackError });
             throw error; // Throw original cache error
           }
         }

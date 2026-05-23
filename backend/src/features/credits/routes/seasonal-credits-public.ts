@@ -1,4 +1,5 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import Logger from '../../../utils/logger.js';
 
 export default async function seasonalCreditsPublicRoutes(fastify: FastifyInstance, _options?: Record<string, unknown>): Promise<void> {
   /**
@@ -38,7 +39,7 @@ export default async function seasonalCreditsPublicRoutes(fastify: FastifyInstan
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Error getting recent credit allocations:', error);
+      Logger.log('error', 'billing', 'get-recent-credit-allocations', 'Error getting recent credit allocations', { error: error.message });
       reply.code(500).send({
         success: false,
         error: 'Failed to retrieve recent credit allocations'

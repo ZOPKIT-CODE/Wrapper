@@ -4,6 +4,8 @@
  * vs when data is stored as JSON strings
  */
 
+import Logger from './logger.js';
+
 export function safeJsonParse<T = Record<string, unknown>>(data: unknown, fallback: T = {} as T, fieldName = 'data'): T {
   try {
     // If data is null or undefined, return fallback
@@ -13,28 +15,28 @@ export function safeJsonParse<T = Record<string, unknown>>(data: unknown, fallba
 
     // If data is already an object (and not a string), return it directly
     if (typeof data === 'object' && data !== null) {
-      console.log(`✅ [JsonParser] ${fieldName} is already an object, using directly`);
+      Logger.log('info', 'utils', 'json-parse', `${fieldName} is already an object, using directly`);
       return data as T;
     }
 
     // If data is a string, try to parse it
     if (typeof data === 'string') {
       if (data.trim() === '') {
-        console.log(`⚠️ [JsonParser] ${fieldName} is empty string, using fallback`);
+        Logger.log('warning', 'utils', 'json-parse', `${fieldName} is empty string, using fallback`);
         return fallback;
       }
-      
-      console.log(`🔍 [JsonParser] Parsing ${fieldName} from string`);
+
+      Logger.log('debug', 'utils', 'json-parse', `Parsing ${fieldName} from string`);
       return JSON.parse(data) as T;
     }
 
     // For any other data type, log warning and return fallback
-    console.log(`⚠️ [JsonParser] Unexpected data type for ${fieldName}:`, typeof data);
+    Logger.log('warning', 'utils', 'json-parse', `Unexpected data type for ${fieldName}`, { dataType: typeof data });
     return fallback;
 
   } catch (err: unknown) {
     const error = err as Error;
-    console.error(`❌ [JsonParser] Failed to parse ${fieldName}:`, {
+    Logger.log('error', 'utils', 'json-parse', `Failed to parse ${fieldName}`, {
       error: error.message,
       dataType: typeof data,
       dataPreview: typeof data === 'string' ? data.substring(0, 100) : String(data).substring(0, 100)
@@ -85,10 +87,10 @@ export function safeJsonStringify(data: unknown, fieldName = 'data'): string | n
 
   } catch (err: unknown) {
     const error = err as Error;
-    console.error(`❌ [JsonParser] Failed to stringify ${fieldName}:`, {
+    Logger.log('error', 'utils', 'json-stringify', `Failed to stringify ${fieldName}`, {
       error: error.message,
       dataType: typeof data
     });
     return null;
   }
-} 
+}

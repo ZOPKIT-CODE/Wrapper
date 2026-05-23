@@ -1,6 +1,102 @@
-import { db } from '../../../db/index.js';
-import { credits, creditTransactions, subscriptions } from '../../../db/schema/index.js';
+import { db, getReadDb } from '../../../db/index.js';
+import { credits, creditTransactions, subscriptions, creditCategorySnapshots } from '../../../db/schema/index.js';
 import { eq, and, desc, gte, lte, sql, isNotNull } from 'drizzle-orm';
+import Logger from '../../../utils/logger.js';
+
+const SNAPSHOT_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+interface CategorySnapshot {
+  freeCredits: number;
+  paidCredits: number;
+  seasonalCredits: number;
+  freeCreditsExpiry: string | null;
+  paidCreditsExpiry: string | null;
+  seasonalCreditsExpiry: string | null;
+  subscriptionExpiry: string | null;
+  subscriptionPlan: string;
+  applicationExpiryDates: Record<string, string>;
+}
+
+async function readCategorySnapshot(tenantId: string, entityId: string): Promise<CategorySnapshot | null> {
+  try {
+    const [snap] = await getReadDb()
+      .select()
+      .from(creditCategorySnapshots)
+      .where(and(
+        eq(creditCategorySnapshots.tenantId, tenantId),
+        eq(creditCategorySnapshots.entityId, entityId),
+      ))
+      .limit(1);
+
+    if (!snap) return null;
+    if (Date.now() - new Date(snap.computedAt!).getTime() > SNAPSHOT_TTL_MS) return null;
+
+    return {
+      freeCredits:           Number(snap.freeCredits    ?? 0),
+      paidCredits:           Number(snap.paidCredits    ?? 0),
+      seasonalCredits:       Number(snap.seasonalCredits ?? 0),
+      freeCreditsExpiry:     snap.freeCreditsExpiry    ? new Date(snap.freeCreditsExpiry).toISOString()    : null,
+      paidCreditsExpiry:     snap.paidCreditsExpiry    ? new Date(snap.paidCreditsExpiry).toISOString()    : null,
+      seasonalCreditsExpiry: snap.seasonalCreditsExpiry ? new Date(snap.seasonalCreditsExpiry).toISOString() : null,
+      subscriptionExpiry:    snap.subscriptionExpiry   ? new Date(snap.subscriptionExpiry).toISOString()   : null,
+      subscriptionPlan:      (snap.subscriptionPlan as string) ?? 'credit_based',
+      applicationExpiryDates: (snap.applicationExpiryDates as Record<string, string>) ?? {},
+    };
+  } catch {
+    return null; // cache miss is non-fatal
+  }
+}
+
+async function writeCategorySnapshot(tenantId: string, entityId: string, data: CategorySnapshot): Promise<void> {
+  try {
+    await db
+      .insert(creditCategorySnapshots)
+      .values({
+        tenantId,
+        entityId,
+        freeCredits:           data.freeCredits.toString(),
+        paidCredits:           data.paidCredits.toString(),
+        seasonalCredits:       data.seasonalCredits.toString(),
+        freeCreditsExpiry:     data.freeCreditsExpiry    ? new Date(data.freeCreditsExpiry)    : null,
+        paidCreditsExpiry:     data.paidCreditsExpiry    ? new Date(data.paidCreditsExpiry)    : null,
+        seasonalCreditsExpiry: data.seasonalCreditsExpiry ? new Date(data.seasonalCreditsExpiry) : null,
+        subscriptionExpiry:    data.subscriptionExpiry   ? new Date(data.subscriptionExpiry)   : null,
+        applicationExpiryDates: data.applicationExpiryDates,
+        subscriptionPlan: data.subscriptionPlan,
+        computedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: [creditCategorySnapshots.tenantId, creditCategorySnapshots.entityId], // uq_credit_snapshot_tenant_entity
+        set: {
+          freeCredits:           data.freeCredits.toString(),
+          paidCredits:           data.paidCredits.toString(),
+          seasonalCredits:       data.seasonalCredits.toString(),
+          freeCreditsExpiry:     data.freeCreditsExpiry    ? new Date(data.freeCreditsExpiry)    : null,
+          paidCreditsExpiry:     data.paidCreditsExpiry    ? new Date(data.paidCreditsExpiry)    : null,
+          seasonalCreditsExpiry: data.seasonalCreditsExpiry ? new Date(data.seasonalCreditsExpiry) : null,
+          subscriptionExpiry:    data.subscriptionExpiry   ? new Date(data.subscriptionExpiry)   : null,
+          applicationExpiryDates: data.applicationExpiryDates,
+          subscriptionPlan: data.subscriptionPlan,
+          computedAt: new Date(),
+        },
+      });
+  } catch {
+    // snapshot write failure is non-fatal; next request will recompute
+  }
+}
+
+export async function invalidateCategorySnapshot(tenantId: string, entityId: string): Promise<void> {
+  try {
+    await db
+      .delete(creditCategorySnapshots)
+      .where(and(
+        eq(creditCategorySnapshots.tenantId, tenantId),
+        eq(creditCategorySnapshots.entityId, entityId),
+      ));
+  } catch {
+    // non-fatal; the TTL will expire it within 5 minutes
+  }
+}
 
 // Extended balance type for UI/alert fields not in current schema
 type CreditBalanceRow = typeof credits.$inferSelect & { criticalBalanceThreshold?: number; lowBalanceThreshold?: number; creditExpiry?: Date | string | null; reservedCredits?: string | null };
@@ -14,15 +110,13 @@ export async function getCurrentBalance(tenantId: string, entityType = 'organiza
     const normalizedEntityType = entityType || 'organization';
     const searchEntityId = entityId || tenantId;
 
-    console.log('🔍 Getting current balance with normalized parameters:', {
+    Logger.log('info', 'billing', 'get-current-balance', 'Getting current balance', {
       tenantId,
-      originalEntityType: entityType,
-      normalizedEntityType,
-      originalEntityId: entityId,
-      searchEntityId
+      entityType: normalizedEntityType,
+      entityId: searchEntityId
     });
 
-    const [creditBalance] = await db
+    const [creditBalance] = await getReadDb()
       .select()
       .from(credits)
       .where(and(
@@ -121,23 +215,34 @@ export async function getCurrentBalance(tenantId: string, entityType = 'organiza
     // REMOVED: Application credit allocations check - applications manage their own credits
     // Applications consume directly from organization balance in credits table
 
-    // Categorize credits by analyzing transactions and allocations
-    let freeCredits = 0;
-    let paidCredits = 0;
-    let seasonalCredits = 0;
-    let freeCreditsExpiry: string | null = null;
-    let paidCreditsExpiry: string | null = null;
-    let seasonalCreditsExpiry: string | null = null;
+    // Categorize credits by analyzing transactions and allocations.
+    // Check the snapshot cache first — if it is fresh (< 5 min), skip the 3 DB queries.
+    const cachedSnapshot = await readCategorySnapshot(tenantId, searchEntityId);
 
-    // parallelized — fetch subscription (expiry + plan), purchase transactions, and seasonal allocations concurrently
+    let freeCredits = cachedSnapshot?.freeCredits ?? 0;
+    let paidCredits = cachedSnapshot?.paidCredits ?? 0;
+    let seasonalCredits = cachedSnapshot?.seasonalCredits ?? 0;
+    let freeCreditsExpiry: string | null = cachedSnapshot?.freeCreditsExpiry ?? null;
+    let paidCreditsExpiry: string | null = cachedSnapshot?.paidCreditsExpiry ?? null;
+    let seasonalCreditsExpiry: string | null = cachedSnapshot?.seasonalCreditsExpiry ?? null;
+    let subscriptionExpiry: string | null = cachedSnapshot?.subscriptionExpiry ?? null;
+    let actualPlan = cachedSnapshot?.subscriptionPlan ?? 'credit_based';
+    let applicationExpiryDates: Record<string, string> = cachedSnapshot?.applicationExpiryDates ?? {};
+    let earliestExpiry: string | null = null;
+
+    if (cachedSnapshot) {
+      // Fast path: all categorization data came from the cache.
+      // We still need actualPlan and earliestExpiry for the return value.
+      earliestExpiry = [freeCreditsExpiry, paidCreditsExpiry, seasonalCreditsExpiry]
+        .filter(Boolean)
+        .sort()[0] ?? null;
+    } else {
+    // Slow path: compute from DB and persist to cache.
     const { seasonalCreditAllocations } = await import('../../../db/schema/billing/seasonal-credits.js');
 
+    const readDb = getReadDb();
     const [subscriptionResult, purchaseTransactionsResult, activeAllocationsResult] = await Promise.all([
-      // Single subscription query that covers currentPeriodEnd (expiry), plan, and canceledAt
-      // canceledAt is used to scope credit categorization to the current subscription lifecycle
-      // (avoids counting stale purchase transactions from before a cancel+resubscribe)
-      // Order by updated_at desc so we use the same subscription row as source of truth (matches Supabase data)
-      db
+      readDb
         .select({
           currentPeriodEnd: subscriptions.currentPeriodEnd,
           plan: subscriptions.plan,
@@ -152,12 +257,11 @@ export async function getCurrentBalance(tenantId: string, entityType = 'organiza
         .orderBy(desc(subscriptions.updatedAt))
         .limit(1)
         .catch((err: unknown) => {
-          console.warn('⚠️ Error fetching subscription:', (err as Error).message);
+          Logger.log('warning', 'billing', 'get-current-balance', 'Error fetching subscription', { error: (err as Error).message });
           return [] as { currentPeriodEnd: Date | null; plan: string; canceledAt: Date | null; updatedAt: Date | null }[];
         }),
 
-      // Purchase transactions for credit categorization
-      db
+      readDb
         .select()
         .from(creditTransactions)
         .where(and(
@@ -167,12 +271,11 @@ export async function getCurrentBalance(tenantId: string, entityType = 'organiza
         ))
         .orderBy(desc(creditTransactions.createdAt))
         .catch((err: unknown) => {
-          console.warn('⚠️ Error fetching credit transactions:', (err as Error).message);
+          Logger.log('warning', 'billing', 'get-current-balance', 'Error fetching credit transactions', { error: (err as Error).message });
           return [] as (typeof creditTransactions.$inferSelect)[];
         }),
 
-      // Active seasonal allocations for expiry dates
-      db
+      readDb
         .select({
           allocatedCredits: seasonalCreditAllocations.allocatedCredits,
           usedCredits: seasonalCreditAllocations.usedCredits,
@@ -190,14 +293,12 @@ export async function getCurrentBalance(tenantId: string, entityType = 'organiza
         ))
         .orderBy(seasonalCreditAllocations.expiresAt)
         .catch((err: unknown) => {
-          console.warn('⚠️ Error fetching seasonal credit expiry:', (err as Error).message);
+          Logger.log('warning', 'billing', 'get-current-balance', 'Error fetching seasonal credit expiry', { error: (err as Error).message });
           return [] as { allocatedCredits: string; usedCredits: string | null; expiresAt: Date; targetApplication: string | null }[];
         }),
     ]);
 
     // Derive subscription expiry and plan from the single subscription query result
-    let subscriptionExpiry: string | null = null;
-    let actualPlan = 'credit_based';
     const subscription = subscriptionResult[0] ?? null;
     if (subscription?.currentPeriodEnd) {
       subscriptionExpiry = new Date(subscription.currentPeriodEnd).toISOString();
@@ -219,7 +320,7 @@ export async function getCurrentBalance(tenantId: string, entityType = 'organiza
       const updatedTime = new Date(subscription.updatedAt).getTime();
       if (updatedTime > canceledTime) {
         lifecycleBoundary = new Date(subscription.canceledAt);
-        console.log(`📊 Credit categorization: using lifecycle boundary ${lifecycleBoundary.toISOString()} (subscription was canceled then reactivated)`);
+        Logger.log('info', 'billing', 'get-current-balance', 'Using lifecycle boundary for credit categorization', { lifecycleBoundary: lifecycleBoundary.toISOString() });
       }
     }
 
@@ -257,14 +358,12 @@ export async function getCurrentBalance(tenantId: string, entityType = 'organiza
       }
     } catch (err: unknown) {
       const txError = err as Error;
-      console.warn('⚠️ Error analyzing credit transactions:', txError.message);
+      Logger.log('warning', 'billing', 'get-current-balance', 'Error analyzing credit transactions', { error: txError.message });
       // Fallback: assume all credits are free if we can't analyze
       freeCredits = parseFloat(String((creditBalance as CreditBalanceRow).availableCredits ?? 0));
     }
 
     // Process seasonal credit allocations with expiry dates
-    let earliestExpiry: string | null = null;
-    const applicationExpiryDates: Record<string, string> = {};
 
     // Calculate seasonal credits and find earliest expiry
     for (const allocation of activeAllocationsResult) {
@@ -290,41 +389,44 @@ export async function getCurrentBalance(tenantId: string, entityType = 'organiza
     }
 
     // Calculate total available credits
-    const totalAvailable = parseFloat(String((creditBalance as CreditBalanceRow).availableCredits ?? 0));
+    const slowTotalAvailable = parseFloat(String((creditBalance as CreditBalanceRow).availableCredits ?? 0));
     const categorizedTotal = freeCredits + paidCredits + seasonalCredits;
 
     // If balance is zero, all categories must be zero regardless of transaction history
-    if (totalAvailable <= 0) {
+    if (slowTotalAvailable <= 0) {
       freeCredits = 0;
       paidCredits = 0;
       seasonalCredits = 0;
-    } else if (freeCredits === 0 && paidCredits === 0 && seasonalCredits === 0 && totalAvailable > 0) {
+    } else if (freeCredits === 0 && paidCredits === 0 && seasonalCredits === 0 && slowTotalAvailable > 0) {
       // Couldn't categorize from transactions — use total as free credits (onboarding scenario)
-      freeCredits = totalAvailable;
+      freeCredits = slowTotalAvailable;
       if (subscriptionExpiry) {
         freeCreditsExpiry = subscriptionExpiry;
       }
-    } else if (totalAvailable > categorizedTotal) {
-      // There's a difference between available credits and categorized credits
-      // This can happen if credits were added but not properly categorized in transactions
-      // Assign the difference to free credits (most common scenario for subscription credits)
-      const uncategorizedCredits = totalAvailable - categorizedTotal;
+    } else if (slowTotalAvailable > categorizedTotal) {
+      const uncategorizedCredits = slowTotalAvailable - categorizedTotal;
       freeCredits += uncategorizedCredits;
-
-      // Set expiry if subscription expiry is available
       if (!freeCreditsExpiry && subscriptionExpiry) {
         freeCreditsExpiry = subscriptionExpiry;
       }
-
-      console.log(`📊 Credit categorization: Found ${uncategorizedCredits} uncategorized credits, assigning to free credits`);
-    } else if (totalAvailable < categorizedTotal) {
-      // Categorized credits exceed available (credits were consumed/expired)
-      // Scale down each category proportionally to match the actual balance
-      const ratio = categorizedTotal > 0 ? totalAvailable / categorizedTotal : 0;
+      Logger.log('info', 'billing', 'get-current-balance', 'Found uncategorized credits, assigning to free credits', { uncategorizedCredits });
+    } else if (slowTotalAvailable < categorizedTotal) {
+      const ratio = categorizedTotal > 0 ? slowTotalAvailable / categorizedTotal : 0;
       paidCredits = Math.round(paidCredits * ratio);
       seasonalCredits = Math.round(seasonalCredits * ratio);
-      freeCredits = Math.max(0, totalAvailable - paidCredits - seasonalCredits);
+      freeCredits = Math.max(0, slowTotalAvailable - paidCredits - seasonalCredits);
     }
+
+    // Persist computed breakdown to the snapshot cache so the next call can skip these 3 queries.
+    void writeCategorySnapshot(tenantId, searchEntityId, {
+      freeCredits, paidCredits, seasonalCredits,
+      freeCreditsExpiry, paidCreditsExpiry, seasonalCreditsExpiry,
+      subscriptionExpiry, subscriptionPlan: actualPlan, applicationExpiryDates,
+    });
+    } // end slow path
+
+    // Always read the live balance from the primary row (not the snapshot).
+    const totalAvailable = parseFloat(String((creditBalance as CreditBalanceRow).availableCredits ?? 0));
 
     return {
       tenantId: creditBalance.tenantId,
@@ -352,7 +454,7 @@ export async function getCurrentBalance(tenantId: string, entityType = 'organiza
     };
   } catch (err: unknown) {
     const error = err as Error;
-    console.error('Error fetching current credit balance:', error);
+    Logger.log('error', 'billing', 'get-current-balance', 'Error fetching current credit balance', { error: error.message });
     throw error;
   }
 }
@@ -403,7 +505,7 @@ export async function getTransactionHistory(tenantId: string, filters: { page?: 
     };
   } catch (err: unknown) {
     const error = err as Error;
-    console.error('Error fetching transaction history:', error);
+    Logger.log('error', 'billing', 'get-transaction-history', 'Error fetching transaction history', { error: error.message });
     throw error;
   }
 }
@@ -413,7 +515,7 @@ export async function getTransactionHistory(tenantId: string, filters: { page?: 
  */
 export async function getEntityBalance(tenantId: string, entityType: string, entityId: string | null): Promise<Record<string, unknown> | null> {
   try {
-    const [creditBalance] = await db
+    const [creditBalance] = await getReadDb()
       .select()
       .from(credits)
       .where(and(
@@ -443,7 +545,7 @@ export async function getEntityBalance(tenantId: string, entityType: string, ent
     };
   } catch (err: unknown) {
     const error = err as Error;
-    console.error('Error fetching entity balance:', error);
+    Logger.log('error', 'billing', 'get-entity-balance', 'Error fetching entity balance', { error: error.message });
     throw error;
   }
 }
@@ -472,7 +574,7 @@ export async function getUsageSummary(tenantId: string, filters: Record<string, 
       };
     }
 
-    const transactions = await db
+    const transactions = await getReadDb()
       .select({
         type: creditTransactions.transactionType,
         amount: creditTransactions.amount,
@@ -522,7 +624,7 @@ export async function getUsageSummary(tenantId: string, filters: Record<string, 
     return summary;
   } catch (err: unknown) {
     const error = err as Error;
-    console.error('Error fetching usage summary:', error);
+    Logger.log('error', 'billing', 'get-usage-summary', 'Error fetching usage summary', { error: error.message });
     throw error;
   }
 }
@@ -553,7 +655,7 @@ export async function getCreditStats(tenantId: string): Promise<Record<string, u
     };
   } catch (err: unknown) {
     const error = err as Error;
-    console.error('Error fetching credit statistics:', error);
+    Logger.log('error', 'billing', 'get-credit-stats', 'Error fetching credit statistics', { error: error.message });
     throw error;
   }
 }

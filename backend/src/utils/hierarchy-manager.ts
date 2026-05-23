@@ -6,6 +6,7 @@
 import { db } from '../db/index.js';
 import { entities, credits } from '../db/schema/index.js';
 import { eq, and, sql } from 'drizzle-orm';
+import Logger from './logger.js';
 
 export class HierarchyManager {
 
@@ -90,7 +91,7 @@ export class HierarchyManager {
    */
   static async updateEntityHierarchyPaths(entityId: string): Promise<{ success: boolean; error?: string }> {
     try {
-      console.log('🔄 Updating hierarchy paths for entity:', entityId);
+      Logger.log('info', 'org', 'update-hierarchy-paths', 'Updating hierarchy paths for entity', { entityId });
 
       // Update the entity itself
       const hierarchyPath = await this.buildHierarchyPath(entityId);
@@ -110,12 +111,13 @@ export class HierarchyManager {
       // Update all descendants
       await this.updateDescendantHierarchyPaths(entityId);
 
-      console.log('✅ Hierarchy paths updated successfully');
+      Logger.log('info', 'org', 'update-hierarchy-paths', 'Hierarchy paths updated successfully', { entityId });
       return { success: true };
 
     } catch (error: unknown) {
-      console.error('❌ Error updating hierarchy paths:', error);
-      return { success: false, error: (error as Error).message };
+      const err = error as Error;
+      Logger.log('error', 'org', 'update-hierarchy-paths', 'Error updating hierarchy paths', { entityId, error: err.message, stack: err.stack });
+      return { success: false, error: err.message };
     }
   }
 
@@ -139,7 +141,7 @@ export class HierarchyManager {
         entity.entityId !== parentEntityId
       );
 
-      console.log(`📊 Found ${descendants.length} descendants to update`);
+      Logger.log('info', 'org', 'update-descendant-paths', `Found ${descendants.length} descendants to update`, { parentEntityId, descendantCount: descendants.length });
 
       // Update each descendant's hierarchy path and level
       for (const descendant of descendants) {
@@ -147,7 +149,11 @@ export class HierarchyManager {
         const fullHierarchyPath = await this.buildFullHierarchyPath(descendant.entityId);
         const entityLevel = this.calculateEntityLevel(hierarchyPath);
 
-        console.log(`🔄 Updating ${descendant.entityId}: ${descendant.hierarchyPath} → ${hierarchyPath}`);
+        Logger.log('info', 'org', 'update-descendant-paths', `Updating ${descendant.entityId}: ${descendant.hierarchyPath} → ${hierarchyPath}`, {
+          entityId: descendant.entityId,
+          oldPath: descendant.hierarchyPath,
+          newPath: hierarchyPath
+        });
 
         await db
           .update(entities)
@@ -160,12 +166,13 @@ export class HierarchyManager {
           .where(eq(entities.entityId, descendant.entityId));
       }
 
-      console.log('✅ Descendant hierarchy paths updated successfully');
+      Logger.log('info', 'org', 'update-descendant-paths', 'Descendant hierarchy paths updated successfully', { parentEntityId });
       return { success: true };
 
     } catch (error: unknown) {
-      console.error('❌ Error updating descendant hierarchy paths:', error);
-      return { success: false, error: (error as Error).message };
+      const err = error as Error;
+      Logger.log('error', 'org', 'update-descendant-paths', 'Error updating descendant hierarchy paths', { parentEntityId, error: err.message, stack: err.stack });
+      return { success: false, error: err.message };
     }
   }
 
@@ -284,12 +291,13 @@ export class HierarchyManager {
       };
 
     } catch (error: unknown) {
-      console.error('Error getting entity hierarchy:', error);
+      const err = error as Error;
+      Logger.log('error', 'org', 'get-hierarchy-tree', 'Error getting entity hierarchy', { tenantId, error: err.message, stack: err.stack });
       return {
         success: false,
         hierarchy: [],
         totalEntities: 0,
-        message: `Failed to get hierarchy: ${(error as Error).message}`
+        message: `Failed to get hierarchy: ${err.message}`
       };
     }
   }
@@ -299,7 +307,7 @@ export class HierarchyManager {
    */
   static async rebuildAllHierarchyPaths(tenantId: string): Promise<{ success: boolean; updatedCount?: number; error?: string }> {
     try {
-      console.log('🔄 Rebuilding all hierarchy paths for tenant:', tenantId);
+      Logger.log('info', 'org', 'rebuild-hierarchy-paths', 'Rebuilding all hierarchy paths for tenant', { tenantId });
 
       // Get all entities for the tenant
       const allEntities = await db
@@ -332,12 +340,13 @@ export class HierarchyManager {
         updatedCount++;
       }
 
-      console.log(`✅ Rebuilt hierarchy paths for ${updatedCount} entities`);
+      Logger.log('info', 'org', 'rebuild-hierarchy-paths', `Rebuilt hierarchy paths for ${updatedCount} entities`, { tenantId, updatedCount });
       return { success: true, updatedCount };
 
     } catch (error: unknown) {
-      console.error('❌ Error rebuilding hierarchy paths:', error);
-      return { success: false, error: (error as Error).message };
+      const err = error as Error;
+      Logger.log('error', 'org', 'rebuild-hierarchy-paths', 'Error rebuilding hierarchy paths', { tenantId, error: err.message, stack: err.stack });
+      return { success: false, error: err.message };
     }
   }
 }

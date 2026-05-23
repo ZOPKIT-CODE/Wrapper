@@ -1,4 +1,5 @@
 import { aiServiceFactory } from './ai-service-factory.js';
+import Logger from '../../../../utils/logger.js';
 
 type Tone = 'professional' | 'casual' | 'urgent' | 'friendly';
 type Length = 'short' | 'medium' | 'long';
@@ -42,7 +43,7 @@ class ContentGenerationService {
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Error generating content:', error);
+      Logger.log('error', 'ai', 'generate-content', 'Error generating content', { message: error.message, stack: error.stack });
       throw new Error(`Content generation failed: ${error.message}`);
     }
   }
@@ -81,7 +82,7 @@ Generate a new version with the same structure but personalized content.`;
           variantId: i + 1
         });
       } catch (err: unknown) {
-        console.error(`Error generating variant ${i + 1}:`, err);
+        Logger.log('error', 'ai', 'generate-variants', `Error generating variant ${i + 1}`, { variantIndex: i + 1, error: err });
       }
     }
 

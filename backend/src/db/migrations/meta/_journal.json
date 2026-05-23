@@ -141,6 +141,34 @@
       "when": 1763000000000,
       "tag": "0019_organization_applications_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "5",
+      "when": 1763050000000,
+      "tag": "0020_circuit_breaker_state",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "5",
+      "when": 1763100000000,
+      "tag": "0021_credit_category_snapshot",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "5",
+      "when": 1763150000000,
+      "tag": "0022_inter_app_outbox",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "5",
+      "when": 1763200000000,
+      "tag": "0023_grant_app_user",
+      "breakpoints": true
     }
   ]
 }

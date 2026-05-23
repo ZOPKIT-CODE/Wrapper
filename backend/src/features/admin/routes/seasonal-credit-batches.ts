@@ -1,5 +1,5 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { SeasonalCreditService } from '../services/SeasonalCreditService.js';
+import { SeasonalCreditService } from '../services/seasonal-credit-service.js';
 import { authenticateToken, requirePermission } from '../../../middleware/auth/auth.js';
 import { PERMISSIONS } from '../../../constants/permissions.js';
 import {

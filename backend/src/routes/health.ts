@@ -13,6 +13,7 @@ import {
   ERROR_BUDGETS,
   FAILURE_TAXONOMY,
 } from '../config/reliability-slo.js';
+import Logger from '../utils/logger.js';
 
 // Read version from package.json at module load
 const __filename = fileURLToPath(import.meta.url);
@@ -25,7 +26,7 @@ try {
   APP_VERSION = packageJson.version || '1.0.0';
 } catch (err: unknown) {
   const error = err as Error;
-  console.warn('⚠️ Could not read package.json version, using default:', error.message);
+  Logger.log('warning', 'routes', 'health-init', '⚠️ Could not read package.json version, using default', { message: error.message });
 }
 
 export default async function healthRoutes(fastify: FastifyInstance, _options?: Record<string, unknown>): Promise<void> {

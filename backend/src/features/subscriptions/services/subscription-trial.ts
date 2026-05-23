@@ -9,6 +9,7 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 import { getCurrentSubscription } from './subscription-core.js';
 import { getPaymentGateway } from '../adapters/index.js';
+import Logger from '../../../utils/logger.js';
 
 /**
  * Create trial subscription for new tenant (creates initial credit balance).
@@ -17,8 +18,7 @@ export async function createTrialSubscription(
   tenantId: string,
   planData: Record<string, unknown> = {}
 ): Promise<Record<string, unknown>> {
-  console.log('🚀 Creating trial credit balance for tenant:', tenantId);
-  console.log('📋 Plan data:', planData);
+  Logger.log('info', 'billing', 'create-trial-subscription', 'Creating trial credit balance for tenant', { tenantId, planData });
 
   try {
     const initialCredits = Number(planData.credits) || 1000;
@@ -42,7 +42,7 @@ export async function createTrialSubscription(
       } as any)
       .returning();
 
-    console.log('✅ Created initial credit balance:', creditRecord);
+    Logger.log('info', 'billing', 'create-trial-subscription', 'Created initial credit balance', { creditId: (creditRecord as any)?.creditId });
 
     await db
       .insert(creditTransactions)
@@ -77,7 +77,7 @@ export async function createTrialSubscription(
     return subscriptionData;
   } catch (err: unknown) {
     const error = err as Error;
-    console.error('Error creating trial credit balance:', error);
+    Logger.log('error', 'billing', 'create-trial-subscription', 'Error creating trial credit balance', { error: error.message });
     throw error;
   }
 }
@@ -89,8 +89,7 @@ export async function createFreeSubscription(
   tenantId: string,
   planData: Record<string, unknown> = {}
 ): Promise<{ subscription: Record<string, unknown> }> {
-  console.log('🆓 Creating free subscription for tenant:', tenantId);
-  console.log('📋 Plan data:', planData);
+  Logger.log('info', 'billing', 'create-free-subscription', 'Creating free subscription for tenant', { tenantId, planData });
 
   try {
     const freeCredits = Number(planData.credits) || 1000;
@@ -113,7 +112,7 @@ export async function createFreeSubscription(
       } as any)
       .returning();
 
-    console.log('✅ Created free plan credit balance:', creditRecord);
+    Logger.log('info', 'billing', 'create-free-subscription', 'Created free plan credit balance', { creditId: (creditRecord as any)?.creditId });
 
     await db
       .insert(creditTransactions)
@@ -146,11 +145,11 @@ export async function createFreeSubscription(
       updatedAt: new Date()
     };
 
-    console.log('✅ Free subscription created successfully');
+    Logger.log('info', 'billing', 'create-free-subscription', 'Free subscription created successfully');
     return { subscription: subscriptionData };
   } catch (err: unknown) {
     const error = err as Error;
-    console.error('❌ Error creating free subscription:', error);
+    Logger.log('error', 'billing', 'create-free-subscription', 'Error creating free subscription', { error: error.message });
     throw error;
   }
 }
@@ -231,7 +230,7 @@ export async function cancelSubscription(
         createdAt: new Date(),
       });
 
-      console.log(`📅 Subscription ${subId} scheduled to cancel at ${periodEnd.toISOString()}`);
+      Logger.log('info', 'billing', 'cancel-subscription', 'Subscription scheduled to cancel', { subscriptionId: subId, cancelAt: periodEnd.toISOString() });
 
       return {
         subscriptionId: subId,
@@ -259,7 +258,7 @@ export async function cancelSubscription(
     }
   } catch (err: unknown) {
     const error = err as Error;
-    console.error('Error scheduling subscription cancellation:', error);
+    Logger.log('error', 'billing', 'cancel-subscription', 'Error scheduling subscription cancellation', { error: error.message });
     throw error;
   }
 }
@@ -278,7 +277,7 @@ export async function handleExpiredTrials(): Promise<number> {
     ));
 
   for (const subscription of expiredTrials) {
-    console.log(`🚨 Trial expired for tenant: ${subscription.tenantId}`);
+    Logger.log('warning', 'billing', 'handle-expired-trials', 'Trial expired for tenant', { tenantId: subscription.tenantId });
 
     await db
       .update(subscriptions)
@@ -289,7 +288,7 @@ export async function handleExpiredTrials(): Promise<number> {
       })
       .where(eq(subscriptions.subscriptionId, subscription.subscriptionId));
 
-    console.log(`📧 Sending trial expiration notice to tenant: ${subscription.tenantId}`);
+    Logger.log('info', 'email', 'handle-expired-trials', 'Sending trial expiration notice to tenant', { tenantId: subscription.tenantId });
   }
 
   return expiredTrials.length;
@@ -316,7 +315,7 @@ export async function sendTrialReminders(): Promise<number> {
       ? Math.ceil((new Date(endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
       : 0;
 
-    console.log(`📧 Sending ${daysRemaining}-day trial reminder to tenant: ${subscription.tenantId}`);
+    Logger.log('info', 'email', 'send-trial-reminders', 'Sending trial reminder to tenant', { tenantId: subscription.tenantId, daysRemaining });
   }
 
   return expiringTrials.length;

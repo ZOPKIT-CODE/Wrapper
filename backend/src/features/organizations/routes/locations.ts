@@ -10,6 +10,7 @@ import {
   validateLocationCreation,
   sanitizeInput
 } from '../../../middleware/validation/validation.js';
+import Logger from '../../../utils/logger.js';
 
 export default async function locationRoutes(
   fastify: FastifyInstance,
@@ -49,7 +50,7 @@ export default async function locationRoutes(
       let responsiblePersonId = (request as any).userContext?.internalUserId;
 
       if (!createdBy) {
-        console.log('⚠️ No authentication context, using fallback user for testing');
+        Logger.log('warning', 'general', 'create-location', 'No authentication context, using fallback user for testing');
         createdBy = (request as any).userContext?.userId || '3a9b3f2c-e335-4c3e-956f-be5341ef38eb';
         responsiblePersonId = null;
       }
@@ -64,7 +65,7 @@ export default async function locationRoutes(
       return reply.send(result);
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Create location failed:', error);
+      Logger.log('error', 'general', 'create-location', 'Create location failed', { error: error.message });
 
       if (error.message.includes('not found')) {
         return reply.code(404).send({
@@ -106,7 +107,7 @@ export default async function locationRoutes(
       return reply.send(result);
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Get location details failed:', error);
+      Logger.log('error', 'general', 'get-location-details', 'Get location details failed', { error: error.message });
 
       if (error.message.includes('not found')) {
         return reply.code(404).send({
@@ -140,7 +141,7 @@ export default async function locationRoutes(
       return reply.send(result);
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Update location failed:', error);
+      Logger.log('error', 'general', 'update-location', 'Update location failed', { error: error.message });
 
       if (error.message.includes('not found')) {
         return reply.code(404).send({
@@ -174,7 +175,7 @@ export default async function locationRoutes(
       return reply.send(result);
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Assign location to organization failed:', error);
+      Logger.log('error', 'general', 'assign-location', 'Assign location to organization failed', { error: error.message });
 
       if (error.message.includes('not found')) {
         return reply.code(404).send({
@@ -216,7 +217,7 @@ export default async function locationRoutes(
       return reply.send(result);
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Remove location from organization failed:', error);
+      Logger.log('error', 'general', 'remove-location', 'Remove location from organization failed', { error: error.message });
 
       if (error.message.includes('last location')) {
         return reply.code(400).send({
@@ -256,7 +257,7 @@ export default async function locationRoutes(
 
       let userId = (request as any).userContext?.userId;
       if (!userId) {
-        console.log('⚠️ No authentication context, using fallback user for testing');
+        Logger.log('warning', 'general', 'update-location-capacity', 'No authentication context, using fallback user for testing');
         userId = '50d4f694-202f-4f27-943d-7aafeffee29c';
       }
 
@@ -265,7 +266,7 @@ export default async function locationRoutes(
       return reply.send(result);
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Update location capacity failed:', error);
+      Logger.log('error', 'general', 'update-location-capacity', 'Update location capacity failed', { error: error.message });
 
       if (error.message.includes('not found')) {
         return reply.code(404).send({
@@ -306,7 +307,7 @@ export default async function locationRoutes(
       return reply.send(result);
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Get location analytics failed:', error);
+      Logger.log('error', 'general', 'get-location-analytics', 'Get location analytics failed', { error: error.message });
 
       if (error.message.includes('not found')) {
         return reply.code(404).send({
@@ -340,7 +341,7 @@ export default async function locationRoutes(
       return reply.send(result);
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Get locations by utilization failed:', error);
+      Logger.log('error', 'general', 'get-locations-by-utilization', 'Get locations by utilization failed', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Retrieval failed',
@@ -361,7 +362,7 @@ export default async function locationRoutes(
 
       let userId = (request as any).userContext?.userId;
       if (!userId) {
-        console.log('⚠️ No authentication context, using fallback user for testing');
+        Logger.log('warning', 'general', 'bulk-update-location-capacities', 'No authentication context, using fallback user for testing');
         userId = '50d4f694-202f-4f27-943d-7aafeffee29c';
       }
 
@@ -370,7 +371,7 @@ export default async function locationRoutes(
       return reply.send(result);
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Bulk update location capacities failed:', error);
+      Logger.log('error', 'general', 'bulk-update-location-capacities', 'Bulk update location capacities failed', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Bulk update failed',
@@ -393,7 +394,7 @@ export default async function locationRoutes(
       return reply.send(result);
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Delete location failed:', error);
+      Logger.log('error', 'general', 'delete-location', 'Delete location failed', { error: error.message });
 
       if (error.message.includes('assigned to organizations')) {
         return reply.code(400).send({
@@ -433,7 +434,7 @@ export default async function locationRoutes(
       return reply.send(result);
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Get tenant locations failed:', error);
+      Logger.log('error', 'general', 'get-tenant-locations', 'Get tenant locations failed', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Retrieval failed',

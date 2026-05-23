@@ -1,7 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from '@tanstack/react-router';
-import { useKindeAuth } from '@kinde-oss/kinde-auth-react';
-import { NavbarButton } from '@/components/ui/resizable-navbar';
+import React, { useEffect } from 'react';
 import { LandingFooter } from '@/components/layout/LandingFooter';
 import { MarketingNavbar } from '@/components/layout/MarketingNavbar';
 
@@ -17,7 +14,7 @@ interface LegalPageLayoutProps {
   docIntro?: React.ReactNode;
   /** Anchor links for in-page navigation (label without leading numbers is fine) */
   tableOfContents?: { id: string; label: string }[];
-  /** Hide the marketing “Start Free Trial” button in the top nav (e.g. on /pricing) */
+  /** Unused — kept for API compatibility, ignored now that the navbar is self-contained */
   hideStartTrialCta?: boolean;
 }
 
@@ -29,53 +26,14 @@ export function LegalPageLayout({
   contained = true,
   docIntro,
   tableOfContents,
-  hideStartTrialCta = false,
 }: LegalPageLayoutProps) {
-  const navigate = useNavigate();
-  const pathname = useLocation().pathname;
-  /** Always hide trial on /pricing even if the prop is omitted (defensive). */
-  const hideTrialNav = hideStartTrialCta || pathname === '/pricing';
-  const { login } = useKindeAuth();
-  const [isLoading, setIsLoading] = useState(false);
-
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, []);
 
-  const handleLogin = () => {
-    setIsLoading(true);
-    login();
-    setIsLoading(false);
-  };
-
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
-      <MarketingNavbar
-        desktopRight={
-          <div className="flex items-center gap-3">
-            <NavbarButton variant="outline" onClick={handleLogin} disabled={isLoading} as="button" className="rounded-xl px-6 py-2.5">
-              {isLoading ? 'Loading...' : 'Sign In'}
-            </NavbarButton>
-            {!hideTrialNav && (
-              <NavbarButton variant="gradient" onClick={() => navigate({ to: '/landing' })} as="button" className="rounded-xl px-6 py-2.5">
-                Start Free Trial
-              </NavbarButton>
-            )}
-          </div>
-        }
-        mobileFooter={
-          <div className="flex w-full flex-col gap-3">
-            <NavbarButton variant="outline" onClick={handleLogin} disabled={isLoading} as="button" className="w-full justify-center rounded-xl">
-              {isLoading ? 'Loading...' : 'Sign In'}
-            </NavbarButton>
-            {!hideTrialNav && (
-              <NavbarButton variant="gradient" onClick={() => navigate({ to: '/landing' })} as="button" className="w-full justify-center rounded-xl">
-                Start Free Trial
-              </NavbarButton>
-            )}
-          </div>
-        }
-      />
+      <MarketingNavbar />
 
       <main className={`relative pt-32 sm:pt-36 pb-16 mx-auto px-4 sm:px-6 lg:px-8 ${wide ? 'max-w-6xl' : 'max-w-4xl'}`}>
         {contained ? (

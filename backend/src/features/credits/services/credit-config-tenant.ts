@@ -4,6 +4,7 @@ import { eq, and } from 'drizzle-orm';
 import { snsSqsPublisher } from '../../messaging/utils/sns-sqs-publisher.js';
 import { getModulePermissions } from './credit-core.js';
 import { getGlobalOperationConfigs, getGlobalModuleConfigs, getGlobalAppConfigs } from './credit-config-global.js';
+import Logger from '../../../utils/logger.js';
 
 const DEFAULT_CREDIT_EVENT_TARGET_APPS = ['crm', 'accounting', 'ops'];
 
@@ -30,7 +31,7 @@ async function publishCreditConfigEventToSuite(
   const changeType = String(eventPayload.changeType ?? 'unknown');
   const operationCode = eventPayload.operationCode ? String(eventPayload.operationCode) : undefined;
 
-  console.log('📣 Publishing credit config event', {
+  Logger.log('info', 'billing', 'publish-credit-config-event', 'Publishing credit config event', {
     eventType,
     changeType,
     tenantId,
@@ -41,10 +42,10 @@ async function publishCreditConfigEventToSuite(
   for (const app of targetApps) {
     try {
       await snsSqsPublisher.publishCreditEvent(app, eventType, tenantId, eventPayload);
-      console.log(`✅ Published ${eventType} to ${app} for tenant ${tenantId}`);
+      Logger.log('info', 'billing', 'publish-credit-config-event', `Published ${eventType} to ${app}`, { app, tenantId });
     } catch (streamErr: unknown) {
       const streamError = streamErr as Error;
-      console.warn(`⚠️ Failed to publish credit config change event to ${app}:`, streamError.message);
+      Logger.log('warning', 'billing', 'publish-credit-config-event', `Failed to publish credit config change event to ${app}`, { app, error: streamError.message });
     }
   }
 }
@@ -54,7 +55,7 @@ async function publishCreditConfigEventToSuite(
  */
 export async function getTenantConfigurations(tenantId: string): Promise<Record<string, unknown>> {
   try {
-    console.log('🔍 Getting tenant configurations for:', tenantId);
+    Logger.log('info', 'billing', 'get-tenant-configurations', 'Getting tenant configurations', { tenantId });
 
     // Get tenant-specific configurations with error handling
     const [tenantOperations, tenantModules, tenantApps] = await Promise.all([
@@ -85,7 +86,7 @@ export async function getTenantConfigurations(tenantId: string): Promise<Record<
     };
   } catch (err: unknown) {
     const error = err as Error;
-    console.error('Error getting tenant configurations:', error);
+    Logger.log('error', 'billing', 'get-tenant-configurations', 'Error getting tenant configurations', { error: error.message });
     // Return empty configuration structure if tables don't exist
     return {
       tenantId,
@@ -142,7 +143,7 @@ export async function getTenantOperationConfigs(tenantId: string): Promise<Recor
     if ((error as Error & { code?: string }).code === '42P01' || error.message.includes('does not exist')) {
       return [];
     }
-    console.error('Error getting tenant operation configs:', error);
+    Logger.log('error', 'billing', 'get-tenant-operation-configs', 'Error getting tenant operation configs', { error: error.message });
     throw error;
   }
 }
@@ -152,7 +153,7 @@ export async function getTenantOperationConfigs(tenantId: string): Promise<Recor
  */
 export async function setTenantOperationConfig(operationCode: string, configData: Record<string, unknown>, userId: string, tenantId: string): Promise<Record<string, unknown>> {
   try {
-    console.log('⚙️ Setting tenant operation config:', { operationCode, tenantId });
+    Logger.log('info', 'billing', 'set-tenant-operation-config', 'Setting tenant operation config', { operationCode, tenantId });
 
     // Validate required fields
     if (!operationCode || !configData) {
@@ -258,7 +259,7 @@ export async function setTenantOperationConfig(operationCode: string, configData
     };
   } catch (err: unknown) {
     const error = err as Error;
-    console.error('Error setting tenant operation config:', error);
+    Logger.log('error', 'billing', 'set-tenant-operation-config', 'Error setting tenant operation config', { error: error.message });
     throw error;
   }
 }
@@ -268,7 +269,7 @@ export async function setTenantOperationConfig(operationCode: string, configData
  */
 export async function setTenantModuleConfig(moduleCode: string, configData: Record<string, unknown>, userId: string, tenantId: string): Promise<Record<string, unknown>> {
   try {
-    console.log('⚙️ Setting tenant module config:', { moduleCode, tenantId });
+    Logger.log('info', 'billing', 'set-tenant-module-config', 'Setting tenant module config', { moduleCode, tenantId });
 
     // Get real permissions from the application modules table
     const moduleOperations = await getModulePermissions(moduleCode);
@@ -326,11 +327,11 @@ export async function setTenantModuleConfig(moduleCode: string, configData: Reco
         results.push(result[0]);
       } catch (opErr: unknown) {
         const opError = opErr as Error;
-        console.warn(`Failed to set config for operation ${operationCode}:`, opError);
+        Logger.log('warning', 'billing', 'set-tenant-module-config', 'Failed to set config for operation', { operationCode, error: opError.message });
       }
     }
 
-    console.log('✅ Tenant module config set successfully for', results.length, 'operations');
+    Logger.log('info', 'billing', 'set-tenant-module-config', 'Tenant module config set successfully', { operationCount: results.length });
     if (results.length > 0) {
       await publishCreditConfigEventToSuite(tenantId, {
         changeType: 'module_updated',
@@ -351,7 +352,7 @@ export async function setTenantModuleConfig(moduleCode: string, configData: Reco
     };
   } catch (err: unknown) {
     const error = err as Error;
-    console.error('Error setting tenant module config:', error);
+    Logger.log('error', 'billing', 'set-tenant-module-config', 'Error setting tenant module config', { error: error.message });
     throw error;
   }
 }
@@ -361,7 +362,7 @@ export async function setTenantModuleConfig(moduleCode: string, configData: Reco
  */
 export async function setTenantAppConfig(appCode: string, configData: Record<string, unknown>, userId: string, tenantId: string): Promise<Record<string, unknown>> {
   try {
-    console.log('⚙️ Setting tenant app config:', { appCode, tenantId });
+    Logger.log('info', 'billing', 'set-tenant-app-config', 'Setting tenant app config', { appCode, tenantId });
 
     // Create system-level operations for the app
     const appOperations = [
@@ -426,12 +427,12 @@ export async function setTenantAppConfig(appCode: string, configData: Record<str
         results.push(result[0]);
       } catch (opErr: unknown) {
         const opError = opErr as Error;
-        console.warn(`Failed to set config for operation ${operationCode}:`, opError);
+        Logger.log('warning', 'billing', 'set-tenant-app-config', 'Failed to set config for operation', { operationCode, error: opError.message });
         // Continue with other operations
       }
     }
 
-    console.log('✅ Tenant app config set successfully for', results.length, 'operations');
+    Logger.log('info', 'billing', 'set-tenant-app-config', 'Tenant app config set successfully', { operationCount: results.length });
     if (results.length > 0) {
       await publishCreditConfigEventToSuite(tenantId, {
         changeType: 'app_updated',
@@ -452,7 +453,7 @@ export async function setTenantAppConfig(appCode: string, configData: Record<str
     };
   } catch (err: unknown) {
     const error = err as Error;
-    console.error('Error setting tenant app config:', error);
+    Logger.log('error', 'billing', 'set-tenant-app-config', 'Error setting tenant app config', { error: error.message });
     throw error;
   }
 }
@@ -462,7 +463,7 @@ export async function setTenantAppConfig(appCode: string, configData: Record<str
  */
 export async function resetTenantConfiguration(tenantId: string, configType: string, configCode: string, userId: string): Promise<Record<string, unknown>> {
   try {
-    console.log('🔄 Resetting tenant config:', { tenantId, configType, configCode });
+    Logger.log('info', 'billing', 'reset-tenant-configuration', 'Resetting tenant config', { tenantId, configType, configCode });
 
     let result;
 
@@ -576,7 +577,7 @@ export async function resetTenantConfiguration(tenantId: string, configType: str
       };
     }
   } catch (error) {
-    console.error('Error resetting tenant configuration:', error);
+    Logger.log('error', 'billing', 'reset-tenant-configuration', 'Error resetting tenant configuration', { error: (error as Error).message });
     throw error;
   }
 }
@@ -586,7 +587,7 @@ export async function resetTenantConfiguration(tenantId: string, configType: str
  */
 export async function bulkUpdateTenantConfigurations(tenantId: string, configs: Record<string, unknown>[], userId: string): Promise<Record<string, unknown>> {
   try {
-    console.log('📦 Bulk updating tenant configurations:', { tenantId, updateCount: configs.length });
+    Logger.log('info', 'billing', 'bulk-update-tenant-configurations', 'Bulk updating tenant configurations', { tenantId, updateCount: configs.length });
 
     const results = [];
 
@@ -617,7 +618,7 @@ export async function bulkUpdateTenantConfigurations(tenantId: string, configs: 
         });
       } catch (err: unknown) {
         const error = err as Error;
-        console.error(`Error updating ${configType} ${configCode}:`, error);
+        Logger.log('error', 'billing', 'bulk-update-tenant-configurations', `Error updating ${configType} ${configCode}`, { error: error.message });
         results.push({
           configType,
           configCode,
@@ -647,7 +648,7 @@ export async function bulkUpdateTenantConfigurations(tenantId: string, configs: 
 
     return summary;
   } catch (error) {
-    console.error('Error in bulk update:', error);
+    Logger.log('error', 'billing', 'bulk-update-tenant-configurations', 'Error in bulk update', { error: (error as Error).message });
     throw error;
   }
 }

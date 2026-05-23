@@ -227,27 +227,24 @@ export function UpdateAvailableBanner() {
         'sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:max-w-md',
         // Stack above sticky headers, modals, and NetworkQualityBanner (z-[110]).
         'z-[120]',
-        // Layout.
-        'flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3',
+        // Layout: always a row so the banner stays compact on mobile too.
+        'flex flex-row flex-wrap items-center gap-2 sm:gap-3',
         // Shape + elevation.
         'rounded-xl border border-border',
-        // Dark theme: lift the border out of the deep-blue background so the
-        // banner reads as a distinct floating surface, not page chrome.
-        'dark:border-white/20',
+        // Dark theme: stronger border + slightly lighter surface so text pops.
+        'dark:border-white/25 dark:bg-neutral-800',
         // Background: slightly frosted; falls back to near-opaque for browsers
         // without backdrop-filter support.
         'bg-background/95 backdrop-blur-sm',
         'supports-[backdrop-filter]:bg-background/80',
         'px-4 py-3',
-        'shadow-xl shadow-black/10',
+        'shadow-xl shadow-black/20',
       ].join(' ')}
     >
-      <span className="text-sm font-medium flex-1">
+      <span className="text-sm font-medium text-foreground flex-1 min-w-0">
         {bannerText}
       </span>
-      {/* flex-wrap ensures buttons never overflow the card on very narrow
-          viewports (<360px); justify-end keeps them right-aligned on wider ones. */}
-      <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3 shrink-0">
+      <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-auto">
         <button
           onClick={handleReload}
           disabled={isReloading}

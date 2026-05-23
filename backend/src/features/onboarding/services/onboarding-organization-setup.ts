@@ -3,6 +3,7 @@ import { eq, and } from 'drizzle-orm';
 import { applications, organizationApplications, applicationModules } from '../../../db/schema/core/suite-schema.js';
 import { v4 as uuidv4 } from 'uuid';
 import { publishTenantApplicationSyncEvent } from '../../messaging/services/tenant-application-event-service.js';
+import Logger from '../../../utils/logger.js';
 
 interface PlanChangeOptions { skipIfRecentlyUpdated?: boolean }
 
@@ -10,7 +11,7 @@ class OnboardingOrganizationSetupService {
   // Update organization applications based on credit package (legacy; no DB writes)
   async updateOrganizationApplicationsForCreditPackage(tenantId: string, creditPackage: string): Promise<Record<string, unknown>> {
     try {
-      console.log('🔄 Updating organization applications for credit package:', { tenantId, creditPackage });
+      Logger.log('info', 'general', 'updateOrganizationApplicationsForCreditPackage', 'Updating organization applications for credit package', { tenantId, creditPackage });
 
       const applicationsByPackage: Record<string, string[]> = {
         basic: ['crm'],
@@ -20,7 +21,7 @@ class OnboardingOrganizationSetupService {
       };
 
       const availableApplications = applicationsByPackage[creditPackage as keyof typeof applicationsByPackage] || ['crm'];
-      console.log('✅ Organization applications updated for credit package:', availableApplications);
+      Logger.log('info', 'general', 'updateOrganizationApplicationsForCreditPackage', 'Organization applications updated for credit package', { availableApplications });
 
       return {
         success: true,
@@ -30,7 +31,7 @@ class OnboardingOrganizationSetupService {
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error updating organization applications for credit package:', error);
+      Logger.log('error', 'general', 'updateOrganizationApplicationsForCreditPackage', 'Error updating organization applications for credit package', { error: error.message });
       throw error;
     }
   }
@@ -41,7 +42,7 @@ class OnboardingOrganizationSetupService {
    */
   async updateOrganizationApplicationsForPlanChange(tenantId: string, planId: string, options: PlanChangeOptions = {}): Promise<Record<string, unknown>> {
     try {
-      console.log('🔄 Updating organization applications for plan change:', { tenantId, planId });
+      Logger.log('info', 'general', 'updateOrganizationApplicationsForPlanChange', 'Updating organization applications for plan change', { tenantId, planId });
 
       const { PLAN_ACCESS_MATRIX } = await import('../../../data/permission-matrix.js');
       const planAccess = (PLAN_ACCESS_MATRIX as Record<string, { applications?: string[]; modules?: Record<string, unknown> }>)[planId] || (PLAN_ACCESS_MATRIX as Record<string, unknown>).free as { applications?: string[]; modules?: Record<string, unknown> };
@@ -88,7 +89,7 @@ class OnboardingOrganizationSetupService {
       for (const appCode of appCodes) {
         const appId = resolveAppId(appCode, appCodeToIdMap);
         if (!appId) {
-          console.warn(`⚠️ Application code "${appCode}" not found in applications table. Skipping. Available: ${Object.keys(appCodeToIdMap).join(', ')}`);
+          Logger.log('warning', 'general', 'updateOrganizationApplicationsForPlanChange', `Application code not found in applications table. Skipping`, { appCode, available: Object.keys(appCodeToIdMap).join(', ') });
           continue;
         }
 
@@ -116,7 +117,7 @@ class OnboardingOrganizationSetupService {
             enabledModules: resolvedModules,
             expiresAt: expiryDate
           });
-          console.log(`✅ Will assign application ${appCode} (${appId}) to tenant ${tenantId}`);
+          Logger.log('info', 'general', 'updateOrganizationApplicationsForPlanChange', 'Will assign application to tenant', { appCode, appId, tenantId });
         }
       }
 
@@ -135,14 +136,14 @@ class OnboardingOrganizationSetupService {
             eq(organizationApplications.tenantId, tenantId),
             eq(organizationApplications.appId, app.appId)
           ));
-        console.log(`🔄 Updated application ${app.appCode} to ${planId} tier with ${app.enabledModules.length} modules (enabled)`);
+        Logger.log('info', 'general', 'updateOrganizationApplicationsForPlanChange', 'Updated application tier', { appCode: app.appCode, planId, moduleCount: app.enabledModules.length });
       }
 
       if (applicationsToInsert.length > 0) {
         await systemDbConnection
           .insert(organizationApplications)
           .values(applicationsToInsert);
-        console.log(`✅ Assigned ${applicationsToInsert.length} new application(s) for plan ${planId} to tenant ${tenantId}`);
+        Logger.log('info', 'general', 'updateOrganizationApplicationsForPlanChange', 'Assigned new applications for plan to tenant', { count: applicationsToInsert.length, planId, tenantId });
       }
 
       // Disable apps that are NOT in the new plan (e.g., downgrade from Enterprise to Starter)
@@ -169,13 +170,13 @@ class OnboardingOrganizationSetupService {
         const disabledCodes = appsToDisable.map(a => {
           return Object.entries(appCodeToIdMap).find(([, id]) => id === a.appId)?.[0] ?? a.appId;
         });
-        console.log(`🔒 Disabled ${appsToDisable.length} app(s) not in ${planId} plan: ${disabledCodes.join(', ')}`);
+        Logger.log('info', 'general', 'updateOrganizationApplicationsForPlanChange', 'Disabled apps not in plan', { count: appsToDisable.length, planId, disabledCodes: disabledCodes.join(', ') });
       }
 
       if (applicationsToInsert.length === 0 && applicationsToUpdate.length === 0 && appsToDisable.length === 0) {
-        console.log(`ℹ️ No application changes needed for plan ${planId} (tenant already has all plan apps at correct tier).`);
+        Logger.log('info', 'general', 'updateOrganizationApplicationsForPlanChange', 'No application changes needed for plan (tenant already has all plan apps at correct tier)', { planId });
       } else {
-        console.log(`✅ Plan change complete: ${applicationsToUpdate.length} updated, ${applicationsToInsert.length} added, ${appsToDisable.length} disabled`);
+        Logger.log('info', 'general', 'updateOrganizationApplicationsForPlanChange', 'Plan change complete', { updated: applicationsToUpdate.length, added: applicationsToInsert.length, disabled: appsToDisable.length });
       }
 
       // ── Publish thin tenant.app.provisioned for EACH newly granted app ──
@@ -217,9 +218,9 @@ class OnboardingOrganizationSetupService {
                     bootstrapHint:    'lazy — call POST /api/sync/tenants/:id/bootstrap on first user login',
                   },
                 });
-                console.log(`  ✅ Published tenant.app.provisioned → ${newAppCode} (plan_upgrade for tenant ${tenantId})`);
+                Logger.log('info', 'general', 'updateOrganizationApplicationsForPlanChange', 'Published tenant.app.provisioned', { targetApp: newAppCode, tenantId, reason: 'plan_upgrade' });
               } catch (pubErr: unknown) {
-                console.warn(`  ⚠️ Failed to publish tenant.app.provisioned → ${newAppCode}:`, (pubErr as Error).message);
+                Logger.log('warning', 'general', 'updateOrganizationApplicationsForPlanChange', 'Failed to publish tenant.app.provisioned', { targetApp: newAppCode, error: (pubErr as Error).message });
               }
             })
           );
@@ -248,7 +249,7 @@ class OnboardingOrganizationSetupService {
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error updating organization applications for plan change:', error);
+      Logger.log('error', 'general', 'updateOrganizationApplicationsForPlanChange', 'Error updating organization applications for plan change', { error: error.message });
       throw error;
     }
   }
@@ -256,11 +257,11 @@ class OnboardingOrganizationSetupService {
   // Setup initial organization structure
   async setupInitialOrganizationStructure(tenantId: string, _organizationData: Record<string, unknown>): Promise<Record<string, unknown>> {
     try {
-      console.log('🏗️ Setting up initial organization structure:', { tenantId });
+      Logger.log('info', 'general', 'setupInitialOrganizationStructure', 'Setting up initial organization structure', { tenantId });
 
       // This would typically create default roles, permissions, etc.
       // For now, just return success
-      console.log('✅ Initial organization structure setup completed');
+      Logger.log('info', 'general', 'setupInitialOrganizationStructure', 'Initial organization structure setup completed');
 
       return {
         success: true,
@@ -274,7 +275,7 @@ class OnboardingOrganizationSetupService {
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error setting up initial organization structure:', error);
+      Logger.log('error', 'general', 'setupInitialOrganizationStructure', 'Error setting up initial organization structure', { error: error.message });
       throw error;
     }
   }
@@ -282,7 +283,7 @@ class OnboardingOrganizationSetupService {
   // Configure applications for new organization based on credit package with modules from permission matrix
   async configureApplicationsForNewOrganization(tenantId: string, creditPackage: string, organizationId: string | null = null): Promise<Record<string, unknown>> {
     try {
-      console.log('⚙️ Configuring applications for new organization:', { tenantId, creditPackage, organizationId });
+      Logger.log('info', 'general', 'configureApplicationsForNewOrganization', 'Configuring applications for new organization', { tenantId, creditPackage, organizationId });
 
       // Import permission matrix to get plan-based modules
       const { PLAN_ACCESS_MATRIX } = await import('../../../data/permission-matrix.js');
@@ -296,8 +297,8 @@ class OnboardingOrganizationSetupService {
       const appCodes = planAccess.applications || [];
       const modulesByApp = planAccess.modules || {};
       
-      console.log(`📋 Assigning applications for ${creditPackage} plan:`, appCodes);
-      console.log(`📋 Modules per application:`, modulesByApp);
+      Logger.log('info', 'general', 'configureApplicationsForNewOrganization', 'Assigning applications for plan', { creditPackage, appCodes });
+      Logger.log('info', 'general', 'configureApplicationsForNewOrganization', 'Modules per application', { modulesByApp });
 
       // Normalize app codes to match database (case-insensitive matching)
       const normalizeAppCode = (code: string): string => {
@@ -356,9 +357,9 @@ class OnboardingOrganizationSetupService {
             expiresAt: expiryDate
           });
           
-          console.log(`✅ Application ${appCode} configured with modules:`, finalEnabledModules);
+          Logger.log('info', 'general', 'configureApplicationsForNewOrganization', 'Application configured with modules', { appCode, enabledModulesCount: Array.isArray(finalEnabledModules) ? finalEnabledModules.length : 0 });
         } else {
-          console.warn(`⚠️ Application with code ${normalizedCode} (original: ${appCode}) not found in database. Available apps:`, Object.keys(appCodeToIdMap));
+          Logger.log('warning', 'general', 'configureApplicationsForNewOrganization', 'Application not found in database', { normalizedCode, appCode, available: Object.keys(appCodeToIdMap).join(', ') });
         }
       }
 
@@ -367,9 +368,9 @@ class OnboardingOrganizationSetupService {
           .insert(organizationApplications)
           .values(applicationsToInsert);
         
-        console.log(`✅ Successfully assigned ${applicationsToInsert.length} applications with modules to tenant ${tenantId}`);
+        Logger.log('info', 'general', 'configureApplicationsForNewOrganization', 'Successfully assigned applications with modules to tenant', { count: applicationsToInsert.length, tenantId });
       } else {
-        console.warn(`⚠️ No applications were assigned to tenant ${tenantId}`);
+        Logger.log('warning', 'general', 'configureApplicationsForNewOrganization', 'No applications were assigned to tenant', { tenantId });
       }
 
       return {
@@ -386,7 +387,7 @@ class OnboardingOrganizationSetupService {
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error configuring applications for new organization:', error);
+      Logger.log('error', 'general', 'configureApplicationsForNewOrganization', 'Error configuring applications for new organization', { error: error.message });
       throw error;
     }
   }

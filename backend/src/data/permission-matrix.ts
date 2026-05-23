@@ -2,6 +2,8 @@
 // This file defines all applications, their modules, and permissions
 // Run `npm run sync-permissions` to update the database
 
+import Logger from '../utils/logger.js';
+
 export const BUSINESS_SUITE_MATRIX = {
   // 🎯 **CRM APPLICATION**
   crm: {
@@ -235,6 +237,179 @@ export const BUSINESS_SUITE_MATRIX = {
         permissions: [
           // read-only feed — no write routes on the calendar module
           { code: 'read', name: 'View Calendar', description: 'View activity calendar' },
+        ]
+      },
+
+      notes: {
+        moduleCode: 'notes',
+        moduleName: 'Notes',
+        description: 'Add and view notes on CRM records',
+        isCore: true,
+        permissions: [
+          { code: 'read', name: 'View Notes', description: 'View notes attached to records' },
+          { code: 'create', name: 'Add Notes', description: 'Add notes to records' },
+          { code: 'update', name: 'Edit Notes', description: 'Edit existing notes' },
+          { code: 'delete', name: 'Delete Notes', description: 'Remove notes' },
+        ]
+      },
+
+      activities: {
+        moduleCode: 'activities',
+        moduleName: 'Activity Feed',
+        description: 'View activity timeline on CRM records',
+        isCore: true,
+        permissions: [
+          { code: 'read', name: 'View Activity Feed', description: 'View activity timeline and history' },
+        ]
+      },
+
+      products: {
+        moduleCode: 'products',
+        moduleName: 'Products',
+        description: 'Manage product catalogue used in quotes and orders',
+        isCore: false,
+        permissions: [
+          { code: 'read', name: 'View Products', description: 'View product records' },
+          { code: 'create', name: 'Create Products', description: 'Add new products' },
+          { code: 'update', name: 'Edit Products', description: 'Modify existing product records' },
+          { code: 'delete', name: 'Delete Products', description: 'Remove product records' },
+        ]
+      },
+
+      bulk_upload: {
+        moduleCode: 'bulk_upload',
+        moduleName: 'Bulk Import',
+        description: 'Import records in bulk via CSV upload',
+        isCore: false,
+        permissions: [
+          { code: 'read', name: 'View Import History', description: 'View bulk import history and results' },
+          { code: 'create', name: 'Run Bulk Import', description: 'Upload CSV files to import records' },
+          { code: 'delete', name: 'Delete Import Records', description: 'Remove bulk import records' },
+        ]
+      },
+
+      webforms: {
+        moduleCode: 'webforms',
+        moduleName: 'Web Forms',
+        description: 'Create and manage lead capture web forms',
+        isCore: false,
+        permissions: [
+          { code: 'read', name: 'View Web Forms', description: 'View web form definitions' },
+          { code: 'create', name: 'Create Web Forms', description: 'Create new web forms' },
+          { code: 'update', name: 'Edit Web Forms', description: 'Modify existing web forms' },
+          { code: 'delete', name: 'Delete Web Forms', description: 'Remove web forms' },
+        ]
+      },
+
+      email_templates: {
+        moduleCode: 'email_templates',
+        moduleName: 'Email Templates',
+        description: 'Create and manage CRM email templates',
+        isCore: false,
+        permissions: [
+          { code: 'read', name: 'View Email Templates', description: 'View email template definitions' },
+          { code: 'create', name: 'Create Email Templates', description: 'Create new email templates' },
+          { code: 'update', name: 'Edit Email Templates', description: 'Modify existing email templates' },
+          { code: 'delete', name: 'Delete Email Templates', description: 'Remove email templates' },
+        ]
+      },
+
+      cadences: {
+        moduleCode: 'cadences',
+        moduleName: 'Cadences',
+        description: 'Automated multi-step sales and communication sequences',
+        isCore: false,
+        permissions: [
+          { code: 'read', name: 'View Cadences', description: 'View cadence definitions' },
+          { code: 'create', name: 'Create Cadences', description: 'Create new cadences' },
+          { code: 'update', name: 'Edit Cadences', description: 'Modify existing cadences' },
+          { code: 'delete', name: 'Delete Cadences', description: 'Remove cadences' },
+        ]
+      },
+
+      marketing_campaigns: {
+        moduleCode: 'marketing_campaigns',
+        moduleName: 'Marketing Campaigns',
+        description: 'Manage email and marketing campaigns',
+        isCore: false,
+        permissions: [
+          { code: 'read', name: 'View Campaigns', description: 'View marketing campaign records' },
+          { code: 'create', name: 'Create Campaigns', description: 'Create new campaigns' },
+          { code: 'update', name: 'Edit Campaigns', description: 'Modify existing campaigns' },
+          { code: 'delete', name: 'Delete Campaigns', description: 'Remove campaigns' },
+        ]
+      },
+
+      approval_processes: {
+        moduleCode: 'approval_processes',
+        moduleName: 'Approval Workflows',
+        description: 'Define and manage approval workflows for CRM records',
+        isCore: false,
+        permissions: [
+          { code: 'read', name: 'View Approval Processes', description: 'View approval workflow definitions' },
+          { code: 'create', name: 'Create Approval Processes', description: 'Create new approval workflows' },
+          { code: 'update', name: 'Edit Approval Processes', description: 'Modify existing approval workflows' },
+          { code: 'delete', name: 'Delete Approval Processes', description: 'Remove approval workflows' },
+          { code: 'approve', name: 'Approve Records', description: 'Approve or reject records in approval workflows' },
+        ]
+      },
+
+      custom_fields: {
+        moduleCode: 'custom_fields',
+        moduleName: 'Custom Fields',
+        description: 'Admin: configure custom fields on CRM entity types',
+        isCore: false,
+        permissions: [
+          { code: 'read', name: 'View Custom Fields', description: 'View custom field definitions' },
+          { code: 'manage', name: 'Manage Custom Fields', description: 'Create, edit, and delete custom field definitions (admin only)' },
+        ]
+      },
+
+      layouts: {
+        moduleCode: 'layouts',
+        moduleName: 'Layouts',
+        description: 'Admin: configure record view layouts per role',
+        isCore: false,
+        permissions: [
+          { code: 'read', name: 'View Layouts', description: 'View layout definitions' },
+          { code: 'manage', name: 'Manage Layouts', description: 'Create, edit, and assign layouts (admin only)' },
+        ]
+      },
+
+      custom_buttons: {
+        moduleCode: 'custom_buttons',
+        moduleName: 'Custom Buttons',
+        description: 'Admin: configure custom action buttons on CRM records',
+        isCore: false,
+        permissions: [
+          { code: 'read', name: 'View Custom Buttons', description: 'View custom button definitions' },
+          { code: 'manage', name: 'Manage Custom Buttons', description: 'Create, edit, and delete custom buttons (admin only)' },
+          { code: 'execute', name: 'Execute Custom Buttons', description: 'Trigger custom button actions on records' },
+        ]
+      },
+
+      custom_functions: {
+        moduleCode: 'custom_functions',
+        moduleName: 'Custom Functions',
+        description: 'Admin: write and deploy serverless automation functions',
+        isCore: false,
+        permissions: [
+          { code: 'read', name: 'View Custom Functions', description: 'View custom function definitions' },
+          { code: 'manage', name: 'Manage Custom Functions', description: 'Create, edit, and deploy custom functions (admin only)' },
+          { code: 'execute', name: 'Execute Custom Functions', description: 'Trigger custom function execution' },
+        ]
+      },
+
+      webhooks: {
+        moduleCode: 'webhooks',
+        moduleName: 'Webhooks',
+        description: 'Configure outbound webhooks for CRM events',
+        isCore: false,
+        permissions: [
+          { code: 'read', name: 'View Webhooks', description: 'View webhook configurations' },
+          { code: 'create', name: 'Create Webhooks', description: 'Add new webhook endpoints' },
+          { code: 'update', name: 'Edit Webhooks', description: 'Modify existing webhook configurations' },
+          { code: 'delete', name: 'Delete Webhooks', description: 'Remove webhook configurations' },
         ]
       },
 
@@ -2134,14 +2309,18 @@ export const PLAN_ACCESS_MATRIX = {
   free: {
     applications: ['crm', 'accounting'],
     modules: {
-      crm: ['leads', 'contacts', 'accounts'],
+      crm: ['leads', 'contacts', 'accounts', 'tasks', 'notes', 'activities', 'notifications'],
       accounting: ['dashboard', 'invoices', 'customers', 'bills', 'vendors', 'expense_reports', 'chart_of_accounts', 'reports']
     },
     permissions: {
       crm: {
-        leads: ['read', 'create', 'update', 'delete'],
-        contacts: ['read', 'create', 'update', 'delete'],
-        accounts: ['read', 'create', 'update', 'delete'],
+        leads:         ['read', 'create', 'update', 'delete'],
+        contacts:      ['read', 'create', 'update', 'delete'],
+        accounts:      ['read', 'create', 'update', 'delete'],
+        tasks:         ['read', 'create', 'update', 'delete'],
+        notes:         ['read', 'create', 'update', 'delete'],
+        activities:    ['read'],
+        notifications: ['read', 'update'],
       },
       accounting: {
         dashboard: ['view'],
@@ -2165,7 +2344,16 @@ export const PLAN_ACCESS_MATRIX = {
   starter: {
     applications: ['crm', 'hr', 'project_management', 'accounting'],
     modules: {
-      crm: ['leads', 'contacts', 'accounts', 'opportunities', 'tickets', 'tasks', 'notifications'],
+      crm: [
+        // Core CRM
+        'leads', 'contacts', 'accounts',
+        // Pipeline & support
+        'opportunities', 'tickets',
+        // Activities
+        'tasks', 'meetings', 'calls', 'communications', 'notes', 'activities',
+        // Reference
+        'documents', 'notifications', 'calendar',
+      ],
       hr: ['employees', 'leave', 'dashboard'],
       project_management: ['projects', 'tasks', 'team', 'dashboard'],
       accounting: [
@@ -2176,13 +2364,20 @@ export const PLAN_ACCESS_MATRIX = {
     },
     permissions: {
       crm: {
-        leads: ['read', 'create', 'update', 'delete'],
-        contacts: ['read', 'create', 'update', 'delete'],
-        accounts: ['read', 'create', 'update', 'delete'],
-        opportunities: ['read', 'create', 'update', 'delete'],
-        tickets: ['read', 'create', 'update', 'delete'],
-        tasks: ['read', 'create', 'update', 'delete'],
-        notifications: ['read', 'update'],
+        leads:          ['read', 'create', 'update', 'delete'],
+        contacts:       ['read', 'create', 'update', 'delete'],
+        accounts:       ['read', 'create', 'update', 'delete'],
+        opportunities:  ['read', 'create', 'update', 'delete'],
+        tickets:        ['read', 'create', 'update', 'delete'],
+        tasks:          ['read', 'create', 'update', 'delete'],
+        meetings:       ['read', 'create', 'update', 'delete'],
+        calls:          ['read', 'create', 'update', 'delete'],
+        communications: ['read', 'create'],              // write-all unlocked at Professional
+        documents:      ['read', 'create', 'delete'],
+        notes:          ['read', 'create', 'update', 'delete'],
+        activities:     ['read'],
+        notifications:  ['read', 'update'],
+        calendar:       ['read'],
       },
       hr: {
         employees: ['read', 'create', 'update', 'delete'],
@@ -2218,7 +2413,16 @@ export const PLAN_ACCESS_MATRIX = {
   professional: {
     applications: ['crm', 'hr', 'project_management', 'accounting'],
     modules: {
-      crm: ['leads', 'contacts', 'accounts', 'opportunities', 'tickets', 'tasks', 'meetings', 'calls', 'events', 'communications', 'quotations', 'invoices', 'documents', 'notifications'],
+      crm: [
+        // All Starter modules
+        'leads', 'contacts', 'accounts', 'opportunities', 'tickets',
+        'tasks', 'meetings', 'calls', 'communications', 'notes', 'activities',
+        'documents', 'notifications', 'calendar',
+        // Professional additions — commercial pipeline
+        'events', 'quotations', 'invoices', 'sales-orders', 'products',
+        // Professional additions — data & outreach ops
+        'bulk_upload', 'webforms', 'email_templates',
+      ],
       hr: ['employees', 'payroll', 'leave', 'dashboard'],
       project_management: ['projects', 'tasks', 'sprints', 'time_tracking', 'team', 'backlog', 'documents', 'analytics', 'reports', 'chat', 'calendar', 'kanban', 'dashboard', 'notifications', 'workspace'],
       accounting: [
@@ -2234,20 +2438,37 @@ export const PLAN_ACCESS_MATRIX = {
     },
     permissions: {
       crm: {
-        leads: ['read', 'create', 'update', 'delete'],
-        contacts: ['read', 'create', 'update', 'delete'],
-        accounts: ['read', 'create', 'update', 'delete'],
-        opportunities: ['read', 'create', 'update', 'delete'],
-        tickets: ['read', 'create', 'update', 'delete'],
-        tasks: ['read', 'create', 'update', 'delete'],
-        meetings: ['read', 'create', 'update', 'delete'],
-        calls: ['read', 'create', 'update', 'delete'],
-        events: ['read', 'create', 'update', 'delete'],
-        communications: ['read', 'create', 'update', 'delete'],
-        quotations: ['read', 'create', 'update', 'delete'],
-        invoices: ['read', 'create', 'update', 'delete'],
-        documents: ['read', 'create', 'delete'],
-        notifications: ['read', 'update'],
+        // Core — same as Starter
+        leads:              ['read', 'create', 'update', 'delete'],
+        contacts:           ['read', 'create', 'update', 'delete'],
+        accounts:           ['read', 'create', 'update', 'delete'],
+        opportunities:      ['read', 'create', 'update', 'delete'],
+        tickets:            ['read', 'create', 'update', 'delete'],
+        tasks:              ['read', 'create', 'update', 'delete'],
+        meetings:           ['read', 'create', 'update', 'delete'],
+        calls:              ['read', 'create', 'update', 'delete'],
+        notes:              ['read', 'create', 'update', 'delete'],
+        activities:         ['read'],
+        documents:          ['read', 'create', 'delete'],
+        notifications:      ['read', 'update'],
+        calendar:           ['read'],
+        // Upgraded at Professional
+        communications:     ['read', 'create', 'update', 'delete'],  // full CRUD (Starter: read/create only)
+        // Commercial pipeline — Professional additions
+        events:             ['read', 'create', 'update', 'delete'],
+        quotations:         ['read', 'create', 'update', 'delete'],
+        invoices:           ['read', 'create', 'update', 'delete'],
+        'sales-orders':     ['read', 'create', 'update', 'delete'],
+        products:           ['read', 'create', 'update', 'delete'],
+        // Data & outreach ops — Professional additions
+        bulk_upload:        ['read', 'create', 'delete'],
+        webforms:           ['read', 'create', 'update', 'delete'],
+        email_templates:    ['read', 'create', 'update', 'delete'],
+        // Basic system access
+        // NOTE: reports_* codes are intentionally absent — the CRM reports module is gated by
+        // requireRole(admin) not requirePermission, so these codes have no effect in the CRM.
+        // Reports access in the CRM is admin-role-only regardless of plan tier.
+        system:             ['settings_read', 'users_read', 'users_read_all', 'users_create', 'users_update', 'users_activate', 'roles_read', 'roles_read_all', 'roles_create', 'roles_update', 'roles_assign', 'audit_read', 'activity_logs_read'],
       },
       hr: {
         employees: ['read', 'read_all', 'create', 'update', 'delete', 'manage_roles'],
@@ -2317,7 +2538,21 @@ export const PLAN_ACCESS_MATRIX = {
   enterprise: {
     applications: ['crm', 'hr', 'affiliateConnect', 'project_management', 'operations', 'accounting'],
     modules: {
-      crm: ['leads', 'accounts', 'contacts', 'opportunities', 'tickets', 'inventory', 'invoices', 'quotations', 'sales-orders', 'tasks', 'meetings', 'calls', 'events', 'communications', 'documents', 'notifications', 'calendar'],
+      crm: [
+        // All Professional modules
+        'leads', 'contacts', 'accounts', 'opportunities', 'tickets',
+        'tasks', 'meetings', 'calls', 'communications', 'notes', 'activities',
+        'documents', 'notifications', 'calendar',
+        'events', 'quotations', 'invoices', 'sales-orders', 'products',
+        'bulk_upload', 'webforms', 'email_templates',
+        // Enterprise additions — advanced automation & customisation
+        'inventory',
+        'cadences', 'marketing_campaigns',
+        'approval_processes',
+        'custom_fields', 'layouts',
+        'custom_buttons', 'custom_functions',
+        'webhooks',
+      ],
       hr: ['employees', 'payroll', 'leave', 'dashboard'],
       affiliateConnect: ['dashboard', 'products', 'affiliates', 'tracking', 'commissions', 'campaigns', 'influencers', 'payments', 'analytics', 'fraud', 'communications', 'integrations', 'settings', 'support'],
       project_management: ['projects', 'tasks', 'sprints', 'time_tracking', 'team', 'backlog', 'documents', 'analytics', 'reports', 'chat', 'calendar', 'kanban', 'dashboard', 'notifications', 'workspace', 'workflow', 'system'],
@@ -2334,23 +2569,51 @@ export const PLAN_ACCESS_MATRIX = {
     },
     permissions: {
       crm: {
-        leads: ['read', 'create', 'update', 'delete'],
-        accounts: ['read', 'create', 'update', 'delete'],
-        contacts: ['read', 'create', 'update', 'delete'],
-        opportunities: ['read', 'create', 'update', 'delete'],
-        tickets: ['read', 'create', 'update', 'delete'],
-        inventory: ['read', 'create', 'update', 'delete'],
-        invoices: ['read', 'create', 'update', 'delete'],
-        quotations: ['read', 'create', 'update', 'delete'],
-        'sales-orders': ['read', 'create', 'update', 'delete'],
-        tasks: ['read', 'create', 'update', 'delete'],
-        meetings: ['read', 'create', 'update', 'delete'],
-        calls: ['read', 'create', 'update', 'delete'],
-        events: ['read', 'create', 'update', 'delete'],
-        communications: ['read', 'create', 'update', 'delete'],
-        documents: ['read', 'create', 'delete'],
-        notifications: ['read', 'update'],
-        calendar: ['read'],
+        // All Professional permissions
+        leads:              ['read', 'create', 'update', 'delete'],
+        contacts:           ['read', 'create', 'update', 'delete'],
+        accounts:           ['read', 'create', 'update', 'delete'],
+        opportunities:      ['read', 'create', 'update', 'delete'],
+        tickets:            ['read', 'create', 'update', 'delete'],
+        tasks:              ['read', 'create', 'update', 'delete'],
+        meetings:           ['read', 'create', 'update', 'delete'],
+        calls:              ['read', 'create', 'update', 'delete'],
+        events:             ['read', 'create', 'update', 'delete'],
+        communications:     ['read', 'create', 'update', 'delete'],
+        quotations:         ['read', 'create', 'update', 'delete'],
+        invoices:           ['read', 'create', 'update', 'delete'],
+        'sales-orders':     ['read', 'create', 'update', 'delete'],
+        products:           ['read', 'create', 'update', 'delete'],
+        documents:          ['read', 'create', 'delete'],
+        notes:              ['read', 'create', 'update', 'delete'],
+        activities:         ['read'],
+        notifications:      ['read', 'update'],
+        calendar:           ['read'],
+        bulk_upload:        ['read', 'create', 'delete'],
+        webforms:           ['read', 'create', 'update', 'delete'],
+        email_templates:    ['read', 'create', 'update', 'delete'],
+        // Enterprise additions
+        inventory:          ['read', 'create', 'update', 'delete'],
+        cadences:           ['read', 'create', 'update', 'delete'],
+        marketing_campaigns: ['read', 'create', 'update', 'delete'],
+        approval_processes: ['read', 'create', 'update', 'delete', 'approve'],
+        custom_fields:      ['read', 'manage'],
+        layouts:            ['read', 'manage'],
+        custom_buttons:     ['read', 'manage', 'execute'],
+        custom_functions:   ['read', 'manage', 'execute'],
+        webhooks:           ['read', 'create', 'update', 'delete'],
+        // Full system access
+        system: [
+          'settings_read', 'settings_update',
+          'configurations_read', 'configurations_create', 'configurations_update', 'configurations_delete',
+          'users_read', 'users_read_all', 'users_create', 'users_update', 'users_delete', 'users_activate',
+          'roles_read', 'roles_read_all', 'roles_create', 'roles_update', 'roles_delete', 'roles_assign',
+          'audit_read', 'audit_read_all', 'audit_export', 'audit_view_details', 'audit_filter',
+          'activity_logs_read', 'activity_logs_read_all', 'activity_logs_export',
+          'reports_read', 'reports_read_all', 'reports_create', 'reports_update', 'reports_delete', 'reports_export', 'reports_schedule',
+          'dropdowns_read', 'dropdowns_create', 'dropdowns_update', 'dropdowns_delete',
+          'integrations_read', 'integrations_create', 'integrations_update', 'integrations_delete',
+        ],
       },
       hr: {
         employees: ['read', 'read_all', 'create', 'update', 'delete', 'view_salary', 'export'],
@@ -2690,7 +2953,7 @@ export function createSuperAdminRoleConfig(selectedPlan: string = 'free', tenant
   const planAccess = PLAN_ACCESS_MATRIX[selectedPlan as PlanIdKey];
   
   if (!planAccess) {
-    console.warn(`⚠️ Plan ${selectedPlan} not found in PLAN_ACCESS_MATRIX, using 'free' plan`);
+    Logger.log('warning', 'permissions', 'create-super-admin-role-config', `⚠️ Plan ${selectedPlan} not found in PLAN_ACCESS_MATRIX, using 'free' plan`);
     return createSuperAdminRoleConfig('free', tenantId, createdBy);
   }
 

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { api, applicationAssignmentAPI } from '@/lib/api';
 import { useOptimizedQuery, useBatchedQueries } from './useOptimizedQuery';
 import { cacheHelpers, CACHE_KEYS } from '@/lib/cache';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { useTrialStatus } from './useTrialStatus';
 import { useOrganizationAuth } from './useOrganizationAuth';
 import { useTenantApplications } from './useSharedQueries';

@@ -7,6 +7,7 @@ import { db } from '../../../db/index.js';
 import { entities } from '../../../db/schema/organizations/unified-entities.js';
 import { organizationMemberships } from '../../../db/schema/organizations/organization_memberships.js';
 import { eq, and, inArray } from 'drizzle-orm';
+import Logger from '../../../utils/logger.js';
 
 export interface DataIsolationUserContext {
   userId: string;
@@ -46,16 +47,7 @@ export class DataIsolationService {
   ): Promise<string[]> {
     const { userId, internalUserId, tenantId } = userContext;
     const { roles, isTenantAdmin } = resolveRolesAndTenantAdmin(userContext);
-    console.log(
-      '🔍 getUserAccessibleOrganizations - userId:',
-      userId,
-      'internalUserId:',
-      internalUserId,
-      'tenantId:',
-      tenantId,
-      'roles:',
-      roles
-    );
+    Logger.log('info', 'user', 'get-user-accessible-organizations', 'getUserAccessibleOrganizations called', { userId, internalUserId, tenantId, roles });
 
     let userMemberships: MembershipRow[] = [];
     try {
@@ -75,27 +67,21 @@ export class DataIsolationService {
           )
         );
       userMemberships = result as unknown as MembershipRow[];
-      console.log(
-        '✅ User organization memberships query successful:',
-        userMemberships.length,
-        'records'
-      );
+      Logger.log('info', 'user', 'get-user-accessible-organizations', 'User organization memberships query successful', { count: userMemberships.length });
     } catch (err: unknown) {
       const queryError = err as Error;
-      console.error('❌ User organization memberships query failed:', queryError);
-      console.error('❌ Query error details:', queryError.message);
-      console.error('❌ Using userId:', internalUserId || userId);
+      Logger.log('error', 'user', 'get-user-accessible-organizations', 'User organization memberships query failed', { error: queryError.message, userId: internalUserId || userId });
       userMemberships = [];
     }
 
     const directOrgIds = userMemberships
       .map((m) => m.organizationId)
       .filter((id): id is string => id != null);
-    console.log('📋 Direct entity IDs:', directOrgIds);
+    Logger.log('info', 'user', 'get-user-accessible-organizations', 'Direct entity IDs', { directOrgIds });
 
     if (!tenantId) return [];
     if (isTenantAdmin) {
-      console.log('👑 User is tenant admin, granting access to all organizations');
+      Logger.log('info', 'user', 'get-user-accessible-organizations', 'User is tenant admin, granting access to all organizations');
       const allOrgs = await db
         .select({ entityId: entities.entityId })
         .from(entities)
@@ -109,7 +95,7 @@ export class DataIsolationService {
     const accessibleOrgs = new Set(directOrgIds);
 
     if (directOrgIds.length === 0) {
-      console.log('ℹ️ User has no direct organization memberships, returning empty array');
+      Logger.log('info', 'user', 'get-user-accessible-organizations', 'User has no direct organization memberships, returning empty array');
       return [];
     }
 
@@ -199,32 +185,30 @@ export class DataIsolationService {
     scope: { orgCount: number; locationCount: number };
   }> {
     try {
-      console.log('🔍 getUserAccessScope - Starting with userContext:', {
+      Logger.log('info', 'user', 'get-user-access-scope', 'getUserAccessScope called', {
         userId: userContext.userId,
         tenantId: userContext.tenantId,
-        roles: 'roles' in userContext ? userContext.roles : undefined,
       });
 
       const accessibleOrgs = await this.getUserAccessibleOrganizations(userContext);
-      console.log('📋 Accessible organizations:', accessibleOrgs);
+      Logger.log('info', 'user', 'get-user-access-scope', 'Accessible organizations', { count: accessibleOrgs.length });
 
       const accessibleLocations = await this.getUserAccessibleLocations(
         userContext,
         accessibleOrgs
       );
-      console.log('📍 Accessible locations:', accessibleLocations);
+      Logger.log('info', 'user', 'get-user-access-scope', 'Accessible locations', { count: accessibleLocations.length });
 
       const cleanOrgIds = (accessibleOrgs || []).filter((id) => id != null);
       const cleanLocationIds = (accessibleLocations || []).filter((id) => id != null);
 
-      console.log('🧹 Clean org IDs:', cleanOrgIds);
-      console.log('🧹 Clean location IDs:', cleanLocationIds);
+      Logger.log('info', 'user', 'get-user-access-scope', 'Clean entity IDs', { cleanOrgIds: cleanOrgIds.length, cleanLocationIds: cleanLocationIds.length });
 
       let orgDetails: Array<Record<string, unknown>> = [];
       let locationDetails: Array<Record<string, unknown>> = [];
 
       if (cleanOrgIds.length > 0 || cleanLocationIds.length > 0) {
-        console.log('🔍 Querying entity details...');
+        Logger.log('info', 'user', 'get-user-access-scope', 'Querying entity details');
         try {
           const allEntityIds = [...cleanOrgIds, ...cleanLocationIds];
           const entityDetails = await db
@@ -251,22 +235,14 @@ export class DataIsolationService {
               locationName: e.entityName,
             }));
 
-          console.log(
-            '✅ Entity details retrieved:',
-            entityDetails.length,
-            '(orgs:',
-            orgDetails.length,
-            ', locs:',
-            locationDetails.length,
-            ')'
-          );
+          Logger.log('info', 'user', 'get-user-access-scope', 'Entity details retrieved', { total: entityDetails.length, orgs: orgDetails.length, locations: locationDetails.length });
         } catch (entityError: unknown) {
-          console.error('❌ Entity query failed:', entityError);
+          Logger.log('error', 'user', 'get-user-access-scope', 'Entity query failed', { error: (entityError as Error).message });
           orgDetails = [];
           locationDetails = [];
         }
       } else {
-        console.log('ℹ️ No accessible entities, skipping query');
+        Logger.log('info', 'user', 'get-user-access-scope', 'No accessible entities, skipping query');
       }
 
       const result = {
@@ -278,12 +254,11 @@ export class DataIsolationService {
         },
       };
 
-      console.log('✅ getUserAccessScope - Success:', result.scope);
+      Logger.log('info', 'user', 'get-user-access-scope', 'getUserAccessScope succeeded', { scope: result.scope });
       return result;
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error in getUserAccessScope:', error);
-      console.error('❌ Error stack:', error.stack);
+      Logger.log('error', 'user', 'get-user-access-scope', 'Error in getUserAccessScope', { error: error.message });
       return {
         organizations: [],
         locations: [],
@@ -404,7 +379,7 @@ export class ApplicationDataIsolationService {
           return false;
       }
     } catch (err: unknown) {
-      console.error('❌ Error in canAccessDataInApplication:', err);
+      Logger.log('error', 'user', 'can-access-data-in-application', 'Error in canAccessDataInApplication', { error: (err as Error).message });
       return false;
     }
   }
@@ -443,7 +418,7 @@ export class ApplicationDataIsolationService {
 
       return canAccess ? data : null;
     } catch (err: unknown) {
-      console.error('❌ Error in filterDataByApplication:', err);
+      Logger.log('error', 'user', 'filter-data-by-application', 'Error in filterDataByApplication', { error: (err as Error).message });
       return Array.isArray(data) ? [] : null;
     }
   }

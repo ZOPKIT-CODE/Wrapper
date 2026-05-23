@@ -2,6 +2,7 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import CustomRoleService from '../services/custom-role-service.js';
 import { authenticateToken, requirePermission } from '../../../middleware/auth/auth.js';
 import { PERMISSIONS } from '../../../constants/permissions.js';
+import Logger from '../../../utils/logger.js';
 type ReqWithUser = FastifyRequest & { userContext?: { tenantId?: string; internalUserId?: string }; body?: Record<string, unknown>; params?: Record<string, string> };
 
 /**
@@ -43,7 +44,7 @@ export default async function customRolesRoutes(
       
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error getting builder options:', error);
+      Logger.log('error', 'role', 'get-builder-options', 'Error getting builder options', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to get role builder options'
@@ -95,7 +96,7 @@ export default async function customRolesRoutes(
       
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error creating role:', error);
+      Logger.log('error', 'role', 'create-from-builder', 'Error creating role', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to create custom role'
@@ -131,12 +132,7 @@ export default async function customRolesRoutes(
         });
       }
       
-      console.log('🔄 Updating role from builder:', { 
-        roleId, 
-        roleName,
-        restrictionsType: typeof restrictions,
-        restrictionsValue: restrictions
-      });
+      Logger.log('info', 'role', 'update-from-builder', 'Updating role from builder', { roleId, roleName, restrictionsType: typeof restrictions });
       
       const updatedRole = await CustomRoleService.updateRoleFromAppsAndModules({
         tenantId,
@@ -166,10 +162,10 @@ export default async function customRolesRoutes(
           updatedBy: (request as any).userContext?.internalUserId ?? '',
           updatedAt: updatedRole.updatedAt || new Date().toISOString()
         });
-        console.log('📡 Published role_updated event to Redis streams');
+        Logger.log('info', 'role', 'update-from-builder', 'Published role_updated event to Redis streams');
       } catch (publishErr: unknown) {
         const publishError = publishErr as Error;
-        console.warn('⚠️ Failed to publish role_updated event:', publishError.message);
+        Logger.log('warning', 'role', 'update-from-builder', 'Failed to publish role_updated event', { error: publishError.message });
       }
       
       return {
@@ -180,7 +176,7 @@ export default async function customRolesRoutes(
       
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error updating role:', error);
+      Logger.log('error', 'role', 'update-from-builder', 'Error updating role', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: error.message || 'Failed to update custom role'
@@ -220,7 +216,7 @@ export default async function customRolesRoutes(
       
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error assigning user permissions:', error);
+      Logger.log('error', 'role', 'assign-user-permissions', 'Error assigning user permissions', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to assign user permissions'
@@ -251,7 +247,7 @@ export default async function customRolesRoutes(
       
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error getting user permissions:', error);
+      Logger.log('error', 'role', 'get-user-permissions', 'Error getting user permissions', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to get user permissions'
@@ -289,7 +285,7 @@ export default async function customRolesRoutes(
       
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error demonstrating usage:', error);
+      Logger.log('error', 'role', 'demonstrate-usage', 'Error demonstrating usage', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to demonstrate usage'

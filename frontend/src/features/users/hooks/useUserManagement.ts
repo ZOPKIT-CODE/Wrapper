@@ -7,7 +7,7 @@ import {
   UpdateProfileData,
   AssignRoleData,
 } from '@/lib/api/users'
-import toast from 'react-hot-toast'
+import { toast } from 'sonner'
 
 const userKeys = {
   all: ['users'] as const,
@@ -130,9 +130,9 @@ export function useRemoveUser() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (userId: string) => usersAPI.removeUser(userId),
-    onSuccess: () => {
+    onSuccess: (_data, userId) => {
       qc.invalidateQueries({ queryKey: userKeys.all })
-      toast.success('User removed')
+      toast.success(userId.startsWith('inv_') ? 'Invitation cancelled' : 'User removed')
     },
     onError: (err: Error & { response?: { data?: { error?: string } } }) => {
       toast.error(err?.response?.data?.error || 'Failed to remove user')

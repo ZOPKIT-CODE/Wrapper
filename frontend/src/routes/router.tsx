@@ -7,7 +7,7 @@ import { ZopkitRoundLoader } from '@/components/common/feedback/ZopkitRoundLoade
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import ProtectedRoute from '@/components/auth/ProtectedRoute'
 import { PermissionGuard } from '@/components/auth/PermissionGuard'
-import { OnboardingGuard, OnboardingPageGuard } from '@/features/onboarding/indexOptimized'
+import { OnboardingGuard, OnboardingPageGuard } from '@/features/onboarding'
 import { ErrorBoundary } from '@/errors/ErrorBoundary'
 import SilentAuthGuard from '@/components/auth/SilentAuthGuard'
 import { UserContextProvider } from '@/contexts/UserContextProvider'
@@ -23,7 +23,7 @@ import {
   ApplicationPage, ApplicationDetailsPage,
   RolesPage, RoleDetailsPage, RoleBuilderPage, UserManagementPage, OrganizationPage, OrganizationCreatePage,
   Permissions, Settings,   AdminDashboardPage, TenantDetailsPage,
-  CampaignDetailsPage, CreateCampaignPage, EmailPreviewPage, NotFound,
+  CampaignDetailsPage, CreateCampaignPage, EmailPreviewPage, InviteAcceptDemo, NotFound,
 } from './lazyPages'
 
 function LoadingScreen() {
@@ -265,6 +265,11 @@ const devEmailPreviewRoute = createRoute({
   path: '/dev/email-preview',
   component: EmailPreviewPage,
 })
+const devInvitePreviewRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/dev/invite-preview',
+  component: InviteAcceptDemo,
+})
 
 // ---------------------------------------------------------------------------
 // Route tree assembly
@@ -311,6 +316,7 @@ const routeTree = rootRoute.addChildren([
   companyAdminCreateCampaignRoute,
   companyAdminRoute,
   devEmailPreviewRoute,
+  devInvitePreviewRoute,
 ])
 
 // ---------------------------------------------------------------------------

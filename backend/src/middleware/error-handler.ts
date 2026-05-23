@@ -1,6 +1,8 @@
 import * as Sentry from '@sentry/node';
 import ActivityLogger from '../services/activityLogger.js';
 import type { FastifyRequest, FastifyReply } from 'fastify';
+import { ErrorCodes, httpStatusToErrorCode, type ErrorCode } from '../utils/error-responses.js';
+import Logger from '../utils/logger.js';
 
 interface ValidationError {
   instancePath?: string;
@@ -16,33 +18,70 @@ interface FastifyError extends Error {
   code?: string;
 }
 
+interface LegacyDetail {
+  field: string | undefined;
+  message: string;
+  value: unknown;
+}
+
+/**
+ * Response shape emitted by the global error handler.
+ *
+ * Dual-shape for backward compatibility:
+ *
+ * - `body.error` is a human-readable STRING (legacy primary, kept indefinitely
+ *   so existing CRM/FA clients that call `body.error.toLowerCase()` or
+ *   `body.error.includes(...)` keep working).
+ * - `body.apiError` is the new canonical structured object
+ *   `{ code, message, details? }`. New clients should opt in to this shape
+ *   when they're ready to migrate.
+ *
+ * The remaining top-level fields (`statusCode`, `timestamp`, `path`, `details`,
+ * `message`, `stack`, `correlationId`, `logId`) are kept for backward compat.
+ */
 interface ErrorResponse {
+  success: false;
+  // Legacy primary: human-readable string. DO NOT change to an object — CRM/FA
+  // clients call `.toLowerCase()` / `.includes()` on this directly.
   error: string;
+  // New canonical structured shape (opt-in for new clients).
+  apiError: ApiErrorObject;
+  // Legacy fields (kept) ----------------------------------------------------
   statusCode: number;
   timestamp: string;
   path: string;
-  details?: { field: string | undefined; message: string; value: unknown }[] | null;
+  details?: LegacyDetail[] | null;
   message?: string;
   stack?: string;
   correlationId?: string;
   logId?: string;
 }
 
+interface ApiErrorObject {
+  code: string;
+  message: string;
+  details?: unknown;
+}
+
 export async function errorHandler(error: FastifyError, request: FastifyRequest, reply: FastifyReply): Promise<void> {
   request.log.error(error);
 
   let statusCode = 500;
-  let message = 'Internal Server Error';
-  let details: { field: string | undefined; message: string; value: unknown }[] | null = null;
+  let legacyErrorLabel = 'Internal Server Error'; // legacy `error` string at top level
+  let canonicalCode: ErrorCode | string = ErrorCodes.INTERNAL;
+  let canonicalMessage: string = legacyErrorLabel;
+  let details: LegacyDetail[] | null = null;
+  let canonicalDetails: unknown | undefined;
 
   if (error.validation) {
     statusCode = 400;
-    message = 'Validation Error';
-    
+    legacyErrorLabel = 'Validation Error';
+    canonicalCode = ErrorCodes.INVALID_INPUT;
+
     details = error.validation.map(v => {
       const fieldName = v.instancePath?.replace('/', '') || v.params?.missingProperty || 'unknown';
       let userMessage = v.message || 'Invalid value';
-      
+
       if (v.keyword === 'required') {
         userMessage = `${fieldName} is required`;
       } else if (v.keyword === 'minLength') {
@@ -62,36 +101,76 @@ export async function errorHandler(error: FastifyError, request: FastifyRequest,
       } else if (v.keyword === 'type') {
         userMessage = `${fieldName} must be of type ${v.params?.type}`;
       }
-      
+
       return {
         field: v.instancePath,
         message: userMessage,
         value: v.data,
       };
     });
+
+    // For the canonical body, expose the structured validation issues directly.
+    canonicalDetails = details;
+    canonicalMessage = legacyErrorLabel;
   } else if (error.statusCode) {
     statusCode = error.statusCode;
-    message = error.message;
+    legacyErrorLabel = error.message;
+    canonicalMessage = error.message;
+    // Honor an explicit error.code if it already looks like one of our ErrorCodes;
+    // otherwise derive from status. (Fastify framework codes like FST_* are caught below.)
+    const errCode = (error as FastifyError & { code?: string }).code;
+    if (errCode && Object.values(ErrorCodes).includes(errCode as ErrorCode)) {
+      canonicalCode = errCode;
+    } else {
+      canonicalCode = httpStatusToErrorCode(statusCode);
+    }
   } else if (error.code === 'FST_JWT_NO_AUTHORIZATION_IN_HEADER') {
     statusCode = 401;
-    message = 'No authorization header';
+    legacyErrorLabel = 'No authorization header';
+    canonicalCode = ErrorCodes.UNAUTHORIZED;
+    canonicalMessage = legacyErrorLabel;
   } else if (error.code === 'FST_JWT_AUTHORIZATION_TOKEN_INVALID') {
     statusCode = 401;
-    message = 'Invalid authorization token';
+    legacyErrorLabel = 'Invalid authorization token';
+    canonicalCode = ErrorCodes.UNAUTHORIZED;
+    canonicalMessage = legacyErrorLabel;
   } else if (error.code === 'FST_RATE_LIMIT_REACHED') {
     statusCode = 429;
-    message = 'Rate limit exceeded';
+    legacyErrorLabel = 'Rate limit exceeded';
+    canonicalCode = ErrorCodes.RATE_LIMITED;
+    canonicalMessage = legacyErrorLabel;
   } else if (error.code === 'ECONNREFUSED') {
     statusCode = 503;
-    message = 'Service unavailable';
+    legacyErrorLabel = 'Service unavailable';
+    canonicalCode = ErrorCodes.SERVICE_UNAVAILABLE;
+    canonicalMessage = legacyErrorLabel;
   } else if (error.name === 'DrizzleError') {
     statusCode = 500;
-    message = 'Database error';
-    details = process.env.NODE_ENV === 'development' ? [{ field: undefined, message: error.message, value: undefined }] : null;
+    legacyErrorLabel = 'Database error';
+    canonicalCode = ErrorCodes.INTERNAL;
+    canonicalMessage = legacyErrorLabel;
+    details = process.env.NODE_ENV === 'development'
+      ? [{ field: undefined, message: error.message, value: undefined }]
+      : null;
+    if (process.env.NODE_ENV === 'development') {
+      canonicalDetails = { dbError: error.message };
+    }
   }
 
+  // Build the structured canonical object (exposed under `apiError`).
+  const canonicalError: ApiErrorObject = {
+    code: canonicalCode,
+    message: canonicalMessage,
+    ...(canonicalDetails !== undefined ? { details: canonicalDetails } : {}),
+  };
+
   const response: ErrorResponse = {
-    error: message,
+    success: false,
+    // Legacy primary: human-readable string (CRM/FA clients call .toLowerCase()
+    // and .includes() on this — must remain a string).
+    error: legacyErrorLabel,
+    // New canonical structured shape (opt-in for new clients).
+    apiError: canonicalError,
     statusCode,
     timestamp: new Date().toISOString(),
     path: request.url,
@@ -116,10 +195,22 @@ export async function errorHandler(error: FastifyError, request: FastifyRequest,
     response.stack = error.stack;
   }
 
+  // ── Dual-shape contract (backward compatible) ──────────────────────────
+  // `response.error`    is the legacy human-readable STRING (already set above).
+  // `response.apiError` is the new canonical structured shape (also set above):
+  //
+  //   LEGACY:  body.error              // 'No authorization header'   (string)
+  //   NEW:     body.apiError.code      // 'UNAUTHORIZED'
+  //   NEW:     body.apiError.message   // 'No authorization header'
+  //   NEW:     body.apiError.details   // optional, e.g. zod issues
+  //
+  // Existing CRM/FA callers continue to read `body.error` as a string. New
+  // clients should opt in to `body.apiError` when they migrate.
+
   if (request.user?.tenantId || request.userContext?.tenantId) {
     const tenantId = request.user?.tenantId || request.userContext?.tenantId;
     const userId = request.user?.internalUserId || request.user?.userId || request.userContext?.userId;
-    
+
     setImmediate(async () => {
       try {
         const requestContext = {
@@ -151,7 +242,7 @@ export async function errorHandler(error: FastifyError, request: FastifyRequest,
           response.logId = result.logId;
         }
       } catch (logError) {
-        console.error('❌ Failed to log error to activity logs:', logError);
+        Logger.log('error', 'middleware', 'error-handler', '❌ Failed to log error to activity logs', { error: logError });
       }
     });
   }

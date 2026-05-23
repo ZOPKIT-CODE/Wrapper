@@ -5,6 +5,7 @@
  */
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import Logger from '../../../utils/logger.js';
 import UnifiedOnboardingService from '../services/unified-onboarding-service.js';
 import OnboardingValidationService from '../services/onboarding-validation-service.js';
 import { invalidateUserCache } from '../../../middleware/auth/auth.js';
@@ -26,7 +27,7 @@ export default async function coreOnboardingRoutes(
       const step = body.step as number;
       const data = (body.data ?? {}) as Record<string, unknown>;
       
-      console.log(`🔍 Validating onboarding step ${step}...`);
+      Logger.log('info', 'general', 'validate-step', 'Validating onboarding step', { step });
 
       const errors: Array<{ field: string; message: string; code?: string; redirectTo?: string }> = [];
       let isValid = true;
@@ -113,11 +114,11 @@ export default async function coreOnboardingRoutes(
                   });
                   isValid = false;
                 } else {
-                  console.warn('⚠️ PAN verification skipped (API/config). Step validation allows proceed.');
+                  Logger.log('warning', 'general', 'validate-step', 'PAN verification skipped (API/config). Step validation allows proceed.');
                 }
               }
             } catch (verifyErr: unknown) {
-              console.warn('PAN verification error (non-blocking):', (verifyErr as Error)?.message);
+              Logger.log('warning', 'general', 'validate-step', 'PAN verification error (non-blocking)', { error: (verifyErr as Error)?.message });
             }
           }
         }
@@ -153,11 +154,11 @@ export default async function coreOnboardingRoutes(
                   });
                   isValid = false;
                 } else {
-                  console.warn('⚠️ GSTIN verification skipped (API/config). Step validation allows proceed.');
+                  Logger.log('warning', 'general', 'validate-step', 'GSTIN verification skipped (API/config). Step validation allows proceed.');
                 }
               }
             } catch (verifyErr: unknown) {
-              console.warn('GSTIN verification error (non-blocking):', (verifyErr as Error)?.message);
+              Logger.log('warning', 'general', 'validate-step', 'GSTIN verification error (non-blocking)', { error: (verifyErr as Error)?.message });
             }
           }
         }
@@ -206,7 +207,7 @@ export default async function coreOnboardingRoutes(
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Step validation error:', error);
+      Logger.log('error', 'general', 'validate-step', 'Step validation error', { error: error.message });
       return reply.code(500).send({
         success: false,
         valid: false,
@@ -257,7 +258,7 @@ export default async function coreOnboardingRoutes(
     schema: {}
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
-      console.log('🚀 === FRONTEND ONBOARDING START ===');
+      Logger.log('info', 'general', 'onboard-frontend', 'Frontend onboarding start');
 
       const body = request.body as Record<string, unknown>;
       const {
@@ -359,7 +360,7 @@ export default async function coreOnboardingRoutes(
         initialCredits: 1000
       }, request);
 
-      console.log('🎉 === FRONTEND ONBOARDING COMPLETE ===');
+      Logger.log('info', 'general', 'onboard-frontend', 'Frontend onboarding complete');
 
       const res = result as { tenant: { tenantId: string; subdomain: string }; adminUser: { userId: string; kindeUserId?: string }; organization: { organizationId: string }; adminRole: { roleId: string }; redirectUrl?: string; creditAllocated?: number; onboardingType?: string };
 
@@ -371,7 +372,7 @@ export default async function coreOnboardingRoutes(
       // post-onboarding request to fail with 401 ("Unauthorized") until TTL expires.
       const kindeUserIdFromResult = res.adminUser.kindeUserId;
       if (kindeUserIdFromResult) {
-        invalidateUserCache(kindeUserIdFromResult);
+        await invalidateUserCache(kindeUserIdFromResult);
       }
       return reply.code(201).send({
         success: true,
@@ -391,7 +392,7 @@ export default async function coreOnboardingRoutes(
     } catch (err: unknown) {
       const error = err as Error;
       const errAny = error as unknown as Record<string, unknown>;
-      console.error('❌ Frontend onboarding failed:', error);
+      Logger.log('error', 'general', 'onboard-frontend', 'Frontend onboarding failed', { error: error.message });
 
       // Handle Fastify schema validation errors
       if (errAny.validation && Array.isArray(errAny.validation)) {
@@ -569,7 +570,7 @@ export default async function coreOnboardingRoutes(
           const user = await kindeService.validateToken(token);
           kindeUserId = user.kindeUserId || user.userId;
         } catch (authErr: unknown) {
-          console.warn('Could not validate token for retry data:', (authErr as Error).message);
+          Logger.log('warning', 'general', 'retry-data', 'Could not validate token for retry data', { error: (authErr as Error).message });
         }
       }
 
@@ -605,7 +606,7 @@ export default async function coreOnboardingRoutes(
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error retrieving retry data:', error);
+      Logger.log('error', 'general', 'retry-data', 'Error retrieving retry data', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to retrieve saved data',
@@ -675,7 +676,7 @@ export default async function coreOnboardingRoutes(
         try {
           await (UnifiedOnboardingServiceImport as { deleteStoredOnboardingFormData: (a: string, b: string) => Promise<void> }).deleteStoredOnboardingFormData(kindeUserId as string, email as string);
         } catch (deleteErr: unknown) {
-          console.warn('⚠️ Failed to delete stored form data (non-critical):', (deleteErr as Error).message);
+          Logger.log('warning', 'general', 'onboard-retry', 'Failed to delete stored form data (non-critical)', { error: (deleteErr as Error).message });
         }
       }
 
@@ -696,7 +697,7 @@ export default async function coreOnboardingRoutes(
 
     } catch (err: unknown) {
       const error = err as Error & { errors?: Array<{ field?: string; message?: string; code?: string }> };
-      console.error('❌ Retry onboarding failed:', error);
+      Logger.log('error', 'general', 'onboard-retry', 'Retry onboarding failed', { error: error.message });
 
       // Handle validation errors
       if ((error as unknown as Record<string, unknown>).name === 'ValidationError' && error.errors) {

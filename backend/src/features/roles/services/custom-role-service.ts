@@ -5,6 +5,7 @@ import { customRoles } from '../../../db/schema/core/permissions.js';
 import { creditConfigurations } from '../../../db/schema/billing/credit_configurations.js';
 import { getAccessibleModules } from '../../../config/permission-tiers.js';
 import { BUSINESS_SUITE_MATRIX } from '../../../data/permission-matrix.js';
+import Logger from '../../../utils/logger.js';
 
 import { v4 as uuidv4 } from 'uuid';
 
@@ -230,13 +231,7 @@ export class CustomRoleService {
     createdBy?: string | null;
   }): Promise<typeof customRoles.$inferSelect> {
 
-    console.log('🏗️ Creating custom role from apps and modules...');
-    console.log('📥 Received parameters:', {
-      roleName,
-      selectedApps,
-      selectedModules,
-      selectedPermissions: JSON.stringify(selectedPermissions, null, 2)
-    });
+    Logger.log('info', 'role', 'create-custom-role', 'Creating custom role from apps and modules', { roleName, selectedApps, selectedModules });
 
 
     // 0. Get a default user for createdBy if not provided
@@ -252,7 +247,7 @@ export class CustomRoleService {
         throw new Error(`No users found for tenant ${tenantId}. Cannot create role without a creator.`);
       }
       createdBy = user.userId;
-      console.log(`📤 Using user ${user.email} as role creator`);
+      Logger.log('info', 'role', 'create-custom-role', 'Using default user as role creator', { userEmail: user.email });
     }
 
     // 1. Get applications from database
@@ -265,7 +260,7 @@ export class CustomRoleService {
       .from(applications)
       .where(inArray(applications.appCode, selectedApps));
 
-    console.log(`📱 Found ${apps.length} applications:`, apps.map(a => a.appCode));
+    Logger.log('info', 'role', 'create-custom-role', 'Found applications', { count: apps.length, appCodes: apps.map(a => a.appCode) });
 
     // 2. Build permission list by iterating through apps and modules
     const permissions: string[] = [];
@@ -284,7 +279,7 @@ export class CustomRoleService {
 
       // Skip this app if no modules are selected
       if (appSelectedModules.length === 0) {
-        console.log(`⚠️ App ${app.appCode} has no selected modules, skipping`);
+        Logger.log('info', 'role', 'create-custom-role', 'App has no selected modules, skipping', { appCode: app.appCode });
         continue;
       }
 
@@ -296,16 +291,11 @@ export class CustomRoleService {
           inArray(applicationModules.moduleCode, appSelectedModules)
         ));
 
-      console.log(`🧩 App ${app.appCode} has ${appModules.length} selected modules`);
-
+      Logger.log('info', 'role', 'create-custom-role', 'App has selected modules', { appCode: app.appCode, moduleCount: appModules.length });
 
       for (const module of appModules) {
         const moduleKey = `${app.appCode}.${module.moduleCode}`;
         const allowedPermissions = selectedPermissions[moduleKey] || [];
-
-        console.log(`  📋 Module ${moduleKey}:`);
-        console.log(`    - Allowed permissions from request:`, allowedPermissions);
-        console.log(`    - Module permissions from DB:`, module.permissions);
 
         // Add permissions for this module
         // Handle both string permissions and object permissions
@@ -313,36 +303,22 @@ export class CustomRoleService {
           allowedPermissions.forEach((permCode: string) => {
             const fullCode = `${app.appCode}.${module.moduleCode}.${permCode}`;
             permissions.push(fullCode);
-            console.log(`  ✅ Added permission: ${fullCode}`);
           });
-        } else {
-          console.log(`  ⚠️ No permissions selected for ${moduleKey}`);
         }
       }
     }
 
     // 3. Create custom role
-    console.log('� Total permissions collected:', permissions.length);
-    console.log('📋 Permissions array:', permissions);
-
-    console.log('�🔧 Processing restrictions for database (create):', {
-      restrictionsType: typeof restrictions,
-      restrictionsValue: restrictions,
-      isString: typeof restrictions === 'string',
-      isObject: typeof restrictions === 'object'
-    });
+    Logger.log('info', 'role', 'create-custom-role', 'Total permissions collected', { count: permissions.length });
 
     // Convert permissions to hierarchical format (consistent with Super Administrator)
     const hierarchicalPermissions = convertPermissionsToHierarchical(permissions);
-    console.log('🌳 Hierarchical permissions:', JSON.stringify(hierarchicalPermissions, null, 2));
 
     // Handle restrictions properly - avoid double-stringification
     let processedRestrictions;
     if (typeof restrictions === 'string') {
-      console.log('🚨 Restrictions already a string, using as-is');
       processedRestrictions = restrictions;
     } else {
-      console.log('📦 Restrictions is object, stringifying');
       processedRestrictions = JSON.stringify(restrictions);
     }
 
@@ -357,10 +333,9 @@ export class CustomRoleService {
       lastModifiedBy: createdBy!
     }).returning();
 
-    console.log(`🎉 Created role "${roleName}" with hierarchical permissions structure`);
+    Logger.log('info', 'role', 'create-custom-role', 'Created role with hierarchical permissions structure', { roleName });
 
     // Publish role creation event to relevant applications (only apps with permissions)
-    console.log('🎯 About to publish role creation event for custom role:', role?.roleId);
     try {
       await publishRoleEventToApplications(
         'role.created',
@@ -376,11 +351,10 @@ export class CustomRoleService {
           createdAt: role.createdAt
         }
       );
-      console.log('✅ Role creation event publishing completed for custom role');
+      Logger.log('info', 'role', 'create-custom-role', 'Role creation event published', { roleId: role?.roleId });
     } catch (err: unknown) {
       const publishError = err as Error;
-      console.warn('⚠️ Failed to publish role creation event:', publishError.message);
-      console.error('Full error:', publishError);
+      Logger.log('warning', 'role', 'create-custom-role', 'Failed to publish role creation event', { error: publishError.message });
       // Don't fail the role creation if event publishing fails
     }
 
@@ -415,7 +389,7 @@ export class CustomRoleService {
     updatedBy?: string | null;
   }): Promise<typeof customRoles.$inferSelect> {
 
-    console.log('🔄 Updating custom role from apps and modules...');
+    Logger.log('info', 'role', 'update-custom-role', 'Updating custom role from apps and modules');
 
     // 0. Check if role exists and is not a system role
     const [existingRole] = await db
@@ -447,7 +421,7 @@ export class CustomRoleService {
         throw new Error(`No users found for tenant ${tenantId}. Cannot update role without an updater.`);
       }
       updatedBy = user.userId;
-      console.log(`📤 Using user ${user.email} as role updater`);
+      Logger.log('info', 'role', 'update-custom-role', 'Using default user as role updater', { userEmail: user.email });
     }
 
     // 2. Get applications from database
@@ -460,7 +434,7 @@ export class CustomRoleService {
       .from(applications)
       .where(inArray(applications.appCode, selectedApps));
 
-    console.log(`📱 Found ${apps.length} applications:`, apps.map(a => a.appCode));
+    Logger.log('info', 'role', 'update-custom-role', 'Found applications', { count: apps.length, appCodes: apps.map(a => a.appCode) });
 
     // 3. Build permission list by iterating through apps and modules
     const permissions: string[] = [];
@@ -479,7 +453,7 @@ export class CustomRoleService {
 
       // Skip this app if no modules are selected
       if (appSelectedModules.length === 0) {
-        console.log(`⚠️ App ${app.appCode} has no selected modules, skipping`);
+        Logger.log('info', 'role', 'update-custom-role', 'App has no selected modules, skipping', { appCode: app.appCode });
         continue;
       }
 
@@ -491,7 +465,7 @@ export class CustomRoleService {
           inArray(applicationModules.moduleCode, appSelectedModules)
         ));
 
-      console.log(`🧩 App ${app.appCode} has ${appModules.length} selected modules`);
+      Logger.log('info', 'role', 'update-custom-role', 'App has selected modules', { appCode: app.appCode, moduleCount: appModules.length });
 
       for (const module of appModules) {
         const moduleKey = `${app.appCode}.${module.moduleCode}`;
@@ -503,30 +477,20 @@ export class CustomRoleService {
           if (allowedPermissions.includes(permission.code)) {
             const fullCode = `${app.appCode}.${module.moduleCode}.${permission.code}`;
             permissions.push(fullCode);
-            console.log(`  ✅ Updated permission: ${fullCode}`);
           }
         });
       }
     }
 
     // 4. Update custom role
-    console.log('🔧 Processing restrictions for database:', {
-      restrictionsType: typeof restrictions,
-      restrictionsValue: restrictions,
-      isString: typeof restrictions === 'string',
-      isObject: typeof restrictions === 'object'
-    });
-
     // Convert permissions to hierarchical format (consistent with Super Administrator)
     const hierarchicalPermissions = convertPermissionsToHierarchical(permissions);
 
     // Handle restrictions properly - avoid double-stringification
     let processedRestrictions;
     if (typeof restrictions === 'string') {
-      console.log('🚨 Restrictions already a string, using as-is');
       processedRestrictions = restrictions;
     } else {
-      console.log('📦 Restrictions is object, stringifying');
       processedRestrictions = JSON.stringify(restrictions);
     }
 
@@ -546,10 +510,9 @@ export class CustomRoleService {
       ))
       .returning();
 
-    console.log(`🎉 Updated role "${roleName}" with hierarchical permissions structure`);
+    Logger.log('info', 'role', 'update-custom-role', 'Updated role with hierarchical permissions structure', { roleName });
 
     // Publish role change event to Redis streams for real-time sync
-    console.log(`🔄 Attempting to publish role change event for "${roleName}"...`);
     try {
       // Redis removed - using AWS MQ publisher
 
@@ -570,7 +533,7 @@ export class CustomRoleService {
         isSystemRole: updatedRole.isSystemRole || false
       });
 
-      console.log(`📡 Published role_updated event for "${roleName}" to Redis streams`);
+      Logger.log('info', 'role', 'update-custom-role', 'Published role_updated event', { roleName });
 
       // Also publish to custom stream for backward compatibility
       const eventData = {
@@ -607,12 +570,10 @@ export class CustomRoleService {
         eventData: eventData
       });
 
-      console.log(`📡 Published role permissions change event for "${roleName}" to AWS MQ`);
-      console.log(`   Event ID: ${result?.eventId}`);
+      Logger.log('info', 'role', 'update-custom-role', 'Published role permissions change event to AWS MQ', { roleName, eventId: result?.eventId });
     } catch (err: unknown) {
       const publishError = err as Error;
-      console.error('⚠️ Failed to publish role change event:', publishError.message);
-      console.error('⚠️ Full error:', publishError);
+      Logger.log('warning', 'role', 'update-custom-role', 'Failed to publish role change event', { error: publishError.message });
       // Don't fail the role update if event publishing fails
     }
 
@@ -625,7 +586,7 @@ export class CustomRoleService {
    * Uses organization_applications table for access control
    */
   static async getRoleCreationOptions(tenantId: string): Promise<Record<string, unknown>[]> {
-    console.log(`🔍 Getting role creation options for tenant: ${tenantId}`);
+    Logger.log('info', 'role', 'get-role-creation-options', 'Getting role creation options for tenant', { tenantId });
 
     // Get organization's available applications
     const orgApps = await db
@@ -690,9 +651,9 @@ export class CustomRoleService {
           accessibleModules = allModules.filter((module: { moduleCode: string }) =>
             enabledMods.includes(module.moduleCode)
           );
-          console.log(`  📦 ${app.appCode}: ${accessibleModules.length}/${allModules.length} modules enabled via credit system`);
+          Logger.log('info', 'role', 'get-role-creation-options', 'App modules enabled via credit system', { appCode: app.appCode, accessible: accessibleModules.length, total: allModules.length });
         } else {
-          console.log(`  📦 ${app.appCode}: ${accessibleModules.length}/${allModules.length} modules accessible (all enabled)`);
+          Logger.log('info', 'role', 'get-role-creation-options', 'App modules all accessible', { appCode: app.appCode, accessible: accessibleModules.length, total: allModules.length });
         }
 
         // Process modules with permissions formatting
@@ -717,7 +678,7 @@ export class CustomRoleService {
                   const defaultPerms = (module.permissions || []) as string[] | { code?: string }[];
                   modulePermissions = await formatPermissionsForUI(defaultPerms, app.appCode, module.moduleCode, tenantId);
                 }
-                console.log(`    🔧 ${module.moduleCode}: Using ${modulePermissions.length} custom permissions`);
+                Logger.log('info', 'role', 'get-role-creation-options', 'Using custom permissions for module', { moduleCode: module.moduleCode, count: modulePermissions.length });
               } else {
                 const defaultPerms = (module.permissions || []) as string[] | { code?: string }[];
                 modulePermissions = await formatPermissionsForUI(defaultPerms, app.appCode, module.moduleCode, tenantId);
@@ -762,14 +723,14 @@ export class CustomRoleService {
     allModules: { moduleCode: string }[],
     fallbackEnabledModules: string[] | null = null
   ): Promise<{ moduleCode: string }[]> {
-    console.log(`🔍 Determining accessible modules for ${appCode} on ${subscriptionTier} tier`);
+    Logger.log('info', 'role', 'get-accessible-modules', 'Determining accessible modules', { appCode, subscriptionTier });
 
     // Get tier-based accessible modules
     const tierModules = getAccessibleModules(appCode, subscriptionTier as 'custom' | 'starter' | 'professional' | 'enterprise' | 'free');
 
     if (tierModules === 'all') {
       // Enterprise tier gets all modules
-      console.log(`  🌟 Enterprise tier: All ${allModules.length} modules accessible`);
+      Logger.log('info', 'role', 'get-accessible-modules', 'Enterprise tier: all modules accessible', { appCode, count: allModules.length });
       return allModules;
     }
 
@@ -779,7 +740,7 @@ export class CustomRoleService {
       const accessibleModules = allModules.filter((module: { moduleCode: string }) =>
         tierModulesArr.includes(module.moduleCode)
       );
-      console.log(`  📋 Tier-based access: ${accessibleModules.length} modules`);
+      Logger.log('info', 'role', 'get-accessible-modules', 'Tier-based module access', { appCode, subscriptionTier, count: accessibleModules.length });
       return accessibleModules;
     }
 
@@ -788,12 +749,12 @@ export class CustomRoleService {
       const fallbackModules = allModules.filter((module: { moduleCode: string }) =>
         fallbackEnabledModules.includes(module.moduleCode)
       );
-      console.log(`  🔄 Fallback to org-specific: ${fallbackModules.length} modules`);
+      Logger.log('info', 'role', 'get-accessible-modules', 'Fallback to org-specific module access', { appCode, count: fallbackModules.length });
       return fallbackModules;
     }
 
     // No access or invalid configuration
-    console.log(`  ❌ No access configured for ${appCode} on ${subscriptionTier}`);
+    Logger.log('info', 'role', 'get-accessible-modules', 'No access configured for app on tier', { appCode, subscriptionTier });
     return [];
   }
 
@@ -802,7 +763,7 @@ export class CustomRoleService {
    * Automatically updates organization_applications based on subscription changes
    */
   static async updateOrganizationAccess(tenantId: string, subscriptionTier: string): Promise<void> {
-    console.log(`🔄 Auto-updating organization access for tenant ${tenantId} to ${subscriptionTier}`);
+    Logger.log('info', 'role', 'update-org-access', 'Auto-updating organization access', { tenantId, subscriptionTier });
 
     // Get all applications
     const allApps = await db.select().from(applications);
@@ -826,7 +787,7 @@ export class CustomRoleService {
           isEnabled: true
         });
 
-        console.log(`  ✅ ${app.appCode}: All ${allModuleCodes.length} modules enabled`);
+        Logger.log('info', 'role', 'update-org-access', 'All modules enabled for app', { appCode: app.appCode, count: allModuleCodes.length });
 
       } else if (Array.isArray(accessibleModuleCodes) && accessibleModuleCodes.length > 0) {
         // Specific modules
@@ -836,7 +797,7 @@ export class CustomRoleService {
           isEnabled: true
         });
 
-        console.log(`  ✅ ${app.appCode}: ${accessibleModuleCodes.length} modules enabled`);
+        Logger.log('info', 'role', 'update-org-access', 'Specific modules enabled for app', { appCode: app.appCode, count: accessibleModuleCodes.length });
 
       } else {
         // No access - disable the app
@@ -846,11 +807,11 @@ export class CustomRoleService {
           isEnabled: false
         });
 
-        console.log(`  ❌ ${app.appCode}: Access disabled`);
+        Logger.log('info', 'role', 'update-org-access', 'Access disabled for app', { appCode: app.appCode });
       }
     }
 
-    console.log(`🎉 Organization access updated successfully for ${subscriptionTier} tier`);
+    Logger.log('info', 'role', 'update-org-access', 'Organization access updated successfully', { subscriptionTier });
   }
 
   /**
@@ -917,7 +878,7 @@ export class CustomRoleService {
     reason?: string;
     expiresAt?: string | null;
   }): Promise<Record<string, unknown>> {
-    console.log(`👤 Assigning user-specific permissions to user ${userId} — table dropped, no-op`);
+    Logger.log('info', 'role', 'assign-user-permissions', 'Assigning user-specific permissions — table dropped, no-op', { userId });
     return {};
   }
 
@@ -930,7 +891,7 @@ export class CustomRoleService {
     sources: Array<{ source: string; roleName?: string; permission: string; reason?: string }>;
     summary: { totalPermissions: number; rolePermissions: number; userOverrides: number; organizationApps: number };
   }> {
-    console.log(`🔍 Resolving complete permissions for user ${userId}`);
+    Logger.log('info', 'role', 'resolve-user-permissions', 'Resolving complete permissions for user', { userId });
 
     const allPermissions = new Set<string>();
     type PermSource = { source: string; roleName?: string; permission: string; reason?: string };
@@ -972,7 +933,7 @@ export class CustomRoleService {
         eq(organizationApplications.isEnabled, true)
       ));
 
-    console.log(`🎯 Resolved ${allPermissions.size} total permissions from ${permissionSources.length} sources`);
+    Logger.log('info', 'role', 'resolve-user-permissions', 'Resolved permissions', { totalPermissions: allPermissions.size, sources: permissionSources.length });
 
     return {
       permissions: Array.from(allPermissions),
@@ -990,30 +951,7 @@ export class CustomRoleService {
    * 5️⃣ **PRACTICAL EXAMPLES - Why We Need Each Table**
    */
   static async demonstrateTableUsage(): Promise<void> {
-    console.log('\n🎯 **DEMONSTRATING WHY WE NEED EACH TABLE**\n');
-
-    console.log('1️⃣ **APPLICATIONS & MODULES TABLES**');
-    console.log('   → Define what exists in the system');
-    console.log('   → Used to build role creation interfaces');
-    console.log('   → Single source of truth for features\n');
-
-    console.log('2️⃣ **ORGANIZATION_APPLICATIONS TABLE**');
-    console.log('   → Controls what each tenant can access');
-    console.log('   → Enables custom packages beyond standard plans');
-    console.log('   → Example: Org A gets CRM+HR, Org B gets CRM+HR+Affiliate\n');
-
-    console.log('3️⃣ **USER_APPLICATION_PERMISSIONS TABLE**');
-    console.log('   → Individual user-level overrides');
-    console.log('   → Temporary access for projects');
-    console.log('   → Training restrictions for new users');
-    console.log('   → Example: Senior manager gets extra "delete" permission\n');
-
-    console.log('🔥 **TOGETHER THEY ENABLE:**');
-    console.log('   ✅ Standard Plans (Starter, Pro, Enterprise)');
-    console.log('   ✅ Custom Packages (Extra modules for specific orgs)');
-    console.log('   ✅ Role-Based Access (Sales Manager, HR Specialist)');
-    console.log('   ✅ Individual Overrides (Power users, temporary access)');
-    console.log('   ✅ Compliance & Security (Restrictions and denials)');
+    Logger.log('info', 'role', 'demonstrate-table-usage', 'Demonstrating table usage: Applications/Modules define what exists; OrganizationApplications controls tenant access; UserApplicationPermissions handles individual overrides. Together they enable standard plans, custom packages, role-based access, individual overrides, and compliance/security restrictions.');
   }
 }
 

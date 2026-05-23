@@ -1,0 +1,186 @@
+/* =========================================================
+   Invite Accept — scoped design-system CSS
+   All class names prefixed with "ia-" to avoid collisions.
+   ========================================================= */
+
+/* ── Split-screen layout ── */
+.ia-stage {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  position: relative;
+}
+.ia-panel {
+  position: relative;
+  padding: 48px 56px;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+/* dark left panel */
+.ia-panel-left {
+  background: #0a1024;
+  color: #f0eee6;
+  overflow: hidden;
+}
+/* dot-grid overlay on left */
+.ia-panel-left::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(240,238,230,0.07) 1px, transparent 1px);
+  background-size: 22px 22px;
+  pointer-events: none;
+}
+/* cream right panel */
+.ia-panel-right {
+  background: #f6f6f1;
+  align-items: stretch;
+  justify-content: center;
+  padding-top: 96px;
+  padding-bottom: 56px;
+}
+/* paper texture on right */
+.ia-panel-right::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(900px 600px at 100% 100%, rgba(74,92,240,0.06) 0%, transparent 60%),
+    radial-gradient(700px 500px at 0% 0%, rgba(15,22,50,0.04) 0%, transparent 55%);
+  pointer-events: none;
+}
+.ia-panel > * { position: relative; z-index: 1; }
+.ia-panel-right .ia-action-shell { margin: 0 auto; }
+
+/* ── Loading state ── */
+.ia-loading-stage {
+  min-height: 100vh;
+  background: #f6f6f1;
+  color: #0a1024;
+  display: grid;
+  place-items: center;
+  position: relative;
+  overflow: hidden;
+  padding: 40px 24px;
+}
+.ia-loading-stage::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(15,22,50,0.06) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* ── Joining state (full dark) ── */
+.ia-joining-stage {
+  min-height: 100vh;
+  background: #0a1024;
+  color: #f6f6f1;
+  display: grid;
+  place-items: center;
+  position: relative;
+  overflow: hidden;
+  padding: 56px 24px;
+}
+.ia-joining-stage::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(240,238,230,0.07) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+/* ── Ring pulse rings around the loading spinner ── */
+.ia-ring-wrap {
+  position: relative;
+  width: 84px;
+  height: 84px;
+}
+.ia-ring-wrap::before {
+  content: "";
+  position: absolute;
+  inset: -10px;
+  border-radius: 30px;
+  border: 1px solid rgba(74,92,240,0.25);
+  animation: ia-ring-pulse 2.4s ease-out infinite;
+}
+.ia-ring-wrap::after {
+  content: "";
+  position: absolute;
+  inset: -22px;
+  border-radius: 36px;
+  border: 1px solid rgba(74,92,240,0.12);
+  animation: ia-ring-pulse 2.4s ease-out infinite;
+  animation-delay: 0.6s;
+}
+
+/* ── Shimmer bar track ── */
+.ia-shimmer {
+  width: 200px;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(15,22,50,0.06);
+  overflow: hidden;
+  position: relative;
+}
+.ia-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, #4a5cf0, transparent);
+  animation: ia-shimmer 1.6s ease-in-out infinite;
+}
+
+/* ── Step row status dot pulse (joining state) ── */
+.ia-step-row-active .ia-status-dot {
+  animation: ia-dot-pulse 1.8s ease-out infinite;
+}
+
+/* ── Live pulse dot (left panel header) ── */
+.ia-pulse {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #6fe5a8;
+  animation: ia-live-pulse 1.8s ease-out infinite;
+}
+.ia-pulse-red { background: #ff8593; }
+
+/* ── Keyframes ── */
+@keyframes ia-ring-pulse {
+  0%   { transform: scale(0.9); opacity: 1; }
+  100% { transform: scale(1.25); opacity: 0; }
+}
+@keyframes ia-shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(350%); }
+}
+@keyframes ia-spin { to { transform: rotate(360deg); } }
+@keyframes ia-live-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(111,229,168,0.7); }
+  70%  { box-shadow: 0 0 0 10px rgba(111,229,168,0); }
+  100% { box-shadow: 0 0 0 0 rgba(111,229,168,0); }
+}
+@keyframes ia-dot-pulse {
+  0%   { box-shadow: 0 0 0 0 currentColor; opacity: 0.8; }
+  70%  { box-shadow: 0 0 0 6px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+@keyframes ia-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.ia-fade-in { animation: ia-fade-in 0.35s ease-out both; }
+
+/* ── Responsive ── */
+@media (max-width: 980px) {
+  .ia-stage { grid-template-columns: 1fr; }
+  .ia-panel { padding: 36px 28px; min-height: auto; }
+  .ia-panel-left { min-height: 60vh; }
+  .ia-panel-right { min-height: 100vh; }
+}
+@media (max-width: 520px) {
+  .ia-panel { padding: 28px 20px; }
+}

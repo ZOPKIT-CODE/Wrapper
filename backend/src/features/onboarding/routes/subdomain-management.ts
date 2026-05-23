@@ -1,4 +1,5 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import Logger from '../../../utils/logger.js';
 import { TenantService } from '../../../services/tenant-service.js';
 
 /**
@@ -40,12 +41,12 @@ export default async function subdomainManagementRoutes(
       const query = request.query as Record<string, string>;
       const { subdomain } = query;
 
-      console.log('🔍 Checking subdomain availability:', subdomain);
+      Logger.log('info', 'general', 'check-subdomain', 'Checking subdomain availability', { subdomain });
 
       // Check if subdomain is available
       const available = await TenantService.checkSubdomainAvailability(subdomain);
 
-      console.log('✅ Subdomain availability result:', { subdomain, available });
+      Logger.log('info', 'general', 'check-subdomain', 'Subdomain availability result', { subdomain, available });
 
       return {
         success: true,
@@ -53,7 +54,7 @@ export default async function subdomainManagementRoutes(
         subdomain
       };
     } catch (err: unknown) {
-      console.error('❌ Error checking subdomain availability:', err);
+      Logger.log('error', 'general', 'check-subdomain', 'Error checking subdomain availability', { error: (err as Error).message });
       request.log.error(err, 'Error checking subdomain availability:');
       return reply.code(500).send({ error: 'Failed to check subdomain availability' });
     }

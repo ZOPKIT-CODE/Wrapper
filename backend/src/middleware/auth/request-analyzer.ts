@@ -1,4 +1,5 @@
 import { shouldLogVerbose } from '../../utils/verbose-log.js';
+import Logger from '../../utils/logger.js';
 
 export interface RequestLike {
   url: string;
@@ -31,7 +32,7 @@ export class RequestAnalyzer {
 
     // Log analysis for debugging (only when verbose to reduce noise)
     if (process.env.NODE_ENV === 'development' && shouldLogVerbose()) {
-      console.log('🔍 Request Analysis:', {
+      Logger.log('info', 'auth', 'analyze-request', '🔍 Request Analysis', {
         path: analysis.path,
         method: analysis.method,
         connectionType: analysis.connectionType,

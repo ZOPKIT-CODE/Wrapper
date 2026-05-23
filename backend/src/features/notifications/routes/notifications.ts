@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { NotificationService } from '../services/notification-service.js';
+import Logger from '../../../utils/logger.js';
 
 const notificationService = new NotificationService();
 
@@ -51,7 +52,7 @@ export default async function notificationRoutes(fastify: FastifyInstance, _opti
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Error getting notifications:', error);
+      Logger.log('error', 'general', 'GET /', 'Error getting notifications', { error: error.message });
       reply.code(500).send({
         success: false,
         error: 'Failed to retrieve notifications'
@@ -81,7 +82,7 @@ export default async function notificationRoutes(fastify: FastifyInstance, _opti
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Error getting unread notification count:', error);
+      Logger.log('error', 'general', 'GET /unread-count', 'Error getting unread notification count', { error: error.message });
       reply.code(500).send({
         success: false,
         error: 'Failed to get unread notification count'
@@ -118,7 +119,7 @@ export default async function notificationRoutes(fastify: FastifyInstance, _opti
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Error marking notification as read:', error);
+      Logger.log('error', 'general', 'PUT /:notificationId/read', 'Error marking notification as read', { error: error.message });
       reply.code(500).send({
         success: false,
         error: 'Failed to mark notification as read'
@@ -155,7 +156,7 @@ export default async function notificationRoutes(fastify: FastifyInstance, _opti
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Error dismissing notification:', error);
+      Logger.log('error', 'general', 'PUT /:notificationId/dismiss', 'Error dismissing notification', { error: error.message });
       reply.code(500).send({
         success: false,
         error: 'Failed to dismiss notification'
@@ -186,7 +187,7 @@ export default async function notificationRoutes(fastify: FastifyInstance, _opti
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Error marking all notifications as read:', error);
+      Logger.log('error', 'general', 'PUT /mark-all-read', 'Error marking all notifications as read', { error: error.message });
       reply.code(500).send({
         success: false,
         error: 'Failed to mark notifications as read'
@@ -216,7 +217,7 @@ export default async function notificationRoutes(fastify: FastifyInstance, _opti
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Error cleaning up notifications:', error);
+      Logger.log('error', 'general', 'DELETE /cleanup', 'Error cleaning up notifications', { error: error.message });
       reply.code(500).send({
         success: false,
         error: 'Failed to cleanup notifications'

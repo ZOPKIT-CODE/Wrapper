@@ -62,27 +62,63 @@ export async function registerMiddleware(fastify: FastifyInstance): Promise<void
     try {
       await restrictInvitedUsers(request, reply);
     } catch (err: unknown) {
-      console.error('❌ Invited user restriction middleware error:', err);
+      const logger = await import('./utils/logger.js');
+      logger.default.log('error', 'middleware', 'middleware', 'Invited user restriction middleware error', { error: (err as Error).message });
     }
   });
   fastify.addHook('preHandler', async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       await trialRestrictionMiddleware(request, reply);
     } catch (err: unknown) {
-      console.error('❌ Trial restriction middleware error:', err);
-      console.log('⚠️ Continuing request despite trial restriction error');
+      const logger = await import('./utils/logger.js');
+      logger.default.log('error', 'restrictions', 'middleware', 'Trial restriction check failed', { error: (err as Error).message });
+      reply.code(503).send({ error: 'Service temporarily unavailable' });
+      return;
     }
   });
   fastify.setErrorHandler(errorHandler);
 }
 
 export async function registerRoutes(fastify: FastifyInstance): Promise<void> {
-  fastify.get('/health', async (_request: FastifyRequest, _reply: FastifyReply) => {
+  fastify.get('/health', async (_request: FastifyRequest, reply: FastifyReply) => {
+    // Honest health check: probe each critical dependency and 503 if any
+    // are unreachable. Routed BEFORE auth, so safe to expose unauthenticated.
+    const checks: Record<string, string> = { db: 'unknown', sns: 'unknown' };
+
+    try {
+      const [{ db }, { sql }] = await Promise.all([
+        import('./db/index.js'),
+        import('drizzle-orm'),
+      ]);
+      await db.execute(sql`SELECT 1`);
+      checks.db = 'ok';
+    } catch (err: unknown) {
+      const logger = (await import('./utils/logger.js')).default;
+      logger.log('error', 'general', 'health-check', 'Database health probe failed', { error: (err as Error).message });
+      checks.db = 'failed';
+    }
+
+    try {
+      const { snsSqsPublisher } = await import('./features/messaging/utils/sns-sqs-publisher.js');
+      checks.sns = snsSqsPublisher.isConfigured() ? 'ok' : 'failed';
+      if (checks.sns === 'failed') {
+        const logger = (await import('./utils/logger.js')).default;
+        logger.log('error', 'general', 'health-check', 'SNS publisher not configured (SNS_INTER_APP_TOPIC_ARN missing)');
+      }
+    } catch (err: unknown) {
+      const logger = (await import('./utils/logger.js')).default;
+      logger.log('error', 'general', 'health-check', 'SNS publisher probe failed', { error: (err as Error).message });
+      checks.sns = 'failed';
+    }
+
+    const ok = checks.db === 'ok' && checks.sns === 'ok';
+    reply.code(ok ? 200 : 503);
     return {
-      status: 'ok',
+      status: ok ? 'ok' : 'degraded',
       timestamp: new Date().toISOString(),
       version: '1.0.0',
       environment: process.env.NODE_ENV,
+      checks,
     };
   });
 

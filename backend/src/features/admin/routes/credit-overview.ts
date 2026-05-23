@@ -10,6 +10,7 @@ import { db } from '../../../db/index.js';
 import { credits, creditTransactions, tenants, entities, subscriptions } from '../../../db/schema/index.js';
 import { eq, and, desc, sql, count, gte, lte, between, isNotNull } from 'drizzle-orm';
 import { SeasonalCreditService } from '../../../features/credits/index.js';
+import Logger from '../../../utils/logger.js';
 
 export default async function adminCreditOverviewRoutes(fastify: FastifyInstance, _options?: object): Promise<void> {
 
@@ -100,7 +101,7 @@ export default async function adminCreditOverviewRoutes(fastify: FastifyInstance
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Error fetching credit overview:', error);
+      Logger.log('error', 'billing', 'admin-credit-overview', 'Error fetching credit overview', { error: error.message });
       return reply.code(500).send({ error: 'Failed to fetch credit overview' });
     }
   });
@@ -210,7 +211,7 @@ export default async function adminCreditOverviewRoutes(fastify: FastifyInstance
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Error fetching credit analytics:', error);
+      Logger.log('error', 'billing', 'admin-credit-analytics', 'Error fetching credit analytics', { error: error.message });
       return reply.code(500).send({ error: 'Failed to fetch credit analytics' });
     }
   });
@@ -304,7 +305,7 @@ export default async function adminCreditOverviewRoutes(fastify: FastifyInstance
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Error fetching credit alerts:', error);
+      Logger.log('error', 'billing', 'admin-credit-alerts', 'Error fetching credit alerts', { error: error.message });
       return reply.code(500).send({ error: 'Failed to fetch credit alerts' });
     }
   });
@@ -407,7 +408,7 @@ export default async function adminCreditOverviewRoutes(fastify: FastifyInstance
       const successCount = results.filter(r => r.success).length;
       const failureCount = results.filter(r => !r.success).length;
 
-      console.log(`Admin ${(request as any).userContext?.userId ?? ''} bulk allocated credits to ${successCount} entities${reason ? `: ${reason}` : ''}`);
+      Logger.log('info', 'billing', 'admin-bulk-allocate', 'Admin bulk allocated credits', { userId: (request as any).userContext?.userId ?? '', successCount, reason });
 
       return {
         success: true,
@@ -422,7 +423,7 @@ export default async function adminCreditOverviewRoutes(fastify: FastifyInstance
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Error bulk allocating credits:', error);
+      Logger.log('error', 'billing', 'admin-bulk-allocate', 'Error bulk allocating credits', { error: error.message });
       return reply.code(500).send({ error: 'Failed to bulk allocate credits' });
     }
   });
@@ -512,7 +513,7 @@ export default async function adminCreditOverviewRoutes(fastify: FastifyInstance
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Error fetching entity credit balances:', error);
+      Logger.log('error', 'billing', 'admin-entity-balances', 'Error fetching entity credit balances', { error: error.message });
       return reply.code(500).send({ error: 'Failed to fetch entity credit balances' });
     }
   });
@@ -591,7 +592,7 @@ export default async function adminCreditOverviewRoutes(fastify: FastifyInstance
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Error fetching credit transactions:', error);
+      Logger.log('error', 'billing', 'admin-credit-transactions', 'Error fetching credit transactions', { error: error.message });
       return reply.code(500).send({ error: 'Failed to fetch credit transactions' });
     }
   });
@@ -603,7 +604,7 @@ export default async function adminCreditOverviewRoutes(fastify: FastifyInstance
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
-      console.log('🔍 Getting all application allocations (admin view)');
+      Logger.log('info', 'billing', 'admin-application-allocations', 'Getting all application allocations');
 
       // REMOVED: creditAllocations table queries
       // Applications now manage their own credit consumption
@@ -684,7 +685,7 @@ export default async function adminCreditOverviewRoutes(fastify: FastifyInstance
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Failed to get application allocations:', err);
+      Logger.log('error', 'billing', 'admin-application-allocations', 'Failed to get application allocations', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to get application allocations',
@@ -701,7 +702,7 @@ export default async function adminCreditOverviewRoutes(fastify: FastifyInstance
       const entityId = params.entityId ?? '';
       const tenantId = (request as any).userContext?.tenantId ?? '';
 
-      console.log('🔍 Getting application allocations for entity:', { entityId, tenantId });
+      Logger.log('info', 'billing', 'admin-entity-application-allocations', 'Getting application allocations for entity', { entityId, tenantId });
 
       // CreditAllocationService removed - applications manage their own credits; return empty
       const allocations: any[] = [];
@@ -714,7 +715,7 @@ export default async function adminCreditOverviewRoutes(fastify: FastifyInstance
       });
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Failed to get application allocations:', err);
+      Logger.log('error', 'billing', 'admin-entity-application-allocations', 'Failed to get application allocations', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to get application allocations',
@@ -734,7 +735,8 @@ export default async function adminCreditOverviewRoutes(fastify: FastifyInstance
       const creditTypes = body.creditTypes as string[] | undefined;
       const processSubscriptionCredits = body.processSubscriptionCredits !== false;
       
-      console.log(`🔧 Admin ${(request as any).userContext?.userId ?? ''} triggered credit expiry processing`, {
+      Logger.log('info', 'billing', 'admin-process-expiries', 'Admin triggered credit expiry processing', {
+        userId: (request as any).userContext?.userId ?? '',
         creditTypes,
         processSubscriptionCredits
       });
@@ -777,7 +779,7 @@ export default async function adminCreditOverviewRoutes(fastify: FastifyInstance
               sql`${subscriptions.currentPeriodEnd} <= ${now}`
             ));
 
-          console.log(`📅 Found ${expiredSubscriptions.length} expired subscriptions`);
+          Logger.log('info', 'billing', 'admin-process-expiries', 'Found expired subscriptions', { count: expiredSubscriptions.length });
 
           let subscriptionCreditsExpired = 0;
           for (const subscription of expiredSubscriptions) {
@@ -792,7 +794,7 @@ export default async function adminCreditOverviewRoutes(fastify: FastifyInstance
               subscriptionCreditsExpired++;
             } catch (subErr: unknown) {
               const subError = subErr as Error;
-              console.error(`Failed to expire credits for subscription ${subscription.subscriptionId}:`, subError?.message ?? '');
+              Logger.log('error', 'billing', 'admin-process-expiries', 'Failed to expire credits for subscription', { subscriptionId: subscription.subscriptionId, error: subError?.message ?? '' });
             }
           }
 
@@ -813,7 +815,7 @@ export default async function adminCreditOverviewRoutes(fastify: FastifyInstance
       });
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Error processing credit expiries:', err);
+      Logger.log('error', 'billing', 'admin-process-expiries', 'Error processing credit expiries', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to process credit expiries',
@@ -883,7 +885,7 @@ export default async function adminCreditOverviewRoutes(fastify: FastifyInstance
       });
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Error getting expiring summary:', err);
+      Logger.log('error', 'billing', 'admin-expiring-summary', 'Error getting expiring summary', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to retrieve expiring summary',

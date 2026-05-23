@@ -1,8 +1,8 @@
 import { db } from '../../../db/index.js';
-import { 
-  tenantUsers, 
-  customRoles, 
-  userRoleAssignments, 
+import {
+  tenantUsers,
+  customRoles,
+  userRoleAssignments,
   auditLogs,
   tenants,
   tenantInvitations
@@ -10,6 +10,7 @@ import {
 import { eq, and, isNull, ne, count } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { kindeService } from '../../auth/index.js';
+import Logger from '../../../utils/logger.js';
 
 type PromotionOptions = {
   transferOwnership?: boolean;
@@ -42,13 +43,13 @@ export class AdminPromotionService {
     } = options;
 
     const transactionId = uuidv4();
-    console.log(`🔄 [AdminPromotion-${transactionId}] Starting admin promotion process...`);
-    
+    Logger.log('info', 'user', 'promote-admin', 'Starting admin promotion process', { transactionId });
+
     try {
       return await db.transaction(async (tx) => {
         // 1. VALIDATION PHASE
-        console.log(`🔍 [AdminPromotion-${transactionId}] Phase 1: Validation`);
-        
+        Logger.log('info', 'user', 'promote-admin', 'Phase 1: Validation', { transactionId });
+
         const validation = await this._validatePromotionRequest(
           tx, tenantId, currentAdminId, newAdminId, transactionId
         );
@@ -61,21 +62,21 @@ export class AdminPromotionService {
         const { currentAdmin, newAdmin, tenant } = data;
 
         // 2. PRE-PROMOTION AUDIT
-        console.log(`📊 [AdminPromotion-${transactionId}] Phase 2: Pre-promotion audit`);
+        Logger.log('info', 'user', 'promote-admin', 'Phase 2: Pre-promotion audit', { transactionId });
         
         const prePromotionAudit = await this._generatePrePromotionAudit(
           tx, tenantId, currentAdminId, newAdminId, transactionId
         );
 
         // 3. CREATE SUPER ADMIN ROLE (if needed)
-        console.log(`👑 [AdminPromotion-${transactionId}] Phase 3: Ensuring Super Admin role exists`);
+        Logger.log('info', 'user', 'promote-admin', 'Phase 3: Ensuring Super Admin role exists', { transactionId });
         
         const superAdminRole = await this._ensureSuperAdminRole(
           tx, tenantId, currentAdminId, transactionId
         );
 
         // 4. HANDLE DATA OWNERSHIP TRANSFER
-        console.log(`🔄 [AdminPromotion-${transactionId}] Phase 4: Data ownership transfer`);
+        Logger.log('info', 'user', 'promote-admin', 'Phase 4: Data ownership transfer', { transactionId });
         
         if (transferOwnership) {
           await this._transferDataOwnership(
@@ -84,26 +85,26 @@ export class AdminPromotionService {
         }
 
         // 5. PROMOTE NEW ADMIN
-        console.log(`⬆️ [AdminPromotion-${transactionId}] Phase 5: Promoting new admin`);
+        Logger.log('info', 'user', 'promote-admin', 'Phase 5: Promoting new admin', { transactionId });
         
         await this._promoteUserToAdmin(
           tx, tenantId, newAdminId, superAdminRole.roleId, promotedBy, transactionId
         );
 
         // 6. HANDLE CURRENT ADMIN TRANSITION
-        console.log(`⬇️ [AdminPromotion-${transactionId}] Phase 6: Current admin transition`);
-        
+        Logger.log('info', 'user', 'promote-admin', 'Phase 6: Current admin transition', { transactionId });
+
         if (transitionType === 'full_transfer' && !retainCurrentAdminAccess) {
           await this._demoteCurrentAdmin(
             tx, tenantId, currentAdminId, promotedBy, transactionId
           );
         } else if (transitionType === 'co_admin') {
           // Keep current admin with admin privileges
-          console.log(`🤝 [AdminPromotion-${transactionId}] Keeping current admin as co-admin`);
+          Logger.log('info', 'user', 'promote-admin', 'Keeping current admin as co-admin', { transactionId });
         }
 
         // 7. UPDATE TENANT RECORD
-        console.log(`🏢 [AdminPromotion-${transactionId}] Phase 7: Updating tenant record`);
+        Logger.log('info', 'user', 'promote-admin', 'Phase 7: Updating tenant record', { transactionId });
         
         await tx.update(tenants)
           .set({
@@ -113,34 +114,34 @@ export class AdminPromotionService {
           .where(eq(tenants.tenantId, tenantId));
 
         // 8. SYNC WITH KINDE
-        console.log(`🔗 [AdminPromotion-${transactionId}] Phase 8: Syncing with Kinde`);
-        
+        Logger.log('info', 'user', 'promote-admin', 'Phase 8: Syncing with Kinde', { transactionId });
+
         try {
           await this._syncAdminChangeWithKinde(
             newAdmin, currentAdmin, tenant, transactionId
           );
         } catch (err: unknown) {
           const kindeError = err as Error;
-          console.warn(`⚠️ [AdminPromotion-${transactionId}] Kinde sync failed:`, kindeError.message);
+          Logger.log('warning', 'kinde', 'promote-admin', 'Kinde sync failed', { transactionId, error: kindeError.message });
           // Don't fail the entire operation for Kinde sync issues
         }
 
         // 9. POST-PROMOTION AUDIT
-        console.log(`📋 [AdminPromotion-${transactionId}] Phase 9: Post-promotion audit`);
+        Logger.log('info', 'user', 'promote-admin', 'Phase 9: Post-promotion audit', { transactionId });
         
         const postPromotionAudit = await this._generatePostPromotionAudit(
           tx, tenantId, currentAdminId, newAdminId, transactionId
         );
 
         // 10. CREATE AUDIT LOG
-        console.log(`📝 [AdminPromotion-${transactionId}] Phase 10: Creating audit trail`);
+        Logger.log('info', 'user', 'promote-admin', 'Phase 10: Creating audit trail', { transactionId });
         
         await this._createPromotionAuditLog(
           tx, tenantId, currentAdminId, newAdminId, promotedBy, 
           prePromotionAudit, postPromotionAudit, transactionId
         );
 
-        console.log(`✅ [AdminPromotion-${transactionId}] Admin promotion completed successfully!`);
+        Logger.log('info', 'user', 'promote-admin', 'Admin promotion completed successfully', { transactionId });
 
         return {
           success: true,
@@ -171,7 +172,7 @@ export class AdminPromotionService {
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ [AdminPromotion-${transactionId}] Admin promotion failed:`, error);
+      Logger.log('error', 'user', 'promote-admin', 'Admin promotion failed', { transactionId, error: error.message });
       
       // Log the failure
       await this._logPromotionFailure(
@@ -192,7 +193,7 @@ export class AdminPromotionService {
     newAdminId: string,
     transactionId: string
   ): Promise<{ isValid: true; data: ValidationData } | { isValid: false; error: string }> {
-    console.log(`🔍 [AdminPromotion-${transactionId}] Validating promotion request...`);
+    Logger.log('info', 'user', 'promote-admin', 'Validating promotion request', { transactionId });
 
     // Check if current admin exists and is actually an admin
     const [currentAdmin] = await tx
@@ -281,7 +282,7 @@ export class AdminPromotionService {
     newAdmin: string;
     dataOwnership: { rolesCreated: number; rolesModified: number; roleAssignments: number; usersInvited: number };
   }> {
-    console.log(`📊 [AdminPromotion-${transactionId}] Generating pre-promotion audit...`);
+    Logger.log('info', 'user', 'promote-admin', 'Generating pre-promotion audit', { transactionId });
 
     // Count data owned by current admin
     const [rolesCreatedRow] = await tx
@@ -326,7 +327,7 @@ export class AdminPromotionService {
     currentAdminId: string,
     transactionId: string
   ): Promise<typeof customRoles.$inferSelect> {
-    console.log(`👑 [AdminPromotion-${transactionId}] Ensuring Super Admin role exists...`);
+    Logger.log('info', 'user', 'promote-admin', 'Ensuring Super Admin role exists', { transactionId });
 
     let [superAdminRole] = await tx
       .select()
@@ -339,7 +340,7 @@ export class AdminPromotionService {
       .limit(1);
 
     if (!superAdminRole) {
-      console.log(`🆕 [AdminPromotion-${transactionId}] Creating Super Admin role...`);
+      Logger.log('info', 'user', 'promote-admin', 'Creating Super Admin role', { transactionId });
       
       [superAdminRole] = await tx.insert(customRoles).values({
         tenantId,
@@ -369,7 +370,7 @@ export class AdminPromotionService {
     newAdminId: string,
     transactionId: string
   ): Promise<void> {
-    console.log(`🔄 [AdminPromotion-${transactionId}] Transferring data ownership...`);
+    Logger.log('info', 'user', 'promote-admin', 'Transferring data ownership', { transactionId });
 
     // Transfer role creation ownership
     await tx.update(customRoles)
@@ -387,7 +388,7 @@ export class AdminPromotionService {
     // Note: We keep the original createdBy for audit trail but update lastModifiedBy
     // User invitations (invitedBy) are kept as historical record
 
-    console.log(`✅ [AdminPromotion-${transactionId}] Data ownership transferred successfully`);
+    Logger.log('info', 'user', 'promote-admin', 'Data ownership transferred successfully', { transactionId });
   }
 
   /**
@@ -401,7 +402,7 @@ export class AdminPromotionService {
     promotedBy: string,
     transactionId: string
   ): Promise<void> {
-    console.log(`⬆️ [AdminPromotion-${transactionId}] Promoting user to admin...`);
+    Logger.log('info', 'user', 'promote-admin', 'Promoting user to admin', { transactionId });
 
     // Update user record to admin
     await tx.update(tenantUsers)
@@ -434,7 +435,7 @@ export class AdminPromotionService {
       });
     }
 
-    console.log(`✅ [AdminPromotion-${transactionId}] User promoted to admin successfully`);
+    Logger.log('info', 'user', 'promote-admin', 'User promoted to admin successfully', { transactionId });
   }
 
   /**
@@ -447,7 +448,7 @@ export class AdminPromotionService {
     demotedBy: string,
     transactionId: string
   ): Promise<void> {
-    console.log(`⬇️ [AdminPromotion-${transactionId}] Demoting current admin...`);
+    Logger.log('info', 'user', 'promote-admin', 'Demoting current admin', { transactionId });
 
     // Update user record
     await tx.update(tenantUsers)
@@ -473,7 +474,7 @@ export class AdminPromotionService {
       ));
 
     // Could assign a default role here if needed
-    console.log(`✅ [AdminPromotion-${transactionId}] Current admin demoted successfully`);
+    Logger.log('info', 'user', 'promote-admin', 'Current admin demoted successfully', { transactionId });
   }
 
   /**
@@ -485,7 +486,7 @@ export class AdminPromotionService {
     tenant: ValidationData['tenant'],
     transactionId: string
   ): Promise<void> {
-    console.log(`🔗 [AdminPromotion-${transactionId}] Syncing with Kinde...`);
+    Logger.log('info', 'kinde', 'promote-admin', 'Syncing with Kinde', { transactionId });
 
     try {
       // Update organization admin in Kinde (if method exists on KindeService)
@@ -500,9 +501,9 @@ export class AdminPromotionService {
         );
       }
 
-      console.log(`✅ [AdminPromotion-${transactionId}] Kinde sync completed`);
+      Logger.log('info', 'kinde', 'promote-admin', 'Kinde sync completed', { transactionId });
     } catch (error) {
-      console.error(`❌ [AdminPromotion-${transactionId}] Kinde sync failed:`, error);
+      Logger.log('error', 'kinde', 'promote-admin', 'Kinde sync failed', { transactionId, error: (error as Error).message });
       throw error;
     }
   }
@@ -517,7 +518,7 @@ export class AdminPromotionService {
     newAdminId: string,
     transactionId: string
   ): Promise<{ timestamp: Date; newAdminStatus: boolean; newAdminRoleCount: number; promotionCompleted: boolean }> {
-    console.log(`📋 [AdminPromotion-${transactionId}] Generating post-promotion audit...`);
+    Logger.log('info', 'user', 'promote-admin', 'Generating post-promotion audit', { transactionId });
 
     // Verify new admin status
     const [newAdminCheck] = await tx
@@ -559,7 +560,7 @@ export class AdminPromotionService {
     postAudit: Awaited<ReturnType<typeof AdminPromotionService._generatePostPromotionAudit>>,
     transactionId: string
   ): Promise<void> {
-    console.log(`📝 [AdminPromotion-${transactionId}] Creating audit trail...`);
+    Logger.log('info', 'user', 'promote-admin', 'Creating audit trail', { transactionId });
 
     await tx.insert(auditLogs).values({
       tenantId,
@@ -626,7 +627,7 @@ export class AdminPromotionService {
         userAgent: 'Admin Promotion Service'
       });
     } catch (logError) {
-      console.error('Failed to log promotion failure:', logError);
+      Logger.log('error', 'user', 'promote-admin', 'Failed to log promotion failure', { error: (logError as Error).message });
     }
   }
 
@@ -693,7 +694,7 @@ export class AdminPromotionService {
       return users.filter(user => user.userId !== currentAdminId);
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Failed to get eligible users:', error);
+      Logger.log('error', 'user', 'promote-admin', 'Failed to get eligible users', { error: error.message });
       throw error;
     }
   }
@@ -785,19 +786,13 @@ export class AdminPromotionService {
     const transactionId = `sys-admin-promote_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const startTime = Date.now();
 
-    console.log(`🔄 [SystemAdminPromotion-${transactionId}] Starting System Administrator promotion...`);
-    console.log(`   Current Admin: ${currentAdminId}`);
-    console.log(`   Target User: ${targetUserId}`);
-    console.log(`   Tenant: ${tenantId}`);
-    console.log(`   Reason: ${reason}`);
-    console.log(`   Force Transfer: ${forceTransfer}`);
-    console.log(`   Previous Admin Provided: ${!!previousAdmin}`);
+    Logger.log('info', 'user', 'promote-system-admin', 'Starting System Administrator promotion', { transactionId, currentAdminId, targetUserId, tenantId, reason, forceTransfer, hasPreviousAdmin: !!previousAdmin });
 
     try {
       return await db.transaction(async (tx) => {
         
         // Phase 1: Enhanced Validation
-        console.log(`🔍 [SystemAdminPromotion-${transactionId}] Phase 1: Enhanced Validation...`);
+        Logger.log('info', 'user', 'promote-system-admin', 'Phase 1: Enhanced Validation', { transactionId });
         
         if (!skipValidation) {
           // Get target user with additional checks
@@ -859,7 +854,7 @@ export class AdminPromotionService {
         }
 
         // Phase 2: Ensure System Administrator role exists
-        console.log(`👑 [SystemAdminPromotion-${transactionId}] Phase 2: Ensuring System Administrator role...`);
+        Logger.log('info', 'user', 'promote-system-admin', 'Phase 2: Ensuring System Administrator role', { transactionId });
         
         let [systemAdminRole] = await tx
           .select()
@@ -872,7 +867,7 @@ export class AdminPromotionService {
           .limit(1);
 
         if (!systemAdminRole) {
-          console.log(`🆕 [SystemAdminPromotion-${transactionId}] Creating System Administrator role...`);
+          Logger.log('info', 'user', 'promote-system-admin', 'Creating System Administrator role', { transactionId });
           
           [systemAdminRole] = await tx.insert(customRoles).values({
             tenantId,
@@ -888,18 +883,18 @@ export class AdminPromotionService {
             lastModifiedBy: currentAdminId || targetUserId
           }).returning();
 
-          console.log(`✅ [SystemAdminPromotion-${transactionId}] System Administrator role created`);
+          Logger.log('info', 'user', 'promote-system-admin', 'System Administrator role created', { transactionId });
         }
 
         // Phase 3: Handle existing System Administrator (Enhanced)
-        console.log(`🔄 [SystemAdminPromotion-${transactionId}] Phase 3: Handling existing System Administrator...`);
+        Logger.log('info', 'user', 'promote-system-admin', 'Phase 3: Handling existing System Administrator', { transactionId });
         
         let detectedPreviousAdmin = null;
 
         // Use provided previousAdmin or detect current one
         if (previousAdmin) {
           detectedPreviousAdmin = previousAdmin;
-          console.log(`🎯 [SystemAdminPromotion-${transactionId}] Using provided previous admin: ${previousAdmin.userName}`);
+          Logger.log('info', 'user', 'promote-system-admin', 'Using provided previous admin', { transactionId, previousAdminName: previousAdmin.userName });
         } else {
           const existingSystemAdmin = await tx
             .select({
@@ -927,7 +922,7 @@ export class AdminPromotionService {
               userName: dpaName,
               userEmail: raw.userEmail
             };
-            console.log(`🔍 [SystemAdminPromotion-${transactionId}] Detected existing System Administrator: ${dpaName}`);
+            Logger.log('info', 'user', 'promote-system-admin', 'Detected existing System Administrator', { transactionId, existingAdmin: dpaName });
           }
         }
 
@@ -935,7 +930,7 @@ export class AdminPromotionService {
         if (detectedPreviousAdmin) {
           const prevAdmin = detectedPreviousAdmin as { userId: string; userName: string; userEmail?: string | null; assignmentId?: string };
           const prevAdminName = prevAdmin.userName || prevAdmin.userEmail;
-          console.log(`⚠️ [SystemAdminPromotion-${transactionId}] Removing System Administrator from: ${prevAdminName}`);
+          Logger.log('warning', 'user', 'promote-system-admin', 'Removing System Administrator role from previous admin', { transactionId, prevAdminName });
           
           // Deactivate their role assignment
           if (prevAdmin.assignmentId) {
@@ -972,11 +967,11 @@ export class AdminPromotionService {
             })
             .where(eq(tenantUsers.userId, (detectedPreviousAdmin as { userId: string }).userId));
 
-          console.log(`✅ [SystemAdminPromotion-${transactionId}] Removed System Administrator role from: ${detectedPreviousAdmin.userName}`);
+          Logger.log('info', 'user', 'promote-system-admin', 'Removed System Administrator role from previous admin', { transactionId, prevAdminName: detectedPreviousAdmin.userName });
         }
 
         // Phase 4: Assign System Administrator role to new admin
-        console.log(`🎯 [SystemAdminPromotion-${transactionId}] Phase 4: Assigning System Administrator role...`);
+        Logger.log('info', 'user', 'promote-system-admin', 'Phase 4: Assigning System Administrator role', { transactionId });
         
         const [newAssignment] = await tx.insert(userRoleAssignments).values({
           userId: targetUserId,
@@ -998,10 +993,10 @@ export class AdminPromotionService {
           .returning();
 
         const targetUserName = [updatedTargetUser.firstName, updatedTargetUser.lastName].filter(Boolean).join(' ') || updatedTargetUser.email;
-        console.log(`✅ [SystemAdminPromotion-${transactionId}] System Administrator role assigned to: ${targetUserName}`);
+        Logger.log('info', 'user', 'promote-system-admin', 'System Administrator role assigned to new admin', { transactionId, targetUserName });
 
         // Phase 5: Enhanced Audit logging
-        console.log(`📝 [SystemAdminPromotion-${transactionId}] Phase 5: Enhanced Audit logging...`);
+        Logger.log('info', 'user', 'promote-system-admin', 'Phase 5: Enhanced Audit logging', { transactionId });
         
         const auditDetails = {
           transactionId,
@@ -1052,8 +1047,7 @@ export class AdminPromotionService {
           });
         }
 
-        console.log(`✅ [SystemAdminPromotion-${transactionId}] System Administrator promotion completed successfully`);
-        console.log(`⏱️ [SystemAdminPromotion-${transactionId}] Total processing time: ${Date.now() - startTime}ms`);
+        Logger.log('info', 'user', 'promote-system-admin', 'System Administrator promotion completed successfully', { transactionId, processingTimeMs: Date.now() - startTime });
 
         return {
           success: true,
@@ -1087,7 +1081,7 @@ export class AdminPromotionService {
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ [SystemAdminPromotion-${transactionId}] System Administrator promotion failed:`, error);
+      Logger.log('error', 'user', 'promote-system-admin', 'System Administrator promotion failed', { transactionId, error: error.message });
       throw error;
     }
   }
@@ -1096,7 +1090,7 @@ export class AdminPromotionService {
    * Get current System Administrator
    */
   static async getCurrentSystemAdmin(tenantId: string): Promise<{ userId: string | null; firstName: string | null; lastName: string | null; email: string | null; roleId: string | null; roleName: string | null; assignedAt: Date | null } | null> {
-    console.log(`🔍 Getting current System Administrator for tenant: ${tenantId}`);
+    Logger.log('info', 'user', 'get-current-system-admin', 'Getting current System Administrator', { tenantId });
 
     try {
       const [currentAdmin] = await db
@@ -1124,7 +1118,7 @@ export class AdminPromotionService {
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Failed to get current System Administrator:', error);
+      Logger.log('error', 'user', 'get-current-system-admin', 'Failed to get current System Administrator', { error: error.message });
       throw error;
     }
   }
@@ -1133,7 +1127,7 @@ export class AdminPromotionService {
    * Get eligible users for System Administrator promotion
    */
   static async getEligibleUsersForSystemAdmin(tenantId: string, _currentAdminId: string): Promise<Array<Record<string, unknown>>> {
-    console.log(`🔍 Getting eligible users for System Administrator promotion in tenant: ${tenantId}`);
+    Logger.log('info', 'user', 'get-eligible-system-admin-users', 'Getting eligible users for System Administrator promotion', { tenantId });
 
     try {
       // Get all active users except current system admin
@@ -1161,12 +1155,12 @@ export class AdminPromotionService {
           isNull(customRoles.roleId) // Not already system admin
         ));
 
-      console.log(`📊 Found ${eligibleUsers.length} eligible users for System Administrator promotion`);
+      Logger.log('info', 'user', 'get-eligible-system-admin-users', 'Found eligible users for System Administrator promotion', { count: eligibleUsers.length });
       return eligibleUsers as Array<Record<string, unknown>>;
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Failed to get eligible users:', error);
+      Logger.log('error', 'user', 'get-eligible-system-admin-users', 'Failed to get eligible users', { error: error.message });
       throw error;
     }
   }
@@ -1175,7 +1169,7 @@ export class AdminPromotionService {
    * Prevent deletion of the only System Administrator
    */
   static async canDeleteUser(tenantId: string, userId: string): Promise<{ canDelete: boolean; reason?: string }> {
-    console.log(`🔍 Checking if user ${userId} can be deleted...`);
+    Logger.log('info', 'user', 'can-delete-user', 'Checking if user can be deleted', { tenantId, userId });
 
     try {
       // Check if user is the current System Administrator
@@ -1215,7 +1209,7 @@ export class AdminPromotionService {
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Failed to check user deletion eligibility:', error);
+      Logger.log('error', 'user', 'can-delete-user', 'Failed to check user deletion eligibility', { error: error.message });
       throw error;
     }
   }

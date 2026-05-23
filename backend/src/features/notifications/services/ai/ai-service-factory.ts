@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
+import Logger from '../../../../utils/logger.js';
 
 type ProviderName = 'openai' | 'anthropic';
 interface CostEntry { requests: number; tokens: number; cost: number; }
@@ -33,9 +34,9 @@ class AIServiceFactory {
         this.providers.openai = new OpenAI({
           apiKey: process.env.OPENAI_API_KEY
         });
-        console.log('✅ OpenAI provider initialized');
+        Logger.log('info', 'ai', 'initialize-providers', '✅ OpenAI provider initialized');
       } catch (error) {
-        console.error('❌ Failed to initialize OpenAI:', error);
+        Logger.log('error', 'ai', 'initialize-providers', '❌ Failed to initialize OpenAI', { error });
       }
     }
 
@@ -45,9 +46,9 @@ class AIServiceFactory {
         this.providers.anthropic = new Anthropic({
           apiKey: process.env.ANTHROPIC_API_KEY
         });
-        console.log('✅ Anthropic provider initialized');
+        Logger.log('info', 'ai', 'initialize-providers', '✅ Anthropic provider initialized');
       } catch (error) {
-        console.error('❌ Failed to initialize Anthropic:', error);
+        Logger.log('error', 'ai', 'initialize-providers', '❌ Failed to initialize Anthropic', { error });
       }
     }
   }
@@ -63,7 +64,7 @@ class AIServiceFactory {
         // Try fallback provider
         const fallbackName = providerName === 'openai' ? 'anthropic' : 'openai';
         if (this.providers[fallbackName]) {
-          console.warn(`⚠️ Provider ${providerName} not available, using fallback: ${fallbackName}`);
+          Logger.log('warning', 'ai', 'get-provider', `⚠️ Provider ${providerName} not available, using fallback: ${fallbackName}`, { providerName, fallbackName });
           return this.providers[fallbackName];
         }
       }
@@ -108,7 +109,7 @@ class AIServiceFactory {
         };
       } catch (err: unknown) {
         const error = err as Error;
-        console.error(`❌ Error with provider ${providerName}:`, error.message);
+        Logger.log('error', 'ai', 'generate-completion', `❌ Error with provider ${providerName}: ${error.message}`, { providerName, stack: error.stack });
         lastError = error;
         continue;
       }

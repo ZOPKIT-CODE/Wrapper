@@ -6,8 +6,10 @@ import { eq, and } from 'drizzle-orm';
 import { RequestAnalyzer } from './request-analyzer.js';
 import { shouldLogVerbose } from '../../utils/verbose-log.js';
 import { getUserPermissions, checkPermissions } from './permission-middleware.js';
+import { SharedCache } from '../../utils/shared-cache.js';
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import type { OnboardingStatus } from '../../types/common.js';
+import Logger from '../../utils/logger.js';
 
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -29,7 +31,6 @@ const PUBLIC_ROUTES: string[] = [
   '/api/credits/webhook',
   '/api/invitations/details',
   '/api/invitations/accept',
-  '/api/invitations/accept-by-token',
   '/api/invitations/details-by-token',
   '/api/credits/packages',
   '/api/onboarding/verify-pan',
@@ -70,24 +71,24 @@ async function findUserInDatabase(kindeUserId: string, tenantId?: string): Promi
   // Cache key includes tenantId so multi-tenant users get correct records per tenant.
   const cacheKey = tenantId ? `${kindeUserId}:${tenantId}` : kindeUserId;
 
-  // Check in-process cache first — eliminates a DB round-trip on every request
+  // Check shared cache first — eliminates a DB round-trip on every request
   // for the same user within the 5-minute TTL window.
-  const cached = userRecordCache.get(cacheKey);
-  if (cached && Date.now() < cached.expiresAt) {
-    if (shouldLogVerbose()) console.log('🔍 User cache HIT:', cacheKey);
+  const cached = await userRecordCache.get(cacheKey);
+  if (cached !== undefined) {
+    if (shouldLogVerbose()) Logger.log('info', 'auth', 'find-user-in-database', '🔍 User cache HIT', { cacheKey });
     // Verify tenant still exists — uses tenantExistsCache (30-min TTL) to avoid
     // a live DB round-trip on every request. Accepts ≤30min stale window for deletions.
-    if (cached.value?.tenantId && !(await isTenantValid(cached.value.tenantId))) {
-      userRecordCache.delete(cacheKey);
-      userRecordCache.set(cacheKey, { value: null, expiresAt: Date.now() + USER_RECORD_CACHE_TTL_MS });
-      if (shouldLogVerbose()) console.log('🔍 User cache invalidated: tenant no longer exists');
+    if (cached.v?.tenantId && !(await isTenantValid(cached.v.tenantId))) {
+      await userRecordCache.delete(cacheKey);
+      await userRecordCache.set(cacheKey, { v: null }, USER_RECORD_CACHE_TTL_MS);
+      if (shouldLogVerbose()) Logger.log('info', 'auth', 'find-user-in-database', '🔍 User cache invalidated: tenant no longer exists');
       return null;
     }
-    return cached.value;
+    return cached.v;
   }
 
   try {
-    if (shouldLogVerbose()) console.log('🔍 Looking up user:', cacheKey);
+    if (shouldLogVerbose()) Logger.log('info', 'auth', 'find-user-in-database', '🔍 Looking up user', { cacheKey });
 
     const whereClause = tenantId
       ? and(eq(tenantUsers.kindeUserId, kindeUserId), eq(tenantUsers.tenantId, tenantId), eq(tenantUsers.isActive, true))
@@ -108,19 +109,19 @@ async function findUserInDatabase(kindeUserId: string, tenantId?: string): Promi
       .where(whereClause) as UserRecord[];
 
     if (!Array.isArray(userRecords) || userRecords.length === 0) {
-      if (shouldLogVerbose()) console.log('⚠️ No user records found (expected during onboarding)');
-      userRecordCache.set(cacheKey, { value: null, expiresAt: Date.now() + USER_RECORD_CACHE_TTL_MS });
+      if (shouldLogVerbose()) Logger.log('info', 'auth', 'find-user-in-database', '⚠️ No user records found (expected during onboarding)');
+      await userRecordCache.set(cacheKey, { v: null }, USER_RECORD_CACHE_TTL_MS);
       return null;
     }
 
     const selectedUser = userRecords.find(u => u.onboardingCompleted) || userRecords[0];
-    if (shouldLogVerbose()) console.log('Auth: user found', selectedUser.userId);
-    userRecordCache.set(cacheKey, { value: selectedUser, expiresAt: Date.now() + USER_RECORD_CACHE_TTL_MS });
+    if (shouldLogVerbose()) Logger.log('info', 'auth', 'find-user-in-database', 'Auth: user found', { userId: selectedUser.userId });
+    await userRecordCache.set(cacheKey, { v: selectedUser }, USER_RECORD_CACHE_TTL_MS);
     return selectedUser;
 
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('❌ Database query error:', err.message);
+    Logger.log('error', 'auth', 'find-user-in-database', '❌ Database query error', { error: err.message });
     return null;
   }
 }
@@ -129,19 +130,23 @@ async function findUserInDatabase(kindeUserId: string, tenantId?: string): Promi
 // findUserInDatabase() runs on every authenticated request and is the single
 // most expensive repeated DB call. Cache by kindeUserId with a 5-minute TTL.
 // Invalidate via invalidateUserCache() whenever onboarding/isActive changes.
+// Backed by SharedCache (async, Redis-ready); falls back to in-process Map.
 const USER_RECORD_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
-interface UserRecordCacheEntry { value: UserRecord | null; expiresAt: number }
-const userRecordCache = new Map<string, UserRecordCacheEntry>();
+// Value is wrapped in an object so that null (user-not-found sentinel) can be
+// distinguished from undefined (cache miss).
+const userRecordCache = new SharedCache<{ v: UserRecord | null }>('auth:user');
 
-export function invalidateUserCache(kindeUserId: string, tenantId?: string): void {
-  userRecordCache.delete(kindeUserId); // bare key (legacy)
+export async function invalidateUserCache(kindeUserId: string, tenantId?: string): Promise<void> {
+  await userRecordCache.delete(kindeUserId); // bare key (legacy)
   if (tenantId) {
-    userRecordCache.delete(`${kindeUserId}:${tenantId}`);
+    await userRecordCache.delete(`${kindeUserId}:${tenantId}`);
   } else {
-    // Delete all tenant-specific keys for this user
+    // Delete all tenant-specific keys for this user (in-process key scan).
+    const toDelete: string[] = [];
     for (const key of userRecordCache.keys()) {
-      if (key.startsWith(`${kindeUserId}:`)) userRecordCache.delete(key);
+      if (key.startsWith(`${kindeUserId}:`)) toDelete.push(key);
     }
+    await Promise.all(toDelete.map(k => userRecordCache.delete(k)));
   }
 }
 // ─────────────────────────────────────────────────────────────────────────
@@ -150,12 +155,12 @@ export function invalidateUserCache(kindeUserId: string, tenantId?: string): voi
 // The role JOIN query runs on every authenticated request for non-null users.
 // Cache by internalUserId with a 5-minute TTL.
 // Invalidate via invalidateRoleCache() whenever roles are reassigned.
+// Backed by SharedCache (async, Redis-ready); falls back to in-process Map.
 const ROLE_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
-interface RoleCacheEntry { isSuperAdmin: boolean; expiresAt: number }
-const roleCacheByUserId = new Map<string, RoleCacheEntry>();
+const roleCacheByUserId = new SharedCache<{ isSuperAdmin: boolean }>('auth:role');
 
-export function invalidateRoleCache(internalUserId: string): void {
-  roleCacheByUserId.delete(internalUserId);
+export async function invalidateRoleCache(internalUserId: string): Promise<void> {
+  await roleCacheByUserId.delete(internalUserId);
 }
 
 /**
@@ -164,8 +169,8 @@ export function invalidateRoleCache(internalUserId: string): void {
  * auth middleware run hits the DB and finds the new tenant, rather than
  * returning the cached null from before onboarding completed.
  */
-export function invalidateTenantLookupCache(orgCode: string): void {
-  tenantLookupCache.delete(orgCode);
+export async function invalidateTenantLookupCache(orgCode: string): Promise<void> {
+  await tenantLookupCache.delete(orgCode);
 }
 // ─────────────────────────────────────────────────────────────────────────
 
@@ -174,12 +179,13 @@ export function invalidateTenantLookupCache(orgCode: string): void {
 // and findTenantByOrgCode. Since tenantIds are immutable once created, we cache
 // existence checks for 30 minutes to avoid a DB round-trip on every request.
 // Worst case: a deleted tenant's cache entry persists for up to 30 minutes.
+// Backed by SharedCache (async, Redis-ready); falls back to in-process Map.
 const TENANT_EXISTS_CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
-const tenantExistsCache = new Map<string, number>(); // tenantId -> expiresAt timestamp
+const tenantExistsCache = new SharedCache<true>('auth:tenant-exists');
 
 async function isTenantValid(tenantId: string): Promise<boolean> {
-  const expiry = tenantExistsCache.get(tenantId);
-  if (expiry && Date.now() < expiry) return true; // cache hit — no DB round-trip
+  const hit = await tenantExistsCache.get(tenantId);
+  if (hit !== undefined) return true; // cache hit — no DB round-trip
   try {
     const [row] = await db
       .select({ tenantId: tenants.tenantId })
@@ -187,7 +193,7 @@ async function isTenantValid(tenantId: string): Promise<boolean> {
       .where(eq(tenants.tenantId, tenantId))
       .limit(1);
     if (row) {
-      tenantExistsCache.set(tenantId, Date.now() + TENANT_EXISTS_CACHE_TTL_MS);
+      await tenantExistsCache.set(tenantId, true, TENANT_EXISTS_CACHE_TTL_MS);
       return true;
     }
     return false;
@@ -201,28 +207,29 @@ async function isTenantValid(tenantId: string): Promise<boolean> {
 // Caches both hits (tenantId string) and misses (null sentinel) to prevent
 // a DB round-trip on every authenticated request for the same org code.
 // TTL is intentionally short (2 min) so new tenants propagate quickly.
+// Backed by SharedCache (async, Redis-ready); falls back to in-process Map.
 const TENANT_LOOKUP_CACHE_TTL_MS = 2 * 60 * 1000; // 2 minutes
-interface TenantLookupEntry { value: string | null; expiresAt: number }
-const tenantLookupCache = new Map<string, TenantLookupEntry>();
+// Value is wrapped so null (miss sentinel) is distinguishable from undefined (not cached).
+const tenantLookupCache = new SharedCache<{ v: string | null }>('auth:tenant-lookup');
 
 async function findTenantByOrgCode(orgCode: string): Promise<string | null> {
   if (!orgCode) return null;
 
-  // Check in-process cache (hits AND misses).
-  const cached = tenantLookupCache.get(orgCode);
-  if (cached && Date.now() < cached.expiresAt) {
+  // Check shared cache (hits AND misses).
+  const cached = await tenantLookupCache.get(orgCode);
+  if (cached !== undefined) {
     // Verify tenant still exists — uses tenantExistsCache (30-min TTL).
-    if (cached.value && !(await isTenantValid(cached.value))) {
-      tenantLookupCache.delete(orgCode);
-      tenantLookupCache.set(orgCode, { value: null, expiresAt: Date.now() + TENANT_LOOKUP_CACHE_TTL_MS });
-      if (shouldLogVerbose()) console.log('🔍 Tenant lookup cache invalidated: tenant no longer exists');
+    if (cached.v && !(await isTenantValid(cached.v))) {
+      await tenantLookupCache.delete(orgCode);
+      await tenantLookupCache.set(orgCode, { v: null }, TENANT_LOOKUP_CACHE_TTL_MS);
+      if (shouldLogVerbose()) Logger.log('info', 'auth', 'find-tenant-by-org-code', '🔍 Tenant lookup cache invalidated: tenant no longer exists');
       return null;
     }
-    return cached.value; // null means "not found" — also cached to avoid repeated DB hits
+    return cached.v; // null means "not found" — also cached to avoid repeated DB hits
   }
 
   try {
-    if (shouldLogVerbose()) console.log('🔍 Looking up tenant:', orgCode);
+    if (shouldLogVerbose()) Logger.log('info', 'auth', 'find-tenant-by-org-code', '🔍 Looking up tenant', { orgCode });
 
     const [tenant] = await db
       .select({ tenantId: tenants.tenantId })
@@ -232,18 +239,18 @@ async function findTenantByOrgCode(orgCode: string): Promise<string | null> {
 
     const result = tenant?.tenantId ?? null;
     // Cache the result (hit or miss).
-    tenantLookupCache.set(orgCode, { value: result, expiresAt: Date.now() + TENANT_LOOKUP_CACHE_TTL_MS });
+    await tenantLookupCache.set(orgCode, { v: result }, TENANT_LOOKUP_CACHE_TTL_MS);
 
     if (result) {
-      if (shouldLogVerbose()) console.log('✅ Found tenant:', result);
+      if (shouldLogVerbose()) Logger.log('info', 'auth', 'find-tenant-by-org-code', '✅ Found tenant', { result });
     } else {
       // Expected during onboarding (no tenant record yet) — verbose-only to avoid noise.
-      if (shouldLogVerbose()) console.log(`⚠️ No tenant found for org code: ${orgCode}`);
+      if (shouldLogVerbose()) Logger.log('info', 'auth', 'find-tenant-by-org-code', `⚠️ No tenant found for org code: ${orgCode}`);
     }
     return result;
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('❌ Tenant lookup error:', err.message);
+    Logger.log('error', 'auth', 'find-tenant-by-org-code', '❌ Tenant lookup error', { error: err.message });
     return null;
   }
 }
@@ -288,7 +295,7 @@ export async function setupDatabaseConnection(request: FastifyRequest, tenantId:
       dbManager.getAppConnection();
   } catch (dbError: unknown) {
     const err = dbError as Error;
-    console.error('❌ Failed to establish database connection:', err.message);
+    Logger.log('error', 'auth', 'setup-database-connection', '❌ Failed to establish database connection', { error: err.message });
     request.db = null;
     return;
   }
@@ -303,7 +310,7 @@ export async function setupDatabaseConnection(request: FastifyRequest, tenantId:
       `;
     } catch (error: unknown) {
       const err = error as Error;
-      console.error('❌ Failed to set tenant context:', err.message);
+      Logger.log('error', 'auth', 'setup-database-connection', '❌ Failed to set tenant context', { error: err.message });
     }
   }
 }
@@ -384,8 +391,8 @@ async function processAuthenticatedUser(request: FastifyRequest, reply: FastifyR
   if (effectiveUserRecord?.userId && tenantId) {
     // Check role cache first — eliminates a DB round-trip on every request
     // for the same user within the 5-minute TTL window.
-    const cachedRole = roleCacheByUserId.get(effectiveUserRecord.userId);
-    if (cachedRole && Date.now() < cachedRole.expiresAt) {
+    const cachedRole = await roleCacheByUserId.get(effectiveUserRecord.userId);
+    if (cachedRole !== undefined) {
       isSuperAdmin = cachedRole.isSuperAdmin;
     } else {
       try {
@@ -400,9 +407,9 @@ async function processAuthenticatedUser(request: FastifyRequest, reply: FastifyR
           .where(eq(userRoleAssignments.userId, effectiveUserRecord.userId));
 
         isSuperAdmin = userRoles.some(role => role.roleName === 'Super Administrator' && role.isSystemRole);
-        roleCacheByUserId.set(effectiveUserRecord.userId, { isSuperAdmin, expiresAt: Date.now() + ROLE_CACHE_TTL_MS });
+        await roleCacheByUserId.set(effectiveUserRecord.userId, { isSuperAdmin }, ROLE_CACHE_TTL_MS);
       } catch (error) {
-        console.warn('⚠️ Failed to check super admin status:', error);
+        Logger.log('warning', 'auth', 'process-authenticated-user', '⚠️ Failed to check super admin status', { error });
       }
     }
   }
@@ -440,7 +447,7 @@ async function processAuthenticatedUser(request: FastifyRequest, reply: FastifyR
   await setupDatabaseConnection(request, tenantId, request.userContext.internalUserId);
 
   if (shouldLogVerbose()) {
-    console.log('✅ User authenticated:', {
+    Logger.log('info', 'auth', 'process-authenticated-user', '✅ User authenticated', {
       userId: kindeUser.userId,
       tenantId,
       needsOnboarding
@@ -474,7 +481,7 @@ export async function authMiddleware(request: FastifyRequest, reply: FastifyRepl
   }
 
   try {
-    if (shouldLogVerbose()) console.log('🔐 Authenticating user...');
+    if (shouldLogVerbose()) Logger.log('info', 'auth', 'auth-middleware', '🔐 Authenticating user...');
 
     const sharedSecret = process.env.OPERATIONS_JWT_SECRET || process.env.SHARED_APP_JWT_SECRET;
     if (sharedSecret) {
@@ -517,13 +524,13 @@ export async function authMiddleware(request: FastifyRequest, reply: FastifyRepl
                 isTenantAdmin: request.userContext.isTenantAdmin,
               };
               await setupDatabaseConnection(request, tenant.tenantId, u.userId);
-              if (shouldLogVerbose()) console.log('✅ Authentication successful (Operations JWT)');
+              if (shouldLogVerbose()) Logger.log('info', 'auth', 'auth-middleware', '✅ Authentication successful (Operations JWT)');
               return;
             }
           }
         }
       } catch (opsErr: unknown) {
-        if (shouldLogVerbose()) console.log('⚠️ Operations JWT verification failed, falling through to Kinde:', (opsErr as Error).message);
+        if (shouldLogVerbose()) Logger.log('info', 'auth', 'auth-middleware', '⚠️ Operations JWT verification failed, falling through to Kinde', { error: (opsErr as Error).message });
       }
     }
 
@@ -539,11 +546,11 @@ export async function authMiddleware(request: FastifyRequest, reply: FastifyRepl
     }
 
     await processAuthenticatedUser(request, reply, kindeUser);
-    if (shouldLogVerbose()) console.log('✅ Authentication successful');
+    if (shouldLogVerbose()) Logger.log('info', 'auth', 'auth-middleware', '✅ Authentication successful');
 
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('❌ Authentication failed:', err.message);
+    Logger.log('error', 'auth', 'auth-middleware', '❌ Authentication failed', { error: err.message });
 
     if (err.message === 'Authentication timeout') {
       reply.code(408).send({
@@ -561,7 +568,7 @@ export async function authMiddleware(request: FastifyRequest, reply: FastifyRepl
         if (refreshSuccess) return;
       } catch (refreshError: unknown) {
         const refErr = refreshError as Error;
-        console.error('❌ Token refresh failed:', refErr.message);
+        Logger.log('error', 'auth', 'auth-middleware', '❌ Token refresh failed', { error: refErr.message });
       }
     }
 

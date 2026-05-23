@@ -9,6 +9,8 @@ import { entities } from '../../../db/schema/organizations/unified-entities.js';
 import { eq, and } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import HierarchyManager from '../../../utils/hierarchy-manager.js';
+import Logger from '../../../utils/logger.js';
+import { snsSqsPublisher } from '../../messaging/utils/sns-sqs-publisher.js';
 
 export class LocationService {
 
@@ -18,7 +20,7 @@ export class LocationService {
   async createLocation(data: Record<string, unknown> & { name: string; address?: string; city?: string; state?: string; zipCode?: string; country?: string; organizationId: string; responsiblePersonId?: string }, createdBy: string) {
     const { name, address, city, state, zipCode, country, organizationId, responsiblePersonId } = data;
 
-    console.log('📍 Received location data:', { name, address, city, state, zipCode, country, organizationId });
+    Logger.log('info', 'general', 'create-location', 'Received location data', { name, address, city, state, zipCode, country, organizationId });
 
     // Validate input
     this.validateLocationData(data);
@@ -63,7 +65,7 @@ export class LocationService {
       createdAt: new Date()
     }).returning();
 
-    console.log('📍 Location entity inserted:', location[0]);
+    Logger.log('info', 'general', 'create-location', 'Location entity inserted', { entityId: location[0].entityId });
     // Note: Hierarchy paths are automatically maintained by database triggers
 
     // Get updated location data with hierarchy paths
@@ -88,7 +90,21 @@ export class LocationService {
       }
     };
 
-    console.log('📍 Location created successfully:', responseData);
+    Logger.log('info', 'general', 'create-location', 'Location created successfully', { entityId: responseData.location.entityId });
+
+    snsSqsPublisher.publishOrgEventToSuite('entity.created', parentEntity[0].tenantId, entityId, {
+      entityId,
+      entityName: name,
+      entityType: 'location',
+      parentId: organizationId,
+      address: addressData,
+      isActive: true,
+      createdBy,
+      createdAt: new Date().toISOString(),
+    }).catch((err: Error) => {
+      Logger.log('warning', 'general', 'create-location', 'Failed to publish entity.created event', { entityId, error: err.message });
+    });
+
     return responseData;
   }
 
@@ -185,16 +201,35 @@ export class LocationService {
       throw new Error('Location not found');
     }
 
+    const loc = updatedLocation[0];
+    snsSqsPublisher.publishOrgEventToSuite('entity.updated', loc.tenantId, locationId, {
+      entityId: locationId,
+      entityName: loc.entityName,
+      entityType: 'location',
+      address: addressData,
+      updatedBy,
+      updatedAt: loc.updatedAt,
+    }).catch((err: Error) => {
+      Logger.log('warning', 'general', 'update-location', 'Failed to publish entity.updated event', { locationId, error: err.message });
+    });
+
     return {
       success: true,
-      location: updatedLocation[0]
+      location: loc
     };
   }
 
   /**
    * Delete location
    */
-  async deleteLocation(locationId: string) {
+  async deleteLocation(locationId: string, deletedBy = 'system') {
+    // Fetch before delete to capture tenantId for event publishing.
+    const [locationData] = await db
+      .select({ tenantId: entities.tenantId, entityName: entities.entityName })
+      .from(entities)
+      .where(and(eq(entities.entityId, locationId), eq(entities.entityType, 'location')))
+      .limit(1);
+
     const deletedLocation = await db
       .delete(entities)
       .where(and(
@@ -205,6 +240,19 @@ export class LocationService {
 
     if (deletedLocation.length === 0) {
       throw new Error('Location not found');
+    }
+
+    if (locationData) {
+      snsSqsPublisher.publishOrgEventToSuite('entity.deactivated', locationData.tenantId, locationId, {
+        entityId: locationId,
+        entityName: locationData.entityName,
+        entityType: 'location',
+        isActive: false,
+        deletedBy,
+        deletedAt: new Date().toISOString(),
+      }).catch((err: Error) => {
+        Logger.log('warning', 'general', 'delete-location', 'Failed to publish entity.deactivated event', { locationId, error: err.message });
+      });
     }
 
     return {
@@ -257,7 +305,7 @@ export class LocationService {
         message: 'Complete entity hierarchy retrieved successfully'
       };
     } catch (error) {
-      console.error('Error in getEntityHierarchyWithLocations:', error);
+      Logger.log('error', 'general', 'get-entity-hierarchy-with-locations', 'Error in getEntityHierarchyWithLocations, falling back to simple query', { error: (error as Error).message });
 
       // Fallback to simple query
       const allEntities = await db

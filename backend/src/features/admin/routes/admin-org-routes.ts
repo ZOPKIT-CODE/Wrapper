@@ -46,8 +46,7 @@ export default async function adminOrgRoutes(fastify: FastifyInstance): Promise<
   fastify.get('/auth-status', async (request: FastifyRequest, reply: FastifyReply) => {
     const req = request as ReqWithUser;
     try {
-      console.log('🔍 Admin Auth Status Check');
-      console.log('📋 Request User Context:', {
+      Logger.log('info', 'general', 'auth-status', 'Admin auth status check', {
         isAuthenticated: req.userContext?.isAuthenticated,
         userId: req.userContext?.userId,
         internalUserId: req.userContext?.internalUserId,
@@ -58,7 +57,7 @@ export default async function adminOrgRoutes(fastify: FastifyInstance): Promise<
 
       // If user is not authenticated, return basic status
       if (!req.userContext?.isAuthenticated) {
-        console.log('❌ User not authenticated, returning basic status');
+        Logger.log('info', 'general', 'auth-status', 'User not authenticated, returning basic status');
         return {
           success: true,
           authStatus: {
@@ -72,7 +71,7 @@ export default async function adminOrgRoutes(fastify: FastifyInstance): Promise<
       let userRoles: any[] = [];
       let legacyPermissions: any[] = []; // Simple permission names - declare at proper scope
 
-      console.log('🔍 Fetching user permissions for:', {
+      Logger.log('info', 'general', 'auth-status', 'Fetching user permissions', {
         internalUserId: req.userContext?.internalUserId,
         tenantId: req.userContext?.tenantId
       });
@@ -93,17 +92,17 @@ export default async function adminOrgRoutes(fastify: FastifyInstance): Promise<
             .where(eq(userRoleAssignments.userId, req.userContext.internalUserId));
 
           userRoles = roles;
-          console.log('📝 User roles found:', userRoles.map(r => ({
+          Logger.log('info', 'role', 'auth-status', 'User roles found', { roles: userRoles.map(r => ({
             roleId: r.roleId,
             roleName: r.roleName,
             isSystemRole: r.isSystemRole,
             hasPermissions: !!r.permissions
-          })));
+          })) });
 
           // Aggregate permissions from all roles
 
           for (const role of roles) {
-            console.log(`🔍 Processing role: ${role.roleName} (${role.roleId})`);
+            Logger.log('info', 'role', 'auth-status', 'Processing role', { roleName: role.roleName, roleId: role.roleId });
 
             if (role.permissions) {
               let rolePermissions;
@@ -122,10 +121,10 @@ export default async function adminOrgRoutes(fastify: FastifyInstance): Promise<
                   rolePermissions = {};
                 }
 
-                console.log(`📋 Raw permissions for role ${role.roleName}:`, Object.keys(rolePermissions || {}));
+                Logger.log('info', 'role', 'auth-status', 'Raw permissions for role', { roleName: role.roleName, permissionKeys: Object.keys(rolePermissions || {}) });
               } catch (parseErr: unknown) {
                 const parseError = parseErr as Error;
-                console.error(`❌ Failed to parse permissions for role ${role.roleName}:`, parseError);
+                Logger.log('error', 'role', 'auth-status', 'Failed to parse permissions for role', { roleName: role.roleName, error: parseError.message });
                 continue;
               }
 
@@ -135,7 +134,7 @@ export default async function adminOrgRoutes(fastify: FastifyInstance): Promise<
                 const flattenedOps = flattenHierarchicalPermissions(rolePermissions);
 
                 if (shouldLogVerbose()) {
-                  console.log(`🔍 Flattened ${flattenedOps.length} operations from role ${role.roleName}`);
+                  Logger.log('info', 'role', 'auth-status', 'Flattened operations from role', { count: flattenedOps.length, roleName: role.roleName });
                 }
 
                 flattenedOps.forEach((operation: string) => {
@@ -164,11 +163,10 @@ export default async function adminOrgRoutes(fastify: FastifyInstance): Promise<
             }
           }
 
-          console.log(`📊 Total permissions aggregated: ${userPermissions.length}`);
-          console.log(`📊 Legacy permissions: ${legacyPermissions.length}`);
+          Logger.log('info', 'general', 'auth-status', 'Permissions aggregated', { total: userPermissions.length, legacy: legacyPermissions.length });
 
         } catch (permissionError: unknown) {
-          console.error('❌ Error fetching user permissions:', permissionError);
+          Logger.log('error', 'general', 'auth-status', 'Error fetching user permissions', { error: (permissionError as Error).message });
         }
       }
 
@@ -205,7 +203,7 @@ export default async function adminOrgRoutes(fastify: FastifyInstance): Promise<
           }
         } catch (err: unknown) {
           const error = err as Error;
-          console.error('Error checking invited user status:', error);
+          Logger.log('error', 'general', 'auth-status', 'Error checking invited user status', { error: error.message });
         }
       }
 
@@ -229,7 +227,7 @@ export default async function adminOrgRoutes(fastify: FastifyInstance): Promise<
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error in auth status check:', error);
+      Logger.log('error', 'general', 'auth-status', 'Error in auth status check', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to get auth status',
@@ -241,7 +239,7 @@ export default async function adminOrgRoutes(fastify: FastifyInstance): Promise<
   // Get user's accessible tenants
   fastify.get('/user-tenants', async (request, reply) => {
     try {
-      console.log('🏢 Getting user tenants for:', request.userContext?.email);
+      Logger.log('info', 'general', 'user-tenants', 'Getting user tenants', { email: request.userContext?.email });
 
       if (!request.userContext?.isAuthenticated) {
         return reply.code(401).send({
@@ -266,7 +264,7 @@ export default async function adminOrgRoutes(fastify: FastifyInstance): Promise<
         ))
         .orderBy(tenants.createdAt);
 
-      console.log('✅ Found user tenants:', userTenants.length);
+      Logger.log('info', 'general', 'user-tenants', 'Found user tenants', { count: userTenants.length });
 
       return {
         success: true,
@@ -275,7 +273,7 @@ export default async function adminOrgRoutes(fastify: FastifyInstance): Promise<
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error getting user tenants:', error);
+      Logger.log('error', 'general', 'user-tenants', 'Error getting user tenants', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to get user tenants',
@@ -292,7 +290,7 @@ export default async function adminOrgRoutes(fastify: FastifyInstance): Promise<
     const tenantId = ((request as ReqWithUser).userContext?.tenantId ?? '') as string;
 
     try {
-      console.log(`🔍 [${requestId}] Getting all organizations for tenant: ${tenantId}`);
+      Logger.log('info', 'general', requestId, 'Getting all organizations for tenant', { tenantId });
 
       const allOrganizations = await db
         .select({
@@ -317,7 +315,7 @@ export default async function adminOrgRoutes(fastify: FastifyInstance): Promise<
         ))
         .orderBy(entities.entityLevel, entities.entityName);
 
-      console.log(`✅ [${requestId}] Found ${allOrganizations.length} organizations`);
+      Logger.log('info', 'general', requestId, 'Found all organizations', { count: allOrganizations.length });
 
       return {
         success: true,
@@ -327,7 +325,7 @@ export default async function adminOrgRoutes(fastify: FastifyInstance): Promise<
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ [${requestId}] Failed to get all organizations:`, error);
+      Logger.log('error', 'general', requestId, 'Failed to get all organizations', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to get all organizations',
@@ -351,24 +349,13 @@ export default async function adminOrgRoutes(fastify: FastifyInstance): Promise<
         const requestId = Logger.generateRequestId('user-invite-org');
 
         try {
-          console.log('\n👤 ================ USER INVITATION (ORG PATH) STARTED ================');
-          console.log(`📋 Request ID: ${requestId}`);
-          console.log(`⏰ Timestamp: ${Logger.getTimestamp()}`);
-          console.log(`👤 Inviting user by: ${(request as ReqWithUser).userContext?.email}`);
+          Logger.log('info', 'email', requestId, 'User invitation started (org path)', { invitedBy: (request as ReqWithUser).userContext?.email });
 
           const email = (body.email ?? '') as string; const name = (body.name ?? '') as string; const roleIds = body.roleIds as string[] | undefined; const rawEntities = body.entities; const primaryEntityId = body.primaryEntityId as string | undefined; const message = body.message as string | undefined;
           const tenantId = ((request as ReqWithUser).userContext?.tenantId ?? '') as string;
 
-          console.log(`📧 [${requestId}] Invitation Data:`, {
-            email,
-            name,
-            roleIds,
-            entities: rawEntities,
-            primaryEntityId,
-            tenantId
-          });
-
-          console.log(`📧 [${requestId}] Validation: Validating input data`);
+          Logger.log('info', 'email', requestId, 'Invitation data received', { email, name, roleIds, entities: rawEntities, primaryEntityId, tenantId });
+          Logger.log('info', 'email', requestId, 'Validating input data');
 
           if (!email) {
             return reply.code(400).send({
@@ -443,7 +430,7 @@ export default async function adminOrgRoutes(fastify: FastifyInstance): Promise<
             });
           }
 
-          console.log(`✅ [${requestId}] Input validation successful`);
+          Logger.log('info', 'email', requestId, 'Input validation successful');
 
           // Process entities - handle both single entity and multi-entity invitations
           const targetEntities = Array.isArray(rawEntities) ? rawEntities : rawEntities ? [rawEntities] : [];
@@ -559,15 +546,15 @@ export default async function adminOrgRoutes(fastify: FastifyInstance): Promise<
               try {
                 const url = new URL(origin);
                 invitationUrl = `${url.protocol}//${url.host}/invite/accept?token=${invitationToken}`;
-                console.log(`🔗 [${requestId}] Using request origin for URL: ${invitationUrl}`);
+                Logger.log('info', 'email', requestId, 'Using request origin for URL', { url: invitationUrl });
               } catch (_e) {
-                console.warn(`⚠️ [${requestId}] Invalid origin URL, using default: ${origin}`);
+                Logger.log('warning', 'email', requestId, 'Invalid origin URL, using default', { origin });
                 invitationUrl = `http://localhost:3000/invite/accept?token=${invitationToken}`;
               }
             } else {
               // Fallback to localhost:3000 (frontend port)
               invitationUrl = `http://localhost:3000/invite/accept?token=${invitationToken}`;
-              console.log(`🔗 [${requestId}] Using default localhost URL: ${invitationUrl}`);
+              Logger.log('info', 'email', requestId, 'Using default localhost URL', { url: invitationUrl });
             }
           } else {
             // Production: use tenant subdomain or env vars
@@ -576,10 +563,10 @@ export default async function adminOrgRoutes(fastify: FastifyInstance): Promise<
               baseUrl = process.env.BASE_URL || 'https://zopkit.com';
             }
             invitationUrl = `${baseUrl}/invite/accept?token=${invitationToken}`;
-            console.log(`🔗 [${requestId}] Using production URL: ${invitationUrl.substring(0, 50)}...`);
+            Logger.log('info', 'email', requestId, 'Using production URL', { url: invitationUrl.substring(0, 50) });
           }
 
-          console.log(`🔗 [${requestId}] Generated invitation URL:`, invitationUrl.substring(0, 80) + '...');
+          Logger.log('info', 'email', requestId, 'Generated invitation URL', { url: invitationUrl.substring(0, 80) });
 
           // Create invitation in tenantInvitations table
           const dbConnection = dbManager.getAppConnection();
@@ -602,10 +589,7 @@ export default async function adminOrgRoutes(fastify: FastifyInstance): Promise<
           const invitationId = insertResult[0].invitation_id;
           const storedUrl = insertResult[0].invitation_url;
 
-          console.log(`✅ [${requestId}] Invitation created in database:`, {
-            invitationId,
-            urlStored: !!storedUrl
-          });
+          Logger.log('info', 'email', requestId, 'Invitation created in database', { invitationId, urlStored: !!storedUrl });
 
           // Update with JSONB target entities
           const targetEntitiesJson = JSON.stringify(validatedEntities).replace(/'/g, "''").replace(/\\/g, '\\\\');
@@ -621,7 +605,7 @@ export default async function adminOrgRoutes(fastify: FastifyInstance): Promise<
 
           // Verify URL was stored
           if (!newInvitation.invitation_url) {
-            console.warn(`⚠️ [${requestId}] URL not stored, updating...`);
+            Logger.log('warning', 'email', requestId, 'URL not stored, updating');
             const urlUpdateQuery = `
               UPDATE tenant_invitations
               SET invitation_url = '${escapedInvitationUrl}'
@@ -673,7 +657,7 @@ export default async function adminOrgRoutes(fastify: FastifyInstance): Promise<
           const emailOrganizations = organizations.length > 0 ? organizations : [tenant.companyName];
 
           // Send invitation email
-          console.log(`📧 [${requestId}] Sending invitation email to: ${email}`);
+          Logger.log('info', 'email', requestId, 'Sending invitation email', { email });
           try {
             await EmailService.sendUserInvitation({
               email,
@@ -688,16 +672,14 @@ export default async function adminOrgRoutes(fastify: FastifyInstance): Promise<
               expiryDate: expiresAt
             });
 
-            console.log(`✅ [${requestId}] Invitation email sent successfully`);
+            Logger.log('info', 'email', requestId, 'Invitation email sent successfully');
           } catch (emailErr: unknown) {
             const emailError = emailErr as Error;
-            console.error(`❌ [${requestId}] Failed to send invitation email:`, emailError.message);
+            Logger.log('error', 'email', requestId, 'Failed to send invitation email', { error: emailError.message });
             // Don't fail the invitation creation if email fails
           }
 
-          console.log(`🎉 [${requestId}] USER INVITATION (ORG PATH) COMPLETED SUCCESSFULLY!`);
-          console.log(`⏱️ [${requestId}] Total processing time: ${Logger.getDuration(startTime)}`);
-          console.log('👤 ================ USER INVITATION (ORG PATH) ENDED ================\n');
+          Logger.log('info', 'email', requestId, 'User invitation (org path) completed', { duration: Logger.getDuration(startTime) });
 
           return {
             success: true,
@@ -716,7 +698,7 @@ export default async function adminOrgRoutes(fastify: FastifyInstance): Promise<
 
         } catch (err: unknown) {
       const error = err as Error;
-          console.error(`❌ [${requestId}] Error sending invitation:`, error);
+          Logger.log('error', 'email', requestId, 'Error sending invitation', { error: error.message });
           return reply.code(500).send({
             success: false,
             error: 'Failed to send invitation',
@@ -735,7 +717,7 @@ export default async function adminOrgRoutes(fastify: FastifyInstance): Promise<
         const tenantId = ((request as ReqWithUser).userContext?.tenantId ?? '') as string;
 
         try {
-          console.log(`👥 [${requestId}] Getting organization users for tenant: ${tenantId}`);
+          Logger.log('info', 'general', requestId, 'Getting organization users for tenant', { tenantId });
 
           const users = await db
             .select({
@@ -756,7 +738,7 @@ export default async function adminOrgRoutes(fastify: FastifyInstance): Promise<
           const activeUsers = users.filter(u => u.isActive);
           const pendingUsers = users.filter(u => !u.isActive);
 
-          console.log(`✅ [${requestId}] Found ${users.length} total users (${activeUsers.length} active, ${pendingUsers.length} pending)`);
+          Logger.log('info', 'general', requestId, 'Found organization users', { total: users.length, active: activeUsers.length, pending: pendingUsers.length });
 
           return {
             success: true,
@@ -772,7 +754,7 @@ export default async function adminOrgRoutes(fastify: FastifyInstance): Promise<
           };
         } catch (err: unknown) {
       const error = err as Error;
-          console.error(`❌ [${requestId}] Failed to get organization users:`, error);
+          Logger.log('error', 'general', requestId, 'Failed to get organization users', { error: error.message });
           return reply.code(500).send({
             success: false,
             error: 'Failed to get organization users',

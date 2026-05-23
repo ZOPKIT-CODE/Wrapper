@@ -5,6 +5,7 @@ import { PERMISSIONS } from '../../../constants/permissions.js';
 import { db } from '../../../db/index.js';
 import { tenantUsers, auditLogs, tenants } from '../../../db/schema/index.js';
 import { eq, and, desc, or, sql } from 'drizzle-orm';
+import Logger from '../../../utils/logger.js';
 
 /**
  * Admin promotion routes for single System Administrator system
@@ -21,7 +22,7 @@ export default async function adminPromotionRoutes(fastify: FastifyInstance, _op
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
-      console.log('🔍 Getting current System Administrator');
+      Logger.log('info', 'general', 'get-current-system-admin', 'Getting current System Administrator');
       
       const tenantId = (request.userContext as { tenantId: string }).tenantId;
       
@@ -40,7 +41,7 @@ export default async function adminPromotionRoutes(fastify: FastifyInstance, _op
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Failed to get current System Administrator:', error);
+      Logger.log('error', 'general', 'get-current-system-admin', 'Failed to get current System Administrator', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to get current System Administrator',
@@ -59,7 +60,7 @@ export default async function adminPromotionRoutes(fastify: FastifyInstance, _op
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
-      console.log('📋 Getting eligible users for System Administrator promotion');
+      Logger.log('info', 'general', 'get-eligible-users', 'Getting eligible users for System Administrator promotion');
       
       const tenantId = (request.userContext as { tenantId: string }).tenantId;
       const currentAdminId = (request.userContext as { internalUserId: string | null }).internalUserId;
@@ -92,7 +93,7 @@ export default async function adminPromotionRoutes(fastify: FastifyInstance, _op
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Failed to get eligible users:', error);
+      Logger.log('error', 'general', 'get-eligible-users', 'Failed to get eligible users', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to get eligible users',
@@ -111,7 +112,7 @@ export default async function adminPromotionRoutes(fastify: FastifyInstance, _op
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
-      console.log('🔍 Previewing System Administrator promotion impact');
+      Logger.log('info', 'general', 'preview-promotion', 'Previewing System Administrator promotion impact');
       
       const body = request.body as Record<string, unknown>;
       const targetUserId = body.targetUserId as string;
@@ -197,7 +198,7 @@ export default async function adminPromotionRoutes(fastify: FastifyInstance, _op
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Failed to preview promotion impact:', error);
+      Logger.log('error', 'general', 'preview-promotion', 'Failed to preview promotion impact', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to preview promotion impact',
@@ -220,7 +221,7 @@ export default async function adminPromotionRoutes(fastify: FastifyInstance, _op
     const startTime = Date.now();
 
     try {
-      console.log(`🔄 [${requestId}] Enhanced System Administrator promotion requested`);
+      Logger.log('info', 'general', requestId, 'Enhanced System Administrator promotion requested');
       
       const body = request.body as Record<string, unknown>;
       const targetUserId = body.targetUserId as string;
@@ -243,11 +244,7 @@ export default async function adminPromotionRoutes(fastify: FastifyInstance, _op
 
       // Validation 2: Get current System Administrator
       const currentAdmin = await AdminPromotionService.getCurrentSystemAdmin(tenantId);
-      console.log(`🔍 [${requestId}] Current System Administrator:`, currentAdmin ? {
-        userId: currentAdmin.userId,
-        name: [currentAdmin.firstName, currentAdmin.lastName].filter(Boolean).join(' ') || currentAdmin.email || '',
-        email: currentAdmin.email
-      } : 'None');
+      Logger.log('info', 'general', requestId, 'Current System Administrator retrieved', { hasCurrentAdmin: !!currentAdmin, currentAdminId: currentAdmin?.userId ?? null });
 
       // Validation 3: Check if target user exists and is eligible
       const [targetUser] = await db
@@ -351,7 +348,7 @@ export default async function adminPromotionRoutes(fastify: FastifyInstance, _op
         .limit(1);
 
       // Execute the promotion
-      console.log(`🚀 [${requestId}] Executing System Administrator promotion...`);
+      Logger.log('info', 'general', requestId, 'Executing System Administrator promotion');
       
       const result = await AdminPromotionService.promoteToSystemAdmin(
         tenantId,
@@ -368,7 +365,7 @@ export default async function adminPromotionRoutes(fastify: FastifyInstance, _op
         }
       );
 
-      console.log(`✅ [${requestId}] System Administrator promotion completed successfully`);
+      Logger.log('info', 'general', requestId, 'System Administrator promotion completed successfully');
 
       const resultData = result.data as Record<string, unknown>;
       return reply.send({
@@ -394,7 +391,7 @@ export default async function adminPromotionRoutes(fastify: FastifyInstance, _op
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ [${requestId}] Enhanced System Administrator promotion failed:`, error);
+      Logger.log('error', 'general', requestId, 'Enhanced System Administrator promotion failed', { error: error.message });
       
       return reply.code(500).send({
         success: false,
@@ -420,7 +417,7 @@ export default async function adminPromotionRoutes(fastify: FastifyInstance, _op
     const startTime = Date.now();
 
     try {
-      console.log(`🔄 [${requestId}] Legacy System Administrator promotion requested`);
+      Logger.log('info', 'general', requestId, 'Legacy System Administrator promotion requested');
       
       const body = request.body as Record<string, unknown>;
       const targetUserId = body.targetUserId as string;
@@ -483,7 +480,7 @@ export default async function adminPromotionRoutes(fastify: FastifyInstance, _op
         }
       );
 
-      console.log(`✅ [${requestId}] Legacy System Administrator promotion completed successfully`);
+      Logger.log('info', 'general', requestId, 'Legacy System Administrator promotion completed successfully');
 
       return reply.send({
         success: true,
@@ -494,7 +491,7 @@ export default async function adminPromotionRoutes(fastify: FastifyInstance, _op
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ [${requestId}] Legacy System Administrator promotion failed:`, error);
+      Logger.log('error', 'general', requestId, 'Legacy System Administrator promotion failed', { error: error.message });
       
       return reply.code(500).send({
         success: false,
@@ -517,7 +514,7 @@ export default async function adminPromotionRoutes(fastify: FastifyInstance, _op
   },
   async (request: FastifyRequest, reply: FastifyReply) => {
     try {
-      console.log('🔍 Getting comprehensive System Administrator status');
+      Logger.log('info', 'general', 'get-admin-status', 'Getting comprehensive System Administrator status');
       
       const tenantId = (request.userContext as { tenantId: string }).tenantId;
       const requestorId = (request.userContext as { internalUserId: string | null }).internalUserId;
@@ -575,7 +572,7 @@ export default async function adminPromotionRoutes(fastify: FastifyInstance, _op
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Failed to get System Administrator status:', error);
+      Logger.log('error', 'general', 'get-admin-status', 'Failed to get System Administrator status', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to get System Administrator status',
@@ -594,7 +591,7 @@ export default async function adminPromotionRoutes(fastify: FastifyInstance, _op
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
-      console.log('📊 Getting System Administrator promotion history');
+      Logger.log('info', 'general', 'get-promotion-history', 'Getting System Administrator promotion history');
       
       const tenantId = (request.userContext as { tenantId: string }).tenantId;
       const q = request.query as Record<string, string | number | undefined>;
@@ -644,7 +641,7 @@ export default async function adminPromotionRoutes(fastify: FastifyInstance, _op
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Failed to get promotion history:', error);
+      Logger.log('error', 'general', 'get-promotion-history', 'Failed to get promotion history', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to get promotion history',
@@ -663,7 +660,7 @@ export default async function adminPromotionRoutes(fastify: FastifyInstance, _op
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
-      console.log('🚨 Emergency System Administrator recovery requested');
+      Logger.log('warning', 'general', 'emergency-recovery', 'Emergency System Administrator recovery requested');
       
       const body = request.body as Record<string, unknown>;
       const emergencyCode = body.emergencyCode as string;
@@ -745,7 +742,7 @@ export default async function adminPromotionRoutes(fastify: FastifyInstance, _op
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Emergency System Administrator recovery failed:', error);
+      Logger.log('error', 'general', 'emergency-recovery', 'Emergency System Administrator recovery failed', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Emergency recovery failed',

@@ -3,6 +3,7 @@ import { authenticateToken } from '../middleware/auth/auth.js';
 import { db } from '../db/index.js';
 import { contactSubmissions } from '../db/schema/index.js';
 import { eq } from 'drizzle-orm';
+import Logger from '../utils/logger.js';
 
 export default async function demoRoutes(fastify: FastifyInstance, _options?: Record<string, unknown>): Promise<void> {
   fastify.post('/schedule', {
@@ -19,7 +20,7 @@ export default async function demoRoutes(fastify: FastifyInstance, _options?: Re
       const preferredTime = body.preferredTime as string | null | undefined;
       const comments = body.comments as string | null | undefined;
 
-      console.log('🎯 Demo Request Received:', {
+      Logger.log('info', 'routes', 'schedule-demo', '🎯 Demo Request Received:', {
         name,
         email,
         company,
@@ -58,7 +59,8 @@ export default async function demoRoutes(fastify: FastifyInstance, _options?: Re
         }
       });
     } catch (err: unknown) {
-      console.error('Demo scheduling error:', err);
+      const error = err as Error;
+      Logger.log('error', 'routes', 'schedule-demo', 'Demo scheduling error', { error: error.message, stack: error.stack });
       reply.code(500).send({
         success: false,
         message: 'Failed to schedule demo. Please try again.'
@@ -83,7 +85,7 @@ export default async function demoRoutes(fastify: FastifyInstance, _options?: Re
       });
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Demo stats error:', error);
+      Logger.log('error', 'routes', 'demo-stats', 'Demo stats error', { error: error.message, stack: error.stack });
       reply.code(500).send({
         success: false,
         message: 'Failed to fetch demo statistics'

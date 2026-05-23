@@ -8,6 +8,7 @@ import { PERMISSIONS } from '../../../constants/permissions.js';
 import { db } from '../../../db/index.js';
 import { tenants, entities, credits, creditTransactions, contactSubmissions, subscriptions } from '../../../db/schema/index.js';
 import { eq, desc, sql, count, sum } from 'drizzle-orm';
+import Logger from '../../../utils/logger.js';
 
 export default async function adminDashboardRoutes(
   fastify: FastifyInstance,
@@ -105,7 +106,7 @@ export default async function adminDashboardRoutes(
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Error fetching admin dashboard overview:', error);
+      Logger.log('error', 'general', 'admin-dashboard-overview', 'Error fetching admin dashboard overview', { error: error.message });
       return reply.code(500).send({ error: 'Failed to fetch dashboard overview' });
     }
   });
@@ -181,7 +182,7 @@ export default async function adminDashboardRoutes(
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Error fetching recent activity:', error);
+      Logger.log('error', 'general', 'admin-recent-activity', 'Error fetching recent activity', { error: error.message });
       return reply.code(500).send({ error: 'Failed to fetch recent activity' });
     }
   });
@@ -242,7 +243,7 @@ export default async function adminDashboardRoutes(
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Error fetching contact submissions:', error);
+      Logger.log('error', 'general', 'admin-contact-submissions', 'Error fetching contact submissions', { error: error.message });
       return reply.code(500).send({ error: 'Failed to fetch contact submissions' });
     }
   });

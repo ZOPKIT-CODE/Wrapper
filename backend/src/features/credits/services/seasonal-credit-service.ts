@@ -1,5 +1,6 @@
 // REMOVED: CreditAllocationService - Application-specific allocations removed
 // REMOVED: creditAllocations, creditAllocationTransactions - Tables removed
+import Logger from '../../../utils/logger.js';
 
 /**
  * ⚠️ DEPRECATED: SeasonalCreditService
@@ -87,7 +88,7 @@ class SeasonalCreditService {
     let { creditType = 'seasonal', expiresAt = null, metadata = {} } = params;
     const { tenantId, creditAmount, campaignId, campaignName, targetApplications } = params;
     try {
-      console.log('🎄 Allocating seasonal credits:', {
+      Logger.log('info', 'billing', 'allocate-seasonal-credits', 'Allocating seasonal credits', {
         tenantId,
         creditAmount,
         creditType,
@@ -98,7 +99,7 @@ class SeasonalCreditService {
       const typesMap = (this.constructor as typeof SeasonalCreditService).SEASONAL_CREDIT_TYPES as Record<string, { name: string; defaultExpiryDays: number; expiryRule: string; warningDays: number; description?: string }>;
       // If credit type is not seasonal, fall back to regular credit allocation
       if (!typesMap[creditType]) {
-        console.warn(`Credit type ${creditType} not supported, falling back to free credits`);
+        Logger.log('warning', 'billing', 'allocate-seasonal-credits', 'Credit type not supported, falling back to free credits', { creditType });
         creditType = 'free';
       }
 
@@ -147,11 +148,11 @@ class SeasonalCreditService {
           throw new Error('allocateCreditsToApplication method removed. Use CreditService.addCreditsToEntity() instead.');
         } catch (err: unknown) {
           const appError = err as Error;
-          console.warn(`Failed to allocate to ${app}, continuing with other apps:`, appError.message);
+          Logger.log('warning', 'billing', 'allocate-seasonal-credits', 'Failed to allocate to app, continuing', { app, error: appError.message });
         }
       }
 
-      console.log(`✅ Allocated ${creditAmount} ${creditType} credits across ${applications.length} applications`);
+      Logger.log('info', 'billing', 'allocate-seasonal-credits', 'Allocated seasonal credits across applications', { creditAmount, creditType, appCount: applications.length });
 
       // Create notification for the tenant
       try {
@@ -167,10 +168,10 @@ class SeasonalCreditService {
           applications
         });
 
-        console.log('📧 Created seasonal credit notification for tenant:', tenantId);
+        Logger.log('info', 'billing', 'allocate-seasonal-credits', 'Created seasonal credit notification for tenant', { tenantId });
       } catch (err: unknown) {
         const notificationError = err as Error;
-        console.warn('Failed to create seasonal credit notification:', notificationError.message);
+        Logger.log('warning', 'billing', 'allocate-seasonal-credits', 'Failed to create seasonal credit notification', { error: notificationError.message });
         // Don't fail the allocation if notification creation fails
       }
 
@@ -178,7 +179,7 @@ class SeasonalCreditService {
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Error allocating seasonal credits:', error);
+      Logger.log('error', 'billing', 'allocate-seasonal-credits', 'Error allocating seasonal credits', { error: error.message });
       throw new Error(`Seasonal credit allocation failed: ${error.message}. This service needs refactoring to use CreditService.`);
     }
   }

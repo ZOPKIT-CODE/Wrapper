@@ -11,6 +11,7 @@ import Logger from '../../../utils/logger.js';
 import ErrorResponses from '../../../utils/error-responses.js';
 import permissionService from '../../roles/services/permission-service.js';
 import { TenantService } from '../../../services/tenant-service.js';
+import { snsSqsPublisher } from '../../messaging/utils/sns-sqs-publisher.js';
 
 type ReqWithUser = FastifyRequest & { userContext?: Record<string, unknown> };
 
@@ -27,10 +28,7 @@ export default async function adminUserRoutes(
     const requestId = Logger.generateRequestId('user-invite');
 
     try {
-      console.log('\n👤 ================ USER INVITATION STARTED ================');
-      console.log(`📋 Request ID: ${requestId}`);
-      console.log(`⏰ Timestamp: ${Logger.getTimestamp()}`);
-      console.log(`👤 Inviting user by: ${reqUser.userContext?.email}`);
+      Logger.log('info', 'email', requestId, 'User invitation started', { invitedBy: reqUser.userContext?.email });
 
       const email = body.email as string;
       const name = body.name as string;
@@ -39,14 +37,8 @@ export default async function adminUserRoutes(
 
       (Logger as any).user?.invite?.(requestId, email, name, roleIds, tenantId);
 
-      console.log(`📧 [${requestId}] Invitation Data:`, {
-        email,
-        name,
-        roleIds,
-        tenantId
-      });
-
-      console.log(`📧 [${requestId}] Validation: Validating input data`);
+      Logger.log('info', 'email', requestId, 'Invitation data received', { email, name, roleIds, tenantId });
+      Logger.log('info', 'email', requestId, 'Validating input data');
 
       if (!email || !name) {
         return reply.code(400).send({
@@ -64,10 +56,10 @@ export default async function adminUserRoutes(
         });
       }
 
-      console.log(`✅ [${requestId}] Input validation successful`);
+      Logger.log('info', 'email', requestId, 'Input validation successful');
 
       // Check if user already exists in this tenant
-      console.log(`🔍 [${requestId}] Checking if user already exists in tenant`);
+      Logger.log('info', 'email', requestId, 'Checking if user already exists in tenant');
       const existingUser = await db
         .select()
         .from(tenantUsers)
@@ -78,7 +70,7 @@ export default async function adminUserRoutes(
         .limit(1);
 
       if (existingUser.length > 0) {
-        console.log(`⚠️ [${requestId}] User already exists in tenant`);
+        Logger.log('warning', 'email', requestId, 'User already exists in tenant');
         return reply.code(409).send({
           success: false,
           error: 'User already exists',
@@ -86,10 +78,10 @@ export default async function adminUserRoutes(
         });
       }
 
-      console.log(`✅ [${requestId}] User does not exist in tenant - proceeding with invitation`);
+      Logger.log('info', 'email', requestId, 'User does not exist in tenant - proceeding with invitation');
 
       // Send invitation email
-      console.log(`📧 [${requestId}] Sending invitation email to: ${email}`);
+      Logger.log('info', 'email', requestId, 'Sending invitation email', { email });
       const emailResult = await EmailService.sendUserInvitation({
         email,
         tenantName: (reqUser.userContext?.tenantId ?? '') as string,
@@ -100,14 +92,22 @@ export default async function adminUserRoutes(
       } as any);
 
       if (emailResult.success) {
-        console.log(`✅ [${requestId}] Invitation email sent successfully`);
+        Logger.log('info', 'email', requestId, 'Invitation email sent successfully');
       } else {
-        console.warn(`⚠️ [${requestId}] Failed to send invitation email: ${emailResult.error}`);
+        Logger.log('warning', 'email', requestId, 'Failed to send invitation email', { error: emailResult.error });
       }
 
-      console.log(`🎉 [${requestId}] USER INVITATION COMPLETED SUCCESSFULLY!`);
-      console.log(`⏱️ [${requestId}] Total processing time: ${Logger.getDuration(startTime)}`);
-      console.log('👤 ================ USER INVITATION ENDED ================\n');
+      Logger.log('info', 'email', requestId, 'User invitation completed', { duration: Logger.getDuration(startTime) });
+
+      snsSqsPublisher.publishUserEventToSuite('user.invited', tenantId, 'pending', {
+        email,
+        name,
+        roleIds: roleIds ?? [],
+        invitedBy: (reqUser.userContext?.userId ?? reqUser.userContext?.email ?? 'admin') as string,
+        invitedAt: new Date().toISOString(),
+      }).catch((err: Error) => {
+        Logger.log('warning', 'email', requestId, 'Failed to publish user.invited event', { email, error: err.message });
+      });
 
       return {
         success: true,
@@ -118,12 +118,7 @@ export default async function adminUserRoutes(
 
     } catch (err: unknown) {
       const error = err as Error & { code?: string };
-      console.error(`❌ [${requestId}] USER INVITATION FAILED!`);
-      console.error(`📋 [${requestId}] Error Message: ${error.message}`);
-      console.error(`🔢 [${requestId}] Error Code: ${error.code ?? 'N/A'}`);
-      console.error(`📋 [${requestId}] Stack Trace: ${error.stack ?? ''}`);
-      console.log(`⏱️ [${requestId}] Failed after: ${Logger.getDuration(startTime)}`);
-      console.log('👤 ================ USER INVITATION FAILED ================\n');
+      Logger.log('error', 'email', requestId, 'User invitation failed', { error: error.message, code: error.code, duration: Logger.getDuration(startTime) });
 
       return reply.code(500).send({
         success: false,
@@ -145,10 +140,7 @@ export default async function adminUserRoutes(
 
     try {
       if (!tenantId) {
-        console.error(`❌ [${requestId}] Missing tenantId in userContext:`, {
-          userContext: request.userContext,
-          isAuthenticated: request.userContext?.isAuthenticated
-        });
+        Logger.log('error', 'user', requestId, 'Missing tenantId in userContext', { isAuthenticated: request.userContext?.isAuthenticated });
         return reply.code(400).send({
           success: false,
           error: 'Missing tenant ID',
@@ -157,7 +149,7 @@ export default async function adminUserRoutes(
         });
       }
 
-      console.log(`🔍 [${requestId}] Getting users list for tenant: ${tenantId}`);
+      Logger.log('info', 'user', requestId, 'Getting users list for tenant', { tenantId });
 
       const usersRaw = await db
         .select({
@@ -179,7 +171,7 @@ export default async function adminUserRoutes(
         name: [u.firstName, u.lastName].filter(Boolean).join(' ') || u.email
       }));
 
-      console.log(`✅ [${requestId}] Found ${users.length} users`);
+      Logger.log('info', 'user', requestId, 'Found users', { count: users.length });
 
       return {
         success: true,
@@ -189,7 +181,7 @@ export default async function adminUserRoutes(
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ [${requestId}] Failed to get users:`, error);
+      Logger.log('error', 'user', requestId, 'Failed to get users', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to get users',
@@ -209,7 +201,7 @@ export default async function adminUserRoutes(
     const tenantId = ((request as ReqWithUser).userContext?.tenantId ?? '') as string;
 
     try {
-      console.log(`🔍 [${requestId}] Getting user details: ${userId} for tenant: ${tenantId}`);
+      Logger.log('info', 'user', requestId, 'Getting user details', { userId, tenantId });
 
       const [userRaw] = await db
         .select({
@@ -240,7 +232,7 @@ export default async function adminUserRoutes(
         });
       }
 
-      console.log(`✅ [${requestId}] Found user: ${user?.email}`);
+      Logger.log('info', 'user', requestId, 'Found user', { email: user?.email });
 
       return {
         success: true,
@@ -249,7 +241,7 @@ export default async function adminUserRoutes(
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ [${requestId}] Failed to get user details:`, error);
+      Logger.log('error', 'user', requestId, 'Failed to get user details', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to get user details',
@@ -271,7 +263,7 @@ export default async function adminUserRoutes(
     const tenantId = ((request as ReqWithUser).userContext?.tenantId ?? '') as string;
 
     try {
-      console.log(`✏️ [${requestId}] Updating user admin status:`, { userId, isTenantAdmin, tenantId });
+      Logger.log('info', 'user', requestId, 'Updating user admin status', { userId, isTenantAdmin, tenantId });
 
       const result = await db
         .update(tenantUsers)
@@ -292,10 +284,10 @@ export default async function adminUserRoutes(
       }
 
       if (result[0]?.kindeUserId) {
-        invalidateUserCache(result[0].kindeUserId);
+        void invalidateUserCache(result[0].kindeUserId);
       }
 
-      console.log(`✅ [${requestId}] User admin status updated successfully`);
+      Logger.log('info', 'user', requestId, 'User admin status updated successfully');
 
       return {
         success: true,
@@ -305,7 +297,7 @@ export default async function adminUserRoutes(
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ [${requestId}] Failed to update user admin status:`, error);
+      Logger.log('error', 'user', requestId, 'Failed to update user admin status', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to update user admin status',
@@ -327,7 +319,7 @@ export default async function adminUserRoutes(
     const tenantId = ((request as ReqWithUser).userContext?.tenantId ?? '') as string;
 
     try {
-      console.log(`🔄 [${requestId}] Assigning role:`, { userId, roleId, tenantId });
+      Logger.log('info', 'role', requestId, 'Assigning role', { userId, roleId, tenantId });
 
       const assignment = await permissionService.assignRole({
         userId,
@@ -337,7 +329,7 @@ export default async function adminUserRoutes(
         tenantId
       } as any);
 
-      console.log(`✅ [${requestId}] Role assigned successfully`);
+      Logger.log('info', 'role', requestId, 'Role assigned successfully');
 
       return {
         success: true,
@@ -347,7 +339,7 @@ export default async function adminUserRoutes(
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ [${requestId}] Failed to assign role:`, error);
+      Logger.log('error', 'role', requestId, 'Failed to assign role', { error: error.message });
       if (error.message.includes('already assigned')) {
         return reply.code(409).send({
           success: false,
@@ -375,7 +367,7 @@ export default async function adminUserRoutes(
     const tenantId = ((request as ReqWithUser).userContext?.tenantId ?? '') as string;
 
     try {
-      console.log(`🔄 [${requestId}] Deassigning role:`, { userId, roleId, tenantId });
+      Logger.log('info', 'role', requestId, 'Deassigning role', { userId, roleId, tenantId });
 
       await permissionService.removeRoleAssignment(
         tenantId,
@@ -384,7 +376,7 @@ export default async function adminUserRoutes(
         ((request as ReqWithUser).userContext?.kindeUserId ?? (request as ReqWithUser).userContext?.internalUserId ?? '') as string
       );
 
-      console.log(`✅ [${requestId}] Role deassigned successfully`);
+      Logger.log('info', 'role', requestId, 'Role deassigned successfully');
 
       return {
         success: true,
@@ -393,7 +385,7 @@ export default async function adminUserRoutes(
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ [${requestId}] Failed to deassign role:`, error);
+      Logger.log('error', 'role', requestId, 'Failed to deassign role', { error: error.message });
       if (error.message === 'Role assignment not found') {
         return reply.code(404).send({
           success: false,
@@ -420,7 +412,7 @@ export default async function adminUserRoutes(
     const tenantId = ((request as ReqWithUser).userContext?.tenantId ?? '') as string;
 
     try {
-      console.log(`🗑️ [${requestId}] Removing user:`, { userId, tenantId });
+      Logger.log('info', 'user', requestId, 'Removing user', { userId, tenantId });
 
       // Get user data before deletion for event publishing
       const [userToDelete] = await db
@@ -446,12 +438,12 @@ export default async function adminUserRoutes(
         ((request as ReqWithUser).userContext?.internalUserId ?? '') as string
       );
 
-      invalidateRoleCache(userId);
+      void invalidateRoleCache(userId);
       if (userToDelete.kindeUserId) {
-        invalidateUserCache(userToDelete.kindeUserId);
+        void invalidateUserCache(userToDelete.kindeUserId);
       }
 
-      console.log(`✅ [${requestId}] User removed successfully`);
+      Logger.log('info', 'user', requestId, 'User removed successfully');
 
       return {
         success: true,
@@ -460,7 +452,7 @@ export default async function adminUserRoutes(
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ [${requestId}] Failed to remove user:`, error);
+      Logger.log('error', 'user', requestId, 'Failed to remove user', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to remove user',
@@ -480,7 +472,7 @@ export default async function adminUserRoutes(
     const tenantId = ((request as ReqWithUser).userContext?.tenantId ?? '') as string;
 
     try {
-      console.log(`🔍 [${requestId}] Getting roles for user: ${userId}`);
+      Logger.log('info', 'role', requestId, 'Getting roles for user', { userId });
 
       const userRoles = await db
         .select({
@@ -500,7 +492,7 @@ export default async function adminUserRoutes(
         ))
         .orderBy(userRoleAssignments.assignedAt);
 
-      console.log(`✅ [${requestId}] Found ${userRoles.length} roles for user`);
+      Logger.log('info', 'role', requestId, 'Found roles for user', { count: userRoles.length });
 
       return {
         success: true,
@@ -511,7 +503,7 @@ export default async function adminUserRoutes(
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ [${requestId}] Failed to get user roles:`, error);
+      Logger.log('error', 'role', requestId, 'Failed to get user roles', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to get user roles',
@@ -531,7 +523,7 @@ export default async function adminUserRoutes(
     const tenantId = ((request as ReqWithUser).userContext?.tenantId ?? '') as string;
 
     try {
-      console.log(`🔍 [${requestId}] Getting organization assignments for user: ${userId}`);
+      Logger.log('info', 'user', requestId, 'Getting organization assignments for user', { userId });
 
       // Pending invitation: userId is inv_<invitationId> — return assignments from invitation targetEntities
       if (typeof userId === 'string' && userId.startsWith('inv_')) {
@@ -607,7 +599,7 @@ export default async function adminUserRoutes(
           });
         }
 
-        console.log(`✅ [${requestId}] Found ${assignments.length} organization assignments (pending invitation)`);
+        Logger.log('info', 'user', requestId, 'Found organization assignments (pending invitation)', { count: assignments.length });
         return {
           success: true,
           data: assignments,
@@ -649,7 +641,7 @@ export default async function adminUserRoutes(
         ))
         .orderBy(organizationMemberships.createdAt);
 
-      console.log(`✅ [${requestId}] Found ${assignments.length} organization assignments`);
+      Logger.log('info', 'user', requestId, 'Found organization assignments', { count: assignments.length });
 
       return {
         success: true,
@@ -659,7 +651,7 @@ export default async function adminUserRoutes(
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ [${requestId}] Failed to get user organization assignments:`, error);
+      Logger.log('error', 'user', requestId, 'Failed to get user organization assignments', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to get user organization assignments',
@@ -679,7 +671,7 @@ export default async function adminUserRoutes(
     const tenantId = ((request as ReqWithUser).userContext?.tenantId ?? '') as string;
 
     try {
-      console.log(`🔄 [${requestId}] Assigning organization:`, { userId, organizationId, assignmentType, tenantId });
+      Logger.log('info', 'user', requestId, 'Assigning organization', { userId, organizationId, assignmentType, tenantId });
 
       // Check if assignment already exists
       const existing = await db
@@ -730,7 +722,21 @@ export default async function adminUserRoutes(
         })
         .returning();
 
-      console.log(`✅ [${requestId}] Organization assigned successfully`);
+      Logger.log('info', 'user', requestId, 'Organization assigned successfully');
+
+      // Publish user.membership.assigned so CRM/FA know about the new org link.
+      try {
+        const { snsSqsPublisher } = await import('../../../features/messaging/utils/sns-sqs-publisher.js');
+        await snsSqsPublisher.publishUserEventToSuite('user.membership.assigned', tenantId, userId, {
+          userId,
+          entityId: organizationId,
+          membershipId,
+          isPrimary,
+          membershipType: 'direct',
+        });
+      } catch (pubErr: unknown) {
+        Logger.log('warning', 'user', requestId, 'Failed to publish user.membership.assigned', { error: (pubErr as Error).message });
+      }
 
       return {
         success: true,
@@ -740,7 +746,7 @@ export default async function adminUserRoutes(
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ [${requestId}] Failed to assign organization:`, error);
+      Logger.log('error', 'user', requestId, 'Failed to assign organization', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to assign organization',
@@ -762,14 +768,7 @@ export default async function adminUserRoutes(
     const entityId = (body.entityId ?? '') as string; const roleId = body.roleId; const membershipType = (body.membershipType as string) ?? 'direct'; const isPrimary = (body.isPrimary as boolean) ?? false;
 
     try {
-      console.log(`➕ [${requestId}] Assigning organization to user:`, {
-        userId,
-        entityId,
-        roleId,
-        membershipType,
-        isPrimary,
-        tenantId
-      });
+      Logger.log('info', 'user', requestId, 'Assigning organization to user', { userId, entityId, roleId, membershipType, isPrimary, tenantId });
 
       // Validate required fields
       if (!entityId) {
@@ -805,7 +804,7 @@ export default async function adminUserRoutes(
         .limit(1);
 
       if (!entity) {
-        console.log(`❌ [${requestId}] Entity not found:`, { entityId, tenantId });
+        Logger.log('error', 'user', requestId, 'Entity not found', { entityId, tenantId });
         return ErrorResponses.notFound(reply, 'Organization', 'Organization or location not found', { requestId });
       }
 
@@ -859,7 +858,7 @@ export default async function adminUserRoutes(
         updatedAt: new Date()
       });
 
-      console.log(`✅ [${requestId}] Organization assigned successfully:`, { membershipId });
+      Logger.log('info', 'user', requestId, 'Organization assigned successfully', { membershipId });
 
       // Publish organization assignment created event (optional - don't fail if eventPublisher is not available)
       try {
@@ -878,11 +877,10 @@ export default async function adminUserRoutes(
           assignedBy: (request as ReqWithUser).userContext.internalUserId, // Use internalUserId (UUID) instead of userId (Kinde ID)
           assignedAt: new Date().toISOString()
         });
-        console.log(`✅ [${requestId}] Published organization assignment event to crm:organization-assignments stream`);
+        Logger.log('info', 'user', requestId, 'Published organization assignment event');
       } catch (eventErr: unknown) {
         const eventError = eventErr as Error;
-        console.error(`❌ [${requestId}] Failed to publish organization assignment event:`, eventError);
-        console.warn(`⚠️ [${requestId}] Event publishing failed (non-critical):`, eventError.message);
+        Logger.log('warning', 'user', requestId, 'Event publishing failed (non-critical)', { error: eventError.message });
       }
 
       return {
@@ -902,7 +900,7 @@ export default async function adminUserRoutes(
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ [${requestId}] Error assigning organization:`, error);
+      Logger.log('error', 'user', requestId, 'Error assigning organization', { error: error.message });
       return ErrorResponses.internalError(reply, 'Failed to assign organization', error as Error, {
         requestId
       });
@@ -919,7 +917,7 @@ export default async function adminUserRoutes(
     const tenantId = ((request as ReqWithUser).userContext?.tenantId ?? '') as string;
 
     try {
-      console.log(`🗑️ [${requestId}] Removing organization assignment:`, { userId, membershipId, tenantId });
+      Logger.log('info', 'user', requestId, 'Removing organization assignment', { userId, membershipId, tenantId });
 
       // Verify the membership belongs to the user and get entity info
       const [membershipData] = await db
@@ -963,7 +961,7 @@ export default async function adminUserRoutes(
         .where(eq(organizationMemberships.membershipId, membershipId))
         .returning();
 
-      console.log(`✅ [${requestId}] Organization assignment removed successfully`);
+      Logger.log('info', 'user', requestId, 'Organization assignment removed successfully');
 
       // Publish organization assignment deleted event (optional - don't fail if eventPublisher is not available)
       try {
@@ -976,11 +974,10 @@ export default async function adminUserRoutes(
           deletedBy: (request as ReqWithUser).userContext.internalUserId, // Use internalUserId (UUID) instead of userId (Kinde ID)
           reason: 'user_removed'
         });
-        console.log(`✅ [${requestId}] Published organization assignment deleted event to crm:organization-assignments stream`);
+        Logger.log('info', 'user', requestId, 'Published organization assignment deleted event');
       } catch (eventErr: unknown) {
         const eventError = eventErr as Error;
-        console.error(`❌ [${requestId}] Failed to publish organization assignment deleted event:`, eventError);
-        console.warn(`⚠️ [${requestId}] Event publishing failed (non-critical):`, eventError.message);
+        Logger.log('warning', 'user', requestId, 'Event publishing failed (non-critical)', { error: eventError.message });
       }
 
       return {
@@ -990,7 +987,7 @@ export default async function adminUserRoutes(
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ [${requestId}] Failed to remove organization assignment:`, error);
+      Logger.log('error', 'user', requestId, 'Failed to remove organization assignment', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to remove organization assignment',
@@ -1012,12 +1009,7 @@ export default async function adminUserRoutes(
     const roleId = body.roleId;
 
     try {
-      console.log(`🔄 [${requestId}] Updating organization role:`, {
-        userId,
-        membershipId,
-        roleId,
-        tenantId
-      });
+      Logger.log('info', 'user', requestId, 'Updating organization role', { userId, membershipId, roleId, tenantId });
 
       // Verify the membership exists and belongs to the user
       const [membership] = await db
@@ -1065,7 +1057,7 @@ export default async function adminUserRoutes(
         })
         .where(eq(organizationMemberships.membershipId, membershipId));
 
-      console.log(`✅ [${requestId}] Organization role updated successfully`);
+      Logger.log('info', 'user', requestId, 'Organization role updated successfully');
 
       // Publish organization assignment updated event (optional - don't fail if eventPublisher is not available)
       try {
@@ -1086,11 +1078,10 @@ export default async function adminUserRoutes(
             roleId: roleId
           }
         });
-        console.log(`✅ [${requestId}] Published organization assignment updated event to crm:organization-assignments stream`);
+        Logger.log('info', 'user', requestId, 'Published organization assignment updated event');
       } catch (eventErr: unknown) {
         const eventError = eventErr as Error;
-        console.error(`❌ [${requestId}] Failed to publish organization assignment updated event:`, eventError);
-        console.warn(`⚠️ [${requestId}] Event publishing failed (non-critical):`, eventError.message);
+        Logger.log('warning', 'user', requestId, 'Event publishing failed (non-critical)', { error: eventError.message });
       }
 
       return {
@@ -1107,7 +1098,7 @@ export default async function adminUserRoutes(
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ [${requestId}] Error updating organization role:`, error);
+      Logger.log('error', 'user', requestId, 'Error updating organization role', { error: error.message });
       return ErrorResponses.internalError(reply, 'Failed to update organization role', error, {
         requestId
       });

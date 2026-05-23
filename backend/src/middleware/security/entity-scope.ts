@@ -2,6 +2,7 @@ import type { FastifyRequest, FastifyReply } from 'fastify';
 import { db } from '../../db/index.js';
 import { entities, responsiblePersons, tenantUsers } from '../../db/schema/index.js';
 import { eq, and, sql, inArray } from 'drizzle-orm';
+import Logger from '../../utils/logger.js';
 
 interface EntityCacheEntry {
   value: unknown;
@@ -78,12 +79,12 @@ export interface EntityScopeResult {
  * @returns {Promise<Object>} Entity scope object
  */
 export async function getUserAccessibleEntities(userId: string, tenantId: string): Promise<EntityScopeResult> {
-  console.log('🔍 Getting accessible entities for user:', { userId, tenantId });
+  Logger.log('info', 'security', 'get-user-accessible-entities', '🔍 Getting accessible entities for user', { userId, tenantId });
 
   const cacheKey = `entity-scope:${userId}:${tenantId}`;
   const cached = await entityCache.get(cacheKey);
   if (cached) {
-    console.log('✅ Entity scope cache hit');
+    Logger.log('info', 'security', 'get-user-accessible-entities', '✅ Entity scope cache hit');
     return cached as EntityScopeResult;
   }
 
@@ -101,7 +102,7 @@ export async function getUserAccessibleEntities(userId: string, tenantId: string
     .limit(1);
 
   if (!user) {
-    console.log('❌ User not found');
+    Logger.log('info', 'security', 'get-user-accessible-entities', '❌ User not found');
     return {
       scope: 'none',
       entities: [],
@@ -112,7 +113,7 @@ export async function getUserAccessibleEntities(userId: string, tenantId: string
 
   // Tenant Admin sees EVERYTHING
   if (user.isTenantAdmin) {
-    console.log('👑 User is Tenant Admin - unrestricted access');
+    Logger.log('info', 'security', 'get-user-accessible-entities', '👑 User is Tenant Admin - unrestricted access');
     // entity_code column was dropped (migration 0015); expose entityId as entityCode for API compatibility
     const allEntities = await db
       .select({
@@ -156,7 +157,7 @@ export async function getUserAccessibleEntities(userId: string, tenantId: string
     ));
 
   if (responsibilities.length === 0) {
-    console.log('⚠️ User has no entity responsibilities');
+    Logger.log('info', 'security', 'get-user-accessible-entities', '⚠️ User has no entity responsibilities');
     const result = {
       scope: 'none',
       entities: [],
@@ -169,7 +170,7 @@ export async function getUserAccessibleEntities(userId: string, tenantId: string
     return result;
   }
 
-  console.log('📋 User has', responsibilities.length, 'entity responsibilities');
+  Logger.log('info', 'security', 'get-user-accessible-entities', `📋 User has ${responsibilities.length} entity responsibilities`);
 
   // OPTIMIZED: Get all responsible entity IDs at once
   const responsibleEntityIds = responsibilities.map(r => r.entityId).filter((id): id is string => id != null);
@@ -192,7 +193,7 @@ export async function getUserAccessibleEntities(userId: string, tenantId: string
       inArray(entities.entityId, allAccessibleEntityIds as string[])
     ));
 
-  console.log('✅ Total accessible entities:', accessibleEntities.length);
+  Logger.log('info', 'security', 'get-user-accessible-entities', `✅ Total accessible entities: ${accessibleEntities.length}`);
 
   const result = {
     scope: 'entity',
@@ -287,14 +288,14 @@ export async function entityScopeMiddleware(request: FastifyRequest, reply: Fast
     const entityScope = await getUserAccessibleEntities(internalUserId, tenantId);
     request.entityScope = entityScope;
     const entityIds = entityScope.entityIds ?? [];
-    console.log('🔐 Entity Scope Set:', {
+    Logger.log('info', 'security', 'entity-scope-middleware', '🔐 Entity Scope Set', {
       userId: internalUserId,
       scope: entityScope.scope,
       entityCount: entityIds.length,
       isUnrestricted: entityScope.isUnrestricted ?? false
     });
   } catch (error) {
-    console.error('❌ Failed to get entity scope:', error);
+    Logger.log('error', 'security', 'entity-scope-middleware', '❌ Failed to get entity scope', { error });
     const fallback: { scope: string; entityIds: string[]; isUnrestricted: boolean } = {
       scope: 'none',
       entityIds: [],

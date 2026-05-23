@@ -2,6 +2,7 @@ import type { FastifyRequest, FastifyReply } from 'fastify';
 import { db } from '../../db/index.js';
 import { platformStaff, platformAuditLogs, type PlatformPermission } from '../../db/schema/platform/platform-staff.js';
 import { eq, and, gt } from 'drizzle-orm';
+import Logger from '../../utils/logger.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Platform permission middleware
@@ -84,7 +85,7 @@ async function logPlatformAction(
     });
   } catch (err) {
     // Never let audit log failure block the actual request — but always surface it.
-    console.error('❌ Failed to write platform audit log:', err);
+    Logger.log('error', 'auth', 'log-platform-action', '❌ Failed to write platform audit log', { error: err });
   }
 }
 

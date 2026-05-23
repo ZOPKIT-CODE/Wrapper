@@ -7,9 +7,12 @@ import {
   type Message,
 } from '@aws-sdk/client-sqs';
 import * as Sentry from '@sentry/node';
+import { sql } from 'drizzle-orm';
 import { InterAppEventService } from './inter-app-event-service.js';
 import { snsSqsPublisher } from '../utils/sns-sqs-publisher.js';
 import { resolvePayload } from '../utils/large-payload-store.js';
+import { db } from '../../../db/index.js';
+import { receivedEvents } from '../../../db/schema/index.js';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -23,6 +26,9 @@ interface InterAppEventPayload {
   tenantId?: string;
   entityId?: string;
   eventData?: Record<string, unknown>;
+  correlationId?: string;
+  causationId?: string;
+  schemaVersion?: string;
 }
 
 /** Shape of the SNS notification envelope that SQS receives */
@@ -52,17 +58,20 @@ interface SqsConsumerStatus {
  * the actual event JSON lives in `notification.Message`.  As a fallback the
  * body may already be the raw event JSON (e.g. direct SQS sends during tests).
  */
-function parseEventPayload(body: string): InterAppEventPayload {
+function parseEventPayload(body: string): {
+  event: InterAppEventPayload;
+  rawEnvelope: Record<string, unknown>;
+} {
   const outer = JSON.parse(body) as Record<string, unknown>;
 
   // SNS envelope – `Type` is always 'Notification' for SNS deliveries
   if (outer['Type'] === 'Notification' && typeof outer['Message'] === 'string') {
     const inner = JSON.parse(outer['Message']) as InterAppEventPayload;
-    return inner;
+    return { event: inner, rawEnvelope: outer };
   }
 
   // Direct send – body is already the event
-  return outer as unknown as InterAppEventPayload;
+  return { event: outer as unknown as InterAppEventPayload, rawEnvelope: outer };
 }
 
 /**
@@ -221,14 +230,16 @@ class SqsInterAppConsumer {
     }
 
     let event: InterAppEventPayload;
+    let rawEnvelope: Record<string, unknown>;
     try {
       const parsed = parseEventPayload(msg.Body);
       // Transparently resolve S3 claim-check if the payload was offloaded.
       // For normal (inline) payloads resolvePayload is a no-op.
       const resolvedEventData = await resolvePayload(
-        parsed.eventData as Record<string, unknown>,
+        parsed.event.eventData as Record<string, unknown>,
       );
-      event = { ...parsed, eventData: resolvedEventData as InterAppEventPayload['eventData'] };
+      event = { ...parsed.event, eventData: resolvedEventData as InterAppEventPayload['eventData'] };
+      rawEnvelope = parsed.rawEnvelope;
     } catch (parseErr: unknown) {
       const error = parseErr as Error;
       console.error(`[SQS←ERR] Failed to parse message ${messageId}: ${error.message}`);
@@ -255,10 +266,21 @@ class SqsInterAppConsumer {
 
     const t0 = Date.now();
 
+    // Durably record the receive BEFORE dispatching to the handler so that
+    // even handler bugs or unhandled event types cannot silently drop the
+    // event.  Same event_id from a redelivery upserts and bumps receive_count.
+    await this.recordReceivedEvent(event, rawEnvelope, msg);
+
     try {
-      await this.handleEventByType(event);
+      const handled = await this.handleEventByType(event);
       // Success path — remove the message from the queue
       await this.deleteMessage(msg);
+
+      await this.markReceivedEventStatus(
+        event.eventId,
+        handled ? 'processed' : 'skipped',
+        null,
+      );
 
       const durationMs = Date.now() - t0;
       console.log(`[SQS←OK] Message processed and deleted: ${messageId} (${durationMs}ms)`);
@@ -279,6 +301,8 @@ class SqsInterAppConsumer {
     } catch (handlerErr: unknown) {
       const error = handlerErr as Error;
       const receiveCount = getReceiveCount(msg);
+
+      await this.markReceivedEventStatus(event.eventId, 'failed', error.message);
 
       console.error(
         `[SQS←ERR] Error processing message ${messageId} (receiveCount=${receiveCount}): ${error.message}`,
@@ -323,27 +347,114 @@ class SqsInterAppConsumer {
   // Event routing
   // -------------------------------------------------------------------------
 
-  private async handleEventByType(event: InterAppEventPayload): Promise<void> {
+  private async handleEventByType(event: InterAppEventPayload): Promise<boolean> {
     const parsedEventData = (event.eventData ?? {}) as Record<string, unknown>;
 
     switch (event.eventType) {
       case 'user.created':
       case 'user.deactivated':
         await this.handleUserEvent(event, parsedEventData);
-        break;
+        return true;
       case 'credit.allocated':
         await this.handleCreditEvent(event, parsedEventData);
-        break;
+        return true;
       case 'org.created':
         await this.handleOrgEvent(event, parsedEventData);
-        break;
+        return true;
       case 'role.created':
       case 'role.updated':
       case 'role.deleted':
         await this.handleRoleEvent(event, parsedEventData);
-        break;
+        return true;
       default:
         console.log(`[SQS←] Unhandled event type: ${event.eventType}`);
+        return false;
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Received-event audit log
+  // -------------------------------------------------------------------------
+
+  /**
+   * Persist (or upsert on redelivery) a row in `received_events` so that every
+   * inbound event is durably recorded regardless of handler implementation.
+   * Failures here are logged but never block the SQS handler / ack flow —
+   * the audit table must not gate processing.
+   */
+  private async recordReceivedEvent(
+    event: InterAppEventPayload,
+    rawEnvelope: Record<string, unknown>,
+    msg: Message,
+  ): Promise<void> {
+    try {
+      const eventId = event.eventId;
+      if (!eventId) {
+        // Without a stable event_id we cannot enforce idempotency, so skip the
+        // audit row and let logs/Sentry surface it.
+        console.warn('[SQS←] Received event has no eventId — skipping received_events audit');
+        return;
+      }
+      await db
+        .insert(receivedEvents)
+        .values({
+          eventId,
+          eventType: event.eventType,
+          sourceApplication: event.sourceApplication ?? 'unknown',
+          targetApplication: event.targetApplication ?? 'wrapper',
+          tenantId: event.tenantId ?? null,
+          entityId: event.entityId ?? null,
+          correlationId: event.correlationId ?? null,
+          causationId: event.causationId ?? null,
+          schemaVersion: event.schemaVersion ?? null,
+          payload: (event.eventData ?? {}) as Record<string, unknown>,
+          rawEnvelope,
+          handlerStatus: 'pending',
+          receiveCount: getReceiveCount(msg),
+          sqsMessageId: msg.MessageId ?? null,
+        })
+        .onConflictDoUpdate({
+          target: receivedEvents.eventId,
+          set: {
+            receiveCount: sql`${receivedEvents.receiveCount} + 1`,
+            handlerStatus: 'pending',
+            handlerError: null,
+          },
+        });
+    } catch (err: unknown) {
+      const error = err as Error;
+      console.error('[SQS←ERR] Failed to record received_events row:', error.message);
+      Sentry.withScope((scope) => {
+        scope.setTag('messaging.transport', 'sqs');
+        scope.setTag('messaging.direction', 'consume');
+        scope.setTag('messaging.failure_type', 'audit_write');
+        scope.setContext('received_events_insert', {
+          eventId: event.eventId,
+          eventType: event.eventType,
+        });
+        Sentry.captureException(error);
+      });
+    }
+  }
+
+  private async markReceivedEventStatus(
+    eventId: string | undefined,
+    status: 'processed' | 'skipped' | 'failed',
+    errorMessage: string | null,
+  ): Promise<void> {
+    if (!eventId) return;
+    try {
+      await db
+        .update(receivedEvents)
+        .set({
+          handlerStatus: status,
+          handlerError: errorMessage,
+          processedAt: status === 'processed' || status === 'skipped' ? new Date() : null,
+        })
+        .where(sql`${receivedEvents.eventId} = ${eventId}`);
+    } catch (err: unknown) {
+      const error = err as Error;
+      console.error('[SQS←ERR] Failed to update received_events status:', error.message);
     }
   }
 

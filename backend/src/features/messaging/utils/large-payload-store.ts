@@ -1,5 +1,6 @@
 import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import * as Sentry from '@sentry/node';
+import Logger from '../../../utils/logger.js';
 
 /**
  * S3 Claim-Check for large SNS/SQS payloads.
@@ -86,9 +87,7 @@ export async function maybeOffloadToS3(
     throw error;
   }
 
-  console.log(
-    `[LargePayloadStore] eventId=${eventId} offloaded to s3://${BUCKET}/${key} (${json.length} bytes)`,
-  );
+  Logger.log('info', 'general', 'maybeOffloadToS3', 'Event payload offloaded to S3', { eventId, bucket: BUCKET, key, payloadBytes: json.length });
 
   Sentry.addBreadcrumb({
     category: 'messaging.large_payload',
@@ -154,7 +153,7 @@ export async function resolvePayload(
     throw emptyBodyError;
   }
 
-  console.log(`[LargePayloadStore] Resolved large payload from s3://${bucket}/${key}`);
+  Logger.log('info', 'general', 'resolvePayload', 'Large payload resolved from S3', { bucket, key });
   Sentry.addBreadcrumb({
     category: 'messaging.large_payload',
     message: 'Large payload resolved from S3',

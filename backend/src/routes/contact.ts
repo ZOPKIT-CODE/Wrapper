@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { db } from '../db/index.js';
 import { contactSubmissions } from '../db/schema/index.js';
+import Logger from '../utils/logger.js';
 
 export default async function contactRoutes(fastify: FastifyInstance, _options?: Record<string, unknown>): Promise<void> {
   // Submit contact form
@@ -20,7 +21,7 @@ export default async function contactRoutes(fastify: FastifyInstance, _options?:
         comments
       } = body
 
-      console.log('📧 Contact Form Submission Received:', {
+      Logger.log('info', 'routes', 'submit-contact-form', '📧 Contact Form Submission Received:', {
         name,
         email,
         company,
@@ -59,7 +60,7 @@ export default async function contactRoutes(fastify: FastifyInstance, _options?:
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Contact form submission error:', error);
+      Logger.log('error', 'routes', 'submit-contact-form', 'Contact form submission error', { error: error.message, stack: error.stack });
       reply.code(500).send({
         success: false,
         message: 'Failed to submit contact form. Please try again.'

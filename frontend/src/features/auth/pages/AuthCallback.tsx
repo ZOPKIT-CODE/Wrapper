@@ -105,7 +105,7 @@ export function AuthCallback() {
           return
         }
 
-        const pendingInvitationToken = localStorage.getItem('pendingInvitationToken')
+        const pendingInvitationToken = sessionStorage.getItem('pendingInvitationToken')
         if (pendingInvitationToken) {
           hasNavigatedRef.current = true
           navigate({ to: `/invite/accept?token=${pendingInvitationToken}`, replace: true })

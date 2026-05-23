@@ -1,20 +1,17 @@
 import React, { memo, useMemo, useState } from 'react';
 import { Application } from '@/types/application';
 import { config } from '@/lib/config';
-import { Settings, ChevronRight, Users2 } from 'lucide-react';
-import { FaMoneyBillTransfer } from 'react-icons/fa6';
-import { IoSettings } from 'react-icons/io5';
-import { IoIosPeople } from 'react-icons/io';
-import { MdOutlineConnectWithoutContact } from 'react-icons/md';
+import { Settings, ChevronRight, Users2, Banknote, Users, Share2 } from 'lucide-react';
 
-function AppIcon({ index, size = 44 }: { index: number; size?: number }) {
+export function AppIcon({ index, size = 44 }: { index: number; size?: number }) {
   const stroke = 'var(--zk-navy)';
   const icons = [
     /* CRM */
-    <IoIosPeople
+    <Users
       key="crm"
       size={size}
-      style={{ color: stroke }}
+      color={stroke}
+      strokeWidth={2.2}
     />,
     /* HR */
     <Users2 key="hr" size={size} color={stroke} strokeWidth={2.2} />,
@@ -27,18 +24,20 @@ function AppIcon({ index, size = 44 }: { index: number; size?: number }) {
       <circle cx="36" cy="26" r="2" fill={stroke} stroke="none" />
     </svg>,
     /* Affiliate */
-    <MdOutlineConnectWithoutContact
+    <Share2
       key="affiliate"
       size={size}
-      style={{ color: stroke }}
+      color={stroke}
+      strokeWidth={2.2}
     />,
     /* Ops */
-    <IoSettings key="ops" size={size} style={{ color: stroke }} />,
+    <Settings key="ops" size={size} color={stroke} strokeWidth={2.2} />,
     /* Finance */
-    <FaMoneyBillTransfer
+    <Banknote
       key="finance"
       size={size}
-      style={{ color: stroke }}
+      color={stroke}
+      strokeWidth={2.2}
     />,
     /* Analytics */
     <svg key="analytics" width={size} height={size} viewBox="0 0 48 48" fill="none" stroke={stroke} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">

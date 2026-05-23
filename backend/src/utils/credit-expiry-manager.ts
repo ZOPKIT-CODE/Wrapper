@@ -1,5 +1,8 @@
 import cron, { ScheduledTask } from 'node-cron';
+import { sql as drizzleSql } from 'drizzle-orm';
+import { db } from '../db/index.js';
 import { CreditExpiryService } from '../features/credits/services/credit-expiry-service.js';
+import Logger from './logger.js';
 
 /**
  * Credit Expiry Manager
@@ -19,75 +22,94 @@ class CreditExpiryManager {
    */
   startExpiryMonitoring() {
     if (this.isRunning) {
-      console.log('⚠️ Credit expiry monitoring is already running');
+      Logger.log('warning', 'credits', 'expiry-monitor-start', 'Credit expiry monitoring is already running');
       return;
     }
 
-    console.log('🚀 Starting credit expiry monitoring system...');
+    Logger.log('info', 'credits', 'expiry-monitor-start', 'Starting credit expiry monitoring system...');
 
     try {
       // Process expired credits — schedule configurable via CREDIT_EXPIRY_CRON_SCHEDULE env var.
       // Default: every hour. For dev testing set to '* * * * *' (every minute).
       const expirySchedule = process.env.CREDIT_EXPIRY_CRON ?? '0 * * * *';
-      console.log(`📅 [CreditExpiryManager] Expiry cron schedule: ${expirySchedule}`);
+      Logger.log('info', 'credits', 'expiry-monitor-start', `[CreditExpiryManager] Expiry cron schedule: ${expirySchedule}`, { expirySchedule });
       const expiryJob = cron.schedule(expirySchedule, async () => {
+        const CREDIT_EXPIRY_LOCK_ID = 7010;
+        const [lockResult] = await db.execute(drizzleSql`SELECT pg_try_advisory_lock(${drizzleSql.raw(String(CREDIT_EXPIRY_LOCK_ID))}) as acquired`);
+        if (!lockResult?.acquired) {
+          Logger.log('info', 'credits', 'expiry-cron', '[CreditExpiryManager] Skipping expiry check — another instance holds the lock');
+          return;
+        }
         try {
-          console.log('⏰ [CreditExpiryManager] Running scheduled expiry check...');
+          Logger.log('info', 'credits', 'expiry-cron', '[CreditExpiryManager] Running scheduled expiry check...');
           const result = await CreditExpiryService.processExpiredCredits();
           this.errorCount = 0; // Reset error count on success
-          console.log(`✅ [CreditExpiryManager] Expiry check completed:`, result);
+          Logger.log('info', 'credits', 'expiry-cron', '[CreditExpiryManager] Expiry check completed', { result });
         } catch (error) {
           this.errorCount++;
-          console.error(`❌ [CreditExpiryManager] Expiry check failed (${this.errorCount}/${this.maxErrors}):`, error);
+          const err = error as Error;
+          Logger.log('error', 'credits', 'expiry-cron', `[CreditExpiryManager] Expiry check failed (${this.errorCount}/${this.maxErrors})`, { errorCount: this.errorCount, maxErrors: this.maxErrors, error: err.message, stack: err.stack });
 
           if (this.errorCount >= this.maxErrors) {
-            console.error('🚨 [CreditExpiryManager] Too many consecutive errors, stopping expiry monitoring');
+            Logger.log('error', 'credits', 'expiry-cron', '[CreditExpiryManager] Too many consecutive errors, stopping expiry monitoring', { errorCount: this.errorCount });
             this.stopExpiryMonitoring();
             // Emit a structured alert — picked up by Elasticsearch/Winston alerting.
             // The /health/detailed endpoint also surfaces this via credit_expiry_runs.
-            console.error(JSON.stringify({
+            Logger.log('error', 'credits', 'cron-stopped', `Credit expiry cron stopped after ${this.maxErrors} consecutive failures. Manual intervention required.`, {
               level: 'ALERT',
               service: 'CreditExpiryManager',
               event: 'cron_stopped',
-              message: `Credit expiry cron stopped after ${this.maxErrors} consecutive failures. Manual intervention required.`,
               consecutiveErrors: this.maxErrors,
               timestamp: new Date().toISOString(),
-            }));
+            });
           }
+        } finally {
+          await db.execute(drizzleSql`SELECT pg_advisory_unlock(${drizzleSql.raw(String(CREDIT_EXPIRY_LOCK_ID))})`);
         }
       });
 
       // Send expiry warnings daily at 9 AM
       const warningJob = cron.schedule('0 9 * * *', async () => {
+        const CREDIT_WARNING_LOCK_ID = 7011;
+        const [lockResult] = await db.execute(drizzleSql`SELECT pg_try_advisory_lock(${drizzleSql.raw(String(CREDIT_WARNING_LOCK_ID))}) as acquired`);
+        if (!lockResult?.acquired) {
+          Logger.log('info', 'credits', 'expiry-warnings', '[CreditExpiryManager] Skipping expiry warnings — another instance holds the lock');
+          return;
+        }
         try {
-          console.log('⏰ [CreditExpiryManager] Sending expiry warnings...');
+          Logger.log('info', 'credits', 'expiry-warnings', '[CreditExpiryManager] Sending expiry warnings...');
           const result = await CreditExpiryService.sendExpiryWarnings(7); // 7 days ahead
-          console.log(`✅ [CreditExpiryManager] Warnings sent:`, result);
+          Logger.log('info', 'credits', 'expiry-warnings', '[CreditExpiryManager] Warnings sent', { result });
         } catch (error) {
-          console.error('❌ [CreditExpiryManager] Warning job failed:', error);
+          const err = error as Error;
+          Logger.log('error', 'credits', 'expiry-warnings', '[CreditExpiryManager] Warning job failed', { error: err.message, stack: err.stack });
+        } finally {
+          await db.execute(drizzleSql`SELECT pg_advisory_unlock(${drizzleSql.raw(String(CREDIT_WARNING_LOCK_ID))})`);
         }
       });
 
       // Health check job - every 15 minutes
       const healthCheckJob = cron.schedule('*/15 * * * *', async () => {
         this.lastHealthCheck = new Date();
-        console.log(`💓 [CreditExpiryManager] Health check: ${this.lastHealthCheck.toISOString()}`);
+        Logger.log('debug', 'credits', 'health-check', `[CreditExpiryManager] Health check: ${this.lastHealthCheck.toISOString()}`, { lastHealthCheck: this.lastHealthCheck.toISOString() });
       });
 
       this.cronJobs = [expiryJob, warningJob, healthCheckJob];
       this.isRunning = true;
       this.lastHealthCheck = new Date();
-      console.log('✅ [CreditExpiryManager] Credit expiry monitoring system started');
+      Logger.log('info', 'credits', 'expiry-monitor-start', '[CreditExpiryManager] Credit expiry monitoring system started');
 
       // Run initial check after 30 seconds
       setTimeout(() => {
         CreditExpiryService.processExpiredCredits().catch(error => {
-          console.error('❌ [CreditExpiryManager] Initial expiry check failed:', error);
+          const err = error as Error;
+          Logger.log('error', 'credits', 'initial-expiry-check', '[CreditExpiryManager] Initial expiry check failed', { error: err.message, stack: err.stack });
         });
       }, 30000);
 
     } catch (error) {
-      console.error('❌ [CreditExpiryManager] Failed to start expiry monitoring:', error);
+      const err = error as Error;
+      Logger.log('error', 'credits', 'expiry-monitor-start', '[CreditExpiryManager] Failed to start expiry monitoring', { error: err.message, stack: err.stack });
       this.stopExpiryMonitoring();
     }
   }
@@ -101,14 +123,16 @@ class CreditExpiryManager {
         try {
           job.destroy();
         } catch (error) {
-          console.error('⚠️ [CreditExpiryManager] Error stopping cron job:', error);
+          const err = error as Error;
+          Logger.log('error', 'credits', 'expiry-monitor-stop', '[CreditExpiryManager] Error stopping cron job', { error: err.message, stack: err.stack });
         }
       });
       this.cronJobs = [];
       this.isRunning = false;
-      console.log('🛑 [CreditExpiryManager] Credit expiry monitoring stopped');
+      Logger.log('info', 'credits', 'expiry-monitor-stop', '[CreditExpiryManager] Credit expiry monitoring stopped');
     } catch (error) {
-      console.error('❌ [CreditExpiryManager] Error stopping monitoring:', error);
+      const err = error as Error;
+      Logger.log('error', 'credits', 'expiry-monitor-stop', '[CreditExpiryManager] Error stopping monitoring', { error: err.message, stack: err.stack });
     }
   }
 
@@ -132,7 +156,8 @@ class CreditExpiryManager {
     try {
       return await CreditExpiryService.processExpiredCredits();
     } catch (error) {
-      console.error('❌ [CreditExpiryManager] Manual expiry processing failed:', error);
+      const err = error as Error;
+      Logger.log('error', 'credits', 'manual-expire', '[CreditExpiryManager] Manual expiry processing failed', { error: err.message, stack: err.stack });
       throw error;
     }
   }

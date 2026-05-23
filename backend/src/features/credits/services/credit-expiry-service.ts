@@ -6,6 +6,7 @@ import { creditPurchases } from '../../../db/schema/billing/credit_purchases.js'
 import { creditExpiryRuns } from '../../../db/schema/billing/credit-expiry-runs.js';
 import { randomUUID } from 'crypto';
 import { snsSqsPublisher } from '../../messaging/utils/sns-sqs-publisher.js';
+import Logger from '../../../utils/logger.js';
 
 type SeasonalAllocationRow = typeof creditBatches.$inferSelect;
 
@@ -24,7 +25,7 @@ export class CreditExpiryService {
     const triggeredBy = options?.triggeredBy ?? null;
     const startMs = Date.now();
     const now = new Date();
-    console.log(`🕐 [CreditExpiryService] Processing expired credits at ${now.toISOString()}`);
+    Logger.log('info', 'billing', 'process-expired-credits', 'Processing expired credits', { timestamp: now.toISOString() });
 
     try {
       // Process in chunks of 500 to avoid loading all rows into memory at once.
@@ -51,7 +52,7 @@ export class CreditExpiryService {
         if (chunk.length === 0) break;
         hasMore = chunk.length === CHUNK_SIZE;
 
-        console.log(`📋 [CreditExpiryService] Processing chunk of ${chunk.length} expired allocations`);
+        Logger.log('info', 'billing', 'process-expired-credits', 'Processing chunk of expired allocations', { count: chunk.length });
 
         for (const allocation of chunk) {
           try {
@@ -68,20 +69,20 @@ export class CreditExpiryService {
               }
             }
           } catch (error) {
-            console.error(`❌ [CreditExpiryService] Error processing allocation ${allocation.allocationId}:`, error);
+            Logger.log('error', 'billing', 'process-expired-credits', 'Error processing allocation', { allocationId: allocation.allocationId, error: (error as Error).message });
             errorCount++;
           }
         }
       }
 
-      console.log(`✅ [CreditExpiryService] Processed ${processedCount} expired allocations, ${errorCount} errors`);
+      Logger.log('info', 'billing', 'process-expired-credits', 'Processed expired allocations', { processedCount, errorCount });
       if (Object.keys(applicationExpiryMap).length > 0) {
-        console.log(`📊 [CreditExpiryService] Application-specific expiry summary:`, applicationExpiryMap);
+        Logger.log('info', 'billing', 'process-expired-credits', 'Application-specific expiry summary', { applicationExpiryMap });
       }
 
       // Also process expired purchased credit batches
       const purchaseExpiry = await this.processExpiredPurchases();
-      console.log(`✅ [CreditExpiryService] Expired purchases: ${purchaseExpiry.processedCount} processed, ${purchaseExpiry.errorCount} errors`);
+      Logger.log('info', 'billing', 'process-expired-credits', 'Expired purchases processed', { processedCount: purchaseExpiry.processedCount, errorCount: purchaseExpiry.errorCount });
 
       const result = {
         success: true,
@@ -101,7 +102,7 @@ export class CreditExpiryService {
         errorCount,
         durationMs: Date.now() - startMs,
         status: errorCount === 0 ? 'success' : processedCount > 0 ? 'partial' : 'error',
-      }).catch((e: unknown) => console.warn('[CreditExpiryService] Failed to write cron run record:', e));
+      }).catch((e: unknown) => Logger.log('warning', 'billing', 'process-expired-credits', 'Failed to write cron run record', { error: (e as Error).message }));
 
       return result;
     } catch (error) {
@@ -116,7 +117,7 @@ export class CreditExpiryService {
         status: 'error',
         errorMessage: error instanceof Error ? error.message : String(error),
       }).catch(() => {/* ignore secondary failure */});
-      console.error('❌ [CreditExpiryService] Error processing expired credits:', error);
+      Logger.log('error', 'billing', 'process-expired-credits', 'Error processing expired credits', { error: (error as Error).message });
       throw error;
     }
   }
@@ -134,7 +135,7 @@ export class CreditExpiryService {
     const usedCredits = allocation.usedCredits;
 
     const allocationType = targetApplication ? `application-specific (${targetApplication})` : 'primary org';
-    console.log(`🔄 [CreditExpiryService] Processing expired ${allocationType} allocation ${allocationId}`);
+    Logger.log('info', 'billing', 'process-expired-allocation', 'Processing expired allocation', { allocationType, allocationId });
 
     // Calculate unused credits — clamp to 0 so partial transfers that pushed
     // usedCredits beyond allocatedCredits don't cause negative deductions.
@@ -168,7 +169,7 @@ export class CreditExpiryService {
         return { alreadyProcessed: true as const };
       }
 
-      console.log(`✅ [CreditExpiryService] Marked ${allocationType} allocation ${allocationId} as expired`);
+      Logger.log('info', 'billing', 'process-expired-allocation', 'Marked allocation as expired', { allocationType, allocationId });
 
       // For org-level allocations, deduct within the same transaction.
       if (unusedCredits > 0 && !app) {
@@ -189,6 +190,29 @@ export class CreditExpiryService {
       await CreditExpiryService.revokeAppCredits(
         String(tenantId), String(entityId), unusedCredits, String(allocationId), app
       );
+    }
+
+    // For primary-org batches, notify all suite apps so FA/CRM can update their records.
+    if (unusedCredits > 0 && !app) {
+      const suiteApps = (process.env.BUSINESS_SUITE_TARGET_APPS || 'crm,accounting,ops').split(',').map((a: string) => a.trim());
+      for (const targetApp of suiteApps) {
+        snsSqsPublisher.publishCreditEvent(
+          targetApp,
+          'credit.expired',
+          String(tenantId),
+          {
+            entityId: String(entityId),
+            allocationId: String(allocationId),
+            expiredCredits: unusedCredits,
+            reason: 'allocation_expiry',
+            targetApplication: null,
+            expiredAt: new Date().toISOString()
+          },
+          'system'
+        ).catch((err: Error) => {
+          Logger.log('warning', 'billing', 'process-expired-allocation', `Failed to publish credit.expired to ${targetApp}`, { error: err.message });
+        });
+      }
     }
 
     return {
@@ -244,9 +268,9 @@ export class CreditExpiryService {
           .where(eq(creditPurchases.purchaseId, purchase.purchaseId));
 
         processedCount++;
-        console.log(`✅ [CreditExpiryService] Expired purchase ${purchase.purchaseId} — deducted ${creditAmount} credits from entity ${entityId}`);
+        Logger.log('info', 'billing', 'process-expired-purchases', 'Expired purchase and deducted credits', { purchaseId: purchase.purchaseId, creditAmount, entityId });
       } catch (err) {
-        console.error(`❌ [CreditExpiryService] Error expiring purchase ${purchase.purchaseId}:`, err);
+        Logger.log('error', 'billing', 'process-expired-purchases', 'Error expiring purchase', { purchaseId: purchase.purchaseId, error: (err as Error).message });
         errorCount++;
       }
     }
@@ -318,9 +342,9 @@ export class CreditExpiryService {
         });
 
       const allocationType = targetApplication ? `application-specific (${targetApplication})` : 'primary org';
-      console.log(`✅ [CreditExpiryService] Deducted ${expiredCredits} expired ${allocationType} credits from entity ${entityId}`);
+      Logger.log('info', 'billing', 'deduct-expired-credits', 'Deducted expired credits from entity', { expiredCredits, allocationType, entityId });
     } catch (error) {
-      console.error(`❌ [CreditExpiryService] Error deducting expired credits:`, error);
+      Logger.log('error', 'billing', 'deduct-expired-credits', 'Error deducting expired credits', { error: (error as Error).message });
       throw error;
     }
   }
@@ -353,9 +377,7 @@ export class CreditExpiryService {
         'system'
       );
 
-      console.log(
-        `✅ [CreditExpiryService] Published credit.expired to ${targetApplication} — ${expiredCredits} credits revoked for entity ${entityId}`
-      );
+      Logger.log('info', 'billing', 'revoke-app-credits', 'Published credit.expired event', { targetApplication, expiredCredits, entityId });
 
       // Write audit ledger entry (no balance change — credits left the org pool at allocation time)
       await systemDbConnection
@@ -372,7 +394,7 @@ export class CreditExpiryService {
           createdAt: new Date()
         });
     } catch (error) {
-      console.error(`❌ [CreditExpiryService] Error revoking app credits for ${targetApplication}:`, error);
+      Logger.log('error', 'billing', 'revoke-app-credits', 'Error revoking app credits', { targetApplication, error: (error as Error).message });
       throw error;
     }
   }
@@ -445,7 +467,7 @@ export class CreditExpiryService {
   static async sendExpiryWarnings(daysAhead = 7) {
     const expiringCredits = await this.getExpiringCredits(daysAhead);
 
-    console.log(`📧 [CreditExpiryService] Sending expiry warnings for ${expiringCredits.length} allocations`);
+    Logger.log('info', 'billing', 'send-expiry-warnings', 'Sending expiry warnings', { allocationCount: expiringCredits.length });
 
     if (expiringCredits.length === 0) {
       return { warningsSent: 0, totalAllocations: 0 };
@@ -495,7 +517,7 @@ export class CreditExpiryService {
 
         warningsSent++;
       } catch (err) {
-        console.error(`[CreditExpiryService] Failed to create expiry warning for tenant ${group.tenantId}:`, err);
+        Logger.log('error', 'billing', 'send-expiry-warnings', 'Failed to create expiry warning for tenant', { tenantId: group.tenantId, error: (err as Error).message });
       }
     }
 
@@ -579,7 +601,7 @@ export class CreditExpiryService {
         isNull(creditBatches.campaignId),
       ));
 
-    console.log(`✅ [CreditExpiryService] Synced non-campaign batch expiry to ${newExpiry.toISOString()} for tenant ${tenantId}`);
+    Logger.log('info', 'billing', 'sync-paid-credit-batch-expiry', 'Synced non-campaign batch expiry', { newExpiry: newExpiry.toISOString(), tenantId });
   }
 
   /**
@@ -610,11 +632,11 @@ export class CreditExpiryService {
         await this.processExpiredAllocation(batch);
         expiredCount++;
       } catch (err) {
-        console.error(`❌ [CreditExpiryService] Failed to expire tenure batch ${batch.allocationId}:`, err);
+        Logger.log('error', 'billing', 'expire-previous-tenure-credits', 'Failed to expire tenure batch', { allocationId: batch.allocationId, error: (err as Error).message });
       }
     }
 
-    console.log(`✅ [CreditExpiryService] Expired ${expiredCount}/${oldBatches.length} previous tenure batches for tenant ${tenantId}`);
+    Logger.log('info', 'billing', 'expire-previous-tenure-credits', 'Expired previous tenure batches', { expiredCount, totalBatches: oldBatches.length, tenantId });
   }
 
   /**
@@ -639,7 +661,7 @@ export class CreditExpiryService {
         await this.processExpiredAllocation(batch);
         expiredCount++;
       } catch (err) {
-        console.error(`❌ [CreditExpiryService] Failed to expire batch ${batch.allocationId} on cancellation:`, err);
+        Logger.log('error', 'billing', 'expire-all-active-batches', 'Failed to expire batch on cancellation', { allocationId: batch.allocationId, error: (err as Error).message });
       }
     }
 
@@ -677,7 +699,28 @@ export class CreditExpiryService {
           initiatedBy: 'system',
         } as any);
 
-        console.log(`🗑️ [CreditExpiryService] Zeroed entity ${entity.entityId}: ${remaining} credits expired`);
+        Logger.log('info', 'billing', 'expire-all-active-batches', 'Zeroed entity credits on subscription cancellation', { entityId: entity.entityId, creditsExpired: remaining });
+
+        // Notify suite apps of the balance wipeout.
+        const suiteApps = (process.env.BUSINESS_SUITE_TARGET_APPS || 'crm,accounting,ops').split(',').map((a: string) => a.trim());
+        for (const targetApp of suiteApps) {
+          snsSqsPublisher.publishCreditEvent(
+            targetApp,
+            'credit.expired',
+            tenantId,
+            {
+              entityId: entity.entityId,
+              allocationId: 'subscription_canceled',
+              expiredCredits: remaining,
+              reason: 'subscription_canceled',
+              targetApplication: null,
+              expiredAt: new Date().toISOString()
+            },
+            'system'
+          ).catch((err: Error) => {
+            Logger.log('warning', 'billing', 'expire-all-active-batches', `Failed to publish credit.expired to ${targetApp}`, { error: err.message });
+          });
+        }
       }
     }
 
@@ -690,7 +733,7 @@ export class CreditExpiryService {
         eq(creditPurchases.status, 'completed'),
       ));
 
-    console.log(`✅ [CreditExpiryService] Subscription canceled — expired ${expiredCount}/${activeBatches.length} batches, zeroed ${entityBalances.length} entity balances for tenant ${tenantId}`);
+    Logger.log('info', 'billing', 'expire-all-active-batches', 'Subscription canceled — expired batches and zeroed balances', { expiredCount, totalBatches: activeBatches.length, entityBalancesZeroed: entityBalances.length, tenantId });
     return { expiredCount, totalBatches: activeBatches.length };
   }
 }

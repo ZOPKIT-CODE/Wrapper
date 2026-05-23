@@ -1,13 +1,14 @@
 import { eq, and, or, sql } from 'drizzle-orm';
 import { db } from '../../../db/index.js';
 import { customRoles, tenantUsers } from '../../../db/schema/index.js';
+import Logger from '../../../utils/logger.js';
 
 /**
  * Update Administrator roles when plan changes - Enhanced version
  */
 export async function updateAdministratorRolesForPlan(tenantId: string, newPlanId: string): Promise<void> {
   try {
-    console.log(`🔐 Updating Administrator roles for tenant ${tenantId} to ${newPlanId} plan`);
+    Logger.log('info', 'role', 'update-admin-roles-for-plan', 'Updating Administrator roles for plan', { tenantId, newPlanId });
 
     const { createSuperAdminRoleConfig } = await import('../../../utils/super-admin-permissions.js');
     const { PLAN_ACCESS_MATRIX } = await import('../../../data/permission-matrix.js');
@@ -38,7 +39,7 @@ export async function updateAdministratorRolesForPlan(tenantId: string, newPlanI
         )
       ));
 
-    console.log(`📋 Found ${adminRoles.length} administrator role(s) to update`);
+    Logger.log('info', 'role', 'update-admin-roles-for-plan', 'Found administrator roles to update', { count: adminRoles.length });
 
     await db.transaction(async (tx) => {
       for (const role of adminRoles) {
@@ -58,13 +59,13 @@ export async function updateAdministratorRolesForPlan(tenantId: string, newPlanI
             updatedRestrictions = newRoleConfig.restrictions as Record<string, unknown>;
             updatedDescription = newRoleConfig.description as string;
 
-            console.log(`   🎯 Updating ${role.roleName} with full ${newPlanId} plan access`);
+            Logger.log('info', 'role', 'update-admin-roles-for-plan', 'Updating role with full plan access', { roleName: role.roleName, planId: newPlanId });
           } else {
             updatedPermissions = await enhanceAdminPermissionsForPlan(role.permissions as Record<string, unknown>, newPlanId, planAccess as Record<string, unknown>);
             updatedRestrictions = await updateAdminRestrictionsForPlan(role.restrictions as Record<string, unknown>, newPlanId, planAccess as Record<string, unknown>);
             updatedDescription = `${role.description} (Updated for ${newPlanId.charAt(0).toUpperCase() + newPlanId.slice(1)} Plan)`;
 
-            console.log(`   🔧 Enhancing custom admin role: ${role.roleName}`);
+            Logger.log('info', 'role', 'update-admin-roles-for-plan', 'Enhancing custom admin role', { roleName: role.roleName });
           }
 
           await tx
@@ -77,11 +78,11 @@ export async function updateAdministratorRolesForPlan(tenantId: string, newPlanI
             })
             .where(eq(customRoles.roleId, role.roleId));
 
-          console.log(`   ✅ Updated role: ${role.roleName}`);
+          Logger.log('info', 'role', 'update-admin-roles-for-plan', 'Updated role', { roleName: role.roleName });
 
         } catch (errRole: unknown) {
           const roleError = errRole as Error;
-          console.error(`   ❌ Failed to update role ${role.roleName}:`, roleError.message);
+          Logger.log('error', 'role', 'update-admin-roles-for-plan', 'Failed to update role', { roleName: role.roleName, error: roleError.message });
           throw roleError;
         }
       }
@@ -89,11 +90,11 @@ export async function updateAdministratorRolesForPlan(tenantId: string, newPlanI
 
     await updateTenantAdminUsersForPlan(tenantId, newPlanId);
 
-    console.log(`✅ Completed administrator role updates for tenant ${tenantId} with ${newPlanId} plan`);
+    Logger.log('info', 'role', 'update-admin-roles-for-plan', 'Completed administrator role updates', { tenantId, planId: newPlanId });
 
   } catch (err: unknown) {
     const error = err as Error;
-    console.error(`❌ Failed to update administrator roles for tenant ${tenantId}:`, error);
+    Logger.log('error', 'role', 'update-admin-roles-for-plan', 'Failed to update administrator roles', { tenantId, error: error.message });
   }
 }
 
@@ -155,7 +156,7 @@ export async function enhanceAdminPermissionsForPlan(
     return enhancedPermissions;
   } catch (err: unknown) {
     const error = err as Error;
-    console.error('Failed to enhance admin permissions:', error);
+    Logger.log('error', 'role', 'enhance-admin-permissions-for-plan', 'Failed to enhance admin permissions', { error: error.message });
     return existingPermissions;
   }
 }
@@ -193,7 +194,7 @@ export async function updateAdminRestrictionsForPlan(
     return updatedRestrictions;
   } catch (err: unknown) {
     const error = err as Error;
-    console.error('Failed to update admin restrictions:', error);
+    Logger.log('error', 'role', 'update-admin-restrictions-for-plan', 'Failed to update admin restrictions', { error: error.message });
     return existingRestrictions;
   }
 }
@@ -203,7 +204,7 @@ export async function updateAdminRestrictionsForPlan(
  */
 export async function updateTenantAdminUsersForPlan(tenantId: string, _newPlanId: string): Promise<void> {
   try {
-    console.log(`👥 Checking tenant admin users for plan update...`);
+    Logger.log('info', 'role', 'update-tenant-admin-users-for-plan', 'Checking tenant admin users for plan update...');
 
     const tenantAdminUsers = await db
       .select()
@@ -214,7 +215,7 @@ export async function updateTenantAdminUsersForPlan(tenantId: string, _newPlanId
       ));
 
     if (tenantAdminUsers.length > 0) {
-      console.log(`   📝 Found ${tenantAdminUsers.length} tenant admin user(s) - permissions will be refreshed on next login`);
+      Logger.log('info', 'role', 'update-tenant-admin-users-for-plan', 'Found tenant admin users - permissions will be refreshed on next login', { count: tenantAdminUsers.length });
 
       await db
         .update(tenantUsers)
@@ -229,7 +230,7 @@ export async function updateTenantAdminUsersForPlan(tenantId: string, _newPlanId
 
   } catch (err: unknown) {
     const error = err as Error;
-    console.error('Failed to update tenant admin users:', error);
+    Logger.log('error', 'role', 'update-tenant-admin-users-for-plan', 'Failed to update tenant admin users', { error: error.message });
   }
 }
 

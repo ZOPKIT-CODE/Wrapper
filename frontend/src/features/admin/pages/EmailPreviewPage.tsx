@@ -12,7 +12,7 @@ import {
   Mail, Send, RefreshCw, CheckCircle, AlertCircle,
   Loader2, Monitor, Smartphone, ExternalLink, Copy, ChevronRight
 } from 'lucide-react'
-import toast from 'react-hot-toast'
+import { toast } from 'sonner'
 import api from '@/lib/api'
 import { ONBOARDING_LOGO_URL } from '@/lib/config'
 

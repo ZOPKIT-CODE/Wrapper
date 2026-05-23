@@ -6,6 +6,7 @@ import {
   GetQueueAttributesCommand,
 } from '@aws-sdk/client-sqs';
 import * as Sentry from '@sentry/node';
+import Logger from '../../../utils/logger.js';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -361,7 +362,7 @@ class SqsJobQueue {
       const abortController = new AbortController();
       this.pollingAbortControllers.set(queueKey, abortController);
       this.startPollingLoop(queueKey, processor, abortController.signal);
-      console.log(`[SQS Job Queue] Worker started for ${queueKey} queue`);
+      Logger.log('info', 'general', 'initializeWorkers', `Worker started for ${queueKey} queue`);
     }
   }
 
@@ -423,7 +424,7 @@ class SqsJobQueue {
               );
 
               const durationMs = Date.now() - jobT0;
-              console.log(`[SQS Job Queue] Job ${jobId} (${queueKey}) completed`);
+              Logger.log('info', 'general', 'startPollingLoop', `Job ${jobId} (${queueKey}) completed`, { jobId, queueKey, durationMs });
               Sentry.addBreadcrumb({
                 category: 'messaging.job',
                 message: `SQS job completed: ${queueKey}`,
@@ -450,15 +451,10 @@ class SqsJobQueue {
                   await this.client.send(
                     new DeleteMessageCommand({ QueueUrl: queueUrl, ReceiptHandle: msg.ReceiptHandle }),
                   );
-                  console.log(
-                    `[SQS Job Queue] Job ${jobId} (${queueKey}) will retry (attempt ${nextAttempt}/${maxAttempts})`,
-                  );
+                  Logger.log('info', 'general', 'startPollingLoop', `Job ${jobId} (${queueKey}) will retry`, { jobId, queueKey, attempt: nextAttempt, maxAttempts });
                 } catch (retryErr: unknown) {
                   const retryError = retryErr as Error;
-                  console.error(
-                    `[SQS Job Queue] Failed to re-enqueue job ${jobId}:`,
-                    retryError.message,
-                  );
+                  Logger.log('error', 'general', 'startPollingLoop', `Failed to re-enqueue job ${jobId}`, { jobId, queueKey, error: retryError.message });
                   Sentry.withScope((scope) => {
                     scope.setTag('messaging.transport', 'sqs');
                     scope.setTag('messaging.job_type', queueKey);
@@ -483,9 +479,7 @@ class SqsJobQueue {
                 await this.client.send(
                   new DeleteMessageCommand({ QueueUrl: queueUrl, ReceiptHandle: msg.ReceiptHandle }),
                 );
-                console.error(
-                  `[SQS Job Queue] Job ${jobId} (${queueKey}) failed after ${nextAttempt} attempts: ${error.message}`,
-                );
+                Logger.log('error', 'general', 'startPollingLoop', `Job ${jobId} (${queueKey}) failed after ${nextAttempt} attempts`, { jobId, queueKey, attemptsMade: nextAttempt, error: error.message });
                 Sentry.withScope((scope) => {
                   scope.setTag('messaging.transport', 'sqs');
                   scope.setTag('messaging.job_type', queueKey);
@@ -505,10 +499,7 @@ class SqsJobQueue {
       } catch (pollErr: unknown) {
         if (!signal.aborted) {
           const pollError = pollErr as Error;
-          console.error(
-            `[SQS Job Queue] Poll error on ${queueKey} queue:`,
-            pollError.message,
-          );
+          Logger.log('error', 'general', 'startPollingLoop', `Poll error on ${queueKey} queue`, { queueKey, error: pollError.message });
           Sentry.withScope((scope) => {
             scope.setTag('messaging.transport', 'sqs');
             scope.setTag('messaging.direction', 'consume');
@@ -582,7 +573,7 @@ class SqsJobQueue {
         parseInt(response.Attributes?.['ApproximateNumberOfMessages'] ?? '0', 10) +
         parseInt(response.Attributes?.['ApproximateNumberOfMessagesNotVisible'] ?? '0', 10);
     } catch (err: unknown) {
-      console.warn(`[SQS Job Queue] Could not fetch queue attributes for ${queueName}:`, (err as Error).message);
+      Logger.log('warning', 'general', 'getQueueStats', `Could not fetch queue attributes for ${queueName}`, { queueName, error: (err as Error).message });
     }
 
     const allStatuses = Array.from(this.jobStatus.values());
@@ -615,7 +606,7 @@ class SqsJobQueue {
       this.pollingAbortControllers.delete(key);
     }
     this.jobStatus.clear();
-    console.log('[SQS Job Queue] Polling loops stopped — no persistent connection to close.');
+    Logger.log('info', 'general', 'close', 'Polling loops stopped — no persistent connection to close');
   }
 }
 

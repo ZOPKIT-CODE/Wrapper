@@ -6,6 +6,7 @@ import { entities, responsiblePersons, tenantUsers } from '../../../db/schema/in
 import { eq, and, sql } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import ErrorResponses from '../../../utils/error-responses.js';
+import Logger from '../../../utils/logger.js';
 
 export default async function entityScopeRoutes(fastify: FastifyInstance, _options?: Record<string, unknown>): Promise<void> {
   // Get current user's entity scope
@@ -27,7 +28,7 @@ export default async function entityScopeRoutes(fastify: FastifyInstance, _optio
       });
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Failed to get entity scope:', error);
+      Logger.log('error', 'general', 'get-entity-scope', 'Failed to get entity scope', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to get entity scope',
@@ -49,7 +50,7 @@ export default async function entityScopeRoutes(fastify: FastifyInstance, _optio
       const tenantId = ctx.tenantId;
       const internalUserId = ctx.internalUserId ?? '';
       
-      console.log('🔄 Updating responsible person:', { entityId, userId, tenantId });
+      Logger.log('info', 'general', 'update-responsible-person', 'Updating responsible person', { entityId, userId, tenantId });
 
       // Verify entity exists and belongs to tenant
       const [entity] = await db
@@ -136,7 +137,7 @@ export default async function entityScopeRoutes(fastify: FastifyInstance, _optio
           });
       }
 
-      console.log('✅ Responsible person updated successfully');
+      Logger.log('info', 'general', 'update-responsible-person', 'Responsible person updated successfully');
 
       return {
         success: true,
@@ -149,7 +150,7 @@ export default async function entityScopeRoutes(fastify: FastifyInstance, _optio
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Failed to update responsible person:', error);
+      Logger.log('error', 'general', 'update-responsible-person', 'Failed to update responsible person', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to update responsible person',
@@ -208,7 +209,7 @@ export default async function entityScopeRoutes(fastify: FastifyInstance, _optio
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Failed to get responsible person:', error);
+      Logger.log('error', 'general', 'get-responsible-person', 'Failed to get responsible person', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to get responsible person',

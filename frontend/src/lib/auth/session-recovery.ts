@@ -9,7 +9,6 @@ const explicitSensitiveKeys = new Set([
 ])
 
 const shouldRemoveAuthKey = (key: string): boolean => {
-  if (key === 'pendingInvitationToken') return false
   if (explicitSensitiveKeys.has(key)) return true
   if (/^refreshToken\d+$/i.test(key)) return true
   if (/kinde|oauth|auth/i.test(key) && /(token|refresh|state|code|session)/i.test(key)) return true

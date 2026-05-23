@@ -9,6 +9,8 @@ import { PERMISSIONS } from '../../../constants/permissions.js';
 import { db } from '../../../db/index.js';
 import { entities, tenants, credits } from '../../../db/schema/index.js';
 import { eq, and, desc, sql, count } from 'drizzle-orm';
+import Logger from '../../../utils/logger.js';
+import { snsSqsPublisher } from '../../messaging/utils/sns-sqs-publisher.js';
 
 export default async function adminEntityManagementRoutes(fastify: FastifyInstance, _options?: object): Promise<void> {
 
@@ -104,7 +106,7 @@ export default async function adminEntityManagementRoutes(fastify: FastifyInstan
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Error fetching entities:', error);
+      Logger.log('error', 'general', 'admin-fetch-entities', 'Error fetching entities', { error: error.message });
       return reply.code(500).send({ error: 'Failed to fetch entities' });
     }
   });
@@ -177,7 +179,7 @@ export default async function adminEntityManagementRoutes(fastify: FastifyInstan
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Error fetching entity details:', error);
+      Logger.log('error', 'general', 'admin-fetch-entity-details', 'Error fetching entity details', { error: error.message });
       return reply.code(500).send({ error: 'Failed to fetch entity details' });
     }
   });
@@ -195,6 +197,12 @@ export default async function adminEntityManagementRoutes(fastify: FastifyInstan
       const isActive = body.isActive;
       const reason = body.reason;
 
+      const [entityMeta] = await db
+        .select({ tenantId: entities.tenantId, entityName: entities.entityName, entityType: entities.entityType })
+        .from(entities)
+        .where(eq(entities.entityId, entityId))
+        .limit(1);
+
       await db
         .update(entities)
         .set({
@@ -203,7 +211,22 @@ export default async function adminEntityManagementRoutes(fastify: FastifyInstan
         })
         .where(eq(entities.entityId, entityId));
 
-      console.log(`Admin ${(request as any).userContext?.userId ?? ''} ${isActive ? 'activated' : 'deactivated'} entity ${entityId}${reason ? `: ${reason}` : ''}`);
+      Logger.log('info', 'general', 'admin-update-entity-status', 'Admin updated entity status', { userId: (request as any).userContext?.userId ?? '', isActive, entityId, reason });
+
+      if (entityMeta) {
+        const entityEventType = isActive ? 'entity.created' : 'entity.deactivated';
+        snsSqsPublisher.publishOrgEventToSuite(entityEventType, entityMeta.tenantId, entityId, {
+          entityId,
+          entityName: entityMeta.entityName,
+          entityType: entityMeta.entityType,
+          isActive,
+          reason: reason ?? null,
+          updatedBy: (request as any).userContext?.userId ?? 'admin',
+          updatedAt: new Date().toISOString(),
+        }).catch((err: Error) => {
+          Logger.log('warning', 'general', 'admin-update-entity-status', `Failed to publish ${entityEventType} event`, { entityId, error: err.message });
+        });
+      }
 
       return {
         success: true,
@@ -211,7 +234,7 @@ export default async function adminEntityManagementRoutes(fastify: FastifyInstan
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Error updating entity status:', error);
+      Logger.log('error', 'general', 'admin-update-entity-status', 'Error updating entity status', { error: error.message });
       return reply.code(500).send({ error: 'Failed to update entity status' });
     }
   });
@@ -228,6 +251,11 @@ export default async function adminEntityManagementRoutes(fastify: FastifyInstan
       const isActive = body.isActive;
       const reason = body.reason;
 
+      const affectedEntities = await db
+        .select({ entityId: entities.entityId, tenantId: entities.tenantId, entityName: entities.entityName, entityType: entities.entityType })
+        .from(entities)
+        .where(sql`${entities.entityId} = any(${entityIds})`);
+
       await db
         .update(entities)
         .set({
@@ -236,7 +264,23 @@ export default async function adminEntityManagementRoutes(fastify: FastifyInstan
         })
         .where(sql`${entities.entityId} = any(${entityIds})`);
 
-      console.log(`Admin ${(request as any).userContext?.userId ?? ''} bulk ${isActive ? 'activated' : 'deactivated'} ${entityIds.length} entities${reason ? `: ${reason}` : ''}`);
+      Logger.log('info', 'general', 'admin-bulk-update-entity-status', 'Admin bulk updated entity status', { userId: (request as any).userContext?.userId ?? '', isActive, entityCount: entityIds.length, reason });
+
+      const bulkEntityEventType = isActive ? 'entity.created' : 'entity.deactivated';
+      const bulkAdminUserId = (request as any).userContext?.userId ?? 'admin';
+      for (const ent of affectedEntities) {
+        snsSqsPublisher.publishOrgEventToSuite(bulkEntityEventType, ent.tenantId, ent.entityId, {
+          entityId: ent.entityId,
+          entityName: ent.entityName,
+          entityType: ent.entityType,
+          isActive,
+          reason: reason ?? null,
+          updatedBy: bulkAdminUserId,
+          updatedAt: new Date().toISOString(),
+        }).catch((err: Error) => {
+          Logger.log('warning', 'general', 'admin-bulk-update-entity-status', `Failed to publish ${bulkEntityEventType} event`, { entityId: ent.entityId, error: err.message });
+        });
+      }
 
       return {
         success: true,
@@ -244,7 +288,7 @@ export default async function adminEntityManagementRoutes(fastify: FastifyInstan
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Error bulk updating entity status:', error);
+      Logger.log('error', 'general', 'admin-bulk-update-entity-status', 'Error bulk updating entity status', { error: error.message });
       return reply.code(500).send({ error: 'Failed to bulk update entity status' });
     }
   });
@@ -300,7 +344,7 @@ export default async function adminEntityManagementRoutes(fastify: FastifyInstan
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Error fetching entity stats:', error);
+      Logger.log('error', 'general', 'admin-entity-stats', 'Error fetching entity stats', { error: error.message });
       return reply.code(500).send({ error: 'Failed to fetch entity statistics' });
     }
   });
@@ -355,7 +399,7 @@ export default async function adminEntityManagementRoutes(fastify: FastifyInstan
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Error searching entities:', error);
+      Logger.log('error', 'general', 'admin-search-entities', 'Error searching entities', { error: error.message });
       return reply.code(500).send({ error: 'Failed to search entities' });
     }
   });
@@ -403,10 +447,7 @@ export default async function adminEntityManagementRoutes(fastify: FastifyInstan
         .orderBy(entities.entityLevel, entities.entityName);
 
       // Debug: Log credit values for each entity
-      console.log('🔍 Hierarchy entities with credits:');
-      entitiesList.forEach(entity => {
-        console.log(`  ${entity.entityId} (${entity.entityName}): ${entity.availableCredits} credits`);
-      });
+      Logger.log('info', 'general', 'admin-entity-hierarchy', 'Hierarchy entities with credits', { count: entitiesList.length });
 
       // Build hierarchy tree
       const entityMap = new Map<string, any>();
@@ -443,7 +484,7 @@ export default async function adminEntityManagementRoutes(fastify: FastifyInstan
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Error fetching entity hierarchy:', error);
+      Logger.log('error', 'general', 'admin-entity-hierarchy', 'Error fetching entity hierarchy', { error: error.message });
       return reply.code(500).send({ error: 'Failed to fetch entity hierarchy' });
     }
   });
@@ -461,7 +502,7 @@ export default async function adminEntityManagementRoutes(fastify: FastifyInstan
         return reply.code(400).send({ error: 'No tenant ID found in user context' });
       }
 
-      console.log('🔍 Getting entity hierarchy for current tenant:', tenantId);
+      Logger.log('info', 'general', 'admin-entity-hierarchy-current', 'Getting entity hierarchy for current tenant', { tenantId });
 
       // Get all active entities for this tenant
       const allEntities = await db
@@ -482,7 +523,7 @@ export default async function adminEntityManagementRoutes(fastify: FastifyInstan
         ))
         .orderBy(entities.entityLevel, entities.entityName);
 
-      console.log(`📊 Found ${allEntities.length} entities for tenant ${tenantId}`);
+      Logger.log('info', 'general', 'admin-entity-hierarchy-current', 'Found entities for tenant', { count: allEntities.length, tenantId });
 
       // Build hierarchy tree
       const entityMap = new Map<string, any>();
@@ -516,7 +557,7 @@ export default async function adminEntityManagementRoutes(fastify: FastifyInstan
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Error fetching current tenant entity hierarchy:', error);
+      Logger.log('error', 'general', 'admin-entity-hierarchy-current', 'Error fetching current tenant entity hierarchy', { error: error.message });
       return reply.code(500).send({ error: 'Failed to fetch entity hierarchy' });
     }
   });

@@ -11,6 +11,7 @@ import swaggerUi from '@fastify/swagger-ui';
 import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod';
 import { swaggerOptions, swaggerUiOptions } from './config/swagger.js';
 import 'dotenv/config';
+import { validateEnv } from './config/env.js';
 import { shouldLogVerbose } from './utils/verbose-log.js';
 import './startup/run-after-core.js';
 
@@ -33,6 +34,12 @@ if (DISABLE_ALL_LOGGING && process.env.SUPPRESS_CONSOLE === 'true') {
 
 import './startup/run-before-dbmanager.js';
 import { dbManager } from './db/connection-manager.js';
+
+// Validate required environment variables before any services are initialised.
+// This runs after dotenv/config so .env values are already loaded.
+if (process.env.NODE_ENV !== 'test') {
+  validateEnv();
+}
 
 const fastify = Fastify({
   requestTimeout: Number(process.env.FASTIFY_REQUEST_TIMEOUT_MS ?? 30_000),
@@ -343,11 +350,23 @@ async function registerPlugins() {
     timeWindow: parseInt(process.env.RATE_LIMIT_WINDOW || '900000'), // 15 minutes
     skipOnError: true,
     keyGenerator: (request: any) => {
-      const userContext = request.userContext;
-      if (userContext?.tenantId) {
-        return `${userContext.tenantId}:${request.ip}`;
+      // Rate-limit by tenantId so one abusive tenant cannot starve others.
+      // Auth middleware (preHandler) hasn't run yet at this stage (onRequest), so
+      // we decode — but do NOT verify — the JWT to extract the tenantId claim.
+      // The actual signature check still happens in preHandler as normal.
+      const authHeader: string = request.headers.authorization ?? '';
+      if (authHeader.startsWith('Bearer ')) {
+        try {
+          const payloadB64 = authHeader.slice(7).split('.')[1];
+          if (payloadB64) {
+            const payload = JSON.parse(Buffer.from(payloadB64, 'base64url').toString('utf8'));
+            if (typeof payload?.tenantId === 'string') {
+              return `tenant:${payload.tenantId}`;
+            }
+          }
+        } catch { /* malformed token — fall through to IP-based limiting */ }
       }
-      return request.ip;
+      return `ip:${request.ip}`;
     },
     allowList: (request: any) => {
       // Don't rate-limit health checks
@@ -421,6 +440,27 @@ async function gracefulShutdown() {
     await fastify.close();
     console.log('✅ Fastify server closed.');
 
+    // Stop the inter-app outbox poller cleanly before tearing the publisher down.
+    try {
+      const poller =
+        (globalThis as { __interAppOutboxPoller?: { stop: () => void } }).__interAppOutboxPoller;
+      if (poller) {
+        poller.stop();
+        console.log('✅ Inter-app outbox poller stopped.');
+      }
+    } catch (pollerErr: unknown) {
+      console.warn('⚠️ Error stopping outbox poller:', (pollerErr as Error).message);
+    }
+
+    // Stop SQS consumer.
+    try {
+      const { sqsConsumer } = await import('./features/messaging/services/sqs-consumer.js');
+      await sqsConsumer.stop();
+      console.log('✅ SQS consumer stopped.');
+    } catch (sqsErr: unknown) {
+      console.warn('⚠️ Error stopping SQS consumer:', (sqsErr as Error).message);
+    }
+
     // Disconnect SNS/SQS publisher (no-op for stateless SDK, but kept for clean shutdown)
     try {
       const { snsSqsPublisher } = await import('./features/messaging/utils/sns-sqs-publisher.js');
@@ -485,6 +525,23 @@ async function start() {
       await snsSqsPublisher.initializeAtStartup();
       const { startOutboxReplayWorker } = await import('./features/messaging/services/outbox-replay-worker.js');
       startOutboxReplayWorker();
+
+      // Inter-app outbox poller — drains inter_app_outbox rows that the
+      // fast-path publish couldn't ship (circuit-open, network errors).
+      // Single-instance via pg_try_advisory_lock(8001) so it's safe to run
+      // on every pod.
+      const { OutboxPoller } = await import('./features/messaging/services/outbox-poller.js');
+      const interAppOutboxPoller = new OutboxPoller();
+      interAppOutboxPoller.start();
+      // Stash on globalThis so gracefulShutdown can stop it cleanly.
+      (globalThis as { __interAppOutboxPoller?: { stop: () => void } }).__interAppOutboxPoller =
+        interAppOutboxPoller;
+
+      // Start the SQS inbound consumer so the wrapper processes events sent back
+      // from CRM / accounting / ops apps (acknowledgements, cross-app events).
+      const { sqsConsumer } = await import('./features/messaging/services/sqs-consumer.js');
+      await sqsConsumer.start();
+      console.log('✅ SQS inbound consumer started');
     } catch (err: unknown) {
       console.warn('⚠️ SNS/SQS initialization skipped:', (err as Error).message);
     }

@@ -17,7 +17,7 @@ export const AuthCallback = React.lazy(() => import('@/features/auth/pages/AuthC
 export const InviteAccept = React.lazy(() => import('@/features/auth/pages/InviteAccept').then(m => ({ default: m.InviteAccept })))
 
 // Onboarding — import directly from the page file, not the barrel
-export const OnboardingPage = React.lazy(() => import('@/features/onboarding/pages/OnboardingOptimized'))
+export const OnboardingPage = React.lazy(() => import('@/features/onboarding/pages/Onboarding'))
 
 // Billing / Payments
 export const PaymentSuccess = React.lazy(() => import('@/features/billing/pages/PaymentSuccess'))
@@ -59,6 +59,7 @@ export const CreateCampaignPage = React.lazy(() => import('@/features/admin/page
 
 // Dev
 export const EmailPreviewPage = React.lazy(() => import('@/features/admin/pages/EmailPreviewPage').then(m => ({ default: m.EmailPreviewPage })))
+export const InviteAcceptDemo = React.lazy(() => import('@/features/auth/pages/InviteAcceptDemo'))
 
 // Misc
 export const NotFound = React.lazy(() => import('@/features/NotFound'))

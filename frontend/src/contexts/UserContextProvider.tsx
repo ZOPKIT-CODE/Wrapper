@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { useLocation } from '@tanstack/react-router';
 import { useKindeAuth } from '@kinde-oss/kinde-auth-react';
 import { useAuthStatus, useTenant } from '@/hooks/useSharedQueries';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 
 export interface UserPermission {
   id: string;

@@ -19,16 +19,11 @@ export default async function adminTrialRoutes(
     const requestId = Logger.generateRequestId('manual-trial-check');
 
     try {
-      console.log('\n🔧 ================ MANUAL TRIAL EXPIRY CHECK ================');
-      console.log(`📋 Request ID: ${requestId}`);
-      console.log(`👤 Requested by: ${(request as ReqWithUser).userContext?.email}`);
-      console.log(`⏰ Timestamp: ${Logger.getTimestamp()}`);
+      Logger.log('info', 'billing', requestId, 'Manual trial expiry check started', { requestedBy: (request as ReqWithUser).userContext?.email });
 
       await trialManager.checkExpiredTrials();
 
-      console.log(`✅ [${requestId}] Manual trial expiry check completed`);
-      console.log(`⏱️ [${requestId}] Duration: ${Logger.getDuration(startTime)}`);
-      console.log('🔧 ================ MANUAL TRIAL CHECK ENDED ================\n');
+      Logger.log('info', 'billing', requestId, 'Manual trial expiry check completed', { duration: Logger.getDuration(startTime) });
 
       return {
         success: true,
@@ -38,7 +33,7 @@ export default async function adminTrialRoutes(
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ [${requestId}] Manual trial expiry check failed:`, error);
+      Logger.log('error', 'billing', requestId, 'Manual trial expiry check failed', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to check expired trials',
@@ -56,16 +51,11 @@ export default async function adminTrialRoutes(
     const requestId = Logger.generateRequestId('manual-trial-reminders');
 
     try {
-      console.log('\n📧 ================ MANUAL TRIAL REMINDERS ================');
-      console.log(`📋 Request ID: ${requestId}`);
-      console.log(`👤 Requested by: ${(request as ReqWithUser).userContext?.email}`);
-      console.log(`⏰ Timestamp: ${Logger.getTimestamp()}`);
+      Logger.log('info', 'billing', requestId, 'Manual trial reminders started', { requestedBy: (request as ReqWithUser).userContext?.email });
 
       await trialManager.sendTrialReminders();
 
-      console.log(`✅ [${requestId}] Manual trial reminders completed`);
-      console.log(`⏱️ [${requestId}] Duration: ${Logger.getDuration(startTime)}`);
-      console.log('📧 ================ MANUAL REMINDERS ENDED ================\n');
+      Logger.log('info', 'billing', requestId, 'Manual trial reminders completed', { duration: Logger.getDuration(startTime) });
 
       return {
         success: true,
@@ -75,7 +65,7 @@ export default async function adminTrialRoutes(
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ [${requestId}] Manual trial reminders failed:`, error);
+      Logger.log('error', 'billing', requestId, 'Manual trial reminders failed', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to send trial reminders',
@@ -95,11 +85,7 @@ export default async function adminTrialRoutes(
     const tenantId = params.tenantId ?? '';
 
     try {
-      console.log('\n⏰ ================ MANUAL TRIAL EXPIRY ================');
-      console.log(`📋 Request ID: ${requestId}`);
-      console.log(`🏢 Target Tenant: ${tenantId}`);
-      console.log(`👤 Requested by: ${(request as ReqWithUser).userContext?.email}`);
-      console.log(`⏰ Timestamp: ${Logger.getTimestamp()}`);
+      Logger.log('info', 'billing', requestId, 'Manual trial expiry started', { tenantId, requestedBy: (request as ReqWithUser).userContext?.email });
 
       // Additional safety - only allow in development/test environment
       if (process.env.NODE_ENV === 'production') {
@@ -112,9 +98,7 @@ export default async function adminTrialRoutes(
 
       await (trialManager as any).manuallyExpireTrial(tenantId);
 
-      console.log(`✅ [${requestId}] Manual trial expiry completed for tenant: ${tenantId}`);
-      console.log(`⏱️ [${requestId}] Duration: ${Logger.getDuration(startTime)}`);
-      console.log('⏰ ================ MANUAL EXPIRY ENDED ================\n');
+      Logger.log('info', 'billing', requestId, 'Manual trial expiry completed', { tenantId, duration: Logger.getDuration(startTime) });
 
       return {
         success: true,
@@ -125,7 +109,7 @@ export default async function adminTrialRoutes(
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ [${requestId}] Manual trial expiry failed for tenant ${tenantId}:`, error);
+      Logger.log('error', 'billing', requestId, 'Manual trial expiry failed', { tenantId, error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to expire trial',
@@ -145,12 +129,11 @@ export default async function adminTrialRoutes(
     const tenantId = params.tenantId ?? '';
 
     try {
-      console.log(`🔍 [${requestId}] Getting trial status for tenant: ${tenantId}`);
+      Logger.log('info', 'billing', requestId, 'Getting trial status for tenant', { tenantId });
 
       const trialStatus = await (trialManager as any).getTrialStatus(tenantId);
 
-      console.log(`✅ [${requestId}] Trial status retrieved for tenant: ${tenantId}`);
-      console.log(`📊 [${requestId}] Status:`, trialStatus);
+      Logger.log('info', 'billing', requestId, 'Trial status retrieved', { tenantId, status: trialStatus });
 
       return {
         success: true,
@@ -160,7 +143,7 @@ export default async function adminTrialRoutes(
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ [${requestId}] Failed to get trial status for tenant ${tenantId}:`, error);
+      Logger.log('error', 'billing', requestId, 'Failed to get trial status', { tenantId, error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to get trial status',
@@ -187,14 +170,12 @@ export default async function adminTrialRoutes(
         });
       }
 
-      console.log(`🔍 [${requestId}] Getting current trial status for tenant: ${tenantId}`);
+      Logger.log('info', 'billing', requestId, 'Getting current trial status', { tenantId });
 
       const trialStatus = await (trialManager as any).getTrialStatus(tenantId);
       const expiryCheck = await trialManager.isTrialExpired(tenantId);
 
-      console.log(`✅ [${requestId}] Current trial status retrieved`);
-      console.log(`📊 [${requestId}] Status:`, trialStatus);
-      console.log(`🔒 [${requestId}] Expiry Check:`, expiryCheck);
+      Logger.log('info', 'billing', requestId, 'Current trial status retrieved', { trialStatus, expiryCheck });
 
       return {
         success: true,
@@ -208,7 +189,7 @@ export default async function adminTrialRoutes(
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ [${requestId}] Failed to get current trial status:`, error);
+      Logger.log('error', 'billing', requestId, 'Failed to get current trial status', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to get current trial status',
@@ -234,12 +215,12 @@ export default async function adminTrialRoutes(
         });
       }
 
-      console.log(`🔍 [${requestId}] Frontend initialization - checking trial status for tenant: ${tenantId}`);
+      Logger.log('info', 'billing', requestId, 'Frontend initialization - checking trial status', { tenantId });
 
       const expiryCheck = await trialManager.isTrialExpired(tenantId);
       const trialStatus = await (trialManager as any).getTrialStatus(tenantId);
 
-      console.log(`📊 [${requestId}] Trial check results:`, expiryCheck);
+      Logger.log('info', 'billing', requestId, 'Trial check results', { expiryCheck });
 
       if (expiryCheck.expired) {
         const now = new Date();
@@ -261,7 +242,7 @@ export default async function adminTrialRoutes(
           expiredDuration = 'just now';
         }
 
-        console.log(`🚫 [${requestId}] TRIAL EXPIRED during initialization - expired ${expiredDuration}`);
+        Logger.log('warning', 'billing', requestId, 'Trial expired during initialization', { expiredDuration });
 
         return reply.code(200).send({
           success: false,
@@ -287,8 +268,7 @@ export default async function adminTrialRoutes(
         });
       }
 
-      console.log(`✅ [${requestId}] Trial active - frontend can proceed with loading`);
-      console.log(`📅 [${requestId}] Trial ends: ${expiryCheck.trialEnd}`);
+      Logger.log('info', 'billing', requestId, 'Trial active - frontend can proceed with loading', { trialEnd: expiryCheck.trialEnd });
 
       return {
         success: true,
@@ -308,7 +288,7 @@ export default async function adminTrialRoutes(
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ [${requestId}] Error during trial initialization check:`, error);
+      Logger.log('error', 'billing', requestId, 'Error during trial initialization check', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to check trial status',
@@ -325,7 +305,7 @@ export default async function adminTrialRoutes(
     const requestId = Logger.generateRequestId('trial-system-status');
 
     try {
-      console.log(`🔍 [${requestId}] Checking trial system status...`);
+      Logger.log('info', 'billing', requestId, 'Checking trial system status');
 
       // Get monitoring status
       const monitoringStatus = trialManager.getMonitoringStatus();
@@ -384,7 +364,7 @@ export default async function adminTrialRoutes(
         issues
       };
 
-      console.log(`✅ [${requestId}] Trial system status retrieved`);
+      Logger.log('info', 'billing', requestId, 'Trial system status retrieved');
 
       return {
         success: true,
@@ -407,7 +387,7 @@ export default async function adminTrialRoutes(
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ [${requestId}] Failed to get trial system status:`, error);
+      Logger.log('error', 'billing', requestId, 'Failed to get trial system status', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to get trial system status',
@@ -424,7 +404,7 @@ export default async function adminTrialRoutes(
     const requestId = Logger.generateRequestId('restart-trial-monitoring');
 
     try {
-      console.log(`🔄 [${requestId}] Restarting trial monitoring system...`);
+      Logger.log('info', 'billing', requestId, 'Restarting trial monitoring system');
 
       // Stop existing monitoring
       trialManager.stopTrialMonitoring();
@@ -439,7 +419,7 @@ export default async function adminTrialRoutes(
       const status = trialManager.getMonitoringStatus();
 
       if (status.isRunning) {
-        console.log(`✅ [${requestId}] Trial monitoring restarted successfully`);
+        Logger.log('info', 'billing', requestId, 'Trial monitoring restarted successfully');
         return {
           success: true,
           message: 'Trial monitoring system restarted successfully',
@@ -447,7 +427,7 @@ export default async function adminTrialRoutes(
           requestId
         };
       } else {
-        console.error(`❌ [${requestId}] Failed to restart trial monitoring`);
+        Logger.log('error', 'billing', requestId, 'Failed to restart trial monitoring');
         return reply.code(500).send({
           success: false,
           error: 'Failed to restart trial monitoring',
@@ -458,7 +438,7 @@ export default async function adminTrialRoutes(
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ [${requestId}] Error restarting trial monitoring:`, error);
+      Logger.log('error', 'billing', requestId, 'Error restarting trial monitoring', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to restart trial monitoring',

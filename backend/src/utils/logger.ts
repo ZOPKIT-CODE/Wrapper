@@ -1,7 +1,25 @@
+/* eslint-disable no-console */
 /**
  * Enhanced Logging Utility
  * Provides structured logging for debugging onboarding, user management, roles, billing, and Stripe operations
  */
+
+import winston from 'winston';
+
+const winstonLogger = winston.createLogger({
+  level: process.env.LOG_LEVEL ?? 'info',
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.json()
+  ),
+  transports: [
+    new winston.transports.Console({
+      format: process.env.NODE_ENV === 'production'
+        ? winston.format.json()
+        : winston.format.combine(winston.format.colorize(), winston.format.simple())
+    })
+  ]
+});
 
 class Logger {
   colors: Record<string, string> = {
@@ -38,11 +56,11 @@ class Logger {
     const timestamp = this.getTimestamp();
     const emoji = this.getEmoji(level, category);
     
-    console.log(`\n${emoji} [${requestId}] ${category}: ${message}`);
-    console.log(`⏰ Timestamp: ${timestamp}`);
-    
+    winstonLogger.info(`\n${emoji} [${requestId}] ${category}: ${message}`);
+    winstonLogger.info(`⏰ Timestamp: ${timestamp}`);
+
     if (Object.keys(data).length > 0) {
-      console.log(`📊 Data:`, JSON.stringify(data, null, 2));
+      winstonLogger.info(`📊 Data: ${JSON.stringify(data, null, 2)}`);
     }
   }
 
@@ -75,43 +93,43 @@ class Logger {
   // Onboarding specific logs
   onboarding = {
     start: (requestId: string, data: Record<string, unknown>) => {
-      console.log('\n🚀 =================== ONBOARDING STARTED ===================');
-      console.log(`📋 Request ID: ${requestId}`);
-      console.log(`⏰ Timestamp: ${this.getTimestamp()}`);
-      console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
-      console.log('📦 Request Data:', JSON.stringify(data, null, 2));
+      winstonLogger.info('\n🚀 =================== ONBOARDING STARTED ===================');
+      winstonLogger.info(`📋 Request ID: ${requestId}`);
+      winstonLogger.info(`⏰ Timestamp: ${this.getTimestamp()}`);
+      winstonLogger.info(`🌍 Environment: ${process.env.NODE_ENV}`);
+      winstonLogger.info(`📦 Request Data: ${JSON.stringify(data, null, 2)}`);
     },
 
     step: (requestId: string, stepNumber: number, description: string, data: Record<string, unknown> = {}) => {
-      console.log(`\n🔄 [${requestId}] Step ${stepNumber}: ${description}`);
+      winstonLogger.info(`\n🔄 [${requestId}] Step ${stepNumber}: ${description}`);
       if (Object.keys(data).length > 0) {
-        console.log(`📊 [${requestId}] Data:`, JSON.stringify(data, null, 2));
+        winstonLogger.info(`📊 [${requestId}] Data: ${JSON.stringify(data, null, 2)}`);
       }
     },
 
     success: (requestId: string, message: string, data: Record<string, unknown> = {}) => {
-      console.log(`✅ [${requestId}] ${message}`);
+      winstonLogger.info(`✅ [${requestId}] ${message}`);
       if (Object.keys(data).length > 0) {
-        console.log(`📊 [${requestId}] Result:`, JSON.stringify(data, null, 2));
+        winstonLogger.info(`📊 [${requestId}] Result: ${JSON.stringify(data, null, 2)}`);
       }
     },
 
     error: (requestId: string, message: string, error: Error & { code?: string; statusCode?: number }, startTime: number) => {
-      console.error(`❌ [${requestId}] ${message}`);
-      console.error(`📋 [${requestId}] Error:`, error.message);
-      if (error.code) console.error(`🔢 [${requestId}] Error Code:`, error.code);
-      if (error.statusCode) console.error(`🌐 [${requestId}] Status Code:`, error.statusCode);
-      if (error.stack) console.error(`📋 [${requestId}] Stack:`, error.stack);
-      console.log(`⏱️ [${requestId}] Failed after ${this.getDuration(startTime)}`);
+      winstonLogger.error(`❌ [${requestId}] ${message}`);
+      winstonLogger.error(`📋 [${requestId}] Error: ${error.message}`);
+      if (error.code) winstonLogger.error(`🔢 [${requestId}] Error Code: ${error.code}`);
+      if (error.statusCode) winstonLogger.error(`🌐 [${requestId}] Status Code: ${error.statusCode}`);
+      if (error.stack) winstonLogger.error(`📋 [${requestId}] Stack: ${error.stack}`);
+      winstonLogger.info(`⏱️ [${requestId}] Failed after ${this.getDuration(startTime)}`);
     },
 
     complete: (requestId: string, startTime: number, data: Record<string, unknown> = {}) => {
-      console.log(`\n🎉 [${requestId}] ONBOARDING COMPLETED SUCCESSFULLY!`);
-      console.log(`⏱️ [${requestId}] Total Duration: ${this.getDuration(startTime)}`);
+      winstonLogger.info(`\n🎉 [${requestId}] ONBOARDING COMPLETED SUCCESSFULLY!`);
+      winstonLogger.info(`⏱️ [${requestId}] Total Duration: ${this.getDuration(startTime)}`);
       if (Object.keys(data).length > 0) {
-        console.log(`📊 [${requestId}] Final Result:`, JSON.stringify(data, null, 2));
+        winstonLogger.info(`📊 [${requestId}] Final Result: ${JSON.stringify(data, null, 2)}`);
       }
-      console.log('🚀 =================== ONBOARDING ENDED ===================\n');
+      winstonLogger.info('🚀 =================== ONBOARDING ENDED ===================\n');
     }
   };
 
@@ -119,31 +137,31 @@ class Logger {
   user = {
     invitation: {
       start: (requestId: string, data: Record<string, unknown>) => {
-        console.log('\n👤 ================ USER INVITATION STARTED ================');
-        console.log(`📋 Request ID: ${requestId}`);
-        console.log(`⏰ Timestamp: ${this.getTimestamp()}`);
-        console.log('📧 Invitation Data:', JSON.stringify(data, null, 2));
+        winstonLogger.info('\n👤 ================ USER INVITATION STARTED ================');
+        winstonLogger.info(`📋 Request ID: ${requestId}`);
+        winstonLogger.info(`⏰ Timestamp: ${this.getTimestamp()}`);
+        winstonLogger.info(`📧 Invitation Data: ${JSON.stringify(data, null, 2)}`);
       },
 
       step: (requestId: string, step: string, description: string, data: Record<string, unknown> = {}) => {
-        console.log(`\n📧 [${requestId}] ${step}: ${description}`);
+        winstonLogger.info(`\n📧 [${requestId}] ${step}: ${description}`);
         if (Object.keys(data).length > 0) {
-          console.log(`📊 [${requestId}] Data:`, JSON.stringify(data, null, 2));
+          winstonLogger.info(`📊 [${requestId}] Data: ${JSON.stringify(data, null, 2)}`);
         }
       },
 
       success: (requestId: string, startTime: number, data: Record<string, unknown> = {}) => {
-        console.log(`\n✅ [${requestId}] USER INVITATION COMPLETED!`);
-        console.log(`⏱️ [${requestId}] Duration: ${this.getDuration(startTime)}`);
-        console.log(`📊 [${requestId}] Result:`, JSON.stringify(data, null, 2));
-        console.log('👤 ================ USER INVITATION ENDED ================\n');
+        winstonLogger.info(`\n✅ [${requestId}] USER INVITATION COMPLETED!`);
+        winstonLogger.info(`⏱️ [${requestId}] Duration: ${this.getDuration(startTime)}`);
+        winstonLogger.info(`📊 [${requestId}] Result: ${JSON.stringify(data, null, 2)}`);
+        winstonLogger.info('👤 ================ USER INVITATION ENDED ================\n');
       },
 
       error: (requestId: string, error: Error, startTime: number) => {
-        console.error(`\n❌ [${requestId}] USER INVITATION FAILED!`);
-        console.error(`📋 [${requestId}] Error:`, error.message);
-        console.log(`⏱️ [${requestId}] Failed after ${this.getDuration(startTime)}`);
-        console.log('👤 ================ USER INVITATION ENDED ================\n');
+        winstonLogger.error(`\n❌ [${requestId}] USER INVITATION FAILED!`);
+        winstonLogger.error(`📋 [${requestId}] Error: ${error.message}`);
+        winstonLogger.info(`⏱️ [${requestId}] Failed after ${this.getDuration(startTime)}`);
+        winstonLogger.info('👤 ================ USER INVITATION ENDED ================\n');
       }
     }
   };
@@ -152,40 +170,40 @@ class Logger {
   role = {
     create: {
       start: (requestId: string, data: Record<string, unknown>) => {
-        console.log('\n🔐 ================ ROLE CREATION STARTED ================');
-        console.log(`📋 Request ID: ${requestId}`);
-        console.log(`⏰ Timestamp: ${this.getTimestamp()}`);
-        console.log('🔐 Role Data:', JSON.stringify(data, null, 2));
+        winstonLogger.info('\n🔐 ================ ROLE CREATION STARTED ================');
+        winstonLogger.info(`📋 Request ID: ${requestId}`);
+        winstonLogger.info(`⏰ Timestamp: ${this.getTimestamp()}`);
+        winstonLogger.info(`🔐 Role Data: ${JSON.stringify(data, null, 2)}`);
       },
 
       step: (requestId: string, step: string, description: string, data: Record<string, unknown> = {}) => {
-        console.log(`\n🔐 [${requestId}] ${step}: ${description}`);
+        winstonLogger.info(`\n🔐 [${requestId}] ${step}: ${description}`);
         if (Object.keys(data).length > 0) {
-          console.log(`📊 [${requestId}] Data:`, JSON.stringify(data, null, 2));
+          winstonLogger.info(`📊 [${requestId}] Data: ${JSON.stringify(data, null, 2)}`);
         }
       },
 
       success: (requestId: string, startTime: number, data: Record<string, unknown> = {}) => {
-        console.log(`\n✅ [${requestId}] ROLE CREATED SUCCESSFULLY!`);
-        console.log(`⏱️ [${requestId}] Duration: ${this.getDuration(startTime)}`);
-        console.log(`📊 [${requestId}] Role:`, JSON.stringify(data, null, 2));
-        console.log('🔐 ================ ROLE CREATION ENDED ================\n');
+        winstonLogger.info(`\n✅ [${requestId}] ROLE CREATED SUCCESSFULLY!`);
+        winstonLogger.info(`⏱️ [${requestId}] Duration: ${this.getDuration(startTime)}`);
+        winstonLogger.info(`📊 [${requestId}] Role: ${JSON.stringify(data, null, 2)}`);
+        winstonLogger.info('🔐 ================ ROLE CREATION ENDED ================\n');
       }
     },
 
     assign: {
       start: (requestId: string, data: Record<string, unknown>) => {
-        console.log('\n👥 ================ ROLE ASSIGNMENT STARTED ================');
-        console.log(`📋 Request ID: ${requestId}`);
-        console.log(`⏰ Timestamp: ${this.getTimestamp()}`);
-        console.log('👥 Assignment Data:', JSON.stringify(data, null, 2));
+        winstonLogger.info('\n👥 ================ ROLE ASSIGNMENT STARTED ================');
+        winstonLogger.info(`📋 Request ID: ${requestId}`);
+        winstonLogger.info(`⏰ Timestamp: ${this.getTimestamp()}`);
+        winstonLogger.info(`👥 Assignment Data: ${JSON.stringify(data, null, 2)}`);
       },
 
       success: (requestId: string, startTime: number, data: Record<string, unknown> = {}) => {
-        console.log(`\n✅ [${requestId}] ROLE ASSIGNED SUCCESSFULLY!`);
-        console.log(`⏱️ [${requestId}] Duration: ${this.getDuration(startTime)}`);
-        console.log(`📊 [${requestId}] Assignment:`, JSON.stringify(data, null, 2));
-        console.log('👥 ================ ROLE ASSIGNMENT ENDED ================\n');
+        winstonLogger.info(`\n✅ [${requestId}] ROLE ASSIGNED SUCCESSFULLY!`);
+        winstonLogger.info(`⏱️ [${requestId}] Duration: ${this.getDuration(startTime)}`);
+        winstonLogger.info(`📊 [${requestId}] Assignment: ${JSON.stringify(data, null, 2)}`);
+        winstonLogger.info('👥 ================ ROLE ASSIGNMENT ENDED ================\n');
       }
     }
   };
@@ -193,44 +211,44 @@ class Logger {
   // Billing and Stripe logs
   billing = {
     start: (requestId: string, operation: string, data: Record<string, unknown>) => {
-      console.log(`\n💳 ================ ${operation.toUpperCase()} STARTED ================`);
-      console.log(`📋 Request ID: ${requestId}`);
-      console.log(`⏰ Timestamp: ${this.getTimestamp()}`);
-      console.log('💳 Billing Data:', JSON.stringify(data, null, 2));
+      winstonLogger.info(`\n💳 ================ ${operation.toUpperCase()} STARTED ================`);
+      winstonLogger.info(`📋 Request ID: ${requestId}`);
+      winstonLogger.info(`⏰ Timestamp: ${this.getTimestamp()}`);
+      winstonLogger.info(`💳 Billing Data: ${JSON.stringify(data, null, 2)}`);
     },
 
     stripe: {
       request: (requestId: string, method: string, endpoint: string, data: Record<string, unknown> = {}) => {
-        console.log(`\n🟢 [${requestId}] Stripe API Request:`);
-        console.log(`🌐 [${requestId}] Method: ${method}`);
-        console.log(`🔗 [${requestId}] Endpoint: ${endpoint}`);
+        winstonLogger.info(`\n🟢 [${requestId}] Stripe API Request:`);
+        winstonLogger.info(`🌐 [${requestId}] Method: ${method}`);
+        winstonLogger.info(`🔗 [${requestId}] Endpoint: ${endpoint}`);
         if (Object.keys(data).length > 0) {
-          console.log(`📊 [${requestId}] Payload:`, JSON.stringify(data, null, 2));
+          winstonLogger.info(`📊 [${requestId}] Payload: ${JSON.stringify(data, null, 2)}`);
         }
       },
 
       response: (requestId: string, status: number | string, data: Record<string, unknown> = {}) => {
-        console.log(`🟢 [${requestId}] Stripe API Response:`);
-        console.log(`📊 [${requestId}] Status: ${status}`);
-        console.log(`📄 [${requestId}] Data:`, JSON.stringify(data, null, 2));
+        winstonLogger.info(`🟢 [${requestId}] Stripe API Response:`);
+        winstonLogger.info(`📊 [${requestId}] Status: ${status}`);
+        winstonLogger.info(`📄 [${requestId}] Data: ${JSON.stringify(data, null, 2)}`);
       },
 
       error: (requestId: string, error: Error & { code?: string; statusCode?: number; decline_code?: string }) => {
-        console.error(`❌ [${requestId}] Stripe API Error:`);
-        console.error(`📋 [${requestId}] Message:`, error.message);
-        console.error(`🔢 [${requestId}] Code:`, error.code);
-        console.error(`🌐 [${requestId}] Status:`, error.statusCode);
+        winstonLogger.error(`❌ [${requestId}] Stripe API Error:`);
+        winstonLogger.error(`📋 [${requestId}] Message: ${error.message}`);
+        winstonLogger.error(`🔢 [${requestId}] Code: ${error.code}`);
+        winstonLogger.error(`🌐 [${requestId}] Status: ${error.statusCode}`);
         if (error.decline_code) {
-          console.error(`💳 [${requestId}] Decline Code:`, error.decline_code);
+          winstonLogger.error(`💳 [${requestId}] Decline Code: ${error.decline_code}`);
         }
       }
     },
 
     success: (requestId: string, operation: string, startTime: number, data: Record<string, unknown> = {}) => {
-      console.log(`\n✅ [${requestId}] ${operation.toUpperCase()} COMPLETED!`);
-      console.log(`⏱️ [${requestId}] Duration: ${this.getDuration(startTime)}`);
-      console.log(`📊 [${requestId}] Result:`, JSON.stringify(data, null, 2));
-      console.log(`💳 ================ ${operation.toUpperCase()} ENDED ================\n`);
+      winstonLogger.info(`\n✅ [${requestId}] ${operation.toUpperCase()} COMPLETED!`);
+      winstonLogger.info(`⏱️ [${requestId}] Duration: ${this.getDuration(startTime)}`);
+      winstonLogger.info(`📊 [${requestId}] Result: ${JSON.stringify(data, null, 2)}`);
+      winstonLogger.info(`💳 ================ ${operation.toUpperCase()} ENDED ================\n`);
     }
   };
 
@@ -238,29 +256,29 @@ class Logger {
   database = {
     transaction: {
       start: (requestId: string, description: string) => {
-        console.log(`\n💾 [${requestId}] Database Transaction Started: ${description}`);
-        console.log(`⏰ [${requestId}] Timestamp: ${this.getTimestamp()}`);
+        winstonLogger.info(`\n💾 [${requestId}] Database Transaction Started: ${description}`);
+        winstonLogger.info(`⏰ [${requestId}] Timestamp: ${this.getTimestamp()}`);
       },
 
       step: (requestId: string, operation: string, table: string, data: Record<string, unknown> = {}) => {
-        console.log(`📝 [${requestId}] ${operation} → ${table}`);
+        winstonLogger.info(`📝 [${requestId}] ${operation} → ${table}`);
         if (Object.keys(data).length > 0) {
-          console.log(`📊 [${requestId}] Data:`, JSON.stringify(data, null, 2));
+          winstonLogger.info(`📊 [${requestId}] Data: ${JSON.stringify(data, null, 2)}`);
         }
       },
 
       success: (requestId: string, description: string, duration: string, data: Record<string, unknown> = {}) => {
-        console.log(`✅ [${requestId}] Transaction Completed: ${description}`);
-        console.log(`⏱️ [${requestId}] Duration: ${duration}`);
+        winstonLogger.info(`✅ [${requestId}] Transaction Completed: ${description}`);
+        winstonLogger.info(`⏱️ [${requestId}] Duration: ${duration}`);
         if (Object.keys(data).length > 0) {
-          console.log(`📊 [${requestId}] Result:`, JSON.stringify(data, null, 2));
+          winstonLogger.info(`📊 [${requestId}] Result: ${JSON.stringify(data, null, 2)}`);
         }
       },
 
       error: (requestId: string, error: Error & { code?: string }, duration: string) => {
-        console.error(`❌ [${requestId}] Transaction Failed after ${duration}`);
-        console.error(`📋 [${requestId}] Error:`, error.message);
-        if (error.code) console.error(`🔢 [${requestId}] Error Code:`, error.code);
+        winstonLogger.error(`❌ [${requestId}] Transaction Failed after ${duration}`);
+        winstonLogger.error(`📋 [${requestId}] Error: ${error.message}`);
+        if (error.code) winstonLogger.error(`🔢 [${requestId}] Error Code: ${error.code}`);
       }
     }
   };
@@ -268,11 +286,11 @@ class Logger {
   // Activity logs
   activity = {
     log: (requestId: string, action: string, resourceType: string, resourceId: string, data: Record<string, unknown> = {}) => {
-      console.log(`📋 [${requestId}] Activity Logged:`);
-      console.log(`🎯 [${requestId}] Action: ${action}`);
-      console.log(`📦 [${requestId}] Resource: ${resourceType} (${resourceId})`);
+      winstonLogger.info(`📋 [${requestId}] Activity Logged:`);
+      winstonLogger.info(`🎯 [${requestId}] Action: ${action}`);
+      winstonLogger.info(`📦 [${requestId}] Resource: ${resourceType} (${resourceId})`);
       if (Object.keys(data).length > 0) {
-        console.log(`📊 [${requestId}] Details:`, JSON.stringify(data, null, 2));
+        winstonLogger.info(`📊 [${requestId}] Details: ${JSON.stringify(data, null, 2)}`);
       }
     }
   };
@@ -280,42 +298,42 @@ class Logger {
   // Email logs
   email = {
     send: (requestId: string, type: string, recipient: string, data: Record<string, unknown> = {}) => {
-      console.log(`📧 [${requestId}] Sending Email:`);
-      console.log(`📮 [${requestId}] Type: ${type}`);
-      console.log(`👤 [${requestId}] To: ${recipient}`);
+      winstonLogger.info(`📧 [${requestId}] Sending Email:`);
+      winstonLogger.info(`📮 [${requestId}] Type: ${type}`);
+      winstonLogger.info(`👤 [${requestId}] To: ${recipient}`);
       if (Object.keys(data).length > 0) {
-        console.log(`📊 [${requestId}] Data:`, JSON.stringify(data, null, 2));
+        winstonLogger.info(`📊 [${requestId}] Data: ${JSON.stringify(data, null, 2)}`);
       }
     },
 
     success: (requestId: string, type: string, recipient: string) => {
-      console.log(`✅ [${requestId}] Email sent successfully: ${type} to ${recipient}`);
+      winstonLogger.info(`✅ [${requestId}] Email sent successfully: ${type} to ${recipient}`);
     },
 
     error: (requestId: string, type: string, recipient: string, error: Error) => {
-      console.error(`❌ [${requestId}] Email failed: ${type} to ${recipient}`);
-      console.error(`📋 [${requestId}] Error:`, error.message);
+      winstonLogger.error(`❌ [${requestId}] Email failed: ${type} to ${recipient}`);
+      winstonLogger.error(`📋 [${requestId}] Error: ${error.message}`);
     }
   };
 
   // Trial and subscription logs
   trial = {
     start: (requestId: string, tenantId: string, duration: string) => {
-      console.log(`⏰ [${requestId}] Trial Started:`);
-      console.log(`🏢 [${requestId}] Tenant: ${tenantId}`);
-      console.log(`⏱️ [${requestId}] Duration: ${duration}`);
+      winstonLogger.info(`⏰ [${requestId}] Trial Started:`);
+      winstonLogger.info(`🏢 [${requestId}] Tenant: ${tenantId}`);
+      winstonLogger.info(`⏱️ [${requestId}] Duration: ${duration}`);
     },
 
     expiry: (requestId: string, tenantId: string, expiredAt: string) => {
-      console.log(`⏰ [${requestId}] Trial Expired:`);
-      console.log(`🏢 [${requestId}] Tenant: ${tenantId}`);
-      console.log(`📅 [${requestId}] Expired at: ${expiredAt}`);
+      winstonLogger.info(`⏰ [${requestId}] Trial Expired:`);
+      winstonLogger.info(`🏢 [${requestId}] Tenant: ${tenantId}`);
+      winstonLogger.info(`📅 [${requestId}] Expired at: ${expiredAt}`);
     },
 
     reminder: (requestId: string, tenantId: string, timeLeft: string) => {
-      console.log(`⏰ [${requestId}] Trial Reminder:`);
-      console.log(`🏢 [${requestId}] Tenant: ${tenantId}`);
-      console.log(`⏱️ [${requestId}] Time left: ${timeLeft}`);
+      winstonLogger.info(`⏰ [${requestId}] Trial Reminder:`);
+      winstonLogger.info(`🏢 [${requestId}] Tenant: ${tenantId}`);
+      winstonLogger.info(`⏱️ [${requestId}] Time left: ${timeLeft}`);
     }
   };
 }

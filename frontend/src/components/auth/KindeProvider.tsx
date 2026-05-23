@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { KindeProvider as OriginalKindeProvider, useKindeAuth } from '@kinde-oss/kinde-auth-react';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import useSilentAuth from '@/hooks/useSilentAuth';
 import { setKindeTokenGetter } from '@/lib/api';
 import { config } from '@/lib/config';

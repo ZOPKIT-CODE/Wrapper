@@ -14,6 +14,7 @@ export * from './billing/credit_configurations.js';
 export * from './billing/seasonal-credits.js';
 export { creditBatches } from './billing/credit-batches.js';
 export * from './billing/credit-expiry-runs.js';
+export { creditCategorySnapshots } from './billing/credit-category-snapshot.js';
 export * from './billing/tenant_banking_details.js';
 
 // Organizations
@@ -28,6 +29,7 @@ export * from './notifications/tenant-template-customizations.js';
 
 // Tracking
 export * from './tracking/event-tracking.js';
+export * from './tracking/inter-app-outbox.js';
 
 // Platform staff (cross-tenant access control)
 export * from './platform/platform-staff.js';

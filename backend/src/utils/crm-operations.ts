@@ -4,6 +4,8 @@
  * Integrates automatic audit logging and permission validation
  */
 
+import Logger from './logger.js';
+
 // Stub when crm-auth-middleware does not export CRMAuditLogger
 const CRMAuditLogger = {
   async logOperation(_req: unknown, _op: unknown, _entityType: string, _id: unknown, _details?: unknown): Promise<void> {}
@@ -64,14 +66,17 @@ export class CRMOperations {
         });
       }
 
-      console.log(`✅ CRM: Created ${entityType} by ${req.userContext.email}`, {
+      Logger.log('info', 'crm', 'create', `CRM: Created ${entityType} by ${req.userContext.email}`, {
+        entityType,
         id: record._id || record.id,
-        tenant: req.userContext.tenantId
+        tenant: req.userContext.tenantId,
+        email: req.userContext.email
       });
 
       return record;
     } catch (error) {
-      console.error(`❌ CRM: Failed to create ${entityType}:`, error);
+      const err = error as Error;
+      Logger.log('error', 'crm', 'create', `CRM: Failed to create ${entityType}`, { entityType, error: err.message, stack: err.stack });
       throw error;
     }
   }
@@ -131,7 +136,8 @@ export class CRMOperations {
 
       return records;
     } catch (error) {
-      console.error(`❌ CRM: Failed to read ${entityType}:`, error);
+      const err = error as Error;
+      Logger.log('error', 'crm', 'read', `CRM: Failed to read ${entityType}`, { entityType, error: err.message, stack: err.stack });
       throw error;
     }
   }
@@ -209,15 +215,18 @@ export class CRMOperations {
         });
       }
 
-      console.log(`✅ CRM: Updated ${entityType} by ${req.userContext.email}`, {
+      Logger.log('info', 'crm', 'update', `CRM: Updated ${entityType} by ${req.userContext.email}`, {
+        entityType,
         id,
         changedFields,
-        tenant: req.userContext.tenantId
+        tenant: req.userContext.tenantId,
+        email: req.userContext.email
       });
 
       return updatedRecord;
     } catch (error) {
-      console.error(`❌ CRM: Failed to update ${entityType}:`, error);
+      const err = error as Error;
+      Logger.log('error', 'crm', 'update', `CRM: Failed to update ${entityType}`, { entityType, error: err.message, stack: err.stack });
       throw error;
     }
   }
@@ -284,14 +293,18 @@ export class CRMOperations {
         });
       }
 
-      console.log(`✅ CRM: ${softDelete ? 'Soft deleted' : 'Deleted'} ${entityType} by ${req.userContext.email}`, {
+      Logger.log('info', 'crm', 'delete', `CRM: ${softDelete ? 'Soft deleted' : 'Deleted'} ${entityType} by ${req.userContext.email}`, {
+        entityType,
         id,
-        tenant: req.userContext.tenantId
+        softDelete,
+        tenant: req.userContext.tenantId,
+        email: req.userContext.email
       });
 
       return result;
     } catch (error) {
-      console.error(`❌ CRM: Failed to delete ${entityType}:`, error);
+      const err = error as Error;
+      Logger.log('error', 'crm', 'delete', `CRM: Failed to delete ${entityType}`, { entityType, error: err.message, stack: err.stack });
       throw error;
     }
   }
@@ -346,15 +359,18 @@ export class CRMOperations {
         });
       }
 
-      console.log(`✅ CRM: Assigned ${entityType} by ${req.userContext.email}`, {
+      Logger.log('info', 'crm', 'assign', `CRM: Assigned ${entityType} by ${req.userContext.email}`, {
+        entityType,
         id,
         assignedTo: assignToUserId,
-        tenant: req.userContext.tenantId
+        tenant: req.userContext.tenantId,
+        email: req.userContext.email
       });
 
       return updatedRecord;
     } catch (error) {
-      console.error(`❌ CRM: Failed to assign ${entityType}:`, error);
+      const err = error as Error;
+      Logger.log('error', 'crm', 'assign', `CRM: Failed to assign ${entityType}`, { entityType, error: err.message, stack: err.stack });
       throw error;
     }
   }
@@ -422,14 +438,18 @@ export class CRMOperations {
         });
       }
 
-      console.log(`✅ CRM: Bulk ${operation} ${entityType} by ${req.userContext.email}`, {
+      Logger.log('info', 'crm', `bulk-${operation}`, `CRM: Bulk ${operation} ${entityType} by ${req.userContext.email}`, {
+        entityType,
+        operation,
         affected: result.modifiedCount || result.deletedCount,
-        tenant: req.userContext.tenantId
+        tenant: req.userContext.tenantId,
+        email: req.userContext.email
       });
 
       return result;
     } catch (error) {
-      console.error(`❌ CRM: Failed bulk ${operation} ${entityType}:`, error);
+      const err = error as Error;
+      Logger.log('error', 'crm', `bulk-${operation}`, `CRM: Failed bulk ${operation} ${entityType}`, { entityType, operation, error: err.message, stack: err.stack });
       throw error;
     }
   }
@@ -490,15 +510,18 @@ export class CRMOperations {
         .skip(skip)
         .sort({ updatedAt: -1 });
 
-      console.log(`🔍 CRM: Search ${entityType} by ${req.userContext.email}`, {
+      Logger.log('info', 'crm', 'search', `CRM: Search ${entityType} by ${req.userContext.email}`, {
+        entityType,
         query: searchQuery,
         results: results.length,
-        tenant: req.userContext.tenantId
+        tenant: req.userContext.tenantId,
+        email: req.userContext.email
       });
 
       return results;
     } catch (error) {
-      console.error(`❌ CRM: Failed to search ${entityType}:`, error);
+      const err = error as Error;
+      Logger.log('error', 'crm', 'search', `CRM: Failed to search ${entityType}`, { entityType, error: err.message, stack: err.stack });
       throw error;
     }
   }

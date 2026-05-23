@@ -18,6 +18,7 @@
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import type { PaymentGatewayPort } from './payment-gateway.port.js';
+import Logger from '../../../utils/logger.js';
 import type {
   PaymentGatewayProvider,
   CreateCheckoutParams,
@@ -166,7 +167,7 @@ export class RazorpayPaymentGateway implements PaymentGatewayPort {
 
   // Razorpay has no hosted billing portal — return null.
   async createBillingPortalSession(_params: BillingPortalParams): Promise<string | null> {
-    console.warn('⚠️ Razorpay does not support a hosted billing portal');
+    Logger.log('warning', 'general', 'createBillingPortalSession', 'Razorpay does not support a hosted billing portal');
     return null;
   }
 

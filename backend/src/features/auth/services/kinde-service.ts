@@ -1,6 +1,9 @@
 import axios from 'axios';
 import { createRemoteJWKSet, jwtVerify, type JWTPayload } from 'jose';
 import { shouldLogVerbose } from '../../../utils/verbose-log.js';
+import { withRetry } from '../../../utils/retry.js';
+import { kindeCircuitBreaker } from '../../../utils/circuit-breaker.js';
+import Logger from '../../../utils/logger.js';
 
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -114,11 +117,11 @@ class KindeService {
         { cacheMaxAge: 6 * 60 * 60 * 1000 } // 6 hours — avoids re-fetching on every cold miss
       );
     } catch (_err) {
-      console.warn('⚠️ Failed to initialize JWKS, will fall back to API-based validation');
+      Logger.log('warning', 'general', 'KindeService-constructor', 'Failed to initialize JWKS, will fall back to API-based validation');
     }
     
     if (!isProduction && shouldLogVerbose()) {
-      console.log('KindeService init:', { baseURL: this.baseURL, oauth: !!this.oauthClientId, m2m: !!this.m2mClientId, jwks: !!this.jwks });
+      Logger.log('info', 'general', 'KindeService-constructor', 'KindeService init', { baseURL: this.baseURL, oauth: !!this.oauthClientId, m2m: !!this.m2mClientId, jwks: !!this.jwks });
     }
   }
 
@@ -164,13 +167,13 @@ class KindeService {
     let lastError: ApiErrorShape | null = null;
     for (const attempt of roleAttempts) {
       try {
-        const response = await axios.post(attempt.endpoint, attempt.body, {
+        const response = await withRetry(() => axios.post(attempt.endpoint, attempt.body, {
           headers: {
             'Authorization': `Bearer ${m2mToken}`,
             'Content-Type': 'application/json'
           },
           timeout: 10000
-        });
+        }));
         return { success: true, endpoint: attempt.endpoint, responseData: response.data };
       } catch (err: unknown) {
         const apiErr = err as ApiErrorShape;
@@ -178,11 +181,7 @@ class KindeService {
         // Only log individual attempt failures at verbose level — callers surface
         // the final outcome at warn/error level so the console is not flooded.
         if (shouldLogVerbose()) {
-          console.warn('⚠️ Role assignment attempt failed:', {
-            endpoint: attempt.endpoint,
-            body: attempt.body,
-            status: apiErr.response?.status
-          });
+          Logger.log('warning', 'general', 'assignUserRoleWithFallbacks', 'Role assignment attempt failed', { endpoint: attempt.endpoint, status: apiErr.response?.status });
         }
       }
     }
@@ -202,7 +201,7 @@ class KindeService {
       return payload;
     } catch (err: unknown) {
       const error = err as Error;
-      if (shouldLogVerbose()) console.log('⚠️ JWKS verification failed:', error.message);
+      if (shouldLogVerbose()) Logger.log('warning', 'general', 'verifyJWTSignature', 'JWKS verification failed', { error: error.message });
       return null;
     }
   }
@@ -238,10 +237,10 @@ class KindeService {
       const scopesToUse = envScopes && envScopes.trim() ? envScopes : defaultScopes;
       const scopes = scopesToUse.replace(/,/g, ' ');
 
-      if (shouldLogVerbose()) console.log('🔍 Requesting Kinde M2M scopes:', scopes);
+      if (shouldLogVerbose()) Logger.log('info', 'general', 'getM2MToken', 'Requesting Kinde M2M scopes', { scopes });
       formData.append('scope', scopes);
 
-      const response = await axios.post(
+      const response = await withRetry(() => axios.post(
         `${this.baseURL}/oauth2/token`,
         formData.toString(),
         {
@@ -249,19 +248,19 @@ class KindeService {
             'Content-Type': 'application/x-www-form-urlencoded'
           }
         }
-      );
+      ));
 
       if (response.data.access_token) {
         const expiresIn: number = typeof response.data.expires_in === 'number' ? response.data.expires_in : 3600;
         this.m2mTokenCache = { token: response.data.access_token, expiresAt: now + expiresIn * 1000 };
-        if (shouldLogVerbose()) console.log('✅ M2M token obtained and cached');
+        if (shouldLogVerbose()) Logger.log('info', 'general', 'getM2MToken', 'M2M token obtained and cached');
         return response.data.access_token;
       } else {
         throw new Error('No access token in response');
       }
     } catch (err: unknown) {
       const error = err as Error & { response?: { data?: { error?: string } } };
-      console.error('❌ Failed to get M2M token:', error.message);
+      Logger.log('error', 'general', 'getM2MToken', 'Failed to get M2M token', { error: error.message });
       throw new Error(`M2M authentication failed: ${error.response?.data?.error || error.message}`);
     }
   }
@@ -287,7 +286,7 @@ class KindeService {
       return JSON.parse(decoded) as Record<string, unknown>;
     } catch (err: unknown) {
       const error = err as Error;
-      console.log('⚠️ JWT decode failed:', error.message);
+      Logger.log('warning', 'general', 'decodeJWT', 'JWT decode failed', { error: error.message });
       return null;
     }
   }
@@ -302,7 +301,7 @@ class KindeService {
     const cacheKey = tokenCacheKey(accessToken);
     const cached = userProfileCache.get(cacheKey);
     if (cached && Date.now() < cached.expiresAt) {
-      if (shouldLogVerbose()) console.log('getUserInfo: cache HIT');
+      if (shouldLogVerbose()) Logger.log('info', 'general', 'getUserInfo', 'Cache HIT');
       return cached.value;
     }
 
@@ -319,7 +318,7 @@ class KindeService {
       try {
         const payload = await this.verifyJWTSignature(accessToken);
         if (payload) {
-          if (shouldLogVerbose()) console.log('getUserInfo: JWKS verified');
+          if (shouldLogVerbose()) Logger.log('info', 'general', 'getUserInfo', 'JWKS verified');
           const normalized = normalizeKindePayload(payload as unknown as Record<string, unknown>);
           // Kinde access tokens often lack email claims — fetch from userinfo endpoint.
           // Only do this if the result won't already be in cache (avoids extra round-trip
@@ -344,7 +343,7 @@ class KindeService {
           return cacheAndReturn(normalized);
         }
       } catch (jwksErr: unknown) {
-        if (shouldLogVerbose()) console.log('⚠️ getUserInfo - JWKS verification failed, trying API endpoints...');
+        if (shouldLogVerbose()) Logger.log('warning', 'general', 'getUserInfo', 'JWKS verification failed, trying API endpoints');
       }
 
       // Strategy 1: Try user_profile endpoint
@@ -357,12 +356,12 @@ class KindeService {
           timeout: 5000
         });
 
-        if (shouldLogVerbose()) console.log('getUserInfo: user_profile OK');
+        if (shouldLogVerbose()) Logger.log('info', 'general', 'getUserInfo', 'user_profile OK');
         return cacheAndReturn(normalizeKindePayload(response.data as Record<string, unknown>));
       } catch (profileErr: unknown) {
         const profileError = profileErr as Error & { response?: { status?: number; statusText?: string; data?: unknown } };
         if (shouldLogVerbose()) {
-          console.log(`⚠️ getUserInfo - user_profile failed (${profileError.response?.status}):`, profileError.response?.data || profileError.message);
+          Logger.log('warning', 'general', 'getUserInfo', 'user_profile failed', { status: profileError.response?.status, error: profileError.message });
         }
       }
 
@@ -385,15 +384,15 @@ class KindeService {
         );
 
         if (introspectResponse.data.active) {
-          if (shouldLogVerbose()) console.log('✅ getUserInfo - Success via introspect endpoint');
+          if (shouldLogVerbose()) Logger.log('info', 'general', 'getUserInfo', 'Success via introspect endpoint');
           return cacheAndReturn(normalizeKindePayload(introspectResponse.data as Record<string, unknown>));
         } else {
-          if (shouldLogVerbose()) console.log('⚠️ getUserInfo - Token is not active according to introspect');
+          if (shouldLogVerbose()) Logger.log('warning', 'general', 'getUserInfo', 'Token is not active according to introspect');
         }
       } catch (introspectErr: unknown) {
         const introspectError = introspectErr as Error & { response?: { status?: number } };
         if (shouldLogVerbose()) {
-          console.log(`⚠️ getUserInfo - introspect failed (${introspectError.response?.status})`);
+          Logger.log('warning', 'general', 'getUserInfo', 'introspect failed', { status: introspectError.response?.status });
         }
       }
 
@@ -408,12 +407,12 @@ class KindeService {
               throw new Error('Token has expired');
             }
 
-            console.warn('⚠️ getUserInfo - Using INSECURE JWT decode (development only)');
+            Logger.log('warning', 'general', 'getUserInfo', 'Using INSECURE JWT decode (development only)');
             return cacheAndReturn(normalizeKindePayload(decoded));
           }
         } catch (decodeErr: unknown) {
           const decodeError = decodeErr as Error;
-          if (shouldLogVerbose()) console.log(`⚠️ getUserInfo - JWT decode fallback failed:`, decodeError.message);
+          if (shouldLogVerbose()) Logger.log('warning', 'general', 'getUserInfo', 'JWT decode fallback failed', { error: decodeError.message });
         }
       }
 
@@ -421,7 +420,7 @@ class KindeService {
 
     } catch (err: unknown) {
       const error = err as Error;
-      if (shouldLogVerbose()) console.error('❌ getUserInfo - All strategies failed:', error.message);
+      if (shouldLogVerbose()) Logger.log('error', 'general', 'getUserInfo', 'All strategies failed', { error: error.message });
       throw new Error('Failed to get user information');
     }
   }
@@ -444,11 +443,11 @@ class KindeService {
         hasMultipleOrganizations: orgCodes.length > 1
       };
 
-      if (shouldLogVerbose()) console.log('getEnhancedUserInfo OK:', enhancedInfo.id);
+      if (shouldLogVerbose()) Logger.log('info', 'general', 'getEnhancedUserInfo', 'getEnhancedUserInfo OK', { userId: enhancedInfo.id });
       return enhancedInfo;
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ getEnhancedUserInfo - Error:', error);
+      Logger.log('error', 'general', 'getEnhancedUserInfo', 'Error', { error: error.message });
       throw error;
     }
   }
@@ -486,20 +485,12 @@ class KindeService {
       };
 
       if (shouldLogVerbose()) {
-        console.log('✅ validateToken - Success:', {
-          userId: userContext.userId,
-          email: userContext.email,
-          hasOrg: !!userContext.organization
-        });
+        Logger.log('info', 'general', 'validateToken', 'Success', { userId: userContext.userId, email: userContext.email, hasOrg: !!userContext.organization });
       }
       return userContext as Record<string, unknown>;
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ validateToken - Error:', {
-        message: error.message,
-        name: error.name,
-        stack: error.stack?.split('\n')[0]
-      });
+      Logger.log('error', 'general', 'validateToken', 'Error', { error: error.message, name: error.name });
 
       if (error.message.includes('401') || error.message.includes('Unauthorized')) {
         throw new Error('Token is unauthorized or expired');
@@ -518,7 +509,7 @@ class KindeService {
    */
   async refreshToken(refreshToken: string): Promise<Record<string, unknown>> {
     try {
-      if (shouldLogVerbose()) console.log('🔄 refreshToken - Starting token refresh...');
+      if (shouldLogVerbose()) Logger.log('info', 'general', 'refreshToken', 'Starting token refresh');
 
       if (!this.oauthClientId || !this.oauthClientSecret) {
         throw new Error('OAuth credentials not configured');
@@ -534,7 +525,7 @@ class KindeService {
       formData.append('client_secret', this.oauthClientSecret);
       formData.append('refresh_token', refreshToken);
 
-      if (shouldLogVerbose()) console.log('🔄 refreshToken - Making refresh request to Kinde...');
+      if (shouldLogVerbose()) Logger.log('info', 'general', 'refreshToken', 'Making refresh request to Kinde');
 
       const response = await axios.post(
         `${this.baseURL}/oauth2/token`,
@@ -547,7 +538,7 @@ class KindeService {
       );
 
       if (response.data.access_token) {
-        if (shouldLogVerbose()) console.log('✅ refreshToken - Token refresh successful');
+        if (shouldLogVerbose()) Logger.log('info', 'general', 'refreshToken', 'Token refresh successful');
         return {
           access_token: response.data.access_token,
           refresh_token: response.data.refresh_token,
@@ -559,7 +550,7 @@ class KindeService {
       }
     } catch (err: unknown) {
       const error = err as Error & { response?: { data?: { error?: string; error_description?: string } } };
-      console.error('❌ refreshToken - Refresh failed:', error.response?.data || error.message);
+      Logger.log('error', 'general', 'refreshToken', 'Refresh failed', { error: error.message });
 
       if (error.response?.data?.error === 'invalid_grant') {
         throw new Error('Refresh token is invalid or expired');
@@ -578,7 +569,7 @@ class KindeService {
    */
   async getUserOrganizations(kindeUserId: string): Promise<{ organizations: unknown[]; success: boolean; message?: string; error?: string }> {
     try {
-      if (shouldLogVerbose()) console.log(`🔍 getUserOrganizations - Getting organizations for user: ${kindeUserId}`);
+      if (shouldLogVerbose()) Logger.log('info', 'general', 'getUserOrganizations', 'Getting organizations for user', { kindeUserId });
 
       if (!kindeUserId) {
         return { organizations: [], success: true, message: 'No user ID provided' };
@@ -598,14 +589,14 @@ class KindeService {
       });
 
       const data = response.data as { organizations?: unknown[]; orgs?: unknown[] };
-      if (shouldLogVerbose()) console.log('✅ getUserOrganizations - Success');
+      if (shouldLogVerbose()) Logger.log('info', 'general', 'getUserOrganizations', 'Success');
       return {
         organizations: data.organizations || data.orgs || [],
         success: true
       };
     } catch (err: unknown) {
       const error = err as Error & { response?: { data?: { error?: string } } };
-      console.error(`❌ getUserOrganizations - Error for user ${kindeUserId}:`, error.response?.data || error.message);
+      Logger.log('error', 'general', 'getUserOrganizations', 'Error for user', { kindeUserId, error: error.message });
       return {
         organizations: [],
         success: false,
@@ -619,10 +610,10 @@ class KindeService {
    */
   async addUserToOrganization(kindeUserId: string, orgCode: string, options: AddUserToOrgOptions = {}): Promise<Record<string, unknown>> {
     try {
-      if (shouldLogVerbose()) console.log(`🔗 addUserToOrganization - Adding user ${kindeUserId} to org ${orgCode}`, options);
+      if (shouldLogVerbose()) Logger.log('info', 'general', 'addUserToOrganization', 'Adding user to org', { kindeUserId, orgCode });
       
       if (!this.m2mClientId || !this.m2mClientSecret) {
-        console.warn('⚠️ addUserToOrganization - No M2M credentials available, using fallback');
+        Logger.log('warning', 'general', 'addUserToOrganization', 'No M2M credentials available, using fallback');
         return {
           success: true,
           userId: kindeUserId,
@@ -633,18 +624,18 @@ class KindeService {
    
       //get the m2m kinde token first 
       const m2mToken = await this.getM2MToken();
-      if (shouldLogVerbose()) console.log(`🔑 M2M token obtained: ${m2mToken ? 'Yes' : 'No'}`);
+      if (shouldLogVerbose()) Logger.log('info', 'general', 'addUserToOrganization', 'M2M token obtained', { obtained: !!m2mToken });
 
       // When skipRoleAssignment is set, just add the user to the org membership
       // without assigning any Kinde role (POST /organizations/{org_code}/users).
       if (options.skipRoleAssignment) {
         const membershipEndpoint = `${this.baseURL}/api/v1/organizations/${orgCode}/users`;
         // Kinde Management API requires the body as { users: [{ id }] }
-        await axios.post(membershipEndpoint, { users: [{ id: kindeUserId }] }, {
+        await kindeCircuitBreaker.execute(() => withRetry(() => axios.post(membershipEndpoint, { users: [{ id: kindeUserId }] }, {
           headers: { 'Authorization': `Bearer ${m2mToken}`, 'Content-Type': 'application/json' },
           timeout: 10000
-        });
-        if (shouldLogVerbose()) console.log(`✅ addUserToOrganization - User added to org (no role assigned)`);
+        })));
+        if (shouldLogVerbose()) Logger.log('info', 'general', 'addUserToOrganization', 'User added to org (no role assigned)');
         return {
           success: true,
           userId: kindeUserId,
@@ -656,13 +647,13 @@ class KindeService {
 
       if (options.exclusive) {
         if (shouldLogVerbose()) {
-          console.warn('⚠️ addUserToOrganization - Exclusive cleanup skipped to avoid removing user from unrelated orgs.');
+          Logger.log('warning', 'general', 'addUserToOrganization', 'Exclusive cleanup skipped to avoid removing user from unrelated orgs');
         }
       }
 
       const role = this.normalizeOrgRole(options.role_code ?? (options.is_admin ? 'admin' : 'member'));
       const roleResult = await this.assignUserRoleWithFallbacks(m2mToken, orgCode, kindeUserId, role);
-      if (shouldLogVerbose()) console.log(`✅ addUserToOrganization - Success with role ${role}`);
+      if (shouldLogVerbose()) Logger.log('info', 'general', 'addUserToOrganization', 'Success with role', { role });
 
       return {
         success: true,
@@ -676,13 +667,7 @@ class KindeService {
       };
     } catch (err: unknown) {
       const error = err as Error & { response?: { data?: unknown; status?: number; statusText?: string }; stack?: string };
-      console.error(`❌ addUserToOrganization - Error:`, {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        stack: error.stack
-      });
+      Logger.log('error', 'general', 'addUserToOrganization', 'Error', { error: error.message, status: error.response?.status });
       return {
         success: false,
         error: (error.response?.data as { error?: string })?.error || error.message,
@@ -701,10 +686,10 @@ class KindeService {
    */
   async removeUserFromOrganization(kindeUserId: string, orgCode: string): Promise<Record<string, unknown>> {
     try {
-      if (shouldLogVerbose()) console.log(`🗑️ removeUserFromOrganization - Removing user ${kindeUserId} from org ${orgCode}`);
+      if (shouldLogVerbose()) Logger.log('info', 'general', 'removeUserFromOrganization', 'Removing user from org', { kindeUserId, orgCode });
       
       if (!this.m2mClientId || !this.m2mClientSecret) {
-        console.warn('⚠️ removeUserFromOrganization - No M2M credentials available, using fallback');
+        Logger.log('warning', 'general', 'removeUserFromOrganization', 'No M2M credentials available, using fallback');
         return {
           success: true,
           message: 'User removed from organization successfully (fallback mode)'
@@ -714,14 +699,14 @@ class KindeService {
       const m2mToken = await this.getM2MToken();
       
       // Remove user from organization via Kinde API
-      await axios.delete(`${this.baseURL}/api/v1/organizations/${orgCode}/users/${kindeUserId}`, {
+      await withRetry(() => axios.delete(`${this.baseURL}/api/v1/organizations/${orgCode}/users/${kindeUserId}`, {
         headers: {
           'Authorization': `Bearer ${m2mToken}`,
           'Accept': 'application/json'
         }
-      });
+      }));
 
-      if (shouldLogVerbose()) console.log('✅ removeUserFromOrganization - Success via Kinde API');
+      if (shouldLogVerbose()) Logger.log('info', 'general', 'removeUserFromOrganization', 'Success via Kinde API');
       return {
         success: true,
         message: 'User removed from organization successfully'
@@ -731,17 +716,14 @@ class KindeService {
       const shouldIgnore = this.isNotFoundOrAlreadyHandledError(error);
       if (shouldIgnore) {
         if (shouldLogVerbose()) {
-          console.warn('⚠️ removeUserFromOrganization - User not in org (treated as success):', {
-            orgCode,
-            userId: kindeUserId
-          });
+          Logger.log('warning', 'general', 'removeUserFromOrganization', 'User not in org (treated as success)', { orgCode, userId: kindeUserId });
         }
         return {
           success: true,
           message: 'User was not a member of organization'
         };
       }
-      console.error(`❌ removeUserFromOrganization - Error:`, err);
+      Logger.log('error', 'general', 'removeUserFromOrganization', 'Error', { error: (err as Error).message });
       return {
         success: false,
         error: error.message || 'Unknown error',
@@ -755,7 +737,7 @@ class KindeService {
    */
   async createOrganization(organizationData: Record<string, unknown>): Promise<Record<string, unknown>> {
     try {
-      if (shouldLogVerbose()) console.log('🏢 createOrganization - Creating organization:', organizationData);
+      if (shouldLogVerbose()) Logger.log('info', 'general', 'createOrganization', 'Creating organization');
       
       if (!this.m2mClientId || !this.m2mClientSecret) {
         throw new Error('M2M credentials not configured – cannot create organization');
@@ -779,19 +761,19 @@ class KindeService {
       if (organizationData.billing_email !== undefined) (orgPayload as Record<string, unknown>).billing_email = organizationData.billing_email;
       if (organizationData.billing_plan_code !== undefined) (orgPayload as Record<string, unknown>).billing_plan_code = organizationData.billing_plan_code;
 
-      if (shouldLogVerbose()) console.log('📤 createOrganization - Sending payload:', orgPayload);
+      if (shouldLogVerbose()) Logger.log('info', 'general', 'createOrganization', 'Sending payload', { orgPayload });
 
       const endpoint = `${this.baseURL}/api/v1/organization`;
       
-      const response = await axios.post(endpoint, orgPayload, {
+      const response = await kindeCircuitBreaker.execute(() => withRetry(() => axios.post(endpoint, orgPayload, {
         headers: {
           'Authorization': `Bearer ${m2mToken}`,
           'Content-Type': 'application/json'
         },
         timeout: 10000 // 10 second timeout
-      });
+      })));
       
-      if (shouldLogVerbose()) console.log('✅ createOrganization - Success via Kinde API');
+      if (shouldLogVerbose()) Logger.log('info', 'general', 'createOrganization', 'Success via Kinde API');
       
       // Extract organization code from response
       const orgCode = response.data.organization?.code || response.data.code;
@@ -814,15 +796,7 @@ class KindeService {
       };
     } catch (err: unknown) {
       const error = err as Error & { response?: { status?: number; statusText?: string; data?: unknown; headers?: unknown }; config?: { url?: string; method?: string } };
-      console.error('❌ createOrganization - Error details:', {
-        message: error.message,
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-        headers: error.response?.headers,
-        url: error.config?.url,
-        method: error.config?.method
-      });
+      Logger.log('error', 'general', 'createOrganization', 'Error', { error: error.message, status: error.response?.status, url: error.config?.url });
       throw new Error(`Failed to create organization via Kinde API: ${error.response?.data ? JSON.stringify(error.response.data) : error.message}`);
     }
   }
@@ -832,7 +806,7 @@ class KindeService {
    */
   async createUser(userData: Record<string, unknown>): Promise<Record<string, unknown>> {
     try {
-      if (shouldLogVerbose()) console.log('👤 createUser - Creating user');
+      if (shouldLogVerbose()) Logger.log('info', 'general', 'createUser', 'Creating user');
       
       if (!this.m2mClientId || !this.m2mClientSecret) {
         throw new Error('M2M credentials not configured – cannot create user');
@@ -856,7 +830,7 @@ class KindeService {
       }
 
       // Create user via Kinde API
-      const response = await axios.post(`${this.baseURL}/api/v1/users`, {
+      const response = await kindeCircuitBreaker.execute(() => withRetry(() => axios.post(`${this.baseURL}/api/v1/users`, {
         profile: { given_name: givenName, family_name: familyName },
         identities: [{ type: 'email', details: { email } }],
         organization_code: orgCode,
@@ -865,9 +839,9 @@ class KindeService {
           'Authorization': `Bearer ${m2mToken}`,
           'Content-Type': 'application/json'
         }
-      });
+      })));
 
-      if (shouldLogVerbose()) console.log('✅ createUser - Success via Kinde API');
+      if (shouldLogVerbose()) Logger.log('info', 'general', 'createUser', 'Success via Kinde API');
       return {
         ...(response.data as Record<string, unknown>),
         created_with_fallback: false,
@@ -875,7 +849,7 @@ class KindeService {
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ createUser - Error:', error);
+      Logger.log('error', 'general', 'createUser', 'Error', { error: error.message });
       throw new Error(`Failed to create user via Kinde API: ${error.message}`);
     }
   }
@@ -886,7 +860,7 @@ class KindeService {
    */
   async exchangeCodeForTokens(code: string, redirectUri: string): Promise<Record<string, unknown>> {
     try {
-      if (shouldLogVerbose()) console.log('🔄 exchangeCodeForTokens - Exchanging code for tokens');
+      if (shouldLogVerbose()) Logger.log('info', 'general', 'exchangeCodeForTokens', 'Exchanging code for tokens');
 
       const formData = new URLSearchParams();
       formData.append('grant_type', 'authorization_code');
@@ -901,11 +875,11 @@ class KindeService {
         { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
       );
 
-      if (shouldLogVerbose()) console.log('✅ exchangeCodeForTokens - Success');
+      if (shouldLogVerbose()) Logger.log('info', 'general', 'exchangeCodeForTokens', 'Success');
       return response.data as Record<string, unknown>;
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ exchangeCodeForTokens - Error:', error);
+      Logger.log('error', 'general', 'exchangeCodeForTokens', 'Error', { error: error.message });
       throw new Error('Failed to exchange code for tokens');
     }
   }
@@ -956,7 +930,7 @@ class KindeService {
    */
   generateLoginUrl(orgCode: string, redirectUri: string, options: LoginUrlOptions = {}): string {
     try {
-      if (shouldLogVerbose()) console.log(`🔗 generateLoginUrl - Generating login URL for org: ${orgCode}`);
+      if (shouldLogVerbose()) Logger.log('info', 'general', 'generateLoginUrl', 'Generating login URL for org', { orgCode });
 
       const {
         state = 'onboarding_complete',
@@ -978,12 +952,12 @@ class KindeService {
       const params = new URLSearchParams(paramsObj);
 
       const loginUrl = `${baseUrl}?${params.toString()}`;
-      if (shouldLogVerbose()) console.log(`✅ generateLoginUrl - Generated URL: ${loginUrl.substring(0, 100)}...`);
+      if (shouldLogVerbose()) Logger.log('info', 'general', 'generateLoginUrl', 'Generated login URL', { urlPrefix: loginUrl.substring(0, 100) });
 
       return loginUrl;
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ generateLoginUrl - Error:', error);
+      Logger.log('error', 'general', 'generateLoginUrl', 'Error', { error: error.message });
       throw new Error('Failed to generate login URL');
     }
   }
@@ -993,10 +967,10 @@ class KindeService {
    */
   async getOrganizationDetails(orgCode: string): Promise<Record<string, unknown>> {
     try {
-      if (shouldLogVerbose()) console.log(`🔍 getOrganizationDetails - Getting details for org: ${orgCode}`);
+      if (shouldLogVerbose()) Logger.log('info', 'general', 'getOrganizationDetails', 'Getting details for org', { orgCode });
       
       if (!this.m2mClientId || !this.m2mClientSecret) {
-        console.warn('⚠️ getOrganizationDetails - No M2M credentials available, using fallback');
+        Logger.log('warning', 'general', 'getOrganizationDetails', 'No M2M credentials available, using fallback');
         return {
           success: true,
           organization: {
@@ -1017,14 +991,14 @@ class KindeService {
         }
       });
 
-      if (shouldLogVerbose()) console.log('✅ getOrganizationDetails - Success via Kinde API');
+      if (shouldLogVerbose()) Logger.log('info', 'general', 'getOrganizationDetails', 'Success via Kinde API');
       return {
         success: true,
         organization: response.data
       } as Record<string, unknown>;
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ getOrganizationDetails - Error:`, error);
+      Logger.log('error', 'general', 'getOrganizationDetails', 'Error', { error: error.message });
       return {
         success: false,
         error: error.message,
@@ -1038,10 +1012,10 @@ class KindeService {
    */
   async listUsers(limit = 100, offset = 0, organizationCode: string | null = null): Promise<{ users: unknown[]; success: boolean; error?: string }> {
     try {
-      if (shouldLogVerbose()) console.log('🔍 listUsers - Getting all users');
+      if (shouldLogVerbose()) Logger.log('info', 'general', 'listUsers', 'Getting all users');
       
       if (!this.m2mClientId || !this.m2mClientSecret) {
-        console.warn('⚠️ listUsers - No M2M credentials available, using fallback');
+        Logger.log('warning', 'general', 'listUsers', 'No M2M credentials available, using fallback');
         return {
           users: [],
           success: true
@@ -1070,7 +1044,7 @@ class KindeService {
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ listUsers - Error:', error);
+      Logger.log('error', 'general', 'listUsers', 'Error', { error: error.message });
       return {
         users: [],
         success: false,

@@ -7,12 +7,14 @@ import {
   tenants
 } from '../../../db/schema/index.js';
 import { eq, and, sql, isNotNull, gt, asc } from 'drizzle-orm';
+import Logger from '../../../utils/logger.js';
 import { getOperationConfig } from './credit-config-global.js';
 import { creditBatches } from '../../../db/schema/billing/credit-batches.js';
 import { randomUUID } from 'crypto';
 import { snsSqsPublisher } from '../../messaging/utils/sns-sqs-publisher.js';
-import { findRootOrganization, ensureCreditRecord, stripe } from './credit-core.js';
-import { getEntityBalance, getCurrentBalance } from './credit-balance.js';
+import { findRootOrganization, ensureCreditRecord } from './credit-core.js';
+import { getEntityBalance, getCurrentBalance, invalidateCategorySnapshot } from './credit-balance.js';
+import { getStripeClient } from '../../subscriptions/adapters/payment-gateway.factory.js';
 
 /**
  * Initialize credits for a tenant (temporary method for testing)
@@ -22,7 +24,7 @@ export async function initializeTenantCredits(
   initialCredits = 1000
 ): Promise<void> {
   try {
-    console.log(`🎯 Initializing ${initialCredits} credits for tenant: ${tenantId}`);
+    Logger.log('info', 'billing', 'initialize-tenant-credits', 'Initializing credits for tenant', { initialCredits, tenantId });
 
     const rootOrgId = await findRootOrganization(tenantId);
     if (!rootOrgId) {
@@ -40,9 +42,9 @@ export async function initializeTenantCredits(
       initiatedBy: 'system'
     });
 
-    console.log('✅ Credits initialized successfully');
+    Logger.log('info', 'billing', 'initialize-tenant-credits', 'Credits initialized successfully');
   } catch (error) {
-    console.error('❌ Failed to initialize credits:', error);
+    Logger.log('error', 'billing', 'initialize-tenant-credits', 'Failed to initialize credits', { error: (error as Error).message });
     throw error;
   }
 }
@@ -96,18 +98,18 @@ export async function purchaseCredits(opts: {
   try {
     let finalEntityId = entityId;
     if (!finalEntityId) {
-      console.log('🔍 No entityId provided for credit purchase, finding root organization...');
+      Logger.log('info', 'billing', 'purchase-credits', 'No entityId provided for credit purchase, finding root organization');
       const rootOrgId = await findRootOrganization(tenantId);
       if (rootOrgId) {
         finalEntityId = rootOrgId;
-        console.log(`✅ Using root organization for credit purchase: ${finalEntityId}`);
+        Logger.log('info', 'billing', 'purchase-credits', 'Using root organization for credit purchase', { entityId: finalEntityId });
       } else {
-        console.warn('⚠️ Root organization not found, will use tenantId as fallback');
+        Logger.log('warning', 'billing', 'purchase-credits', 'Root organization not found, will use tenantId as fallback');
         finalEntityId = tenantId;
       }
     }
 
-    console.log('💰 Processing credit purchase:', {
+    Logger.log('info', 'billing', 'purchase-credits', 'Processing credit purchase', {
       tenantId,
       creditAmount,
       paymentMethod,
@@ -132,7 +134,7 @@ export async function purchaseCredits(opts: {
       let txPurchase: PurchaseRow | undefined;
 
       if (isWebhookCompletion && sessionId) {
-        console.log('🔍 Finding existing purchase for webhook completion...');
+        Logger.log('info', 'billing', 'purchase-credits', 'Finding existing purchase for webhook completion');
         const [existingPurchase] = await tx
           .select()
           .from(creditPurchases)
@@ -140,7 +142,7 @@ export async function purchaseCredits(opts: {
           .limit(1);
 
         if (existingPurchase) {
-          console.log('✅ Found existing purchase:', existingPurchase.purchaseId);
+          Logger.log('info', 'billing', 'purchase-credits', 'Found existing purchase', { purchaseId: existingPurchase.purchaseId });
 
           const updateData = {
             status: 'completed',
@@ -160,12 +162,12 @@ export async function purchaseCredits(opts: {
             creditedAt: updateData.creditedAt
           };
         } else {
-          console.log('⚠️ No existing purchase found, creating new one for webhook completion');
+          Logger.log('info', 'billing', 'purchase-credits', 'No existing purchase found, creating new one for webhook completion');
         }
       }
 
       if (!txPurchase) {
-        console.log('📝 Creating new purchase record...');
+        Logger.log('info', 'billing', 'purchase-credits', 'Creating new purchase record');
         const [newPurchase] = await tx
           .insert(creditPurchases)
           .values({
@@ -198,20 +200,13 @@ export async function purchaseCredits(opts: {
       return txPurchase;
     });
 
-    console.log('🔍 Checking purchase status for credit allocation:', {
+    Logger.log('info', 'billing', 'purchase-credits', 'Checking purchase status for credit allocation', {
       purchaseId: purchase.purchaseId,
       status: purchase.status,
-      paymentStatus: purchase.paymentStatus,
       isWebhookCompletion
     });
 
     if (purchase.status === 'completed') {
-      console.log('💰 Adding credits to entity balance - CALLING addCreditsToEntity...');
-      console.log('📋 Purchase details for credit allocation:', {
-        purchaseId: purchase.purchaseId,
-        stripePaymentIntentId: purchase.stripePaymentIntentId,
-        sourceId: purchase.stripePaymentIntentId || purchase.purchaseId
-      });
       try {
         await addCreditsToEntity({
           tenantId,
@@ -223,18 +218,17 @@ export async function purchaseCredits(opts: {
           description: `Credit purchase: ${creditAmount} credits`,
           initiatedBy: userId || '00000000-0000-0000-0000-000000000001'
         });
-        console.log('✅ addCreditsToEntity completed successfully');
+        Logger.log('info', 'billing', 'purchase-credits', 'addCreditsToEntity completed successfully');
       } catch (creditErr: unknown) {
         const creditError = creditErr as Error;
-        console.error('❌ addCreditsToEntity failed:', creditError.message);
+        Logger.log('error', 'billing', 'purchase-credits', 'addCreditsToEntity failed', { error: creditError.message });
         throw creditError;
       }
     } else {
-      console.log('⚠️ Purchase status is not completed, skipping credit allocation');
+      Logger.log('info', 'billing', 'purchase-credits', 'Purchase status is not completed, skipping credit allocation');
     }
 
     if (paymentMethod === 'stripe' && !isWebhookCompletion) {
-      console.log('💳 Creating Stripe checkout session...');
 
       // Look up tenant's Stripe customer for linking
       let stripeCustomerId: string | undefined;
@@ -265,7 +259,7 @@ export async function purchaseCredits(opts: {
         quantity: 1,
       };
 
-      const checkoutSession = await stripe.checkout.sessions.create(
+      const checkoutSession = await getStripeClient().checkout.sessions.create(
         {
           payment_method_types: ['card'],
           line_items: [lineItem as any],
@@ -313,7 +307,7 @@ export async function purchaseCredits(opts: {
     };
   } catch (err: unknown) {
     const error = err as Error;
-    console.error('Error processing credit purchase:', error);
+    Logger.log('error', 'billing', 'purchase-credits', 'Error processing credit purchase', { error: (error as Error).message });
     throw error;
   }
 }
@@ -339,18 +333,18 @@ export async function addCreditsToEntity(params: {
 
     let normalizedEntityId = entityId;
     if (!normalizedEntityId) {
-      console.log('🔍 No entityId provided, finding root organization...');
+      Logger.log('info', 'billing', 'add-credits-to-entity', 'No entityId provided, finding root organization');
       const rootOrgId = await findRootOrganization(tenantId);
       if (rootOrgId) {
         normalizedEntityId = rootOrgId;
-        console.log(`✅ Using root organization: ${normalizedEntityId}`);
+        Logger.log('info', 'billing', 'add-credits-to-entity', 'Using root organization', { entityId: normalizedEntityId });
       } else {
-        console.warn('⚠️ Root organization not found, falling back to tenantId');
+        Logger.log('warning', 'billing', 'add-credits-to-entity', 'Root organization not found, falling back to tenantId');
         normalizedEntityId = tenantId;
       }
     }
 
-    console.log('💰 Adding credits to entity:', {
+    Logger.log('info', 'billing', 'add-credits-to-entity', 'Adding credits to entity', {
       tenantId,
       originalEntityType: entityType,
       originalEntityId: entityId,
@@ -365,11 +359,11 @@ export async function addCreditsToEntity(params: {
     const sqlConn = postgres((process.env.DATABASE_URL ?? '') as string);
 
     try {
-      console.log('🔐 Setting RLS context on direct connection...');
+      Logger.log('info', 'billing', 'add-credits-to-entity', 'Setting RLS context on direct connection');
       await sqlConn`SELECT set_config('app.tenant_id', ${tenantId}, false)`;
       await sqlConn`SELECT set_config('app.user_id', ${initiatedBy}, false)`;
       await sqlConn`SELECT set_config('app.is_admin', 'true', false)`;
-      console.log('✅ RLS context set on direct connection');
+      Logger.log('info', 'billing', 'add-credits-to-entity', 'RLS context set on direct connection');
 
       // Wrap credit balance + transaction record in a single DB transaction
       // so the ledger stays consistent if either step fails.
@@ -381,13 +375,13 @@ export async function addCreditsToEntity(params: {
             LIMIT 1
           `;
 
-        console.log('📊 Existing credits check result:', existingCredits.length);
+        Logger.log('info', 'billing', 'add-credits-to-entity', 'Existing credits check result', { count: existingCredits.length });
 
         previousBalance = existingCredits.length > 0 ? parseFloat(String(existingCredits[0].available_credits)) : 0;
         newBalance = previousBalance + creditAmount;
 
         if (existingCredits.length > 0) {
-          console.log('📝 Updating existing credit record...');
+          Logger.log('info', 'billing', 'add-credits-to-entity', 'Updating existing credit record');
           const [updatedRow] = await tx`
               UPDATE credits
               SET available_credits = available_credits + ${creditAmount},
@@ -397,9 +391,9 @@ export async function addCreditsToEntity(params: {
             `;
           newBalance = parseFloat(String(updatedRow.available_credits));
           previousBalance = newBalance - creditAmount;
-          console.log('✅ Updated existing credit balance:', { previousBalance, newBalance });
+          Logger.log('info', 'billing', 'add-credits-to-entity', 'Updated existing credit balance', { previousBalance, newBalance });
         } else {
-          console.log('📝 Creating new credit record...');
+          Logger.log('info', 'billing', 'add-credits-to-entity', 'Creating new credit record');
           const newCredit = await tx`
               INSERT INTO credits (
                 tenant_id, entity_id, available_credits, is_active
@@ -408,10 +402,10 @@ export async function addCreditsToEntity(params: {
               )
               RETURNING credit_id
             `;
-          console.log('✅ Created new credit balance:', { creditId: newCredit[0].credit_id, newBalance: creditAmount });
+          Logger.log('info', 'billing', 'add-credits-to-entity', 'Created new credit balance', { creditId: newCredit[0].credit_id, newBalance: creditAmount });
         }
 
-        console.log('📝 Creating transaction record...');
+        Logger.log('info', 'billing', 'add-credits-to-entity', 'Creating transaction record');
 
         await tx`
             INSERT INTO credit_transactions (
@@ -424,7 +418,7 @@ export async function addCreditsToEntity(params: {
               ${initiatedBy === 'system' ? null : initiatedBy}
             )
           `;
-        console.log('✅ Transaction record created successfully');
+        Logger.log('info', 'billing', 'add-credits-to-entity', 'Transaction record created successfully');
 
         // Create a credit_batches row so FIFO allocation to apps can track these
         // credits with proper expiry dates.
@@ -470,23 +464,29 @@ export async function addCreditsToEntity(params: {
                 NOW(), NOW()
               )
             `;
-          console.log(`✅ Created ${batchCreditType} credit batch (expires: ${batchExpiry})`);
+          Logger.log('info', 'billing', 'add-credits-to-entity', 'Created credit batch', { batchCreditType, batchExpiry });
         }
       });
     } finally {
       await sqlConn.end();
     }
 
-    console.log(
-      `✅ Added ${creditAmount} credits to ${normalizedEntityType}${normalizedEntityId ? ` (${normalizedEntityId})` : ''} for tenant ${tenantId}`
-    );
+    Logger.log('info', 'billing', 'add-credits-to-entity', 'Credits added successfully', {
+      creditAmount,
+      normalizedEntityType,
+      normalizedEntityId,
+      tenantId
+    });
+
+    // Invalidate the category snapshot so the next balance read recomputes from DB.
+    void invalidateCategorySnapshot(tenantId, normalizedEntityId!);
 
     // NOTE: Do NOT publish MQ events here. addCreditsToEntity only adds to the
     // tenant's POOL. Apps receive credits only when an admin explicitly allocates
     // via allocateCreditsToApplication(), which publishes the MQ event itself.
   } catch (err: unknown) {
     const error = err as Error;
-    console.error('Error adding credits to entity:', error);
+    Logger.log('error', 'billing', 'add-credits-to-entity', 'Error adding credits to entity', { error: error.message });
     throw error;
   }
 }
@@ -504,7 +504,7 @@ export async function allocateCreditsToApplication(params: {
 }): Promise<Record<string, unknown>> {
   const { tenantId, sourceEntityId, targetApplication, creditAmount, allocationPurpose, initiatedBy } = params;
   try {
-    console.log('📦 Allocating credits to application:', {
+    Logger.log('info', 'billing', 'allocate-credits-to-application', 'Allocating credits to application', {
       tenantId,
       sourceEntityId,
       targetApplication,
@@ -697,7 +697,7 @@ export async function allocateCreditsToApplication(params: {
         }
       });
 
-      console.log('✅ Deducted credits from entity balance:', {
+      Logger.log('info', 'billing', 'allocate-credits-to-application', 'Deducted credits from entity balance', {
         previousBalance,
         newBalance,
         creditAmount,
@@ -744,13 +744,10 @@ export async function allocateCreditsToApplication(params: {
           allocationEventData,
           initiatedBy || 'system'
         );
-        console.log(`✅ Published credit.allocated event to ${targetApplication}: ${batch.deltaAmount} credits, expires ${batch.expiresAt}`);
+        Logger.log('info', 'billing', 'allocate-credits-to-application', 'Published credit.allocated event', { targetApplication, deltaAmount: batch.deltaAmount, expiresAt: batch.expiresAt });
       } catch (publishErr: unknown) {
         const publishError = publishErr as Error;
-        console.warn(
-          `⚠️ Failed to publish credit allocation event to ${targetApplication}:`,
-          publishError.message
-        );
+        Logger.log('warning', 'billing', 'allocate-credits-to-application', 'Failed to publish credit allocation event', { targetApplication, error: publishError.message });
       }
     }
 
@@ -767,7 +764,7 @@ export async function allocateCreditsToApplication(params: {
     };
   } catch (err: unknown) {
     const error = err as Error;
-    console.error('❌ Error allocating credits to application:', error);
+    Logger.log('error', 'billing', 'allocate-credits-to-application', 'Error allocating credits to application', { error: error.message });
     throw error;
   }
 }
@@ -785,7 +782,7 @@ export async function recordCreditConsumption(
   metadata: Record<string, unknown> = {}
 ): Promise<Record<string, unknown>> {
   try {
-    console.log(`📊 Recording credit consumption: ${amount} credits by ${userId} for ${operationType}`);
+    Logger.log('info', 'billing', 'record-credit-consumption', 'Recording credit consumption', { amount, userId, operationType });
 
     try {
       await snsSqsPublisher.publishCreditConsumption(
@@ -800,7 +797,7 @@ export async function recordCreditConsumption(
       );
     } catch (streamErr: unknown) {
       const streamError = streamErr as Error;
-      console.warn('⚠️ Failed to publish credit consumption event:', streamError.message);
+      Logger.log('warning', 'billing', 'record-credit-consumption', 'Failed to publish credit consumption event', { error: streamError.message });
     }
 
     return {
@@ -818,7 +815,7 @@ export async function recordCreditConsumption(
     };
   } catch (err: unknown) {
     const error = err as Error;
-    console.error('Error recording credit consumption:', error);
+    Logger.log('error', 'billing', 'record-credit-consumption', 'Error recording credit consumption', { error: error.message });
     throw error;
   }
 }
@@ -906,6 +903,25 @@ export async function consumeCredits(opts: {
     });
 
     const remaining = Number(currentBalance.availableCredits ?? 0) - creditCost;
+
+    // Invalidate snapshot so the next balance read reflects the deduction.
+    void invalidateCategorySnapshot(tenantId, entityId ?? tenantId);
+
+    const suiteApps = (process.env.BUSINESS_SUITE_TARGET_APPS || 'crm,accounting,ops').split(',').map((a: string) => a.trim());
+    for (const targetApp of suiteApps) {
+      snsSqsPublisher.publishCreditEvent(targetApp, 'credit.consumed', tenantId, {
+        entityId: entityId ?? null,
+        transactionId: result.transaction.transactionId,
+        operationCode,
+        creditsConsumed: creditCost,
+        remainingCredits: remaining,
+        consumedBy: opts.userId,
+        consumedAt: new Date().toISOString(),
+      }, opts.userId).catch((err: Error) => {
+        Logger.log('warning', 'billing', 'consume-credits', 'Failed to publish credit.consumed event', { tenantId, error: err.message });
+      });
+    }
+
     return {
       success: true,
       data: {
@@ -916,7 +932,7 @@ export async function consumeCredits(opts: {
     };
   } catch (err: unknown) {
     const error = err as Error;
-    console.error('Error consuming credits:', error);
+    Logger.log('error', 'billing', 'consume-credits', 'Error consuming credits', { error: (error as Error).message });
     throw error;
   }
 }
@@ -1117,12 +1133,26 @@ export async function transferCredits(params: {
       }
     });
 
+    const suiteAppsTransfer = (process.env.BUSINESS_SUITE_TARGET_APPS || 'crm,accounting,ops').split(',').map((a: string) => a.trim());
+    for (const targetApp of suiteAppsTransfer) {
+      snsSqsPublisher.publishCreditEvent(targetApp, 'credit.transfer', tenantId, {
+        fromEntityId,
+        toEntityId,
+        creditAmount,
+        transferredBy: initiatedBy ?? 'system',
+        reason: params.reason ?? null,
+        transferredAt: new Date().toISOString(),
+      }, initiatedBy ?? 'system').catch((err: Error) => {
+        Logger.log('warning', 'billing', 'transfer-credits', 'Failed to publish credit.transfer event', { tenantId, error: err.message });
+      });
+    }
+
     return {
       success: true,
       message: 'Credits transferred successfully'
     };
   } catch (error) {
-    console.error('Error transferring credits:', error);
+    Logger.log('error', 'billing', 'transfer-credits', 'Error transferring credits', { error: (error as Error).message });
     throw error;
   }
 }

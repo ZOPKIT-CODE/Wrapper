@@ -1,0 +1,50 @@
+{
+  "_comment": "ECS Fargate task definition template for the Wrapper backend. Replace all <PLACEHOLDER> values before registering. The advisory lock ensures only one pod runs the outbox replay worker at a time.",
+  "family": "wrapper-backend",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::<ACCOUNT_ID>:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::<ACCOUNT_ID>:role/wrapper-backend-task-role",
+  "containerDefinitions": [
+    {
+      "name": "wrapper-backend",
+      "image": "<ECR_REPO_URI>/wrapper-backend:<IMAGE_TAG>",
+      "essential": true,
+      "portMappings": [
+        { "containerPort": 3000, "protocol": "tcp" }
+      ],
+      "environment": [
+        { "name": "NODE_ENV",                 "value": "production" },
+        { "name": "PORT",                     "value": "3000" },
+        { "name": "OUTBOX_REPLAY_MAX_TPS",    "value": "50" },
+        { "name": "OUTBOX_REPLAY_INTERVAL_MS","value": "30000" },
+        { "name": "OUTBOX_REPLAY_BATCH_SIZE", "value": "100" }
+      ],
+      "secrets": [
+        { "name": "DATABASE_URL",            "valueFrom": "arn:aws:secretsmanager:<REGION>:<ACCOUNT_ID>:secret:wrapper/DATABASE_URL" },
+        { "name": "SNS_TOPIC_ARN",           "valueFrom": "arn:aws:secretsmanager:<REGION>:<ACCOUNT_ID>:secret:wrapper/SNS_TOPIC_ARN" },
+        { "name": "AWS_ACCESS_KEY_ID",       "valueFrom": "arn:aws:secretsmanager:<REGION>:<ACCOUNT_ID>:secret:wrapper/AWS_ACCESS_KEY_ID" },
+        { "name": "AWS_SECRET_ACCESS_KEY",   "valueFrom": "arn:aws:secretsmanager:<REGION>:<ACCOUNT_ID>:secret:wrapper/AWS_SECRET_ACCESS_KEY" },
+        { "name": "AWS_REGION",              "valueFrom": "arn:aws:secretsmanager:<REGION>:<ACCOUNT_ID>:secret:wrapper/AWS_REGION" },
+        { "name": "PLATFORM_BUS_CLAIM_CHECK_BUCKET", "valueFrom": "arn:aws:secretsmanager:<REGION>:<ACCOUNT_ID>:secret:wrapper/PLATFORM_BUS_CLAIM_CHECK_BUCKET" }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group":         "/ecs/wrapper-backend",
+          "awslogs-region":        "<REGION>",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "healthCheck": {
+        "command":     ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3000/health',(r)=>{process.exit(r.statusCode===200?0:1)})\""],
+        "interval":    30,
+        "timeout":     10,
+        "retries":     3,
+        "startPeriod": 40
+      }
+    }
+  ]
+}

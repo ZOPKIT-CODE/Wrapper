@@ -10,6 +10,7 @@ import { db } from '../../../db/index.js';
 import { tenants, subscriptions, tenantUsers } from '../../../db/schema/index.js';
 import { eq, and, sql } from 'drizzle-orm';
 import { normalizeStripeSubscriptionStatus } from '../services/subscription-webhook-handler.js';
+import Logger from '../../../utils/logger.js';
 
 const paymentGateway = getPaymentGateway();
 
@@ -417,7 +418,7 @@ async function handlePaymentIntentProcessing(paymentIntent: any) {
 async function handlePaymentIntentSucceeded(paymentIntent: any) {
   const tenantId = await findTenantByCustomer(paymentIntent.customer);
   if (!tenantId) {
-    console.warn('Payment intent succeeded but no tenant found for customer:', paymentIntent.customer);
+    Logger.log('warning', 'billing', 'handle-payment-intent-succeeded', 'Payment intent succeeded but no tenant found for customer', { customer: paymentIntent.customer });
     return;
   }
 
@@ -486,7 +487,7 @@ async function handlePaymentIntentSucceeded(paymentIntent: any) {
       });
     }
   } catch (emailError) {
-    console.error('Failed to send payment confirmation email:', emailError);
+    Logger.log('error', 'email', 'handle-payment-intent-succeeded', 'Failed to send payment confirmation email', { error: (emailError as Error).message });
   }
 }
 
@@ -547,7 +548,7 @@ async function handleInvoiceFinalized(invoice: any) {
       }
     );
   } catch (error) {
-    console.error('Error handling invoice finalization:', error);
+    Logger.log('error', 'billing', 'handle-invoice-finalized', 'Error handling invoice finalization', { error: (error as Error).message });
   }
 }
 
@@ -616,7 +617,7 @@ async function handleInvoicePaymentActionRequired(invoice: any) {
       }
     );
   } catch (error) {
-    console.error('Error handling invoice payment action required:', error);
+    Logger.log('error', 'billing', 'handle-invoice-action-required', 'Error handling invoice payment action required', { error: (error as Error).message });
   }
 }
 
@@ -677,7 +678,7 @@ async function handleChargeRefunded(charge: any) {
 async function handleDisputeCreated(dispute: any) {
   const maybeStripeClient = (paymentGateway as unknown as { getRawClient?: () => Stripe | null }).getRawClient?.();
   if (!maybeStripeClient) {
-    console.warn('Stripe client unavailable in current payment gateway; skipping dispute charge lookup');
+    Logger.log('warning', 'billing', 'handle-dispute-created', 'Stripe client unavailable in current payment gateway; skipping dispute charge lookup');
     return;
   }
 
@@ -719,7 +720,7 @@ async function handleSubscriptionCreated(subscription: any) {
     }
 
     if (!tenantId) {
-      console.warn(`No tenant found for subscription ${subscription.id} with customer ${subscription.customer}`);
+      Logger.log('warning', 'billing', 'handle-subscription-created', 'No tenant found for subscription', { subscriptionId: subscription.id, customer: subscription.customer });
       return;
     }
 
@@ -750,7 +751,7 @@ async function handleSubscriptionCreated(subscription: any) {
       })
       .where(eq(subscriptions.tenantId, tenantId));
   } catch (error) {
-    console.error('Error handling subscription creation:', error);
+    Logger.log('error', 'billing', 'handle-subscription-created', 'Error handling subscription creation', { error: (error as Error).message });
   }
 }
 
@@ -768,7 +769,7 @@ async function handleSubscriptionUpdated(subscription: any) {
       })
       .where(eq(subscriptions.stripeSubscriptionId, subscription.id));
   } catch (error) {
-    console.error('Error handling subscription update:', error);
+    Logger.log('error', 'billing', 'handle-subscription-updated', 'Error handling subscription update', { error: (error as Error).message });
   }
 }
 
@@ -779,7 +780,7 @@ async function handleSubscriptionDeleted(subscription: any) {
       .set({ status: 'canceled', canceledAt: new Date(), updatedAt: new Date() })
       .where(eq(subscriptions.stripeSubscriptionId, subscription.id));
   } catch (error) {
-    console.error('Error handling subscription deletion:', error);
+    Logger.log('error', 'billing', 'handle-subscription-deleted', 'Error handling subscription deletion', { error: (error as Error).message });
   }
 }
 
@@ -791,13 +792,13 @@ async function handleCheckoutSessionCompleted(session: any) {
   try {
     const tenantId = session.metadata?.tenantId;
     if (!tenantId) {
-      console.warn('No tenantId in checkout session metadata');
+      Logger.log('warning', 'billing', 'handle-checkout-session-completed', 'No tenantId in checkout session metadata');
       return;
     }
 
     const planId = session.metadata?.planId || session.metadata?.packageId;
     if (!planId) {
-      console.warn('No planId in checkout session metadata');
+      Logger.log('warning', 'billing', 'handle-checkout-session-completed', 'No planId in checkout session metadata');
       return;
     }
 
@@ -806,7 +807,7 @@ async function handleCheckoutSessionCompleted(session: any) {
     const availablePlans = await SubscriptionService.getAvailablePlans();
     const planDetails = availablePlans.find(p => p.id === planId);
     if (!planDetails) {
-      console.warn(`Could not find plan details for planId: ${planId}`);
+      Logger.log('warning', 'billing', 'handle-checkout-session-completed', 'Could not find plan details for planId', { planId });
       return;
     }
 
@@ -862,11 +863,11 @@ async function handleCheckoutSessionCompleted(session: any) {
           });
         }
       } catch (emailError) {
-        console.error('Failed to send payment confirmation email:', emailError);
+        Logger.log('error', 'email', 'handle-checkout-session-completed', 'Failed to send payment confirmation email', { error: (emailError as Error).message });
       }
     }
   } catch (error) {
-    console.error('Error handling checkout session completion:', error);
+    Logger.log('error', 'billing', 'handle-checkout-session-completed', 'Error handling checkout session completion', { error: (error as Error).message });
     throw error;
   }
 }
@@ -887,7 +888,7 @@ async function findTenantByCustomer(customerId: unknown): Promise<string | null>
 
     return tenant?.tenantId ?? null;
   } catch (error) {
-    console.error('Error finding tenant by customer:', error);
+    Logger.log('error', 'billing', 'find-tenant-by-customer', 'Error finding tenant by customer', { error: (error as Error).message });
     return null;
   }
 }
@@ -938,7 +939,7 @@ export async function getTenantAdminEmail(tenantId: unknown): Promise<{ email: s
 
     return null;
   } catch (error) {
-    console.error('Error getting tenant admin email:', error);
+    Logger.log('error', 'billing', 'get-tenant-admin-email', 'Error getting tenant admin email', { error: (error as Error).message });
     return null;
   }
 }
@@ -987,7 +988,7 @@ function findTenantFromRazorpayNotes(data: Record<string, unknown>): string | nu
 async function handleRazorpayOrderPaid(data: Record<string, unknown>) {
   const tenantId = findTenantFromRazorpayNotes(data);
   if (!tenantId) {
-    console.warn('No tenantId in Razorpay order notes — skipping');
+    Logger.log('warning', 'billing', 'handle-razorpay-order-paid', 'No tenantId in Razorpay order notes — skipping');
     return;
   }
 
@@ -1020,7 +1021,7 @@ async function handleRazorpayOrderPaid(data: Record<string, unknown>) {
         customer: null,
       });
     } catch (err) {
-      console.error('Failed to activate plan on Razorpay order.paid:', err);
+      Logger.log('error', 'billing', 'handle-razorpay-order-paid', 'Failed to activate plan on Razorpay order.paid', { error: (err as Error).message });
     }
   }
 }
@@ -1031,7 +1032,7 @@ async function handleRazorpayOrderPaid(data: Record<string, unknown>) {
 async function handleRazorpayPaymentCaptured(data: Record<string, unknown>) {
   const tenantId = findTenantFromRazorpayNotes(data);
   if (!tenantId) {
-    console.warn('No tenantId in Razorpay payment notes — skipping');
+    Logger.log('warning', 'billing', 'handle-razorpay-payment-captured', 'No tenantId in Razorpay payment notes — skipping');
     return;
   }
 
@@ -1093,7 +1094,7 @@ async function handleRazorpaySubscriptionActivated(data: Record<string, unknown>
       .set({ status: 'active', updatedAt: new Date() })
       .where(eq(subscriptions.tenantId, tenantId));
   } catch (error) {
-    console.error('Error updating subscription on Razorpay activation:', error);
+    Logger.log('error', 'billing', 'handle-razorpay-subscription-activated', 'Error updating subscription on Razorpay activation', { error: (error as Error).message });
   }
 }
 
@@ -1135,6 +1136,6 @@ async function handleRazorpaySubscriptionCancelled(data: Record<string, unknown>
       .set({ status: 'canceled', canceledAt: new Date(), updatedAt: new Date() })
       .where(eq(subscriptions.tenantId, tenantId));
   } catch (error) {
-    console.error('Error updating subscription on Razorpay cancellation:', error);
+    Logger.log('error', 'billing', 'handle-razorpay-subscription-cancelled', 'Error updating subscription on Razorpay cancellation', { error: (error as Error).message });
   }
 }

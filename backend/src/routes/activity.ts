@@ -2,6 +2,7 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import ActivityLogger, { ACTIVITY_TYPES, RESOURCE_TYPES } from '../services/activityLogger.js';
 import { authenticateToken } from '../middleware/auth/auth.js';
 import { trackActivity } from '../middleware/activityTracker.js';
+import Logger from '../utils/logger.js';
 
 /**
  * Activity Logs API Routes
@@ -34,7 +35,7 @@ export default async function activityRoutes(fastify: FastifyInstance, _opts?: R
       
       // Use the internal user ID, not the Kinde user ID
       const userId = request.user.internalUserId || request.user.userId;
-      console.log('Activity API - User context:', { userId, tenantId, internalUserId: request.user.internalUserId });
+      Logger.log('info', 'routes', 'get-user-activity', 'Activity API - User context:', { userId, tenantId, internalUserId: request.user.internalUserId });
 
       if (!userId) {
         return reply.code(400).send({
@@ -68,7 +69,7 @@ export default async function activityRoutes(fastify: FastifyInstance, _opts?: R
 
       // MANDATORY: Pass tenantId to ensure tenant isolation
       const result = await ActivityLogger.getUserActivity(userId, tenantId, options as Parameters<typeof ActivityLogger.getUserActivity>[2]);
-      console.log('Activity API - Result for user', userId, 'tenant', tenantId, ':', result.activities.length, 'activities found');
+      Logger.log('info', 'routes', 'get-user-activity', `Activity API - Result for user ${userId} tenant ${tenantId} : ${result.activities.length} activities found`);
 
       return reply.send({
         success: true,
@@ -77,7 +78,7 @@ export default async function activityRoutes(fastify: FastifyInstance, _opts?: R
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Failed to get user activity:', error);
+      Logger.log('error', 'routes', 'get-user-activity', '❌ Failed to get user activity', { error: error.message, stack: error.stack });
       return reply.code(500).send({
         success: false,
         error: 'Failed to fetch user activity'
@@ -133,7 +134,7 @@ export default async function activityRoutes(fastify: FastifyInstance, _opts?: R
       }
 
       const result = await ActivityLogger.getTenantAuditLogs(tenantId ?? '', options as Parameters<typeof ActivityLogger.getTenantAuditLogs>[1]);
-      console.log('Audit API - Result for tenant', tenantId, ':', result.logs.length, 'logs found');
+      Logger.log('info', 'routes', 'get-audit-logs', `Audit API - Result for tenant ${tenantId} : ${result.logs.length} logs found`);
 
       return reply.send({
         success: true,
@@ -142,7 +143,7 @@ export default async function activityRoutes(fastify: FastifyInstance, _opts?: R
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Failed to get audit logs:', error);
+      Logger.log('error', 'routes', 'get-audit-logs', '❌ Failed to get audit logs', { error: error.message, stack: error.stack });
       return reply.code(500).send({
         success: false,
         error: 'Failed to fetch audit logs'
@@ -189,7 +190,7 @@ export default async function activityRoutes(fastify: FastifyInstance, _opts?: R
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Failed to get activity stats:', error);
+      Logger.log('error', 'routes', 'get-activity-stats', '❌ Failed to get activity stats', { error: error.message, stack: error.stack });
       return reply.code(500).send({
         success: false,
         error: 'Failed to fetch activity statistics'
@@ -288,7 +289,7 @@ export default async function activityRoutes(fastify: FastifyInstance, _opts?: R
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Failed to get user activity summary:', error);
+      Logger.log('error', 'routes', 'get-user-activity-summary', '❌ Failed to get user activity summary', { error: error.message, stack: error.stack });
       return reply.code(500).send({
         success: false,
         error: 'Failed to fetch user activity summary'
@@ -373,7 +374,7 @@ export default async function activityRoutes(fastify: FastifyInstance, _opts?: R
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Failed to export activity logs:', error);
+      Logger.log('error', 'routes', 'export-activity-logs', '❌ Failed to export activity logs', { error: error.message, stack: error.stack });
       return reply.code(500).send({
         success: false,
         error: 'Failed to export activity logs'
@@ -436,7 +437,7 @@ export default async function activityRoutes(fastify: FastifyInstance, _opts?: R
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Failed to get error logs:', error);
+      Logger.log('error', 'routes', 'get-error-logs', '❌ Failed to get error logs', { error: error.message, stack: error.stack });
       return reply.code(500).send({
         success: false,
         error: 'Failed to fetch error logs'

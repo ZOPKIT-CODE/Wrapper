@@ -20,6 +20,7 @@ import type { PaymentGatewayPort } from './payment-gateway.port.js';
 import { StripePaymentGateway } from './stripe.adapter.js';
 import { MockPaymentGateway } from './mock.adapter.js';
 import { RazorpayPaymentGateway } from './razorpay.adapter.js';
+import Logger from '../../../utils/logger.js';
 
 let instance: PaymentGatewayPort | null = null;
 
@@ -29,7 +30,7 @@ function resolveProvider(): PaymentGatewayProvider {
   if (valid.includes(env as PaymentGatewayProvider)) {
     return env as PaymentGatewayProvider;
   }
-  console.warn(`⚠️ Unknown PAYMENT_GATEWAY_PROVIDER "${env}" — falling back to stripe`);
+  Logger.log('warning', 'general', 'resolveProvider', `Unknown PAYMENT_GATEWAY_PROVIDER "${env}" — falling back to stripe`);
   return 'stripe';
 }
 
@@ -38,7 +39,7 @@ function createGateway(provider: PaymentGatewayProvider): PaymentGatewayPort {
     case 'stripe': {
       const gw = new StripePaymentGateway();
       if (!gw.isConfigured()) {
-        console.warn('⚠️ Stripe adapter not configured — falling back to mock gateway');
+        Logger.log('warning', 'general', 'createGateway', 'Stripe adapter not configured — falling back to mock gateway');
         return new MockPaymentGateway();
       }
       return gw;
@@ -47,7 +48,7 @@ function createGateway(provider: PaymentGatewayProvider): PaymentGatewayPort {
     case 'razorpay': {
       const gw = new RazorpayPaymentGateway();
       if (!gw.isConfigured()) {
-        console.warn('⚠️ Razorpay adapter not configured — falling back to mock gateway');
+        Logger.log('warning', 'general', 'createGateway', 'Razorpay adapter not configured — falling back to mock gateway');
         return new MockPaymentGateway();
       }
       return gw;
@@ -64,7 +65,7 @@ function createGateway(provider: PaymentGatewayProvider): PaymentGatewayPort {
       return new MockPaymentGateway();
 
     default:
-      console.warn(`⚠️ Provider "${provider}" not yet implemented — using mock gateway`);
+      Logger.log('warning', 'general', 'createGateway', `Provider "${provider}" not yet implemented — using mock gateway`);
       return new MockPaymentGateway();
   }
 }
@@ -77,7 +78,7 @@ export function getPaymentGateway(): PaymentGatewayPort {
   if (!instance) {
     const provider = resolveProvider();
     instance = createGateway(provider);
-    console.log(`✅ Payment gateway initialised: ${instance.providerName}`);
+    Logger.log('info', 'general', 'getPaymentGateway', 'Payment gateway initialised', { providerName: instance.providerName });
   }
   return instance;
 }
@@ -94,4 +95,22 @@ export function setPaymentGateway(gw: PaymentGatewayPort): void {
  */
 export function resetPaymentGateway(): void {
   instance = null;
+}
+
+/**
+ * Returns the raw Stripe SDK instance from the singleton gateway.
+ * Use only when the gateway adapter methods don't cover your use-case
+ * (e.g. legacy code that calls the Stripe SDK directly).
+ * Throws if the active gateway is not Stripe or Stripe is not configured.
+ */
+export function getStripeClient(): NonNullable<ReturnType<StripePaymentGateway['getRawClient']>> {
+  const gw = getPaymentGateway();
+  if (!(gw instanceof StripePaymentGateway)) {
+    throw new Error('Active payment gateway is not Stripe — cannot retrieve raw Stripe client');
+  }
+  const client = gw.getRawClient();
+  if (!client) {
+    throw new Error('Stripe is not configured. Set STRIPE_SECRET_KEY in your environment.');
+  }
+  return client;
 }

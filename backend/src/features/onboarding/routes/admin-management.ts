@@ -1,4 +1,5 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import Logger from '../../../utils/logger.js';
 import { authenticateToken, invalidateRoleCache, invalidateUserCache } from '../../../middleware/auth/auth.js';
 import { db } from '../../../db/index.js';
 import { tenants, tenantUsers, customRoles, userRoleAssignments } from '../../../db/schema/index.js';
@@ -72,7 +73,7 @@ export default async function adminManagementRoutes(
         .returning({ kindeUserId: tenantUsers.kindeUserId });
 
       if (resetUser?.kindeUserId) {
-        invalidateUserCache(resetUser.kindeUserId);
+        void invalidateUserCache(resetUser.kindeUserId);
       }
 
       return {
@@ -120,12 +121,7 @@ export default async function adminManagementRoutes(
     const requestId = `onboard_${Date.now()}`;
 
     try {
-      console.log('\n🚀 =================== ONBOARDING STARTED ===================');
-      console.log(`📋 Request ID: ${requestId}`);
-      console.log(`⏰ Timestamp: ${new Date().toISOString()}`);
-      console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
-      console.log(`🔗 User IP: ${request.ip}`);
-      console.log(`🖥️ User Agent: ${request.headers['user-agent']}`);
+      Logger.log('info', 'general', 'create-organization', 'Onboarding started', { requestId, timestamp: new Date().toISOString(), environment: process.env.NODE_ENV, ip: request.ip, userAgent: request.headers['user-agent'] });
 
       const body = request.body as Record<string, unknown>;
       const {
@@ -142,53 +138,26 @@ export default async function adminManagementRoutes(
         teamEmails = []
       } = body;
 
-      console.log('📦 Onboarding Request Data:', {
-        requestId,
-        companyName,
-        subdomain,
-        industry,
-        adminEmail,
-        adminName,
-        selectedPlan,
-        planName,
-        planPrice,
-        maxUsers,
-        maxProjects,
-        teamEmailsCount: (teamEmails as string[]).length,
-        teamEmails: (teamEmails as string[]).slice(0, 3) // Log first 3 emails only for privacy
-      });
+      Logger.log('info', 'general', 'create-organization', 'Onboarding request data', { requestId, companyName, subdomain, industry, adminEmail, adminName, selectedPlan, planName, planPrice, maxUsers, maxProjects, teamEmailsCount: (teamEmails as string[]).length });
 
       // Get current user from token
-      console.log(`🔐 [${requestId}] Step 1: Extracting authentication token...`);
+      Logger.log('info', 'general', 'create-organization', 'Step 1: Extracting authentication token', { requestId });
       const token = extractToken(request);
 
       if (!token) {
-        console.error(`❌ [${requestId}] Authentication failed: No token provided`);
-        console.log(`⏱️ [${requestId}] Onboarding failed after ${Date.now() - startTime}ms`);
+        Logger.log('error', 'general', 'create-organization', 'Authentication failed: No token provided', { requestId, elapsed: Date.now() - startTime });
         return reply.code(401).send({ error: 'Authentication required' });
       }
 
-      console.log(`✅ [${requestId}] Token extracted successfully`);
-      console.log(`🔍 [${requestId}] Step 2: Validating token with Kinde...`);
+      Logger.log('info', 'general', 'create-organization', 'Step 2: Validating token with Kinde', { requestId });
 
       const kindeUser = await kindeService.validateToken(token);
       const kindeUserId = kindeUser.kindeUserId || kindeUser.userId;
 
-      console.log(`✅ [${requestId}] User authenticated successfully:`, {
-        kindeUserId,
-        email: adminEmail,
-        tokenValid: true,
-        kindeResponse: {
-          id: kindeUser.id,
-          email: kindeUser.email,
-          given_name: kindeUser.given_name,
-          family_name: kindeUser.family_name
-        }
-      });
+      Logger.log('info', 'general', 'create-organization', 'User authenticated successfully', { requestId, kindeUserId, email: adminEmail });
 
       // Check if organization already exists
-      console.log(`🔍 [${requestId}] Step 3: Checking if organization already exists...`);
-      console.log(`📧 [${requestId}] Checking email: ${adminEmail}`);
+      Logger.log('info', 'general', 'create-organization', 'Step 3: Checking if organization already exists', { requestId, adminEmail });
 
       const existingTenant = await db
         .select({ tenantId: tenants.tenantId })
@@ -197,72 +166,53 @@ export default async function adminManagementRoutes(
         .limit(1);
 
       if (existingTenant.length > 0) {
-        console.error(`❌ [${requestId}] Organization already exists for email: ${adminEmail}`);
-        console.log(`⏱️ [${requestId}] Onboarding failed after ${Date.now() - startTime}ms`);
+        Logger.log('error', 'general', 'create-organization', 'Organization already exists for email', { requestId, adminEmail, elapsed: Date.now() - startTime });
         return reply.code(409).send({
           error: 'Organization already exists',
           message: 'This email is already associated with an organization.'
         });
       }
 
-      console.log(`✅ [${requestId}] Email available for new organization`);
-
-      // Check subdomain availability
-      console.log(`🔍 [${requestId}] Step 4: Checking subdomain availability...`);
-      console.log(`🏷️ [${requestId}] Checking subdomain: ${subdomain}`);
+      Logger.log('info', 'general', 'create-organization', 'Step 4: Checking subdomain availability', { requestId, subdomain });
 
       const available = await TenantService.checkSubdomainAvailability(subdomain as string);
 
       if (!available) {
-        console.error(`❌ [${requestId}] Subdomain unavailable: ${subdomain}`);
-        console.log(`⏱️ [${requestId}] Onboarding failed after ${Date.now() - startTime}ms`);
+        Logger.log('error', 'general', 'create-organization', 'Subdomain unavailable', { requestId, subdomain, elapsed: Date.now() - startTime });
         return reply.code(400).send({
           error: 'Subdomain unavailable',
           message: 'This subdomain is already taken.'
         });
       }
 
-      console.log(`✅ [${requestId}] Subdomain available: ${subdomain}`);
-
-      // 🎯 CRITICAL: Remove user from ALL current organizations first
-      console.log(`🧹 [${requestId}] Step 5: Cleaning up user from existing organizations...`);
-      console.log(`👤 [${requestId}] User ID: ${kindeUserId}`);
+      Logger.log('info', 'general', 'create-organization', 'Step 5: Cleaning up user from existing organizations', { requestId, kindeUserId });
 
       try {
         const userOrgs = await kindeService.getUserOrganizations(kindeUserId as string);
         const orgsList = userOrgs.organizations as Array<{ code: string; name?: string; is_default?: boolean }> | undefined;
-        console.log(`🔍 [${requestId}] User organizations response:`, {
-          organizationsCount: orgsList?.length || 0,
-          organizations: orgsList?.map((org) => ({
-            code: org.code,
-            name: org.name,
-            is_default: org.is_default
-          }))
-        });
+        Logger.log('info', 'general', 'create-organization', 'User organizations response', { requestId, organizationsCount: orgsList?.length || 0 });
 
         if (userOrgs.organizations && userOrgs.organizations.length > 0) {
-          console.log(`📋 [${requestId}] User is in ${userOrgs.organizations.length} organizations, removing all...`);
+          Logger.log('info', 'general', 'create-organization', 'Removing user from all organizations', { requestId, count: userOrgs.organizations.length });
 
           for (const org of userOrgs.organizations as Array<{ code: string; name?: string; is_default?: boolean }>) {
-            console.log(`🗑️ [${requestId}] Removing user from organization: ${org.code}`);
+            Logger.log('info', 'general', 'create-organization', 'Removing user from organization', { requestId, orgCode: org.code });
             try {
               await kindeService.removeUserFromOrganization(kindeUserId as string, org.code);
-              console.log(`✅ [${requestId}] Successfully removed from: ${org.code}`);
+              Logger.log('info', 'general', 'create-organization', 'Successfully removed from organization', { requestId, orgCode: org.code });
             } catch (removeError: unknown) {
-              console.warn(`⚠️ [${requestId}] Failed to remove from ${org.code}:`, (removeError as Error).message);
+              Logger.log('warning', 'general', 'create-organization', 'Failed to remove user from organization', { requestId, orgCode: org.code, error: (removeError as Error).message });
             }
           }
         }
 
-        console.log(`✅ [${requestId}] Organization cleanup completed`);
+        Logger.log('info', 'general', 'create-organization', 'Organization cleanup completed', { requestId });
       } catch (cleanupError: unknown) {
-        console.warn(`⚠️ [${requestId}] Organization cleanup failed:`, (cleanupError as Error).message);
-        console.log(`🔄 [${requestId}] Continuing with onboarding despite cleanup failure`);
+        Logger.log('warning', 'general', 'create-organization', 'Organization cleanup failed, continuing with onboarding', { requestId, error: (cleanupError as Error).message });
       }
 
       // Create new organization
-      console.log(`🏗️ [${requestId}] Step 6: Creating new Kinde organization...`);
-      console.log(`🏢 [${requestId}] Organization name: ${companyName}`);
+      Logger.log('info', 'general', 'create-organization', 'Step 6: Creating new Kinde organization', { requestId, companyName });
 
       const kindeOrg = await kindeService.createOrganization({
         name: companyName,
@@ -279,10 +229,10 @@ export default async function adminManagementRoutes(
         throw new Error('Failed to get organization code from Kinde response');
       }
 
-      console.log(`✅ [${requestId}] Kinde organization created: ${actualOrgCode}`);
+      Logger.log('info', 'general', 'create-organization', 'Kinde organization created', { requestId, orgCode: actualOrgCode });
 
       // Create tenant in database
-      console.log(`💾 [${requestId}] Step 7: Creating tenant in database...`);
+      Logger.log('info', 'general', 'create-organization', 'Step 7: Creating tenant in database', { requestId });
       const [tenant] = await db
         .insert(tenants)
         .values({
@@ -297,10 +247,10 @@ export default async function adminManagementRoutes(
         } as any)
         .returning();
 
-      console.log(`✅ [${requestId}] Tenant created in database: ${tenant.tenantId}`);
+      Logger.log('info', 'general', 'create-organization', 'Tenant created in database', { requestId, tenantId: tenant.tenantId });
 
       // Create admin user
-      console.log(`👤 [${requestId}] Step 8: Creating admin user...`);
+      Logger.log('info', 'general', 'create-organization', 'Step 8: Creating admin user', { requestId });
       const [adminUser] = await db
         .insert(tenantUsers)
         .values({
@@ -316,10 +266,10 @@ export default async function adminManagementRoutes(
         } as any)
         .returning();
 
-      console.log(`✅ [${requestId}] Admin user created: ${adminUser.userId}`);
+      Logger.log('info', 'general', 'create-organization', 'Admin user created', { requestId, userId: adminUser.userId });
 
       // Create admin role
-      console.log(`🔐 [${requestId}] Step 9: Creating admin role...`);
+      Logger.log('info', 'general', 'create-organization', 'Step 9: Creating admin role', { requestId });
       // FIXED: Import from permission-matrix.js instead of utils folder
       const { createSuperAdminRoleConfig } = await import('../../../data/permission-matrix.js');
       const roleConfig = createSuperAdminRoleConfig('free', tenant.tenantId, adminUser.userId);
@@ -340,29 +290,23 @@ export default async function adminManagementRoutes(
         });
 
       if (adminUser.kindeUserId) {
-        invalidateUserCache(adminUser.kindeUserId);
+        void invalidateUserCache(adminUser.kindeUserId);
       }
-      invalidateRoleCache(adminUser.userId);
+      void invalidateRoleCache(adminUser.userId);
 
-      console.log(`✅ [${requestId}] Admin role created and assigned`);
+      Logger.log('info', 'general', 'create-organization', 'Admin role created and assigned', { requestId });
 
       // Assign user to organization
-      console.log(`🔗 [${requestId}] Step 10: Assigning user to organization...`);
+      Logger.log('info', 'general', 'create-organization', 'Step 10: Assigning user to organization', { requestId });
       try {
         await kindeService.addUserToOrganization(kindeUserId as string, actualOrgCode, { exclusive: true });
-        console.log(`✅ [${requestId}] User assigned to organization successfully`);
+        Logger.log('info', 'general', 'create-organization', 'User assigned to organization successfully', { requestId });
       } catch (assignError: unknown) {
-        console.warn(`⚠️ [${requestId}] Organization assignment failed:`, (assignError as Error).message);
+        Logger.log('warning', 'general', 'create-organization', 'Organization assignment failed', { requestId, error: (assignError as Error).message });
       }
 
       const totalTime = Date.now() - startTime;
-      console.log(`\n🎉 =================== ONBOARDING COMPLETED ===================`);
-      console.log(`📋 Request ID: ${requestId}`);
-      console.log(`⏱️ Total Time: ${totalTime}ms`);
-      console.log(`🏢 Organization: ${companyName} (${actualOrgCode})`);
-      console.log(`👤 Admin User: ${adminName} (${adminEmail})`);
-      console.log(`📊 Plan: ${selectedPlan}`);
-      console.log(`==========================================================\n`);
+      Logger.log('info', 'general', 'create-organization', 'Onboarding completed', { requestId, totalTime, companyName, orgCode: actualOrgCode, adminName, adminEmail, selectedPlan });
 
       return {
         success: true,
@@ -390,13 +334,7 @@ export default async function adminManagementRoutes(
       const error = err as Error;
       const totalTime = Date.now() - startTime;
       const body = request.body as Record<string, unknown>;
-      console.error(`\n❌ =================== ONBOARDING FAILED ===================`);
-      console.error(`📋 Request ID: ${requestId}`);
-      console.error(`⏱️ Failed after ${totalTime}ms`);
-      console.error(`📧 Admin Email: ${body?.adminEmail}`);
-      console.error(`🏢 Company: ${body?.companyName}`);
-      console.error(`🔍 Error: ${error.message}`);
-      console.error(`==========================================================\n`);
+      Logger.log('error', 'general', 'create-organization', 'Onboarding failed', { requestId, totalTime, adminEmail: body?.adminEmail, companyName: body?.companyName, error: error.message });
 
       request.log.error(error, 'Error during organization creation:');
       return reply.code(500).send({

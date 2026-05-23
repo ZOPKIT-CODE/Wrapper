@@ -3,7 +3,7 @@ import { useKindeAuth } from '@kinde-oss/kinde-auth-react'
 import { useLocation } from '@tanstack/react-router'
 import { api, subscriptionAPI, creditAPI } from '@/lib/api'
 import { useCreditStatusQuery } from '@/hooks/useSharedQueries'
-import toast from 'react-hot-toast'
+import { toast } from 'sonner'
 
 export interface CreditStatus {
   hasCredits: boolean

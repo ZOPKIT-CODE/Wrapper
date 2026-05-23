@@ -9,18 +9,33 @@ import AnimatedLoader from '@/components/common/feedback/AnimatedLoader';
 import { DASHBOARD_PAGE_TITLE_CLASS } from '@/components/dashboard/DashboardPageHeader';
 import { AlertCircle } from 'lucide-react';
 import { useRoleIdParam } from '@/hooks/useRoleRouteParams';
+import { getCrmRoleTemplate } from '@/data/crm-role-templates';
 
 export function RoleBuilderPage() {
   const roleId = useRoleIdParam();
   const navigate = useNavigate();
   const isEditMode = !!roleId;
-  
+
+  // Read ?template= from URL (e.g. /dashboard/roles/new?template=crm_sales_rep)
+  const templateKey = new URLSearchParams(window.location.search).get('template') ?? undefined;
+  const templateRole = templateKey ? getCrmRoleTemplate(templateKey) : undefined;
+
   // Fetch role if editing
   const { data: rolesData = [], isLoading } = useRoles({});
   const initialRole = React.useMemo(() => {
     if (!isEditMode || !roleId) return null;
     return rolesData.find((r: any) => r.roleId === roleId || r.id === roleId) || null;
   }, [rolesData, roleId, isEditMode]);
+
+  // Template pre-fill: convert template to the shape ApplicationModuleRoleBuilder expects
+  const templateInitialRole = React.useMemo(() => {
+    if (!templateRole) return undefined;
+    return {
+      roleName: '',
+      description: templateRole.description,
+      permissions: templateRole.permissions,
+    };
+  }, [templateRole]);
 
   const { invalidateRoles } = useInvalidateQueries();
 
@@ -59,6 +74,12 @@ export function RoleBuilderPage() {
     );
   }
 
+  const pageTitle = isEditMode
+    ? 'Edit Role'
+    : templateRole
+      ? `New Role — ${templateRole.roleName} Template`
+      : 'Create New Role';
+
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)] min-h-[500px] w-full">
       {/* Header with Back Button */}
@@ -73,9 +94,7 @@ export function RoleBuilderPage() {
           Back to Roles
         </Button>
         <div className="flex-1">
-          <h1 className={DASHBOARD_PAGE_TITLE_CLASS}>
-            {isEditMode ? 'Edit Role' : 'Create New Role'}
-          </h1>
+          <h1 className={DASHBOARD_PAGE_TITLE_CLASS}>{pageTitle}</h1>
         </div>
       </div>
 
@@ -84,7 +103,7 @@ export function RoleBuilderPage() {
         <ApplicationModuleRoleBuilder
           onSave={handleSave}
           onCancel={handleCancel}
-          initialRole={initialRole || undefined}
+          initialRole={initialRole ?? templateInitialRole ?? undefined}
         />
       </div>
     </div>

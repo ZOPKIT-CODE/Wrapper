@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import tenantApplicationsService from '../services/tenant-applications-service.js';
+import Logger from '../utils/logger.js';
 
 export default async function applicationsRoutes(
   fastify: FastifyInstance,
@@ -13,9 +14,9 @@ export default async function applicationsRoutes(
       }
 
       request.log.info({ tenantId }, 'Getting applications for tenant');
-      console.log(`[APPS] tenantId="${tenantId}" kindeOrgId="${(request as any).userContext?.kindeOrgId}" internalUserId="${(request as any).userContext?.internalUserId}"`);
+      Logger.log('info', 'routes', 'get-applications', `[APPS] tenantId="${tenantId}" kindeOrgId="${(request as any).userContext?.kindeOrgId}" internalUserId="${(request as any).userContext?.internalUserId}"`);
       const userApps = await tenantApplicationsService.getEnabledApplicationsForTenant(tenantId);
-      console.log(`[APPS] returned ${userApps.length} apps for tenantId="${tenantId}"`);
+      Logger.log('info', 'routes', 'get-applications', `[APPS] returned ${userApps.length} apps for tenantId="${tenantId}"`);
       return { success: true, data: userApps };
     } catch (err: unknown) {
       const error = err as Error;

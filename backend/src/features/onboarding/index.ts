@@ -5,6 +5,7 @@
  */
 
 import type { FastifyInstance } from 'fastify';
+import Logger from '../../utils/logger.js';
 
 // Routes
 export { default as coreOnboardingRoutes } from './routes/core-onboarding.js';
@@ -28,7 +29,7 @@ import adminManagementRoutes from './routes/admin-management.js';
 import verificationRoutes from './routes/verification-routes.js';
 
 export default async function onboardingRoutes(fastify: FastifyInstance, options?: Record<string, unknown>) {
-  console.log('🔧 Registering onboarding feature routes...');
+  Logger.log('info', 'general', 'onboardingRoutes', 'Registering onboarding feature routes');
 
   // Register all onboarding sub-routes
   await subdomainManagementRoutes(fastify, options);
@@ -38,6 +39,6 @@ export default async function onboardingRoutes(fastify: FastifyInstance, options
   await dataManagementRoutes(fastify, options);
   await adminManagementRoutes(fastify, options);
 
-  console.log('✅ Onboarding feature routes registered successfully');
+  Logger.log('info', 'general', 'onboardingRoutes', 'Onboarding feature routes registered successfully');
 }
 

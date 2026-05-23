@@ -2,6 +2,7 @@ import { db } from '../../../db/index.js';
 import { tenants, tenantUsers, customRoles, userRoleAssignments, entities, credits } from '../../../db/schema/index.js';
 // REMOVED: creditAllocations - Table removed, applications manage their own credits
 import { eq, and, sql } from 'drizzle-orm';
+import Logger from '../../../utils/logger.js';
 
 export interface TriggerTenantSyncOptions {
   skipReferenceData?: boolean;
@@ -35,11 +36,7 @@ export class WrapperSyncService {
   static async triggerTenantSync(tenantId: string, options: TriggerTenantSyncOptions = {}): Promise<SyncResults> {
     const { skipReferenceData = false, forceSync = false, requestedBy } = options;
 
-    console.log(`🔄 Starting tenant sync for ${tenantId}`, {
-      skipReferenceData,
-      forceSync,
-      requestedBy
-    });
+    Logger.log('info', 'general', 'triggerTenantSync', 'Starting tenant sync', { tenantId, skipReferenceData, forceSync, requestedBy });
 
     const startTime = Date.now();
     const results: SyncResults = {
@@ -57,24 +54,24 @@ export class WrapperSyncService {
 
     try {
       // Phase 1: Essential Data (Blocking)
-      console.log('📋 Phase 1: Syncing essential data...');
+      Logger.log('info', 'general', 'triggerTenantSync', 'Phase 1: Syncing essential data');
       results.phases.essential = await this.syncEssentialData(tenantId, requestedBy);
-      console.log('✅ Phase 1 completed:', results.phases.essential);
+      Logger.log('info', 'general', 'triggerTenantSync', 'Phase 1 completed', { success: results.phases.essential.success });
 
       // Phase 2: Reference Data (Non-blocking)
       if (!skipReferenceData) {
-        console.log('📋 Phase 2: Syncing reference data...');
+        Logger.log('info', 'general', 'triggerTenantSync', 'Phase 2: Syncing reference data');
         results.phases.reference = await this.syncReferenceData(tenantId, requestedBy);
-        console.log('✅ Phase 2 completed:', results.phases.reference);
+        Logger.log('info', 'general', 'triggerTenantSync', 'Phase 2 completed', { success: results.phases.reference.success });
       } else {
-        console.log('⏭️ Phase 2 skipped (skipReferenceData=true)');
+        Logger.log('info', 'general', 'triggerTenantSync', 'Phase 2 skipped (skipReferenceData=true)');
         results.phases.reference = { success: true, data: {}, skipped: true };
       }
 
       // Phase 3: Validation
-      console.log('📋 Phase 3: Validating sync...');
+      Logger.log('info', 'general', 'triggerTenantSync', 'Phase 3: Validating sync');
       results.phases.validation = await this.validateSync(tenantId);
-      console.log('✅ Phase 3 completed:', results.phases.validation);
+      Logger.log('info', 'general', 'triggerTenantSync', 'Phase 3 completed', { success: results.phases.validation.success });
 
       // Calculate overall success
       results.success = results.phases.essential.success &&
@@ -84,20 +81,13 @@ export class WrapperSyncService {
       results.completedAt = new Date();
       results.duration = results.completedAt.getTime() - startTime;
 
-      console.log(`🎉 Tenant sync completed for ${tenantId}`, {
-        success: results.success,
-        duration: `${results.duration}ms`,
-        phases: (Object.keys(results.phases) as Array<keyof typeof results.phases>).map(phase => ({
-          phase,
-          success: results.phases[phase].success
-        }))
-      });
+      Logger.log('info', 'general', 'triggerTenantSync', 'Tenant sync completed', { tenantId, success: results.success, duration: `${results.duration}ms` });
 
       return results;
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ Tenant sync failed for ${tenantId}:`, error);
+      Logger.log('error', 'general', 'triggerTenantSync', 'Tenant sync failed', { tenantId, error: error.message });
       results.completedAt = new Date();
       results.duration = results.completedAt.getTime() - startTime;
       results.error = error.message;
@@ -113,22 +103,22 @@ export class WrapperSyncService {
 
     try {
       // 1. Sync tenant information
-      console.log(`🏢 Syncing tenant info for ${tenantId}...`);
+      Logger.log('info', 'general', 'syncEssentialData', 'Syncing tenant info', { tenantId });
       const tenantResult = await this.syncTenantInfo(tenantId);
       results.data.tenant = tenantResult;
-      console.log(`✅ Tenant synced: ${(tenantResult as { success?: boolean }).success ? 'success' : 'failed'}`);
+      Logger.log('info', 'general', 'syncEssentialData', 'Tenant synced', { success: (tenantResult as { success?: boolean }).success });
 
       // 2. Sync user profiles
-      console.log(`👥 Syncing user profiles for ${tenantId}...`);
+      Logger.log('info', 'general', 'syncEssentialData', 'Syncing user profiles', { tenantId });
       const userProfilesResult = await this.syncUserProfiles(tenantId);
       results.data.userProfiles = userProfilesResult;
-      console.log(`✅ User profiles synced: ${(userProfilesResult as { count?: number }).count} records`);
+      Logger.log('info', 'general', 'syncEssentialData', 'User profiles synced', { count: (userProfilesResult as { count?: number }).count });
 
       // 3. Sync organizations
-      console.log(`🏛️ Syncing organizations for ${tenantId}...`);
+      Logger.log('info', 'general', 'syncEssentialData', 'Syncing organizations', { tenantId });
       const orgsResult = await this.syncOrganizations(tenantId);
       results.data.organizations = orgsResult;
-      console.log(`✅ Organizations synced: ${(orgsResult as { count?: number }).count} records`);
+      Logger.log('info', 'general', 'syncEssentialData', 'Organizations synced', { count: (orgsResult as { count?: number }).count });
 
       results.success = Boolean((tenantResult as { success?: boolean }).success) &&
                        Boolean((userProfilesResult as { success?: boolean }).success) &&
@@ -138,7 +128,7 @@ export class WrapperSyncService {
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ Essential data sync failed for ${tenantId}:`, error);
+      Logger.log('error', 'general', 'syncEssentialData', 'Essential data sync failed', { tenantId, error: error.message });
       throw error;
     }
   }
@@ -151,34 +141,34 @@ export class WrapperSyncService {
 
     try {
       // 1. Sync detailed tenant users
-      console.log(`👤 Syncing detailed tenant users for ${tenantId}...`);
+      Logger.log('info', 'general', 'syncReferenceData', 'Syncing detailed tenant users', { tenantId });
       const tenantUsersResult = await this.syncTenantUsers(tenantId);
       results.data.tenantUsers = tenantUsersResult;
-      console.log(`✅ Detailed users synced: ${(tenantUsersResult as { count?: number }).count} records`);
+      Logger.log('info', 'general', 'syncReferenceData', 'Detailed users synced', { count: (tenantUsersResult as { count?: number }).count });
 
       // 2. Sync credit configurations
-      console.log(`💳 Syncing credit configurations for ${tenantId}...`);
+      Logger.log('info', 'general', 'syncReferenceData', 'Syncing credit configurations', { tenantId });
       const creditConfigsResult = await this.syncCreditConfigs(tenantId);
       results.data.creditConfigs = creditConfigsResult;
-      console.log(`✅ Credit configs synced: ${(creditConfigsResult as { count?: number }).count} records`);
+      Logger.log('info', 'general', 'syncReferenceData', 'Credit configs synced', { count: (creditConfigsResult as { count?: number }).count });
 
       // 3. Sync entity credits
-      console.log(`💰 Syncing entity credits for ${tenantId}...`);
+      Logger.log('info', 'general', 'syncReferenceData', 'Syncing entity credits', { tenantId });
       const entityCreditsResult = await this.syncEntityCredits(tenantId);
       results.data.entityCredits = entityCreditsResult;
-      console.log(`✅ Entity credits synced: ${(entityCreditsResult as { count?: number }).count} records`);
+      Logger.log('info', 'general', 'syncReferenceData', 'Entity credits synced', { count: (entityCreditsResult as { count?: number }).count });
 
       // 4. Sync employee assignments
-      console.log(`👷 Syncing employee assignments for ${tenantId}...`);
+      Logger.log('info', 'general', 'syncReferenceData', 'Syncing employee assignments', { tenantId });
       const employeeAssignmentsResult = await this.syncEmployeeAssignments(tenantId);
       results.data.employeeAssignments = employeeAssignmentsResult;
-      console.log(`✅ Employee assignments synced: ${(employeeAssignmentsResult as { count?: number }).count} records`);
+      Logger.log('info', 'general', 'syncReferenceData', 'Employee assignments synced', { count: (employeeAssignmentsResult as { count?: number }).count });
 
       // 5. Sync role assignments
-      console.log(`🎭 Syncing role assignments for ${tenantId}...`);
+      Logger.log('info', 'general', 'syncReferenceData', 'Syncing role assignments', { tenantId });
       const roleAssignmentsResult = await this.syncRoleAssignments(tenantId);
       results.data.roleAssignments = roleAssignmentsResult;
-      console.log(`✅ Role assignments synced: ${(roleAssignmentsResult as { count?: number }).count} records`);
+      Logger.log('info', 'general', 'syncReferenceData', 'Role assignments synced', { count: (roleAssignmentsResult as { count?: number }).count });
 
       results.success = true; // Reference data sync is non-blocking
 
@@ -186,7 +176,7 @@ export class WrapperSyncService {
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ Reference data sync failed for ${tenantId}:`, error);
+      Logger.log('error', 'general', 'syncReferenceData', 'Reference data sync failed', { tenantId, error: error.message });
       (results as { error?: string }).error = error.message;
       return results;
     }
@@ -250,7 +240,7 @@ export class WrapperSyncService {
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ Validation failed for ${tenantId}:`, error);
+      Logger.log('error', 'general', 'validateSync', 'Validation failed', { tenantId, error: error.message });
       validation.validation.issues.push('Validation error: ' + error.message);
       return validation;
     }
@@ -274,7 +264,7 @@ export class WrapperSyncService {
       return { success: true, count: 1, data: tenant };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ Error syncing tenant info for ${tenantId}:`, error);
+      Logger.log('error', 'general', 'syncTenantInfo', 'Error syncing tenant info', { tenantId, error: error.message });
       return { success: false, error: error.message, count: 0 };
     }
   }
@@ -322,7 +312,7 @@ export class WrapperSyncService {
       return { success: true, count: users.length, data: users };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ Error syncing user profiles for ${tenantId}:`, error);
+      Logger.log('error', 'general', 'syncUserProfiles', 'Error syncing user profiles', { tenantId, error: error.message });
       return { success: false, error: error.message, count: 0 };
     }
   }
@@ -354,7 +344,7 @@ export class WrapperSyncService {
       return { success: true, count: organizations.length, data: organizations };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ Error syncing organizations for ${tenantId}:`, error);
+      Logger.log('error', 'general', 'syncOrganizations', 'Error syncing organizations', { tenantId, error: error.message });
       return { success: false, error: error.message, count: 0 };
     }
   }
@@ -390,7 +380,7 @@ export class WrapperSyncService {
       return { success: true, count: tenantUsersData.length, data: tenantUsersData };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ Error syncing detailed tenant users for ${tenantId}:`, error);
+      Logger.log('error', 'general', 'syncTenantUsers', 'Error syncing detailed tenant users', { tenantId, error: error.message });
       return { success: false, error: error.message, count: 0 };
     }
   }
@@ -421,7 +411,7 @@ export class WrapperSyncService {
       return { success: true, count: creditConfigs.length, data: creditConfigs };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ Error syncing credit configs for ${tenantId}:`, error);
+      Logger.log('error', 'general', 'syncCreditConfigs', 'Error syncing credit configs', { tenantId, error: error.message });
       return { success: false, error: error.message, count: 0 };
     }
   }
@@ -447,7 +437,7 @@ export class WrapperSyncService {
       return { success: true, count: entityCredits.length, data: entityCredits };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ Error syncing entity credits for ${tenantId}:`, error);
+      Logger.log('error', 'general', 'syncEntityCredits', 'Error syncing entity credits', { tenantId, error: error.message });
       return { success: false, error: error.message, count: 0 };
     }
   }
@@ -481,7 +471,7 @@ export class WrapperSyncService {
       return { success: true, count: assignments.length, data: assignments };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ Error syncing employee assignments for ${tenantId}:`, error);
+      Logger.log('error', 'general', 'syncEmployeeAssignments', 'Error syncing employee assignments', { tenantId, error: error.message });
       return { success: false, error: error.message, count: 0 };
     }
   }
@@ -519,7 +509,7 @@ export class WrapperSyncService {
       return { success: true, count: roleAssignments.length, data: roleAssignments };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ Error syncing role assignments for ${tenantId}:`, error);
+      Logger.log('error', 'general', 'syncRoleAssignments', 'Error syncing role assignments', { tenantId, error: error.message });
       return { success: false, error: error.message, count: 0 };
     }
   }
@@ -571,7 +561,7 @@ export class WrapperSyncService {
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ Error getting sync status for ${tenantId}:`, error);
+      Logger.log('error', 'general', 'getSyncStatus', 'Error getting sync status', { tenantId, error: error.message });
       throw error;
     }
   }
@@ -590,7 +580,7 @@ export class WrapperSyncService {
       return Number((result[0] as { count: unknown })?.count ?? 0);
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ Error getting role assignment count for ${tenantId}:`, error);
+      Logger.log('error', 'general', 'getRoleAssignmentCount', 'Error getting role assignment count', { tenantId, error: error.message });
       return 0;
     }
   }

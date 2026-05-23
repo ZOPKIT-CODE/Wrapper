@@ -3,13 +3,14 @@ import { db } from '../../../db/index.js';
 import { subscriptions, payments } from '../../../db/schema/index.js';
 import { EmailService } from '../../../utils/email.js';
 import { getCurrentSubscription, getAvailablePlans } from './subscription-core.js';
-import { getPaymentGateway } from '../adapters/index.js';
+import { getPaymentGateway, getStripeClient } from '../adapters/index.js';
 import { updateAdministratorRolesForPlan } from './subscription-plan-roles.js';
 import { PaymentService } from './payment-service.js';
 import { createCheckoutSession, createBillingPortalSession } from './subscription-checkout.js';
 import { isValidPlanChange, calculateFeatureLoss, calculateDataRetention, calculateUserLimits } from './subscription-plan-change.helpers.js';
-import { stripe } from '../../credits/services/credit-core.js';
 export { isValidPlanChange, calculateFeatureLoss, calculateDataRetention, calculateUserLimits };
+import Logger from '../../../utils/logger.js';
+import { snsSqsPublisher } from '../../messaging/utils/sns-sqs-publisher.js';
 
 /**
  * Change subscription plan (upgrade/downgrade).
@@ -22,7 +23,7 @@ export async function changePlan(params: {
 }): Promise<Record<string, unknown>> {
   const { tenantId, planId, billingCycle = 'yearly', currency = 'usd' } = params;
   try {
-    console.log('🔄 Changing plan for tenant:', tenantId, 'to plan:', planId);
+    Logger.log('info', 'billing', 'change-plan', 'Changing plan for tenant', { tenantId, planId });
 
     const currentSubscription = await getCurrentSubscription(tenantId);
     if (!currentSubscription) {
@@ -98,7 +99,7 @@ export async function changePlan(params: {
 
   } catch (err: unknown) {
     const error = err as Error;
-    console.error('Error changing plan:', error);
+    Logger.log('error', 'billing', 'change-plan', 'Error changing plan', { error: error.message });
     throw error;
   }
 }
@@ -118,7 +119,7 @@ export async function scheduleDowngrade(params: { tenantId: string; planId: stri
     };
   } catch (err: unknown) {
     const error = err as Error;
-    console.error('Error scheduling downgrade:', error);
+    Logger.log('error', 'billing', 'schedule-downgrade', 'Error scheduling downgrade', { error: error.message });
     throw error;
   }
 }
@@ -178,7 +179,7 @@ export async function processImmediatePlanChange(params: {
         prorationBehavior: 'always_invoice',
       });
 
-      console.log(`✅ Upgraded subscription ${stripeSubId} to ${planId} (prorated). New period: ${updatedSub.currentPeriodStart.toISOString()} → ${updatedSub.currentPeriodEnd.toISOString()}`);
+      Logger.log('info', 'billing', 'process-immediate-plan-change', 'Upgraded subscription (prorated)', { stripeSubId, planId, periodStart: updatedSub.currentPeriodStart.toISOString(), periodEnd: updatedSub.currentPeriodEnd.toISOString() });
 
       // DO NOT update plan/yearlyPrice in the DB here.
       // The Stripe subscription.updated webhook handles all DB updates, credit
@@ -190,7 +191,7 @@ export async function processImmediatePlanChange(params: {
       let proratedAmount = 0;
       let invoiceId: string | null = null;
       try {
-        const invoiceList = await stripe.invoices.list({
+        const invoiceList = await getStripeClient().invoices.list({
           subscription: stripeSubId,
           limit: 1,
         });
@@ -200,7 +201,7 @@ export async function processImmediatePlanChange(params: {
           invoiceId = latestInvoice.id;
         }
       } catch (err) {
-        console.warn('Could not retrieve prorated invoice amount:', (err as Error).message);
+        Logger.log('warning', 'billing', 'process-immediate-plan-change', 'Could not retrieve prorated invoice amount', { error: (err as Error).message });
       }
 
       const plans = await getAvailablePlans();
@@ -232,7 +233,7 @@ export async function processImmediatePlanChange(params: {
     });
   } catch (err: unknown) {
     const error = err as Error;
-    console.error('❌ Error processing plan upgrade:', error);
+    Logger.log('error', 'billing', 'process-immediate-plan-change', 'Error processing plan upgrade', { error: error.message });
     throw error;
   }
 }
@@ -247,7 +248,7 @@ export async function immediateDowngrade(params: { tenantId: string; newPlan: st
   const gateway = getPaymentGateway();
 
   try {
-    console.log('🔄 Processing immediate downgrade:', { tenantId, newPlan, refundRequested });
+    Logger.log('info', 'billing', 'immediate-downgrade', 'Processing immediate downgrade', { tenantId, newPlan, refundRequested });
 
     const currentSubscription = await getCurrentSubscription(tenantId);
     if (!currentSubscription) {
@@ -300,7 +301,7 @@ export async function immediateDowngrade(params: { tenantId: string; newPlan: st
       }
     }
 
-    console.log(`📝 Subscription downgrade: ${currentSubscription.plan} → ${newPlan} for tenant ${tenantId}`);
+    Logger.log('info', 'billing', 'immediate-downgrade', 'Subscription downgrade in progress', { tenantId, fromPlan: currentSubscription.plan, toPlan: newPlan });
 
     // Use gateway adapter for subscription operations
     if (newPlan === 'trial' && currentSubscription.stripeSubscriptionId && gateway.isConfigured()) {
@@ -346,7 +347,7 @@ export async function immediateDowngrade(params: { tenantId: string; newPlan: st
       const onboardingOrgSetup = (await import('../../onboarding/services/onboarding-organization-setup.js')).default;
       await onboardingOrgSetup.updateOrganizationApplicationsForPlanChange(tenantId, newPlan);
     } catch (errOrgApp: unknown) {
-      console.error('❌ Failed to update organization applications:', (errOrgApp as Error).message);
+      Logger.log('error', 'billing', 'immediate-downgrade', 'Failed to update organization applications', { error: (errOrgApp as Error).message });
     }
 
     const updatedSubscription = await getCurrentSubscription(tenantId);
@@ -425,7 +426,19 @@ export async function immediateDowngrade(params: { tenantId: string; newPlan: st
       }
     }
 
-    console.log(`✅ Downgrade completed: ${currentSubscription.plan} → ${newPlan} for tenant ${tenantId}`);
+    Logger.log('info', 'billing', 'immediate-downgrade', 'Downgrade completed', { tenantId, fromPlan: currentSubscription.plan, toPlan: newPlan });
+
+    snsSqsPublisher.publishOrgEventToSuite('subscription.downgraded', tenantId, tenantId, {
+      tenantId,
+      fromPlan: currentSubscription.plan,
+      toPlan: newPlan,
+      refundAmount: refundRequested ? refundAmount : 0,
+      prorationAmount,
+      effectiveDate: new Date().toISOString(),
+      provider: gateway.providerName,
+    }).catch((err: Error) => {
+      Logger.log('warning', 'billing', 'immediate-downgrade', 'Failed to publish subscription.downgraded event', { tenantId, error: err.message });
+    });
 
     const emailServiceDowngrade = new EmailService();
     await emailServiceDowngrade.sendDowngradeConfirmation({
@@ -442,7 +455,7 @@ export async function immediateDowngrade(params: { tenantId: string; newPlan: st
     };
   } catch (err: unknown) {
     const error = err as Error;
-    console.error('❌ Immediate downgrade failed:', error);
+    Logger.log('error', 'billing', 'immediate-downgrade', 'Immediate downgrade failed', { error: error.message });
     throw error;
   }
 }

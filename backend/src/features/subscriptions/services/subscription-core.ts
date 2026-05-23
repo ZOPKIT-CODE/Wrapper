@@ -9,6 +9,7 @@ import { CreditService } from '../../credits/index.js';
 import { getPaymentGateway } from '../adapters/index.js';
 import type { PaymentGatewayPort } from '../adapters/index.js';
 import { getAvailablePlans as _getAvailablePlans, getPlanApplications, getPlanLimits } from '../../../data/plans.js';
+import Logger from '../../../utils/logger.js';
 
 // Inlined from subscription-repository.ts (only 2 methods, single caller)
 async function getLatestActiveSubscription(tenantId: string): Promise<typeof subscriptions.$inferSelect | null> {
@@ -42,15 +43,14 @@ export async function getCurrentSubscription(tenantId: string): Promise<Record<s
 
       if (subscriptionRecord) {
         actualSubscription = subscriptionRecord;
-        console.log('✅ Found active subscription:', {
+        Logger.log('info', 'billing', 'get-current-subscription', 'Found active subscription', {
           plan: subscriptionRecord.plan,
-          currentPeriodEnd: subscriptionRecord.currentPeriodEnd,
           status: subscriptionRecord.status
         });
       }
     } catch (err: unknown) {
       const subError = err as Error;
-      console.warn('⚠️ Error checking subscription table:', subError.message);
+      Logger.log('warning', 'billing', 'get-current-subscription', 'Error checking subscription table', { error: subError.message });
     }
 
     const plan = actualSubscription?.plan || 'free';
@@ -80,7 +80,7 @@ export async function getCurrentSubscription(tenantId: string): Promise<Record<s
     };
   } catch (err: unknown) {
     const error = err as Error;
-    console.error('Error getting current subscription:', error);
+    Logger.log('error', 'billing', 'get-current-subscription', 'Error getting current subscription', { error: error.message });
 
     // Fallback: try to get traditional subscription if no credits found
     try {
@@ -99,7 +99,7 @@ export async function getCurrentSubscription(tenantId: string): Promise<Record<s
       };
     } catch (fallbackErr: unknown) {
       const fallbackError = fallbackErr as Error;
-      console.error('Error fetching fallback subscription:', fallbackError);
+      Logger.log('error', 'billing', 'get-current-subscription', 'Error fetching fallback subscription', { error: fallbackError.message });
       // Return free plan as final fallback
       return {
         plan: 'free',
@@ -156,14 +156,14 @@ export async function getUsageMetrics(tenantId: string): Promise<Record<string, 
     };
   } catch (err: unknown) {
     const error = err as Error;
-    console.error('Error getting usage metrics:', error);
+    Logger.log('error', 'billing', 'get-usage-metrics', 'Error getting usage metrics', { error: error.message });
     throw error;
   }
 }
 
 // Get billing history for a tenant (credit purchases + plan upgrade entries)
 export async function getBillingHistory(tenantId: string): Promise<Record<string, unknown>[]> {
-  console.log('📋 Fetching billing history for tenant:', tenantId);
+  Logger.log('info', 'billing', 'get-billing-history', 'Fetching billing history for tenant', { tenantId });
 
   // ── 1. Real payment records from the payments table ───────────────────────
   const paymentRows = await db
@@ -254,7 +254,7 @@ export async function getBillingHistory(tenantId: string): Promise<Record<string
       }
     }
   } catch (errSub: unknown) {
-    console.warn('⚠️ Could not fetch subscription for billing history:', (errSub as Error).message);
+    Logger.log('warning', 'billing', 'get-billing-history', 'Could not fetch subscription for billing history', { error: (errSub as Error).message });
   }
 
   const combined = [...enrichedPaymentEntries, ...planUpgradeEntries].sort((a, b) => {
@@ -262,7 +262,7 @@ export async function getBillingHistory(tenantId: string): Promise<Record<string
     return toMs(b.paidAt || b.createdAt) - toMs(a.paidAt || a.createdAt);
   });
 
-  console.log(`✅ Billing history: ${enrichedPaymentEntries.length} payments, ${planUpgradeEntries.length} plan entries`);
+  Logger.log('info', 'billing', 'get-billing-history', 'Billing history fetched', { paymentCount: enrichedPaymentEntries.length, planEntryCount: planUpgradeEntries.length });
   return combined;
 }
 
@@ -281,11 +281,11 @@ export async function getPlanIdFromPriceId(priceId: string): Promise<string | nu
       }
     }
 
-    console.warn(`⚠️ Plan not found for price ID: ${priceId}`);
+    Logger.log('warning', 'billing', 'get-plan-id-from-price-id', 'Plan not found for price ID', { priceId });
     return null;
   } catch (err: unknown) {
     const error = err as Error;
-    console.error('Error getting plan ID from price ID:', error);
+    Logger.log('error', 'billing', 'get-plan-id-from-price-id', 'Error getting plan ID from price ID', { error: error.message });
     return null;
   }
 }

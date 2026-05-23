@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { db } from '../../../db/index.js';
 import { eventTracking } from '../../../db/schema/index.js';
 import { eq, and, gte, lte, like } from 'drizzle-orm';
+import Logger from '../../../utils/logger.js';
 
 interface TrackingMetadata {
   userId?: string;
@@ -15,7 +16,7 @@ class OnboardingTrackingService {
   // Track onboarding phase completion/progress
   async trackOnboardingPhase(tenantId: string, phase: string, status: string, metadata: TrackingMetadata = {}): Promise<Record<string, unknown>> {
     try {
-      console.log('📊 Tracking onboarding phase:', { tenantId, phase, status });
+      Logger.log('info', 'general', 'trackOnboardingPhase', 'Tracking onboarding phase', { tenantId, phase, status });
 
       const {
         userId,
@@ -49,7 +50,7 @@ class OnboardingTrackingService {
         publishedBy: userId ?? null
       });
 
-      console.log('✅ Onboarding phase tracked:', {
+      Logger.log('info', 'general', 'trackOnboardingPhase', 'Onboarding phase tracked', {
         trackingId: eventId,
         tenantId,
         phase,
@@ -68,7 +69,7 @@ class OnboardingTrackingService {
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error tracking onboarding phase:', error);
+      Logger.log('error', 'general', 'trackOnboardingPhase', 'Error tracking onboarding phase', { error: error.message });
       throw error;
     }
   }
@@ -76,7 +77,7 @@ class OnboardingTrackingService {
   // Get onboarding progress for a tenant
   async getOnboardingProgress(tenantId: string): Promise<Record<string, unknown>> {
     try {
-      console.log('📊 Getting onboarding progress for tenant:', tenantId);
+      Logger.log('info', 'general', 'getOnboardingProgress', 'Getting onboarding progress for tenant', { tenantId });
 
       const rows = await db.select()
         .from(eventTracking)
@@ -112,12 +113,12 @@ class OnboardingTrackingService {
         lastUpdated: new Date().toISOString()
       };
 
-      console.log('✅ Onboarding progress calculated:', progress);
+      Logger.log('info', 'general', 'getOnboardingProgress', 'Onboarding progress calculated', { progress });
       return progress;
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error getting onboarding progress:', error);
+      Logger.log('error', 'general', 'getOnboardingProgress', 'Error getting onboarding progress', { error: error.message });
       throw error;
     }
   }
@@ -127,7 +128,7 @@ class OnboardingTrackingService {
     try {
       const { startDate, endDate, phase } = options;
 
-      console.log('📊 Getting onboarding analytics:', { tenantId, phase, startDate, endDate });
+      Logger.log('info', 'general', 'getOnboardingAnalytics', 'Getting onboarding analytics', { tenantId, phase, startDate, endDate });
 
       const conditions = [
         eq(eventTracking.tenantId, tenantId as unknown as string),
@@ -170,12 +171,12 @@ class OnboardingTrackingService {
         generatedAt: new Date().toISOString()
       };
 
-      console.log('✅ Onboarding analytics generated:', analytics);
+      Logger.log('info', 'general', 'getOnboardingAnalytics', 'Onboarding analytics generated', { analytics });
       return analytics;
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error getting onboarding analytics:', error);
+      Logger.log('error', 'general', 'getOnboardingAnalytics', 'Error getting onboarding analytics', { error: error.message });
       throw error;
     }
   }

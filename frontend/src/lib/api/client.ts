@@ -1,5 +1,5 @@
 import axios, { AxiosError } from 'axios'
-import toast from 'react-hot-toast'
+import { toast } from 'sonner'
 import { logger } from '@/lib/logger'
 import { config } from '@/lib/config'
 import { markSessionRecoveryReason } from '@/lib/auth/session-recovery'
@@ -132,6 +132,11 @@ export const setKindeTokenGetter = (getter: () => Promise<string | null>) => {
   kindeTokenGetter = getter;
 };
 
+// ─── 5-minute token cache (merged from apiOptimized.ts) ──────────────────────
+let cachedToken: string | null = null;
+let tokenCacheTime: number = 0;
+const TOKEN_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
 const isValidJWT = (token: string): boolean => {
   if (!token || typeof token !== 'string') return false;
   if (token.length < 20) return false;
@@ -166,12 +171,22 @@ const isTokenExpired = (token: string): boolean => {
  * Tokens are never read from localStorage/sessionStorage/cookies by JS — cookies
  * are httpOnly and sent automatically via withCredentials. The Bearer header is set
  * from the Kinde SDK's in-memory token for cases where cookie flow doesn't apply.
+ *
+ * Includes a 5-minute short-lived cache to avoid repeated async calls on rapid
+ * sequential requests (merged from apiOptimized.ts).
  */
 export const getKindeToken = async (): Promise<string | null> => {
+  const now = Date.now();
+  if (cachedToken && (now - tokenCacheTime) < TOKEN_CACHE_DURATION) {
+    return cachedToken;
+  }
+
   if (kindeTokenGetter) {
     try {
       const token = await kindeTokenGetter();
       if (token && isValidJWT(token) && !isTokenExpired(token)) {
+        cachedToken = token;
+        tokenCacheTime = now;
         return token;
       }
       if (token && isTokenExpired(token)) {
@@ -182,6 +197,8 @@ export const getKindeToken = async (): Promise<string | null> => {
     }
   }
 
+  cachedToken = null;
+  tokenCacheTime = 0;
   return null;
 };
 
@@ -370,6 +387,8 @@ api.interceptors.response.use(
     // ── 401 Unauthorized — stale session ───────────────────────────────────
     if (status === 401) {
       logger.debug('Authentication required — session may have expired')
+      cachedToken = null
+      tokenCacheTime = 0
       notifySessionExpired()
     }
 
@@ -429,3 +448,41 @@ api.interceptors.response.use(
 )
 
 export default api
+
+// ─── Backward-compat aliases (merged from apiOptimized.ts) ───────────────────
+
+/** Alias for the main `api` axios instance — keeps callers that imported from apiOptimized working. */
+export const apiOptimized = api;
+
+/** Onboarding API helpers (previously exported from apiOptimized.ts). */
+export const onboardingAPIOptimized = {
+  checkSubdomain: (subdomain: string) =>
+    api.get(`/onboarding/check-subdomain?subdomain=${subdomain}`),
+
+  checkStatus: () =>
+    api.get('/onboarding/status'),
+
+  markUserAsOnboarded: (tenantId: string) =>
+    api.post('/onboarding/mark-onboarded', { tenantId }),
+
+  getUserOrganization: () =>
+    api.get('/onboarding/user-organization'),
+
+  getDataByEmail: (email: string, kindeUserId?: string) =>
+    api.post('/onboarding/get-data', { email, kindeUserId }),
+
+  markComplete: (organizationId: string) =>
+    api.post('/onboarding/mark-complete', { organizationId }),
+
+  updateStep: (step: string, data?: any, email?: string, formData?: any, kindeUserId?: string) =>
+    api.post('/onboarding/update-step', { step, data, email, formData, kindeUserId }),
+
+  reset: (targetUserId?: string) =>
+    api.post('/onboarding/reset', targetUserId ? { targetUserId } : {}),
+
+  verifyPAN: (pan: string, name?: string) =>
+    api.post('/onboarding/verify-pan', { pan, name }),
+
+  verifyGSTIN: (gstin: string, businessName?: string) =>
+    api.post('/onboarding/verify-gstin', { gstin, businessName }),
+};

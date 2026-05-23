@@ -20,14 +20,14 @@ export default async function adminRoleRoutes(fastify: FastifyInstance): Promise
     const tenantId = ((request as ReqWithUser).userContext?.tenantId ?? '') as string;
 
     try {
-      console.log(`🔍 [${requestId}] Getting roles for tenant: ${tenantId}`);
+      Logger.log('info', 'role', requestId, 'Getting roles for tenant', { tenantId });
 
       const roles = await db
         .select()
         .from(customRoles)
         .where(eq(customRoles.tenantId, tenantId));
 
-      console.log(`✅ [${requestId}] Found ${roles.length} roles`);
+      Logger.log('info', 'role', requestId, 'Found roles', { count: roles.length });
 
       return {
         success: true,
@@ -37,7 +37,7 @@ export default async function adminRoleRoutes(fastify: FastifyInstance): Promise
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ [${requestId}] Failed to get roles:`, error);
+      Logger.log('error', 'role', requestId, 'Failed to get roles', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to get roles',
@@ -57,7 +57,7 @@ export default async function adminRoleRoutes(fastify: FastifyInstance): Promise
     const roleName = body.roleName as string; const description = body.description as string; const permissions = body.permissions;
 
     try {
-      console.log(`➕ [${requestId}] Creating role:`, { roleName, description, tenantId });
+      Logger.log('info', 'role', requestId, 'Creating role', { roleName, description, tenantId });
 
       const roleId = uuidv4();
 
@@ -74,7 +74,7 @@ export default async function adminRoleRoutes(fastify: FastifyInstance): Promise
         })
         .returning();
 
-      console.log(`✅ [${requestId}] Role created successfully: ${roleId}`);
+      Logger.log('info', 'role', requestId, 'Role created successfully', { roleId });
 
       return {
         success: true,
@@ -84,7 +84,7 @@ export default async function adminRoleRoutes(fastify: FastifyInstance): Promise
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ [${requestId}] Failed to create role:`, error);
+      Logger.log('error', 'role', requestId, 'Failed to create role', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to create role',
@@ -106,7 +106,7 @@ export default async function adminRoleRoutes(fastify: FastifyInstance): Promise
     const updateData = body as Record<string, unknown>;
 
     try {
-      console.log(`✏️ [${requestId}] Updating role:`, { roleId, tenantId, updateData });
+      Logger.log('info', 'role', requestId, 'Updating role', { roleId, tenantId });
 
       const result = await (db.update(customRoles) as any)
         .set({
@@ -126,7 +126,7 @@ export default async function adminRoleRoutes(fastify: FastifyInstance): Promise
         });
       }
 
-      console.log(`✅ [${requestId}] Role updated successfully`);
+      Logger.log('info', 'role', requestId, 'Role updated successfully');
 
       // Publish role update event to AWS MQ
       try {
@@ -144,10 +144,10 @@ export default async function adminRoleRoutes(fastify: FastifyInstance): Promise
           updatedBy: ((request as ReqWithUser).userContext?.internalUserId ?? '') as string,
           updatedAt: updatedRole.updatedAt || new Date().toISOString()
         });
-        console.log(`📡 [${requestId}] Published role_updated event to Redis streams`);
+        Logger.log('info', 'role', requestId, 'Published role_updated event');
       } catch (publishErr: unknown) {
         const publishError = publishErr as Error;
-        console.warn(`⚠️ [${requestId}] Failed to publish role_updated event:`, publishError.message);
+        Logger.log('warning', 'role', requestId, 'Failed to publish role_updated event', { error: publishError.message });
         // Don't fail the request if event publishing fails
       }
 
@@ -159,7 +159,7 @@ export default async function adminRoleRoutes(fastify: FastifyInstance): Promise
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ [${requestId}] Failed to update role:`, error);
+      Logger.log('error', 'role', requestId, 'Failed to update role', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to update role',
@@ -179,7 +179,7 @@ export default async function adminRoleRoutes(fastify: FastifyInstance): Promise
     const tenantId = ((request as ReqWithUser).userContext?.tenantId ?? '') as string;
 
     try {
-      console.log(`🗑️ [${requestId}] Deleting role:`, { roleId, tenantId });
+      Logger.log('info', 'role', requestId, 'Deleting role', { roleId, tenantId });
 
       const result = await db
         .delete(customRoles)
@@ -196,7 +196,7 @@ export default async function adminRoleRoutes(fastify: FastifyInstance): Promise
         });
       }
 
-      console.log(`✅ [${requestId}] Role deleted successfully`);
+      Logger.log('info', 'role', requestId, 'Role deleted successfully');
 
       return {
         success: true,
@@ -205,7 +205,7 @@ export default async function adminRoleRoutes(fastify: FastifyInstance): Promise
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ [${requestId}] Failed to delete role:`, error);
+      Logger.log('error', 'role', requestId, 'Failed to delete role', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to delete role',
@@ -225,7 +225,7 @@ export default async function adminRoleRoutes(fastify: FastifyInstance): Promise
     const page = (query.page as string) ?? '1'; const limit = (query.limit as string) ?? '50'; const action = query.action as string | undefined; const userId = query.userId as string | undefined;
 
     try {
-      console.log(`🔍 [${requestId}] Getting audit logs:`, { tenantId, page, limit, action, userId });
+      Logger.log('info', 'general', requestId, 'Getting audit logs', { tenantId, page, limit, action, userId });
 
       const whereClause = action && userId
         ? and(eq(auditLogs.tenantId, tenantId), eq(auditLogs.action, action), eq(auditLogs.userId, userId))
@@ -242,7 +242,7 @@ export default async function adminRoleRoutes(fastify: FastifyInstance): Promise
         .limit(parseInt(limit))
         .offset((parseInt(page) - 1) * parseInt(limit));
 
-      console.log(`✅ [${requestId}] Found ${logs.length} audit logs`);
+      Logger.log('info', 'general', requestId, 'Found audit logs', { count: logs.length });
 
       return {
         success: true,
@@ -256,7 +256,7 @@ export default async function adminRoleRoutes(fastify: FastifyInstance): Promise
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ [${requestId}] Failed to get audit logs:`, error);
+      Logger.log('error', 'general', requestId, 'Failed to get audit logs', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to get audit logs',
@@ -274,11 +274,10 @@ export default async function adminRoleRoutes(fastify: FastifyInstance): Promise
     const tenantId = ((request as ReqWithUser).userContext?.tenantId ?? '') as string;
 
     try {
-      console.log(`🔍 [${requestId}] Getting all roles for tenant: ${tenantId}`);
+      Logger.log('info', 'role', requestId, 'Getting all roles for tenant', { tenantId });
 
       if (!tenantId) {
-        console.error(`❌ [${requestId}] Missing tenantId in userContext:`, {
-          userContext: request.userContext,
+        Logger.log('error', 'role', requestId, 'Missing tenantId in userContext', {
           isAuthenticated: request.userContext?.isAuthenticated,
           userId: request.userContext?.userId
         });
@@ -312,7 +311,7 @@ export default async function adminRoleRoutes(fastify: FastifyInstance): Promise
 
       // Ensure allRoles is an array
       if (!Array.isArray(allRoles)) {
-        console.error(`❌ [${requestId}] Database query did not return an array:`, typeof allRoles);
+        Logger.log('error', 'role', requestId, 'Database query did not return an array', { type: typeof allRoles });
         return reply.code(500).send({
           success: false,
           error: 'Database error',
@@ -339,13 +338,13 @@ export default async function adminRoleRoutes(fastify: FastifyInstance): Promise
         return aName.localeCompare(bName);
       });
 
-      console.log(`✅ [${requestId}] Found ${sortedRoles.length} roles`);
+      Logger.log('info', 'role', requestId, 'Found all roles', { count: sortedRoles.length });
 
         // Transform roles to ensure all fields are properly formatted
       const transformedRoles = sortedRoles.map(role => {
         // Ensure role is an object
         if (!role || typeof role !== 'object') {
-          console.warn(`⚠️ [${requestId}] Invalid role object found:`, role);
+          Logger.log('warning', 'role', requestId, 'Invalid role object found');
           return null;
         }
 
@@ -364,7 +363,7 @@ export default async function adminRoleRoutes(fastify: FastifyInstance): Promise
           }
         } catch (parseErr: unknown) {
           const parseError = parseErr as Error;
-          console.warn(`⚠️ [${requestId}] Failed to parse permissions for role ${role.roleId}:`, parseError.message);
+          Logger.log('warning', 'role', requestId, 'Failed to parse permissions for role', { roleId: role.roleId, error: parseError.message });
           permissions = {};
         }
 
@@ -380,7 +379,7 @@ export default async function adminRoleRoutes(fastify: FastifyInstance): Promise
           }
         } catch (parseErr: unknown) {
           const parseError = parseErr as Error;
-          console.warn(`⚠️ [${requestId}] Failed to parse restrictions for role ${role.roleId}:`, parseError.message);
+          Logger.log('warning', 'role', requestId, 'Failed to parse restrictions for role', { roleId: role.roleId, error: parseError.message });
           restrictions = {};
         }
 
@@ -409,8 +408,7 @@ export default async function adminRoleRoutes(fastify: FastifyInstance): Promise
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ [${requestId}] Failed to get all roles:`, error);
-      console.error(`❌ [${requestId}] Error stack:`, error.stack);
+      Logger.log('error', 'role', requestId, 'Failed to get all roles', { error: error.message, stack: error.stack });
       return reply.code(500).send({
         success: false,
         error: 'Failed to get all roles',

@@ -1,4 +1,5 @@
 // AWS SDK v3 (Route 53) - explicit dist-cjs path for ESM resolution (Node 22)
+import Logger from '../../../utils/logger.js';
 import {
   Route53Client,
   ChangeResourceRecordSetsCommand,
@@ -53,13 +54,13 @@ class DNSManagementService {
             secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
           },
         });
-        console.log('✅ AWS Route 53 initialized successfully');
+        Logger.log('info', 'general', 'initializeAWS', 'AWS Route 53 initialized successfully');
       } else {
-        console.log('⚠️ AWS credentials not configured, using mock DNS service');
+        Logger.log('info', 'general', 'initializeAWS', 'AWS credentials not configured, using mock DNS service');
       }
     } catch (err: unknown) {
       const error = err as Error;
-      console.warn('⚠️ AWS SDK not available, using mock DNS service:', error.message);
+      Logger.log('warning', 'general', 'initializeAWS', 'AWS SDK not available, using mock DNS service', { error: error.message });
     }
   }
 
@@ -68,7 +69,7 @@ class DNSManagementService {
    */
   async createTenantSubdomain(tenantId: string, customTarget: string | null = null): Promise<Record<string, unknown>> {
     try {
-      console.log(`🏢 Creating subdomain for tenant: ${tenantId}`);
+      Logger.log('info', 'general', 'createTenantSubdomain', 'Creating subdomain for tenant', { tenantId });
 
       // Get tenant details
       const tenant = await db
@@ -90,12 +91,12 @@ class DNSManagementService {
 
       if (subdomain) {
         // Tenant already has a subdomain in database
-        console.log(`📋 Tenant already has subdomain in database: ${subdomain}`);
+        Logger.log('info', 'general', 'createTenantSubdomain', 'Tenant already has subdomain in database', { subdomain });
         isExisting = true;
       } else {
         // Generate new unique subdomain
         subdomain = await this.generateUniqueSubdomain(tenant[0].companyName);
-        console.log(`🔧 Generated new subdomain: ${subdomain}`);
+        Logger.log('info', 'general', 'createTenantSubdomain', 'Generated new subdomain', { subdomain });
       }
 
       // Create DNS record (this will handle existing records gracefully)
@@ -115,9 +116,9 @@ class DNSManagementService {
           })
           .where(eq(tenants.tenantId, tenantId));
 
-        console.log(`✅ Subdomain set in database: ${subdomain}.${this.baseDomain} → ${targetValue}`);
+        Logger.log('info', 'general', 'createTenantSubdomain', 'Subdomain set in database', { fullDomain: `${subdomain}.${this.baseDomain}`, target: targetValue });
       } else {
-        console.log(`✅ Subdomain already exists: ${subdomain}.${this.baseDomain} → ${targetValue}`);
+        Logger.log('info', 'general', 'createTenantSubdomain', 'Subdomain already exists', { fullDomain: `${subdomain}.${this.baseDomain}`, target: targetValue });
       }
 
       return {
@@ -132,7 +133,7 @@ class DNSManagementService {
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Subdomain creation failed:', error);
+      Logger.log('error', 'general', 'createTenantSubdomain', 'Subdomain creation failed', { error: error.message });
       throw new Error(`Subdomain creation failed: ${error.message}`);
     }
   }
@@ -142,7 +143,7 @@ class DNSManagementService {
    */
   async setupCustomDomain(tenantId: string, customDomain: string): Promise<Record<string, unknown>> {
     try {
-      console.log(`🔧 Setting up custom domain: ${customDomain} for tenant: ${tenantId}`);
+      Logger.log('info', 'general', 'setupCustomDomain', 'Setting up custom domain for tenant', { customDomain, tenantId });
 
       // Validate domain format
       if (!this.isValidDomain(customDomain)) {
@@ -182,8 +183,7 @@ class DNSManagementService {
       };
       void verificationRequest;
 
-      console.log(`✅ Verification setup complete for: ${customDomain}`);
-      console.log(`📝 TXT Record: ${verificationDomain} = "${verificationToken}"`);
+      Logger.log('info', 'general', 'setupCustomDomain', 'Verification setup complete', { customDomain, verificationDomain, verificationToken });
 
       return {
         success: true,
@@ -201,7 +201,7 @@ class DNSManagementService {
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Custom domain setup failed:', error);
+      Logger.log('error', 'general', 'setupCustomDomain', 'Custom domain setup failed', { error: error.message });
       throw new Error(`Custom domain setup failed: ${error.message}`);
     }
   }
@@ -211,7 +211,7 @@ class DNSManagementService {
    */
   async verifyDomainOwnership(tenantId: string, customDomain: string): Promise<Record<string, unknown>> {
     try {
-      console.log(`🔍 Verifying domain ownership: ${customDomain}`);
+      Logger.log('info', 'general', 'verifyDomainOwnership', 'Verifying domain ownership', { customDomain });
 
       // Get stored verification data (from your verification_requests table)
       const verificationData = await this.getVerificationData(tenantId, customDomain);
@@ -254,7 +254,7 @@ class DNSManagementService {
       // Clean up verification record
       await this.deleteDNSRecord(verification.verificationDomain, this._recordTypes.VERIFICATION);
 
-      console.log(`✅ Domain verified and configured: ${customDomain}`);
+      Logger.log('info', 'general', 'verifyDomainOwnership', 'Domain verified and configured', { customDomain });
 
       return {
         success: true,
@@ -266,7 +266,7 @@ class DNSManagementService {
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Domain verification failed:', error);
+      Logger.log('error', 'general', 'verifyDomainOwnership', 'Domain verification failed', { error: error.message });
       throw new Error(`Domain verification failed: ${error.message}`);
     }
   }
@@ -276,7 +276,7 @@ class DNSManagementService {
    */
   async checkTXTRecord(domain: string, expectedValue: string): Promise<boolean> {
     try {
-      console.log(`🔍 Checking TXT record: ${domain} = "${expectedValue}"`);
+      Logger.log('info', 'general', 'checkTXTRecord', 'Checking TXT record', { domain, expectedValue });
 
       // Use DNS lookup to check TXT record
       const dns = require('dns').promises;
@@ -294,20 +294,19 @@ class DNSManagementService {
           value.replace(/"/g, '') === cleanExpectedValue
         );
 
-        console.log(`📋 Found TXT values:`, txtValues);
-        console.log(`✅ TXT record ${hasCorrectValue ? 'verified' : 'not found'}`);
+        Logger.log('info', 'general', 'checkTXTRecord', 'TXT record check result', { txtValues, verified: hasCorrectValue });
 
         return hasCorrectValue;
 
       } catch (dnsErr: unknown) {
         const dnsError = dnsErr as Error;
-        console.log(`❌ DNS lookup failed for ${domain}:`, dnsError.message);
+        Logger.log('warning', 'general', 'checkTXTRecord', 'DNS lookup failed', { domain, error: dnsError.message });
         return false;
       }
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ TXT record check failed:', error);
+      Logger.log('error', 'general', 'checkTXTRecord', 'TXT record check failed', { error: error.message });
       return false;
     }
   }
@@ -323,7 +322,7 @@ class DNSManagementService {
 
     // If AWS SDK is not available, return mock response
     if (!this.route53) {
-      console.log(`🔄 Mock DNS record creation: ${domain} (${type}) → ${value}`);
+      Logger.log('info', 'general', 'createDNSRecord', 'Mock DNS record creation', { domain, type, value });
       return {
         changeId: 'mock-change-id-' + Date.now(),
         status: 'INSYNC',
@@ -358,8 +357,7 @@ class DNSManagementService {
         ChangeInfo: { Id: string; Status: string };
       };
 
-      console.log(`✅ DNS record upserted: ${domain} (${type}) → ${value}`);
-      console.log(`   Change ID: ${result.ChangeInfo.Id}`);
+      Logger.log('info', 'general', 'createDNSRecord', 'DNS record upserted', { domain, type, value, changeId: result.ChangeInfo.Id });
 
       return {
         changeId: result.ChangeInfo.Id,
@@ -371,7 +369,7 @@ class DNSManagementService {
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ DNS record creation failed:', error);
+      Logger.log('error', 'general', 'createDNSRecord', 'DNS record creation failed', { error: error.message });
       throw new Error(`DNS record creation failed: ${error.message}`);
     }
   }
@@ -381,13 +379,13 @@ class DNSManagementService {
    */
   async deleteDNSRecord(domain: string, type: string): Promise<Record<string, unknown>> {
     try {
-      console.log(`🗑️ Deleting DNS record: ${domain} (${type})`);
+      Logger.log('info', 'general', 'deleteDNSRecord', 'Deleting DNS record', { domain, type });
 
       // Get current record first
       const currentRecord = await this.getDNSRecord(domain, type);
 
       if (!currentRecord) {
-        console.warn(`⚠️ DNS record not found: ${domain}`);
+        Logger.log('warning', 'general', 'deleteDNSRecord', 'DNS record not found', { domain });
         return { deleted: false, reason: 'Record not found' };
       }
 
@@ -415,7 +413,7 @@ class DNSManagementService {
         ChangeInfo: { Id: string };
       };
 
-      console.log(`✅ DNS record deleted: ${domain}`);
+      Logger.log('info', 'general', 'deleteDNSRecord', 'DNS record deleted', { domain });
 
       return {
         deleted: true,
@@ -426,7 +424,7 @@ class DNSManagementService {
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ DNS record deletion failed:', error);
+      Logger.log('error', 'general', 'deleteDNSRecord', 'DNS record deletion failed', { error: error.message });
       throw new Error(`DNS record deletion failed: ${error.message}`);
     }
   }
@@ -456,7 +454,7 @@ class DNSManagementService {
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error getting DNS record:', error);
+      Logger.log('error', 'general', 'getDNSRecord', 'Error getting DNS record', { error: error.message });
       return null;
     }
   }
@@ -550,7 +548,7 @@ class DNSManagementService {
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error getting change status:', error);
+      Logger.log('error', 'general', 'getChangeStatus', 'Error getting change status', { error: error.message });
       throw new Error(`Failed to get change status: ${error.message}`);
     }
   }

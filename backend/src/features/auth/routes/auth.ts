@@ -5,6 +5,7 @@ import { db } from '../../../db/index.js';
 import { tenants, tenantUsers, applications, organizationApplications } from '../../../db/schema/index.js';
 import { eq, and } from 'drizzle-orm';
 import { shouldLogVerbose } from '../../../utils/verbose-log.js';
+import Logger from '../../../utils/logger.js';
 
 // ─── validate-token response cache ────────────────────────────────────────
 // The FA backend (and other downstream apps) call POST /validate-token on
@@ -113,7 +114,7 @@ async function fetchEnabledApps(tenantId: string): Promise<Array<{
   } catch (err: unknown) {
     // Non-fatal: if organization_applications doesn't exist yet (older tenants)
     // return empty array — downstream apps handle entitlement gracefully.
-    if (shouldLogVerbose()) console.warn('⚠️ fetchEnabledApps failed (non-fatal):', (err as Error).message);
+    if (shouldLogVerbose()) Logger.log('warning', 'kinde', 'fetch-enabled-apps', 'fetchEnabledApps failed (non-fatal)', { error: (err as Error).message });
     return [];
   }
 }
@@ -179,7 +180,7 @@ export default async function authRoutes(
     const query = request.query as Record<string, string>;
     const { state, redirect_uri, provider, prompt, login_hint } = query;
 
-    if (shouldLogVerbose()) console.log('🔍 OAuth login request:', { state, provider });
+    if (shouldLogVerbose()) Logger.log('info', 'kinde', 'oauth-login', 'OAuth login request', { state, provider });
 
     try {
       const authUrl = identityProvider.getSocialAuthUrl(provider || 'default', {
@@ -191,7 +192,7 @@ export default async function authRoutes(
       return reply.redirect(authUrl);
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ OAuth login error:', error.message);
+      Logger.log('error', 'kinde', 'oauth-login', 'OAuth login error', { error: error.message });
       return reply.code(500).send({
         error: 'Internal Server Error',
         message: 'Failed to generate OAuth login URL',
@@ -228,7 +229,7 @@ export default async function authRoutes(
       return reply.redirect(authUrl);
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ ${provider} OAuth error:`, error.message);
+      Logger.log('error', 'kinde', 'oauth-provider', `${provider} OAuth error`, { provider, error: error.message });
       return reply.code(500).send({
         error: 'Internal Server Error',
         message: `Failed to generate ${provider} OAuth URL`,
@@ -264,7 +265,7 @@ export default async function authRoutes(
       return reply.redirect(authUrl);
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Organization login error:', error.message);
+      Logger.log('error', 'kinde', 'org-login', 'Organization login error', { error: error.message });
       return reply.code(500).send({
         error: 'Internal Server Error',
         message: 'Failed to generate organization login URL',
@@ -281,15 +282,15 @@ export default async function authRoutes(
     const query = request.query as Record<string, string>;
     const { code, state, error: authError } = query;
 
-    if (shouldLogVerbose()) console.log('🔍 OAuth callback received:', { hasCode: !!code, state, error: authError });
+    if (shouldLogVerbose()) Logger.log('info', 'kinde', 'oauth-callback', 'OAuth callback received', { hasCode: !!code, state, authError });
 
     if (authError) {
-      console.error('❌ OAuth error in callback:', authError);
+      Logger.log('error', 'kinde', 'oauth-callback', 'OAuth error in callback', { authError });
       return reply.redirect(buildAuthErrorRedirect(parseStateSafe(state), 'auth_failed', 'Authentication failed'));
     }
 
     if (!code) {
-      console.error('❌ No authorization code received');
+      Logger.log('error', 'kinde', 'oauth-callback', 'No authorization code received');
       return reply.redirect(buildAuthErrorRedirect(parseStateSafe(state), 'no_code', 'No authorization code provided'));
     }
 
@@ -307,7 +308,7 @@ export default async function authRoutes(
       const tokens = await identityProvider.exchangeCodeForTokens(code, redirectUri);
       const userInfo = await identityProvider.getEnhancedUserInfo(tokens.access_token as string);
 
-      if (shouldLogVerbose()) console.log('✅ Authenticated user:', { id: userInfo.id, email: userInfo.email });
+      if (shouldLogVerbose()) Logger.log('info', 'kinde', 'oauth-callback', 'Authenticated user', { id: userInfo.id, email: userInfo.email });
 
       const base = getAuthCookieOptions();
       const cookieOptions = {
@@ -328,7 +329,7 @@ export default async function authRoutes(
 
       // App authentication flow (CRM redirect)
       if (parsedState.app_code && parsedState.redirect_url) {
-        if (shouldLogVerbose()) console.log('🔍 App auth flow:', parsedState.app_code);
+        if (shouldLogVerbose()) Logger.log('info', 'kinde', 'oauth-callback', 'App auth flow', { appCode: parsedState.app_code });
         const frontendCallbackUrl = new URL(`${process.env.FRONTEND_URL}/auth/callback`);
         frontendCallbackUrl.searchParams.set('state', JSON.stringify({
           app_code: parsedState.app_code,
@@ -352,7 +353,7 @@ export default async function authRoutes(
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ OAuth callback error:', error.message);
+      Logger.log('error', 'kinde', 'oauth-callback', 'OAuth callback error', { error: error.message });
       return reply.redirect(buildAuthErrorRedirect(parseStateSafe(state), 'callback_failed', error.message || 'Failed to process authentication'));
     }
   });
@@ -376,7 +377,7 @@ export default async function authRoutes(
       });
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error getting user info:', error.message);
+      Logger.log('error', 'kinde', 'auth-me', 'Error getting user info', { error: error.message });
       return reply.code(500).send({
         error: 'Internal Server Error',
         message: 'Failed to get user information',
@@ -403,7 +404,7 @@ export default async function authRoutes(
       return reply.send({ success: true, data: { logoutUrl, message: 'Logged out successfully' } });
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Logout error:', error.message);
+      Logger.log('error', 'kinde', 'auth-logout', 'Logout error', { error: error.message });
       return reply.code(500).send({ error: 'Internal Server Error', message: 'Failed to logout' });
     }
   });
@@ -443,7 +444,7 @@ export default async function authRoutes(
       return reply.send({ success: true, data: { message: 'Token refreshed successfully' } });
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Token refresh error:', error.message);
+      Logger.log('error', 'kinde', 'auth-refresh', 'Token refresh error', { error: error.message });
       const clearOpts = { path: '/', domain: getAuthCookieOptions().domain };
       reply.clearCookie('kinde_token', clearOpts).clearCookie('kinde_refresh_token', clearOpts);
       return reply.code(401).send({ error: 'Unauthorized', message: 'Failed to refresh token' });
@@ -543,7 +544,7 @@ export default async function authRoutes(
             }
           }
         } catch (opsErr: unknown) {
-          if (shouldLogVerbose()) console.log('⚠️ Operations JWT verification failed, trying Kinde:', (opsErr as Error).message);
+          if (shouldLogVerbose()) Logger.log('warning', 'kinde', 'validate-token', 'Operations JWT verification failed, trying Kinde', { error: (opsErr as Error).message });
         }
       }
 
@@ -656,7 +657,7 @@ export default async function authRoutes(
       return reply.send(res);
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ validate-token error:', error.message);
+      Logger.log('error', 'kinde', 'validate-token', 'validate-token error', { error: error.message });
       const lowerMessage = (error.message || '').toLowerCase();
       if (lowerMessage.includes('invalid compact jws') || lowerMessage.includes('jwt malformed')) {
         return reply.code(400).send({

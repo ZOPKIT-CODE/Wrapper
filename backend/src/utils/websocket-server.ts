@@ -7,11 +7,20 @@ import { WebSocketServer as WSServer, WebSocket } from 'ws';
 import { parse } from 'url';
 import type { IncomingMessage } from 'http';
 import type { Server } from 'http';
+import { createRemoteJWKSet, jwtVerify } from 'jose';
+import Logger from './logger.js';
 
 let wss: WSServer | null = null;
 const clientConnections = new Map<string, Set<WebSocket>>(); // userId -> Set of WebSocket connections
 const tenantUserMap = new Map<string, Set<string>>(); // tenantId -> Set of userIds
 const userTenantMap = new Map<string, string>(); // userId -> tenantId
+
+// Module-level JWKS set — cached once to avoid re-fetching on every connection.
+const kindeIssuerUrl = process.env.KINDE_ISSUER_URL || process.env.KINDE_DOMAIN || 'https://auth.zopkit.com';
+const wsJwks = createRemoteJWKSet(
+  new URL(`${kindeIssuerUrl}/.well-known/jwks.json`),
+  { cacheMaxAge: 6 * 60 * 60 * 1000 } // 6 hours
+);
 
 /**
  * Initialize WebSocket server
@@ -27,22 +36,47 @@ export function initWebSocketServer(server: Server): WSServer {
     perMessageDeflate: false // Disable compression for lower latency
   });
 
-  wss.on('connection', (ws: WebSocket, request: IncomingMessage) => {
+  wss.on('connection', async (ws: WebSocket, request: IncomingMessage) => {
     const url = parse(request.url ?? '', true);
     const userId = url.query?.userId as string | undefined;
     const tenantId = url.query?.tenantId as string | undefined;
     const token = url.query?.token as string | undefined;
 
     if (!userId || !tenantId || !token) {
-      console.warn('⚠️ WebSocket connection rejected: missing parameters');
+      Logger.log('warning', 'websocket', 'connection-rejected', 'WebSocket connection rejected: missing parameters');
       ws.close(1008, 'Missing required parameters');
       return;
     }
 
-    // TODO: Validate token here
-    // For now, accept connection
+    // Validate JWT token using Kinde's JWKS endpoint
+    try {
+      const { payload } = await jwtVerify(token, wsJwks, {
+        issuer: kindeIssuerUrl,
+      });
 
-    console.log(`✅ WebSocket connected: ${userId} (tenant: ${tenantId})`);
+      // Verify token is not expired (jwtVerify handles this, but be explicit)
+      const now = Math.floor(Date.now() / 1000);
+      if (payload.exp !== undefined && payload.exp < now) {
+        Logger.log('warning', 'websocket', 'connection-rejected', `WebSocket connection rejected: token expired for ${userId}`, { userId });
+        ws.close(1008, 'Token expired');
+        return;
+      }
+
+      // Verify the token's subject matches the claimed userId
+      const tokenSub = payload.sub;
+      if (!tokenSub || tokenSub !== userId) {
+        Logger.log('warning', 'websocket', 'connection-rejected', `WebSocket connection rejected: userId mismatch (token sub: ${tokenSub}, param: ${userId})`, { tokenSub, userId });
+        ws.close(1008, 'Token userId mismatch');
+        return;
+      }
+    } catch (err) {
+      const error = err as Error;
+      Logger.log('warning', 'websocket', 'connection-rejected', `WebSocket connection rejected: invalid token — ${error.message}`, { error: error.message });
+      ws.close(1008, 'Invalid or expired token');
+      return;
+    }
+
+    Logger.log('info', 'websocket', 'connected', `WebSocket connected: ${userId} (tenant: ${tenantId})`, { userId, tenantId });
 
     // Store connection
     if (!clientConnections.has(userId)) {
@@ -70,7 +104,8 @@ export function initWebSocketServer(server: Server): WSServer {
         const data = JSON.parse(message.toString());
         handleWebSocketMessage(ws, userId, tenantId, data);
       } catch (error) {
-        console.error('❌ WebSocket message error:', error);
+        const err = error as Error;
+        Logger.log('error', 'websocket', 'message-error', 'WebSocket message error', { error: err.message, stack: err.stack });
         ws.send(JSON.stringify({
           type: 'error',
           message: 'Invalid message format'
@@ -80,7 +115,7 @@ export function initWebSocketServer(server: Server): WSServer {
 
     // Handle disconnect
     ws.on('close', () => {
-      console.log(`🔌 WebSocket disconnected: ${userId}`);
+      Logger.log('info', 'websocket', 'disconnected', `WebSocket disconnected: ${userId}`, { userId });
       const connections = clientConnections.get(userId);
       if (connections) {
         connections.delete(ws);
@@ -105,7 +140,8 @@ export function initWebSocketServer(server: Server): WSServer {
 
     // Handle errors
     ws.on('error', (error) => {
-      console.error(`❌ WebSocket error for ${userId}:`, error);
+      const err = error as Error;
+      Logger.log('error', 'websocket', 'connection-error', `WebSocket error for ${userId}`, { userId, error: err.message, stack: err.stack });
     });
 
     // Send ping every 30 seconds to keep connection alive
@@ -122,7 +158,7 @@ export function initWebSocketServer(server: Server): WSServer {
     });
   });
 
-  console.log('✅ WebSocket server initialized');
+  Logger.log('info', 'websocket', 'server-initialized', 'WebSocket server initialized');
   return wss;
 }
 
@@ -137,11 +173,11 @@ function handleWebSocketMessage(ws: WebSocket, userId: string, tenantId: string,
     
     case 'subscribe':
       // Subscribe to specific notification types
-      console.log(`📡 User ${userId} subscribed to:`, data.channels);
+      Logger.log('info', 'websocket', 'subscribe', `User ${userId} subscribed`, { userId, channels: data.channels });
       break;
-    
+
     default:
-      console.log(`📨 Unknown message type: ${data.type}`);
+      Logger.log('info', 'websocket', 'unknown-message', `Unknown message type: ${data.type}`, { userId, type: data.type });
   }
 }
 
@@ -167,7 +203,8 @@ export function sendNotificationToUser(userId: string, notification: Record<stri
         ws.send(message);
         sent = true;
       } catch (error) {
-        console.error(`❌ Failed to send notification to ${userId}:`, error);
+        const err = error as Error;
+        Logger.log('error', 'websocket', 'send-notification-failed', `Failed to send notification to ${userId}`, { userId, error: err.message, stack: err.stack });
       }
     }
   });
@@ -181,7 +218,7 @@ export function sendNotificationToUser(userId: string, notification: Record<stri
 export function broadcastToTenant(tenantId: string, notification: Record<string, unknown>): { sent: number; total: number } {
   const userIds = tenantUserMap.get(tenantId);
   if (!userIds || userIds.size === 0) {
-    console.log(`⚠️ No active connections for tenant ${tenantId}`);
+    Logger.log('info', 'websocket', 'broadcast-skip', `No active connections for tenant ${tenantId}`, { tenantId });
     return { sent: 0, total: 0 };
   }
 
@@ -203,14 +240,15 @@ export function broadcastToTenant(tenantId: string, notification: Record<string,
             ws.send(message);
             sentCount++;
           } catch (error) {
-            console.error(`❌ Failed to send notification to ${userId}:`, error);
+            const err = error as Error;
+            Logger.log('error', 'websocket', 'broadcast-send-failed', `Failed to send notification to ${userId}`, { userId, tenantId, error: err.message, stack: err.stack });
           }
         }
       });
     }
   });
 
-  console.log(`📢 Broadcasted to ${sentCount} connections across ${totalUsers} users in tenant ${tenantId}`);
+  Logger.log('info', 'websocket', 'broadcast-tenant', `Broadcasted to ${sentCount} connections across ${totalUsers} users in tenant ${tenantId}`, { tenantId, sent: sentCount, totalUsers });
   return { sent: sentCount, total: totalUsers };
 }
 
@@ -229,7 +267,7 @@ export function broadcastToTenants(tenantIds: string[], notification: Record<str
   const totalSent = results.reduce((sum: number, r: { sent: number; total: number }) => sum + r.sent, 0);
   const totalUsers = results.reduce((sum: number, r: { sent: number; total: number }) => sum + r.total, 0);
 
-  console.log(`📢 Bulk broadcasted to ${totalSent} connections across ${totalUsers} users in ${tenantIds.length} tenants`);
+  Logger.log('info', 'websocket', 'broadcast-tenants', `Bulk broadcasted to ${totalSent} connections across ${totalUsers} users in ${tenantIds.length} tenants`, { tenantCount: tenantIds.length, totalSent, totalUsers });
   return {
     results,
     summary: {

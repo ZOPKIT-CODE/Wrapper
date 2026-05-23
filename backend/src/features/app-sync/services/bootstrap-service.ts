@@ -46,6 +46,8 @@ export interface BootstrapTenantRecord {
   tenantName: string;
   kindeOrgId: string | null;
   isActive: boolean;
+  industry: string | null;
+  organizationSize: string | null;
   /** Subscription status/billing/trial details — plan name is at the event top-level */
   subscription: {
     status: string | null;
@@ -348,10 +350,12 @@ export class BootstrapService {
   private async fetchTenant(tx: any, tenantId: string): Promise<BootstrapTenantRecord | null> {
     const rows = await tx
       .select({
-        tenantId:    tenants.tenantId,
-        companyName: tenants.companyName,
-        kindeOrgId:  tenants.kindeOrgId,
-        isActive:    tenants.isActive,
+        tenantId:         tenants.tenantId,
+        companyName:      tenants.companyName,
+        kindeOrgId:       tenants.kindeOrgId,
+        isActive:         tenants.isActive,
+        industry:         tenants.industry,
+        organizationSize: tenants.organizationSize,
       })
       .from(tenants)
       .where(eq(tenants.tenantId, tenantId))
@@ -378,10 +382,12 @@ export class BootstrapService {
     const sub = subRows[0] ?? null;
 
     return {
-      tenantId:   r.tenantId,
-      tenantName: r.companyName ?? '',
-      kindeOrgId: r.kindeOrgId ?? null,
-      isActive:   r.isActive ?? true,
+      tenantId:         r.tenantId,
+      tenantName:       r.companyName ?? '',
+      kindeOrgId:       r.kindeOrgId ?? null,
+      isActive:         r.isActive ?? true,
+      industry:         r.industry ?? null,
+      organizationSize: r.organizationSize ?? null,
       subscription: sub
         ? {
             status:         sub.status ?? null,

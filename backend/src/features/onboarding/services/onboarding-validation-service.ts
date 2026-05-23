@@ -9,6 +9,7 @@ import { systemDbConnection } from '../../../db/index.js';
 import { tenants, tenantUsers } from '../../../db/schema/index.js';
 import { eq } from 'drizzle-orm';
 import VerificationService from './verification-service.js';
+import Logger from '../../../utils/logger.js';
 
 class OnboardingValidationService {
 
@@ -26,7 +27,7 @@ class OnboardingValidationService {
       throw new Error('Email is required for duplicate checking');
     }
 
-    console.log('🔍 Checking for duplicate email:', adminEmail);
+    Logger.log('info', 'general', 'checkForDuplicates', 'Checking for duplicate email', { adminEmail });
 
     // Check if email already exists as adminEmail in tenants table
     const existingTenant = await systemDbConnection
@@ -43,7 +44,7 @@ class OnboardingValidationService {
       const tenant = existingTenant[0];
       // If onboarding is already completed, this is not an error - user should be redirected
       if (tenant.onboardingCompleted === true) {
-        console.log('✅ Email found with completed onboarding - user should be redirected to dashboard');
+        Logger.log('info', 'general', 'checkForDuplicates', 'Email found with completed onboarding - user should be redirected to dashboard');
         return { 
           available: false, 
           alreadyOnboarded: true,
@@ -52,7 +53,7 @@ class OnboardingValidationService {
         };
       }
       // If onboarding is not completed, treat as duplicate
-      console.log('❌ Duplicate email found in tenants table with incomplete onboarding:', adminEmail);
+      Logger.log('warning', 'general', 'checkForDuplicates', 'Duplicate email found in tenants table with incomplete onboarding', { adminEmail });
       throw new Error('This email is already associated with an organization');
     }
 
@@ -71,7 +72,7 @@ class OnboardingValidationService {
       const user = existingUser[0];
       // If user is already onboarded, this is not an error - user should be redirected
       if (user.onboardingCompleted === true) {
-        console.log('✅ Email found as user with completed onboarding - user should be redirected to dashboard');
+        Logger.log('info', 'general', 'checkForDuplicates', 'Email found as user with completed onboarding - user should be redirected to dashboard');
         return { 
           available: false, 
           alreadyOnboarded: true,
@@ -80,11 +81,11 @@ class OnboardingValidationService {
         };
       }
       // If onboarding is not completed, treat as duplicate
-      console.log('❌ Duplicate email found in tenantUsers table with incomplete onboarding:', adminEmail);
+      Logger.log('warning', 'general', 'checkForDuplicates', 'Duplicate email found in tenantUsers table with incomplete onboarding', { adminEmail });
       throw new Error('This email is already registered as a user');
     }
 
-    console.log('✅ No duplicates found for email:', adminEmail);
+    Logger.log('info', 'general', 'checkForDuplicates', 'No duplicates found for email', { adminEmail });
     return { available: true };
   }
 
@@ -98,7 +99,7 @@ class OnboardingValidationService {
       throw new Error('Subdomain is required');
     }
 
-    console.log('🔍 Checking subdomain availability:', subdomain);
+    Logger.log('info', 'general', 'checkSubdomainAvailability', 'Checking subdomain availability', { subdomain });
 
     const existingTenant = await systemDbConnection
       .select({ tenantId: tenants.tenantId })
@@ -107,7 +108,7 @@ class OnboardingValidationService {
       .limit(1);
 
     const isAvailable = existingTenant.length === 0;
-    console.log(isAvailable ? '✅ Subdomain available' : '❌ Subdomain taken:', subdomain);
+    Logger.log('info', 'general', 'checkSubdomainAvailability', isAvailable ? 'Subdomain available' : 'Subdomain taken', { subdomain });
 
     return isAvailable;
   }
@@ -119,7 +120,7 @@ class OnboardingValidationService {
    * @returns {Object} Validation result with success status and data
    */
   static async validateCompleteOnboarding(data: Record<string, unknown>, type: string): Promise<Record<string, unknown>> {
-    console.log('🔍 Validating complete onboarding data for type:', type);
+    Logger.log('info', 'general', 'validateCompleteOnboarding', 'Validating complete onboarding data', { type });
 
     const errors = [];
 
@@ -212,7 +213,7 @@ class OnboardingValidationService {
         const pan = (data.panNumber ?? taxDetails?.pan) as string;
         const companyName = String(data.legalCompanyName ?? data.companyName ?? '');
         
-        console.log(`🔍 Verifying PAN: ${pan} for company: ${companyName}`);
+        Logger.log('info', 'general', 'validateCompleteOnboarding', 'Verifying PAN', { pan, companyName });
         try {
           const panVerification = await VerificationService.verifyPAN(pan, companyName);
           
@@ -224,8 +225,7 @@ class OnboardingValidationService {
                               panVerification.requiresWhitelist;
             
             if (shouldSkip) {
-              console.warn(`⚠️ PAN verification skipped (service not configured or API error). PAN will be stored without verification.`);
-              console.warn(`   Reason: ${panVerification.error || 'Verification service unavailable'}`);
+              Logger.log('warning', 'general', 'validateCompleteOnboarding', 'PAN verification skipped (service not configured or API error). PAN will be stored without verification', { reason: panVerification.error || 'Verification service unavailable' });
             } else {
               // Only add error if verification failed for actual validation reasons (invalid/inactive PAN)
               errors.push({ 
@@ -235,18 +235,17 @@ class OnboardingValidationService {
               });
             }
           } else {
-            console.log(`✅ PAN verified successfully: ${pan}`);
+            Logger.log('info', 'general', 'validateCompleteOnboarding', 'PAN verified successfully', { pan });
             // Optionally store verification details for later use
             const details = panVerification.details as Record<string, unknown> | undefined;
             if (details) {
-              console.log(`📋 PAN Details: Name Match Score: ${details.nameMatchScore}, Type: ${details.type}`);
+              Logger.log('info', 'general', 'validateCompleteOnboarding', 'PAN details', { nameMatchScore: details.nameMatchScore, type: details.type });
             }
           }
         } catch (err: unknown) {
           const verifyError = err as Error;
           // Network errors or unexpected exceptions: log but don't block onboarding
-          console.warn(`⚠️ PAN verification error (non-blocking):`, verifyError.message);
-          console.warn(`   PAN will be stored without verification.`);
+          Logger.log('warning', 'general', 'validateCompleteOnboarding', 'PAN verification error (non-blocking). PAN will be stored without verification', { error: verifyError.message });
         }
       }
 
@@ -255,7 +254,7 @@ class OnboardingValidationService {
         const gstin = String(data.gstin);
         const companyName = String(data.legalCompanyName ?? data.companyName ?? '');
         
-        console.log(`🔍 Verifying GSTIN: ${gstin} for company: ${companyName}`);
+        Logger.log('info', 'general', 'validateCompleteOnboarding', 'Verifying GSTIN', { gstin, companyName });
         try {
           const gstinVerification = await VerificationService.verifyGSTIN(gstin, companyName);
           
@@ -267,8 +266,7 @@ class OnboardingValidationService {
                               gstinVerification.requiresWhitelist;
             
             if (shouldSkip) {
-              console.warn(`⚠️ GSTIN verification skipped (service not configured or API error). GSTIN will be stored without verification.`);
-              console.warn(`   Reason: ${gstinVerification.error || 'Verification service unavailable'}`);
+              Logger.log('warning', 'general', 'validateCompleteOnboarding', 'GSTIN verification skipped (service not configured or API error). GSTIN will be stored without verification', { reason: gstinVerification.error || 'Verification service unavailable' });
             } else {
               // Only add error if verification failed for actual validation reasons (invalid/inactive GSTIN)
               errors.push({ 
@@ -278,7 +276,7 @@ class OnboardingValidationService {
               });
             }
           } else {
-            console.log(`✅ GSTIN verified successfully: ${gstin}`);
+            Logger.log('info', 'general', 'validateCompleteOnboarding', 'GSTIN verified successfully', { gstin });
             // Check if GSTIN status is active
             const gstinDetails = gstinVerification.details as Record<string, unknown> | undefined;
             const status = gstinDetails?.status as string | undefined;
@@ -291,14 +289,13 @@ class OnboardingValidationService {
                 code: 'GSTIN_NOT_ACTIVE'
               });
             } else if (gstinDetails) {
-              console.log(`📋 GSTIN Details: Status: ${status}, Legal Name: ${gstinDetails.legalBusinessName}`);
+              Logger.log('info', 'general', 'validateCompleteOnboarding', 'GSTIN details', { status, legalBusinessName: gstinDetails.legalBusinessName });
             }
           }
         } catch (err: unknown) {
           const verifyError = err as Error;
           // Network errors or unexpected exceptions: log but don't block onboarding
-          console.warn(`⚠️ GSTIN verification error (non-blocking):`, verifyError.message);
-          console.warn(`   GSTIN will be stored without verification.`);
+          Logger.log('warning', 'general', 'validateCompleteOnboarding', 'GSTIN verification error (non-blocking). GSTIN will be stored without verification', { error: verifyError.message });
         }
       }
     }
@@ -310,14 +307,14 @@ class OnboardingValidationService {
     }
 
     if (errors.length > 0) {
-      console.log('❌ Validation failed:', errors);
+      Logger.log('warning', 'general', 'validateCompleteOnboarding', 'Validation failed', { errors });
       return {
         success: false,
         errors
       };
     }
 
-    console.log('✅ Validation successful');
+    Logger.log('info', 'general', 'validateCompleteOnboarding', 'Validation successful');
     return {
       success: true,
       data: {
@@ -336,7 +333,7 @@ class OnboardingValidationService {
       throw new Error('Company name is required to generate subdomain');
     }
 
-    console.log('🔧 Generating unique subdomain for:', companyName);
+    Logger.log('info', 'general', 'generateUniqueSubdomain', 'Generating unique subdomain', { companyName });
 
     // Convert company name to subdomain-friendly format
     let baseSubdomain = companyName
@@ -368,7 +365,7 @@ class OnboardingValidationService {
       }
     }
 
-    console.log('✅ Generated unique subdomain:', subdomain);
+    Logger.log('info', 'general', 'generateUniqueSubdomain', 'Generated unique subdomain', { subdomain });
     return subdomain;
   }
 }

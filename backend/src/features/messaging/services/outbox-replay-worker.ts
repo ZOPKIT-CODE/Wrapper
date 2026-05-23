@@ -1,6 +1,7 @@
 import { EventTrackingService } from './event-tracking-service.js';
 import { db } from '../../../db/index.js';
 import { sql } from 'drizzle-orm';
+import Logger from '../../../utils/logger.js';
 
 // Stable 32-bit advisory lock key for the outbox replay worker.
 // All Wrapper processes compete for the same lock; only one wins per cycle.
@@ -69,20 +70,24 @@ export function startOutboxReplayWorker(): void {
     try {
       const replayed = await EventTrackingService.replayPendingEvents(batchSize, maxRetries);
       if (replayed > 0) {
-        console.log(`🔁 Outbox replay worker republished ${replayed} pending/failed event(s)`);
+        Logger.log('info', 'general', 'startOutboxReplayWorker', `Outbox replay worker republished ${replayed} pending/failed event(s)`, { replayed });
       }
     } catch (error: unknown) {
-      console.error('❌ Outbox replay worker (pending) failed:', (error as Error)?.message || error);
+      Logger.log('error', 'general', 'startOutboxReplayWorker', 'Outbox replay worker (pending) failed', { error: (error as Error)?.message || String(error) });
     }
+
+    // 1 s gap: ensures the shared OUTBOX_REPLAY_MAX_TPS token budget refills between
+    // the two replay paths so their chunk boundaries cannot produce a combined TPS burst.
+    await new Promise((r) => setTimeout(r, 1000));
 
     // Also reprocess events stuck as published+unacknowledged (MQ was down at publish time)
     try {
       const reprocessed = await EventTrackingService.replayUnacknowledgedPublishedEvents();
       if (reprocessed > 0) {
-        console.log(`🔁 Outbox unack reprocessor redelivered ${reprocessed} event(s)`);
+        Logger.log('info', 'general', 'startOutboxReplayWorker', `Outbox unack reprocessor redelivered ${reprocessed} event(s)`, { reprocessed });
       }
     } catch (error: unknown) {
-      console.error('❌ Outbox replay worker (unack) failed:', (error as Error)?.message || error);
+      Logger.log('error', 'general', 'startOutboxReplayWorker', 'Outbox replay worker (unack) failed', { error: (error as Error)?.message || String(error) });
     }
   };
 

@@ -3,6 +3,8 @@ import { creditConfigurations, applications as applicationsTable, applicationMod
 import { eq, and, sql, inArray, or } from 'drizzle-orm';
 import { getModulePermissions } from './credit-core.js';
 import { CreditConfigRepository } from './credit-config-repository.js';
+import Logger from '../../../utils/logger.js';
+import { snsSqsPublisher } from '../../messaging/utils/sns-sqs-publisher.js';
 
 /**
  * Get global operation configurations
@@ -33,7 +35,7 @@ export async function getGlobalOperationConfigs() {
     if ((error as Error & { code?: string }).code === '42P01' || error.message.includes('does not exist')) {
       return [];
     }
-    console.error('Error getting global operation configs:', error);
+    Logger.log('error', 'billing', 'get-global-operation-configs', 'Error getting global operation configs', { error: error.message });
     throw error;
   }
 }
@@ -80,7 +82,7 @@ export async function getGlobalModuleConfigs(): Promise<Record<string, unknown>[
     return Object.values(moduleConfigs);
   } catch (err: unknown) {
     const error = err as Error;
-    console.error('Error getting global module configs:', error);
+    Logger.log('error', 'billing', 'get-global-module-configs', 'Error getting global module configs', { error: error.message });
     return [];
   }
 }
@@ -128,7 +130,7 @@ export async function getGlobalAppConfigs(): Promise<Record<string, unknown>[]> 
     return Object.values(appConfigs);
   } catch (err: unknown) {
     const error = err as Error;
-    console.error('Error getting global app configs:', error);
+    Logger.log('error', 'billing', 'get-global-app-configs', 'Error getting global app configs', { error: error.message });
     return [];
   }
 }
@@ -192,7 +194,7 @@ export async function getOperationConfig(operationCode: string, tenantId: string
     };
   } catch (err: unknown) {
     const error = err as Error;
-    console.error('Error fetching operation config:', error);
+    Logger.log('error', 'billing', 'get-operation-config', 'Error fetching operation config', { error: error.message });
     throw error;
   }
 }
@@ -273,7 +275,7 @@ export async function getModuleConfig(moduleCode: string, tenantId: string | nul
     };
   } catch (err: unknown) {
     const error = err as Error;
-    console.error('Error fetching module config:', error);
+    Logger.log('error', 'billing', 'get-module-config', 'Error fetching module config', { error: error.message });
     throw error;
   }
 }
@@ -356,7 +358,7 @@ export async function getAppConfig(appCode: string, tenantId: string | null = nu
     };
   } catch (err: unknown) {
     const error = err as Error;
-    console.error('Error fetching app config:', error);
+    Logger.log('error', 'billing', 'get-app-config', 'Error fetching app config', { error: error.message });
     throw error;
   }
 }
@@ -483,7 +485,7 @@ export async function getAllConfigurations(filters: Record<string, unknown> = {}
     return results;
   } catch (err: unknown) {
     const error = err as Error;
-    console.error('Error fetching all configurations:', error);
+    Logger.log('error', 'billing', 'get-all-configurations', 'Error fetching all configurations', { error: error.message });
     throw error;
   }
 }
@@ -543,10 +545,24 @@ export async function setOperationConfig(operationCode: string, configData: Reco
         .returning();
     }
 
+    const suiteAppsOpCfg = (process.env.BUSINESS_SUITE_TARGET_APPS || 'crm,accounting,ops').split(',').map((a: string) => a.trim());
+    for (const targetApp of suiteAppsOpCfg) {
+      snsSqsPublisher.publishCreditEvent(targetApp, 'credit_config_updated', tenantId ?? 'global', {
+        configType: 'operation',
+        operationCode,
+        tenantId: tenantId ?? null,
+        isGlobal: tenantId === null,
+        updatedBy: adminUserId,
+        updatedAt: new Date().toISOString(),
+      }, adminUserId).catch((err: Error) => {
+        Logger.log('warning', 'billing', 'set-operation-config', 'Failed to publish credit_config_updated event', { operationCode, error: err.message });
+      });
+    }
+
     return result;
   } catch (err: unknown) {
     const error = err as Error;
-    console.error('Error setting operation config:', error);
+    Logger.log('error', 'billing', 'set-operation-config', 'Error setting operation config', { error: error.message });
     throw error;
   }
 }
@@ -572,7 +588,7 @@ export async function getApplicationModules() {
 
     return modules;
   } catch (error) {
-    console.error('Error fetching application modules:', error);
+    Logger.log('error', 'billing', 'get-application-modules', 'Error fetching application modules', { error: (error as Error).message });
     return [];
   }
 }
@@ -582,7 +598,7 @@ export async function getApplicationModules() {
  */
 export async function getApplicationCreditConfigurations() {
   try {
-    console.log('📊 Getting application credit configurations');
+    Logger.log('info', 'billing', 'get-application-credit-configurations', 'Getting application credit configurations');
 
     // Get all applications
     const applications = await db
@@ -674,7 +690,7 @@ export async function getApplicationCreditConfigurations() {
 
     return applicationsWithConfigs;
   } catch (error) {
-    console.error('Error getting application credit configurations:', error);
+    Logger.log('error', 'billing', 'get-application-credit-configurations', 'Error getting application credit configurations', { error: (error as Error).message });
     throw error;
   }
 }
@@ -686,7 +702,7 @@ export async function getApplicationCreditConfigurations() {
  */
 export async function getGlobalCreditConfigurationsByApp(appIdentifier: string | null = null) {
   try {
-    console.log('🔍 Getting global credit configurations for app:', appIdentifier || 'ALL');
+    Logger.log('info', 'billing', 'get-global-credit-configs-by-app', 'Getting global credit configurations for app', { appIdentifier: appIdentifier || 'ALL' });
 
     // Build query for applications
     const appCondition = appIdentifier
@@ -821,7 +837,7 @@ export async function getGlobalCreditConfigurationsByApp(appIdentifier: string |
       }
     };
   } catch (error) {
-    console.error('Error getting global credit configurations by app:', error);
+    Logger.log('error', 'billing', 'get-global-credit-configs-by-app', 'Error getting global credit configurations by app', { error: (error as Error).message });
     throw error;
   }
 }
@@ -831,7 +847,7 @@ export async function getGlobalCreditConfigurationsByApp(appIdentifier: string |
  */
 export async function createTenantOperationCost(tenantId: string, configData: Record<string, unknown>, userId: string): Promise<Record<string, unknown>> {
   try {
-    console.log('⚙️ Creating tenant-specific operation cost:', { tenantId, operationCode: configData.operationCode });
+    Logger.log('info', 'billing', 'create-tenant-operation-cost', 'Creating tenant-specific operation cost', { tenantId, operationCode: configData.operationCode });
 
     const {
       operationCode,
@@ -880,7 +896,7 @@ export async function createTenantOperationCost(tenantId: string, configData: Re
 
     // If configuration exists, update it instead of throwing error
     if (existing.length > 0) {
-      console.log('⚙️ Updating existing tenant-specific operation cost configuration');
+      Logger.log('info', 'billing', 'create-tenant-operation-cost', 'Updating existing tenant-specific operation cost configuration');
 
       const updateData: Record<string, unknown> = {
         creditCost: (creditCost as number).toString(),
@@ -908,7 +924,7 @@ export async function createTenantOperationCost(tenantId: string, configData: Re
         .set(updateData as any)
         .where(eq(creditConfigurations.configId, existing[0].configId));
 
-      console.log('✅ Updated tenant-specific operation cost configuration');
+      Logger.log('info', 'billing', 'create-tenant-operation-cost', 'Updated tenant-specific operation cost configuration');
       return { success: true, message: 'Tenant operation cost configuration updated successfully', configId: existing[0].configId };
     }
 
@@ -949,14 +965,14 @@ export async function createTenantOperationCost(tenantId: string, configData: Re
     if (overagePeriod !== undefined) insertData.overagePeriod = overagePeriod;
     if (overageCost !== undefined) insertData.overageCost = String(overageCost);
 
-    console.log('📝 Inserting tenant configuration data:', insertData);
+    Logger.log('info', 'billing', 'create-tenant-operation-cost', 'Inserting tenant configuration data', { operationCode: insertData.operationCode });
 
     const newConfig = await db
       .insert(creditConfigurations)
       .values(insertData as any)
       .returning();
 
-    console.log('✅ Tenant-specific operation cost created:', newConfig[0]);
+    Logger.log('info', 'billing', 'create-tenant-operation-cost', 'Tenant-specific operation cost created');
 
     return {
       success: true,
@@ -965,10 +981,10 @@ export async function createTenantOperationCost(tenantId: string, configData: Re
     };
   } catch (err: unknown) {
     const error = err as Error & { code?: string };
-    console.error('❌ Error creating tenant operation cost:', error);
+    Logger.log('error', 'billing', 'create-tenant-operation-cost', 'Error creating tenant operation cost', { error: error.message });
 
     if (error.code === '23505') {
-      console.warn('⚠️ Unexpected unique constraint violation in createTenantOperationCost:', error);
+      Logger.log('warning', 'billing', 'create-tenant-operation-cost', 'Unexpected unique constraint violation in createTenantOperationCost', { error: error.message });
       throw new Error('Tenant operation cost configuration already exists. Please try updating instead.');
     } else if (error.code === '23503') {
       throw new Error('Invalid tenant ID or user ID');
@@ -985,7 +1001,7 @@ export async function createTenantOperationCost(tenantId: string, configData: Re
  */
 export async function setModuleConfig(moduleCode: string, configData: Record<string, unknown>, adminUserId: string, tenantId: string | null = null): Promise<unknown[]> {
   try {
-    console.log('⚙️ Setting module config:', { moduleCode, tenantId });
+    Logger.log('info', 'billing', 'set-module-config', 'Setting module config', { moduleCode, tenantId });
 
     // Get real permissions from the application modules table
     const moduleOperations = await getModulePermissions(moduleCode);
@@ -1042,15 +1058,30 @@ export async function setModuleConfig(moduleCode: string, configData: Record<str
         results.push(result[0]);
       } catch (opErr: unknown) {
         const opError = opErr as Error;
-        console.warn(`Failed to set config for operation ${operationCode}:`, opError);
+        Logger.log('warning', 'billing', 'set-module-config', 'Failed to set config for operation', { operationCode, error: opError.message });
       }
     }
 
-    console.log('✅ Module config set successfully for', results.length, 'operations');
+    Logger.log('info', 'billing', 'set-module-config', 'Module config set successfully', { operationCount: results.length });
+
+    const suiteAppsModCfg = (process.env.BUSINESS_SUITE_TARGET_APPS || 'crm,accounting,ops').split(',').map((a: string) => a.trim());
+    for (const targetApp of suiteAppsModCfg) {
+      snsSqsPublisher.publishCreditEvent(targetApp, 'credit_config_updated', tenantId ?? 'global', {
+        configType: 'module',
+        moduleCode,
+        tenantId: tenantId ?? null,
+        isGlobal: tenantId === null,
+        updatedBy: adminUserId,
+        updatedAt: new Date().toISOString(),
+      }, adminUserId).catch((err: Error) => {
+        Logger.log('warning', 'billing', 'set-module-config', 'Failed to publish credit_config_updated event', { moduleCode, error: err.message });
+      });
+    }
+
     return results;
   } catch (err: unknown) {
     const error = err as Error;
-    console.error('Error setting module config:', error);
+    Logger.log('error', 'billing', 'set-module-config', 'Error setting module config', { error: error.message });
     throw error;
   }
 }
@@ -1060,7 +1091,7 @@ export async function setModuleConfig(moduleCode: string, configData: Record<str
  */
 export async function setAppConfig(appCode: string, configData: Record<string, unknown>, adminUserId: string, tenantId: string | null = null): Promise<unknown[]> {
   try {
-    console.log('⚙️ Setting app config:', { appCode, tenantId });
+    Logger.log('info', 'billing', 'set-app-config', 'Setting app config', { appCode, tenantId });
 
     // Create system-level operations for the app
     const appOperations = [
@@ -1124,15 +1155,30 @@ export async function setAppConfig(appCode: string, configData: Record<string, u
         results.push(result[0]);
       } catch (opErr: unknown) {
         const opError = opErr as Error;
-        console.warn(`Failed to set config for operation ${operationCode}:`, opError);
+        Logger.log('warning', 'billing', 'set-app-config', 'Failed to set config for operation', { operationCode, error: opError.message });
       }
     }
 
-    console.log('✅ App config set successfully for', results.length, 'operations');
+    Logger.log('info', 'billing', 'set-app-config', 'App config set successfully', { operationCount: results.length });
+
+    const suiteAppsAppCfg = (process.env.BUSINESS_SUITE_TARGET_APPS || 'crm,accounting,ops').split(',').map((a: string) => a.trim());
+    for (const targetApp of suiteAppsAppCfg) {
+      snsSqsPublisher.publishCreditEvent(targetApp, 'credit_config_updated', tenantId ?? 'global', {
+        configType: 'app',
+        appCode,
+        tenantId: tenantId ?? null,
+        isGlobal: tenantId === null,
+        updatedBy: adminUserId,
+        updatedAt: new Date().toISOString(),
+      }, adminUserId).catch((err: Error) => {
+        Logger.log('warning', 'billing', 'set-app-config', 'Failed to publish credit_config_updated event', { appCode, error: err.message });
+      });
+    }
+
     return results;
   } catch (err: unknown) {
     const error = err as Error;
-    console.error('Error setting app config:', error);
+    Logger.log('error', 'billing', 'set-app-config', 'Error setting app config', { error: error.message });
     throw error;
   }
 }

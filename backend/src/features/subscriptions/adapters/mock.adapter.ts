@@ -6,6 +6,7 @@
  */
 
 import type { PaymentGatewayPort } from './payment-gateway.port.js';
+import Logger from '../../../utils/logger.js';
 import type {
   PaymentGatewayProvider,
   CreateCheckoutParams,
@@ -50,12 +51,12 @@ export class MockPaymentGateway implements PaymentGatewayPort {
     const separator = params.successUrl.includes('?') ? '&' : '?';
     const url = `${params.successUrl}${separator}session_id=${sessionId}&mock=true`;
 
-    console.log('🧪 Mock checkout session created:', sessionId);
+    Logger.log('info', 'general', 'createCheckoutSession', 'Mock checkout session created', { sessionId });
     return { sessionId, url };
   }
 
   async createBillingPortalSession(params: BillingPortalParams): Promise<string | null> {
-    console.log('🧪 Mock billing portal session created for customer:', params.customerId);
+    Logger.log('info', 'general', 'createBillingPortalSession', 'Mock billing portal session created', { customerId: params.customerId });
     return `${params.returnUrl}?mock_portal=true`;
   }
 
@@ -84,7 +85,7 @@ export class MockPaymentGateway implements PaymentGatewayPort {
 
   async createRefund(params: CreateRefundParams): Promise<RefundResult> {
     const refundId = `mock_refund_${Date.now()}`;
-    console.log('🧪 Mock refund created:', refundId, 'amount:', params.amount);
+    Logger.log('info', 'general', 'createRefund', 'Mock refund created', { refundId, amount: params.amount });
     return {
       refundId,
       amount: params.amount,
@@ -111,12 +112,12 @@ export class MockPaymentGateway implements PaymentGatewayPort {
   }
 
   async updateSubscription(subscriptionId: string, _params: UpdateSubscriptionParams): Promise<GatewaySubscription> {
-    console.log('🧪 Mock subscription updated:', subscriptionId);
+    Logger.log('info', 'general', 'updateSubscription', 'Mock subscription updated', { subscriptionId });
     return this.retrieveSubscription(subscriptionId);
   }
 
   async cancelSubscription(subscriptionId: string, _params?: CancelSubscriptionParams): Promise<void> {
-    console.log('🧪 Mock subscription cancelled:', subscriptionId);
+    Logger.log('info', 'general', 'cancelSubscription', 'Mock subscription cancelled', { subscriptionId });
   }
 
   // -----------------------------------------------------------------------

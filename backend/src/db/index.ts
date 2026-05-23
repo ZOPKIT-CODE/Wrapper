@@ -1,4 +1,4 @@
-import { dbManager, initializeDrizzleInstances } from './connection-manager.js';
+import { dbManager, initializeDrizzleInstances, getReadDb } from './connection-manager.js';
 import 'dotenv/config';
 
 process.stdout.write('🔌 Connecting to PostgreSQL...\n');
@@ -9,7 +9,7 @@ export const db = appDb;
 export const systemDbConnection = systemDb;
 export const connectionString = process.env.DATABASE_URL || '';
 
-export { dbManager };
+export { dbManager, getReadDb };
 
 export const sql = dbManager.getAppConnection();
 export const systemSql = dbManager.getSystemConnection();

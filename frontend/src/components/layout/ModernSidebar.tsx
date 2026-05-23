@@ -344,32 +344,6 @@ export function ModernSidebar({
                 ))}
             </div>
 
-            {/* Workspace card */}
-            {!isCollapsed && (
-                <div style={{
-                    padding: '12px 14px',
-                    borderRadius: 12,
-                    background: 'rgba(255,255,255,0.08)',
-                    border: '1px solid rgba(255,255,255,0.12)',
-                    animation: 'zk-fadeIn 320ms ease both',
-                }}>
-                    <div style={{
-                        fontSize: 10,
-                        fontFamily: 'var(--zk-mono)',
-                        color: 'var(--zk-navy-muted)',
-                        letterSpacing: '0.12em',
-                        marginBottom: 4,
-                    }}>
-                        WORKSPACE
-                    </div>
-                    <div style={{ fontSize: 13, fontWeight: 500, color: '#ffffff', letterSpacing: '-0.01em' }}>
-                        Production
-                    </div>
-                    <div style={{ fontSize: 11.5, color: 'var(--zk-navy-muted)', marginTop: 2 }}>
-                        zopkit.app
-                    </div>
-                </div>
-            )}
 
             {/* User card */}
             <div style={{

@@ -14,7 +14,7 @@ import {
   DASHBOARD_PAGE_DESCRIPTION_CLASS,
   DASHBOARD_PAGE_TITLE_CLASS,
 } from '@/components/dashboard/DashboardPageHeader';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import api from '@/lib/api';
 import { useMutation } from '@tanstack/react-query';
 import { subscriptionAPI } from '@/lib/api';

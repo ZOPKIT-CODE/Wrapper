@@ -279,7 +279,7 @@ class ActivityLogger {
     // MANDATORY: Validate tenantId is provided
     if (!tenantId) {
       const error = new Error('Tenant ID is mandatory for activity logging');
-      console.error(`❌ [${requestId}] ${error.message}`);
+      Logger.log('error', 'activity', 'log-activity', `❌ [${requestId}] ${error.message}`);
       return { success: false, error: error.message, requestId };
     }
     
@@ -318,11 +318,11 @@ class ActivityLogger {
 
       await db.insert(auditLogs).values(activityData);
 
-      console.log(`✅ [${requestId}] Activity logged successfully: ${action} for user ${userId}`);
+      Logger.log('info', 'activity', 'log-activity', `✅ [${requestId}] Activity logged successfully: ${action} for user ${userId}`);
       return { success: true, requestId };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ [${requestId}] Failed to log activity:`, {
+      Logger.log('error', 'activity', 'log-activity', `❌ [${requestId}] Failed to log activity`, {
         error: error.message,
         userId,
         tenantId,
@@ -352,7 +352,7 @@ class ActivityLogger {
     // MANDATORY: Validate tenantId is provided
     if (!tenantId) {
       const error = new Error('Tenant ID is mandatory for audit event logging');
-      console.error(`❌ [${requestId}] ${error.message}`);
+      Logger.log('error', 'activity', 'log-audit-event', `❌ [${requestId}] ${error.message}`);
       return { success: false, error: error.message, requestId };
     }
     
@@ -397,11 +397,11 @@ class ActivityLogger {
 
       await db.insert(auditLogs).values(auditData);
 
-      console.log(`✅ [${requestId}] Audit event logged successfully: ${action} on ${resourceType}:${resourceId} by user ${userId}`);
+      Logger.log('info', 'activity', 'log-audit-event', `✅ [${requestId}] Audit event logged successfully: ${action} on ${resourceType}:${resourceId} by user ${userId}`);
       return { success: true, requestId };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ [${requestId}] Failed to log audit event:`, {
+      Logger.log('error', 'activity', 'log-audit-event', `❌ [${requestId}] Failed to log audit event`, {
         error: error.message,
         tenantId,
         userId,
@@ -571,7 +571,7 @@ class ActivityLogger {
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Failed to get user activity:', error);
+      Logger.log('error', 'activity', 'get-user-activity', '❌ Failed to get user activity', { error: error.message, stack: error.stack });
       throw error;
     }
   }
@@ -681,7 +681,7 @@ class ActivityLogger {
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Failed to get tenant audit logs:', error);
+      Logger.log('error', 'activity', 'get-tenant-audit-logs', '❌ Failed to get tenant audit logs', { error: error.message, stack: error.stack });
       throw error;
     }
   }
@@ -784,7 +784,7 @@ class ActivityLogger {
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Failed to get activity stats:', error);
+      Logger.log('error', 'activity', 'get-activity-stats', '❌ Failed to get activity stats', { error: error.message, stack: error.stack });
       throw error;
     }
   }
@@ -831,11 +831,11 @@ class ActivityLogger {
 
       await db.insert(auditLogs).values(activityData as unknown as typeof auditLogs.$inferInsert[]);
 
-      console.log(`📊 Batch activities logged: ${activities.length} entries`);
+      Logger.log('info', 'activity', 'log-batch-activities', `📊 Batch activities logged: ${activities.length} entries`);
       return { success: true, count: activities.length };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Failed to log batch activities:', error);
+      Logger.log('error', 'activity', 'log-batch-activities', '❌ Failed to log batch activities', { error: error.message, stack: error.stack });
       return { success: false, error: error.message };
     }
   }
@@ -862,11 +862,11 @@ class ActivityLogger {
 
       await db.insert(auditLogs).values(auditData as unknown as typeof auditLogs.$inferInsert[]);
 
-      console.log(`🔍 Batch audit events logged: ${auditEvents.length} entries`);
+      Logger.log('info', 'activity', 'log-batch-audit-events', `🔍 Batch audit events logged: ${auditEvents.length} entries`);
       return { success: true, count: auditEvents.length };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Failed to log batch audit events:', error);
+      Logger.log('error', 'activity', 'log-batch-audit-events', '❌ Failed to log batch audit events', { error: error.message, stack: error.stack });
       return { success: false, error: error.message };
     }
   }
@@ -887,7 +887,7 @@ class ActivityLogger {
     
     // MANDATORY: Validate tenantId is provided
     if (!tenantId) {
-      console.error(`❌ [${requestId}] Error logging skipped: No tenantId provided`);
+      Logger.log('error', 'activity', 'log-error', `❌ [${requestId}] Error logging skipped: No tenantId provided`);
       return { success: false, error: 'Tenant ID is mandatory for error logging', requestId };
     }
 
@@ -944,11 +944,11 @@ class ActivityLogger {
 
       await db.insert(auditLogs).values(errorData);
 
-      console.log(`✅ [${requestId}] Error logged successfully: ${errorInfo.action} (${errorInfo.severity})`);
+      Logger.log('info', 'activity', 'log-error', `✅ [${requestId}] Error logged successfully: ${errorInfo.action} (${errorInfo.severity})`);
       return { success: true, requestId, logId: requestId };
     } catch (logErr: unknown) {
       const logError = logErr as Error;
-      console.error(`❌ [${requestId}] Failed to log error:`, {
+      Logger.log('error', 'activity', 'log-error', `❌ [${requestId}] Failed to log error`, {
         error: logError.message,
         originalError: err.message,
         tenantId,
@@ -1166,7 +1166,7 @@ class ActivityLogger {
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Failed to get error logs:', error);
+      Logger.log('error', 'activity', 'get-error-logs', '❌ Failed to get error logs', { error: error.message, stack: error.stack });
       throw error;
     }
   }

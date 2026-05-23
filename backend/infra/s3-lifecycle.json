@@ -1,0 +1,14 @@
+{
+  "Rules": [
+    {
+      "ID": "expire-platform-bus-claim-checks",
+      "Status": "Enabled",
+      "Filter": {
+        "Prefix": "platform-bus/"
+      },
+      "Expiration": {
+        "Days": 7
+      }
+    }
+  ]
+}

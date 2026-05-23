@@ -1,4 +1,5 @@
 import DistributedSSOCache from '../../utils/distributed-sso-cache.js';
+import Logger from '../../utils/logger.js';
 
 /**
  * Cache Invalidation Middleware
@@ -26,36 +27,36 @@ export class CacheInvalidationService {
    */
   static async invalidateUserRoleCache(userId: string, tenantId: string, context: Record<string, unknown> = {}) {
     try {
-      console.log(`🗑️ Invalidating cache for user role change: ${userId}`);
-      
+      Logger.log('info', 'cache', 'invalidate-user-role-cache', `🗑️ Invalidating cache for user role change: ${userId}`);
+
       // Get the user's Kinde info to invalidate the right cache keys
       const user = await this.getUserKindeInfo(userId);
       if (!user) {
-        console.warn(`⚠️ Could not find Kinde info for user ${userId}`);
+        Logger.log('warning', 'cache', 'invalidate-user-role-cache', `⚠️ Could not find Kinde info for user ${userId}`);
         return;
       }
-      
+
       // Invalidate user-specific cache
       await DistributedSSOCache.invalidateUserCache(userId, tenantId);
-      
+
       // Also invalidate auth cache if we have Kinde info (orgCode from tenant join if needed)
       const userWithOrg = user as { kindeUserId: string | null; orgCode?: string };
       if (userWithOrg.kindeUserId && userWithOrg.orgCode) {
         const authKey = `auth:${userWithOrg.kindeUserId}:${userWithOrg.orgCode}`;
         await DistributedSSOCache.invalidateUserCache(authKey);
       }
-      
-      console.log(`✅ Cache invalidated for user ${userId} role change`);
-      
+
+      Logger.log('info', 'cache', 'invalidate-user-role-cache', `✅ Cache invalidated for user ${userId} role change`);
+
       // Log the invalidation event
       await this.logCacheInvalidation(CACHE_INVALIDATION_EVENTS.USER_ROLE_CHANGED, {
         userId,
         tenantId,
         ...context
       });
-      
+
     } catch (error) {
-      console.error(`❌ Failed to invalidate user role cache for ${userId}:`, error);
+      Logger.log('error', 'cache', 'invalidate-user-role-cache', `❌ Failed to invalidate user role cache for ${userId}`, { error });
     }
   }
   
@@ -64,8 +65,8 @@ export class CacheInvalidationService {
    */
   static async invalidateUserPermissionsCache(userId: string, tenantId: string, appCode: string | null = null, context: Record<string, unknown> = {}) {
     try {
-      console.log(`🗑️ Invalidating permissions cache: ${userId}${appCode ? ` for ${appCode}` : ''}`);
-      
+      Logger.log('info', 'cache', 'invalidate-user-permissions-cache', `🗑️ Invalidating permissions cache: ${userId}${appCode ? ` for ${appCode}` : ''}`);
+
       if (appCode) {
         // Invalidate specific app permissions
         const permKey = `perms:${userId}:${tenantId}:${appCode}`;
@@ -74,18 +75,18 @@ export class CacheInvalidationService {
         // Invalidate all user permissions
         await DistributedSSOCache.invalidateUserCache(userId, tenantId);
       }
-      
-      console.log(`✅ Permissions cache invalidated for user ${userId}`);
-      
+
+      Logger.log('info', 'cache', 'invalidate-user-permissions-cache', `✅ Permissions cache invalidated for user ${userId}`);
+
       await this.logCacheInvalidation(CACHE_INVALIDATION_EVENTS.USER_PERMISSIONS_CHANGED, {
         userId,
         tenantId,
         appCode,
         ...context
       });
-      
+
     } catch (error) {
-      console.error(`❌ Failed to invalidate permissions cache for ${userId}:`, error);
+      Logger.log('error', 'cache', 'invalidate-user-permissions-cache', `❌ Failed to invalidate permissions cache for ${userId}`, { error });
     }
   }
   
@@ -94,24 +95,24 @@ export class CacheInvalidationService {
    */
   static async invalidateTenantSubscriptionCache(tenantId: string, context: Record<string, unknown> = {}) {
     try {
-      console.log(`🗑️ Invalidating subscription cache for tenant: ${tenantId}`);
-      
+      Logger.log('info', 'cache', 'invalidate-tenant-subscription-cache', `🗑️ Invalidating subscription cache for tenant: ${tenantId}`);
+
       // Invalidate subscription and features cache
       await Promise.all([
         DistributedSSOCache.invalidateTenantCache(tenantId),
         // Also invalidate all user permissions since subscription affects access
         this.invalidateAllTenantUserPermissions(tenantId)
       ]);
-      
-      console.log(`✅ Subscription cache invalidated for tenant ${tenantId}`);
-      
+
+      Logger.log('info', 'cache', 'invalidate-tenant-subscription-cache', `✅ Subscription cache invalidated for tenant ${tenantId}`);
+
       await this.logCacheInvalidation(CACHE_INVALIDATION_EVENTS.TENANT_SUBSCRIPTION_CHANGED, {
         tenantId,
         ...context
       });
-      
+
     } catch (error) {
-      console.error(`❌ Failed to invalidate subscription cache for ${tenantId}:`, error);
+      Logger.log('error', 'cache', 'invalidate-tenant-subscription-cache', `❌ Failed to invalidate subscription cache for ${tenantId}`, { error });
     }
   }
   
@@ -120,29 +121,29 @@ export class CacheInvalidationService {
    */
   static async invalidateRoleCache(roleId: string, tenantId: string, context: Record<string, unknown> = {}) {
     try {
-      console.log(`🗑️ Invalidating cache for role change: ${roleId}`);
-      
+      Logger.log('info', 'cache', 'invalidate-role-cache', `🗑️ Invalidating cache for role change: ${roleId}`);
+
       // Get all users with this role
       const usersWithRole = await this.getUsersWithRole(roleId, tenantId);
-      
+
       // Invalidate cache for all affected users
-      const invalidationPromises = usersWithRole.map(userId => 
+      const invalidationPromises = usersWithRole.map(userId =>
         this.invalidateUserPermissionsCache(userId, tenantId, null, { roleId })
       );
-      
+
       await Promise.all(invalidationPromises);
-      
-      console.log(`✅ Role cache invalidated for ${usersWithRole.length} users`);
-      
+
+      Logger.log('info', 'cache', 'invalidate-role-cache', `✅ Role cache invalidated for ${usersWithRole.length} users`);
+
       await this.logCacheInvalidation(CACHE_INVALIDATION_EVENTS.ROLE_UPDATED, {
         roleId,
         tenantId,
         affectedUsers: usersWithRole.length,
         ...context
       });
-      
+
     } catch (error) {
-      console.error(`❌ Failed to invalidate role cache for ${roleId}:`, error);
+      Logger.log('error', 'cache', 'invalidate-role-cache', `❌ Failed to invalidate role cache for ${roleId}`, { error });
     }
   }
   
@@ -151,21 +152,21 @@ export class CacheInvalidationService {
    */
   static async invalidateUserStatusCache(userId: string, tenantId: string, context: Record<string, unknown> = {}) {
     try {
-      console.log(`🗑️ Invalidating cache for user status change: ${userId}`);
-      
+      Logger.log('info', 'cache', 'invalidate-user-status-cache', `🗑️ Invalidating cache for user status change: ${userId}`);
+
       // Invalidate all user-related cache
       await DistributedSSOCache.invalidateUserCache(userId, tenantId);
-      
-      console.log(`✅ User status cache invalidated for ${userId}`);
-      
+
+      Logger.log('info', 'cache', 'invalidate-user-status-cache', `✅ User status cache invalidated for ${userId}`);
+
       await this.logCacheInvalidation(CACHE_INVALIDATION_EVENTS.USER_STATUS_CHANGED, {
         userId,
         tenantId,
         ...context
       });
-      
+
     } catch (error) {
-      console.error(`❌ Failed to invalidate user status cache for ${userId}:`, error);
+      Logger.log('error', 'cache', 'invalidate-user-status-cache', `❌ Failed to invalidate user status cache for ${userId}`, { error });
     }
   }
   
@@ -189,7 +190,7 @@ export class CacheInvalidationService {
         
       return user;
     } catch (error) {
-      console.error('Failed to get user Kinde info:', error);
+      Logger.log('error', 'cache', 'get-user-kinde-info', 'Failed to get user Kinde info', { error });
       return null;
     }
   }
@@ -210,7 +211,7 @@ export class CacheInvalidationService {
         
       return users.map(u => u.userId);
     } catch (error) {
-      console.error('Failed to get users with role:', error);
+      Logger.log('error', 'cache', 'get-users-with-role', 'Failed to get users with role', { error });
       return [];
     }
   }
@@ -233,27 +234,27 @@ export class CacheInvalidationService {
       );
       
       await Promise.all(invalidationPromises);
-      console.log(`✅ Invalidated permissions for ${users.length} users in tenant ${tenantId}`);
-      
+      Logger.log('info', 'cache', 'invalidate-all-tenant-user-permissions', `✅ Invalidated permissions for ${users.length} users in tenant ${tenantId}`);
+
     } catch (error) {
-      console.error('Failed to invalidate all tenant user permissions:', error);
+      Logger.log('error', 'cache', 'invalidate-all-tenant-user-permissions', 'Failed to invalidate all tenant user permissions', { error });
     }
   }
   
   static async logCacheInvalidation(event: string, data: Record<string, unknown>): Promise<void> {
     try {
       // Log cache invalidation events for monitoring
-      console.log(`📊 Cache Invalidation Event: ${event}`, data);
-      
+      Logger.log('info', 'cache', 'log-cache-invalidation', `📊 Cache Invalidation Event: ${event}`, data);
+
       // You could store this in a database table for analytics
       // await db.insert(cacheInvalidationLogs).values({
       //   event,
       //   data: JSON.stringify(data),
       //   timestamp: new Date()
       // });
-      
+
     } catch (error) {
-      console.error('Failed to log cache invalidation:', error);
+      Logger.log('error', 'cache', 'log-cache-invalidation', 'Failed to log cache invalidation', { error });
     }
   }
 }

@@ -8,6 +8,7 @@ import AutoPermissionSyncService from '../services/permission-sync-service.js';
 import { customRoleService as CustomRoleService } from '../index.js';
 import { authenticateToken, requirePermission } from '../../../middleware/auth/auth.js';
 import { PERMISSIONS } from '../../../constants/permissions.js';
+import Logger from '../../../utils/logger.js';
 
 export default async function permissionSyncRoutes(fastify: FastifyInstance, _options?: Record<string, unknown>): Promise<void> {
   /**
@@ -18,7 +19,7 @@ export default async function permissionSyncRoutes(fastify: FastifyInstance, _op
     preHandler: [authenticateToken, requirePermission(PERMISSIONS.SYSTEM_ADMIN_MANAGE)]
   }, async (_request: FastifyRequest, reply: FastifyReply) => {
     try {
-      console.log('🚀 API: Starting full permission sync with auto-updates...');
+      Logger.log('info', 'general', 'permission-sync', 'Starting full permission sync with auto-updates');
       
       const result = await AutoPermissionSyncService.syncPermissionsWithAutoUpdate();
       
@@ -30,7 +31,7 @@ export default async function permissionSyncRoutes(fastify: FastifyInstance, _op
       
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ API: Permission sync failed:', error);
+      Logger.log('error', 'general', 'permission-sync', 'Permission sync failed', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Permission sync failed',
@@ -56,7 +57,7 @@ export default async function permissionSyncRoutes(fastify: FastifyInstance, _op
         });
       }
       
-      console.log(`🔄 API: Updating organization access for ${tenantId} to ${subscriptionTier}`);
+      Logger.log('info', 'general', 'update-organization-access', 'Updating organization access', { tenantId, subscriptionTier });
       
       await CustomRoleService.updateOrganizationAccess(tenantId as string, subscriptionTier as string);
       
@@ -68,7 +69,7 @@ export default async function permissionSyncRoutes(fastify: FastifyInstance, _op
       
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ API: Organization access update failed:', error);
+      Logger.log('error', 'general', 'update-organization-access', 'Organization access update failed', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to update organization access',
@@ -94,7 +95,7 @@ export default async function permissionSyncRoutes(fastify: FastifyInstance, _op
         });
       }
       
-      console.log(`🔄 API: Handling subscription tier change for ${tenantId}: ${oldTier} → ${newTier}`);
+      Logger.log('info', 'general', 'subscription-tier-change', 'Handling subscription tier change', { tenantId, oldTier, newTier });
       
       const result = await AutoPermissionSyncService.handleSubscriptionTierChange(
         tenantId as string,
@@ -110,7 +111,7 @@ export default async function permissionSyncRoutes(fastify: FastifyInstance, _op
       
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ API: Subscription tier change failed:', error);
+      Logger.log('error', 'general', 'subscription-tier-change', 'Subscription tier change failed', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to handle subscription tier change',
@@ -140,7 +141,7 @@ export default async function permissionSyncRoutes(fastify: FastifyInstance, _op
       
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ API: Failed to get tier configuration:', error);
+      Logger.log('error', 'general', 'tier-configuration', 'Failed to get tier configuration', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to get tier configuration',
@@ -184,7 +185,7 @@ export default async function permissionSyncRoutes(fastify: FastifyInstance, _op
       
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ API: Module access check failed:', error);
+      Logger.log('error', 'general', 'check-module-access', 'Module access check failed', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to check module access',
@@ -201,7 +202,7 @@ export default async function permissionSyncRoutes(fastify: FastifyInstance, _op
     preHandler: [authenticateToken, requirePermission(PERMISSIONS.SYSTEM_ADMIN_MANAGE)]
   }, async (_request: FastifyRequest, reply: FastifyReply) => {
     try {
-      console.log('🧹 API: Clearing permission caches...');
+      Logger.log('info', 'general', 'clear-caches', 'Clearing permission caches');
       
       const result = await AutoPermissionSyncService.clearPermissionCaches();
       
@@ -213,7 +214,7 @@ export default async function permissionSyncRoutes(fastify: FastifyInstance, _op
       
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ API: Cache clearing failed:', error);
+      Logger.log('error', 'general', 'clear-caches', 'Cache clearing failed', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to clear caches',
@@ -240,7 +241,7 @@ export default async function permissionSyncRoutes(fastify: FastifyInstance, _op
         });
       }
       
-      console.log('⏰ API: Running scheduled permission sync...');
+      Logger.log('info', 'general', 'scheduled-sync', 'Running scheduled permission sync');
       
       const result = await AutoPermissionSyncService.runScheduledSync();
       
@@ -252,7 +253,7 @@ export default async function permissionSyncRoutes(fastify: FastifyInstance, _op
       
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ API: Scheduled sync failed:', error);
+      Logger.log('error', 'general', 'scheduled-sync', 'Scheduled sync failed', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Scheduled sync failed',

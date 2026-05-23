@@ -73,7 +73,12 @@ describe('errorHandler – validation errors', () => {
     expect(reply.code).toHaveBeenCalledWith(400);
     const body = (reply.send as ReturnType<typeof vi.fn>).mock.calls[0][0];
     expect(body.statusCode).toBe(400);
+    // Legacy shape: `error` is a human-readable string (kept for CRM/FA compat).
+    expect(body.success).toBe(false);
     expect(body.error).toBe('Validation Error');
+    // New canonical structured shape lives under `apiError`:
+    expect(body.apiError.code).toBe('INVALID_INPUT');
+    expect(body.apiError.message).toBe('Validation Error');
   });
 
   it('maps "required" keyword to a human-readable message', async () => {
@@ -197,6 +202,8 @@ describe('errorHandler – statusCode errors', () => {
     expect(reply.code).toHaveBeenCalledWith(404);
     const body = (reply.send as ReturnType<typeof vi.fn>).mock.calls[0][0];
     expect(body.error).toBe('Resource not found');
+    expect(body.apiError.code).toBe('NOT_FOUND');
+    expect(body.apiError.message).toBe('Resource not found');
     expect(body.statusCode).toBe(404);
   });
 
@@ -224,6 +231,8 @@ describe('errorHandler – auth errors', () => {
     expect(reply.code).toHaveBeenCalledWith(401);
     const body = (reply.send as ReturnType<typeof vi.fn>).mock.calls[0][0];
     expect(body.error).toBe('No authorization header');
+    expect(body.apiError.code).toBe('UNAUTHORIZED');
+    expect(body.apiError.message).toBe('No authorization header');
   });
 
   it('returns 401 for FST_JWT_AUTHORIZATION_TOKEN_INVALID', async () => {
@@ -236,6 +245,8 @@ describe('errorHandler – auth errors', () => {
     expect(reply.code).toHaveBeenCalledWith(401);
     const body = (reply.send as ReturnType<typeof vi.fn>).mock.calls[0][0];
     expect(body.error).toBe('Invalid authorization token');
+    expect(body.apiError.code).toBe('UNAUTHORIZED');
+    expect(body.apiError.message).toBe('Invalid authorization token');
   });
 
   it('returns 429 for FST_RATE_LIMIT_REACHED', async () => {
@@ -248,6 +259,8 @@ describe('errorHandler – auth errors', () => {
     expect(reply.code).toHaveBeenCalledWith(429);
     const body = (reply.send as ReturnType<typeof vi.fn>).mock.calls[0][0];
     expect(body.error).toBe('Rate limit exceeded');
+    expect(body.apiError.code).toBe('RATE_LIMITED');
+    expect(body.apiError.message).toBe('Rate limit exceeded');
   });
 });
 
@@ -264,6 +277,8 @@ describe('errorHandler – infrastructure errors', () => {
     expect(reply.code).toHaveBeenCalledWith(503);
     const body = (reply.send as ReturnType<typeof vi.fn>).mock.calls[0][0];
     expect(body.error).toBe('Service unavailable');
+    expect(body.apiError.code).toBe('SERVICE_UNAVAILABLE');
+    expect(body.apiError.message).toBe('Service unavailable');
   });
 
   it('returns 500 for DrizzleError without exposing internals in production', async () => {
@@ -279,6 +294,8 @@ describe('errorHandler – infrastructure errors', () => {
     expect(reply.code).toHaveBeenCalledWith(500);
     const body = (reply.send as ReturnType<typeof vi.fn>).mock.calls[0][0];
     expect(body.error).toBe('Database error');
+    expect(body.apiError.code).toBe('INTERNAL');
+    expect(body.apiError.message).toBe('Database error');
     expect(body.details).toBeNull();
 
     process.env.NODE_ENV = originalEnv;
@@ -315,6 +332,8 @@ describe('errorHandler – generic errors', () => {
     expect(reply.code).toHaveBeenCalledWith(500);
     const body = (reply.send as ReturnType<typeof vi.fn>).mock.calls[0][0];
     expect(body.error).toBe('Internal Server Error');
+    expect(body.apiError.code).toBe('INTERNAL');
+    expect(body.apiError.message).toBe('Internal Server Error');
     expect(body.statusCode).toBe(500);
   });
 

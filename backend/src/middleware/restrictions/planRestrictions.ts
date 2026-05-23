@@ -10,6 +10,7 @@ import {
   getMinimumPlanForApp,
   getMinimumPlanForModule,
 } from '../../data/plans.js';
+import Logger from '../../utils/logger.js';
 
 // Middleware to check application access
 export const checkApplicationAccess = (requiredApplication: string) => {
@@ -51,7 +52,7 @@ export const checkApplicationAccess = (requiredApplication: string) => {
       req.subscription = subscription;
       next();
     } catch (error) {
-      console.error('Application access check error:', error);
+      Logger.log('error', 'restrictions', 'check-application-access', 'Application access check error', { error });
       res.status(500).json({
         success: false,
         error: 'Failed to verify application access'
@@ -116,7 +117,7 @@ export const checkModuleAccess = (requiredApplication: string, requiredModule: s
       req.subscription = subscription;
       next();
     } catch (error) {
-      console.error('Module access check error:', error);
+      Logger.log('error', 'restrictions', 'check-module-access', 'Module access check error', { error });
       res.status(500).json({
         success: false,
         error: 'Failed to verify module access'
@@ -174,7 +175,7 @@ export const checkUserLimit = async (request: FastifyRequest, reply: FastifyRepl
 
     request.subscription = { ...subscription, plan: (subscription as Record<string, unknown>).plan as string } as { plan: string; [k: string]: unknown };
   } catch (error) {
-    console.error('User limit check error:', error);
+    Logger.log('error', 'restrictions', 'check-user-limit', 'User limit check error', { error });
     return reply.code(500).send({
       success: false,
       error: 'Failed to verify user limits'
@@ -235,7 +236,7 @@ export const checkRoleLimit = async (request: FastifyRequest, reply: FastifyRepl
 
     request.subscription = { ...subscription, plan: (subscription as Record<string, unknown>).plan as string } as { plan: string; [k: string]: unknown };
   } catch (error) {
-    console.error('Role limit check error:', error);
+    Logger.log('error', 'restrictions', 'check-role-limit', 'Role limit check error', { error });
     return reply.code(500).send({
       success: false,
       error: 'Failed to verify role limits'
@@ -299,7 +300,7 @@ export const getPlanLimits = async (req: { user?: { tenantId?: string } }, res: 
       }
     });
   } catch (error) {
-    console.error('Error getting plan limits:', error);
+    Logger.log('error', 'restrictions', 'get-plan-limits', 'Error getting plan limits', { error });
     res.status(500).json({
       success: false,
       error: 'Failed to get plan limits'

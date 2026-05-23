@@ -3,6 +3,7 @@ import { notifications, NOTIFICATION_TYPES, NOTIFICATION_PRIORITIES } from '../.
 import { and, eq, or, lt, lte, gte, desc, sql, isNull } from 'drizzle-orm';
 import type { SQL } from 'drizzle-orm';
 import type { NewNotification } from '../../../db/schema/types.js';
+import Logger from '../../../utils/logger.js';
 
 export interface GetNotificationsOptions {
   limit?: number;
@@ -48,11 +49,11 @@ class NotificationService {
         })
         .returning();
 
-      console.log(`📧 Created notification: ${title} for tenant ${tenantId}`);
+      Logger.log('info', 'general', 'createNotification', 'Created notification', { title, tenantId });
       return notification;
 
     } catch (error) {
-      console.error('Error creating notification:', error);
+      Logger.log('error', 'general', 'createNotification', 'Error creating notification', { error: (error as Error).message });
       throw error;
     }
   }
@@ -105,7 +106,7 @@ class NotificationService {
       return notificationList;
 
     } catch (error) {
-      console.error('Error getting notifications:', error);
+      Logger.log('error', 'general', 'getNotifications', 'Error getting notifications', { error: (error as Error).message });
       throw error;
     }
   }
@@ -152,7 +153,7 @@ class NotificationService {
       return parseInt(String(result[0].count ?? 0), 10) || 0;
 
     } catch (error) {
-      console.error('Error getting unread notification count:', error);
+      Logger.log('error', 'general', 'getUnreadCount', 'Error getting unread notification count', { error: (error as Error).message });
       throw error;
     }
   }
@@ -178,13 +179,13 @@ class NotificationService {
         .returning();
 
       if (notification) {
-        console.log(`✅ Marked notification as read: ${notificationId}`);
+        Logger.log('info', 'general', 'markAsRead', 'Marked notification as read', { notificationId });
       }
 
       return notification;
 
     } catch (error) {
-      console.error('Error marking notification as read:', error);
+      Logger.log('error', 'general', 'markAsRead', 'Error marking notification as read', { error: (error as Error).message });
       throw error;
     }
   }
@@ -210,13 +211,13 @@ class NotificationService {
         .returning();
 
       if (notification) {
-        console.log(`🚫 Dismissed notification: ${notificationId}`);
+        Logger.log('info', 'general', 'markAsDismissed', 'Dismissed notification', { notificationId });
       }
 
       return notification;
 
     } catch (error) {
-      console.error('Error dismissing notification:', error);
+      Logger.log('error', 'general', 'markAsDismissed', 'Error dismissing notification', { error: (error as Error).message });
       throw error;
     }
   }
@@ -258,11 +259,11 @@ class NotificationService {
         .where(and(...validConditions))
         .returning();
 
-      console.log(`✅ Marked ${result.length} notifications as read for tenant ${tenantId}`);
+      Logger.log('info', 'general', 'markAllAsRead', 'Marked notifications as read', { count: result.length, tenantId });
       return result.length;
 
     } catch (error) {
-      console.error('Error marking all notifications as read:', error);
+      Logger.log('error', 'general', 'markAllAsRead', 'Error marking all notifications as read', { error: (error as Error).message });
       throw error;
     }
   }
@@ -281,11 +282,11 @@ class NotificationService {
         ))
         .returning();
 
-      console.log(`🧹 Cleaned up ${result.length} expired notifications`);
+      Logger.log('info', 'general', 'cleanupExpiredNotifications', 'Cleaned up expired notifications', { count: result.length });
       return result.length;
 
     } catch (error) {
-      console.error('Error cleaning up expired notifications:', error);
+      Logger.log('error', 'general', 'cleanupExpiredNotifications', 'Error cleaning up expired notifications', { error: (error as Error).message });
       throw error;
     }
   }
@@ -309,7 +310,8 @@ class NotificationService {
     const expiresDate = new Date(expiresAt as string | Date);
     const daysUntilExpiry = Math.ceil((expiresDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
 
-    console.log(`📧 Creating seasonal credit notification for tenant ${tenantId}:`, {
+    Logger.log('info', 'general', 'createSeasonalCreditNotification', 'Creating seasonal credit notification', {
+      tenantId,
       title,
       message,
       creditType: creditTypeStr,
@@ -338,10 +340,10 @@ class NotificationService {
       targetUserId: null // Explicitly set to null to ensure it's a general notification
     };
 
-    console.log('📧 Notification data:', notificationData);
+    Logger.log('info', 'general', 'createSeasonalCreditNotification', 'Notification data prepared', { notificationData });
 
     const result = await this.createNotification(notificationData);
-    console.log('📧 Notification created successfully:', result);
+    Logger.log('info', 'general', 'createSeasonalCreditNotification', 'Notification created successfully');
     return result;
   }
 
@@ -518,11 +520,11 @@ class NotificationService {
         allNotifications.push(...created);
       }
 
-      console.log(`📧 Bulk created ${allNotifications.length} notifications`);
+      Logger.log('info', 'general', 'bulkCreateNotifications', 'Bulk created notifications', { count: allNotifications.length });
       return allNotifications;
 
     } catch (error) {
-      console.error('Error bulk creating notifications:', error);
+      Logger.log('error', 'general', 'bulkCreateNotifications', 'Error bulk creating notifications', { error: (error as Error).message });
       throw error;
     }
   }
@@ -548,7 +550,7 @@ class NotificationService {
         notifications: createdNotifications
       };
     } catch (error) {
-      console.error('Error sending notifications to tenants:', error);
+      Logger.log('error', 'general', 'sendToTenants', 'Error sending notifications to tenants', { error: (error as Error).message });
       throw error;
     }
   }
@@ -597,7 +599,7 @@ class NotificationService {
         byPriority: {}
       };
     } catch (error) {
-      console.error('Error getting notification stats:', error);
+      Logger.log('error', 'general', 'getNotificationStats', 'Error getting notification stats', { error: (error as Error).message });
       throw error;
     }
   }
@@ -679,7 +681,7 @@ class NotificationService {
         }
       };
     } catch (error) {
-      console.error('Error getting sent notifications history:', error);
+      Logger.log('error', 'general', 'getSentNotificationsHistory', 'Error getting sent notifications history', { error: (error as Error).message });
       throw error;
     }
   }

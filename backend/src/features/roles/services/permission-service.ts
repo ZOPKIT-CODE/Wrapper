@@ -4,6 +4,7 @@ import { auditLogs } from '../../../db/schema/core/users.js';
 import { organizationMemberships } from '../../../db/schema/organizations/organization_memberships.js';
 import { eq, and, like, desc, count, or, ne, inArray } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
+import Logger from '../../../utils/logger.js';
 // Static imports — avoids repeated module-resolution overhead on every request.
 import { snsSqsPublisher } from '../../messaging/utils/sns-sqs-publisher.js';
 import { BUSINESS_SUITE_MATRIX } from '../../../data/permission-matrix.js';
@@ -91,14 +92,7 @@ class PermissionService {
       operationCount: applications.reduce((total, app) => total + app.operationCount, 0)
     };
 
-    console.log('📊 Permission Structure Summary:');
-    console.log(`🏢 Total Applications: ${summary.applicationCount}`);
-    console.log(`📦 Total Modules: ${summary.moduleCount}`);
-    console.log(`⚡ Total Operations: ${summary.operationCount}`);
-    
-    applications.forEach(app => {
-      console.log(`  📱 ${app.name}: ${app.moduleCount} modules, ${app.operationCount} operations`);
-    });
+    Logger.log('info', 'role', 'get-permission-structure', 'Permission Structure Summary', { applicationCount: summary.applicationCount, moduleCount: summary.moduleCount, operationCount: summary.operationCount });
 
     return { 
       applications,
@@ -158,7 +152,7 @@ class PermissionService {
   async getTenantRoles(tenantId: string, options: GetTenantRolesOptions = {}): Promise<{ data: unknown[]; total: number; page: number; limit: number; totalPages: number }> {
     const { page = 1, limit = 20, search, type } = options;
     
-    console.log('🔍 getTenantRoles called with:', { tenantId, options });
+    Logger.log('info', 'role', 'get-tenant-roles', 'getTenantRoles called', { tenantId, options });
     
     let whereClause = eq(customRoles.tenantId, tenantId) as ReturnType<typeof eq>;
     if (search) {
@@ -188,7 +182,7 @@ class PermissionService {
       .where(whereClause)
       .groupBy(customRoles.roleId);
 
-    console.log('🔍 Query built, checking for roles with tenantId:', tenantId);
+    Logger.log('info', 'role', 'get-tenant-roles', 'Query built for tenant roles', { tenantId });
 
     // Get total count
     const countQuery = db
@@ -196,7 +190,7 @@ class PermissionService {
       .from(customRoles)
       .where(eq(customRoles.tenantId, tenantId));
 
-    console.log('🔍 Executing queries...');
+    Logger.log('info', 'role', 'get-tenant-roles', 'Executing queries');
     
     const [roleResults, countResult] = await Promise.all([
       query
@@ -207,11 +201,7 @@ class PermissionService {
     ]);
 
     const totalCount = Number(countResult[0]?.count ?? 0);
-    console.log('🔍 Query results:', {
-      roleResultsCount: roleResults.length,
-      countResult: totalCount,
-      firstRole: roleResults[0] ?? 'No roles found'
-    });
+    Logger.log('info', 'role', 'get-tenant-roles', 'Query results', { roleResultsCount: roleResults.length, totalCount });
 
     return {
       data: roleResults,
@@ -374,7 +364,7 @@ class PermissionService {
         updatedAt: (row.updatedAt ?? new Date()).toISOString()
       });
 
-      console.log('📡 Published role_updated event to Redis streams');
+      Logger.log('info', 'role', 'update-role', 'Published role_updated event');
 
       // Also publish to custom stream for backward compatibility
       const eventData = {
@@ -411,11 +401,10 @@ class PermissionService {
         eventData: eventData
       });
 
-      console.log(`📡 Published role permissions change event for role "${roleId}" to AWS MQ`);
-      console.log(`   Event ID: ${result?.eventId}`);
+      Logger.log('info', 'role', 'update-role', 'Published role permissions change event to AWS MQ', { roleId, eventId: result?.eventId });
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('⚠️ Failed to publish role change event:', error.message);
+      Logger.log('warning', 'role', 'update-role', 'Failed to publish role change event', { error: error.message });
       // Don't fail the role update if event publishing fails
     }
 
@@ -524,7 +513,38 @@ class PermissionService {
     }
 
     // Role membership changed for these users (transfer or force removal).
-    affectedUserIds.forEach(invalidateRoleCache);
+    affectedUserIds.forEach(id => { void invalidateRoleCache(id); });
+
+    // Publish role.deleted to every app in the suite so each consumer can
+    // expire its local copy of the role + any cached permission grants.
+    // Done AFTER the DB delete + audit + cache invalidation; any publish
+    // failure is logged but never reverses the deletion.
+    try {
+      const roleRow = existingRole[0] as Record<string, unknown>;
+      const publishResults = await snsSqsPublisher.publishRoleEventToSuite(
+        'role.deleted',
+        tenantId,
+        roleId,
+        {
+          roleName: roleRow.roleName ?? (roleRow as { name?: string }).name,
+          description: roleRow.description,
+          permissions: roleRow.permissions,
+          restrictions: roleRow.restrictions,
+          metadata: roleRow.metadata,
+          deletedBy: deletedBy ?? 'system',
+          deletedAt: new Date().toISOString(),
+          transferredToRoleId: transferUsersTo,
+          affectedUsersCount: totalAssignments,
+        },
+        deletedBy ?? 'system'
+      );
+      const failed = publishResults.filter((r) => r.success === false);
+      if (failed.length > 0) {
+        Logger.log('warning', 'role', 'delete-role', 'Some role.deleted publishes failed', { roleId, failed });
+      }
+    } catch (publishErr: unknown) {
+      Logger.log('error', 'role', 'delete-role', 'Failed to publish role.deleted event', { roleId, error: (publishErr as Error).message });
+    }
 
     return {
       deleted: true,
@@ -566,21 +586,7 @@ class PermissionService {
   async assignRole(assignmentData: AssignmentData): Promise<typeof userRoleAssignments.$inferSelect> {
     const { userId, roleId, expiresAt, assignedBy, tenantId } = assignmentData;
     
-    console.log('🔒 [PermissionService] Role assignment request:', {
-      userId,
-      roleId,
-      assignedBy,
-      tenantId,
-      hasExpiration: !!expiresAt
-    });
-    
-    console.log('🔒 [PermissionService] Role assignment request:', {
-      userId,
-      roleId,
-      assignedBy,
-      tenantId,
-      hasExpiration: !!expiresAt
-    });
+    Logger.log('info', 'role', 'assign-role', 'Role assignment request', { userId, roleId, assignedBy, tenantId, hasExpiration: !!expiresAt });
     
     // Check if assignment already exists
     const existing = await db
@@ -595,10 +601,7 @@ class PermissionService {
       .limit(1);
 
     if (existing.length > 0) {
-      console.log('🔄 [PermissionService] Updating existing role assignment:', {
-        existingAssignmentId: existing[0].id,
-        wasActive: existing[0].isActive
-      });
+      Logger.log('info', 'role', 'assign-role', 'Updating existing role assignment', { existingAssignmentId: existing[0].id, wasActive: existing[0].isActive });
       
       // Update existing assignment
       const updated = await db
@@ -612,8 +615,8 @@ class PermissionService {
         .where(eq(userRoleAssignments.id, existing[0].id))
         .returning();
 
-      console.log('✅ [PermissionService] Role assignment updated successfully');
-      invalidateRoleCache(userId);
+      Logger.log('info', 'role', 'assign-role', 'Role assignment updated successfully');
+      void invalidateRoleCache(userId);
       
       // Publish role assignment event (reassignment)
       try {
@@ -626,17 +629,17 @@ class PermissionService {
           expiresAt: expiresAt ? new Date(expiresAt).toISOString() : undefined,
           entityId: (updated[0] as { organizationId?: string }).organizationId
         });
-        console.log('📡 Published role reassignment event successfully');
+        Logger.log('info', 'role', 'assign-role', 'Published role reassignment event successfully');
       } catch (err: unknown) {
         const error = err as Error;
-        console.warn('⚠️ Failed to publish role reassignment event:', error.message);
+        Logger.log('warning', 'role', 'assign-role', 'Failed to publish role reassignment event', { error: error.message });
       }
       
       return updated[0];
     }
 
     // Create new assignment - 'id' is auto-generated by schema
-    console.log('➕ [PermissionService] Creating new role assignment');
+    Logger.log('info', 'role', 'assign-role', 'Creating new role assignment');
     
     const assignment = await db
       .insert(userRoleAssignments)
@@ -651,8 +654,8 @@ class PermissionService {
       })
       .returning();
 
-    console.log('✅ [PermissionService] New role assignment created successfully');
-    invalidateRoleCache(userId);
+    Logger.log('info', 'role', 'assign-role', 'New role assignment created successfully');
+    void invalidateRoleCache(userId);
     
     // Publish role assignment event
     try {
@@ -665,10 +668,10 @@ class PermissionService {
         expiresAt: expiresAt ? new Date(expiresAt).toISOString() : undefined,
         entityId: (assignment[0] as { organizationId?: string }).organizationId
       });
-      console.log('📡 Published role assignment event successfully');
+      Logger.log('info', 'role', 'assign-role', 'Published role assignment event successfully');
     } catch (err: unknown) {
       const error = err as Error;
-      console.warn('⚠️ Failed to publish role assignment event:', error.message);
+      Logger.log('warning', 'role', 'assign-role', 'Failed to publish role assignment event', { error: error.message });
     }
     
     return assignment[0];
@@ -676,12 +679,7 @@ class PermissionService {
 
   // Remove role assignment
   async removeRoleAssignment(tenantId: string, userId: string, roleId: string, removedBy: string): Promise<{ success: boolean; assignmentId: string }> {
-    console.log('🔒 [PermissionService] Role removal request:', {
-      userId,
-      roleId,
-      removedBy,
-      tenantId
-    });
+    Logger.log('info', 'role', 'remove-role-assignment', 'Role removal request', { userId, roleId, removedBy, tenantId });
     
     // Find the assignment
     const existing = await db
@@ -706,9 +704,9 @@ class PermissionService {
       .delete(userRoleAssignments)
       .where(eq(userRoleAssignments.id, assignment.id));
 
-    console.log('✅ [PermissionService] Role assignment removed successfully');
-    invalidateRoleCache(userId);
-    
+    Logger.log('info', 'role', 'remove-role-assignment', 'Role assignment removed successfully');
+    void invalidateRoleCache(userId);
+
     // Publish role unassignment event
     try {
       await snsSqsPublisher.publishRoleEventToSuite('role_unassigned', tenantId, roleId, {
@@ -719,10 +717,10 @@ class PermissionService {
         unassignedBy: removedBy,
         reason: 'Manual removal'
       });
-      console.log('📡 Published role unassignment event successfully');
+      Logger.log('info', 'role', 'remove-role-assignment', 'Published role unassignment event successfully');
     } catch (err: unknown) {
       const error = err as Error;
-      console.warn('⚠️ Failed to publish role unassignment event:', error.message);
+      Logger.log('warning', 'role', 'remove-role-assignment', 'Failed to publish role unassignment event', { error: error.message });
     }
 
     return { success: true, assignmentId: assignment.id ?? '' };
@@ -730,11 +728,7 @@ class PermissionService {
 
   // Remove role assignment by assignmentId
   async removeRoleAssignmentById(tenantId: string, assignmentId: string, removedBy: string): Promise<{ success: boolean; assignmentId: string }> {
-    console.log('🔒 [PermissionService] Role removal by assignmentId request:', {
-      assignmentId,
-      removedBy,
-      tenantId
-    });
+    Logger.log('info', 'role', 'remove-role-assignment-by-id', 'Role removal by assignmentId request', { assignmentId, removedBy, tenantId });
     
     // Find the assignment - use 'id' field from schema
     const existing = await db
@@ -754,9 +748,9 @@ class PermissionService {
       .delete(userRoleAssignments)
       .where(eq(userRoleAssignments.id, assignmentId));
 
-    console.log('✅ [PermissionService] Role assignment removed successfully');
-    invalidateRoleCache(assignment.userId);
-    
+    Logger.log('info', 'role', 'remove-role-assignment-by-id', 'Role assignment removed successfully');
+    void invalidateRoleCache(assignment.userId);
+
     // Publish role unassignment event
     try {
       await snsSqsPublisher.publishRoleEventToSuite('role_unassigned', tenantId, assignment.roleId, {
@@ -767,10 +761,10 @@ class PermissionService {
         unassignedBy: removedBy,
         reason: 'Manual removal'
       });
-      console.log('📡 Published role unassignment event successfully');
+      Logger.log('info', 'role', 'remove-role-assignment-by-id', 'Published role unassignment event successfully');
     } catch (err: unknown) {
       const error = err as Error;
-      console.warn('⚠️ Failed to publish role unassignment event:', error.message);
+      Logger.log('warning', 'role', 'remove-role-assignment-by-id', 'Failed to publish role unassignment event', { error: error.message });
     }
     
     return { success: true, assignmentId: assignment.id ?? '' };
@@ -901,20 +895,16 @@ class PermissionService {
 
   // Process role inheritance
   async processRoleInheritance(tenantId: string, basePermissions: Record<string, unknown> | undefined, inheritance: Record<string, unknown>): Promise<Record<string, unknown>> {
-    console.log('🧬 processRoleInheritance called with:', {
-      tenantId,
-      hasBasePermissions: !!basePermissions,
-      inheritance
-    });
+    Logger.log('info', 'role', 'process-role-inheritance', 'processRoleInheritance called', { tenantId, hasBasePermissions: !!basePermissions });
 
     
     const { parentRoles, inheritanceMode } = inheritance as { parentRoles?: unknown[]; inheritanceMode?: string };
     if (!parentRoles || !Array.isArray(parentRoles) || parentRoles.length === 0) {
-      console.log('⚠️ No parent roles specified, returning base permissions');
+      Logger.log('info', 'role', 'process-role-inheritance', 'No parent roles specified, returning base permissions');
       return basePermissions || {};
     }
 
-    console.log('🔍 Fetching parent roles:', parentRoles);
+    Logger.log('info', 'role', 'process-role-inheritance', 'Fetching parent roles', { count: parentRoles.length });
 
     try {
     // Get parent roles
@@ -933,31 +923,31 @@ class PermissionService {
         )
       );
 
-      console.log(`📋 Found ${parents.length} parent roles out of ${parentRoles.length} requested`);
+      Logger.log('info', 'role', 'process-role-inheritance', 'Found parent roles', { found: parents.length, requested: parentRoles.length });
 
       if (parents.length === 0) {
-        console.log('⚠️ No parent roles found, returning base permissions');
+        Logger.log('warning', 'role', 'process-role-inheritance', 'No parent roles found, returning base permissions');
         return basePermissions || {};
       }
 
     if (parents.length !== parentRoles.length) {
         const foundRoleIds = parents.map(p => p.roleId);
         const missingRoleIds = parentRoles.filter(id => !foundRoleIds.includes(id as string));
-        console.log('⚠️ Some parent roles not found:', missingRoleIds);
+        Logger.log('warning', 'role', 'process-role-inheritance', 'Some parent roles not found', { missingRoleIds });
         // Don't throw error, just continue with found roles
     }
 
     // Sort by priority (higher priority = more important)
     parents.sort((a, b) => (b.priority || 0) - (a.priority || 0));
-      console.log('📊 Parent roles sorted by priority:', parents.map(p => ({ name: p.roleName, priority: p.priority })));
+      Logger.log('info', 'role', 'process-role-inheritance', 'Parent roles sorted by priority', { roles: parents.map(p => ({ name: p.roleName, priority: p.priority })) });
 
       let effectivePermissions = basePermissions ? { ...basePermissions } : {};
-      console.log('🏁 Starting inheritance processing with mode:', inheritanceMode);
+      Logger.log('info', 'role', 'process-role-inheritance', 'Starting inheritance processing', { inheritanceMode });
 
       parents.forEach((parent, index) => {
         try {
-          console.log(`🔄 Processing parent role ${index + 1}/${parents.length}: ${parent.roleName}`);
-          
+          Logger.log('info', 'role', 'process-role-inheritance', 'Processing parent role', { index: index + 1, total: parents.length, roleName: parent.roleName });
+
           let parentPermissions: Record<string, unknown> = {};
           if (parent.permissions) {
             try {
@@ -965,63 +955,60 @@ class PermissionService {
               if (parentPermissions.metadata) {
                 delete parentPermissions.metadata;
               }
-              console.log(`📝 Parsed permissions for ${parent.roleName}:`, Object.keys(parentPermissions));
+              Logger.log('info', 'role', 'process-role-inheritance', 'Parsed parent role permissions', { roleName: parent.roleName, keys: Object.keys(parentPermissions) });
             } catch (parseError) {
-              console.error(`❌ Failed to parse permissions for parent role ${parent.roleName}:`, parseError);
+              Logger.log('error', 'role', 'process-role-inheritance', 'Failed to parse permissions for parent role', { roleName: parent.roleName, error: (parseError as Error).message });
               return; // Skip this parent role
             }
           }
-      
+
       switch (inheritanceMode) {
         case 'additive':
-              console.log(`➕ Applying additive inheritance from ${parent.roleName}`);
+              Logger.log('info', 'role', 'process-role-inheritance', 'Applying additive inheritance', { roleName: parent.roleName });
           effectivePermissions = this.mergePermissions(effectivePermissions as Record<string, unknown>, parentPermissions);
           break;
         case 'restrictive':
-              console.log(`🔒 Applying restrictive inheritance from ${parent.roleName}`);
+              Logger.log('info', 'role', 'process-role-inheritance', 'Applying restrictive inheritance', { roleName: parent.roleName });
           effectivePermissions = this.intersectPermissions(effectivePermissions as Record<string, unknown>, parentPermissions);
           break;
         case 'override':
-              console.log(`🔄 Applying override inheritance from ${parent.roleName}`);
+              Logger.log('info', 'role', 'process-role-inheritance', 'Applying override inheritance', { roleName: parent.roleName });
           effectivePermissions = { ...parentPermissions, ...(effectivePermissions as Record<string, unknown>) };
           break;
             default:
-              console.log(`⚠️ Unknown inheritance mode: ${inheritanceMode}, using additive`);
+              Logger.log('warning', 'role', 'process-role-inheritance', 'Unknown inheritance mode, using additive', { inheritanceMode });
           effectivePermissions = this.mergePermissions(effectivePermissions as Record<string, unknown>, parentPermissions);
           }
-          
-          console.log(`✅ Processed inheritance from ${parent.roleName}, current permissions:`, Object.keys(effectivePermissions));
+
+          Logger.log('info', 'role', 'process-role-inheritance', 'Processed inheritance from parent role', { roleName: parent.roleName, permissionKeys: Object.keys(effectivePermissions) });
         } catch (parentError) {
-          console.error(`❌ Error processing parent role ${parent.roleName}:`, parentError);
+          Logger.log('error', 'role', 'process-role-inheritance', 'Error processing parent role', { roleName: parent.roleName, error: (parentError as Error).message });
           // Continue with other parent roles
         }
       });
 
-      console.log('🎉 Role inheritance processing completed successfully');
-      console.log('📊 Final effective permissions:', Object.keys(effectivePermissions));
+      Logger.log('info', 'role', 'process-role-inheritance', 'Role inheritance processing completed', { finalPermissionKeys: Object.keys(effectivePermissions) });
     return effectivePermissions;
     } catch (error) {
-      console.error('🚨 Error in processRoleInheritance:', error);
-      console.log('🔄 Falling back to base permissions');
+      Logger.log('error', 'role', 'process-role-inheritance', 'Error in processRoleInheritance, falling back to base permissions', { error: (error as Error).message });
       return basePermissions || {};
     }
   }
 
   // Helper method to merge permissions (additive inheritance)
   mergePermissions(basePermissions: Record<string, unknown> | undefined, parentPermissions: Record<string, unknown> | undefined): Record<string, unknown> {
-    console.log('🔀 Merging permissions - base keys:', Object.keys(basePermissions || {}));
-    console.log('🔀 Merging permissions - parent keys:', Object.keys(parentPermissions || {}));
-    
+    Logger.log('info', 'role', 'merge-permissions', 'Merging permissions', { baseKeys: Object.keys(basePermissions || {}), parentKeys: Object.keys(parentPermissions || {}) });
+
     const merged: Record<string, unknown> = { ...(basePermissions || {}) };
-    
+
     Object.keys(parentPermissions || {}).forEach((resource: string) => {
       const parentPerm = (parentPermissions as Record<string, unknown>)[resource] as Record<string, unknown>;
       const basePerm = merged[resource] as Record<string, unknown> | undefined;
-      
+
       if (!basePerm) {
         // Resource doesn't exist in base, add it from parent
         merged[resource] = { ...parentPerm };
-        console.log(`➕ Added new resource from parent: ${resource}`);
+        Logger.log('info', 'role', 'merge-permissions', 'Added new resource from parent', { resource });
       } else {
         const baseOps = Array.isArray(basePerm.operations) ? basePerm.operations : [];
         const parentOps = Array.isArray(parentPerm.operations) ? parentPerm.operations : [];
@@ -1045,18 +1032,17 @@ class PermissionService {
           conditions: { ...(parentPerm.conditions || {}), ...(basePerm.conditions || {}) }
         };
         
-        console.log(`🔀 Merged resource: ${resource}, level: ${higherLevel}, scope: ${broaderScope}`);
+        Logger.log('info', 'role', 'merge-permissions', 'Merged resource', { resource, level: higherLevel, scope: broaderScope });
       }
     });
-    
-    console.log('✅ Permissions merged successfully - final keys:', Object.keys(merged));
+
+    Logger.log('info', 'role', 'merge-permissions', 'Permissions merged successfully', { finalKeys: Object.keys(merged) });
     return merged;
   }
 
   // Helper method to intersect permissions (restrictive inheritance)
   intersectPermissions(basePermissions: Record<string, unknown> | undefined, parentPermissions: Record<string, unknown> | undefined): Record<string, unknown> {
-    console.log('🔒 Intersecting permissions - base keys:', Object.keys(basePermissions || {}));
-    console.log('🔒 Intersecting permissions - parent keys:', Object.keys(parentPermissions || {}));
+    Logger.log('info', 'role', 'intersect-permissions', 'Intersecting permissions', { baseKeys: Object.keys(basePermissions || {}), parentKeys: Object.keys(parentPermissions || {}) });
     
     const intersected: Record<string, unknown> = {};
     
@@ -1066,7 +1052,7 @@ class PermissionService {
       
       if (!parentPerm) {
         // Resource doesn't exist in parent, exclude it
-        console.log(`❌ Excluded resource not in parent: ${resource}`);
+        Logger.log('info', 'role', 'intersect-permissions', 'Excluded resource not in parent', { resource });
         return;
       }
       
@@ -1091,40 +1077,40 @@ class PermissionService {
         conditions: { ...(basePerm.conditions || {}), ...(parentPerm.conditions || {}) }
       };
       
-      console.log(`🔒 Intersected resource: ${resource}, level: ${lowerLevel}, scope: ${narrowerScope}, ops: ${commonOps.length}`);
+      Logger.log('info', 'role', 'intersect-permissions', 'Intersected resource', { resource, level: lowerLevel, scope: narrowerScope, opCount: commonOps.length });
     });
-    
-    console.log('✅ Permissions intersected successfully - final keys:', Object.keys(intersected));
+
+    Logger.log('info', 'role', 'intersect-permissions', 'Permissions intersected successfully', { finalKeys: Object.keys(intersected) });
     return intersected;
   }
 
   // Validate permission structure
   async validatePermissionStructure(permissions: unknown): Promise<Record<string, unknown>> {
-    console.log('🔍 validatePermissionStructure called with type:', typeof permissions, 'keys:', Array.isArray(permissions) ? permissions.length + ' items' : Object.keys(permissions || {}));
-    
+    Logger.log('info', 'role', 'validate-permission-structure', 'validatePermissionStructure called', { type: typeof permissions, keys: Array.isArray(permissions) ? `${(permissions as unknown[]).length} items` : Object.keys((permissions as Record<string, unknown>) || {}) });
+
     if (!permissions) {
-      console.log('⚠️ No permissions provided');
+      Logger.log('warning', 'role', 'validate-permission-structure', 'No permissions provided');
       return {};
     }
 
     // Handle array format (from role builder/custom role service)
     if (Array.isArray(permissions)) {
-      console.log('🔄 Converting array permissions to structured format');
+      Logger.log('info', 'role', 'validate-permission-structure', 'Converting array permissions to structured format');
       return this.convertArrayPermissionsToStructured(permissions);
     }
 
     // Handle object format (advanced role structure)
     if (typeof permissions !== 'object') {
-      console.log('⚠️ Invalid permissions type');
+      Logger.log('warning', 'role', 'validate-permission-structure', 'Invalid permissions type');
       return {};
     }
 
     // Check if this is a mis-formatted array (array converted to object with numeric keys)
     const keys = Object.keys(permissions as Record<string, unknown>);
     const isArrayAsObject = keys.length > 0 && keys.every(key => /^\d+$/.test(key)) && keys.every(key => Array.isArray((permissions as Record<string, unknown>)[key]));
-    
+
     if (isArrayAsObject) {
-      console.log('🔄 Detected array-as-object format, converting back to array...');
+      Logger.log('info', 'role', 'validate-permission-structure', 'Detected array-as-object format, converting back to array');
       const arrayPermissions: unknown[] = [];
       keys.forEach((key: string) => {
         arrayPermissions.push(...((permissions as Record<string, unknown>)[key] as unknown[]));
@@ -1134,30 +1120,30 @@ class PermissionService {
 
     // Get available permissions for validation
     const availablePermissionIds = await this.getAvailablePermissionIds();
-    console.log('📋 Available permission IDs count:', availablePermissionIds.size);
+    Logger.log('info', 'role', 'validate-permission-structure', 'Available permission IDs count', { count: availablePermissionIds.size });
 
     const validatedPermissions: Record<string, unknown> = {};
 
     Object.keys(permissions as Record<string, unknown>).forEach((resource: string) => {
       const permission = (permissions as Record<string, unknown>)[resource];
-      
+
       // Skip metadata and other non-permission objects
       if (resource === 'metadata' || resource === 'inheritance' || resource === 'restrictions') {
-        console.log(`⏭️ Skipping non-permission object: ${resource}`);
+        Logger.log('info', 'role', 'validate-permission-structure', 'Skipping non-permission object', { resource });
         return;
       }
-      
-      console.log(`🔍 Validating resource: ${resource}`, permission);
+
+      Logger.log('info', 'role', 'validate-permission-structure', 'Validating resource', { resource });
 
       if (!permission || typeof permission !== 'object') {
-        console.log(`⚠️ Skipping invalid permission for resource: ${resource}`);
+        Logger.log('warning', 'role', 'validate-permission-structure', 'Skipping invalid permission for resource', { resource });
         return;
       }
-      
+
       const validLevels = ['none', 'read', 'write', 'admin'];
       const permLevel = (permission as Record<string, unknown>).level as string;
       if (!permLevel || !validLevels.includes(permLevel)) {
-        console.log(`❌ Invalid permission level: ${permLevel} for resource: ${resource}`);
+        Logger.log('error', 'role', 'validate-permission-structure', 'Invalid permission level', { permLevel, resource });
         throw new Error(`Invalid permission level: ${permLevel} for resource: ${resource}`);
       }
 
@@ -1165,7 +1151,7 @@ class PermissionService {
       if ((permission as Record<string, unknown>).operations && Array.isArray((permission as Record<string, unknown>).operations) && availablePermissionIds.size > 0) {
         const invalidOps = ((permission as Record<string, unknown>).operations as string[]).filter((op: string) => !availablePermissionIds.has(op));
         if (invalidOps.length > 0) {
-          console.log(`⚠️ Some operations not in available permissions for ${resource}:`, invalidOps);
+          Logger.log('warning', 'role', 'validate-permission-structure', 'Some operations not in available permissions', { resource, invalidOps });
           // Don't throw error, just log warning for now
           // throw new Error(`Invalid operations for ${resource}: ${invalidOps.join(', ')}`);
         }
@@ -1174,7 +1160,7 @@ class PermissionService {
       const validScopes = ['own', 'team', 'department', 'zone', 'all'];
       const permScope = (permission as Record<string, unknown>).scope as string;
       if (permScope && !validScopes.includes(permScope)) {
-        console.log(`❌ Invalid permission scope: ${permScope} for resource: ${resource}`);
+        Logger.log('error', 'role', 'validate-permission-structure', 'Invalid permission scope', { permScope, resource });
         throw new Error(`Invalid permission scope: ${permScope} for resource: ${resource}`);
       }
 
@@ -1186,16 +1172,16 @@ class PermissionService {
         conditions: perm.conditions || {}
       };
 
-      console.log(`✅ Validated permission for ${resource}:`, validatedPermissions[resource]);
+      Logger.log('info', 'role', 'validate-permission-structure', 'Validated permission for resource', { resource });
     });
 
-    console.log('✅ All permissions validated successfully. Final count:', Object.keys(validatedPermissions).length);
+    Logger.log('info', 'role', 'validate-permission-structure', 'All permissions validated successfully', { finalCount: Object.keys(validatedPermissions).length });
     return validatedPermissions;
   }
 
   // Convert array permissions to structured format
   convertArrayPermissionsToStructured(permissionArray: unknown[]): Record<string, unknown> {
-    console.log('🔄 Converting permission array to structured format:', permissionArray.length, 'permissions');
+    Logger.log('info', 'role', 'convert-array-permissions', 'Converting permission array to structured format', { count: permissionArray.length });
     
     const structured: Record<string, unknown> = {};
     const groupedPermissions: Record<string, string[]> = {};
@@ -1236,19 +1222,19 @@ class PermissionService {
         conditions: {}
       };
 
-      console.log(`✅ Converted ${resourceKey}: ${operations.length} operations, level: ${level}`);
+      Logger.log('info', 'role', 'convert-array-permissions', 'Converted resource', { resourceKey, opCount: operations.length, level });
     });
 
-    console.log('🎉 Array to structured conversion completed:', Object.keys(structured).length, 'resources');
+    Logger.log('info', 'role', 'convert-array-permissions', 'Array to structured conversion completed', { resourceCount: Object.keys(structured).length });
     return structured;
   }
 
   // Validate restrictions
   async validateRestrictions(restrictions: RestrictionInput | null | undefined): Promise<Record<string, unknown>> {
-    console.log('🔍 validateRestrictions called with:', restrictions);
-    
+    Logger.log('info', 'role', 'validate-restrictions', 'validateRestrictions called');
+
     if (!restrictions || typeof restrictions !== 'object') {
-      console.log('⚠️ No restrictions provided or invalid type, returning default structure');
+      Logger.log('warning', 'role', 'validate-restrictions', 'No restrictions provided or invalid type, returning default structure');
       return {
         timeRestrictions: {},
         ipRestrictions: {},
@@ -1265,79 +1251,79 @@ class PermissionService {
     };
 
     if (restrictions.timeRestrictions && typeof restrictions.timeRestrictions === 'object') {
-      console.log('🕐 Validating time restrictions...');
+      Logger.log('info', 'role', 'validate-restrictions', 'Validating time restrictions');
       const tr = restrictions.timeRestrictions as Record<string, unknown>;
       const allowedHours = tr.allowedHours;
       const allowedDays = tr.allowedDays;
       const timezone = tr.timezone;
       const blockWeekends = tr.blockWeekends;
       const blockHolidays = tr.blockHolidays;
-      
+
       if (allowedHours !== undefined) {
         if (!Array.isArray(allowedHours) || (allowedHours as unknown[]).some((h: unknown) => typeof h !== 'number' || (h as number) < 0 || (h as number) > 23)) {
-          console.log('❌ Invalid allowed hours:', allowedHours);
+          Logger.log('error', 'role', 'validate-restrictions', 'Invalid allowed hours');
           throw new Error('Invalid allowed hours. Must be array of integers 0-23');
         }
         validated.timeRestrictions.allowedHours = allowedHours;
-        console.log('✅ Allowed hours validated:', allowedHours);
+        Logger.log('info', 'role', 'validate-restrictions', 'Allowed hours validated', { allowedHours });
       }
 
       if (allowedDays !== undefined) {
         if (!Array.isArray(allowedDays) || (allowedDays as unknown[]).some((d: unknown) => typeof d !== 'number' || (d as number) < 0 || (d as number) > 6)) {
-          console.log('❌ Invalid allowed days:', allowedDays);
+          Logger.log('error', 'role', 'validate-restrictions', 'Invalid allowed days');
           throw new Error('Invalid allowed days. Must be array of integers 0-6');
         }
         validated.timeRestrictions.allowedDays = allowedDays;
-        console.log('✅ Allowed days validated:', allowedDays);
+        Logger.log('info', 'role', 'validate-restrictions', 'Allowed days validated', { allowedDays });
       }
       if (typeof timezone === 'string') {
         validated.timeRestrictions.timezone = timezone;
-        console.log('✅ Timezone validated:', timezone);
+        Logger.log('info', 'role', 'validate-restrictions', 'Timezone validated', { timezone });
       }
       if (typeof blockWeekends === 'boolean') {
         validated.timeRestrictions.blockWeekends = blockWeekends;
-        console.log('✅ Block weekends validated:', blockWeekends);
+        Logger.log('info', 'role', 'validate-restrictions', 'Block weekends validated', { blockWeekends });
       }
       if (typeof blockHolidays === 'boolean') {
         validated.timeRestrictions.blockHolidays = blockHolidays;
-        console.log('✅ Block holidays validated:', blockHolidays);
+        Logger.log('info', 'role', 'validate-restrictions', 'Block holidays validated', { blockHolidays });
       }
     }
 
     if (restrictions.ipRestrictions && typeof restrictions.ipRestrictions === 'object') {
-      console.log('🌐 Validating IP restrictions...');
+      Logger.log('info', 'role', 'validate-restrictions', 'Validating IP restrictions');
       const ir = restrictions.ipRestrictions as Record<string, unknown>;
       const allowedIPs = ir.allowedIPs;
       const blockedIPs = ir.blockedIPs;
       const allowVPN = ir.allowVPN;
-      
+
       if (allowedIPs && Array.isArray(allowedIPs)) {
         // Basic IP validation - could be enhanced with proper IP regex
         const validIPs = allowedIPs.filter(ip => typeof ip === 'string' && ip.length > 0);
         if (validIPs.length === allowedIPs.length) {
         validated.ipRestrictions.allowedIPs = allowedIPs;
-          console.log('✅ Allowed IPs validated:', allowedIPs.length);
+          Logger.log('info', 'role', 'validate-restrictions', 'Allowed IPs validated', { count: allowedIPs.length });
         } else {
-          console.log('⚠️ Some invalid IPs in allowedIPs list');
+          Logger.log('warning', 'role', 'validate-restrictions', 'Some invalid IPs in allowedIPs list');
         }
       }
       if (blockedIPs && Array.isArray(blockedIPs)) {
         const validIPs = blockedIPs.filter(ip => typeof ip === 'string' && ip.length > 0);
         if (validIPs.length === blockedIPs.length) {
         validated.ipRestrictions.blockedIPs = blockedIPs;
-          console.log('✅ Blocked IPs validated:', blockedIPs.length);
+          Logger.log('info', 'role', 'validate-restrictions', 'Blocked IPs validated', { count: blockedIPs.length });
         } else {
-          console.log('⚠️ Some invalid IPs in blockedIPs list');
+          Logger.log('warning', 'role', 'validate-restrictions', 'Some invalid IPs in blockedIPs list');
         }
       }
       if (typeof allowVPN === 'boolean') {
         validated.ipRestrictions.allowVPN = allowVPN;
-        console.log('✅ Allow VPN validated:', allowVPN);
+        Logger.log('info', 'role', 'validate-restrictions', 'Allow VPN validated', { allowVPN });
       }
     }
 
     if (restrictions.dataRestrictions && typeof restrictions.dataRestrictions === 'object') {
-      console.log('📊 Validating data restrictions...');
+      Logger.log('info', 'role', 'validate-restrictions', 'Validating data restrictions');
       const dr = restrictions.dataRestrictions as Record<string, unknown>;
       const maxRecordsPerDay = dr.maxRecordsPerDay;
       const maxExportsPerMonth = dr.maxExportsPerMonth;
@@ -1345,60 +1331,60 @@ class PermissionService {
       const maxFileSize = dr.maxFileSize;
       const dataRetentionDays = dr.dataRetentionDays;
       const customRules = dr.customRules;
-      
+
       if (typeof maxRecordsPerDay === 'number' && maxRecordsPerDay >= 0) {
         validated.dataRestrictions.maxRecordsPerDay = maxRecordsPerDay;
-        console.log('✅ Max records per day validated:', maxRecordsPerDay);
+        Logger.log('info', 'role', 'validate-restrictions', 'Max records per day validated', { maxRecordsPerDay });
       }
       if (typeof maxExportsPerMonth === 'number' && maxExportsPerMonth >= 0) {
         validated.dataRestrictions.maxExportsPerMonth = maxExportsPerMonth;
-        console.log('✅ Max exports per month validated:', maxExportsPerMonth);
+        Logger.log('info', 'role', 'validate-restrictions', 'Max exports per month validated', { maxExportsPerMonth });
       }
       if (allowedFileTypes && Array.isArray(allowedFileTypes)) {
         validated.dataRestrictions.allowedFileTypes = (allowedFileTypes as unknown[]).filter((t: unknown) => typeof t === 'string');
-        console.log('✅ Allowed file types validated:', (validated.dataRestrictions.allowedFileTypes as unknown[]).length);
+        Logger.log('info', 'role', 'validate-restrictions', 'Allowed file types validated', { count: (validated.dataRestrictions.allowedFileTypes as unknown[]).length });
       }
       if (typeof maxFileSize === 'number' && maxFileSize >= 0) {
         validated.dataRestrictions.maxFileSize = maxFileSize;
-        console.log('✅ Max file size validated:', maxFileSize);
+        Logger.log('info', 'role', 'validate-restrictions', 'Max file size validated', { maxFileSize });
       }
       if (typeof dataRetentionDays === 'number' && dataRetentionDays >= 0) {
         validated.dataRestrictions.dataRetentionDays = dataRetentionDays;
-        console.log('✅ Data retention days validated:', dataRetentionDays);
+        Logger.log('info', 'role', 'validate-restrictions', 'Data retention days validated', { dataRetentionDays });
       }
       if (customRules && typeof customRules === 'object') {
         validated.dataRestrictions.customRules = customRules;
-        console.log('✅ Custom rules validated');
+        Logger.log('info', 'role', 'validate-restrictions', 'Custom rules validated');
       }
     }
 
     if (restrictions.featureRestrictions && typeof restrictions.featureRestrictions === 'object') {
-      console.log('⚙️ Validating feature restrictions...');
+      Logger.log('info', 'role', 'validate-restrictions', 'Validating feature restrictions');
       const fr = restrictions.featureRestrictions as Record<string, unknown>;
       const allowBulkOperations = fr.allowBulkOperations;
       const allowAPIAccess = fr.allowAPIAccess;
       const allowIntegrations = fr.allowIntegrations;
       const maxApiCalls = fr.maxApiCalls;
-      
+
       if (typeof allowBulkOperations === 'boolean') {
         validated.featureRestrictions.allowBulkOperations = allowBulkOperations;
-        console.log('✅ Allow bulk operations validated:', allowBulkOperations);
+        Logger.log('info', 'role', 'validate-restrictions', 'Allow bulk operations validated', { allowBulkOperations });
       }
       if (typeof allowAPIAccess === 'boolean') {
         validated.featureRestrictions.allowAPIAccess = allowAPIAccess;
-        console.log('✅ Allow API access validated:', allowAPIAccess);
+        Logger.log('info', 'role', 'validate-restrictions', 'Allow API access validated', { allowAPIAccess });
       }
       if (typeof allowIntegrations === 'boolean') {
         validated.featureRestrictions.allowIntegrations = allowIntegrations;
-        console.log('✅ Allow integrations validated:', allowIntegrations);
+        Logger.log('info', 'role', 'validate-restrictions', 'Allow integrations validated', { allowIntegrations });
       }
       if (typeof maxApiCalls === 'number' && maxApiCalls >= 0) {
         validated.featureRestrictions.maxApiCalls = maxApiCalls;
-        console.log('✅ Max API calls validated:', maxApiCalls);
+        Logger.log('info', 'role', 'validate-restrictions', 'Max API calls validated', { maxApiCalls });
       }
     }
 
-    console.log('✅ All restrictions validated successfully');
+    Logger.log('info', 'role', 'validate-restrictions', 'All restrictions validated successfully');
     return validated;
   }
 
@@ -1690,20 +1676,18 @@ class PermissionService {
     } = updateData;
     
     try {
-      console.log('🔄 updateAdvancedRole called with:', {
+      Logger.log('info', 'role', 'update-advanced-role', 'updateAdvancedRole called', {
         tenantId,
         roleId,
-        updateData: {
-          name,
-          description,
-          color,
-          hasPermissions: !!permissions,
-          hasRestrictions: !!restrictions,
-          hasInheritance: !!inheritance,
-          hasMetadata: !!metadata,
-          updatedBy,
-          allowAdvancedUpdate
-        }
+        name,
+        description,
+        color,
+        hasPermissions: !!permissions,
+        hasRestrictions: !!restrictions,
+        hasInheritance: !!inheritance,
+        hasMetadata: !!metadata,
+        updatedBy,
+        allowAdvancedUpdate
       });
     
     // Get existing role
@@ -1719,43 +1703,41 @@ class PermissionService {
       .limit(1);
 
     if (!existingRole.length) {
-        console.log('❌ Role not found:', roleId);
+        Logger.log('error', 'role', 'update-advanced-role', 'Role not found', { roleId });
       throw new Error('Role not found');
     }
 
-      console.log('✅ Found existing role:', {
+      Logger.log('info', 'role', 'update-advanced-role', 'Found existing role', {
         roleId: existingRole[0].roleId,
         name: existingRole[0].roleName,
         isSystemRole: existingRole[0].isSystemRole
       });
 
     if (existingRole[0].isSystemRole) {
-        console.log('❌ Attempted to modify system role:', roleId);
+        Logger.log('error', 'role', 'update-advanced-role', 'Attempted to modify system role', { roleId });
       throw new Error('Cannot modify system roles');
     }
 
-    // Check if this role was created by CustomRoleService (array permissions) 
+    // Check if this role was created by CustomRoleService (array permissions)
     // and prevent accidental corruption unless explicitly allowed
     if (permissions && !allowAdvancedUpdate) {
       try {
         const raw = existingRole[0].permissions;
         const existingPermissions = typeof raw === 'string' ? JSON.parse(raw) : raw;
         const isArrayBasedRole = Array.isArray(existingPermissions);
-        
+
         if (isArrayBasedRole) {
-          console.log('⚠️ Detected role created by CustomRoleService (array permissions)');
-          console.log('🛡️ Preventing advanced update to avoid permission corruption');
-          console.log('💡 Use CustomRoleService.updateRoleFromAppsAndModules() or set allowAdvancedUpdate=true');
+          Logger.log('warning', 'role', 'update-advanced-role', 'Detected CustomRoleService role (array permissions) — preventing advanced update to avoid corruption. Use CustomRoleService.updateRoleFromAppsAndModules() or set allowAdvancedUpdate=true');
           throw new Error('This role was created using the application/module builder. Use the custom role update API or set allowAdvancedUpdate=true to override this protection.');
         }
       } catch (_parseError) {
-        console.log('⚠️ Could not parse existing permissions, proceeding with update');
+        Logger.log('warning', 'role', 'update-advanced-role', 'Could not parse existing permissions, proceeding with update');
       }
     }
 
     // Check name uniqueness if name is being changed
     if (name && name !== existingRole[0].roleName) {
-        console.log('🔍 Checking name uniqueness for:', name);
+        Logger.log('info', 'role', 'update-advanced-role', 'Checking name uniqueness', { name });
       const nameExists = await db
         .select({ roleId: customRoles.roleId })
         .from(customRoles)
@@ -1769,10 +1751,10 @@ class PermissionService {
         .limit(1);
 
       if (nameExists.length > 0) {
-          console.log('❌ Role name already exists:', name);
+          Logger.log('error', 'role', 'update-advanced-role', 'Role name already exists', { name });
         throw new Error(`Role with name "${name}" already exists`);
       }
-        console.log('✅ Role name is unique');
+        Logger.log('info', 'role', 'update-advanced-role', 'Role name is unique');
     }
 
     const updates: Record<string, unknown> = {
@@ -1781,41 +1763,41 @@ class PermissionService {
 
       if (name) {
         updates.roleName = name;
-        console.log('📝 Updating role name to:', name);
+        Logger.log('info', 'role', 'update-advanced-role', 'Updating role name', { name });
       }
       if (description !== undefined) {
         updates.description = description;
-        console.log('📝 Updating description');
+        Logger.log('info', 'role', 'update-advanced-role', 'Updating description');
       }
       if (color) {
         updates.color = color;
-        console.log('📝 Updating color to:', color);
+        Logger.log('info', 'role', 'update-advanced-role', 'Updating color', { color });
       }
-    
+
     if (permissions) {
-        console.log('🔐 Processing permissions update...');
+        Logger.log('info', 'role', 'update-advanced-role', 'Processing permissions update');
         try {
       let effectivePermissions: unknown = permissions;
       const inh = inheritance as Record<string, unknown> | undefined;
       if (inh?.parentRoles && Array.isArray(inh.parentRoles) && inh.parentRoles.length > 0) {
-            console.log('🧬 Processing inheritance for parent roles:', inh.parentRoles);
+            Logger.log('info', 'role', 'update-advanced-role', 'Processing inheritance for parent roles', { parentRoles: inh.parentRoles });
         effectivePermissions = await this.processRoleInheritance(tenantId, permissions as Record<string, unknown>, inh);
-            console.log('✅ Inheritance processed successfully');
+            Logger.log('info', 'role', 'update-advanced-role', 'Inheritance processed successfully');
       }
 
-          console.log('🔍 Validating permission structure...');
+          Logger.log('info', 'role', 'update-advanced-role', 'Validating permission structure');
       const validatedPermissions = await this.validatePermissionStructure(effectivePermissions) as Record<string, unknown>;
-          console.log('✅ Permissions validated successfully');
+          Logger.log('info', 'role', 'update-advanced-role', 'Permissions validated successfully');
 
           if (!validatedPermissions || Object.keys(validatedPermissions).length === 0) {
-            console.error('⚠️ validatePermissionStructure returned empty result');
+            Logger.log('error', 'role', 'update-advanced-role', 'validatePermissionStructure returned empty result');
             throw new Error('Permission validation resulted in empty permissions. This would corrupt the role.');
           }
 
           const rawPerms = existingRole[0].permissions;
           const existingPermissions = (typeof rawPerms === 'string' ? JSON.parse(rawPerms) : rawPerms) as Record<string, unknown>;
           const existingMeta = (existingPermissions.metadata ?? {}) as Record<string, unknown>;
-      
+
       updates.permissions = {
         ...validatedPermissions,
         metadata: {
@@ -1825,28 +1807,28 @@ class PermissionService {
           ...(metadata as Record<string, unknown> ?? {})
         }
       };
-          console.log('📝 Permissions formatted for storage');
+          Logger.log('info', 'role', 'update-advanced-role', 'Permissions formatted for storage');
         } catch (err: unknown) {
           const permissionError = err as Error;
-          console.error('❌ Permission processing failed:', permissionError);
+          Logger.log('error', 'role', 'update-advanced-role', 'Permission processing failed', { error: permissionError.message });
           throw new Error(`Permission validation failed: ${permissionError.message}`);
         }
     }
-    
+
     if (restrictions !== undefined) {
-        console.log('🚫 Processing restrictions update...');
+        Logger.log('info', 'role', 'update-advanced-role', 'Processing restrictions update');
         try {
       const validatedRestrictions = await this.validateRestrictions(restrictions as RestrictionInput);
       updates.restrictions = validatedRestrictions;
-          console.log('✅ Restrictions validated and formatted');
+          Logger.log('info', 'role', 'update-advanced-role', 'Restrictions validated and formatted');
         } catch (err: unknown) {
           const restrictionError = err as Error;
-          console.error('❌ Restriction processing failed:', restrictionError);
+          Logger.log('error', 'role', 'update-advanced-role', 'Restriction processing failed', { error: restrictionError.message });
           throw new Error(`Restriction validation failed: ${restrictionError.message}`);
         }
     }
 
-      console.log('💾 Updating role in database...');
+      Logger.log('info', 'role', 'update-advanced-role', 'Updating role in database');
     const updatedRole = await db
       .update(customRoles)
       .set(updates as Partial<typeof customRoles.$inferInsert>)
@@ -1859,11 +1841,11 @@ class PermissionService {
       .returning();
 
       if (!updatedRole.length) {
-        console.log('❌ No rows updated in database');
+        Logger.log('error', 'role', 'update-advanced-role', 'No rows updated in database');
         throw new Error('Failed to update role - no rows affected');
       }
 
-      console.log('✅ Role updated successfully in database');
+      Logger.log('info', 'role', 'update-advanced-role', 'Role updated successfully in database');
 
     // Log the update
       try {
@@ -1876,9 +1858,9 @@ class PermissionService {
       oldValues: existingRole[0],
       newValues: updates
     });
-        console.log('✅ Audit event logged');
+        Logger.log('info', 'role', 'update-advanced-role', 'Audit event logged');
       } catch (auditError) {
-        console.error('⚠️ Failed to log audit event:', auditError);
+        Logger.log('error', 'role', 'update-advanced-role', 'Failed to log audit event', { error: (auditError as Error).message });
         // Don't fail the entire operation for audit logging
       }
 
@@ -1894,29 +1876,23 @@ class PermissionService {
           updatedBy: updatedBy ?? 'system',
           updatedAt: (row.updatedAt ?? new Date()).toISOString()
         });
-        console.log('📡 Published role_updated event to AWS MQ');
+        Logger.log('info', 'role', 'update-advanced-role', 'Published role_updated event to AWS MQ');
       } catch (err: unknown) {
         const publishError = err as Error;
-        console.warn('⚠️ Failed to publish role_updated event:', publishError.message);
+        Logger.log('warning', 'role', 'update-advanced-role', 'Failed to publish role_updated event', { error: publishError.message });
       }
 
-      console.log('🎉 updateAdvancedRole completed successfully');
+      Logger.log('info', 'role', 'update-advanced-role', 'updateAdvancedRole completed successfully');
     return updatedRole[0] as typeof customRoles.$inferSelect;
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('🚨 updateAdvancedRole failed:', {
+      Logger.log('error', 'role', 'update-advanced-role', 'updateAdvancedRole failed', {
         error: error.message,
-        stack: error.stack,
         tenantId,
         roleId,
-        updateData: {
-          name,
-          description,
-          color,
-          hasPermissions: !!permissions,
-          hasRestrictions: !!restrictions,
-          hasInheritance: !!inheritance
-        }
+        hasPermissions: !!permissions,
+        hasRestrictions: !!restrictions,
+        hasInheritance: !!inheritance
       });
       throw error;
     }
@@ -1935,7 +1911,7 @@ class PermissionService {
       }
     } catch (err: unknown) {
       const error = err as Error;
-      console.log('⚠️ Could not load available permissions for validation:', error.message);
+      Logger.log('warning', 'role', 'get-available-permission-ids', 'Could not load available permissions for validation', { error: error.message });
     }
     return availablePermissionIds;
   }

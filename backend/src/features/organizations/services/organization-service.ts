@@ -17,6 +17,7 @@ import {
 import HierarchyManager from '../../../utils/hierarchy-manager.js';
 import { snsSqsPublisher } from '../../messaging/utils/sns-sqs-publisher.js';
 import accountingEntityProvisioningService from '../../messaging/services/accounting-entity-provisioning-service.js';
+import Logger from '../../../utils/logger.js';
 
 export class OrganizationService {
 
@@ -91,7 +92,7 @@ export class OrganizationService {
       });
     } catch (streamError: unknown) {
       const e = streamError as Error;
-      console.warn('⚠️ Failed to publish organization creation event:', e.message);
+      Logger.log('warning', 'general', 'create-parent-organization', 'Failed to publish organization creation event', { error: e.message });
     }
 
     try {
@@ -109,7 +110,7 @@ export class OrganizationService {
       });
     } catch (provisionError: unknown) {
       const e = provisionError as Error;
-      console.warn('⚠️ Failed to publish accounting provisioning request:', e.message);
+      Logger.log('warning', 'general', 'create-parent-organization', 'Failed to publish accounting provisioning request', { error: e.message });
     }
 
     return {
@@ -150,7 +151,7 @@ export class OrganizationService {
   async createSubOrganization(data: Record<string, unknown> & { name: string; description?: string; gstin?: string; parentOrganizationId?: string; organizationType?: string; tenantId?: string; entityCode?: string; legalName?: string; status?: string; country?: string; currency?: string; fiscalYearEnd?: string; taxId?: string; registrationNumber?: string; email?: string; phone?: string; website?: string; notes?: string }, createdBy: string) {
     const { name, description, parentOrganizationId, organizationType, tenantId, entityCode, legalName, status, country, currency, fiscalYearEnd, taxId, registrationNumber, email, phone, website, notes } = data;
 
-    console.log('🏗️ OrganizationService.createSubOrganization called with:', {
+    Logger.log('info', 'general', 'create-sub-organization', 'createSubOrganization called', {
       name,
       description,
       parentOrganizationId,
@@ -160,9 +161,9 @@ export class OrganizationService {
     });
 
     // Validate input
-    console.log('🔍 Validating organization data...');
+    Logger.log('info', 'general', 'create-sub-organization', 'Validating organization data');
     this.validateOrganizationData(data);
-    console.log('✅ Organization data validation passed');
+    Logger.log('info', 'general', 'create-sub-organization', 'Organization data validation passed');
 
     const organizationId = uuidv4();
     let tenantIdToUse, parentEntityId;
@@ -186,19 +187,19 @@ export class OrganizationService {
       parentEntityId = parentOrganizationId;
     } else {
       // Create top-level organization - need tenantId from somewhere else
-      console.log('🏢 Creating top-level organization, checking tenantId...');
+      Logger.log('info', 'general', 'create-sub-organization', 'Creating top-level organization, checking tenantId');
       if (!tenantId) {
-        console.log('❌ No tenantId provided for top-level organization');
+        Logger.log('error', 'general', 'create-sub-organization', 'No tenantId provided for top-level organization');
         throw new Error('Tenant ID is required for top-level organization creation');
       }
 
-      console.log('✅ Using tenantId for top-level organization:', tenantId);
+      Logger.log('info', 'general', 'create-sub-organization', 'Using tenantId for top-level organization', { tenantId });
       tenantIdToUse = tenantId;
       parentEntityId = null;
     }
 
     // Create organization
-    console.log('💾 Inserting organization into database...');
+    Logger.log('info', 'general', 'create-sub-organization', 'Inserting organization into database');
     const organization = await db.insert(entities).values({
       entityId: organizationId,
       tenantId: tenantIdToUse,
@@ -213,7 +214,7 @@ export class OrganizationService {
       createdAt: new Date()
     }).returning();
 
-    console.log('✅ Organization inserted successfully:', organization[0]);
+    Logger.log('info', 'general', 'create-sub-organization', 'Organization inserted successfully', { organizationId: organization[0].entityId });
     // Note: Hierarchy paths are automatically maintained by database triggers
 
     // Publish organization creation event to AWS MQ
@@ -245,7 +246,7 @@ export class OrganizationService {
       });
     } catch (streamError: unknown) {
       const e = streamError as Error;
-      console.warn('⚠️ Failed to publish organization creation event:', e.message);
+      Logger.log('warning', 'general', 'create-sub-organization', 'Failed to publish organization creation event', { error: e.message });
     }
 
     try {
@@ -263,7 +264,7 @@ export class OrganizationService {
       });
     } catch (provisionError: unknown) {
       const e = provisionError as Error;
-      console.warn('⚠️ Failed to publish accounting provisioning request:', e.message);
+      Logger.log('warning', 'general', 'create-sub-organization', 'Failed to publish accounting provisioning request', { error: e.message });
     }
 
     return {
@@ -278,7 +279,7 @@ export class OrganizationService {
    */
   async getOrganizationDetails(organizationId: string) {
     try {
-      console.log('🔍 Getting organization details for:', organizationId);
+      Logger.log('info', 'general', 'get-organization-details', 'Getting organization details', { organizationId });
 
       // First, check if organization exists with a simple query
       const orgCheck = await db
@@ -297,7 +298,7 @@ export class OrganizationService {
         throw new Error('Organization not found');
       }
 
-      console.log('✅ Organization exists:', orgCheck[0]);
+      Logger.log('info', 'general', 'get-organization-details', 'Organization exists', { organizationId: orgCheck[0].entityId });
 
       // Now get full details
       const organization = await db
@@ -309,19 +310,19 @@ export class OrganizationService {
         ))
         .limit(1);
 
-      console.log('📊 Full organization query result:', organization);
+      Logger.log('info', 'general', 'get-organization-details', 'Full organization query result', { count: organization.length });
 
       if (!organization || organization.length === 0) {
         throw new Error('Organization not found');
       }
 
       const orgData = organization[0];
-      console.log('🏢 Organization data:', orgData);
+      Logger.log('info', 'general', 'get-organization-details', 'Organization data retrieved', { organizationId: orgData.entityId });
 
       // Get parent organization details if exists
       let parentOrganization = null;
       if (orgData.parentEntityId) {
-        console.log('👨‍👩‍👧‍👦 Getting parent organization:', orgData.parentEntityId);
+        Logger.log('info', 'general', 'get-organization-details', 'Getting parent organization', { parentEntityId: orgData.parentEntityId });
         try {
           const parent = await db
             .select({
@@ -337,11 +338,11 @@ export class OrganizationService {
 
           if (parent && parent.length > 0) {
             parentOrganization = parent[0];
-            console.log('👨‍👩‍👧‍👦 Parent organization found:', parentOrganization);
+            Logger.log('info', 'general', 'get-organization-details', 'Parent organization found', { parentOrganizationId: parentOrganization.organizationId });
           }
         } catch (parentError: unknown) {
           const e = parentError as Error;
-          console.log('⚠️ Could not get parent organization:', e.message);
+          Logger.log('warning', 'general', 'get-organization-details', 'Could not get parent organization', { error: e.message });
           // Continue without parent organization
         }
       }
@@ -354,7 +355,7 @@ export class OrganizationService {
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error in getOrganizationDetails:', error);
+      Logger.log('error', 'general', 'get-organization-details', 'Error in getOrganizationDetails', { error: error.message });
       throw new Error(`Failed to get organization details: ${error.message}`);
     }
   }
@@ -421,23 +422,23 @@ export class OrganizationService {
         ))
         .orderBy(entities.entityLevel, entities.entityName);
 
-      console.log(`📊 Found ${allEntities.length} total entities, including both organizations and locations...`);
+      Logger.log('info', 'general', 'get-organization-hierarchy', 'Found total entities', { count: allEntities.length });
 
       // Include both organizations and locations in hierarchy
       let hierarchy = allEntities.filter(entity =>
         entity.entityType === 'organization' || entity.entityType === 'location'
       );
 
-      console.log(`🏢 Found ${hierarchy.length} entities before access control filtering (${hierarchy.filter(e => e.entityType === 'organization').length} organizations, ${hierarchy.filter(e => e.entityType === 'location').length} locations)`);
+      Logger.log('info', 'general', 'get-organization-hierarchy', 'Entities before access control filtering', { total: hierarchy.length, organizations: hierarchy.filter(e => e.entityType === 'organization').length, locations: hierarchy.filter(e => e.entityType === 'location').length });
 
       if (userContext) {
         // Check if user is a tenant admin or super admin - they should have access to all organizations
         const uctx = userContext as Record<string, unknown>;
         const isAdmin = uctx.isTenantAdmin || uctx.isSuperAdmin || uctx.isAdmin;
-        console.log('🔍 User access check - isAdmin:', isAdmin, 'isTenantAdmin:', uctx.isTenantAdmin, 'isSuperAdmin:', uctx.isSuperAdmin);
+        Logger.log('info', 'general', 'get-organization-hierarchy', 'User access check', { isAdmin, isTenantAdmin: uctx.isTenantAdmin, isSuperAdmin: uctx.isSuperAdmin });
 
         if (isAdmin) {
-          console.log('👑 User is admin, granting access to all organizations and locations');
+          Logger.log('info', 'general', 'get-organization-hierarchy', 'User is admin, granting access to all organizations and locations');
           // Admin users can access all organizations and locations, no filtering needed
         } else {
           let accessibleEntities: string[] = [];
@@ -477,7 +478,7 @@ export class OrganizationService {
         }
       }
 
-      console.log(`✅ Final entities after filtering: ${hierarchy.length} (${hierarchy.filter((e: { entityType: string }) => e.entityType === 'organization').length} organizations, ${hierarchy.filter((e: { entityType: string }) => e.entityType === 'location').length} locations)`);
+      Logger.log('info', 'general', 'get-organization-hierarchy', 'Final entities after filtering', { total: hierarchy.length, organizations: hierarchy.filter((e: { entityType: string }) => e.entityType === 'organization').length, locations: hierarchy.filter((e: { entityType: string }) => e.entityType === 'location').length });
 
       // Build hierarchy tree from flat list
       const orgMap = new Map<string, Record<string, unknown>>();
@@ -527,10 +528,7 @@ export class OrganizationService {
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Error in getOrganizationHierarchy:', error);
-
-      // Fallback to simple query if hierarchy manager fails
-      console.log('Falling back to simple hierarchy query...');
+      Logger.log('error', 'general', 'get-organization-hierarchy', 'Error in getOrganizationHierarchy, falling back to simple hierarchy query', { error: error.message });
       const allEntities = await db
         .select({
           organizationId: entities.entityId,
@@ -626,9 +624,21 @@ export class OrganizationService {
     // Update hierarchy paths for the moved organization and all its descendants
     await HierarchyManager.updateEntityHierarchyPaths(organizationId);
 
+    const movedOrg = updatedOrg[0];
+    snsSqsPublisher.publishOrgEventToSuite('entity.parent_changed', movedOrg.tenantId, organizationId, {
+      entityId: organizationId,
+      entityType: 'organization',
+      previousParentId: organization[0].parentEntityId ?? null,
+      newParentId: newParentId ?? null,
+      movedBy,
+      movedAt: new Date().toISOString(),
+    }).catch((err: Error) => {
+      Logger.log('warning', 'general', 'move-organization', 'Failed to publish entity.parent_changed event', { organizationId, error: err.message });
+    });
+
     return {
       success: true,
-      organization: updatedOrg[0],
+      organization: movedOrg,
       message: 'Organization moved successfully'
     };
   }
@@ -672,9 +682,24 @@ export class OrganizationService {
       throw new Error('Organization not found or update failed');
     }
 
+    const org = updatedOrg[0];
+    try {
+      await snsSqsPublisher.publishOrgEventToSuite('entity.updated', org.tenantId, org.entityId, {
+        entityId: org.entityId,
+        entityName: org.entityName,
+        entityType: 'organization',
+        description: org.description,
+        isActive: org.isActive,
+        updatedBy: org.updatedBy,
+        updatedAt: org.updatedAt
+      });
+    } catch (publishErr: unknown) {
+      Logger.log('warning', 'organization', 'update-organization', 'Failed to publish entity.updated event', { organizationId, error: (publishErr as Error).message });
+    }
+
     return {
       success: true,
-      organization: updatedOrg[0],
+      organization: org,
       message: 'Organization updated successfully'
     };
   }
@@ -731,6 +756,32 @@ export class OrganizationService {
 
     if (deletedOrg.length === 0) {
       throw new Error('Organization not found');
+    }
+
+    // Publish entity.deactivated so downstream apps mark their mirror as inactive.
+    // Done AFTER the DB soft-delete; publish failures are logged but don't roll back.
+    try {
+      const deactivatedAt = new Date().toISOString();
+      await snsSqsPublisher.publishOrgEventToSuite(
+        'entity.deactivated',
+        String(deletedOrg[0].tenantId),
+        String(deletedOrg[0].entityId),
+        {
+          entityId: deletedOrg[0].entityId,
+          entityCode: deletedOrg[0].entityId,
+          entityName: deletedOrg[0].entityName,
+          entityType: deletedOrg[0].entityType ?? 'organization',
+          parentId: deletedOrg[0].parentEntityId ?? null,
+          entityLevel: deletedOrg[0].entityLevel,
+          isActive: false,
+          deactivatedAt,
+          deactivatedBy: deletedBy,
+          updatedAt: deactivatedAt,
+        },
+        deletedBy
+      );
+    } catch (publishErr: unknown) {
+      Logger.log('error', 'organization', 'delete-organization', 'Failed to publish entity.deactivated event', { organizationId, error: (publishErr as Error).message });
     }
 
     return {

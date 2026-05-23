@@ -5,6 +5,7 @@ import { payments } from '../../../db/schema/billing/subscriptions.js';
 import { eq, desc, and } from 'drizzle-orm';
 import { PaymentRepository } from './payment-repository.js';
 import { getPaymentGateway } from '../adapters/index.js';
+import Logger from '../../../utils/logger.js';
 
 type PaymentData = Record<string, unknown> & {
   tenantId: string;
@@ -87,11 +88,11 @@ export class PaymentService {
         paidAt: paymentData.paidAt || new Date(),
       });
 
-      console.log('✅ Payment recorded:', payment.paymentId);
+      Logger.log('info', 'billing', 'record-payment', 'Payment recorded', { paymentId: payment.paymentId });
       return payment;
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Failed to record payment:', error);
+      Logger.log('error', 'billing', 'record-payment', 'Failed to record payment', { error: error.message });
       Sentry.withScope((scope) => {
         scope.setTag('payment.operation', 'recordPayment');
         scope.setTag('payment.status', paymentData.status);
@@ -113,7 +114,7 @@ export class PaymentService {
       return PaymentRepository.getByPaymentIntentId(paymentIntentId);
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Failed to get payment by intent ID:', error);
+      Logger.log('error', 'billing', 'get-payment-by-intent-id', 'Failed to get payment by intent ID', { error: error.message });
       throw error;
     }
   }
@@ -133,7 +134,7 @@ export class PaymentService {
       });
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Failed to update payment status:', error);
+      Logger.log('error', 'billing', 'update-payment-status', 'Failed to update payment status', { error: error.message });
       Sentry.captureException(error, { tags: { 'payment.operation': 'updateStatus', 'payment.new_status': status } });
       throw error;
     }
@@ -145,7 +146,7 @@ export class PaymentService {
       return PaymentRepository.getHistoryByTenant(tenantId, limit);
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Failed to get payment history:', error);
+      Logger.log('error', 'billing', 'get-payment-history', 'Failed to get payment history', { error: error.message });
       throw error;
     }
   }
@@ -231,7 +232,7 @@ export class PaymentService {
       return result;
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Failed to record refund:', error);
+      Logger.log('error', 'billing', 'record-refund', 'Failed to record refund', { error: error.message });
       Sentry.withScope((scope) => {
         scope.setTag('payment.operation', 'recordRefund');
         scope.setContext('refund', { originalPaymentId, refundAmount, reason });
@@ -305,7 +306,7 @@ export class PaymentService {
       return stats;
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Failed to get payment stats:', error);
+      Logger.log('error', 'billing', 'get-payment-stats', 'Failed to get payment stats', { error: error.message });
       throw error;
     }
   }
@@ -347,7 +348,7 @@ export class PaymentService {
       return Array.from(methodsMap.values());
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Failed to get payment methods:', error);
+      Logger.log('error', 'billing', 'get-payment-methods', 'Failed to get payment methods', { error: error.message });
       throw error;
     }
   }
@@ -383,7 +384,7 @@ export class PaymentService {
       return updatedPayment;
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Failed to record dispute:', error);
+      Logger.log('error', 'billing', 'record-dispute', 'Failed to record dispute', { error: error.message });
       throw error;
     }
   }
@@ -394,7 +395,7 @@ export class PaymentService {
       return PaymentRepository.getBySubscription(subscriptionId);
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Failed to get subscription payments:', error);
+      Logger.log('error', 'billing', 'get-subscription-payments', 'Failed to get subscription payments', { error: error.message });
       throw error;
     }
   }
@@ -405,7 +406,7 @@ export class PaymentService {
       return PaymentRepository.getFailedByTenant(tenantId, limit);
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Failed to get failed payments:', error);
+      Logger.log('error', 'billing', 'get-failed-payments', 'Failed to get failed payments', { error: error.message });
       throw error;
     }
   }
@@ -438,11 +439,11 @@ export class PaymentService {
       };
 
       const [payment] = await db.insert(payments).values(paymentRecord as any).returning();
-      console.log('✅ Payment record created:', payment.paymentId);
+      Logger.log('info', 'billing', 'create-payment-record', 'Payment record created', { paymentId: payment.paymentId });
       return payment as unknown as Record<string, unknown>;
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Failed to create payment record:', error);
+      Logger.log('error', 'billing', 'create-payment-record', 'Failed to create payment record', { error: error.message });
       Sentry.withScope((scope) => {
         scope.setTag('payment.operation', 'createPaymentRecord');
         scope.setContext('payment', {
@@ -485,7 +486,7 @@ export class PaymentService {
           reason,
           metadata: { tenantId, paymentId, reason },
         });
-        console.log('✅ Gateway refund created:', gatewayRefund.refundId, '(provider:', gateway.providerName + ')');
+        Logger.log('info', 'billing', 'process-refund', 'Gateway refund created', { refundId: gatewayRefund.refundId, provider: gateway.providerName });
       }
 
       await db.transaction(async (tx) => {
@@ -520,7 +521,7 @@ export class PaymentService {
       return { refundId: gatewayRefund?.refundId, amount: refundAmount, currency: payment.currency, status: 'succeeded', isPartialRefund, provider: gateway.providerName };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Refund processing failed:', error);
+      Logger.log('error', 'billing', 'process-refund', 'Refund processing failed', { error: error.message });
       Sentry.withScope((scope) => {
         scope.setTag('payment.operation', 'processRefund');
         scope.setContext('refund', { tenantId, paymentId, amount, reason });
@@ -597,7 +598,7 @@ export class PaymentService {
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('getPaymentDetailsByCheckoutSessionId:', error?.message);
+      Logger.log('error', 'billing', 'get-payment-details-by-session-id', 'getPaymentDetailsByCheckoutSessionId failed', { error: error?.message });
       return null;
     }
   }

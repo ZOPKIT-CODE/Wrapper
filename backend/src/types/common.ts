@@ -82,6 +82,8 @@ export interface HealthCheckResult {
   status: 'healthy' | 'unhealthy' | 'error' | 'not_initialized';
   app_connection?: string;
   system_connection?: string;
+  read_connection?: string;
+  read_replica?: boolean;
   message?: string;
   error?: string;
   timestamp?: string;

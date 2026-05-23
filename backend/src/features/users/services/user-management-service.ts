@@ -10,6 +10,8 @@ import {
 } from '../../../db/schema/index.js';
 import { eq, and, or, desc, asc, sql, count, like, inArray } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
+import { snsSqsPublisher } from '../../messaging/utils/sns-sqs-publisher.js';
+import Logger from '../../../utils/logger.js';
 
 /** Matches seeded / matrix role name; enforced as a single active assignment + pending invite per tenant */
 function isOrganizationAdminRoleName(name: string | null | undefined): boolean {
@@ -712,6 +714,16 @@ export class UserManagementService {
       throw new Error('User not found');
     }
 
+    snsSqsPublisher.publishUserEventToSuite('user.updated', tenantId, userId, {
+      userId,
+      email: updated.email,
+      firstName: updated.firstName,
+      lastName: updated.lastName,
+      isActive: updated.isActive,
+    }).catch((err: Error) => {
+      Logger.log('warning', 'users', 'update-user-profile', 'Failed to publish user.updated event', { userId, error: err.message });
+    });
+
     return updated;
   }
 
@@ -890,6 +902,17 @@ export class UserManagementService {
       })
       .returning();
 
+    snsSqsPublisher.publishUserEventToSuite('user.role.assigned', tenantId, userId, {
+      userId,
+      roleId,
+      assignmentId: assignment.id,
+      assignedBy,
+      isTemporary: isTemporary ?? false,
+      expiresAt: expiresAt ?? null,
+    }).catch((err: Error) => {
+      Logger.log('warning', 'users', 'assign-role', 'Failed to publish user.role.assigned event', { userId, roleId, error: err.message });
+    });
+
     return assignment;
   }
 
@@ -922,6 +945,14 @@ export class UserManagementService {
       .set({ isActive: false, deactivatedAt: new Date() })
       .where(eq(userRoleAssignments.id, assignmentId))
       .returning();
+
+    snsSqsPublisher.publishUserEventToSuite('user.role.removed', tenantId, assignment.userId, {
+      userId: assignment.userId,
+      roleId: removed.roleId,
+      assignmentId,
+    }).catch((err: Error) => {
+      Logger.log('warning', 'users', 'remove-role-assignment', 'Failed to publish user.role.removed event', { assignmentId, error: err.message });
+    });
 
     return removed;
   }

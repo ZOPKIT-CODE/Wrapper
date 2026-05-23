@@ -12,7 +12,8 @@ import {
   validateOrganizationUpdate,
   sanitizeInputMiddleware
 } from '../../../middleware/validation/validation.js';
-console.log('🚀 Loading entities.js routes file...');
+import Logger from '../../../utils/logger.js';
+Logger.log('info', 'general', 'boot', 'Loading entities.js routes file...');
 
 /**
  * Maps raw entity from DB to FA-relevant response format.
@@ -55,7 +56,7 @@ export default async function entityRoutes(
 ): Promise<void> {
 
   // Simple logging to verify routes are loaded
-  console.log('🔄 Entities routes are being registered...');
+  Logger.log('info', 'general', 'boot', 'Entities routes are being registered...');
 
   fastify.addHook('preHandler', async (request, reply) => {
     // Skip if the global app-level preHandler already ran auth and populated userContext.
@@ -103,7 +104,7 @@ export default async function entityRoutes(
         tenant,
       });
     } catch (error) {
-      console.error('❌ Get tenant by kinde org id failed:', error);
+      Logger.log('error', 'general', 'get-tenant-by-kinde-id', 'Get tenant by kinde org id failed', { error: (error as Error).message });
       return reply.code(500).send({
         success: false,
         message: 'Failed to resolve tenant by kinde org id',
@@ -117,7 +118,7 @@ export default async function entityRoutes(
     try {
       const tenantId = params.tenantId ?? '';
 
-      console.log('🔍 Getting complete entity hierarchy for tenant:', tenantId);
+      Logger.log('info', 'general', 'get-entity-hierarchy', 'Getting complete entity hierarchy for tenant', { tenantId });
 
       // Use the location service to get complete hierarchy with locations
       const result = await LocationService.getEntityHierarchyWithLocations(tenantId);
@@ -191,11 +192,11 @@ export default async function entityRoutes(
         });
       } else {
         // FALLBACK: Try to get basic entity list if hierarchy fails
-        console.log('⚠️ Hierarchy retrieval failed, attempting fallback...');
+        Logger.log('warning', 'general', 'get-entity-hierarchy', 'Hierarchy retrieval failed, attempting fallback...');
         const fallbackResult = await LocationService.getTenantLocations(tenantId);
 
         if (fallbackResult.success && fallbackResult.locations.length > 0) {
-          console.log('✅ Fallback successful - returning flat entity list');
+          Logger.log('info', 'general', 'get-entity-hierarchy', 'Fallback successful - returning flat entity list');
           
           // Remove duplicates in fallback mode too
           const entityMap = new Map();
@@ -240,7 +241,7 @@ export default async function entityRoutes(
         return reply.code(404).send(result);
       }
     } catch (error) {
-      console.error('❌ Get entity hierarchy failed:', error);
+      Logger.log('error', 'general', 'get-entity-hierarchy', 'Get entity hierarchy failed', { error: (error as Error).message });
       return reply.code(500).send({
         success: false,
         error: 'Retrieval failed',
@@ -255,7 +256,7 @@ export default async function entityRoutes(
     try {
       const parentEntityId = params.parentEntityId ?? '';
 
-      console.log('🏠 Getting hierarchy starting from parent entity:', parentEntityId);
+      Logger.log('info', 'general', 'get-parent-entity-hierarchy', 'Getting hierarchy starting from parent entity', { parentEntityId });
 
       // Get the parent entity details first
       const { db } = await import('../../../db/index.js');
@@ -358,7 +359,7 @@ export default async function entityRoutes(
       });
 
     } catch (error) {
-      console.error('❌ Get parent entity hierarchy failed:', error);
+      Logger.log('error', 'general', 'get-parent-entity-hierarchy', 'Get parent entity hierarchy failed', { error: (error as Error).message });
       return reply.code(500).send({
         success: false,
         error: 'Retrieval failed',
@@ -376,10 +377,9 @@ export default async function entityRoutes(
       const tenantId = (request as any).userContext?.tenantId ?? params.tenantId ?? '';
       const entityType = query?.entityType;
 
-      console.log('🏢 Getting tenant entities:', {
+      Logger.log('info', 'general', 'get-tenant-entities', 'Getting tenant entities', {
         tenantId,
         entityType,
-        queryString: request.query,
         url: request.url,
         tenantIdType: typeof tenantId,
         tenantIdLength: tenantId?.length
@@ -387,7 +387,7 @@ export default async function entityRoutes(
 
       // DEBUG: Validate tenantId format
       if (!tenantId || typeof tenantId !== 'string' || tenantId.length !== 36) {
-        console.error('🚨 Invalid tenantId format:', {
+        Logger.log('error', 'validation', 'get-tenant-entities', 'Invalid tenantId format', {
           tenantId,
           type: typeof tenantId,
           length: tenantId?.length
@@ -403,7 +403,7 @@ export default async function entityRoutes(
       // Only perform a DB round-trip when the URL tenantId does not match the JWT
       // context (e.g. a stale client sending the wrong ID).
       if (request.userContext?.tenantId && request.userContext.tenantId !== tenantId) {
-        console.error('🚨 tenantId mismatch — URL param differs from JWT context:', {
+        Logger.log('error', 'general', 'get-tenant-entities', 'tenantId mismatch — URL param differs from JWT context', {
           urlTenantId: tenantId,
           jwtTenantId: request.userContext.tenantId
         });
@@ -413,7 +413,7 @@ export default async function entityRoutes(
         const result = await EntityAdminService.getTenantEntities(correctedTenantId, entityType);
 
         if (result.success) {
-          console.log('✅ Returned entities for JWT tenant (corrected):', correctedTenantId);
+          Logger.log('info', 'general', 'get-tenant-entities', 'Returned entities for JWT tenant (corrected)', { correctedTenantId });
           return reply.send({
             ...result,
             correctedTenantId,
@@ -430,22 +430,15 @@ export default async function entityRoutes(
         });
       }
 
-      console.log('✅ Tenant confirmed via JWT context:', tenantId);
+      Logger.log('info', 'general', 'get-tenant-entities', 'Tenant confirmed via JWT context', { tenantId });
 
       const result = await EntityAdminService.getTenantEntities(tenantId, entityType);
 
       if (result.success) {
-        console.log('✅ Tenant entities retrieved successfully:', {
+        Logger.log('info', 'general', 'get-tenant-entities', 'Tenant entities retrieved successfully', {
           tenantId,
           entityType,
-          totalEntities: result.total,
-          entityTypesReturned: [...new Set((result.entities as any[]).map((e: any) => e.entityType))],
-          sampleEntities: (result.entities as any[]).slice(0, 3).map((e: any) => ({
-            id: e.entityId,
-            name: e.entityName,
-            type: e.entityType,
-            tenantId: e.tenantId
-          }))
+          totalEntities: result.total as unknown as number
         });
 
         return reply.send(result);
@@ -454,11 +447,10 @@ export default async function entityRoutes(
       }
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Get tenant entities failed:', error);
-      console.error('❌ Error stack:', error.stack);
-      console.error('❌ Error details:', {
+      Logger.log('error', 'general', 'get-tenant-entities', 'Get tenant entities failed', {
         errorMessage: error.message,
-        errorName: error.name
+        errorName: error.name,
+        stack: error.stack
       });
       return reply.code(500).send({
         success: false,
@@ -541,7 +533,7 @@ export default async function entityRoutes(
       return reply.code(400).send(result);
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Create entity failed:', error);
+      Logger.log('error', 'general', 'create-entity', 'Create entity failed', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Creation failed',
@@ -563,7 +555,7 @@ export default async function entityRoutes(
       const entityId = params.entityId ?? '';
       const updateData = request.body as Record<string, unknown>;
 
-      console.log('🔄 Update entity endpoint called for:', entityId, 'with data:', updateData);
+      Logger.log('info', 'general', 'update-entity', 'Update entity endpoint called', { entityId, updateData });
 
       // Transform entity data to organization format for service compatibility
       const orgUpdateData = {
@@ -602,7 +594,7 @@ export default async function entityRoutes(
       }
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Update entity failed:', error);
+      Logger.log('error', 'general', 'update-entity', 'Update entity failed', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Update failed',
@@ -619,7 +611,7 @@ export default async function entityRoutes(
     try {
       const entityId = params.entityId ?? '';
 
-      console.log('🗑️ Delete entity endpoint called for:', entityId);
+      Logger.log('info', 'general', 'delete-entity', 'Delete entity endpoint called', { entityId });
 
       const result = await (OrganizationService as any).deleteOrganization(entityId);
 
@@ -632,7 +624,7 @@ export default async function entityRoutes(
         return reply.code(404).send(result);
       }
     } catch (error) {
-      console.error('❌ Delete entity failed:', error);
+      Logger.log('error', 'general', 'delete-entity', 'Delete entity failed', { error: (error as Error).message });
       return reply.code(500).send({
         success: false,
         error: 'Deletion failed',

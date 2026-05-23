@@ -11,19 +11,19 @@ import { subscriptions } from '../../db/schema/index.js';
 export async function trialRestrictionMiddleware(request: FastifyRequest, reply: FastifyReply): Promise<void | ReturnType<FastifyReply['send']>> {
   // TEMPORARY: Skip all trial restrictions in local development
   if (process.env.NODE_ENV === 'development' || process.env.BYPASS_TRIAL_RESTRICTIONS === 'true') {
-    if (shouldLogVerbose()) console.log('🔓 Trial restriction: BYPASSED for local development');
+    if (shouldLogVerbose()) Logger.log('info', 'restrictions', 'trial-restriction-middleware', '🔓 Trial restriction: BYPASSED for local development');
     return;
   }
 
   // Skip check for non-authenticated requests
   if (!request.userContext?.tenantId) {
-    if (shouldLogVerbose()) console.log('🔓 Trial restriction: No tenantId, skipping check');
+    if (shouldLogVerbose()) Logger.log('info', 'restrictions', 'trial-restriction-middleware', '🔓 Trial restriction: No tenantId, skipping check');
     return;
   }
 
   // Skip check for auth-related operations during registration
   if (request.url.includes('/auth') || request.url.includes('/onboarding')) {
-    if (shouldLogVerbose()) console.log('🔓 Trial restriction: Auth/onboarding operation, skipping check');
+    if (shouldLogVerbose()) Logger.log('info', 'restrictions', 'trial-restriction-middleware', '🔓 Trial restriction: Auth/onboarding operation, skipping check');
     return;
   }
 
@@ -90,7 +90,7 @@ export async function trialRestrictionMiddleware(request: FastifyRequest, reply:
 
         if (!isAllowedWritePath) {
           if (shouldLogVerbose()) {
-            console.log(`[${requestId}] Blocked write operation for canceled subscription: ${request.method} ${request.url}`);
+            Logger.log('info', 'restrictions', 'trial-restriction-middleware', `[${requestId}] Blocked write operation for canceled subscription: ${request.method} ${request.url}`);
           }
           return reply.code(403).send({
             error: 'Subscription expired',
@@ -104,7 +104,7 @@ export async function trialRestrictionMiddleware(request: FastifyRequest, reply:
     }
   } catch (subErr: unknown) {
     // Non-blocking: if subscription check fails, continue to credit check
-    console.error(`[${requestId}] Subscription status check failed:`, (subErr as Error).message);
+    Logger.log('error', 'database', requestId, 'Subscription status check failed', { error: (subErr as Error).message });
   }
 
   try {
@@ -116,7 +116,7 @@ export async function trialRestrictionMiddleware(request: FastifyRequest, reply:
 
     if (isCreditInsufficient) {
       if (shouldLogVerbose()) {
-        console.log(`[${requestId}] Insufficient credits for tenant ${tenantId}: ${creditBalance?.availableCredits || 0} available`);
+        Logger.log('info', 'restrictions', 'trial-restriction-middleware', `[${requestId}] Insufficient credits for tenant ${tenantId}: ${creditBalance?.availableCredits || 0} available`);
       }
 
       // Calculate credit shortage
@@ -187,14 +187,13 @@ export async function trialRestrictionMiddleware(request: FastifyRequest, reply:
     }
 
     if (shouldLogVerbose()) {
-      console.log(`[${requestId}] Credits OK: ${creditBalance?.availableCredits || 0} available`);
+      Logger.log('info', 'restrictions', 'trial-restriction-middleware', `[${requestId}] Credits OK: ${creditBalance?.availableCredits || 0} available`);
     }
 
   } catch (err: unknown) {
     const error = err as NodeJS.ErrnoException;
-    console.error(`❌ [${requestId}] Credit balance check failed:`, error.message);
-    
-    
+    Logger.log('error', 'billing', requestId, 'Credit balance check failed', { error: error.message });
+
     // If it's a database connection error or critical error, we might want to block
     if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
       return reply.code(503).send({

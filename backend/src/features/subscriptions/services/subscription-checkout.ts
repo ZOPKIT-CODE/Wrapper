@@ -92,7 +92,7 @@ export async function createCheckoutSession(params: {
       quantity: 1,
     }];
 
-    console.log('🔍 createCheckoutSession — subscription:', {
+    Logger.log('info', 'general', 'createCheckoutSession', 'createCheckoutSession — subscription', {
       planId: selectedPlan.id,
       name: selectedPlan.name,
       price: totalAmount,
@@ -123,7 +123,7 @@ export async function createCheckoutSession(params: {
       quantity: 1,
     }];
 
-    console.log('🔍 createCheckoutSession — credit purchase:', {
+    Logger.log('info', 'general', 'createCheckoutSession', 'createCheckoutSession — credit purchase', {
       packageId: selectedPlan.id,
       dollarAmount: totalAmount,
       currency: selectedPlan.currency,
@@ -132,7 +132,7 @@ export async function createCheckoutSession(params: {
 
   // If the gateway isn't configured (e.g. no keys), fall back to mock URL
   if (!gateway.isConfigured()) {
-    console.log(`🧪 createCheckoutSession — mock mode for ${checkoutType.toLowerCase()}`);
+    Logger.log('info', 'general', 'createCheckoutSession', `createCheckoutSession — mock mode for ${checkoutType.toLowerCase()}`);
     const mockSessionId = `mock_${isSubscriptionCheckout ? 'subscription' : 'credit'}_session_${Date.now()}`;
     const mockCheckoutUrl = `${successUrl}?session_id=${mockSessionId}&mock=true&planId=${planId}${isSubscriptionCheckout ? `&billingCycle=yearly&currency=${checkoutCurrency}` : `&credits=${credits}`}`;
 
@@ -149,7 +149,7 @@ export async function createCheckoutSession(params: {
             notes: `Mock purchase of $${totalAmount.toFixed(2)} worth of credits (${estimatedCredits} credits)`
           });
         } catch (err: unknown) {
-          console.error('❌ Mock credit purchase processing error:', err);
+          Logger.log('error', 'general', 'createCheckoutSession', 'Mock credit purchase processing error', { error: (err as Error).message });
         }
       }, 2000);
     }
@@ -190,14 +190,14 @@ export async function createCheckoutSession(params: {
   } catch (err: unknown) {
     const error = err as Error & { code?: string };
     const message = error?.message || String(error);
-    console.error(`❌ Checkout failed (${checkoutType}):`, message);
+    Logger.log('error', 'general', 'createCheckoutSession', `Checkout failed (${checkoutType})`, { message });
 
     const isMissingPrice = error?.code === 'resource_missing' || /no such price/i.test(message);
     const isDev = process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test';
     if (isMissingPrice && isDev && isSubscriptionCheckout) {
       const mockSessionId = `mock_subscription_session_${Date.now()}`;
       const mockCheckoutUrl = `${successUrl.replace('{CHECKOUT_SESSION_ID}', mockSessionId)}&mock=true&planId=${planId}&billingCycle=yearly&currency=${checkoutCurrency}`;
-      console.warn('⚠️ Price ID not found — using mock checkout in dev mode');
+      Logger.log('warning', 'general', 'createCheckoutSession', 'Price ID not found — using mock checkout in dev mode');
       return mockCheckoutUrl;
     }
 
@@ -229,10 +229,10 @@ export async function handleMockCheckoutCompleted(params: { tenantId: string; pl
       notes: `Mock purchase of ${String(selectedPackage.name || 'package')} package`
     });
 
-    console.log('✅ Mock credit purchase processed for tenant:', tenantId);
+    Logger.log('info', 'general', 'handleMockCheckoutCompleted', 'Mock credit purchase processed', { tenantId });
   } catch (err: unknown) {
     const error = err as Error;
-    console.error('❌ Error processing mock credit purchase:', error);
+    Logger.log('error', 'general', 'handleMockCheckoutCompleted', 'Error processing mock credit purchase', { error: error.message });
     throw error;
   }
 }
@@ -264,6 +264,6 @@ export async function createBillingPortalSession(tenantId: string, returnUrl?: s
     returnUrl: returnUrl || `${process.env.FRONTEND_URL || ''}/billing`,
   });
 
-  console.log('🔗 Billing portal session created for tenant:', tenantId, '(provider:', gateway.providerName + ')');
+  Logger.log('info', 'general', 'createBillingPortalSession', 'Billing portal session created', { tenantId, provider: gateway.providerName });
   return url;
 }

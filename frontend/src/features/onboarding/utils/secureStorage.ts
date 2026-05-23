@@ -81,7 +81,7 @@ export const secureStore = (key: string, data: any): void => {
       timestamp: new Date().toISOString(),
       version: '1.0'
     };
-    localStorage.setItem(key, JSON.stringify(secureData));
+    sessionStorage.setItem(key, JSON.stringify(secureData));
   } catch (error) {
     console.error('Secure storage failed:', error);
     throw new Error('Failed to securely store data');
@@ -93,7 +93,7 @@ export const secureStore = (key: string, data: any): void => {
  */
 export const secureRetrieve = (key: string): any | null => {
   try {
-    const storedData = localStorage.getItem(key);
+    const storedData = sessionStorage.getItem(key);
     if (!storedData) return null;
 
     const secureData = JSON.parse(storedData);
@@ -115,7 +115,7 @@ export const secureRetrieve = (key: string): any | null => {
   } catch (error) {
     console.error('Secure retrieval failed:', error);
     // Clean up corrupted data
-    localStorage.removeItem(key);
+    sessionStorage.removeItem(key);
     return null;
   }
 };
@@ -125,7 +125,7 @@ export const secureRetrieve = (key: string): any | null => {
  */
 export const secureClear = (key: string): void => {
   try {
-    localStorage.removeItem(key);
+    sessionStorage.removeItem(key);
   } catch (error) {
     console.error('Secure clear failed:', error);
   }

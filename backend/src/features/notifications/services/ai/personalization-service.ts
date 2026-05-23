@@ -2,6 +2,7 @@ import { aiServiceFactory } from './ai-service-factory.js';
 import { db } from '../../../../db/index.js';
 import { tenants } from '../../../../db/schema/index.js';
 import { eq } from 'drizzle-orm';
+import Logger from '../../../../utils/logger.js';
 
 interface BaseContent { title: string; message: string; [k: string]: unknown }
 interface PersonalizeOptions { additionalContext?: Record<string, unknown>; temperature?: number }
@@ -43,7 +44,7 @@ class PersonalizationService {
         provider: result.provider
       };
     } catch (err: unknown) {
-      console.error('Error personalizing content:', err);
+      Logger.log('error', 'ai', 'personalize-content', 'Error personalizing content', { error: err });
       return baseContent as unknown as Record<string, unknown>;
     }
   }
@@ -63,7 +64,7 @@ class PersonalizationService {
         });
       } catch (err: unknown) {
         const error = err as Error;
-        console.error(`Error personalizing for tenant ${tenantId}:`, error);
+        Logger.log('error', 'ai', 'personalize-batch', `Error personalizing for tenant ${tenantId}`, { tenantId, message: error.message, stack: error.stack });
         results.push({
           tenantId,
           ...baseContent,
@@ -92,7 +93,7 @@ class PersonalizationService {
           variantId: i + 1
         });
       } catch (error) {
-        console.error(`Error generating variant ${i + 1}:`, error);
+        Logger.log('error', 'ai', 'generate-personalized-variants', `Error generating variant ${i + 1}`, { variantIndex: i + 1, error });
       }
     }
 
@@ -112,7 +113,7 @@ class PersonalizationService {
 
       return tenant as unknown as Record<string, unknown>;
     } catch (err: unknown) {
-      console.error('Error fetching tenant data:', err);
+      Logger.log('error', 'ai', 'get-tenant-data', 'Error fetching tenant data', { error: err });
       return null;
     }
   }

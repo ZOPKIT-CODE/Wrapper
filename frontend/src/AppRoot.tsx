@@ -34,7 +34,7 @@ export const AppRoot = () => {
         <NuqsAdapter>
           <ThemeProvider defaultTheme="system" storageKey="zopkit-theme">
             <Toaster position="top-right" richColors offset="80px" gap={12} />
-            <NetworkQualityBanner />
+<NetworkQualityBanner />
             {/*
              * UpdateAvailableBanner is mounted here, ABOVE <RouterProvider>, which means
              * the TanStack Router context is not yet available at this depth.

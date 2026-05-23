@@ -2,6 +2,7 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { CreditService } from '../../../features/credits/index.js';
 import { authenticateToken } from '../../../middleware/auth/auth.js';
 import { requirePlatformPermission } from '../../../middleware/auth/platform-permission-middleware.js';
+import Logger from '../../../utils/logger.js';
 
 /**
  * Admin Credit Configuration Routes
@@ -369,15 +370,15 @@ export default async function creditConfigurationRoutes(fastify: FastifyInstance
 
       await request.logPlatformAction?.('credit_config.create_operation', tenantId, 'credit_configuration', undefined, undefined, configData);
 
-      console.log('📝 Creating tenant operation cost:', { tenantId, configData, userId });
+      Logger.log('info', 'billing', 'create-tenant-operation-cost', 'Creating tenant operation cost', { tenantId, userId });
 
       const result = await CreditService.createTenantOperationCost(tenantId, configData as any, userId) as any;
 
-      console.log('✅ Tenant operation cost created successfully:', result);
+      Logger.log('info', 'billing', 'create-tenant-operation-cost', 'Tenant operation cost created successfully');
       reply.send(result);
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error in tenant operation cost route:', err);
+      Logger.log('error', 'billing', 'create-tenant-operation-cost', 'Error creating tenant operation cost', { error: error.message });
       request.log.error(error, 'Error creating tenant operation cost:');
 
       reply.code(500).send({
@@ -400,7 +401,7 @@ export default async function creditConfigurationRoutes(fastify: FastifyInstance
     const initialCredits = Number(body.initialCredits) || 1000;
 
     try {
-      console.log(`🎯 Initializing ${initialCredits} credits for tenant: ${tenantId}`);
+      Logger.log('info', 'billing', 'initialize-credits', 'Initializing credits for tenant', { initialCredits, tenantId });
 
       const result = await CreditService.initializeTenantCredits(tenantId, initialCredits) as any;
 
@@ -436,7 +437,7 @@ export default async function creditConfigurationRoutes(fastify: FastifyInstance
     try {
       const app = query.app;
 
-      console.log('📊 Fetching global credit configurations for app:', app || 'ALL');
+      Logger.log('info', 'billing', 'get-global-credit-configs-by-app', 'Fetching global credit configurations', { app: app || 'ALL' });
 
       const result = await CreditService.getGlobalCreditConfigurationsByApp(app as any) as any;
 

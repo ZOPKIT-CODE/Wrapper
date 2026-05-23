@@ -161,24 +161,22 @@ function HeroSection() {
         <div style={{ position: 'relative', padding: '20px 14px 0' }}>
             {/* CSS animations for projector puck — injected once */}
             <style>{`
-                @keyframes mob-ppFloat { 0%,100%{ transform:translateY(0) } 50%{ transform:translateY(-5px) } }
-                @keyframes mob-ppLensGlow {
-                    0%,100%{ box-shadow:0 0 0 3px rgba(36,59,110,0.95),0 0 18px 5px rgba(46,79,140,0.9),0 0 44px 10px rgba(36,59,110,0.6),0 0 90px 20px rgba(27,46,90,0.35) }
-                    50%{     box-shadow:0 0 0 3px rgba(60,105,190,1),0 0 28px 9px rgba(60,105,190,0.95),0 0 68px 16px rgba(46,79,140,0.75),0 0 140px 28px rgba(36,59,110,0.5) }
-                }
-                @keyframes mob-ppHotspot { 0%,100%{ opacity:0.9;filter:blur(1.5px);transform:scale(1) } 50%{ opacity:1;filter:blur(0.5px);transform:scale(1.22) } }
+                @keyframes mob-ppFloat   { 0%,100%{ transform:translateY(0) } 50%{ transform:translateY(-5px) } }
+                @keyframes mob-ppLensGlow { 0%,100%{ opacity:0.65 } 50%{ opacity:1 } }
+                @keyframes mob-ppHotspot { 0%,100%{ opacity:0.9;transform:scale(1) } 50%{ opacity:1;transform:scale(1.22) } }
                 @keyframes mob-ppRingOut  { 0%{ transform:scale(0.5);opacity:0.75 } 100%{ transform:scale(3.8);opacity:0 } }
                 @keyframes mob-beamUp {
                     0%{ opacity:0; transform:translateX(-50%) scaleY(0) }
                     20%{ opacity:1 }
                     100%{ opacity:0; transform:translateX(-50%) scaleY(1) }
                 }
-                .mob-pp-float  { animation: mob-ppFloat    5.5s ease-in-out infinite; }
-                .mob-pp-lens   { animation: mob-ppLensGlow 2.8s ease-in-out infinite; }
-                .mob-pp-hotspot{ animation: mob-ppHotspot  2.8s ease-in-out infinite; }
-                .mob-pp-ring1  { animation: mob-ppRingOut  2.8s ease-out infinite; }
-                .mob-pp-ring2  { animation: mob-ppRingOut  2.8s ease-out 1.4s infinite; }
+                .mob-pp-float  { animation: mob-ppFloat    5.5s ease-in-out infinite; will-change: transform; }
+                .mob-pp-lens   { animation: mob-ppLensGlow 2.8s ease-in-out infinite; will-change: opacity; box-shadow: 0 0 0 3px rgba(46,79,140,0.85), 0 0 44px 10px rgba(36,59,110,0.55), 0 0 90px 20px rgba(27,46,90,0.3); }
+                .mob-pp-hotspot{ animation: mob-ppHotspot  2.8s ease-in-out infinite; will-change: opacity, transform; }
+                .mob-pp-ring1  { animation: mob-ppRingOut  2.8s ease-out infinite; will-change: transform, opacity; }
+                .mob-pp-ring2  { animation: mob-ppRingOut  2.8s ease-out 1.4s infinite; will-change: transform, opacity; }
                 .mob-beam      { animation: mob-beamUp 1s cubic-bezier(0.16,1,0.3,1) forwards; transform-origin: bottom center; }
+                @media (prefers-reduced-motion: reduce) { .mob-pp-float,.mob-pp-lens,.mob-pp-hotspot,.mob-pp-ring1,.mob-pp-ring2 { animation: none !important; } }
                 /* Hide all scrollbars */
                 *::-webkit-scrollbar { display: none !important; }
                 * { scrollbar-width: none !important; -ms-overflow-style: none !important; }
@@ -851,8 +849,10 @@ function MockExpandModal({ title, children, onClose }: { title: string; children
 
             {/* Mock content — static fit, no scroll */}
             <div style={{ flex: 1, overflow: 'hidden', padding: '0 8px 4px', display: 'flex', flexDirection: 'column' }}>
-                <div style={{ zoom: 0.58, flex: 1, overflow: 'hidden' } as React.CSSProperties}>
-                    {children}
+                <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+                    <div style={{ transform: 'scale(0.58)', transformOrigin: 'top left', width: '172%' }}>
+                        {children}
+                    </div>
                 </div>
             </div>
 
@@ -946,8 +946,10 @@ function FeaturePanel({ num, bg, accent, icon, title, desc, bullets, chip, child
                     position: 'relative', cursor: 'pointer',
                 }}
             >
-                <div style={{ zoom: 0.82 } as React.CSSProperties}>
-                    {children}
+                <div style={{ overflow: 'hidden' }}>
+                    <div style={{ transform: 'scale(0.82)', transformOrigin: 'top left', width: '122%' }}>
+                        {children}
+                    </div>
                 </div>
                 {/* Expand affordance */}
                 <div style={{

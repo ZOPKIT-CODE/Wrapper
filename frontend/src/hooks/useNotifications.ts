@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { Notification } from '@/features/notifications/types';
 import { NotificationService } from '@/services/notificationService';
 import { useNotifications as useNotificationsQuery, useUnreadCount as useUnreadCountQuery, useInvalidateQueries } from '@/hooks/useSharedQueries';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 
 export const useNotifications = () => {
   // Use shared hooks with caching instead of direct API calls

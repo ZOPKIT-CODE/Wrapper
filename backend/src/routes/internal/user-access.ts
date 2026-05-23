@@ -13,6 +13,7 @@ import { tenantUsers, customRoles, userRoleAssignments } from '../../db/schema/i
 import { eq, and } from 'drizzle-orm';
 import DistributedSSOCache from '../../utils/distributed-sso-cache.js';
 import ErrorResponses from '../../utils/error-responses.js';
+import Logger from '../../utils/logger.js';
 
 // Shared helper — extract tool names from a role permission map
 export function getAvailableTools(roles: any[]): string[] {
@@ -95,19 +96,19 @@ export default async function internalUserAccessRoutes(fastify: FastifyInstance)
     const force_refresh   = body.force_refresh as boolean | undefined;
 
     try {
-      console.log(`🔍 Processing user permissions request: ${kinde_user_id} for ${requesting_app}`);
+      Logger.log('info', 'routes', 'user-permissions', `🔍 Processing user permissions request: ${kinde_user_id} for ${requesting_app}`);
 
       if (!force_refresh) {
         const cachedAuth = await DistributedSSOCache.getUserAuth(kinde_user_id, kinde_org_code) as any;
         if (cachedAuth) {
-          console.log(`🚀 CACHE HIT: Returning cached auth data for ${kinde_user_id}`);
+          Logger.log('info', 'routes', 'user-permissions', `🚀 CACHE HIT: Returning cached auth data for ${kinde_user_id}`);
           const cachedPermissions = await DistributedSSOCache.getUserPermissions(
             cachedAuth.user?.id ?? '',
             cachedAuth.tenant?.id ?? '',
             requesting_app,
           );
           if (cachedPermissions) {
-            console.log(`🎯 CACHE HIT: Returning cached permissions for ${requesting_app}`);
+            Logger.log('info', 'routes', 'user-permissions', `🎯 CACHE HIT: Returning cached permissions for ${requesting_app}`);
             return {
               success: true,
               data: {
@@ -121,7 +122,7 @@ export default async function internalUserAccessRoutes(fastify: FastifyInstance)
         }
       }
 
-      console.log(`💾 Cache MISS: Fetching fresh data from database`);
+      Logger.log('info', 'routes', 'user-permissions', `💾 Cache MISS: Fetching fresh data from database`);
 
       const tenant = await TenantService.getByKindeOrgId(kinde_org_code);
       if (!tenant) {
@@ -247,9 +248,10 @@ export default async function internalUserAccessRoutes(fastify: FastifyInstance)
             roles: userRoleNames,
           }),
         ]);
-        console.log(`✅ Successfully cached auth data for ${kinde_user_id}:${requesting_app}`);
+        Logger.log('info', 'routes', 'user-permissions', `✅ Successfully cached auth data for ${kinde_user_id}:${requesting_app}`);
       } catch (cacheError) {
-        console.error('⚠️ Cache write failed (non-critical):', cacheError);
+        const cacheErr = cacheError as Error;
+        Logger.log('error', 'routes', 'user-permissions', '⚠️ Cache write failed (non-critical)', { error: cacheErr.message, stack: cacheErr.stack });
       }
 
       return { success: true, data: { ...responseData, source: 'database', cachedAt: new Date().toISOString() } };

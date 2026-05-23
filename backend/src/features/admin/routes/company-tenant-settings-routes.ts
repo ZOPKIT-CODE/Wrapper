@@ -48,7 +48,7 @@ export default async function companyTenantSettingsRoutes(fastify: FastifyInstan
         });
       }
 
-      console.log(`🔍 [${requestId}] Getting tenant info for: ${tenantId}`);
+      Logger.log('info', 'general', requestId, 'Getting tenant info', { tenantId });
 
       const tenant = await db
         .select()
@@ -62,7 +62,7 @@ export default async function companyTenantSettingsRoutes(fastify: FastifyInstan
         });
       }
 
-      console.log(`✅ [${requestId}] Tenant info retrieved`);
+      Logger.log('info', 'general', requestId, 'Tenant info retrieved');
 
       return {
         success: true,
@@ -71,7 +71,7 @@ export default async function companyTenantSettingsRoutes(fastify: FastifyInstan
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ [${requestId}] Failed to get tenant info:`, error);
+      Logger.log('error', 'general', requestId, 'Failed to get tenant info', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to get tenant information',
@@ -89,7 +89,7 @@ export default async function companyTenantSettingsRoutes(fastify: FastifyInstan
     const tenantId = ((request as ReqWithUser).userContext?.tenantId ?? '') as string;
 
     try {
-      console.log(`📊 [${requestId}] Getting comprehensive onboarding status for tenant: ${tenantId}`);
+      Logger.log('info', 'onboarding', requestId, 'Getting comprehensive onboarding status', { tenantId });
 
       const [tenant] = await db
         .select()
@@ -165,9 +165,11 @@ export default async function companyTenantSettingsRoutes(fastify: FastifyInstan
         updatedAt: tenant.updatedAt
       };
 
-      console.log(`✅ [${requestId}] Comprehensive onboarding status retrieved`);
-      console.log(`📊 [${requestId}] Onboarding completed: ${onboardingStatus.onboardingCompleted}`);
-      console.log(`⏰ [${requestId}] Subscription status: ${onboardingStatus.subscriptionStatus} (Trial active: ${trialActive})`);
+      Logger.log('info', 'onboarding', requestId, 'Comprehensive onboarding status retrieved', {
+        onboardingCompleted: onboardingStatus.onboardingCompleted,
+        subscriptionStatus: onboardingStatus.subscriptionStatus,
+        trialActive
+      });
 
       return {
         success: true,
@@ -176,7 +178,7 @@ export default async function companyTenantSettingsRoutes(fastify: FastifyInstan
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ [${requestId}] Failed to get onboarding status:`, error);
+      Logger.log('error', 'onboarding', requestId, 'Failed to get onboarding status', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to get onboarding status',
@@ -196,7 +198,7 @@ export default async function companyTenantSettingsRoutes(fastify: FastifyInstan
     const updateData = body as Record<string, unknown>;
 
     try {
-      console.log(`✏️ [${requestId}] Updating tenant:`, { tenantId, updateData });
+      Logger.log('info', 'general', requestId, 'Updating tenant', { tenantId });
 
       const result = await (db.update(tenants) as any)
         .set({
@@ -212,7 +214,32 @@ export default async function companyTenantSettingsRoutes(fastify: FastifyInstan
         });
       }
 
-      console.log(`✅ [${requestId}] Tenant updated successfully`);
+      Logger.log('info', 'general', requestId, 'Tenant updated successfully');
+
+      // Publish configuration.updated event so downstream apps mirror the change
+      try {
+        const { snsSqsPublisher } = await import('../../messaging/utils/sns-sqs-publisher.js');
+        const userContext = (request as ReqWithUser).userContext ?? {};
+        const changedBy = (userContext.internalUserId as string | undefined) ?? (userContext.email as string | undefined) ?? 'system';
+        const { updatedAt: _omitUpdatedAt, ...changedFields } = updateData;
+        const publishResults = await snsSqsPublisher.publishConfigurationUpdateToSuite(
+          tenantId,
+          {
+            entityId: 'global',
+            configKey: 'tenant.settings',
+            configCategory: 'tenant',
+            configValue: changedFields,
+            changedBy,
+          },
+          changedBy
+        );
+        const failed = publishResults.filter((r) => r.success === false);
+        if (failed.length > 0) {
+          Logger.log('warning', 'general', requestId, 'Some configuration.updated publishes failed', { tenantId, failed });
+        }
+      } catch (publishErr: unknown) {
+        Logger.log('error', 'general', requestId, 'Failed to publish configuration.updated event', { tenantId, error: (publishErr as Error).message });
+      }
 
       return {
         success: true,
@@ -222,7 +249,7 @@ export default async function companyTenantSettingsRoutes(fastify: FastifyInstan
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ [${requestId}] Failed to update tenant:`, error);
+      Logger.log('error', 'general', requestId, 'Failed to update tenant', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to update tenant',
@@ -243,7 +270,7 @@ export default async function companyTenantSettingsRoutes(fastify: FastifyInstan
     const confirmDeletion = body.confirmDeletion;
 
     try {
-      console.log(`🚨 [${requestId}] DANGER: Complete tenant deletion requested:`, { tenantId });
+      Logger.log('warning', 'general', requestId, 'Complete tenant deletion requested', { tenantId });
 
       if (!confirmDeletion || confirmDeletion !== 'DELETE_ALL_DATA') {
         return reply.code(400).send({
@@ -264,7 +291,7 @@ export default async function companyTenantSettingsRoutes(fastify: FastifyInstan
         });
       }
 
-      console.log(`🗑️ [${requestId}] Proceeding with tenant deletion...`);
+      Logger.log('info', 'general', requestId, 'Proceeding with tenant deletion');
 
       const summary = await deleteTenantData(tenantId as string);
 
@@ -297,7 +324,7 @@ export default async function companyTenantSettingsRoutes(fastify: FastifyInstan
         });
       });
 
-      console.log(`✅ [${requestId}] Tenant deletion completed:`, summary);
+      Logger.log('info', 'general', requestId, 'Tenant deletion completed', { summary });
 
       return {
         success: true,
@@ -307,7 +334,7 @@ export default async function companyTenantSettingsRoutes(fastify: FastifyInstan
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ [${requestId}] Failed to delete tenant:`, error);
+      Logger.log('error', 'general', requestId, 'Failed to delete tenant', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to delete tenant',
@@ -326,11 +353,11 @@ export default async function companyTenantSettingsRoutes(fastify: FastifyInstan
     const tenantId = params.tenantId ?? '';
 
     try {
-      console.log(`📊 [${requestId}] Getting data summary for tenant: ${tenantId}`);
+      Logger.log('info', 'general', requestId, 'Getting data summary for tenant', { tenantId });
 
       const summary = await getTenantDataSummary(tenantId as string);
 
-      console.log(`✅ [${requestId}] Data summary retrieved`);
+      Logger.log('info', 'general', requestId, 'Data summary retrieved');
 
       return {
         success: true,
@@ -340,7 +367,7 @@ export default async function companyTenantSettingsRoutes(fastify: FastifyInstan
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ [${requestId}] Failed to get tenant data summary:`, error);
+      Logger.log('error', 'general', requestId, 'Failed to get tenant data summary', { error: error.message });
       return reply.code(500).send({
         success: false,
         error: 'Failed to get tenant data summary',

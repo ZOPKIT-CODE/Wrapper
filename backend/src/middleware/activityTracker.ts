@@ -1,5 +1,6 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import ActivityLogger, { ACTIVITY_TYPES, RESOURCE_TYPES } from '../services/activityLogger.js';
+import Logger from '../utils/logger.js';
 
 export interface TrackActivityOptions {
   skipPatterns?: RegExp[];
@@ -86,16 +87,16 @@ async function logRequestActivity(request: FastifyRequest, reply: FastifyReply, 
     if (!tenantId) {
       // Skip logging for onboarding and other expected no-tenant paths
       if (!/\/api\/onboarding\//.test(url) && !/\/api\/admin\/auth-status/.test(url)) {
-        console.log('⚠️ Activity tracking skipped: No tenantId for', url);
+        Logger.log('info', 'middleware', 'log-request-activity', '⚠️ Activity tracking skipped: No tenantId for', { url });
       }
       return;
     }
-    
+
     // Use internal user ID, not Kinde user ID
     const userId = request.user.internalUserId || request.user.userId;
     if (!userId) {
       if (!/\/api\/onboarding\//.test(url)) {
-        console.log('⚠️ Activity tracking skipped: No userId for', url);
+        Logger.log('info', 'middleware', 'log-request-activity', '⚠️ Activity tracking skipped: No userId for', { url });
       }
       return;
     }
@@ -108,9 +109,9 @@ async function logRequestActivity(request: FastifyRequest, reply: FastifyReply, 
     }
 
     const requestContext = ActivityLogger.createRequestContext(request as never, undefined);
-    
-    console.log(`📝 Logging activity: ${activityInfo.action} for user ${userId}, tenant ${tenantId}, URL: ${url}`);
-    
+
+    Logger.log('info', 'middleware', 'log-request-activity', `📝 Logging activity: ${activityInfo.action} for user ${userId}, tenant ${tenantId}, URL: ${url}`);
+
     // Log the activity
     const result = await ActivityLogger.logActivity(
       userId,
@@ -128,11 +129,11 @@ async function logRequestActivity(request: FastifyRequest, reply: FastifyReply, 
     );
 
     if (!result.success) {
-      console.error(`❌ Failed to log activity: ${result.error}`);
+      Logger.log('error', 'middleware', 'log-request-activity', `❌ Failed to log activity: ${result.error}`);
     }
 
   } catch (error) {
-    console.error('❌ Failed to track request activity:', error);
+    Logger.log('error', 'middleware', 'log-request-activity', '❌ Failed to track request activity', { error });
     // Don't throw - logging failures shouldn't affect the main request
   }
 }
@@ -625,7 +626,7 @@ export const trackUserAction = (action: string, options: { appId?: string | null
 
       done();
     } catch (error) {
-      console.error('❌ Failed to prepare activity tracking:', error);
+      Logger.log('error', 'middleware', 'track-user-action', '❌ Failed to prepare activity tracking', { error });
       done(); // Continue even if tracking fails
     }
   };
@@ -658,7 +659,7 @@ export const completeTrackedAction = () => {
       }
       done();
     } catch (error) {
-      console.error('❌ Failed to complete activity tracking:', error);
+      Logger.log('error', 'middleware', 'complete-tracked-action', '❌ Failed to complete activity tracking', { error });
       done();
     }
   };
@@ -697,7 +698,7 @@ export const trackAuditEvent = (resourceType: string, options: { captureChanges?
 
       done();
     } catch (error) {
-      console.error('❌ Failed to prepare audit tracking:', error);
+      Logger.log('error', 'middleware', 'track-audit-event', '❌ Failed to prepare audit tracking', { error });
       done();
     }
   };
@@ -724,7 +725,7 @@ export const logAuditEvent = async (request: FastifyRequest, action: string, res
       requestContext as Record<string, unknown>
     );
   } catch (error) {
-    console.error('❌ Failed to log audit event:', error);
+    Logger.log('error', 'middleware', 'log-audit-event', '❌ Failed to log audit event', { error });
   }
 };
 
@@ -738,7 +739,7 @@ export const trackLogin = async (user: { internalUserId?: string | null; userId?
     // Use internal user ID if available, otherwise fall back to userId
     const userId = user.internalUserId || user.userId;
     if (!userId) {
-      console.error('❌ trackLogin: No valid user ID found');
+      Logger.log('error', 'middleware', 'track-login', '❌ trackLogin: No valid user ID found');
       return;
     }
     
@@ -778,7 +779,7 @@ export const trackLogin = async (user: { internalUserId?: string | null; userId?
     );
 
   } catch (error) {
-    console.error('❌ Failed to track login activity:', error);
+    Logger.log('error', 'middleware', 'track-login', '❌ Failed to track login activity', { error });
   }
 };
 
@@ -792,7 +793,7 @@ export const trackLogout = async (user: { internalUserId?: string | null; userId
     // Use internal user ID if available, otherwise fall back to userId
     const userId = user.internalUserId || user.userId;
     if (!userId) {
-      console.error('❌ trackLogout: No valid user ID found');
+      Logger.log('error', 'middleware', 'track-logout', '❌ trackLogout: No valid user ID found');
       return;
     }
 
@@ -810,7 +811,7 @@ export const trackLogout = async (user: { internalUserId?: string | null; userId
     );
 
   } catch (error) {
-    console.error('❌ Failed to track logout activity:', error);
+    Logger.log('error', 'middleware', 'track-logout', '❌ Failed to track logout activity', { error });
   }
 };
 
@@ -883,7 +884,7 @@ async function logErrorActivity(request: FastifyRequest, reply: FastifyReply, pa
     );
 
   } catch (error) {
-    console.error('❌ Failed to log error activity:', error);
+    Logger.log('error', 'middleware', 'log-error-activity', '❌ Failed to log error activity', { error });
     // Don't throw - error logging failures shouldn't affect the main request
   }
-} 
+}

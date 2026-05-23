@@ -2,6 +2,7 @@ import { eq, inArray } from 'drizzle-orm';
 import { db } from '../../../db/index.js';
 import { applications, applicationModules, customRoles, organizationApplications } from '../../../db/schema/index.js';
 import { InterAppEventService } from './inter-app-event-service.js';
+import Logger from '../../../utils/logger.js';
 
 type PublishReason =
   | 'plan_change'
@@ -94,7 +95,7 @@ async function syncOrganizationAdminRolePermissions(
 
   const orgAdminRoles = roleRows.filter((role) => isOrganizationAdminRoleName(role.roleName));
   if (orgAdminRoles.length === 0) {
-    console.warn(`⚠️ No Organization Admin role found to sync for tenant ${tenantId}`);
+    Logger.log('warning', 'general', 'syncOrganizationAdminRolePermissions', `No Organization Admin role found to sync for tenant ${tenantId}`, { tenantId });
     return;
   }
 
@@ -110,9 +111,7 @@ async function syncOrganizationAdminRolePermissions(
       .where(eq(customRoles.roleId, role.roleId));
   }
 
-  console.log(
-    `✅ Synced Organization Admin role permissions for tenant ${tenantId} (${orgAdminRoles.length} role(s))`
-  );
+  Logger.log('info', 'general', 'syncOrganizationAdminRolePermissions', `Synced Organization Admin role permissions for tenant ${tenantId}`, { tenantId, roleCount: orgAdminRoles.length });
 }
 
 async function getTargetApps(): Promise<string[]> {
@@ -181,7 +180,7 @@ export async function publishTenantApplicationSyncEvent(params: {
     // Keep Wrapper source role in sync so downstream Wrapper->FA sync does not revert entitlement updates.
     await syncOrganizationAdminRolePermissions(tenantId, actorId);
   } catch (syncError) {
-    console.warn(`⚠️ Failed to sync Organization Admin role permissions for tenant ${tenantId}:`, syncError);
+    Logger.log('warning', 'general', 'publishTenantApplicationSyncEvent', `Failed to sync Organization Admin role permissions for tenant ${tenantId}`, { tenantId, error: (syncError as Error).message });
   }
 
   const applicationsSnapshot = await getTenantApplicationSnapshot(tenantId);
@@ -214,13 +213,9 @@ export async function publishTenantApplicationSyncEvent(params: {
 
   const failed = publishResults.filter((r) => r.status === 'rejected');
   if (failed.length > 0) {
-    console.error(
-      `❌ Failed to publish tenant.applications.updated for tenant ${tenantId} to ${failed.length}/${targetApps.length} targets`
-    );
+    Logger.log('error', 'general', 'publishTenantApplicationSyncEvent', `Failed to publish tenant.applications.updated for tenant ${tenantId}`, { tenantId, failedCount: failed.length, totalTargets: targetApps.length });
   } else {
-    console.log(
-      `✅ Published tenant.applications.updated for tenant ${tenantId} to targets: ${targetApps.join(', ')}`
-    );
+    Logger.log('info', 'general', 'publishTenantApplicationSyncEvent', `Published tenant.applications.updated for tenant ${tenantId}`, { tenantId, targets: targetApps.join(', ') });
   }
 }
 

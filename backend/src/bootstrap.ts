@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * Entry point: logs immediately, then loads app.js.
  * If you see ECANCELED after "Loading app", nodemon restarted during load — run once: npm start

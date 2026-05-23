@@ -3,13 +3,14 @@ import { customRoles, userRoleAssignments } from '../../../db/schema/core/permis
 import { tenantUsers, auditLogs } from '../../../db/schema/core/users.js';
 import { eq, and, count, sql } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
+import Logger from '../../../utils/logger.js';
 const SYSTEM_ACTOR_UUID = '00000000-0000-0000-0000-000000000000';
 
 class PermissionMatrixService {
   // Get user permission context
   async getUserPermissionContext(userId: string, tenantId: string) {
     try {
-      console.log('🔍 getUserPermissionContext called for user:', userId, 'tenant:', tenantId);
+      Logger.log('info', 'general', 'getUserPermissionContext', 'Getting user permission context', { userId, tenantId });
 
       // Get user roles
       const userRoles = await db
@@ -30,7 +31,7 @@ class PermissionMatrixService {
           )
         );
 
-      console.log('📋 Found', userRoles.length, 'active roles for user');
+      Logger.log('info', 'general', 'getUserPermissionContext', 'Found active roles for user', { count: userRoles.length });
 
       // Aggregate permissions from all roles
       const aggregatedPermissions: Record<string, unknown> = {};
@@ -66,7 +67,7 @@ class PermissionMatrixService {
           }
         } catch (parseError: unknown) {
           const err = parseError as Error;
-          console.error('❌ Error parsing permissions for role:', role.roleId, err);
+          Logger.log('error', 'general', 'getUserPermissionContext', 'Error parsing permissions for role', { roleId: role.roleId, error: err.message });
         }
       });
 
@@ -83,17 +84,12 @@ class PermissionMatrixService {
         roleCount: userRoles.length
       };
 
-      console.log('✅ Permission context built:', {
-        userId,
-        tenantId,
-        roleCount: context.roleCount,
-        permissionCount: Object.keys(aggregatedPermissions).length
-      });
+      Logger.log('info', 'general', 'getUserPermissionContext', 'Permission context built', { userId, tenantId, roleCount: context.roleCount, permissionCount: Object.keys(aggregatedPermissions).length });
 
       return context;
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('🚨 Error in getUserPermissionContext:', error);
+      Logger.log('error', 'general', 'getUserPermissionContext', 'Error in getUserPermissionContext', { error: error.message });
       throw error;
     }
   }
@@ -123,17 +119,11 @@ class PermissionMatrixService {
 
       const hasPermission = flatPermissions.includes(permission);
 
-      console.log('🔍 Permission check:', {
-        userId,
-        tenantId,
-        permission,
-        hasPermission,
-        totalPermissions: flatPermissions.length
-      });
+      Logger.log('info', 'general', 'hasPermission', 'Permission check', { userId, tenantId, permission, hasPermission, totalPermissions: flatPermissions.length });
 
       return hasPermission;
     } catch (err: unknown) {
-      console.error('🚨 Error checking permission:', err);
+      Logger.log('error', 'general', 'hasPermission', 'Error checking permission', { error: (err as Error).message });
       return false;
     }
   }
@@ -146,17 +136,11 @@ class PermissionMatrixService {
 
       const hasAll = permissions.every(permission => flatPermissions.includes(permission));
 
-      console.log('🔍 Has all permissions check:', {
-        userId,
-        tenantId,
-        required: permissions,
-        hasAll,
-        userPermissions: flatPermissions.length
-      });
+      Logger.log('info', 'general', 'hasAllPermissions', 'Has all permissions check', { userId, tenantId, required: permissions, hasAll, userPermissions: flatPermissions.length });
 
       return hasAll;
     } catch (err: unknown) {
-      console.error('🚨 Error checking all permissions:', err);
+      Logger.log('error', 'general', 'hasAllPermissions', 'Error checking all permissions', { error: (err as Error).message });
       return false;
     }
   }
@@ -169,17 +153,11 @@ class PermissionMatrixService {
 
       const hasAny = permissions.some(permission => flatPermissions.includes(permission));
 
-      console.log('🔍 Has any permission check:', {
-        userId,
-        tenantId,
-        required: permissions,
-        hasAny,
-        userPermissions: flatPermissions.length
-      });
+      Logger.log('info', 'general', 'hasAnyPermission', 'Has any permission check', { userId, tenantId, required: permissions, hasAny, userPermissions: flatPermissions.length });
 
       return hasAny;
     } catch (err: unknown) {
-      console.error('🚨 Error checking any permission:', err);
+      Logger.log('error', 'general', 'hasAnyPermission', 'Error checking any permission', { error: (err as Error).message });
       return false;
     }
   }
@@ -200,15 +178,11 @@ class PermissionMatrixService {
 
       const result = Array.from(applications);
 
-      console.log('📱 User accessible applications:', {
-        userId,
-        tenantId,
-        applications: result
-      });
+      Logger.log('info', 'general', 'getUserAccessibleApplications', 'User accessible applications', { userId, tenantId, applications: result });
 
       return result;
     } catch (err: unknown) {
-      console.error('🚨 Error getting accessible applications:', err);
+      Logger.log('error', 'general', 'getUserAccessibleApplications', 'Error getting accessible applications', { error: (err as Error).message });
       return [];
     }
   }
@@ -271,14 +245,14 @@ class PermissionMatrixService {
       }
     ];
 
-    console.log('📋 Available role templates:', templates.length);
+    Logger.log('info', 'general', 'getAvailableRoleTemplates', 'Available role templates', { count: templates.length });
     return templates;
   }
 
   // Assign role template to user
   async assignRoleTemplate(userId: string, tenantId: string, templateId: string, customizations: Record<string, unknown> = {}) {
     try {
-      console.log('🔧 Assigning role template:', { userId, tenantId, templateId, customizations });
+      Logger.log('info', 'general', 'assignRoleTemplate', 'Assigning role template', { userId, tenantId, templateId });
 
       const templates = this.getAvailableRoleTemplates();
       const template = templates.find(t => t.id === templateId);
@@ -329,11 +303,11 @@ class PermissionMatrixService {
         assignedAt: new Date()
       } as any);
 
-      console.log('✅ Role template assigned successfully');
+      Logger.log('info', 'general', 'assignRoleTemplate', 'Role template assigned successfully');
       return { roleId, templateId, userId };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('🚨 Error assigning role template:', error);
+      Logger.log('error', 'general', 'assignRoleTemplate', 'Error assigning role template', { error: error.message });
       throw error;
     }
   }
@@ -341,7 +315,7 @@ class PermissionMatrixService {
   // Get permission analytics
   async getPermissionAnalytics(tenantId: string) {
     try {
-      console.log('📊 Getting permission analytics for tenant:', tenantId);
+      Logger.log('info', 'general', 'getPermissionAnalytics', 'Getting permission analytics', { tenantId });
 
       // Get role counts
       const roleStats = await db
@@ -374,11 +348,11 @@ class PermissionMatrixService {
         generatedAt: new Date().toISOString()
       };
 
-      console.log('📊 Permission analytics:', analytics);
+      Logger.log('info', 'general', 'getPermissionAnalytics', 'Permission analytics computed', { analytics });
       return analytics;
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('🚨 Error getting permission analytics:', error);
+      Logger.log('error', 'general', 'getPermissionAnalytics', 'Error getting permission analytics', { error: error.message });
       throw error;
     }
   }
@@ -386,7 +360,7 @@ class PermissionMatrixService {
   // Revoke all user permissions
   async revokeAllUserPermissions(userId: string, tenantId: string) {
     try {
-      console.log('🚫 Revoking all permissions for user:', userId, 'tenant:', tenantId);
+      Logger.log('info', 'general', 'revokeAllUserPermissions', 'Revoking all permissions for user', { userId, tenantId });
 
       // Get all active role assignments for user
       const assignments = await db
@@ -421,11 +395,11 @@ class PermissionMatrixService {
         createdAt: new Date()
       });
 
-      console.log('✅ All permissions revoked for user:', { userId, assignmentsRevoked: assignments.length });
+      Logger.log('info', 'general', 'revokeAllUserPermissions', 'All permissions revoked for user', { userId, assignmentsRevoked: assignments.length });
       return { userId, assignmentsRevoked: assignments.length };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('🚨 Error revoking user permissions:', error);
+      Logger.log('error', 'general', 'revokeAllUserPermissions', 'Error revoking user permissions', { error: error.message });
       throw error;
     }
   }

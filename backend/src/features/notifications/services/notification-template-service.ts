@@ -3,6 +3,7 @@ import { notificationTemplates, TEMPLATE_CATEGORIES } from '../../../db/schema/n
 import { eq, and, desc, like, or } from 'drizzle-orm';
 import { NOTIFICATION_TYPES, NOTIFICATION_PRIORITIES } from '../../../db/schema/notifications/notifications.js';
 import { notificationCacheService } from './notification-cache-service.js';
+import Logger from '../../../utils/logger.js';
 
 export interface CreateTemplateData {
   name: string;
@@ -76,10 +77,10 @@ class NotificationTemplateService {
         } as typeof notificationTemplates.$inferInsert)
         .returning();
 
-      console.log(`📝 Created notification template: ${name}`);
+      Logger.log('info', 'general', 'createTemplate', 'Created notification template', { name });
       return template;
     } catch (error) {
-      console.error('Error creating notification template:', error);
+      Logger.log('error', 'general', 'createTemplate', 'Error creating notification template', { error: (error as Error).message });
       throw error;
     }
   }
@@ -154,7 +155,7 @@ class NotificationTemplateService {
 
       return templates;
     } catch (error) {
-      console.error('Error getting templates:', error);
+      Logger.log('error', 'general', 'getTemplates', 'Error getting templates', { error: (error as Error).message });
       throw error;
     }
   }
@@ -187,7 +188,7 @@ class NotificationTemplateService {
 
       return template;
     } catch (error) {
-      console.error('Error getting template:', error);
+      Logger.log('error', 'general', 'getTemplate', 'Error getting template', { error: (error as Error).message });
       throw error;
     }
   }
@@ -224,14 +225,14 @@ class NotificationTemplateService {
         .where(eq(notificationTemplates.templateId, templateId))
         .returning();
 
-      console.log(`✅ Updated notification template: ${templateId}`);
-      
+      Logger.log('info', 'general', 'updateTemplate', 'Updated notification template', { templateId });
+
       // Invalidate cache
       await notificationCacheService.invalidateTemplate(templateId);
-      
+
       return template;
     } catch (error) {
-      console.error('Error updating template:', error);
+      Logger.log('error', 'general', 'updateTemplate', 'Error updating template', { error: (error as Error).message });
       throw error;
     }
   }
@@ -262,14 +263,14 @@ class NotificationTemplateService {
         .delete(notificationTemplates)
         .where(eq(notificationTemplates.templateId, templateId));
 
-      console.log(`🗑️ Deleted notification template: ${templateId}`);
-      
+      Logger.log('info', 'general', 'deleteTemplate', 'Deleted notification template', { templateId });
+
       // Invalidate cache
       await notificationCacheService.invalidateTemplate(templateId);
-      
+
       return true;
     } catch (error) {
-      console.error('Error deleting template:', error);
+      Logger.log('error', 'general', 'deleteTemplate', 'Error deleting template', { error: (error as Error).message });
       throw error;
     }
   }
@@ -337,7 +338,7 @@ class NotificationTemplateService {
         }
       };
     } catch (error) {
-      console.error('Error rendering template:', error);
+      Logger.log('error', 'general', 'renderTemplate', 'Error rendering template', { error: (error as Error).message });
       throw error;
     }
   }

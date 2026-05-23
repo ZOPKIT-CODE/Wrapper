@@ -2,6 +2,7 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { CreditExpiryService } from '../services/credit-expiry-service.js';
 import { PERMISSIONS } from '../../../constants/permissions.js';
 import { authenticateToken, requirePermission } from '../../../middleware/auth/auth.js';
+import Logger from '../../../utils/logger.js';
 
 /**
  * Credit Expiry Routes
@@ -11,7 +12,7 @@ export default async function creditExpiryRoutes(
   fastify: FastifyInstance,
   _options?: Record<string, unknown>
 ): Promise<void> {
-  console.log('🔧 REGISTERING CREDIT EXPIRY ROUTES...');
+  Logger.log('info', 'general', 'boot', 'Registering credit expiry routes');
 
   // Process expired credits (admin only, can be called via cron)
   fastify.post('/process-expired', {
@@ -26,7 +27,7 @@ export default async function creditExpiryRoutes(
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error processing expired credits:', error);
+      Logger.log('error', 'billing', 'process-expired-credits', 'Error processing expired credits', { error: error.message });
       return reply.code(500).send({
         success: false,
         message: 'Failed to process expired credits',
@@ -57,7 +58,7 @@ export default async function creditExpiryRoutes(
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error fetching expiring credits:', error);
+      Logger.log('error', 'billing', 'get-expiring-credits', 'Error fetching expiring credits', { error: error.message });
       return reply.code(500).send({
         success: false,
         message: 'Failed to fetch expiring credits',
@@ -90,7 +91,7 @@ export default async function creditExpiryRoutes(
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error fetching expiry stats:', error);
+      Logger.log('error', 'billing', 'get-expiry-stats', 'Error fetching expiry stats', { error: error.message });
       return reply.code(500).send({
         success: false,
         message: 'Failed to fetch expiry statistics',
@@ -115,7 +116,7 @@ export default async function creditExpiryRoutes(
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error sending expiry warnings:', error);
+      Logger.log('error', 'billing', 'send-expiry-warnings', 'Error sending expiry warnings', { error: error.message });
       return reply.code(500).send({
         success: false,
         message: 'Failed to send expiry warnings',

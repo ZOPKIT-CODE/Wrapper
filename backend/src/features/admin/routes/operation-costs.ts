@@ -7,6 +7,7 @@ import { eq, sql, count, avg, desc, and } from 'drizzle-orm';
 import { authenticateToken } from '../../../middleware/auth/auth.js';
 import { requirePlatformPermission } from '../../../middleware/auth/platform-permission-middleware.js';
 import { snsSqsPublisher } from '../../messaging/utils/sns-sqs-publisher.js';
+import Logger from '../../../utils/logger.js';
 
 /**
  * Admin Operation Cost Management Routes
@@ -417,7 +418,7 @@ export default async function operationCostRoutes(fastify: FastifyInstance, _opt
       }
     } catch (err: unknown) {
       const error = err as Error & { code?: string };
-      console.error('❌ Error creating operation cost:', err);
+      Logger.log('error', 'billing', 'create-operation-cost', 'Error creating operation cost', { error: (err as Error).message });
       request.log.error(error, 'Error creating operation cost:');
 
       let errorMessage = 'Failed to create operation cost';
@@ -483,7 +484,7 @@ export default async function operationCostRoutes(fastify: FastifyInstance, _opt
         });
       }
 
-      console.log('📋 Existing config:', existing[0]);
+      Logger.log('info', 'billing', 'update-operation-cost', 'Existing config found', { configId });
 
       const validFields = ['operationCode', 'creditCost', 'unit', 'unitMultiplier', 'isGlobal', 'isActive'];
       const filteredUpdateData: Record<string, unknown> = {};
@@ -494,7 +495,7 @@ export default async function operationCostRoutes(fastify: FastifyInstance, _opt
         }
       }
 
-      console.log('📝 Filtered update data:', filteredUpdateData);
+      Logger.log('info', 'billing', 'update-operation-cost', 'Filtered update data', { fields: Object.keys(filteredUpdateData) });
 
       const processedUpdateData = { ...filteredUpdateData };
       if (processedUpdateData.creditCost !== undefined) {

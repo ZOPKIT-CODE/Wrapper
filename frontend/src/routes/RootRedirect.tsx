@@ -24,7 +24,7 @@ export function RootRedirect() {
 
     const pendingToken =
       typeof window !== 'undefined'
-        ? localStorage.getItem('pendingInvitationToken')
+        ? sessionStorage.getItem('pendingInvitationToken')
         : null
 
     if (pendingToken) {

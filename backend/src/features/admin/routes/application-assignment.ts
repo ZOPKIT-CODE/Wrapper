@@ -10,6 +10,7 @@ import { eq, and, sql, count, inArray } from 'drizzle-orm';
 import { authenticateToken } from '../../../middleware/auth/auth.js';
 import { publishTenantApplicationSyncEvent } from '../../messaging/services/tenant-application-event-service.js';
 import { requirePlatformPermission } from '../../../middleware/auth/platform-permission-middleware.js';
+import Logger from '../../../utils/logger.js';
 
 /**
  * Admin Application Assignment Routes
@@ -30,10 +31,7 @@ export default async function applicationAssignmentRoutes(fastify: FastifyInstan
     try {
       const tenantId = params.tenantId ?? '';
 
-      console.log('🔍 Tenant-apps route called');
-      console.log('🔍 Tenant ID:', tenantId);
-      console.log('🔍 Headers:', request.headers);
-      console.log('🔍 User:', request.user);
+      Logger.log('info', 'general', 'tenant-apps', 'Tenant-apps route called', { tenantId });
 
       // Get tenant applications with modules and permissions
       const tenantApplications = await db
@@ -58,13 +56,13 @@ export default async function applicationAssignmentRoutes(fastify: FastifyInstan
         .where(eq(organizationApplications.tenantId, tenantId))
         .orderBy(applications.appName);
 
-      console.log(`🔍 Found ${tenantApplications.length} tenant applications for tenant ${tenantId}`);
+      Logger.log('info', 'general', 'tenant-apps', 'Found tenant applications', { count: tenantApplications.length, tenantId });
 
       // Process each tenant application to include modules and permissions
       const processedApplications = await Promise.all(
         tenantApplications.map(async (tenantApp) => {
           try {
-            console.log(`🔍 Processing app: ${tenantApp.appCode} (${tenantApp.appId})`);
+            Logger.log('info', 'general', 'tenant-apps', 'Processing app', { appCode: tenantApp.appCode, appId: tenantApp.appId });
 
             // Get all modules for this application
             const appModules = await db
@@ -80,7 +78,7 @@ export default async function applicationAssignmentRoutes(fastify: FastifyInstan
               .where(eq(applicationModules.appId, tenantApp.appId))
               .orderBy(applicationModules.moduleCode);
 
-            console.log(`📦 Found ${appModules.length} modules for app ${tenantApp.appCode}`);
+            Logger.log('info', 'general', 'tenant-apps', 'Found modules for app', { count: appModules.length, appCode: tenantApp.appCode });
 
             const enabledModulesPermissions: Record<string, any> = {};
             let customPermissions: Record<string, any> = {};
@@ -90,13 +88,13 @@ export default async function applicationAssignmentRoutes(fastify: FastifyInstan
                 const module = appModules.find((m: any) => m.moduleCode === moduleCode);
                 if (module && module.permissions) {
                   enabledModulesPermissions[moduleCode] = module.permissions;
-                  console.log(`✅ Added permissions for enabled module ${moduleCode}:`, module.permissions);
+                  Logger.log('info', 'general', 'tenant-apps', 'Added permissions for enabled module', { moduleCode });
                 } else {
-                  console.log(`⚠️ Module ${moduleCode} not found or has no permissions`);
+                  Logger.log('warning', 'general', 'tenant-apps', 'Module not found or has no permissions', { moduleCode });
                 }
               });
             } else {
-              console.log(`⚠️ No enabled modules for tenant app ${tenantApp.appCode}`);
+              Logger.log('warning', 'general', 'tenant-apps', 'No enabled modules for tenant app', { appCode: tenantApp.appCode });
             }
 
             // Extract custom permissions if they exist
@@ -104,13 +102,13 @@ export default async function applicationAssignmentRoutes(fastify: FastifyInstan
               try {
                 // customPermissions is already a JSON object, no need to parse
                 customPermissions = tenantApp.customPermissions || {};
-                console.log(`🎯 Custom permissions for ${tenantApp.appCode}:`, customPermissions);
+                Logger.log('info', 'general', 'tenant-apps', 'Custom permissions found', { appCode: tenantApp.appCode });
               } catch (parseError) {
-                console.log(`❌ Error parsing custom permissions for tenant app ${tenantApp.id}:`, parseError);
+                Logger.log('error', 'general', 'tenant-apps', 'Error parsing custom permissions', { id: tenantApp.id, error: (parseError as Error).message });
                 customPermissions = {};
               }
             } else {
-              console.log(`📋 No custom permissions set for ${tenantApp.appCode}`);
+              Logger.log('info', 'general', 'tenant-apps', 'No custom permissions set for app', { appCode: tenantApp.appCode });
             }
 
             return {
@@ -121,7 +119,7 @@ export default async function applicationAssignmentRoutes(fastify: FastifyInstan
             };
           } catch (err: unknown) {
       const error = err as Error;
-            console.log(`Error processing permissions for tenant app ${tenantApp.id}:`, error);
+            Logger.log('error', 'general', 'tenant-apps', 'Error processing permissions for tenant app', { id: tenantApp.id, error: error.message });
             return {
               ...tenantApp,
               modules: [],
@@ -132,7 +130,7 @@ export default async function applicationAssignmentRoutes(fastify: FastifyInstan
         })
       );
 
-      console.log(`🏢 Processed ${processedApplications.length} tenant applications`);
+      Logger.log('info', 'general', 'tenant-apps', 'Processed tenant applications', { count: processedApplications.length });
       reply.send({
         success: true,
         data: {
@@ -142,7 +140,7 @@ export default async function applicationAssignmentRoutes(fastify: FastifyInstan
       });
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Error fetching tenant applications:', error);
+      Logger.log('error', 'general', 'tenant-apps', 'Error fetching tenant applications', { error: error.message });
       reply.code(500).send({
         success: false,
         error: 'Failed to fetch tenant applications'
@@ -287,7 +285,7 @@ export default async function applicationAssignmentRoutes(fastify: FastifyInstan
               tenantApplications.map(async (tenantApp) => {
                 try {
                   // Get all modules for this application to include permissions
-                  console.log(`🔍 Fetching modules for app ${tenantApp.appCode} (${tenantApp.appId})`);
+                  Logger.log('info', 'general', 'app-overview', 'Fetching modules for app', { appCode: tenantApp.appCode, appId: tenantApp.appId });
                   const appModules = await db
                     .select({
                       moduleId: applicationModules.moduleId,
@@ -299,8 +297,7 @@ export default async function applicationAssignmentRoutes(fastify: FastifyInstan
                     .where(eq(applicationModules.appId, tenantApp.appId))
                     .orderBy(applicationModules.moduleCode);
 
-                  console.log(`📦 Found ${appModules.length} modules for app ${tenantApp.appCode}`);
-                  console.log(`🔧 Enabled modules for tenant:`, tenantApp.enabledModules);
+                  Logger.log('info', 'general', 'app-overview', 'Found modules for app', { count: appModules.length, appCode: tenantApp.appCode, enabledModules: tenantApp.enabledModules });
 
                   const enabledModulesPermissions: Record<string, any> = {};
 
@@ -309,13 +306,13 @@ export default async function applicationAssignmentRoutes(fastify: FastifyInstan
                       const module = appModules.find((m: any) => m.moduleCode === moduleCode);
                       if (module && module.permissions) {
                         enabledModulesPermissions[moduleCode] = module.permissions;
-                        console.log(`✅ Added permissions for module ${moduleCode}:`, module.permissions);
+                        Logger.log('info', 'general', 'app-overview', 'Added permissions for module', { moduleCode });
                       } else {
-                        console.log(`⚠️ Module ${moduleCode} not found or has no permissions`);
+                        Logger.log('warning', 'general', 'app-overview', 'Module not found or has no permissions', { moduleCode });
                       }
                     });
                   } else {
-                    console.log(`⚠️ No enabled modules for tenant app ${tenantApp.appCode}`);
+                    Logger.log('warning', 'general', 'app-overview', 'No enabled modules for tenant app', { appCode: tenantApp.appCode });
                   }
 
                   // Extract custom permissions if they exist
@@ -324,13 +321,13 @@ export default async function applicationAssignmentRoutes(fastify: FastifyInstan
                     try {
                       // customPermissions is already a JSON object, no need to parse
                       customPermissions = tenantApp.customPermissions || {};
-                      console.log(`🎯 Custom permissions for ${tenantApp.appCode}:`, customPermissions);
+                      Logger.log('info', 'general', 'app-overview', 'Custom permissions found', { appCode: tenantApp.appCode });
                     } catch (parseError) {
-                      console.log(`❌ Error parsing custom permissions for tenant app ${tenantApp.id}:`, parseError);
+                      Logger.log('error', 'general', 'app-overview', 'Error parsing custom permissions', { id: tenantApp.id, error: (parseError as Error).message });
                       customPermissions = {};
                     }
                   } else {
-                    console.log(`📋 No custom permissions set for ${tenantApp.appCode}`);
+                    Logger.log('info', 'general', 'app-overview', 'No custom permissions set for app', { appCode: tenantApp.appCode });
                   }
 
                   const result = {
@@ -340,17 +337,17 @@ export default async function applicationAssignmentRoutes(fastify: FastifyInstan
                     customPermissions: customPermissions
                   };
 
-                  console.log(`📤 Final response for ${tenantApp.appCode}:`, {
+                  Logger.log('info', 'general', 'app-overview', 'Final response for app', {
+                    appCode: tenantApp.appCode,
                     enabledModulesCount: (Array.isArray(tenantApp.enabledModules) ? tenantApp.enabledModules.length : 0),
                     availableModulesCount: appModules.length,
-                    enabledModulesPermissionsCount: Object.keys(enabledModulesPermissions).length,
-                    customPermissionsKeys: Object.keys(customPermissions)
+                    enabledModulesPermissionsCount: Object.keys(enabledModulesPermissions).length
                   });
 
                   return result;
                 } catch (err: unknown) {
       const error = err as Error;
-                  console.log(`Error processing permissions for tenant app ${tenantApp.id}:`, error);
+                  Logger.log('error', 'general', 'app-overview', 'Error processing permissions for tenant app', { id: tenantApp.id, error: error.message });
                   return {
                     ...tenantApp,
                     availableModules: [],
@@ -368,17 +365,17 @@ export default async function applicationAssignmentRoutes(fastify: FastifyInstan
               applications: processedTenantApplications
             };
 
-            console.log(`🏢 Processed tenant ${tenant.companyName} (${tenant.tenantId}):`, {
+            Logger.log('info', 'general', 'app-overview', 'Processed tenant', {
+              companyName: tenant.companyName, tenantId: tenant.tenantId,
               totalApps: tenantApplications.length,
-              enabledApps: tenantApplications.filter(app => app.isEnabled).length,
-              appsWithPermissions: processedTenantApplications.filter(app => Object.keys(app.enabledModulesPermissions).length > 0).length
+              enabledApps: tenantApplications.filter(app => app.isEnabled).length
             });
 
             return tenantResult;
           } catch (err: unknown) {
       const error = err as Error;
             // If there's an error getting applications for this tenant, return tenant with empty applications
-            console.log(`Error getting applications for tenant ${tenant.tenantId}:`, error);
+            Logger.log('error', 'general', 'app-overview', 'Error getting applications for tenant', { tenantId: tenant.tenantId, error: error.message });
             return {
               ...tenant,
               assignmentCount: 0,
@@ -520,7 +517,7 @@ export default async function applicationAssignmentRoutes(fastify: FastifyInstan
               }
             } catch (err: unknown) {
       const error = err as Error;
-              console.warn(`Failed to parse permissions for module ${module.moduleCode}:`, error);
+              Logger.log('warning', 'general', 'app-assignment', 'Failed to parse permissions for module', { moduleCode: module.moduleCode, error: error.message });
               defaultPermissions = [];
             }
 
@@ -610,7 +607,7 @@ export default async function applicationAssignmentRoutes(fastify: FastifyInstan
       let assignmentId;
       if (existing.length > 0) {
         // Update existing assignment instead of throwing error
-        console.log('📝 Updating existing application assignment');
+        Logger.log('info', 'general', 'app-assignment', 'Updating existing application assignment');
 
         // Handle permissions: use customPermissions if provided, otherwise get default permissions
         let finalCustomPermissions = {};
@@ -618,7 +615,7 @@ export default async function applicationAssignmentRoutes(fastify: FastifyInstan
           if (customPermissions && Object.keys(customPermissions).length > 0) {
             // Use the provided custom permissions
             finalCustomPermissions = customPermissions;
-            console.log('Using custom permissions:', finalCustomPermissions);
+            Logger.log('info', 'general', 'app-assignment', 'Using custom permissions');
           } else {
             // Get default permissions for enabled modules
             const modulesData = await db
@@ -643,14 +640,14 @@ export default async function applicationAssignmentRoutes(fastify: FastifyInstan
                 }
               } catch (err: unknown) {
       const error = err as Error;
-                console.warn(`Failed to parse permissions for module ${module.moduleCode}:`, error);
+                Logger.log('warning', 'general', 'app-assignment', 'Failed to parse permissions for module', { moduleCode: module.moduleCode, error: error.message });
                 parsedPermissions = [];
               }
               // Only set permissions for this specific application's modules
               // Don't merge with permissions from other applications
               (finalCustomPermissions as Record<string, any>)[module.moduleCode] = parsedPermissions;
             });
-            console.log('Using default permissions for app', appId, ':', finalCustomPermissions);
+            Logger.log('info', 'general', 'app-assignment', 'Using default permissions for app', { appId });
           }
         }
 
@@ -700,7 +697,7 @@ export default async function applicationAssignmentRoutes(fastify: FastifyInstan
         if (customPermissions && typeof customPermissions === 'object' && customPermissions !== null && Object.keys(customPermissions).length > 0) {
           // Use the provided custom permissions
           finalCustomPermissions = customPermissions as Record<string, any>;
-          console.log('Using custom permissions:', finalCustomPermissions);
+          Logger.log('info', 'general', 'app-assignment', 'Using custom permissions');
         } else {
           // Get default permissions for enabled modules
           const modulesData = await db
@@ -725,12 +722,12 @@ export default async function applicationAssignmentRoutes(fastify: FastifyInstan
               }
             } catch (err: unknown) {
       const error = err as Error;
-              console.warn(`Failed to parse permissions for module ${module.moduleCode}:`, error);
+              Logger.log('warning', 'general', 'app-assignment', 'Failed to parse permissions for module', { moduleCode: module.moduleCode, error: error.message });
               parsedPermissions = [];
             }
             (finalCustomPermissions as Record<string, any>)[module.moduleCode] = parsedPermissions;
           });
-          console.log('Using default permissions:', finalCustomPermissions);
+          Logger.log('info', 'general', 'app-assignment', 'Using default permissions');
         }
       }
 
@@ -772,8 +769,7 @@ export default async function applicationAssignmentRoutes(fastify: FastifyInstan
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error assigning application to tenant:', error.message);
-      console.error('❌ Stack:', error.stack);
+      Logger.log('error', 'general', 'app-assignment', 'Error assigning application to tenant', { error: error.message, stack: error.stack });
       request.log.error(error, 'Error assigning application to tenant:');
       return reply.code(500).send({
         success: false,
@@ -991,7 +987,7 @@ export default async function applicationAssignmentRoutes(fastify: FastifyInstan
               if (defaultConfig.customPermissions && Object.keys(defaultConfig.customPermissions as object).length > 0) {
                 // Use the provided custom permissions
                 customPermissions = (defaultConfig.customPermissions ?? {}) as Record<string, any>;
-                console.log('Bulk assign: Using custom permissions:', customPermissions);
+                Logger.log('info', 'general', 'bulk-app-assign', 'Using custom permissions');
               } else {
                 // Get default permissions for enabled modules
                 const modulesData = await db
@@ -1016,12 +1012,12 @@ export default async function applicationAssignmentRoutes(fastify: FastifyInstan
                     }
                   } catch (err: unknown) {
       const error = err as Error;
-                    console.warn(`Failed to parse permissions for module ${module.moduleCode}:`, error);
+                    Logger.log('warning', 'general', 'bulk-app-assign', 'Failed to parse permissions for module', { moduleCode: module.moduleCode, error: error.message });
                     parsedPermissions = [];
                   }
                   customPermissions[module.moduleCode] = parsedPermissions;
                 });
-                console.log('Bulk assign: Using default permissions:', customPermissions);
+                Logger.log('info', 'general', 'bulk-app-assign', 'Using default permissions');
               }
             }
 
@@ -1128,7 +1124,7 @@ export default async function applicationAssignmentRoutes(fastify: FastifyInstan
                 }
               } catch (err: unknown) {
       const error = err as Error;
-                console.warn(`Failed to parse permissions for module ${module.moduleCode}:`, error);
+                Logger.log('warning', 'general', 'app-assignment', 'Failed to parse permissions for module', { moduleCode: module.moduleCode, error: error.message });
                 parsedPermissions = [];
               }
 
@@ -1210,7 +1206,7 @@ export default async function applicationAssignmentRoutes(fastify: FastifyInstan
       }
 
       // Verify tenant and application exist before proceeding
-      console.log(`🔍 Verifying tenant ${tenantId} and app ${module[0].appId} exist...`);
+      Logger.log('info', 'general', 'assign-module', 'Verifying tenant and app exist', { tenantId, appId: module[0].appId });
 
       const tenantExists = await db
         .select()
@@ -1232,7 +1228,7 @@ export default async function applicationAssignmentRoutes(fastify: FastifyInstan
         throw new Error(`Application ${module[0].appId} not found in database`);
       }
 
-      console.log(`✅ Tenant and application verified`);
+      Logger.log('info', 'general', 'assign-module', 'Tenant and application verified');
 
       // Check if tenant already has this application assigned
       const existingAssignment = await (db as any)
@@ -1252,10 +1248,10 @@ export default async function applicationAssignmentRoutes(fastify: FastifyInstan
         } else if (Array.isArray(module[0].permissions)) {
           modulePermissions = module[0].permissions;
         }
-        console.log(`📋 Assigning module ${module[0].moduleCode} with ${modulePermissions.length} permissions:`, modulePermissions);
+        Logger.log('info', 'general', 'assign-module', 'Assigning module with permissions', { moduleCode: module[0].moduleCode, count: modulePermissions.length });
       } catch (err: unknown) {
       const error = err as Error;
-        console.warn(`Failed to parse permissions for module ${module[0].moduleCode}:`, error);
+        Logger.log('warning', 'general', 'assign-module', 'Failed to parse permissions for module', { moduleCode: module[0].moduleCode, error: error.message });
         modulePermissions = [];
       }
 
@@ -1281,8 +1277,7 @@ export default async function applicationAssignmentRoutes(fastify: FastifyInstan
           updatedCustomPermissions[module[0].moduleCode] = modulePermissions;
         }
 
-        console.log(`🔄 Updating existing assignment ${assignmentId} with modules:`, updatedModules);
-        console.log(`🔄 Updating custom permissions for module ${module[0].moduleCode}:`, modulePermissions);
+        Logger.log('info', 'general', 'assign-module', 'Updating existing assignment with modules', { assignmentId, updatedModules, moduleCode: module[0].moduleCode });
 
         // Validate data before update
         if (!Array.isArray(updatedModules)) {
@@ -1302,20 +1297,14 @@ export default async function applicationAssignmentRoutes(fastify: FastifyInstan
           .where(eq(organizationApplications.id, assignmentId))
           .returning();
 
-        console.log(`✅ Update result:`, updateResult);
+        Logger.log('info', 'general', 'assign-module', 'Update result', { assignmentId, count: updateResult.length });
       } else {
         // Create new assignment with just this module and its permissions
         const customPermissions = {
           [module[0].moduleCode]: modulePermissions
         };
 
-        console.log(`🆕 Creating new assignment for tenant ${tenantId} with app ${module[0].appId}`);
-        console.log(`🆕 New assignment data:`, {
-          tenantId,
-          appId: module[0].appId,
-          enabledModules: [module[0].moduleCode],
-          customPermissions
-        });
+        Logger.log('info', 'general', 'assign-module', 'Creating new assignment', { tenantId, appId: module[0].appId, moduleCode: module[0].moduleCode });
 
         // Validate data before insert
         if (!tenantId || typeof tenantId !== 'string') {
@@ -1345,10 +1334,10 @@ export default async function applicationAssignmentRoutes(fastify: FastifyInstan
           .returning();
 
         assignmentId = newAssignment[0].id;
-        console.log(`✅ New assignment created with ID: ${assignmentId}`);
+        Logger.log('info', 'general', 'assign-module', 'New assignment created', { assignmentId });
       }
 
-      console.log(`✅ Module ${module[0].moduleCode} assigned successfully to tenant ${tenantId} with ${modulePermissions.length} permissions`);
+      Logger.log('info', 'general', 'assign-module', 'Module assigned successfully', { moduleCode: module[0].moduleCode, tenantId, permissionsCount: modulePermissions.length });
 
       try {
         const actorId = ((request as any).user?.userId || (request as any).user?.id || 'system') as string;
@@ -1372,13 +1361,7 @@ export default async function applicationAssignmentRoutes(fastify: FastifyInstan
       };
     } catch (err: unknown) {
       const error = err as Error & { code?: string };
-      console.error('❌ Error assigning module:', error);
-      console.error('❌ Error stack:', error.stack);
-      console.error('❌ Error details:', {
-        message: error.message,
-        code: (error as any).code,
-        name: error.name
-      });
+      Logger.log('error', 'general', 'assign-module', 'Error assigning module', { error: error.message, code: (error as any).code, stack: error.stack });
 
       request.log.error(error, 'Error assigning module:');
       return reply.code(500).send({
@@ -1452,7 +1435,7 @@ export default async function applicationAssignmentRoutes(fastify: FastifyInstan
         [module[0].moduleCode]: permissions
       };
 
-      console.log(`🔄 Updating permissions for module ${module[0].moduleCode} to:`, permissions);
+      Logger.log('info', 'general', 'update-module-permissions', 'Updating permissions for module', { moduleCode: module[0].moduleCode });
 
       await db
         .update(organizationApplications)

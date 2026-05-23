@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { CreditService } from '../services/credit-service.js';
+import Logger from '../../../utils/logger.js';
 import { authenticateToken, requirePermission } from '../../../middleware/auth/auth.js';
 import { PERMISSIONS } from '../../../constants/permissions.js';
 import { db } from '../../../db/index.js';
@@ -11,7 +12,7 @@ export default async function creditRoutes(
   fastify: FastifyInstance,
   _options?: Record<string, unknown>
 ): Promise<void> {
-  console.log('🔧 REGISTERING CREDIT ROUTES...');
+  Logger.log('info', 'general', 'boot', 'Registering credit routes');
 
   // Get current credit balance for authenticated user
   fastify.get('/current', {
@@ -19,33 +20,32 @@ export default async function creditRoutes(
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const userContext = request.userContext as { userId: string; tenantId: string | null };
-      console.log('🔍 Credit API: Request received', userContext);
+      Logger.log('info', 'billing', 'get-credit-balance', 'Credit API request received', { userId: userContext.userId, tenantId: userContext.tenantId });
       const userId = userContext.userId;
       let tenantId = userContext.tenantId;
 
-      console.log('💰 Credit API: Request received', {
+      Logger.log('info', 'billing', 'get-credit-balance', 'Credit API request received', {
         userId,
         tenantId,
-        hasTenantId: !!tenantId,
-        userContext: request.userContext
+        hasTenantId: !!tenantId
       });
 
       if (!tenantId) {
-        console.log('⚠️ Credit API: User not associated with organization, checking onboarding status')
+        Logger.log('warning', 'billing', 'get-credit-balance', 'User not associated with organization, checking onboarding status');
         // Check if user needs onboarding instead of hard error
         try {
-          console.log('🔍 Credit API: Querying database for user record');
+          Logger.log('info', 'billing', 'get-credit-balance', 'Querying database for user record');
           const onboardingResponse = await db
             .select()
             .from(tenantUsers)
             .where(eq(tenantUsers.kindeUserId, userId))
             .limit(1);
 
-          console.log('✅ Credit API: Database query successful, found', onboardingResponse.length, 'records');
+          Logger.log('info', 'billing', 'get-credit-balance', 'Database query successful', { recordCount: onboardingResponse.length });
 
           if (onboardingResponse.length === 0) {
             // User doesn't exist in our system - likely needs onboarding
-            console.log('🏢 Credit API: User record not found, likely needs onboarding')
+            Logger.log('info', 'billing', 'get-credit-balance', 'User record not found, likely needs onboarding');
             return reply.code(404).send({
               success: false,
               error: 'Organization Required',
@@ -60,7 +60,7 @@ export default async function creditRoutes(
 
           // User exists - check if they have a tenant
           const userRecord = onboardingResponse[0];
-          console.log('👤 Credit API: Found user record:', {
+          Logger.log('info', 'billing', 'get-credit-balance', 'Found user record', {
             userId: userRecord.userId,
             tenantId: userRecord.tenantId,
             onboardingCompleted: userRecord.onboardingCompleted,
@@ -70,12 +70,12 @@ export default async function creditRoutes(
           // CRITICAL FIX: If user has a tenant in database but request context has null tenantId,
           // use the tenantId from the database record
           if (userRecord.tenantId && userRecord.onboardingCompleted) {
-            console.log('✅ Credit API: User has completed onboarding with tenant, querying credit data');
+            Logger.log('info', 'billing', 'get-credit-balance', 'User has completed onboarding with tenant, querying credit data');
             // Set the tenantId from database and continue with normal credit query
             tenantId = userRecord.tenantId;
           } else {
             // User doesn't have a completed tenant setup
-            console.log('⚠️ Credit API: User does not have completed tenant setup, returning onboarding required');
+            Logger.log('warning', 'billing', 'get-credit-balance', 'User does not have completed tenant setup, returning onboarding required');
             return reply.code(404).send({
               success: false,
               error: 'Organization Required',
@@ -88,15 +88,15 @@ export default async function creditRoutes(
             });
           }
         } catch (onboardingError) {
-          console.error('❌ Credit API: Error checking onboarding status:', onboardingError);
+          Logger.log('error', 'billing', 'get-credit-balance', 'Error checking onboarding status', { error: (onboardingError as Error).message });
 
           // CRITICAL FIX: If database query fails but user is authenticated,
           // provide default credit balance instead of hard error
-          console.log('⚠️ Credit API: Database query failed but user is authenticated, returning default credit balance');
+          Logger.log('warning', 'billing', 'get-credit-balance', 'Database query failed but user is authenticated, returning default credit balance');
         }
 
         // Return default credit balance for authenticated users without tenant context
-        console.log('💰 Credit API: Returning default credit balance for authenticated user');
+        Logger.log('info', 'billing', 'get-credit-balance', 'Returning default credit balance for authenticated user');
         return {
           success: true,
           data: {
@@ -133,7 +133,7 @@ export default async function creditRoutes(
 
       // Find all organization entities for this tenant
       // Select only columns we use so the query works when legal_name (and other FA fields) are not yet migrated
-      console.log('🔍 Credit API: Finding organization entities for tenant:', tenantId);
+      Logger.log('info', 'billing', 'get-credit-balance', 'Finding organization entities for tenant', { tenantId });
       let organizationEntities: { entityId: string; entityName: string; entityLevel: number | null }[] = [];
       try {
         organizationEntities = await db
@@ -151,14 +151,14 @@ export default async function creditRoutes(
           .orderBy(asc(entities.entityLevel), asc(entities.createdAt));
       } catch (dbErr: unknown) {
         const dbError = dbErr as Error;
-        console.error('❌ Error querying organization entities:', dbError);
+        Logger.log('error', 'billing', 'get-credit-balance', 'Error querying organization entities', { error: dbError.message });
         throw new Error(`Database query failed: ${dbError.message}`);
       }
 
       let creditBalance = null;
 
       if (organizationEntities.length > 0) {
-        console.log('✅ Credit API: Found organization entities:', organizationEntities.length);
+        Logger.log('info', 'billing', 'get-credit-balance', 'Found organization entities', { count: organizationEntities.length });
 
         const primaryEntity = organizationEntities[0];
 
@@ -168,7 +168,7 @@ export default async function creditRoutes(
           creditBalance = await CreditService.getCurrentBalance(tenantId, 'organization', primaryEntity.entityId);
           creditBalance.entityId = primaryEntity.entityId;
         } catch (entityError) {
-          console.error(`❌ Error getting balance for primary entity ${primaryEntity.entityId}:`, entityError);
+          Logger.log('error', 'billing', 'get-credit-balance', 'Error getting balance for primary entity', { entityId: primaryEntity.entityId, error: (entityError as Error).message });
         }
 
         // Aggregate availableCredits across ALL entities so the billing header
@@ -206,12 +206,12 @@ export default async function creditRoutes(
           const categorized = paidCredits + seasonalCredits;
           creditBalance.freeCredits = Math.max(0, totalAvailable - categorized);
 
-          console.log(`💰 Credit API: Aggregated balance across ${organizationEntities.length} entities: ${totalAvailable}`);
+          Logger.log('info', 'billing', 'get-credit-balance', 'Aggregated balance across entities', { entityCount: organizationEntities.length, totalAvailable });
         }
 
-        console.log('💰 Credit API: Final credit balance:', creditBalance);
+        Logger.log('info', 'billing', 'get-credit-balance', 'Final credit balance resolved', { availableCredits: creditBalance?.availableCredits });
       } else {
-        console.log('⚠️ Credit API: No organization entities found for tenant');
+        Logger.log('warning', 'billing', 'get-credit-balance', 'No organization entities found for tenant');
       }
 
       if (!creditBalance) {
@@ -258,7 +258,7 @@ export default async function creditRoutes(
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Error fetching current credit balance:', error);
+      Logger.log('error', 'billing', 'get-credit-balance', 'Error fetching current credit balance', { error: error.message });
       request.log.error(error, 'Error fetching current credit balance:');
       const errorMessage = error.message || 'Unknown error';
       const errorStack = process.env.NODE_ENV === 'development' ? error.stack : undefined;
@@ -315,7 +315,7 @@ export default async function creditRoutes(
 
       return { success: true, data: result };
     } catch (err: unknown) {
-      console.error('❌ Error fetching entity balances:', err);
+      Logger.log('error', 'billing', 'get-entity-balances', 'Error fetching entity balances', { error: (err as Error).message });
       return reply.code(500).send({ success: false, error: 'Failed to fetch entity balances' });
     }
   });
@@ -433,7 +433,7 @@ export default async function creditRoutes(
         });
       }
 
-      console.log('🔄 Credit purchase requested:', { tenantId, creditAmount, paymentMethod, currency });
+      Logger.log('info', 'billing', 'purchase-credits', 'Credit purchase requested', { tenantId, creditAmount, paymentMethod, currency });
 
       const result = await CreditService.purchaseCredits({
         tenantId,
@@ -467,7 +467,7 @@ export default async function creditRoutes(
           requestContext
         );
       } catch (logErr: unknown) {
-        console.warn('⚠️ Failed to log credit purchase activity:', (logErr as Error).message);
+        Logger.log('warning', 'billing', 'purchase-credits', 'Failed to log credit purchase activity', { error: (logErr as Error).message });
       }
 
       return {
@@ -497,7 +497,7 @@ export default async function creditRoutes(
           requestContext
         );
       } catch (logErr: unknown) {
-        console.warn('⚠️ Failed to log credit purchase failure activity:', (logErr as Error).message);
+        Logger.log('warning', 'billing', 'purchase-credits', 'Failed to log credit purchase failure activity', { error: (logErr as Error).message });
       }
       return reply.code(500).send({
         error: 'Failed to process credit purchase',
@@ -616,7 +616,7 @@ export default async function creditRoutes(
 
       if (!sourceEntityId) {
         // If no source entity specified, find the entity that has credits
-        console.log('🔍 Finding source entity with credits for tenant:', tenantId);
+        Logger.log('info', 'billing', 'transfer-credits', 'Finding source entity with credits for tenant', { tenantId });
 
         const organizationEntities = await db
           .select({
@@ -638,13 +638,13 @@ export default async function creditRoutes(
           const entitiesToCheck = organizationEntities;
 
           for (const entity of entitiesToCheck) {
-            console.log('🔍 Checking credits for entity:', entity.entityId, entity.entityName);
+            Logger.log('info', 'billing', 'transfer-credits', 'Checking credits for entity', { entityId: entity.entityId, entityName: entity.entityName });
 
             const entityCreditBalance = await CreditService.getCurrentBalance(tenantId, 'organization', entity.entityId);
 
             // If we found credits (not the default "no credits" response), use this as source
             if (entityCreditBalance && entityCreditBalance.availableCredits > 0) {
-              console.log('💰 Found credits on entity:', entity.entityId, entity.entityName);
+              Logger.log('info', 'billing', 'transfer-credits', 'Found credits on entity', { entityId: entity.entityId, entityName: entity.entityName });
               sourceEntityId = entity.entityId;
               break; // Use the first entity that has credits
             }
@@ -653,10 +653,10 @@ export default async function creditRoutes(
           // If no entity has credits, use the default entity as fallback
           if (!sourceEntityId) {
             if (primaryEntity) {
-              console.log('⚠️ No credits found, using primary entity as source:', primaryEntity.entityId);
+              Logger.log('warning', 'billing', 'transfer-credits', 'No credits found, using primary entity as source', { entityId: primaryEntity.entityId });
               sourceEntityId = primaryEntity.entityId;
             } else {
-              console.log('⚠️ No credits found, using first entity as source:', organizationEntities[0].entityId);
+              Logger.log('warning', 'billing', 'transfer-credits', 'No credits found, using first entity as source', { entityId: organizationEntities[0].entityId });
               sourceEntityId = organizationEntities[0].entityId;
             }
           }
@@ -675,7 +675,7 @@ export default async function creditRoutes(
         });
       }
 
-      console.log('🔄 Transferring credits from entity:', sourceEntityId, 'to entity:', toEntityId);
+      Logger.log('info', 'billing', 'transfer-credits', 'Transferring credits between entities', { fromEntityId: sourceEntityId, toEntityId });
 
       const result = await CreditService.transferCredits({
         fromTenantId: String(sourceEntityId),
@@ -1151,17 +1151,17 @@ export default async function creditRoutes(
                     }
                   }
                 } catch (pmError: unknown) {
-                  console.log('Could not fetch payment method details:', (pmError as Error).message);
+                  Logger.log('warning', 'billing', 'get-credit-payment', 'Could not fetch payment method details', { error: (pmError as Error).message });
                 }
               }
             }
           } catch (stripeError: unknown) {
-            console.log('Could not retrieve Stripe session:', (stripeError as Error).message);
+            Logger.log('warning', 'billing', 'get-credit-payment', 'Could not retrieve Stripe session', { error: (stripeError as Error).message });
             // Continue to return 404 if not found
           }
         }
       } catch (dbError: unknown) {
-        console.error('Database error in credit payment lookup:', dbError);
+        Logger.log('error', 'database', 'get-credit-payment', 'Database error in credit payment lookup', { error: (dbError as Error).message });
         return reply.code(500).send({
           error: 'Database error',
           message: 'Failed to query credit payment records'
@@ -1203,7 +1203,7 @@ export default async function creditRoutes(
             paymentMethodDetailsFromDB = paymentRecord.paymentMethodDetails;
           }
         } catch (dbError: unknown) {
-          console.log('Could not fetch payment record:', (dbError as Error).message);
+          Logger.log('warning', 'database', 'get-credit-payment', 'Could not fetch payment record', { error: (dbError as Error).message });
         }
 
         // Use payment method details from DB if available, otherwise use Stripe fetch
@@ -1311,30 +1311,21 @@ export default async function creditRoutes(
       done();
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    console.log('🎣 CREDIT WEBHOOK ENDPOINT HIT!');
-    console.log('================================\n');
+    Logger.log('info', 'billing', 'credit-webhook', 'Credit webhook endpoint hit');
 
     try {
-      console.log('🔥 WEBHOOK TRY BLOCK EXECUTING');
 
       const signature = request.headers['stripe-signature'];
       const rawBodyRaw = (request as FastifyRequest & { rawBody?: Buffer | string }).rawBody;
       const rawBodyStr = rawBodyRaw == null ? '' : (Buffer.isBuffer(rawBodyRaw) ? rawBodyRaw.toString() : String(rawBodyRaw));
 
-      console.log('🎣 CREDIT PURCHASE WEBHOOK RECEIVED');
-      console.log('=====================================\n');
-
-      console.log('📡 Webhook headers:', {
-        'content-type': request.headers['content-type'],
-        'stripe-signature': signature ? 'present' : 'missing',
-        'user-agent': request.headers['user-agent']
+      Logger.log('info', 'billing', 'credit-webhook', 'Credit purchase webhook received', {
+        contentType: request.headers['content-type'],
+        hasSignature: !!signature,
+        rawBodyLength: rawBodyStr ? rawBodyStr.length : 0
       });
 
-      console.log('📦 Raw body type:', typeof rawBodyStr);
-      console.log('📦 Raw body length:', rawBodyStr ? rawBodyStr.length : 'null');
-
       // Verify Stripe webhook signature — always required
-      console.log('🔧 STARTING WEBHOOK VERIFICATION PROCESS');
       let event: { id: string; type: string; data: { object: unknown }; created: number };
       try {
         if (!process.env.STRIPE_WEBHOOK_SECRET) {
@@ -1349,14 +1340,13 @@ export default async function creditRoutes(
           timeout: Number(process.env.STRIPE_TIMEOUT_MS ?? 10_000)
         });
         event = stripe.webhooks.constructEvent(rawBodyStr, signature, process.env.STRIPE_WEBHOOK_SECRET) as typeof event;
-        console.log('✅ Webhook signature verified');
+        Logger.log('info', 'billing', 'credit-webhook', 'Webhook signature verified');
       } catch (error: unknown) {
-        console.error('❌ Webhook verification failed:', (error as Error).message);
+        Logger.log('error', 'billing', 'credit-webhook', 'Webhook verification failed', { error: (error as Error).message });
         return reply.code(400).send({ error: 'Webhook verification failed' });
       }
 
-      console.log('🎯 Processing webhook event:', event.type);
-      console.log('📋 Event ID:', event.id);
+      Logger.log('info', 'billing', 'credit-webhook', 'Processing webhook event', { eventType: event.type, eventId: event.id });
 
       // Idempotency check — skip already-processed events
       try {
@@ -1366,24 +1356,20 @@ export default async function creditRoutes(
           .where(eq(eventTracking.eventId, event.id))
           .limit(1);
         if (existing) {
-          console.log('⏭️ Skipping already-processed webhook event:', event.id);
+          Logger.log('info', 'billing', 'credit-webhook', 'Skipping already-processed webhook event', { eventId: event.id });
           return reply.code(200).send({ received: true, duplicate: true });
         }
       } catch (dedupeErr) {
-        console.warn('⚠️ Idempotency check failed, proceeding with processing:', (dedupeErr as Error).message);
+        Logger.log('warning', 'billing', 'credit-webhook', 'Idempotency check failed, proceeding with processing', { error: (dedupeErr as Error).message });
       }
 
       // Handle credit purchase completion
       if (event.type === 'checkout.session.completed') {
         const session = event.data.object as { id: string; payment_status?: string; amount_total?: number; payment_intent?: string; metadata?: Record<string, unknown>; customer?: string; currency?: string };
 
-        console.log('💳 CHECKOUT SESSION COMPLETED:');
-        console.log('   • Session ID:', session.id);
-        console.log('   • Payment Status:', session.payment_status);
-        console.log('   • Amount:', (session.amount_total ?? 0) / 100);
+        Logger.log('info', 'billing', 'credit-webhook', 'Checkout session completed', { sessionId: session.id, paymentStatus: session.payment_status, amount: (session.amount_total ?? 0) / 100 });
 
         if (session.payment_status === 'paid' && session.metadata?.creditAmount) {
-          console.log('\n🎯 CREDIT PURCHASE DETECTED - PROCESSING...\n');
 
           try {
             // Extract metadata
@@ -1393,15 +1379,10 @@ export default async function creditRoutes(
             const entityType = (session.metadata?.entityType as string) || 'organization';
             const entityId = (session.metadata?.entityId as string) || tenantId;
 
-            console.log('📋 PURCHASE DETAILS:');
-            console.log('   • Tenant ID:', tenantId);
-            console.log('   • User ID:', userId);
-            console.log('   • Credits:', creditAmount);
-            console.log('   • Entity Type:', entityType);
-            console.log('   • Entity ID:', entityId);
+            Logger.log('info', 'billing', 'credit-webhook', 'Credit purchase details', { tenantId, userId, creditAmount, entityType, entityId });
 
             if (!tenantId || !userId || !creditAmount) {
-              console.error('❌ Missing required metadata');
+              Logger.log('error', 'billing', 'credit-webhook', 'Missing required metadata');
               return reply.code(400).send({ error: 'Missing required metadata' });
             }
 
@@ -1427,12 +1408,12 @@ export default async function creditRoutes(
                         exp_year: paymentMethod.card.exp_year
                       }
                     };
-                    console.log('💳 Payment method details fetched:', paymentMethodDetails);
+                    Logger.log('info', 'billing', 'credit-webhook', 'Payment method details fetched');
                   }
                 }
               }
             } catch (stripeError: unknown) {
-              console.warn('⚠️ Could not fetch payment method details from Stripe:', (stripeError as Error).message);
+              Logger.log('warning', 'billing', 'credit-webhook', 'Could not fetch payment method details from Stripe', { error: (stripeError as Error).message });
             }
 
             // Process the credit purchase
@@ -1475,15 +1456,12 @@ export default async function creditRoutes(
                 stripeRawData: session as Record<string, unknown>,
                 paidAt: new Date()
               });
-              console.log('✅ Payment record created with payment method details');
+              Logger.log('info', 'billing', 'credit-webhook', 'Payment record created with payment method details');
             } catch (paymentRecordError: unknown) {
-              console.warn('⚠️ Could not create payment record:', (paymentRecordError as Error).message);
+              Logger.log('warning', 'billing', 'credit-webhook', 'Could not create payment record', { error: (paymentRecordError as Error).message });
             }
 
-            console.log('✅ CREDIT PURCHASE PROCESSED:');
-            console.log('   • Purchase ID:', purchaseResult.purchaseId);
-            console.log('   • Credits Allocated:', creditAmount);
-            console.log('   • Status: completed');
+            Logger.log('info', 'billing', 'credit-webhook', 'Credit purchase processed', { purchaseId: purchaseResult.purchaseId, creditsAllocated: creditAmount });
 
             // Record processed event for idempotency
             try {
@@ -1498,7 +1476,7 @@ export default async function creditRoutes(
                 status: 'processed',
               });
             } catch (trackErr) {
-              console.warn('⚠️ Failed to record webhook event:', (trackErr as Error).message);
+              Logger.log('warning', 'billing', 'credit-webhook', 'Failed to record webhook event', { error: (trackErr as Error).message });
             }
 
             return reply.code(200).send({
@@ -1510,7 +1488,7 @@ export default async function creditRoutes(
 
           } catch (purchaseError: unknown) {
             const pe = purchaseError as Error;
-            console.error('❌ Credit purchase processing failed:', pe.message);
+            Logger.log('error', 'billing', 'credit-webhook', 'Credit purchase processing failed', { error: pe.message });
 
             // Still return 200 to Stripe to prevent retries
             return reply.code(200).send({
@@ -1520,11 +1498,11 @@ export default async function creditRoutes(
             });
           }
         } else {
-          console.log('⚠️ Payment not completed or not a credit purchase');
+          Logger.log('warning', 'billing', 'credit-webhook', 'Payment not completed or not a credit purchase');
           return reply.code(200).send({ message: 'Payment not completed or not a credit purchase' });
         }
       } else {
-        console.log('ℹ️ Unhandled webhook event type:', event.type);
+        Logger.log('info', 'billing', 'credit-webhook', 'Unhandled webhook event type', { eventType: event.type });
         return reply.code(200).send({
           message: 'Event type not handled',
           receivedEventType: event.type,
@@ -1534,7 +1512,7 @@ export default async function creditRoutes(
 
     } catch (error: unknown) {
       const err = error as Error;
-      console.error('❌ Webhook processing error:', err);
+      Logger.log('error', 'billing', 'credit-webhook', 'Webhook processing error', { error: err.message });
       // Return 500 for unexpected errors to trigger Stripe retry
       return reply.code(500).send({ error: 'Webhook processing failed' });
     }

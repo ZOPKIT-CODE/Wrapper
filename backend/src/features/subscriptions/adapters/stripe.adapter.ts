@@ -7,6 +7,9 @@
 
 import Stripe from 'stripe';
 import type { PaymentGatewayPort } from './payment-gateway.port.js';
+import { withRetry } from '../../../utils/retry.js';
+import { stripeCircuitBreaker } from '../../../utils/circuit-breaker.js';
+import Logger from '../../../utils/logger.js';
 import type {
   PaymentGatewayProvider,
   CreateCheckoutParams,
@@ -62,16 +65,16 @@ export class StripePaymentGateway implements PaymentGatewayPort {
   private initialise(): void {
     const secretKey = process.env.STRIPE_SECRET_KEY;
     if (!secretKey) {
-      console.warn('⚠️ STRIPE_SECRET_KEY not configured — Stripe adapter inactive');
+      Logger.log('warning', 'general', 'initialise', 'STRIPE_SECRET_KEY not configured — Stripe adapter inactive');
       return;
     }
     if (!process.env.STRIPE_WEBHOOK_SECRET) {
-      console.warn('⚠️ STRIPE_WEBHOOK_SECRET not configured — webhook verification will fail');
+      Logger.log('warning', 'general', 'initialise', 'STRIPE_WEBHOOK_SECRET not configured — webhook verification will fail');
     }
     if (secretKey.startsWith('sk_test_')) {
-      console.log('🧪 Stripe adapter initialised in TEST mode');
+      Logger.log('info', 'general', 'initialise', 'Stripe adapter initialised in TEST mode');
     } else if (secretKey.startsWith('sk_live_')) {
-      console.log('🚀 Stripe adapter initialised in LIVE mode');
+      Logger.log('info', 'general', 'initialise', 'Stripe adapter initialised in LIVE mode');
     }
 
     this.stripe = new Stripe(secretKey, {
@@ -159,7 +162,10 @@ export class StripePaymentGateway implements PaymentGatewayPort {
       sessionConfig.tax_id_collection = { enabled: true };
     }
 
-    const session = await s.checkout.sessions.create(sessionConfig as Stripe.Checkout.SessionCreateParams);
+    const session = await stripeCircuitBreaker.execute(() => withRetry(
+      () => s.checkout.sessions.create(sessionConfig as Stripe.Checkout.SessionCreateParams),
+      { maxAttempts: 2, baseDelayMs: 1000 }
+    ));
 
     return {
       sessionId: session.id,
@@ -170,10 +176,13 @@ export class StripePaymentGateway implements PaymentGatewayPort {
   async createBillingPortalSession(params: BillingPortalParams): Promise<string | null> {
     const s = this.ensureStripe();
 
-    const session = await s.billingPortal.sessions.create({
-      customer: params.customerId,
-      return_url: params.returnUrl,
-    });
+    const session = await withRetry(
+      () => s.billingPortal.sessions.create({
+        customer: params.customerId,
+        return_url: params.returnUrl,
+      }),
+      { maxAttempts: 2, baseDelayMs: 1000 }
+    );
 
     return session.url ?? null;
   }
@@ -204,7 +213,7 @@ export class StripePaymentGateway implements PaymentGatewayPort {
     let stripeEvent: Stripe.Event;
 
     if (isDev && bypassSig) {
-      console.log('⚠️ DEV MODE: Bypassing Stripe webhook signature verification');
+      Logger.log('warning', 'general', 'verifyWebhook', 'DEV MODE: Bypassing Stripe webhook signature verification');
       const parsed = JSON.parse(typeof rawBody === 'string' ? rawBody : rawBody.toString());
       const parsedRecord = parsed as Record<string, unknown>;
       const nestedEvent = (parsedRecord.event ?? {}) as Record<string, unknown>;
@@ -270,7 +279,10 @@ export class StripePaymentGateway implements PaymentGatewayPort {
       refundData.charge = params.chargeId;
     }
 
-    const refund = await s.refunds.create(refundData);
+    const refund = await withRetry(
+      () => s.refunds.create(refundData),
+      { maxAttempts: 2, baseDelayMs: 1000 }
+    );
 
     return {
       refundId: refund.id,
@@ -288,7 +300,10 @@ export class StripePaymentGateway implements PaymentGatewayPort {
 
   async retrieveSubscription(subscriptionId: string): Promise<GatewaySubscription> {
     const s = this.ensureStripe();
-    const sub = await s.subscriptions.retrieve(subscriptionId, { expand: ['items.data'] });
+    const sub = await withRetry(
+      () => s.subscriptions.retrieve(subscriptionId, { expand: ['items.data'] }),
+      { maxAttempts: 2, baseDelayMs: 1000 }
+    );
     return this.mapSubscription(sub);
   }
 
@@ -310,16 +325,22 @@ export class StripePaymentGateway implements PaymentGatewayPort {
       updateParams.cancel_at_period_end = params.cancelAtPeriodEnd;
     }
 
-    const sub = await s.subscriptions.update(subscriptionId, updateParams);
+    const sub = await withRetry(
+      () => s.subscriptions.update(subscriptionId, updateParams),
+      { maxAttempts: 2, baseDelayMs: 1000 }
+    );
     return this.mapSubscription(sub);
   }
 
   async cancelSubscription(subscriptionId: string, params?: CancelSubscriptionParams): Promise<void> {
     const s = this.ensureStripe();
-    await s.subscriptions.cancel(subscriptionId, {
-      prorate: params?.prorate,
-      invoice_now: params?.invoiceNow,
-    });
+    await withRetry(
+      () => s.subscriptions.cancel(subscriptionId, {
+        prorate: params?.prorate,
+        invoice_now: params?.invoiceNow,
+      }),
+      { maxAttempts: 2, baseDelayMs: 1000 }
+    );
   }
 
   // -----------------------------------------------------------------------
@@ -328,7 +349,10 @@ export class StripePaymentGateway implements PaymentGatewayPort {
 
   async retrieveCustomer(customerId: string): Promise<GatewayCustomer> {
     const s = this.ensureStripe();
-    const customer = await s.customers.retrieve(customerId);
+    const customer = await withRetry(
+      () => s.customers.retrieve(customerId),
+      { maxAttempts: 2, baseDelayMs: 1000 }
+    );
 
     if (customer.deleted) {
       return { id: customerId, email: null, deleted: true };
@@ -350,9 +374,10 @@ export class StripePaymentGateway implements PaymentGatewayPort {
   async retrieveCheckoutSession(sessionId: string, expand?: string[]): Promise<GatewayCheckoutSession> {
     const s = this.ensureStripe();
 
-    const session = await s.checkout.sessions.retrieve(sessionId, {
-      expand: expand ?? [],
-    });
+    const session = await withRetry(
+      () => s.checkout.sessions.retrieve(sessionId, { expand: expand ?? [] }),
+      { maxAttempts: 2, baseDelayMs: 1000 }
+    );
 
     let subscription: GatewaySubscription | undefined;
     if (session.subscription && typeof session.subscription !== 'string') {
@@ -378,7 +403,10 @@ export class StripePaymentGateway implements PaymentGatewayPort {
 
   async retrieveInvoice(invoiceId: string): Promise<GatewayInvoice> {
     const s = this.ensureStripe();
-    const invoice = await s.invoices.retrieve(invoiceId);
+    const invoice = await withRetry(
+      () => s.invoices.retrieve(invoiceId),
+      { maxAttempts: 2, baseDelayMs: 1000 }
+    );
     return this.mapInvoice(invoice);
   }
 

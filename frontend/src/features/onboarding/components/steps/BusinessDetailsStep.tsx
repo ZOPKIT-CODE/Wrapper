@@ -404,6 +404,44 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(({ f
                 </FormItem>
               )}
             />
+
+            <FormField
+              control={form.control}
+              name={"businessDetails.primaryUseCase" as any}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={`${labelClasses} flex items-center gap-2`}>
+                    Primary CRM Use Case <span className="text-slate-400 font-normal">(Optional)</span>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
+                        <p className="font-semibold mb-1">Optional Field</p>
+                        <p>Tell us how you plan to use the CRM. We'll configure layouts, pipelines, and defaults to match your primary workflow.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value || ''}>
+                    <FormControl>
+                      <SelectTrigger className={inputClasses}>
+                        <div className="flex items-center gap-2">
+                          <Settings2 className="w-4 h-4 text-slate-400" />
+                          <SelectValue placeholder="Select primary use case" />
+                        </div>
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent className="rounded-xl border-slate-200 shadow-xl bg-white/95 backdrop-blur-xl">
+                      <SelectItem value="sales" className="py-3 cursor-pointer focus:bg-slate-50">Sales Pipeline & Revenue</SelectItem>
+                      <SelectItem value="support" className="py-3 cursor-pointer focus:bg-slate-50">Customer Support & Ticketing</SelectItem>
+                      <SelectItem value="marketing" className="py-3 cursor-pointer focus:bg-slate-50">Marketing & Lead Generation</SelectItem>
+                      <SelectItem value="full" className="py-3 cursor-pointer focus:bg-slate-50">Full CRM (Sales + Support + Marketing)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </div>
 
           <FormField

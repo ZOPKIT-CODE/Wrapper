@@ -21,7 +21,10 @@ export interface LogEntry {
   data?: unknown;
 }
 
+const IS_DEV = import.meta.env.DEV;
+
 function getEntries(): LogEntry[] {
+  if (!IS_DEV) return [];
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
@@ -33,6 +36,7 @@ function getEntries(): LogEntry[] {
 }
 
 function setEntries(entries: LogEntry[]): void {
+  if (!IS_DEV) return;
   try {
     let json = JSON.stringify(entries);
     while (json.length > MAX_SIZE_BYTES && entries.length > 1) {
@@ -99,3 +103,8 @@ export const onboardingLogger = {
     }
   },
 };
+
+// Remove any logs left from a previous dev session when running in production.
+if (!IS_DEV) {
+  try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
+}

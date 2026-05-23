@@ -22,8 +22,8 @@ module.exports = {
       { allowConstantExport: true },
     ],
     '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-    '@typescript-eslint/no-explicit-any': 'warn',
-    'no-console': 'warn',
+    '@typescript-eslint/no-explicit-any': 'error',
+    'no-console': ['warn', { allow: ['error'] }],
     'prefer-const': 'error',
   },
 }

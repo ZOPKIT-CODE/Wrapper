@@ -15,7 +15,7 @@ import { creditBatches, subscriptions, tenants } from '../db/schema/index.js';
 import { authenticateToken } from '../middleware/auth/auth.js';
 import { CreditExpiryService } from '../features/credits/services/credit-expiry-service.js';
 import { addCreditsToEntity } from '../features/credits/services/credit-operations.js';
-import { SeasonalCreditService } from '../features/admin/services/SeasonalCreditService.js';
+import { SeasonalCreditService } from '../features/admin/services/seasonal-credit-service.js';
 
 export default async function devCreditTestRoutes(
   fastify: FastifyInstance,

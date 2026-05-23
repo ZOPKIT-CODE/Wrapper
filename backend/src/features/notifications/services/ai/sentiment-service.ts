@@ -1,4 +1,5 @@
 import { aiServiceFactory } from './ai-service-factory.js';
+import Logger from '../../../../utils/logger.js';
 
 interface SentimentContent { title?: string; message?: string; type?: string; priority?: string; [k: string]: unknown }
 interface SentimentOptions { includeSuggestions?: boolean; detectUrgency?: boolean; checkTone?: boolean }
@@ -40,7 +41,7 @@ class SentimentService {
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Error analyzing sentiment:', error);
+      Logger.log('error', 'ai', 'analyze-sentiment', 'Error analyzing sentiment', { message: error.message, stack: error.stack });
       throw new Error(`Sentiment analysis failed: ${error.message}`);
     }
   }
@@ -69,7 +70,7 @@ Message: ${content.message}`;
 
       return this._parseQuickCheck(result.text);
     } catch (err: unknown) {
-      console.error('Error in quick sentiment check:', err);
+      Logger.log('error', 'ai', 'quick-check', 'Error in quick sentiment check', { error: err });
       return {
         sentimentScore: 50,
         sentiment: 'neutral',
@@ -109,7 +110,7 @@ Return JSON:
 
       return this._parseIssues(result.text);
     } catch (error) {
-      console.error('Error checking for issues:', error);
+      Logger.log('error', 'ai', 'check-for-issues', 'Error checking for issues', { error });
       return {
         hasIssues: false,
         issues: [],
@@ -179,7 +180,7 @@ Analyze:`;
       // Fallback: extract key information from text
       return this._extractFromText(text);
     } catch (err: unknown) {
-      console.error('Error parsing analysis:', err);
+      Logger.log('error', 'ai', 'parse-analysis', 'Error parsing analysis', { error: err });
       return this._defaultAnalysis();
     }
   }
@@ -195,7 +196,7 @@ Analyze:`;
       }
       return this._defaultQuickCheck();
     } catch (err: unknown) {
-      console.error('Error parsing quick check:', err);
+      Logger.log('error', 'ai', 'parse-quick-check', 'Error parsing quick check', { error: err });
       return this._defaultQuickCheck();
     }
   }
@@ -216,7 +217,7 @@ Analyze:`;
         suggestions: []
       };
     } catch (err: unknown) {
-      console.error('Error parsing issues:', err);
+      Logger.log('error', 'ai', 'parse-issues', 'Error parsing issues', { error: err });
       return {
         hasIssues: false,
         issues: [],

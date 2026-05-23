@@ -2,6 +2,7 @@ import { db } from '../db/index.js';
 import { tenants, credits } from '../db/schema/index.js';
 import { eq, and, sql, gte, lte, like, inArray } from 'drizzle-orm';
 import { notificationCacheService } from '../features/notifications/services/notification-cache-service.js';
+import Logger from '../utils/logger.js';
 
 export interface TenantFilters {
   status?: string;
@@ -135,7 +136,8 @@ class TenantFilterService {
       await notificationCacheService.cacheFilteredTenants(filters as Record<string, unknown>, result);
       return result;
     } catch (err: unknown) {
-      console.error('Error filtering tenants:', err);
+      const error = err as Error;
+      Logger.log('error', 'tenant', 'filter-tenants', 'Error filtering tenants', { error: error.message, stack: error.stack });
       throw err;
     }
   }
@@ -148,7 +150,8 @@ class TenantFilterService {
       const tenantIds = await this.filterTenants(filters);
       return tenantIds.length;
     } catch (err: unknown) {
-      console.error('Error getting tenant count:', err);
+      const error = err as Error;
+      Logger.log('error', 'tenant', 'get-tenant-count', 'Error getting tenant count', { error: error.message, stack: error.stack });
       throw err;
     }
   }
@@ -180,7 +183,8 @@ class TenantFilterService {
         .offset(offset);
       return tenantDetails as unknown as Array<Record<string, unknown>>;
     } catch (err: unknown) {
-      console.error('Error getting filtered tenant details:', err);
+      const error = err as Error;
+      Logger.log('error', 'tenant', 'get-filtered-tenant-details', 'Error getting filtered tenant details', { error: error.message, stack: error.stack });
       throw err;
     }
   }

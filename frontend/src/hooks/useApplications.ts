@@ -2,7 +2,7 @@ import { useState, useCallback, useMemo } from "react";
 import useOrganizationAuth from "./useOrganizationAuth";
 import { useAuthStatus, useTenantApplications } from "./useSharedQueries";
 import { Application } from "@/types/application";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 
 export function useApplications() {
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);

@@ -1,11 +1,7 @@
-import Stripe from 'stripe';
 import { db } from '../../../db/index.js';
 import { credits, applications as applicationsTable, applicationModules } from '../../../db/schema/index.js';
 import { eq, and, isNull, desc } from 'drizzle-orm';
-
-export const stripe = new Stripe((process.env.STRIPE_SECRET_KEY ?? '') as string, {
-  timeout: Number(process.env.STRIPE_TIMEOUT_MS ?? 10_000)
-});
+import Logger from '../../../utils/logger.js';
 
 /**
  * Initialize credit record for an entity if it doesn't exist
@@ -25,7 +21,7 @@ export async function ensureCreditRecord(tenantId: string, entityType = 'organiz
       .limit(1);
 
     if (!existingEntity) {
-      console.warn(`Cannot create credit record: Entity ${searchEntityId} does not exist in entities table`);
+      Logger.log('warning', 'billing', 'ensure-credit-record', 'Cannot create credit record: entity does not exist', { entityId: searchEntityId });
       return false;
     }
 
@@ -53,7 +49,7 @@ export async function ensureCreditRecord(tenantId: string, entityType = 'organiz
     return false;
   } catch (err: unknown) {
     const error = err as Error;
-    console.error('Error ensuring credit record:', error);
+    Logger.log('error', 'billing', 'ensure-credit-record', 'Error ensuring credit record', { error: error.message });
     throw error;
   }
 }
@@ -115,7 +111,7 @@ export async function findRootOrganization(tenantId: string): Promise<string | n
       .limit(1);
     return rootOrg?.entityId ?? null;
   } catch (err: unknown) {
-    console.warn(`No root organization found for tenant ${tenantId}:`, (err as Error).message);
+    Logger.log('warning', 'billing', 'find-root-organization', 'No root organization found for tenant', { tenantId, error: (err as Error).message });
     return null;
   }
 }
@@ -165,7 +161,7 @@ export async function getModulePermissions(moduleCode: string): Promise<string[]
     return [];
   } catch (err: unknown) {
     const error = err as Error;
-    console.error('Error fetching module permissions:', error);
+    Logger.log('error', 'billing', 'get-module-permissions', 'Error fetching module permissions', { error: error.message });
     return [
       `system.${moduleCode}.view`,
       `system.${moduleCode}.create`,

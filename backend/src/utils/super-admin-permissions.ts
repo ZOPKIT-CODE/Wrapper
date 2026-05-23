@@ -2,6 +2,7 @@
 // Utility to generate comprehensive permissions for Super Administrator roles based on their plan
 
 import { PLAN_ACCESS_MATRIX, PermissionMatrixUtils } from '../data/permission-matrix.js';
+import Logger from './logger.js';
 
 type PlanIdKey = keyof typeof PLAN_ACCESS_MATRIX;
 
@@ -227,11 +228,16 @@ export function createSuperAdminRoleConfig(planId: string, tenantId: string, cre
  * @param {object} permissions - Generated permissions object
  */
 export function logPermissionSummary(planId: string, permissions: Record<string, unknown>): void {
-  console.log(`📊 Super Administrator permissions for ${planId} plan:`);
+  Logger.log('info', 'auth', 'super-admin-summary', `Super Administrator permissions for ${planId} plan`, { planId });
 
   const counts = getPermissionCounts(planId);
 
-  console.log(`   📈 Total: ${counts.totalApplications} applications, ${counts.totalModules} modules, ${counts.totalPermissions} permissions`);
+  Logger.log('info', 'auth', 'super-admin-summary', `Total: ${counts.totalApplications} applications, ${counts.totalModules} modules, ${counts.totalPermissions} permissions`, {
+    planId,
+    totalApplications: counts.totalApplications,
+    totalModules: counts.totalModules,
+    totalPermissions: counts.totalPermissions
+  });
 
   Object.keys(permissions).forEach(app => {
     const appVal = permissions[app];
@@ -240,14 +246,14 @@ export function logPermissionSummary(planId: string, permissions: Record<string,
       const appPermissions = Object.values(appVal as Record<string, unknown>).reduce((sum: number, perms: unknown) => {
         return sum + (Array.isArray(perms) ? perms.length : 0);
       }, 0);
-      
-      console.log(`   ${app}: ${modules.length} modules, ${appPermissions} permissions`);
+
+      Logger.log('info', 'auth', 'super-admin-summary', `${app}: ${modules.length} modules, ${appPermissions} permissions`, { app, modulesCount: modules.length, permissionsCount: appPermissions });
 
       // Log individual permissions for debugging
       modules.forEach(moduleCode => {
         const modulePerms = (appVal as Record<string, string[]>) [moduleCode];
         if (Array.isArray(modulePerms)) {
-          console.log(`     ${moduleCode}: ${modulePerms.join(', ')}`);
+          Logger.log('debug', 'auth', 'super-admin-summary', `${moduleCode}: ${modulePerms.join(', ')}`, { app, moduleCode, permissions: modulePerms });
         }
       });
     }

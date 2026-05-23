@@ -7,7 +7,7 @@
  */
 
 // Factory (primary API)
-export { getPaymentGateway, setPaymentGateway, resetPaymentGateway } from './payment-gateway.factory.js';
+export { getPaymentGateway, setPaymentGateway, resetPaymentGateway, getStripeClient } from './payment-gateway.factory.js';
 
 // Port interface
 export type { PaymentGatewayPort } from './payment-gateway.port.js';

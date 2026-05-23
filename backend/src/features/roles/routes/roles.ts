@@ -27,45 +27,33 @@ export async function publishRoleEventToApplications(
 
     // Parse permissions if they're stored as JSON string
     let permissions = roleData.permissions as unknown;
-    console.log(`🔍 [publishRoleEvent] Processing permissions for role ${roleId}:`, {
-      type: typeof permissions,
-      isNull: permissions === null,
-      isUndefined: permissions === undefined,
-      isString: typeof permissions === 'string',
-      isObject: typeof permissions === 'object' && permissions !== null,
-      sample: permissions ? (typeof permissions === 'string' ? permissions.substring(0, 100) : JSON.stringify(permissions).substring(0, 100)) : 'null/undefined'
-    });
+    Logger.log('info', 'role', 'publish-role-event', 'Processing permissions for role', { roleId, type: typeof permissions, isNull: permissions === null, isString: typeof permissions === 'string' });
 
     if (typeof permissions === 'string') {
       try {
         permissions = JSON.parse(permissions);
-        console.log(`✅ [publishRoleEvent] Parsed permissions JSON string for role ${roleId}`);
+        Logger.log('info', 'role', 'publish-role-event', 'Parsed permissions JSON string for role', { roleId });
       } catch (err: unknown) {
         const e = err as Error;
-        console.warn(`⚠️ [publishRoleEvent] Failed to parse permissions JSON for role ${roleId}:`, e.message);
+        Logger.log('warning', 'role', 'publish-role-event', 'Failed to parse permissions JSON for role', { roleId, error: e.message });
         permissions = {};
       }
     }
 
     // Ensure permissions is an object (could be null/undefined from database)
     if (!permissions || typeof permissions !== 'object') {
-      console.warn(`⚠️ [publishRoleEvent] Invalid permissions format for role ${roleId}, using empty object. Type: ${typeof permissions}`);
+      Logger.log('warning', 'role', 'publish-role-event', 'Invalid permissions format for role, using empty object', { roleId, type: typeof permissions });
       permissions = {};
     }
 
     // Extract which applications are present in this role's permissions
     let applications = PermissionMatrixUtils.extractApplicationsFromPermissions(permissions as Record<string, unknown> | null | undefined);
-    console.log(`🔍 [publishRoleEvent] Extracted applications for role ${roleId}:`, applications);
+    Logger.log('info', 'role', 'publish-role-event', 'Extracted applications for role', { roleId, applications });
 
     // For deletion events, if we can't extract applications from permissions,
     // try to get all enabled applications for the tenant as a fallback
     if (applications.length === 0 && eventType === 'role.deleted') {
-      console.log(`⚠️ [publishRoleEvent] No applications found in role ${roleId} permissions for deletion event, attempting fallback...`);
-      console.log(`📋 [publishRoleEvent] Permissions structure:`, {
-        permissionsKeys: permissions ? Object.keys(permissions) : 'null/undefined',
-        permissionsType: typeof permissions,
-        permissionsPreview: permissions ? JSON.stringify(permissions).substring(0, 200) : 'null/undefined'
-      });
+      Logger.log('warning', 'role', 'publish-role-event', 'No applications found in role permissions for deletion event, attempting fallback', { roleId, permissionsType: typeof permissions });
       
       try {
         // Try to get enabled applications for the tenant as fallback
@@ -81,29 +69,23 @@ export async function publishRoleEventToApplications(
           ));
         
         applications = enabledApps.map(app => app.appCode);
-        console.log(`✅ [publishRoleEvent] Fallback: Found ${applications.length} enabled applications for tenant ${tenantId}:`, applications);
+        Logger.log('info', 'role', 'publish-role-event', 'Fallback: Found enabled applications for tenant', { tenantId, count: applications.length, applications });
         
         if (applications.length === 0) {
-          console.log(`⚠️ [publishRoleEvent] No enabled applications found for tenant ${tenantId}, skipping event publishing`);
+          Logger.log('warning', 'role', 'publish-role-event', 'No enabled applications found for tenant, skipping event publishing', { tenantId });
           return;
         }
       } catch (err: unknown) {
         const fallbackError = err as Error;
-        console.error(`❌ [publishRoleEvent] Failed to get enabled applications as fallback:`, fallbackError.message);
-        console.log(`⚠️ [publishRoleEvent] Skipping event publishing for role ${roleId}`);
+        Logger.log('error', 'role', 'publish-role-event', 'Failed to get enabled applications as fallback, skipping event publishing', { roleId, error: fallbackError.message });
         return;
       }
     } else if (applications.length === 0) {
-      console.log(`⚠️ [publishRoleEvent] No applications found in role ${roleId} permissions, skipping event publishing`);
-      console.log(`📋 [publishRoleEvent] Permissions structure:`, {
-        permissionsKeys: permissions ? Object.keys(permissions) : 'null/undefined',
-        permissionsType: typeof permissions,
-        permissionsPreview: permissions ? JSON.stringify(permissions).substring(0, 200) : 'null/undefined'
-      });
+      Logger.log('warning', 'role', 'publish-role-event', 'No applications found in role permissions, skipping event publishing', { roleId, permissionsType: typeof permissions });
       return;
     }
 
-    console.log(`📡 Publishing ${eventType} event for role ${roleId} to applications:`, applications);
+    Logger.log('info', 'role', 'publish-role-event', `Publishing ${eventType} event for role`, { roleId, applications });
 
     // Publish event to each relevant application using their specific stream
     const publishPromises = applications.map(async (appCode) => {
@@ -147,19 +129,19 @@ export async function publishRoleEventToApplications(
           (roleData.createdBy || roleData.updatedBy || roleData.deletedBy || 'system') as string
         );
 
-        console.log(`✅ Published ${eventType} event to ${appCode} for role ${roleId}`);
+        Logger.log('info', 'role', 'publish-role-event', `Published ${eventType} event to application`, { appCode, roleId });
       } catch (err: unknown) {
         const error = err as Error;
-        console.error(`❌ Failed to publish ${eventType} event to ${appCode}:`, error.message);
+        Logger.log('error', 'role', 'publish-role-event', `Failed to publish ${eventType} event to application`, { appCode, error: error.message });
         // Don't throw - continue with other applications
       }
     });
 
     await Promise.allSettled(publishPromises);
-    console.log(`✅ Completed publishing ${eventType} events for role ${roleId}`);
+    Logger.log('info', 'role', 'publish-role-event', `Completed publishing ${eventType} events for role`, { roleId });
   } catch (err: unknown) {
     const error = err as Error;
-    console.error(`❌ Error publishing role events:`, error);
+    Logger.log('error', 'role', 'publish-role-event', 'Error publishing role events', { error: error.message });
     // Don't throw - event publishing failure shouldn't break the API response
   }
 }
@@ -279,10 +261,7 @@ export default async function roleRoutes(
     schema: {}
   }, async (request, reply) => {
     try {
-      console.log('📋 GET roles request:', {
-        tenantId: (request as any).userContext?.tenantId,
-        query: request.query
-      });
+      Logger.log('info', 'role', 'get-roles', 'GET roles request', { tenantId: (request as any).userContext?.tenantId });
 
       const roles = await permissionService.getTenantRoles(
         request.userContext?.tenantId ?? '',
@@ -306,7 +285,7 @@ export default async function roleRoutes(
           }
         } catch (err: unknown) {
           const error = err as Error;
-          console.error(`Failed to parse permissions for role ${(role as any).roleId}:`, error.message);
+          Logger.log('error', 'role', 'get-roles', 'Failed to parse permissions for role', { roleId: (role as any).roleId, error: error.message });
           permissions = {};
         }
         
@@ -321,7 +300,7 @@ export default async function roleRoutes(
           }
         } catch (err: unknown) {
           const error = err as Error;
-          console.error(`Failed to parse restrictions for role ${(role as any).roleId}:`, error.message);
+          Logger.log('error', 'role', 'get-roles', 'Failed to parse restrictions for role', { roleId: (role as any).roleId, error: error.message });
           restrictions = {};
         }
 
@@ -329,7 +308,7 @@ export default async function roleRoutes(
           metadata = (role as any).metadata ? JSON.parse((role as any).metadata) : {};
         } catch (err: unknown) {
           const error = err as Error;
-          console.error(`Failed to parse metadata for role ${(role as any).roleId}:`, error.message);
+          Logger.log('error', 'role', 'get-roles', 'Failed to parse metadata for role', { roleId: (role as any).roleId, error: error.message });
           metadata = {};
         }
         
@@ -429,10 +408,7 @@ export default async function roleRoutes(
         };
       }) || [];
       
-      console.log('📊 Roles fetched successfully:', {
-        count: parsedRoles.length,
-        total: roles.total || 0
-      });
+      Logger.log('info', 'role', 'get-roles', 'Roles fetched successfully', { count: parsedRoles.length, total: roles.total || 0 });
       
       return {
         success: true,
@@ -448,12 +424,7 @@ export default async function roleRoutes(
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('🚨 Error fetching tenant roles:', {
-        error: error.message,
-        stack: error.stack,
-        tenantId: request.userContext?.tenantId,
-        query: request.query
-      });
+      Logger.log('error', 'role', 'get-roles', 'Error fetching tenant roles', { error: error.message, tenantId: request.userContext?.tenantId });
       
       // Provide more specific error response
       return reply.code(500).send({ 
@@ -576,7 +547,7 @@ export default async function roleRoutes(
         permissions = (role as any).permissions ? JSON.parse((role as any).permissions) : {};
       } catch (err: unknown) {
         const error = err as Error;
-        console.error(`Failed to parse permissions for created role ${(role as any).roleId}:`, error.message);
+        Logger.log('error', 'role', 'create-role', 'Failed to parse permissions for created role', { roleId: (role as any).roleId, error: error.message });
         permissions = {};
       }
       
@@ -584,7 +555,7 @@ export default async function roleRoutes(
         restrictions = (role as any).restrictions ? JSON.parse((role as any).restrictions) : {};
       } catch (err: unknown) {
         const error = err as Error;
-        console.error(`Failed to parse restrictions for created role ${(role as any).roleId}:`, error.message);
+        Logger.log('error', 'role', 'create-role', 'Failed to parse restrictions for created role', { roleId: (role as any).roleId, error: error.message });
         restrictions = {};
       }
       
@@ -609,12 +580,7 @@ export default async function roleRoutes(
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('🚨 Error creating role:', {
-        error: error.message,
-        stack: error.stack,
-        tenantId: request.userContext.tenantId,
-        requestBody: request.body
-      });
+      Logger.log('error', 'role', 'create-role', 'Error creating role', { error: error.message, tenantId: request.userContext.tenantId });
       
       // Provide more specific error responses
       if ((error as Error).message.includes('already exists')) {
@@ -668,17 +634,11 @@ export default async function roleRoutes(
       const updateData = body;
       const tenantId = (request as any).userContext?.tenantId ?? '';
 
-      console.log('🔄 Updating role:', {
-        roleId,
-        tenantId,
-        requestBody: updateData,
-        restrictionsType: typeof updateData.restrictions,
-        restrictionsValue: updateData.restrictions
-      });
+      Logger.log('info', 'role', 'update-role', 'Updating role', { roleId, tenantId, restrictionsType: typeof updateData.restrictions });
 
       const updatedRole = await permissionService.updateAdvancedRole((request as any).userContext?.tenantId ?? '', roleId, updateData as any);
 
-      console.log('✅ Role updated successfully:', updatedRole);
+      Logger.log('info', 'role', 'update-role', 'Role updated successfully', { roleId: (updatedRole as any).roleId });
 
       // Log role update activity
       await ActivityLogger.logActivity(
@@ -711,6 +671,21 @@ export default async function roleRoutes(
         }
       );
 
+      // When permissions explicitly changed, also emit a fine-grained event
+      if (updateData.permissions !== undefined) {
+        await publishRoleEventToApplications(
+          'role.permissions_updated',
+          tenantId,
+          roleId,
+          {
+            roleName: updatedRole.roleName || (updatedRole as any).name,
+            permissions: updatedRole.permissions,
+            updatedBy: (request as any).userContext?.internalUserId,
+            updatedAt: updatedRole.updatedAt || new Date()
+          }
+        );
+      }
+
       // Get users affected by this role change — scoped to this tenant
       const affectedUsers = await db
         .select({
@@ -727,12 +702,11 @@ export default async function roleRoutes(
           eq(userRoleAssignments.isActive, true)
         ));
 
-      console.log(`🔔 Role change affects ${affectedUsers.length} users`);
+      Logger.log('info', 'role', 'update-role', 'Role change affects users', { count: affectedUsers.length });
 
       // Trigger permission refresh notification for affected users
       if (affectedUsers.length > 0) {
-        console.log('📢 Triggering permission refresh notifications...');
-        console.log('👥 Users who should refresh permissions:', affectedUsers.map(u => u.email));
+        Logger.log('info', 'role', 'update-role', 'Triggering permission refresh notifications for affected users', { emails: affectedUsers.map(u => u.email) });
         
         // In a real implementation, you would implement WebSocket broadcasting here
         // For now, we'll include this information in the response so the frontend can handle it
@@ -752,13 +726,7 @@ export default async function roleRoutes(
       };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('🚨 Error updating role:', {
-        error: error.message,
-        stack: error.stack,
-        roleId: params.roleId,
-        tenantId: (request as any).userContext?.tenantId,
-        requestBody: request.body
-      });
+      Logger.log('error', 'role', 'update-role', 'Error updating role', { error: error.message, roleId: params.roleId, tenantId: (request as any).userContext?.tenantId });
 
       return reply.code(500).send({
         error: 'Failed to update role',
@@ -924,7 +892,7 @@ export default async function roleRoutes(
           );
         } catch (publishErr: unknown) {
           const publishError = publishErr as Error;
-          console.warn('⚠️ Failed to publish role deletion event:', publishError.message);
+          Logger.log('warning', 'role', 'delete-role', 'Failed to publish role deletion event', { error: publishError.message });
           // Don't fail the deletion if event publishing fails
         }
       }

@@ -7,6 +7,7 @@ import { db } from '../../db/index.js';
 import { tenants, entities, tenantUsers } from '../../db/schema/index.js';
 import { eq, and, ne } from 'drizzle-orm';
 import type { FastifyRequest, FastifyReply } from 'fastify';
+import Logger from '../../utils/logger.js';
 
 // GSTIN validation regex
 const GSTIN_REGEX = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
@@ -385,7 +386,7 @@ export function sanitizeInputMiddleware() {
         (request as { params: unknown }).params = sanitizeInput(request.params as Record<string, unknown>);
       }
     } catch (error) {
-      console.error('❌ Input sanitization error:', error);
+      Logger.log('error', 'validation', 'sanitize-input-middleware', '❌ Input sanitization error', { error });
       // Don't fail the request for sanitization errors, just log them
     }
   };

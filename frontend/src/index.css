@@ -1,6 +1,14 @@
 /* Font loaded via index.html <link> to avoid @import order issues in bundle */
 @import "tailwindcss";
 
+/* Global mobile overflow safeguard */
+@media (max-width: 639px) {
+  body,
+  #root {
+    overflow-x: hidden;
+  }
+}
+
 @plugin "tailwindcss-animate";
 
 @custom-variant dark (&:is(.dark *));

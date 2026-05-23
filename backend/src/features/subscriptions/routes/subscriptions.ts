@@ -8,6 +8,7 @@ import { tenants, payments, subscriptions } from '../../../db/schema/index.js';
 import { eq, and, inArray, sql } from 'drizzle-orm';
 import ErrorResponses from '../../../utils/error-responses.js';
 import { PLAN_ACCESS_MATRIX } from '../../../data/permission-matrix.js';
+import Logger from '../../../utils/logger.js';
 import { z } from 'zod';
 
 export default async function subscriptionRoutes(
@@ -762,7 +763,7 @@ export default async function subscriptionRoutes(
         }
       } catch (dbError) {
         // Log but DON'T return 500 — fall through to Stripe API lookup below
-        console.error('Database error in payment lookup (falling through to gateway):', dbError);
+        Logger.log('error', 'database', 'get-payment-by-identifier', 'Database error in payment lookup (falling through to gateway)', { error: (dbError as Error).message });
       }
 
       if (!payment) {

@@ -5,6 +5,7 @@ import {
   organizationApplications
 } from '../db/schema/core/suite-schema.js';
 import { eq, and } from 'drizzle-orm';
+import Logger from '../utils/logger.js';
 
 export default async function suiteRoutes(fastify: FastifyInstance, _options?: Record<string, unknown>): Promise<void> {
   // Get user's available applications
@@ -12,7 +13,7 @@ export default async function suiteRoutes(fastify: FastifyInstance, _options?: R
     try {
       const { tenantId } = request.userContext;
 
-      console.log('📱 Getting organization applications:', { tenantId });
+      Logger.log('info', 'routes', 'get-organization-applications', '📱 Getting organization applications:', { tenantId });
 
       // Get applications enabled for this organization
       const userApps = await db
@@ -44,7 +45,7 @@ export default async function suiteRoutes(fastify: FastifyInstance, _options?: R
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Failed to get user applications:', error);
+      Logger.log('error', 'routes', 'get-organization-applications', '❌ Failed to get user applications', { error: error.message, stack: error.stack });
       return reply.code(500).send({
         error: 'Failed to get applications',
         message: error.message
@@ -59,7 +60,7 @@ export default async function suiteRoutes(fastify: FastifyInstance, _options?: R
       const q = request.query as Record<string, unknown>;
       const limit = Number(q.limit) || 50;
 
-      console.log('📊 Getting user activity:', { internalUserId, limit });
+      Logger.log('info', 'routes', 'get-user-activity', '📊 Getting user activity:', { internalUserId, limit });
 
       // Return basic activity info since SSO activity tracking is not available
       return reply.send({
@@ -72,7 +73,7 @@ export default async function suiteRoutes(fastify: FastifyInstance, _options?: R
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Failed to get user activity:', error);
+      Logger.log('error', 'routes', 'get-user-activity', '❌ Failed to get user activity', { error: error.message, stack: error.stack });
       return reply.code(500).send({
         error: 'Failed to get activity',
         message: error.message
@@ -94,7 +95,7 @@ export default async function suiteRoutes(fastify: FastifyInstance, _options?: R
         });
       }
 
-      console.log('🔄 Handling app redirect:', { appCode, returnTo, userId: userContext.internalUserId });
+      Logger.log('info', 'routes', 'app-redirect', '🔄 Handling app redirect:', { appCode, returnTo, userId: userContext.internalUserId });
 
       // Get application details
       const [app] = await db
@@ -126,7 +127,7 @@ export default async function suiteRoutes(fastify: FastifyInstance, _options?: R
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ App redirect failed:', error);
+      Logger.log('error', 'routes', 'app-redirect', '❌ App redirect failed', { error: error.message, stack: error.stack });
       return reply.code(500).send({
         error: 'App redirect failed',
         message: error.message
@@ -137,7 +138,7 @@ export default async function suiteRoutes(fastify: FastifyInstance, _options?: R
   // Get all applications (admin only)
   fastify.get('/admin/applications', async (_request: FastifyRequest, reply: FastifyReply) => {
     try {
-      console.log('🔧 Getting all applications (admin)');
+      Logger.log('info', 'routes', 'get-all-applications', '🔧 Getting all applications (admin)');
 
       const allApps = await db
         .select()
@@ -151,7 +152,7 @@ export default async function suiteRoutes(fastify: FastifyInstance, _options?: R
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Failed to get all applications:', error);
+      Logger.log('error', 'routes', 'get-all-applications', '❌ Failed to get all applications', { error: error.message, stack: error.stack });
       return reply.code(500).send({
         error: 'Failed to get applications',
         message: error.message
@@ -177,7 +178,7 @@ export default async function suiteRoutes(fastify: FastifyInstance, _options?: R
         });
       }
 
-      console.log('🆕 Creating new application:', { appCode, appName });
+      Logger.log('info', 'routes', 'create-application', '🆕 Creating new application:', { appCode, appName });
 
       const [newApp] = await db
         .insert(applications)
@@ -199,7 +200,7 @@ export default async function suiteRoutes(fastify: FastifyInstance, _options?: R
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Failed to create application:', error);
+      Logger.log('error', 'routes', 'create-application', '❌ Failed to create application', { error: error.message, stack: error.stack });
       return reply.code(500).send({
         error: 'Failed to create application',
         message: error.message
@@ -212,7 +213,7 @@ export default async function suiteRoutes(fastify: FastifyInstance, _options?: R
     try {
       const { orgId } = request.params;
 
-      console.log('🏢 Getting organization applications:', { orgId });
+      Logger.log('info', 'routes', 'get-admin-organization-applications', '🏢 Getting organization applications:', { orgId });
 
       const orgApps = await db
         .select({
@@ -241,7 +242,7 @@ export default async function suiteRoutes(fastify: FastifyInstance, _options?: R
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Failed to get organization applications:', error);
+      Logger.log('error', 'routes', 'get-admin-organization-applications', '❌ Failed to get organization applications', { error: error.message, stack: error.stack });
       return reply.code(500).send({
         error: 'Failed to get organization applications',
         message: error.message
@@ -259,7 +260,7 @@ export default async function suiteRoutes(fastify: FastifyInstance, _options?: R
       const enabledModules = body.enabledModules as unknown;
       const maxUsers = body.maxUsers as number | undefined;
 
-      console.log('🔄 Toggling application for organization:', { orgId, appId, isEnabled });
+      Logger.log('info', 'routes', 'toggle-application', '🔄 Toggling application for organization:', { orgId, appId, isEnabled });
 
       // Check if record exists
       const [existing] = await db
@@ -307,7 +308,7 @@ export default async function suiteRoutes(fastify: FastifyInstance, _options?: R
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Failed to toggle application:', error);
+      Logger.log('error', 'routes', 'toggle-application', '❌ Failed to toggle application', { error: error.message, stack: error.stack });
       return reply.code(500).send({
         error: 'Failed to toggle application',
         message: error.message

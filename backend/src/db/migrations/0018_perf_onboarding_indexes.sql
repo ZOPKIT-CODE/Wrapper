@@ -8,16 +8,24 @@
 
 DO $$ BEGIN
   IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'tenants') THEN
-    CREATE INDEX IF NOT EXISTS idx_tenants_kinde_org_id
-      ON tenants (kinde_org_id)
-      WHERE kinde_org_id IS NOT NULL;
+    BEGIN
+      CREATE INDEX IF NOT EXISTS idx_tenants_kinde_org_id
+        ON tenants (kinde_org_id)
+        WHERE kinde_org_id IS NOT NULL;
+    EXCEPTION WHEN insufficient_privilege THEN
+      RAISE NOTICE 'Skipping idx_tenants_kinde_org_id — insufficient privilege (create manually with a superuser if needed)';
+    END;
   END IF;
 END $$;
 
 DO $$ BEGIN
   IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'tenant_users') THEN
-    CREATE INDEX IF NOT EXISTS idx_tenant_users_kinde_user_id
-      ON tenant_users (kinde_user_id)
-      WHERE kinde_user_id IS NOT NULL;
+    BEGIN
+      CREATE INDEX IF NOT EXISTS idx_tenant_users_kinde_user_id
+        ON tenant_users (kinde_user_id)
+        WHERE kinde_user_id IS NOT NULL;
+    EXCEPTION WHEN insufficient_privilege THEN
+      RAISE NOTICE 'Skipping idx_tenant_users_kinde_user_id — insufficient privilege (create manually with a superuser if needed)';
+    END;
   END IF;
 END $$;

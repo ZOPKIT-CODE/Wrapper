@@ -10,6 +10,7 @@ import {
   organizationApplications,
 } from '../db/schema/index.js';
 import { eq, like, count, or } from 'drizzle-orm';
+import Logger from './logger.js';
 
 interface DeletedRecords {
   userRoleAssignments?: number;
@@ -35,7 +36,7 @@ export const deleteTenantData = async (tenantId: string): Promise<{
   success: boolean;
   errors: string[];
 }> => {
-  console.log(`🗑️ Starting cleanup for tenant: ${tenantId}`);
+  Logger.log('info', 'tenant', 'cleanup-tenant', `Starting cleanup for tenant: ${tenantId}`, { tenantId });
 
   const deletionResults: {
     tenantId: string;
@@ -67,7 +68,7 @@ export const deleteTenantData = async (tenantId: string): Promise<{
       deletionResults.kindeOrgId = tenantRow?.kindeOrgId ?? null;
 
       // 1. Delete user role assignments first (has FKs to both tenantUsers and customRoles)
-      console.log('🔄 Deleting user role assignments...');
+      Logger.log('info', 'tenant', 'cleanup-tenant', 'Deleting user role assignments...', { tenantId });
       
       // Get all user IDs for this tenant
       const tenantUserIds = await tx
@@ -89,70 +90,70 @@ export const deleteTenantData = async (tenantId: string): Promise<{
           .returning({ id: userRoleAssignments.id });
       }
       deletionResults.deletedRecords.userRoleAssignments = userRoleAssignmentsResult.length;
-      console.log(`✅ Deleted ${userRoleAssignmentsResult.length} user role assignments`);
+      Logger.log('info', 'tenant', 'cleanup-tenant', `Deleted ${userRoleAssignmentsResult.length} user role assignments`, { tenantId, count: userRoleAssignmentsResult.length });
 
       // 2. Delete audit logs (has FK to tenantUsers - must delete before tenant users)
-      console.log('🔄 Deleting audit logs...');
+      Logger.log('info', 'tenant', 'cleanup-tenant', 'Deleting audit logs...', { tenantId });
       const auditLogsResult = await tx
         .delete(auditLogs)
         .where(eq(auditLogs.tenantId, tenantId))
         .returning({ id: auditLogs.logId });
       deletionResults.deletedRecords.auditLogs = auditLogsResult.length;
-      console.log(`✅ Deleted ${auditLogsResult.length} audit logs`);
+      Logger.log('info', 'tenant', 'cleanup-tenant', `Deleted ${auditLogsResult.length} audit logs`, { tenantId, count: auditLogsResult.length });
 
       // 5. Delete custom roles (has FK to tenants and created_by FK to tenant_users)
-      console.log('🔄 Deleting custom roles...');
+      Logger.log('info', 'tenant', 'cleanup-tenant', 'Deleting custom roles...', { tenantId });
       const customRolesResult = await tx
         .delete(customRoles)
         .where(eq(customRoles.tenantId, tenantId))
         .returning({ id: customRoles.roleId });
       deletionResults.deletedRecords.customRoles = customRolesResult.length;
-      console.log(`✅ Deleted ${customRolesResult.length} custom roles`);
+      Logger.log('info', 'tenant', 'cleanup-tenant', `Deleted ${customRolesResult.length} custom roles`, { tenantId, count: customRolesResult.length });
 
       // 6. Delete tenant users (has FK to tenants)
-      console.log('🔄 Deleting tenant users...');
+      Logger.log('info', 'tenant', 'cleanup-tenant', 'Deleting tenant users...', { tenantId });
       const tenantUsersResult = await tx
         .delete(tenantUsers)
         .where(eq(tenantUsers.tenantId, tenantId))
         .returning({ id: tenantUsers.userId });
       deletionResults.deletedRecords.tenantUsers = tenantUsersResult.length;
-      console.log(`✅ Deleted ${tenantUsersResult.length} tenant users`);
+      Logger.log('info', 'tenant', 'cleanup-tenant', `Deleted ${tenantUsersResult.length} tenant users`, { tenantId, count: tenantUsersResult.length });
 
       // 7. Delete payments (has FK to subscriptions)
-      console.log('🔄 Deleting payments...');
+      Logger.log('info', 'tenant', 'cleanup-tenant', 'Deleting payments...', { tenantId });
       const paymentsResult = await tx
         .delete(payments)
         .where(eq(payments.tenantId, tenantId))
         .returning({ id: payments.paymentId });
       deletionResults.deletedRecords.payments = paymentsResult.length;
-      console.log(`✅ Deleted ${paymentsResult.length} payments`);
+      Logger.log('info', 'tenant', 'cleanup-tenant', `Deleted ${paymentsResult.length} payments`, { tenantId, count: paymentsResult.length });
 
       // 8. Delete subscriptions (has FK to tenants)
-      console.log('🔄 Deleting subscriptions...');
+      Logger.log('info', 'tenant', 'cleanup-tenant', 'Deleting subscriptions...', { tenantId });
       const subscriptionsResult = await tx
         .delete(subscriptions)
         .where(eq(subscriptions.tenantId, tenantId))
         .returning({ id: subscriptions.subscriptionId });
       deletionResults.deletedRecords.subscriptions = subscriptionsResult.length;
-      console.log(`✅ Deleted ${subscriptionsResult.length} subscriptions`);
+      Logger.log('info', 'tenant', 'cleanup-tenant', `Deleted ${subscriptionsResult.length} subscriptions`, { tenantId, count: subscriptionsResult.length });
 
       // 9. Delete organization applications (has FK to tenants)
-      console.log('🔄 Deleting organization applications...');
+      Logger.log('info', 'tenant', 'cleanup-tenant', 'Deleting organization applications...', { tenantId });
       const orgAppsResult = await tx
         .delete(organizationApplications)
         .where(eq(organizationApplications.tenantId, tenantId))
         .returning({ id: organizationApplications.id });
       deletionResults.deletedRecords.organizationApplications = orgAppsResult.length;
-      console.log(`✅ Deleted ${orgAppsResult.length} organization applications`);
+      Logger.log('info', 'tenant', 'cleanup-tenant', `Deleted ${orgAppsResult.length} organization applications`, { tenantId, count: orgAppsResult.length });
 
       // 10. Finally, delete the tenant itself
-      console.log('🔄 Deleting tenant...');
+      Logger.log('info', 'tenant', 'cleanup-tenant', 'Deleting tenant...', { tenantId });
       const tenantResult = await tx
         .delete(tenants)
         .where(eq(tenants.tenantId, tenantId))
         .returning({ id: tenants.tenantId });
       deletionResults.deletedRecords.tenants = tenantResult.length;
-      console.log(`✅ Deleted ${tenantResult.length} tenant record`);
+      Logger.log('info', 'tenant', 'cleanup-tenant', `Deleted ${tenantResult.length} tenant record`, { tenantId, count: tenantResult.length });
 
       if (tenantResult.length === 0) {
         throw new Error(`Tenant ${tenantId} not found`);
@@ -162,8 +163,7 @@ export const deleteTenantData = async (tenantId: string): Promise<{
     deletionResults.success = true;
     deletionResults.endTime = new Date();
 
-    console.log('🎉 Tenant cleanup completed successfully!');
-    console.log('📊 Summary:', {
+    Logger.log('info', 'tenant', 'cleanup-tenant', 'Tenant cleanup completed successfully', {
       tenantId,
       totalTime: deletionResults.endTime ? `${deletionResults.endTime.getTime() - deletionResults.startTime.getTime()}ms` : 'N/A',
       deletedRecords: deletionResults.deletedRecords
@@ -176,7 +176,8 @@ export const deleteTenantData = async (tenantId: string): Promise<{
     deletionResults.endTime = new Date();
     deletionResults.errors.push(err instanceof Error ? err.message : String(err));
 
-    console.error('🚨 Tenant cleanup failed:', err);
+    const error = err as Error;
+    Logger.log('error', 'tenant', 'cleanup-tenant', 'Tenant cleanup failed', { tenantId, error: error.message, stack: error.stack });
     throw err;
   }
 };
@@ -185,8 +186,8 @@ export const deleteTenantData = async (tenantId: string): Promise<{
  * Delete multiple tenants by email domain (useful for cleaning up test accounts)
  */
 export const deleteTenantsByDomain = async (emailDomain: string): Promise<{ domain: string; totalTenants: number; results: unknown[] }> => {
-  console.log(`🗑️ Starting cleanup for tenants with email domain: ${emailDomain}`);
-  
+  Logger.log('info', 'tenant', 'cleanup-by-domain', `Starting cleanup for tenants with email domain: ${emailDomain}`, { emailDomain });
+
   try {
     // Find all tenants with matching email domain
     const tenantsToDelete = await db
@@ -194,18 +195,18 @@ export const deleteTenantsByDomain = async (emailDomain: string): Promise<{ doma
       .from(tenants)
       .where(like(tenants.adminEmail, `%@${emailDomain}`));
 
-    console.log(`Found ${tenantsToDelete.length} tenants to delete`);
+    Logger.log('info', 'tenant', 'cleanup-by-domain', `Found ${tenantsToDelete.length} tenants to delete`, { emailDomain, count: tenantsToDelete.length });
 
     const results = [];
-    
+
     for (const tenant of tenantsToDelete) {
-      console.log(`\n--- Deleting tenant: ${tenant.adminEmail} ---`);
+      Logger.log('info', 'tenant', 'cleanup-by-domain', `Deleting tenant: ${tenant.adminEmail}`, { tenantId: tenant.tenantId, adminEmail: tenant.adminEmail });
       try {
         const result = await deleteTenantData(tenant.tenantId);
         results.push(result);
       } catch (err: unknown) {
         const error = err as Error;
-        console.error(`Failed to delete tenant ${tenant.tenantId}:`, error);
+        Logger.log('error', 'tenant', 'cleanup-by-domain', `Failed to delete tenant ${tenant.tenantId}`, { tenantId: tenant.tenantId, error: error.message, stack: error.stack });
         results.push({
           tenantId: tenant.tenantId,
           success: false,
@@ -221,7 +222,8 @@ export const deleteTenantsByDomain = async (emailDomain: string): Promise<{ doma
     };
 
   } catch (error) {
-    console.error('🚨 Domain cleanup failed:', error);
+    const err = error as Error;
+    Logger.log('error', 'tenant', 'cleanup-by-domain', 'Domain cleanup failed', { emailDomain, error: err.message, stack: err.stack });
     throw error;
   }
 };
@@ -307,7 +309,8 @@ export const getTenantDataSummary = async (tenantId: string): Promise<{
     };
 
   } catch (error) {
-    console.error('🚨 Failed to get tenant summary:', error);
+    const err = error as Error;
+    Logger.log('error', 'tenant', 'get-summary', 'Failed to get tenant summary', { tenantId, error: err.message, stack: err.stack });
     throw error;
   }
-}; 
+};

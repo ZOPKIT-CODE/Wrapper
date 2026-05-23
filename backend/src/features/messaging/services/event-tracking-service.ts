@@ -2,6 +2,7 @@ import { db } from '../../../db/index.js';
 import { eventTracking } from '../../../db/schema/index.js';
 import { eq, and, inArray, sql } from 'drizzle-orm';
 import { snsSqsPublisher } from '../utils/sns-sqs-publisher.js';
+import Logger from '../../../utils/logger.js';
 
 // Maximum rows returned by getUnacknowledgedEvents to prevent OOM on large tenants.
 const UNACKNOWLEDGED_EVENTS_LIMIT = Number(process.env.UNACKNOWLEDGED_EVENTS_LIMIT || 500);
@@ -78,7 +79,7 @@ export class EventTrackingService {
       return { acknowledged: true, storage: 'database' };
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ Failed to acknowledge event ${eventId}:`, error);
+      Logger.log('error', 'general', 'acknowledgeEvent', `Failed to acknowledge event ${eventId}`, { eventId, error: error.message });
       throw error;
     }
   }
@@ -122,7 +123,7 @@ export class EventTrackingService {
       return record;
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ Failed to mark event ${eventId} as failed:`, error);
+      Logger.log('error', 'general', 'markEventFailed', `Failed to mark event ${eventId} as failed`, { eventId, error: error.message });
       throw error;
     }
   }
@@ -141,7 +142,7 @@ export class EventTrackingService {
       return record || null;
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ Failed to get event status for ${eventId}:`, error);
+      Logger.log('error', 'general', 'getEventStatus', `Failed to get event status for ${eventId}`, { eventId, error: error.message });
       throw error;
     }
   }
@@ -176,7 +177,7 @@ export class EventTrackingService {
       return records;
     } catch (err: unknown) {
       const error = err as Error;
-      console.error(`❌ Failed to get unacknowledged events for tenant ${tenantId}:`, error);
+      Logger.log('error', 'general', 'getUnacknowledgedEvents', `Failed to get unacknowledged events for tenant ${tenantId}`, { tenantId, error: error.message });
       throw error;
     }
   }
@@ -238,7 +239,7 @@ export class EventTrackingService {
 
       return metrics;
     } catch (error) {
-      console.error(`❌ Failed to get sync health metrics for tenant ${tenantId}:`, error);
+      Logger.log('error', 'general', 'getSyncHealthMetrics', `Failed to get sync health metrics for tenant ${tenantId}`, { tenantId, error: (error as Error).message });
       throw error;
     }
   }
@@ -307,7 +308,7 @@ export class EventTrackingService {
         }
       };
     } catch (error) {
-      console.error(`❌ Failed to get inter-app sync health for tenant ${tenantId}:`, error);
+      Logger.log('error', 'general', 'getInterAppSyncHealth', `Failed to get inter-app sync health for tenant ${tenantId}`, { tenantId, error: (error as Error).message });
       throw error;
     }
   }
@@ -336,22 +337,35 @@ export class EventTrackingService {
     const succeededIds: string[] = [];
     const failedMap = new Map<string, string>(); // eventId → error message
 
-    // Publish all events concurrently (broker publish is I/O bound, not DB bound).
-    // Use allSettled so one failure does not abort the rest.
-    const publishResults = await Promise.allSettled(
-      rows.map((row) =>
-        snsSqsPublisher.publishInterAppEvent({
-          eventId: row.eventId,
-          eventType: row.eventType,
-          sourceApplication: row.sourceApplication,
-          targetApplication: row.targetApplication,
-          tenantId: row.tenantId,
-          entityId: row.entityId || '',
-          eventData: (row.eventData as Record<string, unknown>) || {},
-          publishedBy: row.publishedBy || 'outbox-replay-worker',
-        })
-      )
-    );
+    // Publish in rate-limited chunks to avoid saturating the SNS TPS limit.
+    // OUTBOX_REPLAY_MAX_TPS (default 50) events per second across all chunks.
+    const MAX_TPS = Number(process.env.OUTBOX_REPLAY_MAX_TPS ?? 50);
+    const CHUNK_DELAY_MS = Math.round(1000 / MAX_TPS) * MAX_TPS; // 1 full second per chunk
+    const CHUNK_SIZE = MAX_TPS;
+
+    const publishResults: PromiseSettledResult<{ success: boolean; eventId: string; routingKey: string; messageId: string }>[] = [];
+    for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
+      const chunk = rows.slice(i, i + CHUNK_SIZE);
+      const chunkResults = await Promise.allSettled(
+        chunk.map((row) =>
+          snsSqsPublisher.publishInterAppEvent({
+            eventId: row.eventId,
+            eventType: row.eventType,
+            sourceApplication: row.sourceApplication,
+            targetApplication: row.targetApplication,
+            tenantId: row.tenantId,
+            entityId: row.entityId || '',
+            eventData: (row.eventData as Record<string, unknown>) || {},
+            publishedBy: row.publishedBy || 'outbox-replay-worker',
+          })
+        )
+      );
+      publishResults.push(...chunkResults);
+      // Rate-limit: wait 1s between chunks (skip delay after last chunk)
+      if (i + CHUNK_SIZE < rows.length) {
+        await new Promise((r) => setTimeout(r, CHUNK_DELAY_MS));
+      }
+    }
 
     publishResults.forEach((result, i) => {
       const row = rows[i];
@@ -434,20 +448,31 @@ export class EventTrackingService {
     const succeededIds: string[] = [];
     const failedMap = new Map<string, string>();
 
-    const results = await Promise.allSettled(
-      rows.map((row) =>
-        snsSqsPublisher.publishInterAppEvent({
-          eventId: row.eventId,
-          eventType: row.eventType,
-          sourceApplication: row.sourceApplication,
-          targetApplication: row.targetApplication,
-          tenantId: row.tenantId,
-          entityId: row.entityId || '',
-          eventData: (row.eventData as Record<string, unknown>) || {},
-          publishedBy: row.publishedBy || 'outbox-unack-reprocessor',
-        })
-      )
-    );
+    const UNACK_MAX_TPS = Number(process.env.OUTBOX_REPLAY_MAX_TPS ?? 50);
+    const UNACK_CHUNK_SIZE = UNACK_MAX_TPS;
+
+    const results: PromiseSettledResult<Awaited<ReturnType<typeof snsSqsPublisher.publishInterAppEvent>>>[] = [];
+    for (let i = 0; i < rows.length; i += UNACK_CHUNK_SIZE) {
+      const chunk = rows.slice(i, i + UNACK_CHUNK_SIZE);
+      const chunkResults = await Promise.allSettled(
+        chunk.map((row) =>
+          snsSqsPublisher.publishInterAppEvent({
+            eventId: row.eventId,
+            eventType: row.eventType,
+            sourceApplication: row.sourceApplication,
+            targetApplication: row.targetApplication,
+            tenantId: row.tenantId,
+            entityId: row.entityId || '',
+            eventData: (row.eventData as Record<string, unknown>) || {},
+            publishedBy: row.publishedBy || 'outbox-unack-reprocessor',
+          })
+        )
+      );
+      results.push(...chunkResults);
+      if (i + UNACK_CHUNK_SIZE < rows.length) {
+        await new Promise((r) => setTimeout(r, 1000));
+      }
+    }
 
     results.forEach((result, i) => {
       const row = rows[i];
@@ -497,11 +522,11 @@ export class EventTrackingService {
         .where(sql`${eventTracking.publishedAt} < ${cutoffDate}`);
       const totalCleaned = (deleteResult as { rowCount?: number })?.rowCount ?? 0;
 
-      console.log(`🧹 Cleaned up ${totalCleaned} old tracked events from database`);
+      Logger.log('info', 'general', 'cleanupOldEvents', `Cleaned up ${totalCleaned} old tracked events from database`, { totalCleaned });
       return totalCleaned;
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Failed to cleanup old events:', error);
+      Logger.log('error', 'general', 'cleanupOldEvents', 'Failed to cleanup old events', { error: error.message });
       throw error;
     }
   }

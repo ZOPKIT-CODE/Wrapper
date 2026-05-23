@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
+import Logger from '../../../utils/logger.js';
 import { authenticateToken, invalidateUserCache } from '../../../middleware/auth/auth.js';
 import { db } from '../../../db/index.js';
 import { tenants, tenantUsers, customRoles, onboardingFormData } from '../../../db/schema/index.js';
@@ -173,7 +174,7 @@ export default async function statusManagementRoutes(
         .returning({ kindeUserId: tenantUsers.kindeUserId });
 
       if (updatedUser?.kindeUserId) {
-        invalidateUserCache(updatedUser.kindeUserId);
+        void invalidateUserCache(updatedUser.kindeUserId);
       }
 
       return {
@@ -203,7 +204,7 @@ export default async function statusManagementRoutes(
           email = kindeUser.email;
         }
       } catch (authErr: unknown) {
-        if (shouldLogVerbose()) console.log('Token validation failed, using query params:', (authErr as Error).message);
+        if (shouldLogVerbose()) Logger.log('info', 'general', 'onboarding-status', 'Token validation failed, using query params', { error: (authErr as Error).message });
         const q = request.query as Record<string, string | undefined>;
         if (q?.kindeUserId) kindeUserId = q.kindeUserId;
         if (q?.email) email = q.email;
@@ -242,7 +243,7 @@ export default async function statusManagementRoutes(
       const [user] = await userQuery.limit(1);
 
       if (!user) {
-        if (shouldLogVerbose()) console.log(`Onboarding status: no user found (${lookupType})`);
+        if (shouldLogVerbose()) Logger.log('info', 'general', 'onboarding-status', 'No user found', { lookupType });
 
         if (kindeUserId && email) {
           return {
@@ -274,7 +275,7 @@ export default async function statusManagementRoutes(
       }
 
       if (shouldLogVerbose()) {
-        console.log('Onboarding status: user found', {
+        Logger.log('info', 'general', 'onboarding-status', 'User found', {
           userId: user.userId,
           onboardingCompleted: user.onboardingCompleted,
           tenantId: user.tenantId
@@ -353,7 +354,7 @@ export default async function statusManagementRoutes(
       };
 
       if (shouldLogVerbose()) {
-        console.log('Onboarding status result:', {
+        Logger.log('info', 'general', 'onboarding-status', 'Onboarding status result', {
           isOnboarded,
           needsOnboarding,
           userType: result.authStatus.userType
@@ -364,7 +365,7 @@ export default async function statusManagementRoutes(
 
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('❌ Onboarding status error:', error.message);
+      Logger.log('error', 'general', 'onboarding-status', 'Onboarding status error', { error: error.message });
       request.log.error(error, 'Error getting onboarding status:');
       return reply.code(500).send({ error: 'Failed to get onboarding status' });
     }

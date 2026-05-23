@@ -248,168 +248,315 @@ export const productPagesData: ProductsMap = {
 
     'b2b-crm': {
         hero: {
-            headline: 'Modern B2B CRM Built for Sales Teams',
-            subheadline: 'Complete sales cycle from lead to invoice. Modern UI. Affordable pricing. Perfect for B2B companies.',
-            valueProposition: 'Stop paying Salesforce prices for features you don\'t need. Our B2B CRM gives you everything you need to manage your sales cycle at a fraction of the cost.',
+            headline: 'Run Sales, Support, and Marketing on One Platform — and Cut CRM Spend by 60%',
+            subheadline: 'Stop paying three vendors to track one customer. Your reps, support agents, and marketers work from a single record — from first webform to closed invoice to open ticket — without copy-pasting between tools.',
+            valueProposition: 'Stop stitching together a sales tool, a help desk, and a marketing platform. Our CRM runs your entire customer lifecycle — from the first Webform submission to a closed Invoice and every support Ticket after — in one system.',
             primaryCTA: 'Start Free Trial',
             secondaryCTA: 'Watch Demo',
             stats: [
-                { label: 'Sales Reps', value: '50,000+' },
-                { label: 'Deals Managed', value: '2M+' },
-                { label: 'Faster Cycles', value: '30%' },
-                { label: 'Revenue Increase', value: '25%' },
+                { label: 'Avg. CRM Spend Cut', value: '60%' },
+                { label: 'Tools Replaced', value: '3-in-1' },
+                { label: 'Companies Running On It', value: '1,000+' },
+                { label: 'Time to First Workflow Live', value: 'Same-day' },
             ],
         },
         problem: {
-            headline: 'Tired of Expensive, Over-Complicated CRMs?',
+            headline: 'Three Tools, Three Bills, and a Customer Who Falls Through the Cracks',
             painPoints: [
+                { icon: Unlink, text: 'Sales, support, and marketing data living in disconnected tools' },
                 { icon: DollarSign, text: 'Paying $150+/user/month for legacy CRMs' },
-                { icon: Clock, text: 'Complex setup and configuration' },
-                { icon: FileStack, text: 'Features you never use' },
-                { icon: UserX, text: 'Poor mobile experience' },
-                { icon: Unlink, text: 'Limited customization' },
-                { icon: AlertTriangle, text: 'Expensive integrations' },
+                { icon: FileStack, text: 'Quotes and invoices created outside the CRM' },
+                { icon: AlertTriangle, text: 'No SLA tracking on customer support tickets' },
+                { icon: TrendingDown, text: 'Marketing campaigns with no real lead attribution' },
+                { icon: Clock, text: 'Rigid systems you can\'t customize or automate' },
             ],
         },
         solution: {
-            headline: 'Enterprise Power. Consumer Simplicity.',
-            description: 'Our B2B CRM gives you the power of enterprise tools with the simplicity of modern apps. Built specifically for B2B sales teams, with integrated quotations, orders, and invoicing.',
+            headline: 'One Customer Record. Three Teams. Zero Tab-Switching.',
+            description: 'When a lead converts, your sales rep, support agent, and marketer see the same record. Quotes become invoices in one click. Tickets carry the full deal history. Campaigns prove their pipeline impact. No data sync, no duplicate entry, and no finger-pointing about who owns the customer.',
             differentiators: [
-                { icon: Target, text: 'Modern UI: Clean, intuitive interface' },
-                { icon: Zap, text: 'Complete Cycle: From lead to invoice' },
-                { icon: DollarSign, text: 'Affordable: 50-70% cheaper than competitors' },
-                { icon: Clock, text: 'Fast Implementation: Days, not months' },
-                { icon: Smartphone, text: 'Mobile-First: Full functionality on mobile' },
-                { icon: Database, text: 'Integrated: Syncs with Ops & Finance' },
+                { icon: Network, text: 'Core CRM: Leads, Contacts, Accounts & Opportunities' },
+                { icon: Receipt, text: 'Sales Execution: Quotes, Invoices, Orders & Approvals' },
+                { icon: MessageCircle, text: 'Customer Support: SLA-tracked Tickets & Communications' },
+                { icon: Mail, text: 'Marketing: Campaigns, Webforms & Email Cadences' },
+                { icon: Smartphone, text: 'Productivity: Calendar, Tasks, Meetings & Documents' },
+                { icon: Settings, text: 'Customizable: Custom Fields, Functions & Webhooks' },
             ],
         },
         features: [
-            { 
-                icon: Target, 
-                title: 'Lead Management', 
-                description: 'Capture, qualify, and route leads with automated scoring, BANT qualification, lead source tracking, and lead assignment rules. Convert more leads into opportunities.',
-                benefits: [
-                    'Increase lead conversion by 35% with automated scoring',
-                    'Qualify leads faster with BANT framework',
-                    'Route leads automatically to the right rep'
+            {
+                icon: Target,
+                title: 'Leads',
+                description: 'Capture, score, and convert every inbound and outbound lead — with kanban and list pipeline views from first touch to conversion.',
+                subFeatures: [
+                    'Kanban and list pipeline views with drag-and-drop stage management',
+                    'Lead scoring rules based on profile, activity, and source',
+                    'Bulk CSV import with field mapping and duplicate detection',
+                    'One-click conversion to Contact, Account, and Opportunity',
+                    'Source tracking and lead attribution per campaign or channel',
                 ]
             },
-            { 
-                icon: Database, 
-                title: 'Contact & Account Management', 
-                description: 'Complete customer profiles with relationship mapping, account health scoring, contact history, activity tracking, and account hierarchy. Manage all customer relationships.',
-                benefits: [
-                    'Maintain complete customer profiles in one place',
-                    'Track account health and identify at-risk accounts',
-                    'Map relationships across organizations'
+            {
+                icon: Users,
+                title: 'Contacts',
+                description: 'Build a complete record of every person — activity history, communication log, linked accounts, and open deals in one profile.',
+                subFeatures: [
+                    'Full contact profiles with custom fields and tag support',
+                    'Chronological activity timeline across calls, emails, meetings, and notes',
+                    'Communication history with every inbound and outbound interaction',
+                    'Linked accounts and associated opportunities per contact',
+                    'Bulk actions for email, tagging, and status updates',
                 ]
             },
-            { 
-                icon: BarChart3, 
-                title: 'Pipeline Management', 
-                description: 'Visual pipeline with drag-and-drop stages, custom pipeline stages, probability weighting, sales forecasting, win/loss analysis, and deal tracking. Manage your sales pipeline effectively.',
-                benefits: [
-                    'Forecast revenue accurately with probability weighting',
-                    'Move deals through stages with drag-and-drop',
-                    'Identify bottlenecks in your sales pipeline'
+            {
+                icon: Building2,
+                title: 'Accounts',
+                description: 'Manage company-level relationships with all their contacts, deals, tickets, and revenue history in one account record.',
+                subFeatures: [
+                    'Company profiles with industry, size, and custom field support',
+                    'All contacts, opportunities, invoices, and tickets linked per account',
+                    'Account-level activity and communication timeline',
+                    'Hierarchical account structures for subsidiaries and groups',
+                    'Revenue roll-up and deal history across the full account lifetime',
                 ]
             },
-            { 
-                icon: Files, 
-                title: 'Quotations & Orders', 
-                description: 'Create professional quotations with templates, convert to orders automatically, track order status, quote versioning, and approval workflows. Streamline quote-to-order process.',
-                benefits: [
-                    'Create professional quotes 3x faster with templates',
-                    'Convert quotes to orders with one click',
-                    'Track order status in real-time'
+            {
+                icon: TrendingUp,
+                title: 'Opportunities',
+                description: 'Drive every deal through a configurable stage pipeline with weighted forecasting and full deal history.',
+                subFeatures: [
+                    'Configurable deal stages with probability weights per stage',
+                    'Weighted revenue pipeline with forecast view by user, team, or period',
+                    'Deal cards with close date, value, and stage tracking',
+                    'Win/loss analysis with reason tracking and reporting',
+                    'Linked contacts, accounts, quotes, and invoices per opportunity',
                 ]
             },
-            { 
-                icon: Receipt, 
-                title: 'Invoice Generation', 
-                description: 'Automatically generate invoices from orders, track payment status, invoice templates, payment reminders, and integration with accounting systems. Get paid faster.',
-                benefits: [
-                    'Generate invoices automatically from orders',
-                    'Track payment status and send reminders',
-                    'Integrate seamlessly with accounting systems'
+            {
+                icon: FileText,
+                title: 'Quotations',
+                description: 'Generate professional, itemized PDF quotes directly from any deal — with line items, taxes, discounts, and approval routing.',
+                subFeatures: [
+                    'Quote builder with product line items, quantities, and pricing',
+                    'Tax and discount application at line or header level',
+                    'Branded PDF generation from configurable templates',
+                    'Quote approval workflow before sending to the customer',
+                    'One-click conversion from Quotation to Invoice or Sales Order',
                 ]
             },
-            { 
-                icon: BarChart3, 
-                title: 'Sales Analytics & Reporting', 
-                description: 'Real-time dashboards, sales forecasting, performance metrics, revenue attribution, custom report builder, and executive summaries. Make data-driven sales decisions.',
-                benefits: [
-                    'Track sales performance with real-time dashboards',
-                    'Forecast revenue accurately with AI-powered insights',
-                    'Generate custom reports for stakeholders'
+            {
+                icon: Receipt,
+                title: 'Invoices',
+                description: 'Convert accepted quotes to invoices in one click — with payment status tracking, PDF export, and full receivables visibility.',
+                subFeatures: [
+                    'One-click invoice creation from accepted quotations',
+                    'Line-item detail with taxes, discounts, and subtotals',
+                    'Payment status tracking: draft, sent, partial, paid, overdue',
+                    'Branded PDF invoice generation from configurable templates',
+                    'Linked back to the originating quotation and opportunity',
                 ]
             },
-            { 
-                icon: Mail, 
-                title: 'Email Integration', 
-                description: 'Gmail/Outlook sync, email tracking and open rates, automated email sequences, email templates library, and email-to-CRM logging. Never miss a customer communication.',
-                benefits: [
-                    'Track email opens and engagement automatically',
-                    'Automate follow-up sequences',
-                    'Sync all emails to CRM automatically'
+            {
+                icon: ShoppingCart,
+                title: 'Sales Orders',
+                description: 'Track order fulfilment from won deal through delivery, tied directly to the account and opportunity that generated it.',
+                subFeatures: [
+                    'Order creation from won opportunities or standalone',
+                    'Order line items linked to the product catalog',
+                    'Order status tracking from confirmed through delivered',
+                    'Account and opportunity linkage for full revenue traceability',
+                    'Fulfilment notes and document attachments per order',
                 ]
             },
-            { 
-                icon: Calendar, 
-                title: 'Calendar Integration', 
-                description: 'Google Calendar/Outlook sync, meeting scheduling automation, availability management, calendar-based follow-ups, and meeting notes. Manage your schedule efficiently.',
-                benefits: [
-                    'Sync calendars and never double-book',
-                    'Automate meeting scheduling',
-                    'Set follow-ups based on calendar events'
+            {
+                icon: GitBranch,
+                title: 'Approval Processes',
+                description: 'Route deals, quotes, and orders through configurable multi-step approval chains before they proceed.',
+                subFeatures: [
+                    'Configurable approval chains with sequential or parallel routing',
+                    'Approver assignment by role, user, or manager hierarchy',
+                    'Approval request notifications with inline approve/reject actions',
+                    'Full approval history log per record with timestamps',
+                    'Fallback rules for absent approvers and escalation paths',
                 ]
             },
-            { 
-                icon: Smartphone, 
-                title: 'Mobile App', 
-                description: 'Full CRM functionality on iOS and Android devices, offline mode, voice-to-text notes, GPS location tracking, mobile document signing, and quick actions. Work from anywhere.',
-                benefits: [
-                    'Access full CRM functionality on mobile',
-                    'Work offline and sync when online',
-                    'Capture notes and updates on-the-go'
+            {
+                icon: Package,
+                title: 'Products & Inventory',
+                description: 'Maintain a centralized product catalog with pricing, categories, and stock levels — referenced by quotes, invoices, and orders.',
+                subFeatures: [
+                    'Product catalog with SKU, description, category, and pricing',
+                    'Multiple price lists per product for different customer tiers',
+                    'Stock level tracking with low-stock alerts',
+                    'Product linkage to quotes, invoices, and sales orders',
+                    'CSV bulk import and bulk update support',
                 ]
             },
-            { 
-                icon: RefreshCw, 
-                title: 'Workflow Automation', 
-                description: 'Automate repetitive tasks, lead scoring automation, automated follow-up sequences, task automation, workflow builder, and integration with Flowtilla. Save time and increase productivity.',
-                benefits: [
-                    'Automate 80% of repetitive sales tasks',
-                    'Set up automated follow-up sequences',
-                    'Build custom workflows without coding'
+            {
+                icon: MessageCircle,
+                title: 'Tickets',
+                description: 'Manage customer support from the same system you sell — with priority, status, SLA targets, and full case history.',
+                subFeatures: [
+                    'Ticket creation from email, webform, or manual entry',
+                    'Priority and status workflow: open, in-progress, resolved, closed',
+                    'SLA target tracking with breach alerts',
+                    'Linked to the customer contact and account record',
+                    'Full thread history with internal notes and customer replies',
+                ]
+            },
+            {
+                icon: Mail,
+                title: 'Communications',
+                description: 'Every email, call, and meeting logged in one unified inbox — so no customer interaction ever falls through the cracks.',
+                subFeatures: [
+                    'Unified inbox for inbound and outbound emails per record',
+                    'Call logging with duration, outcome, and notes',
+                    'Meeting records with agenda, attendees, and outcome notes',
+                    'Linked to the contact, account, or ticket being discussed',
+                    'Full chronological communication timeline per customer',
+                ]
+            },
+            {
+                icon: Activity,
+                title: 'Marketing Campaigns',
+                description: 'Run campaigns, attribute leads back to the source, and measure revenue impact — without leaving the CRM.',
+                subFeatures: [
+                    'Campaign setup with type, budget, and date tracking',
+                    'Lead attribution per campaign with source tagging',
+                    'Pipeline and revenue reports filtered by campaign',
+                    'Campaign-level conversion tracking from lead to close',
+                    'Multi-channel support: email, event, and webform campaigns',
+                ]
+            },
+            {
+                icon: Globe,
+                title: 'Webforms',
+                description: 'Embed lead-capture forms on any website and have submissions flow directly into the CRM as new leads.',
+                subFeatures: [
+                    'Form builder with custom fields and validation rules',
+                    'Embeddable on any website via script or iframe',
+                    'Automatic lead creation on submission with source tagging',
+                    'Field mapping to CRM lead fields',
+                    'Submission notifications and configurable auto-responses',
+                ]
+            },
+            {
+                icon: Workflow,
+                title: 'Email Templates & Cadences',
+                description: 'Send consistent, personalized outreach at scale — with reusable templates and automated drip cadences.',
+                subFeatures: [
+                    'Email template builder with merge fields for personalization',
+                    'Drip cadence builder with step delays and conditional branching',
+                    'Shared template library across the sales team',
+                    'Cadence enrollment per lead or contact segment',
+                    'Open, click, and reply tracking per email sent',
+                ]
+            },
+            {
+                icon: UserPlus,
+                title: 'Bulk Upload',
+                description: 'Import leads, contacts, and accounts in bulk via CSV — with field mapping, validation, and duplicate detection.',
+                subFeatures: [
+                    'CSV upload for leads, contacts, and accounts',
+                    'Column-to-field mapping interface with live preview',
+                    'Duplicate detection with merge or skip options per row',
+                    'Row-level validation errors displayed before commit',
+                    'Import history with record count and error log',
+                ]
+            },
+            {
+                icon: Calendar,
+                title: 'Calendar & Events',
+                description: 'Schedule and track meetings, events, and deadlines in a CRM-native calendar linked to every relevant record.',
+                subFeatures: [
+                    'Day, week, and month calendar views',
+                    'Event and meeting creation linked to contacts, accounts, or opportunities',
+                    'Recurring event support with exception handling',
+                    'Calendar visibility across team members with role permissions',
+                    'Event reminders and notifications',
+                ]
+            },
+            {
+                icon: ClipboardList,
+                title: 'Tasks & Activities',
+                description: 'Assign, track, and close tasks across every record type — so follow-ups never slip and activity feeds stay current.',
+                subFeatures: [
+                    'Task creation linked to any lead, contact, account, or deal',
+                    'Due date, priority, and assignee tracking per task',
+                    'Activity feed showing all completed and pending actions',
+                    'Bulk task assignment and status updates across records',
+                    'Call, meeting, and email logging as activity entries',
+                ]
+            },
+            {
+                icon: BookOpen,
+                title: 'Notes & Documents',
+                description: 'Add rich-text notes and file attachments directly on any record — so context is always where the work is.',
+                subFeatures: [
+                    'Rich-text note editor with formatting support',
+                    'Notes linked to leads, contacts, accounts, opportunities, and tickets',
+                    'File attachment support per record (PDF, images, documents)',
+                    'Notes and documents visible in the full activity timeline',
+                    'Internal-only notes for team collaboration on a record',
+                ]
+            },
+            {
+                icon: LayoutTemplate,
+                title: 'Custom Fields & Layouts',
+                description: 'Extend every record type with your own fields and rearrange the UI layout — without writing any code.',
+                subFeatures: [
+                    'Custom field types: text, number, date, dropdown, checkbox, relation',
+                    'Field groups and sections for organized record layout design',
+                    'Drag-and-drop layout editor per record type',
+                    'Field-level visibility and required-field rules by role',
+                    'Default value configuration and field validation rules',
+                ]
+            },
+            {
+                icon: Zap,
+                title: 'Custom Buttons & Functions',
+                description: 'Build one-click automations on any record — from updating a field to calling an external API — with a code-based function runner.',
+                subFeatures: [
+                    'Custom button placement on any record detail view',
+                    'Code-based function execution triggered on button click',
+                    'Full access to record data within the function context',
+                    'External API calls from within function code',
+                    'Execution log with success/error tracking per run',
+                ]
+            },
+            {
+                icon: Link,
+                title: 'Webhooks',
+                description: 'Push CRM events to any external system in real time — on record create, update, or custom trigger.',
+                subFeatures: [
+                    'Webhook endpoints configured per CRM event type',
+                    'Events supported: record created, updated, deleted, status changed',
+                    'Custom payload mapping per webhook destination',
+                    'Delivery log with automatic retry on failure',
+                    'Authentication header support for secure webhook endpoints',
                 ]
             },
         ],
         useCases: [
             {
-                title: 'B2B SaaS Companies',
-                description: 'Manage your entire sales cycle from lead to subscription with integrated invoicing and subscription tracking.',
-                benefits: ['Complete sales cycle', 'Subscription tracking', 'Integrated invoicing', 'Sales analytics', 'Pipeline forecasting'],
+                title: 'Sales Pipeline & Revenue',
+                description: 'Run the full revenue motion in one place — capture Leads, work Opportunities through a weighted pipeline, then generate Quotations, Sales Orders, and Invoices the moment a deal is won.',
+                benefits: ['Lead capture & scoring', 'Weighted pipeline & forecasting', 'PDF quotes & invoices', 'Sales order tracking', 'Multi-step deal approvals'],
             },
             {
-                title: 'Manufacturing Companies',
-                description: 'Handle complex B2B sales with quotations, orders, and invoice generation. Track large deals and long sales cycles.',
-                benefits: ['Quotation management', 'Order tracking', 'Invoice automation', 'CRM integration', 'Deal tracking'],
+                title: 'Customer Support & Ticketing',
+                description: 'Support customers from the same system you sell to them. Track Tickets with priority, status, and SLA targets, with every email, call, and meeting unified in one Communications inbox.',
+                benefits: ['SLA-tracked ticketing', 'Priority & status workflows', 'Unified Communications inbox', 'Full activity timeline', 'Documents per record'],
             },
             {
-                title: 'Service Providers',
-                description: 'Track leads, manage opportunities, and generate invoices for your services. Manage client relationships and project-based sales.',
-                benefits: ['Lead tracking', 'Opportunity management', 'Service invoicing', 'Client relationship', 'Project tracking'],
+                title: 'Marketing & Lead Generation',
+                description: 'Fill the top of the funnel and prove what works. Launch Marketing Campaigns with lead attribution, capture demand with embedded Webforms, and nurture with Email Templates & Cadences.',
+                benefits: ['Campaigns with lead attribution', 'Embeddable webforms', 'Email cadences & drip sequences', 'CSV bulk upload', 'Lead source tracking'],
             },
             {
-                title: 'Real Estate',
-                description: 'Property sales pipeline management for commercial and residential real estate. Track properties, leads, and deals.',
-                benefits: ['Property tracking', 'Lead management', 'Deal pipeline', 'Document management', 'Commission tracking'],
-            },
-            {
-                title: 'Professional Services',
-                description: 'Service-based sales tracking for consulting, legal, and professional services firms. Manage proposals, contracts, and client relationships.',
-                benefits: ['Proposal management', 'Contract tracking', 'Client relationship', 'Project-based sales', 'Time tracking integration'],
+                title: 'Full CRM',
+                description: 'Sales, support, and marketing on a single platform. Combine all 32 modules into one source of truth, then tailor it to your workflow with Custom Fields, Custom Functions, and Webhooks.',
+                benefits: ['Sales + support + marketing unified', 'Custom fields & layouts', 'One-click custom automations', 'Webhooks to any system', 'Single shared customer record'],
             },
         ],
         pricing: {
@@ -487,8 +634,8 @@ export const productPagesData: ProductsMap = {
             ],
         },
         finalCTA: {
-            headline: 'Ready to Transform Your Sales Process?',
-            description: 'Join 1,000+ companies using our B2B CRM to manage their sales cycle from lead to invoice. Get enterprise power at a fraction of the cost.',
+            headline: 'Start Free. Replace Three Tools by Next Week.',
+            description: '1,000+ companies have retired their separate sales tool, help desk, and marketing platform for one shared customer record. 14-day free trial, no credit card, same-day setup — your first lead-to-invoice flow can be live before the trial is over.',
             primaryCTA: 'Start Free Trial',
             secondaryCTAs: ['Schedule Demo', 'Contact Sales'],
         },

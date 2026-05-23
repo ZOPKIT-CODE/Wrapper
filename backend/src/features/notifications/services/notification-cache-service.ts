@@ -1,3 +1,5 @@
+import Logger from '../../../utils/logger.js';
+
 interface CacheEntry<T = unknown> {
   value: T;
   expiresAt: number;
@@ -56,7 +58,7 @@ class NotificationCacheService {
       this.cache.set(key, { value: template, expiresAt });
       return true;
     } catch (error) {
-      console.error('Failed to cache template:', error);
+      Logger.log('error', 'general', 'cacheTemplate', 'Failed to cache template', { error: (error as Error).message });
       return false;
     }
   }
@@ -77,7 +79,7 @@ class NotificationCacheService {
       
       return entry.value;
     } catch (error) {
-      console.error('Failed to get cached template:', error);
+      Logger.log('error', 'general', 'getTemplate', 'Failed to get cached template', { error: (error as Error).message });
       return null;
     }
   }
@@ -94,7 +96,7 @@ class NotificationCacheService {
       this.cache.delete(this._getKey('templates', 'list'));
       return true;
     } catch (error) {
-      console.error('Failed to invalidate template cache:', error);
+      Logger.log('error', 'general', 'invalidateTemplate', 'Failed to invalidate template cache', { error: (error as Error).message });
       return false;
     }
   }
@@ -110,7 +112,7 @@ class NotificationCacheService {
       this.cache.set(key, { value: templates, expiresAt });
       return true;
     } catch (error) {
-      console.error('Failed to cache template list:', error);
+      Logger.log('error', 'general', 'cacheTemplateList', 'Failed to cache template list', { error: (error as Error).message });
       return false;
     }
   }
@@ -132,7 +134,7 @@ class NotificationCacheService {
       
       return entry.value;
     } catch (error) {
-      console.error('Failed to get cached template list:', error);
+      Logger.log('error', 'general', 'getTemplateList', 'Failed to get cached template list', { error: (error as Error).message });
       return null;
     }
   }
@@ -147,7 +149,7 @@ class NotificationCacheService {
       this.cache.set(key, { value: metadata, expiresAt });
       return true;
     } catch (error) {
-      console.error('Failed to cache tenant metadata:', error);
+      Logger.log('error', 'general', 'cacheTenantMetadata', 'Failed to cache tenant metadata', { error: (error as Error).message });
       return false;
     }
   }
@@ -168,7 +170,7 @@ class NotificationCacheService {
       
       return entry.value;
     } catch (error) {
-      console.error('Failed to get cached tenant metadata:', error);
+      Logger.log('error', 'general', 'getTenantMetadata', 'Failed to get cached tenant metadata', { error: (error as Error).message });
       return null;
     }
   }
@@ -189,7 +191,7 @@ class NotificationCacheService {
       }
       return true;
     } catch (error) {
-      console.error('Failed to invalidate tenant cache:', error);
+      Logger.log('error', 'general', 'invalidateTenant', 'Failed to invalidate tenant cache', { error: (error as Error).message });
       return false;
     }
   }
@@ -205,7 +207,7 @@ class NotificationCacheService {
       this.cache.set(key, { value: tenantIds, expiresAt });
       return true;
     } catch (error) {
-      console.error('Failed to cache filtered tenants:', error);
+      Logger.log('error', 'general', 'cacheFilteredTenants', 'Failed to cache filtered tenants', { error: (error as Error).message });
       return false;
     }
   }
@@ -227,7 +229,7 @@ class NotificationCacheService {
       
       return entry.value;
     } catch (error) {
-      console.error('Failed to get cached filtered tenants:', error);
+      Logger.log('error', 'general', 'getFilteredTenants', 'Failed to get cached filtered tenants', { error: (error as Error).message });
       return null;
     }
   }
@@ -243,7 +245,7 @@ class NotificationCacheService {
       this.cache.set(key, { value: stats, expiresAt });
       return true;
     } catch (error) {
-      console.error('Failed to cache stats:', error);
+      Logger.log('error', 'general', 'cacheStats', 'Failed to cache stats', { error: (error as Error).message });
       return false;
     }
   }
@@ -265,7 +267,7 @@ class NotificationCacheService {
       
       return entry.value;
     } catch (error) {
-      console.error('Failed to get cached stats:', error);
+      Logger.log('error', 'general', 'getStats', 'Failed to get cached stats', { error: (error as Error).message });
       return null;
     }
   }
@@ -289,7 +291,7 @@ class NotificationCacheService {
       }
       return true;
     } catch (error) {
-      console.error('Failed to invalidate stats cache:', error);
+      Logger.log('error', 'general', 'invalidateStats', 'Failed to invalidate stats cache', { error: (error as Error).message });
       return false;
     }
   }
@@ -301,10 +303,10 @@ class NotificationCacheService {
     try {
       // This would be called with template IDs that are frequently accessed
       // Implementation would fetch templates and cache them
-      console.log(`🔥 Warming cache for ${templateIds.length} templates`);
+      Logger.log('info', 'general', 'warmTemplateCache', 'Warming cache for templates', { count: templateIds.length });
       return true;
     } catch (error) {
-      console.error('Failed to warm template cache:', error);
+      Logger.log('error', 'general', 'warmTemplateCache', 'Failed to warm template cache', { error: (error as Error).message });
       return false;
     }
   }
@@ -321,10 +323,10 @@ class NotificationCacheService {
           count++;
         }
       }
-      console.log(`🧹 Cleared ${count} cache entries`);
+      Logger.log('info', 'general', 'clearAll', 'Cleared cache entries', { count });
       return true;
     } catch (error) {
-      console.error('Failed to clear cache:', error);
+      Logger.log('error', 'general', 'clearAll', 'Failed to clear cache', { error: (error as Error).message });
       return false;
     }
   }

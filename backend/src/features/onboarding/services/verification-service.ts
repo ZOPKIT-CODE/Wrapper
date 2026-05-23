@@ -5,6 +5,7 @@
  */
 
 import axios from 'axios';
+import Logger from '../../../utils/logger.js';
 
 class VerificationService {
   private apiKey: string;
@@ -73,15 +74,12 @@ class VerificationService {
 
     // Log configuration status (without exposing secrets)
     if (!this.isConfigured()) {
-      console.warn('⚠️ Verification service not configured.');
-      console.warn('   Required: VERIFICATION_API_KEY and VERIFICATION_API_SECRET');
-      console.warn('   Current status:', {
+      Logger.log('warning', 'general', 'VerificationService', 'Verification service not configured. Required: VERIFICATION_API_KEY and VERIFICATION_API_SECRET', {
         apiKey: this.apiKey ? `${this.apiKey.substring(0, 4)}...` : 'NOT SET',
         apiSecret: this.apiSecret ? 'SET' : 'NOT SET'
       });
     } else {
-      console.log('✅ Verification service configured');
-      console.log(`🔧 API Environment: ${this.isProduction ? 'PRODUCTION' : 'SANDBOX'}`);
+      Logger.log('info', 'general', 'VerificationService', 'Verification service configured', { environment: this.isProduction ? 'PRODUCTION' : 'SANDBOX' });
     }
   }
 
@@ -104,7 +102,7 @@ class VerificationService {
     }
 
     try {
-      console.log('🔐 Authenticating with verification API...');
+      Logger.log('info', 'general', 'authenticate', 'Authenticating with verification API');
       
       const url = `${this.baseUrl}/authenticate`;
       // Use plain axios without custom agents - Sandbox requires standard TLS negotiation
@@ -125,16 +123,16 @@ class VerificationService {
         this.accessToken = result.data.access_token;
         // Set expiry to 1 hour from now (tokens typically last 1 hour)
         this.tokenExpiry = Date.now() + (60 * 60 * 1000);
-        console.log('✅ Authentication successful');
+        Logger.log('info', 'general', 'authenticate', 'Authentication successful');
         return this.accessToken;
       } else {
         throw new Error('Invalid authentication response');
       }
     } catch (err: unknown) {
       const error = err as Error & { response?: { status: number; data?: unknown } };
-      console.error('❌ Authentication error:', error);
+      Logger.log('error', 'general', 'authenticate', 'Authentication error', { error: error.message });
       if (error.response) {
-        console.error(`❌ Authentication failed: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
+        Logger.log('error', 'general', 'authenticate', 'Authentication failed', { status: error.response.status, data: error.response.data });
         throw new Error(`Authentication failed: ${error.response.status}`);
       }
       throw new Error(`Failed to authenticate: ${error.message}`);
@@ -177,7 +175,7 @@ class VerificationService {
     const requestUrl = `${this.baseUrl}/kyc/pan/verify`;
     try {
       if (!this.isConfigured()) {
-        console.warn('⚠️ Verification credentials not configured, skipping PAN verification');
+        Logger.log('warning', 'general', 'verifyPAN', 'Verification credentials not configured, skipping PAN verification');
         return {
           verified: false,
           error: 'Verification service not configured. Please contact support or check your environment variables.',
@@ -195,8 +193,7 @@ class VerificationService {
         };
       }
 
-      console.log(`🔍 Verifying PAN: ${pan}${name ? ` with name: ${name}` : ''}`);
-      console.log(`🔗 Using API URL: ${this.baseUrl}`);
+      Logger.log('info', 'general', 'verifyPAN', 'Verifying PAN', { pan, name: name ?? undefined, baseUrl: this.baseUrl });
 
       const body = {
         pan: pan.toUpperCase(),
@@ -206,7 +203,7 @@ class VerificationService {
         ...(dateOfBirth && { date_of_birth: dateOfBirth })
       };
       
-      console.log(`📤 Request URL: ${requestUrl}`);
+      Logger.log('info', 'general', 'verifyPAN', 'Sending PAN verification request', { requestUrl });
 
       // Use plain axios without custom agents - Sandbox requires standard TLS negotiation
       const response = await axios({
@@ -224,7 +221,7 @@ class VerificationService {
         const isVerified = verificationData.status === 'valid' || verificationData.status === 'active';
         
         if (isVerified) {
-          console.log(`✅ PAN verified successfully: ${pan}`);
+          Logger.log('info', 'general', 'verifyPAN', 'PAN verified successfully', { pan });
           return {
             verified: true,
             error: null,
@@ -241,7 +238,7 @@ class VerificationService {
             type: verificationData.category || verificationData.type
           };
         } else {
-          console.log(`❌ PAN verification failed: ${pan} - Status: ${verificationData.status}`);
+          Logger.log('warning', 'general', 'verifyPAN', 'PAN verification failed', { pan, status: verificationData.status });
           return {
             verified: false,
             error: verificationData.remarks || `PAN verification failed. Status: ${verificationData.status}`,
@@ -249,7 +246,7 @@ class VerificationService {
           };
         }
       } else {
-        console.log(`❌ PAN verification failed: ${pan} - ${result.message || 'Invalid response'}`);
+        Logger.log('warning', 'general', 'verifyPAN', 'PAN verification failed: invalid response', { pan, message: result.message });
         return {
           verified: false,
           error: result.message || 'PAN verification failed. Please check the PAN number.',
@@ -258,7 +255,7 @@ class VerificationService {
       }
     } catch (err: unknown) {
       const error = err as Error & { response?: { status: number; data?: unknown } };
-      console.error('❌ PAN verification error:', error);
+      Logger.log('error', 'general', 'verifyPAN', 'PAN verification error', { error: error.message });
 
       // Handle axios errors
       if (error.response) {
@@ -336,7 +333,7 @@ class VerificationService {
   async verifyGSTIN(gstin: string, businessName: string | null = null): Promise<Record<string, unknown>> {
     try {
       if (!this.isConfigured()) {
-        console.warn('⚠️ Verification credentials not configured, skipping GSTIN verification');
+        Logger.log('warning', 'general', 'verifyGSTIN', 'Verification credentials not configured, skipping GSTIN verification');
         return {
           verified: false,
           error: 'Verification service not configured. Please contact support or check your environment variables.',
@@ -354,15 +351,14 @@ class VerificationService {
         };
       }
 
-      console.log(`🔍 Verifying GSTIN: ${gstin}${businessName ? ` for business: ${businessName}` : ''}`);
-      console.log(`🔗 Using API URL: ${this.baseUrl}`);
+      Logger.log('info', 'general', 'verifyGSTIN', 'Verifying GSTIN', { gstin, businessName: businessName ?? undefined, baseUrl: this.baseUrl });
 
       const url = `${this.baseUrl}/gst/compliance/public/gstin/search`;
       const body = {
         gstin: gstin.toUpperCase()
       };
       
-      console.log(`📤 Request URL: ${url}`);
+      Logger.log('info', 'general', 'verifyGSTIN', 'Sending GSTIN verification request', { url });
 
       // Use plain axios without custom agents - Sandbox requires standard TLS negotiation
       try {
@@ -380,7 +376,7 @@ class VerificationService {
           const gstinData = resultData;
           const isActive = gstinData.sts === 'Active' || gstinData.sts === 'active';
           
-          console.log(`✅ GSTIN verified successfully: ${gstin}`);
+          Logger.log('info', 'general', 'verifyGSTIN', 'GSTIN verified successfully', { gstin });
           return {
             verified: isActive,
             error: isActive ? null : `GSTIN status is ${gstinData.sts}. Only active GSTINs are allowed.`,
@@ -407,7 +403,7 @@ class VerificationService {
         if (inner.response) {
           const status = inner.response.status;
           const errorData = (inner.response.data as Record<string, unknown>) || {};
-          console.error(`❌ GSTIN verification failed: ${status}`, errorData);
+          Logger.log('error', 'general', 'verifyGSTIN', 'GSTIN verification failed', { status, errorData });
           if (status === 403) {
             return {
               verified: false,
@@ -440,7 +436,7 @@ class VerificationService {
             retryable: status >= 500
           };
         }
-        console.error('❌ GSTIN verification network error:', inner.message);
+        Logger.log('error', 'general', 'verifyGSTIN', 'GSTIN verification network error', { error: inner.message });
         const msg = `Network error: ${inner.message}`;
         const isAuthOrConfigError = /Authentication failed|401|Subscription (has )?expired|Invalid API credentials/i.test(inner.message || '');
         return {
@@ -453,7 +449,7 @@ class VerificationService {
       }
     } catch (err: unknown) {
       const error = err as Error & { response?: { status: number; data?: unknown } };
-      console.error('❌ GSTIN verification error:', error);
+      Logger.log('error', 'general', 'verifyGSTIN', 'GSTIN verification error', { error: error.message });
       const msg = error.message || 'An error occurred during GSTIN verification';
       const isAuthOrConfigError = /Authentication failed|401|Subscription (has )?expired|Invalid API credentials/i.test(msg) ||
         (error.response && error.response.status === 401);
@@ -490,7 +486,7 @@ class VerificationService {
         };
       }
 
-      console.log(`🔍 Fetching GSTINs for PAN: ${pan}`);
+      Logger.log('info', 'general', 'getGSTINsByPAN', 'Fetching GSTINs for PAN', { pan });
 
       const url = `${this.baseUrl}/gst/compliance/public/pan/search`;
       const body = {
@@ -527,7 +523,7 @@ class VerificationService {
       };
     } catch (err: unknown) {
       const error = err as Error & { response?: { data?: { message?: string } } };
-      console.error('❌ Error fetching GSTINs by PAN:', error);
+      Logger.log('error', 'general', 'getGSTINsByPAN', 'Error fetching GSTINs by PAN', { error: error.message });
       return {
         success: false,
         error: error.response?.data?.message || error.message || 'Failed to fetch GSTINs',

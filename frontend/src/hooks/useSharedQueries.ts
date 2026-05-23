@@ -519,7 +519,11 @@ export function useInvalidateQueries() {
     invalidateUnreadCount: () => queryClient.invalidateQueries({ queryKey: queryKeys.unreadCount }),
     invalidateUsers: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
     invalidateEntities: (tenantId?: string) => queryClient.invalidateQueries({ queryKey: queryKeys.entities(tenantId || '') }),
-    invalidateRoles: () => queryClient.invalidateQueries({ queryKey: ['roles'] }),
+    invalidateRoles: () => {
+      queryClient.invalidateQueries({ queryKey: ['roles'] })
+      // Also invalidate user management queries so useAvailableRoles reflects new roles immediately
+      queryClient.invalidateQueries({ queryKey: ['users'] })
+    },
     invalidateAll: () => queryClient.invalidateQueries(),
     prefetchAuthStatus: () => queryClient.prefetchQuery({
       queryKey: queryKeys.authStatus,

@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useNavigate } from '@tanstack/react-router';
+import { CrmRoleTemplatesSection } from './components/CrmRoleTemplatesSection';
 import { ShieldPlus, MoreVertical, Eye, Edit, Copy, Trash2, Search, Download, Archive, RefreshCw, Shield, Plus, Crown, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -650,6 +651,9 @@ export function RoleManagementDashboard() {
             </PearlButton>
           )}
         />
+
+        {/* CRM Role Templates */}
+        <CrmRoleTemplatesSection />
 
         {/* Enhanced Filters and Search */}
         <Card className="rounded-2xl bg-white shadow-sm" style={{ borderColor: 'var(--zk-line)' }}>

@@ -1,6 +1,7 @@
 packages:
   - "backend"
   - "frontend"
+  - "video"
 
 onlyBuiltDependencies:
   - '@tailwindcss/oxide'

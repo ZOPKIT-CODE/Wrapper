@@ -67,7 +67,7 @@ if (startupStorageResetEnabled) {
   const shouldRemoveKey = (key: string) => {
     if (explicitSensitiveKeys.has(key)) return true
     if (/^refreshToken\d+$/i.test(key)) return true
-    if (key !== "pendingInvitationToken" && /(access.?token|refresh.?token|id.?token)/i.test(key)) {
+    if (/(access.?token|refresh.?token|id.?token)/i.test(key)) {
       return true
     }
     return false

@@ -1,7 +1,8 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
+import { useKindeAuth } from '@kinde-oss/kinde-auth-react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ChevronRight, Menu, X } from 'lucide-react';
+import { ChevronRight, LayoutDashboard, Menu, Rocket, X } from 'lucide-react';
 import {
   Navbar,
   NavBody,
@@ -13,6 +14,7 @@ import {
 } from '@/components/ui/resizable-navbar';
 import { DynamicIcon } from '@/features/landing/components/Icons';
 import { getAllIndustries } from '@/data/industryPages';
+import api, { createCancelableRequest } from '@/lib/api';
 
 /** Same slugs + labels as landing `/landing` — matches `productPages` routes */
 const MARKETING_NAV_PRODUCTS = [
@@ -35,18 +37,101 @@ export const DEFAULT_MARKETING_NAV_ITEMS = [
 ] as const;
 
 export type MarketingNavbarProps = {
-  /** Right side of desktop bar (Sign In, Sign up, session CTA, etc.) */
-  desktopRight: React.ReactNode;
-  /** Bottom of mobile sheet after Products / Industries / links */
-  mobileFooter: React.ReactNode;
+  /** Override the right-side desktop CTA. Omit to use the built-in auth-aware button. */
+  desktopRight?: React.ReactNode;
+  /** Override the mobile sheet footer CTA. Omit to use the built-in auth-aware button. */
+  mobileFooter?: React.ReactNode;
 };
 
+interface CtaConfig {
+  label: string;
+  icon: React.ReactNode;
+  action: () => void;
+  disabled: boolean;
+  variant: 'primary' | 'gradient';
+}
+
+function useMarketingCta(): CtaConfig {
+  const navigate = useNavigate();
+  const { login, isAuthenticated } = useKindeAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const [onboardingCompleted, setOnboardingCompleted] = useState(false);
+  const [backendAuthenticated, setBackendAuthenticated] = useState<boolean | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
+
+  useEffect(() => {
+    const { signal, cancel } = createCancelableRequest();
+    const timer = setTimeout(async () => {
+      try {
+        const response = await api.get('/admin/auth-status', { signal });
+        const auth = response.data?.authStatus;
+        const isBackendAuth = auth?.isAuthenticated === true;
+        setBackendAuthenticated(isBackendAuth);
+        setOnboardingCompleted(
+          isBackendAuth && (auth?.onboardingCompleted === true || auth?.needsOnboarding === false)
+        );
+      } catch {
+        setBackendAuthenticated(null);
+      }
+      setAuthChecked(true);
+    }, 100);
+
+    return () => {
+      clearTimeout(timer);
+      cancel();
+    };
+  }, [isAuthenticated]);
+
+  const handleLogin = async () => {
+    setIsLoading(true);
+    try {
+      const googleConnectionId = import.meta.env.VITE_KINDE_GOOGLE_CONNECTION_ID;
+      if (googleConnectionId) {
+        await login({ connectionId: googleConnectionId });
+      } else {
+        await login();
+      }
+    } catch {
+      // ignore
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const hasSession = authChecked && (backendAuthenticated ?? isAuthenticated);
+
+  if (!authChecked) {
+    return { label: 'Loading...', icon: null, action: () => undefined, disabled: true, variant: 'primary' };
+  }
+  if (!hasSession) {
+    return { label: isLoading ? 'Loading...' : 'Sign In', icon: null, action: handleLogin, disabled: isLoading, variant: 'primary' };
+  }
+  if (onboardingCompleted) {
+    return {
+      label: 'Go to Workspace',
+      icon: <LayoutDashboard className="w-4 h-4 mr-2 inline" />,
+      action: () => navigate({ to: '/dashboard/applications' }),
+      disabled: false,
+      variant: 'gradient',
+    };
+  }
+  return {
+    label: 'Complete onboarding',
+    icon: <Rocket className="w-4 h-4 mr-2 inline" />,
+    action: () => navigate({ to: '/onboarding' }),
+    disabled: false,
+    variant: 'gradient',
+  };
+}
+
 /**
- * Shared marketing site navbar: Products + Industries dropdowns, Pricing & Contact,
- * same layout/visuals as the landing page.
+ * Shared marketing site navbar used across all public pages.
+ * Renders a built-in auth-aware CTA by default; pass desktopRight/mobileFooter
+ * only if a page needs a one-off override.
  */
 export function MarketingNavbar({ desktopRight, mobileFooter }: MarketingNavbarProps) {
   const navigate = useNavigate();
+  const cta = useMarketingCta();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showProductsDropdown, setShowProductsDropdown] = useState(false);
   const [showIndustriesDropdown, setShowIndustriesDropdown] = useState(false);
@@ -101,6 +186,32 @@ export function MarketingNavbar({ desktopRight, mobileFooter }: MarketingNavbarP
   );
 
   const navItems = DEFAULT_MARKETING_NAV_ITEMS;
+
+  const defaultDesktopCta = (
+    <NavbarButton
+      variant={cta.variant}
+      onClick={cta.action}
+      disabled={cta.disabled}
+      as="button"
+      className="text-[13px]"
+    >
+      {cta.icon}
+      {cta.label}
+    </NavbarButton>
+  );
+
+  const defaultMobileCta = (
+    <NavbarButton
+      variant={cta.variant}
+      onClick={cta.action}
+      disabled={cta.disabled}
+      as="button"
+      className="w-full justify-center"
+    >
+      {cta.icon}
+      {cta.label}
+    </NavbarButton>
+  );
 
   return (
     <Navbar>
@@ -214,7 +325,9 @@ export function MarketingNavbar({ desktopRight, mobileFooter }: MarketingNavbarP
           ))}
         </div>
 
-        <div className="flex items-center gap-2 shrink-0 ml-4">{desktopRight}</div>
+        <div className="flex items-center gap-2 shrink-0 ml-4">
+          {desktopRight ?? defaultDesktopCta}
+        </div>
       </NavBody>
 
       <MobileNav>
@@ -223,57 +336,73 @@ export function MarketingNavbar({ desktopRight, mobileFooter }: MarketingNavbarP
           <button
             type="button"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="p-2 rounded-lg hover:bg-slate-100 transition-colors duration-150 cursor-pointer"
+            className="w-9 h-9 rounded-xl bg-[#13204A] flex items-center justify-center transition-all duration-150 cursor-pointer hover:bg-[#1B2E5A] active:scale-95"
             aria-label="Toggle menu"
           >
-            {isMobileMenuOpen ? <X className="w-5 h-5 text-slate-700" /> : <Menu className="w-5 h-5 text-slate-700" />}
+            {isMobileMenuOpen
+              ? <X className="w-4 h-4 text-white" />
+              : <Menu className="w-4 h-4 text-white" />}
           </button>
         </MobileNavHeader>
 
         <MobileNavMenu isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)}>
-          <div className="border-b border-slate-100 pb-3 mb-3">
-            <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider px-3 mb-1.5">Products</p>
-            {MARKETING_NAV_PRODUCTS.map((product) => (
+          {/* Products */}
+          <div className="mb-2">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2 mb-1">Products</p>
+            <div className="max-h-[220px] overflow-y-auto rounded-xl bg-white/60 border border-black/[0.06] divide-y divide-black/[0.04]">
+              {MARKETING_NAV_PRODUCTS.map((product) => (
+                <a
+                  key={product.id}
+                  href={`/products/${product.id}`}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center gap-2.5 px-3 py-2.5 text-[13px] text-[#1B2E5A] font-medium hover:bg-white/80 active:bg-white transition-colors duration-100 cursor-pointer first:rounded-t-xl last:rounded-b-xl"
+                >
+                  <span className="w-6 h-6 rounded-md bg-slate-100 flex items-center justify-center shrink-0">
+                    <DynamicIcon name={product.icon} className="w-3 h-3 text-slate-500" />
+                  </span>
+                  {product.name}
+                </a>
+              ))}
+            </div>
+          </div>
+
+          {/* Industries */}
+          <div className="mb-2">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2 mb-1">Industries</p>
+            <div className="rounded-xl bg-white/60 border border-black/[0.06] divide-y divide-black/[0.04]">
+              {allIndustries.map((industry) => (
+                <a
+                  key={industry.slug}
+                  href={`/industries/${industry.slug}`}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center gap-2 px-3 py-2.5 text-[13px] text-[#1B2E5A] font-medium hover:bg-white/80 active:bg-white transition-colors duration-100 cursor-pointer first:rounded-t-xl last:rounded-b-xl"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#3D8FE8] shrink-0" />
+                  {industry.name}
+                </a>
+              ))}
+            </div>
+          </div>
+
+          {/* Standalone links */}
+          <div className="rounded-xl bg-white/60 border border-black/[0.06] divide-y divide-black/[0.04] mb-3">
+            {navItems.map((item, idx) => (
               <a
-                key={product.id}
-                href={`/products/${product.id}`}
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="block px-3 py-1.5 text-[13px] text-[#1B2E5A] hover:text-[#162447] hover:bg-slate-50 rounded-lg transition-colors duration-100 font-medium cursor-pointer"
+                key={`mobile-link-${idx}`}
+                href={item.link}
+                onClick={(e) => {
+                  setIsMobileMenuOpen(false);
+                  handleAnchorClick(e, item.link);
+                }}
+                className="flex items-center gap-2 px-3 py-2.5 text-[13px] text-[#1B2E5A] font-medium hover:bg-white/80 active:bg-white transition-colors duration-100 cursor-pointer first:rounded-t-xl last:rounded-b-xl"
               >
-                {product.name}
+                <span className="w-1.5 h-1.5 rounded-full bg-[#6B5BD6] shrink-0" />
+                {item.name}
               </a>
             ))}
           </div>
 
-          <div className="border-b border-slate-100 pb-3 mb-3">
-            <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider px-3 mb-1.5">Industries</p>
-            {allIndustries.map((industry) => (
-              <a
-                key={industry.slug}
-                href={`/industries/${industry.slug}`}
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="block px-3 py-1.5 text-[13px] text-[#1B2E5A] hover:text-[#162447] hover:bg-slate-50 rounded-lg transition-colors duration-100 font-medium cursor-pointer"
-              >
-                {industry.name}
-              </a>
-            ))}
-          </div>
-
-          {navItems.map((item, idx) => (
-            <a
-              key={`mobile-link-${idx}`}
-              href={item.link}
-              onClick={(e) => {
-                setIsMobileMenuOpen(false);
-                handleAnchorClick(e, item.link);
-              }}
-              className="block px-3 py-1.5 text-[13px] text-[#1B2E5A] hover:text-[#162447] hover:bg-slate-50 rounded-lg transition-colors duration-100 font-medium cursor-pointer"
-            >
-              {item.name}
-            </a>
-          ))}
-
-          <div className="pt-3 mt-1">{mobileFooter}</div>
+          {mobileFooter ?? defaultMobileCta}
         </MobileNavMenu>
       </MobileNav>
     </Navbar>

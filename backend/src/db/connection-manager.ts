@@ -9,8 +9,10 @@ dotenv.config();
 class DatabaseConnectionManager {
   appConnection: Sql | null = null;
   systemConnection: Sql | null = null;
+  readConnection: Sql | null = null;
   appDb: PostgresJsDatabase<typeof schema> | null = null;
   systemDb: PostgresJsDatabase<typeof schema> | null = null;
+  readDb: PostgresJsDatabase<typeof schema> | null = null;
   initialized = false;
 
   async initialize(): Promise<void> {
@@ -67,6 +69,29 @@ class DatabaseConnectionManager {
       this.appDb = drizzle(this.appConnection, { schema });
       this.systemDb = drizzle(this.systemConnection, { schema });
 
+      // Read replica — uses DATABASE_URL_READ if set, otherwise aliases appConnection.
+      // Route all SELECT-only queries here to offload the primary.
+      const readUrl = process.env.DATABASE_URL_READ;
+      if (readUrl) {
+        this.readConnection = postgres(readUrl, {
+          max: Number(process.env.DB_READ_POOL_MAX ?? 20),
+          idle_timeout: 20,
+          connect_timeout: 5,
+          connection: {
+            statement_timeout: dbStatementTimeoutMs,
+            idle_in_transaction_session_timeout: dbIdleTransactionTimeoutMs,
+          },
+        });
+        this.readDb = drizzle(this.readConnection, { schema });
+        console.log('✅ Read-replica connection established (DATABASE_URL_READ)');
+      } else {
+        this.readConnection = this.appConnection;
+        this.readDb = this.appDb;
+        if (process.env.NODE_ENV === 'production') {
+          console.warn('⚠️  DATABASE_URL_READ not set — read queries will hit the primary');
+        }
+      }
+
       this.initialized = true;
       console.log('✅ Database connections initialized successfully');
 
@@ -109,6 +134,13 @@ class DatabaseConnectionManager {
     return this.systemDb;
   }
 
+  getReadDb(): PostgresJsDatabase<typeof schema> {
+    if (!this.readDb) {
+      throw new Error('Read Drizzle instance not initialized');
+    }
+    return this.readDb;
+  }
+
   async closeAll(): Promise<void> {
     try {
       console.log('🔌 Closing database connections...');
@@ -123,8 +155,15 @@ class DatabaseConnectionManager {
         this.systemConnection = null;
       }
 
+      // Only close readConnection if it is a distinct pool (not aliased to appConnection)
+      if (this.readConnection && this.readConnection !== this.appConnection) {
+        await this.readConnection.end();
+      }
+      this.readConnection = null;
+
       this.appDb = null;
       this.systemDb = null;
+      this.readDb = null;
       this.initialized = false;
 
       console.log('✅ Database connections closed successfully');
@@ -141,18 +180,23 @@ class DatabaseConnectionManager {
         return { status: 'not_initialized', message: 'Database connections not initialized' };
       }
 
-      const appResult = await this.appConnection!`SELECT 1 as test`;
-      const appHealthy = appResult[0]?.test === 1;
+      const [appResult, systemResult, readResult] = await Promise.all([
+        this.appConnection!`SELECT 1 as test`,
+        this.systemConnection!`SELECT 1 as test`,
+        this.readConnection!`SELECT 1 as test`,
+      ]);
 
-      const systemResult = await this.systemConnection!`SELECT 1 as test`;
+      const appHealthy    = appResult[0]?.test === 1;
       const systemHealthy = systemResult[0]?.test === 1;
-
-      const overallHealthy = appHealthy && systemHealthy;
+      const readHealthy   = readResult[0]?.test === 1;
+      const overallHealthy = appHealthy && systemHealthy && readHealthy;
 
       return {
         status: overallHealthy ? 'healthy' : 'unhealthy',
         app_connection: appHealthy ? 'healthy' : 'unhealthy',
         system_connection: systemHealthy ? 'healthy' : 'unhealthy',
+        read_connection: readHealthy ? 'healthy' : 'unhealthy',
+        read_replica: !!process.env.DATABASE_URL_READ,
         timestamp: new Date().toISOString()
       };
 
@@ -178,6 +222,10 @@ function getSystemDb() {
   return dbManager.getSystemDb();
 }
 
+function getReadDb() {
+  return dbManager.getReadDb();
+}
+
 function initializeDrizzleInstances() {
   return {
     appDb: dbManager.getAppDb(),
@@ -185,5 +233,5 @@ function initializeDrizzleInstances() {
   };
 }
 
-export { dbManager, getAppDb, getSystemDb, initializeDrizzleInstances };
+export { dbManager, getAppDb, getSystemDb, getReadDb, initializeDrizzleInstances };
 export default dbManager;

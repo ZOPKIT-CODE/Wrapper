@@ -20,8 +20,8 @@ export { default as tenantRoutes } from './routes/tenants.js';
 export { default as adminPromotionRoutes } from './routes/admin-promotion.js';
 
 // Services
-export { DashboardService } from './services/DashboardService.js';
-export { TenantAdminService } from './services/TenantAdminService.js';
-export { EntityAdminService } from './services/EntityAdminService.js';
-export { CreditAdminService } from './services/CreditAdminService.js';
+export { DashboardService } from './services/dashboard-service.js';
+export { TenantAdminService } from './services/tenant-admin-service.js';
+export { EntityAdminService } from './services/entity-admin-service.js';
+export { CreditAdminService } from './services/credit-admin-service.js';
 export { AdminPromotionService } from './services/admin-promotion-service.js';

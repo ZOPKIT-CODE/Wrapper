@@ -1,11 +1,10 @@
 import React, { Suspense, useState, useEffect } from 'react'
 import { PetpoojaHeroSection } from '@/features/landing/components/PetpoojaHeroSection'
 import { useNavigate } from '@tanstack/react-router'
-import { useKindeAuth } from '@kinde-oss/kinde-auth-react'
 import { DynamicIcon } from '@/features/landing/components/Icons'
-import { ArrowRight, FileText, GraduationCap, Users, Zap, Mail, Phone, MapPin, LayoutDashboard, Rocket } from 'lucide-react'
-import api, { createCancelableRequest } from '@/lib/api'
-import toast from 'react-hot-toast'
+import { ArrowRight, FileText, GraduationCap, Users, Zap, Mail, Phone, MapPin } from 'lucide-react'
+import api from '@/lib/api'
+import { toast } from 'sonner'
 import { consumeSessionRecoveryReason } from '@/lib/auth/session-recovery'
 
 const WorkflowVisualizer = React.lazy(() =>
@@ -13,18 +12,12 @@ const WorkflowVisualizer = React.lazy(() =>
 )
 import { getAllIndustries } from '@/data/industryPages'
 
-import { NavbarButton } from "@/components/ui/resizable-navbar"
 import { LandingFooter } from "@/components/layout/LandingFooter"
 import { MarketingNavbar } from "@/components/layout/MarketingNavbar"
 
 const Landing: React.FC = () => {
   const navigate = useNavigate()
-  const { login, isAuthenticated } = useKindeAuth()
-  const [isLoading, setIsLoading] = useState(false)
-  const [onboardingCompleted, setOnboardingCompleted] = useState(false)
-  const [backendAuthenticated, setBackendAuthenticated] = useState<boolean | null>(null)
-  const [authChecked, setAuthChecked] = useState(false)
-  
+
   // Contact form state
   const [contactForm, setContactForm] = useState({
     name: '',
@@ -54,102 +47,6 @@ const Landing: React.FC = () => {
     }
   }, [])
 
-  // Check authentication and onboarding status in background
-  useEffect(() => {
-    const { signal, cancel } = createCancelableRequest()
-
-    const checkAuthenticatedUser = async () => {
-      try {
-        const response = await api.get('/admin/auth-status', { signal })
-        const auth = response.data?.authStatus
-        const isBackendAuth = auth?.isAuthenticated === true
-
-        setBackendAuthenticated(isBackendAuth)
-
-        if (isBackendAuth) {
-          const hasCompletedOnboarding =
-            auth?.onboardingCompleted === true ||
-            auth?.needsOnboarding === false
-
-          setOnboardingCompleted(hasCompletedOnboarding)
-        } else {
-          setOnboardingCompleted(false)
-        }
-      } catch {
-        // Fall back to Kinde state when backend auth status is unavailable
-        setBackendAuthenticated(null)
-      }
-      setAuthChecked(true)
-    }
-
-    const timer = setTimeout(checkAuthenticatedUser, 100)
-    return () => {
-      clearTimeout(timer)
-      cancel()
-    }
-  }, [isAuthenticated])
-
-  const handleLogin = async () => {
-    setIsLoading(true)
-    try {
-      // Get Google connection ID from environment variable for custom auth
-      const googleConnectionId = import.meta.env.VITE_KINDE_GOOGLE_CONNECTION_ID
-      
-      if (!googleConnectionId) {
-        console.error('❌ VITE_KINDE_GOOGLE_CONNECTION_ID is not configured')
-        // Fallback to standard login if connection ID not configured
-        await login()
-      } else {
-        // Use Kinde custom auth with connection ID
-        await login({ connectionId: googleConnectionId })
-      }
-    } catch (error) {
-      console.error('Login error:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const hasAuthenticatedSession = authChecked && (backendAuthenticated ?? isAuthenticated)
-
-  const getPrimaryCtaConfig = () => {
-    if (!authChecked) {
-      return {
-        label: 'Loading...',
-        icon: null as React.ReactNode,
-        action: () => undefined,
-        disabled: true,
-      }
-    }
-
-    if (!hasAuthenticatedSession) {
-      return {
-        label: isLoading ? 'Loading...' : 'Sign In',
-        icon: null as React.ReactNode,
-        action: handleLogin,
-        disabled: isLoading,
-      }
-    }
-
-    if (onboardingCompleted) {
-      return {
-        label: 'Go to Workspace',
-        icon: <LayoutDashboard className="w-4 h-4 mr-2 inline" />,
-        action: () => navigate({ to: '/dashboard/applications' }),
-        disabled: false,
-      }
-    }
-
-    return {
-      label: 'Complete onboarding',
-      icon: <Rocket className="w-4 h-4 mr-2 inline" />,
-      action: () => navigate({ to: '/onboarding' }),
-      disabled: false,
-    }
-  }
-
-  const primaryCta = getPrimaryCtaConfig()
-
   return (
     <div className="min-h-screen bg-white text-slate-900 selection:bg-teal-100 selection:text-teal-900 font-sans overflow-x-clip lg:overflow-x-visible relative">
 
@@ -173,32 +70,7 @@ const Landing: React.FC = () => {
         <div className="absolute left-0 right-0 h-px" style={{ top: '64px', background: 'linear-gradient(to right, transparent, rgba(148,163,184,0.6), transparent)' }} />
       </div>
 
-      <MarketingNavbar
-        desktopRight={
-          <NavbarButton
-            variant={hasAuthenticatedSession ? 'gradient' : 'primary'}
-            onClick={primaryCta.action}
-            disabled={primaryCta.disabled}
-            as="button"
-            className="text-[13px]"
-          >
-            {primaryCta.icon}
-            {primaryCta.label}
-          </NavbarButton>
-        }
-        mobileFooter={
-          <NavbarButton
-            onClick={() => { primaryCta.action(); }}
-            variant={hasAuthenticatedSession ? 'gradient' : 'primary'}
-            className="w-full justify-center"
-            as="button"
-            disabled={primaryCta.disabled}
-          >
-            {primaryCta.icon}
-            {primaryCta.label}
-          </NavbarButton>
-        }
-      />
+      <MarketingNavbar />
 
       {/* Hero */}
       <PetpoojaHeroSection
@@ -208,7 +80,7 @@ const Landing: React.FC = () => {
         }}
       />
 
-      <section id="workflows" className="sm:py-20 lg:py-24 bg-white" style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 800px' }}>
+      <section id="workflows" className="py-12 sm:py-20 lg:py-24 bg-white overflow-x-hidden" style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 800px' }}>
         <Suspense fallback={<div className="min-h-[400px]" />}>
           <WorkflowVisualizer />
         </Suspense>
