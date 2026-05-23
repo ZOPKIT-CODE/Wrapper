@@ -11,6 +11,7 @@ import { getOperationConfig } from './credit-config-global.js';
 import { creditBatches } from '../../../db/schema/billing/credit-batches.js';
 import { randomUUID } from 'crypto';
 import { snsSqsPublisher } from '../../messaging/utils/sns-sqs-publisher.js';
+import { deriveEventId } from '../../messaging/services/event-id.js';
 import { findRootOrganization, ensureCreditRecord, stripe } from './credit-core.js';
 import { getEntityBalance, getCurrentBalance } from './credit-balance.js';
 
@@ -534,6 +535,12 @@ export async function allocateCreditsToApplication(params: {
     interface BatchResult { allocationId: string; expiresAt: string | null; deltaAmount: number; creditType: string }
     const batchResults: BatchResult[] = [];
 
+    // Computed once so the in-tx outbox INSERT and the post-tx publish call
+    // share an identical `allocatedAt`. The two paths INSERT the same
+    // event_id (deterministic on allocationId) — outside-tx insert is a
+    // no-op via ON CONFLICT.
+    const allocatedAt = new Date().toISOString();
+
     try {
       await sqlConn`SELECT set_config('app.tenant_id', ${tenantId}, false)`;
       await sqlConn`SELECT set_config('app.user_id', ${rlsUserId}, false)`;
@@ -695,6 +702,61 @@ export async function allocateCreditsToApplication(params: {
             creditType: 'paid',
           });
         }
+
+        // Same-tx outbox: insert one event_tracking row per batch BEFORE the
+        // tx commits, using a deterministic event_id derived from the batch
+        // allocation_id. If this tx commits, the outbox row is durable; the
+        // poller (or the post-tx publish below) will deliver it to SNS. If
+        // this tx rolls back, the credit deduction AND the outbox row both
+        // disappear — no orphan events, no silent drops. The post-tx
+        // publishCreditEvent computes the SAME event_id and so its
+        // EventTrackingService.trackPublishedEvent insert becomes a no-op
+        // via ON CONFLICT (event_id) DO NOTHING.
+        for (const batch of batchResults) {
+          const eventId = deriveEventId({
+            eventType: 'credit.allocated',
+            tenantId,
+            entityId: sourceEntityId,
+            domainOpId: batch.allocationId,
+            targetApplication,
+          });
+          const eventData = {
+            entityId: sourceEntityId,
+            targetApplication,
+            deltaAmount: batch.deltaAmount,
+            allocatedCredits: batch.deltaAmount,
+            allocationType: 'organization',
+            allocationPurpose: allocationPurpose || `Credit allocation to ${targetApplication}`,
+            allocationSource: 'admin_allocation',
+            allocatedBy: initiatedBy,
+            allocatedAt,
+            allocationId: batch.allocationId,
+            expiresAt: batch.expiresAt,
+            creditType: batch.creditType,
+            metadata: {
+              sourceEntityId,
+              previousEntityBalance: previousBalance,
+              newEntityBalance: newBalance,
+              purpose: allocationPurpose,
+              totalAllocationAmount: creditAmount,
+              batchCount: batchResults.length,
+            },
+          };
+          await tx`
+            INSERT INTO event_tracking (
+              event_id, event_type, tenant_id, entity_id, stream_key,
+              source_application, target_application, event_data,
+              published_by, metadata, status, acknowledged
+            ) VALUES (
+              ${eventId}, 'credit.allocated', ${tenantId}, ${sourceEntityId}, 'inter-app-events',
+              'wrapper', ${targetApplication}, ${JSON.stringify(eventData)}::jsonb,
+              ${initiatedBy || 'system'},
+              ${JSON.stringify({ outbox: true, allocationId: batch.allocationId })}::jsonb,
+              'pending', false
+            )
+            ON CONFLICT (event_id) DO NOTHING
+          `;
+        }
       });
 
       console.log('✅ Deducted credits from entity balance:', {
@@ -711,7 +773,12 @@ export async function allocateCreditsToApplication(params: {
     // (FA) gets per-batch expiry dates and can create separate batch records.
     // E.g., 250 credits from seasonal(200, expires Apr 10) + free(50, expires Jul 4)
     // → two events: {deltaAmount:200, expiresAt:Apr10} + {deltaAmount:50, expiresAt:Jul4}
-    const allocatedAt = new Date().toISOString();
+    //
+    // The outbox row for each event was already INSERTed atomically inside
+    // the tx above. This publish call is a fast-path SNS delivery; on
+    // failure the row stays `pending` and the poller retries. `allocatedAt`
+    // is reused from the pre-tx computation so the in-tx and post-tx
+    // payloads match byte-for-byte.
     for (const batch of batchResults) {
       const allocationEventData = {
         entityId: sourceEntityId,
