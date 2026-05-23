@@ -30,6 +30,7 @@ export * from './notifications/tenant-template-customizations.js';
 // Tracking
 export * from './tracking/event-tracking.js';
 export * from './tracking/inter-app-outbox.js';
+export * from './tracking/received-events.js';
 
 // Platform staff (cross-tenant access control)
 export * from './platform/platform-staff.js';
