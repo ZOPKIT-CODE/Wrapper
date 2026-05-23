@@ -31,12 +31,16 @@ class DatabaseConnectionManager {
       // Pool sizes are configurable via environment variables so they can be tuned
       // per deployment without a code change (e.g. smaller in dev, larger in prod).
       //
-      // Defaults raised from 10/5 to 30/15:
-      //   - A typical tenant bootstrap involves 8 parallel collection fetches.
-      //   - With 10 connections and 4 concurrent tenants onboarding, every query
-      //     queues behind the pool — turning 200ms operations into 2-3 seconds.
-      //   - Postgres itself handles hundreds of connections; 30 is still conservative.
-      const appPoolMax    = Number(process.env.DB_POOL_MAX         ?? 30);
+      // Default raised to 50/15 with the RLS connection-plumbing rework:
+      //   - Tenant-scoped requests now reserve a connection for their full
+      //     lifetime (see db/request-connection.ts), so each in-flight
+      //     authenticated request holds one app-pool slot until the response.
+      //   - At ~200-500ms typical request duration, 50 connections support
+      //     ~100-250 req/s of tenant traffic. Below that ceiling the pool is
+      //     non-blocking; above it, requests queue.
+      //   - Postgres itself handles hundreds of connections; 50 is still
+      //     conservative and well within Supabase/RDS defaults.
+      const appPoolMax    = Number(process.env.DB_POOL_MAX         ?? 50);
       const systemPoolMax = Number(process.env.DB_SYSTEM_POOL_MAX  ?? 15);
       const dbStatementTimeoutMs = Number(process.env.DB_STATEMENT_TIMEOUT_MS ?? 30_000);
       const dbIdleTransactionTimeoutMs = Number(process.env.DB_IDLE_IN_TX_TIMEOUT_MS ?? 30_000);
