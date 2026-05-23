@@ -1,7 +1,11 @@
 import jwt from 'jsonwebtoken';
 import { kindeService } from '../../features/auth/index.js';
 import { db, dbManager } from '../../db/index.js';
+import { reserveTenantConnection } from '../../db/request-connection.js';
+import { enterRequestDbScope } from '../../db/request-context.js';
 import { tenants, tenantUsers, customRoles, userRoleAssignments } from '../../db/schema/index.js';
+import * as schema from '../../db/schema/index.js';
+import { drizzle as drizzleWrap } from 'drizzle-orm/postgres-js';
 import { eq, and } from 'drizzle-orm';
 import { RequestAnalyzer } from './request-analyzer.js';
 import { shouldLogVerbose } from '../../utils/verbose-log.js';
@@ -15,6 +19,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 // SECURITY: Keep this list minimal. Use exact paths; avoid broad prefixes.
 const PUBLIC_ROUTES: string[] = [
   '/health',
+  '/.well-known/jwks.json',
   '/api/auth/callback',
   '/api/auth/oauth/',
   '/api/auth/providers',
@@ -282,29 +287,81 @@ export async function setupDatabaseConnection(request: FastifyRequest, tenantId:
   const analysis = RequestAnalyzer.analyzeRequest(request);
   request.requestAnalysis = analysis;
 
-  try {
-    request.db = analysis.requiresBypass ?
-      dbManager.getSystemConnection() :
-      dbManager.getAppConnection();
-  } catch (dbError: unknown) {
-    const err = dbError as Error;
-    console.error('❌ Failed to establish database connection:', err.message);
-    request.db = null;
+  // Bypass requests (system/admin/onboarding) and unauthenticated requests use
+  // the shared pool directly. RLS does not apply here, so there's nothing to
+  // bind to a specific connection and we avoid the cost of a reservation.
+  if (analysis.requiresBypass || !tenantId) {
+    try {
+      request.db = analysis.requiresBypass
+        ? dbManager.getSystemConnection()
+        : dbManager.getAppConnection();
+    } catch (dbError: unknown) {
+      const err = dbError as Error;
+      console.error('❌ Failed to establish database connection:', err.message);
+      request.db = null;
+    }
     return;
   }
 
-  if (!analysis.requiresBypass && tenantId && request.db) {
+  // Tenant-scoped path: reserve a connection from the app pool, set the GUCs
+  // on it, and stash both the reserved Sql and its release callback on the
+  // request. Fastify onResponse + onError hooks (registered in
+  // app-routes.ts) MUST invoke `_dbRelease` to return the connection to the
+  // pool. Missing either hook causes a slow connection leak.
+  //
+  // GUC ↔ query binding guarantee:
+  //   `reserveTenantConnection` calls `appPool.reserve()` which pins one
+  //   physical connection until release(). The set_config call runs on that
+  //   pinned connection, and any subsequent query made on `request.db`
+  //   (the same reserved handle) is therefore guaranteed to execute against
+  //   the connection whose GUCs were just set. This closes the hole where
+  //   the previous shared-pool implementation would land set_config and the
+  //   query on different connections.
+  try {
+    const pool = dbManager.getAppConnection();
+    const { sql: reserved, release } = await reserveTenantConnection(pool, tenantId, userId);
+    request.db = reserved;
+    request._dbRelease = release;
+
+    // Publish the reserved Drizzle in AsyncLocalStorage so the default `db`
+    // import (a Proxy in db/index.ts) routes queries onto the pinned
+    // connection. enterWith binds for the remainder of this async context,
+    // which Fastify's hook chain inherits — preHandler, handler, and
+    // onResponse all observe the same store.
+    const reservedDrizzle = drizzleWrap(reserved, { schema });
+    enterRequestDbScope(reservedDrizzle);
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error('❌ Failed to reserve tenant DB connection:', err.message);
+    // Fall back to the shared pool so the request can still proceed. Without
+    // a reservation the GUCs cannot be reliably bound to subsequent queries,
+    // but this is strictly better than 500'ing every request if the pool is
+    // momentarily exhausted. RLS won't enforce for this request — same as
+    // the pre-fix behaviour.
     try {
-      // Single round-trip instead of two separate SQL calls.
-      await request.db`
-        SELECT
-          set_config('app.tenant_id', ${tenantId}, false),
-          set_config('app.user_id',   ${userId || ''}, false)
-      `;
-    } catch (error: unknown) {
-      const err = error as Error;
-      console.error('❌ Failed to set tenant context:', err.message);
+      request.db = dbManager.getAppConnection();
+    } catch {
+      request.db = null;
     }
+  }
+}
+
+/**
+ * Release any per-request DB reservation taken by setupDatabaseConnection.
+ * Idempotent — safe to call from both onResponse and onError hooks (Fastify
+ * may invoke them in sequence on a failed request).
+ */
+export async function releaseRequestDbConnection(request: FastifyRequest): Promise<void> {
+  const release = request._dbRelease;
+  if (!release) return;
+  // Clear first so a second invocation is a no-op even if release() throws.
+  request._dbRelease = undefined;
+  try {
+    await release();
+  } catch (err: unknown) {
+    // Releasing should not fail in practice; if it does, log and move on
+    // rather than propagating into Fastify's error path.
+    console.error('❌ Failed to release request DB connection:', (err as Error).message);
   }
 }
 

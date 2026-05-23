@@ -122,7 +122,7 @@ export default async function internalServiceAuthRoutes(fastify: FastifyInstance
       const tenant = await TenantService.getTenantDetails(tenant_id);
       if (!tenant) return ErrorResponses.notFound(reply, 'Tenant', 'Tenant not found');
 
-      const { sign } = await import('jsonwebtoken');
+      const { signServiceToken } = await import('../../utils/jwt-signing.js');
       const payload = {
         service,
         tenant_id,
@@ -132,11 +132,9 @@ export default async function internalServiceAuthRoutes(fastify: FastifyInstance
         exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60),
       };
 
-      const secret = process.env.JWT_SECRET;
-      if (!secret) {
-        throw new Error('JWT_SECRET environment variable is not set');
-      }
-      const token = sign(payload, secret);
+      // signServiceToken transparently picks RS256 (if configured) or HS256
+      // (default, JWT_SECRET) so existing downstream verifiers keep working.
+      const token = signServiceToken(payload);
 
       console.log(`✅ Service token generated for ${service}`);
 

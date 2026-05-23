@@ -17,17 +17,24 @@ async function authenticateServiceOrToken(request: FastifyRequest, reply: Fastif
     if (authHeader && typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
       const token = authHeader.substring(7);
       try {
-        // Validate service token with strict secret handling
-        const { verify } = await import('jsonwebtoken');
-        const secret = process.env.SERVICE_TOKEN_SECRET || process.env.JWT_SECRET;
-        if (!secret) {
-          throw new Error('SERVICE_TOKEN_SECRET or JWT_SECRET must be configured for service auth');
-        }
+        // Validate service token. Accept both HS256 (legacy shared secret) and
+        // RS256 (asymmetric, public key). When SERVICE_TOKEN_SECRET is set it
+        // takes precedence as the HS256 key; otherwise we delegate to the
+        // shared verifier which understands JWT_SECRET + the JWKS public key.
         const allowedServiceNames = (process.env.ALLOWED_SERVICE_TOKENS || 'crm,accounting,ops,wrapper')
           .split(',')
           .map((s) => s.trim())
           .filter(Boolean);
-        const decoded = verify(token, secret) as Record<string, unknown>;
+
+        let decoded: Record<string, unknown>;
+        const serviceTokenSecret = process.env.SERVICE_TOKEN_SECRET;
+        if (serviceTokenSecret) {
+          const { verify } = await import('jsonwebtoken');
+          decoded = verify(token, serviceTokenSecret) as Record<string, unknown>;
+        } else {
+          const { verifyServiceToken } = await import('../../../utils/jwt-signing.js');
+          decoded = verifyServiceToken(token);
+        }
 
         if ((decoded as any).type === 'service_token' && allowedServiceNames.includes(String((decoded as any).service || ''))) {
           (request as any).serviceAuth = decoded;
