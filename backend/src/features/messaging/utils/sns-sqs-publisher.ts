@@ -2,6 +2,7 @@ import { SNSClient, PublishCommand, GetTopicAttributesCommand } from '@aws-sdk/c
 import * as Sentry from '@sentry/node';
 import { CircuitBreaker } from '../../../utils/circuit-breaker.js';
 import { maybeOffloadToS3 } from './large-payload-store.js';
+import { deriveEventId } from '../services/event-id.js';
 
 /**
  * SNS/SQS Publisher
@@ -344,6 +345,20 @@ class SnsSqsPublisher {
       targetApplication,
       tenantId,
       entityId: roleId,
+      // Deterministic — downstream consumers dedupe by eventId on retry.
+      // For assignment events, use assignmentId so different assignments of
+      // the same role produce distinct eventIds.
+      eventId: deriveEventId({
+        eventType,
+        tenantId,
+        entityId: roleId,
+        domainOpId:
+          (eventType === 'role_assigned' || eventType === 'role_unassigned') &&
+          typeof roleData.assignmentId === 'string'
+            ? (roleData.assignmentId as string)
+            : roleId,
+        targetApplication,
+      }),
       eventData: {
         roleId,
         roleName: roleData.roleName || roleData.name,
@@ -516,6 +531,14 @@ class SnsSqsPublisher {
         creditData.configId ??
         `credit_${Date.now()}`
     );
+    // If a natural domain operation ID is available (allocationId / configId /
+    // operationId for consumption), derive a deterministic eventId so retries
+    // collapse on the downstream consumer's dedup-by-eventId path.
+    const naturalKey =
+      (typeof creditData.allocationId === 'string' && creditData.allocationId) ||
+      (typeof creditData.configId === 'string' && creditData.configId) ||
+      (typeof creditData.operationId === 'string' && creditData.operationId) ||
+      null;
     return this.publishInterAppEvent({
       eventType,
       sourceApplication: 'wrapper',
@@ -524,6 +547,17 @@ class SnsSqsPublisher {
       entityId,
       eventData: creditData,
       publishedBy,
+      ...(naturalKey
+        ? {
+            eventId: deriveEventId({
+              eventType,
+              tenantId,
+              entityId,
+              domainOpId: naturalKey,
+              targetApplication,
+            }),
+          }
+        : {}),
     });
   }
 

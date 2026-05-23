@@ -12,6 +12,21 @@ export interface PublishEventParams {
   entityId?: string;
   eventData?: Record<string, unknown>;
   publishedBy?: string;
+  /**
+   * Stable, caller-supplied event ID. Recommended for any operation with a
+   * natural domain key — guarantees retries collapse on the outbox UNIQUE
+   * constraint instead of publishing duplicates. Use `deriveEventId(...)` to
+   * compute one from `(eventType, tenantId, entityId, domainOpId)`.
+   * Falls back to a random ID when omitted.
+   */
+  eventId?: string;
+  /**
+   * Optional drizzle transaction handle from the caller's domain write.
+   * When provided, the outbox INSERT participates in the caller's tx and the
+   * synchronous SNS publish is skipped (the poller delivers after commit),
+   * making the publish atomic with the domain write.
+   */
+  tx?: typeof db;
 }
 
 export interface TrackPublishedEventParams {
@@ -43,9 +58,32 @@ export class InterAppEventService {
     tenantId,
     entityId,
     eventData = {},
-    publishedBy = 'system'
+    publishedBy = 'system',
+    eventId: callerEventId,
+    tx,
   }: PublishEventParams): Promise<Record<string, unknown> | undefined> {
-    const eventId = `outbox_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+    const eventId =
+      callerEventId ?? `outbox_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+
+    // ── tx-bound path: outbox INSERT participates in the caller's transaction.
+    // Skip the synchronous SNS publish — the outbox poller delivers after the
+    // caller's tx commits, so the event is atomic with the domain write.
+    if (tx) {
+      await EventTrackingService.trackPublishedEvent({
+        eventId,
+        eventType,
+        tenantId,
+        entityId,
+        streamKey: 'inter-app-events',
+        sourceApplication,
+        targetApplication,
+        eventData,
+        publishedBy,
+        tx,
+      });
+      return { eventId, status: 'queued' };
+    }
+
     try {
       await EventTrackingService.trackPublishedEvent({
         eventId,

@@ -1,4 +1,5 @@
 import { InterAppEventService } from './inter-app-event-service.js';
+import { deriveEventId } from './event-id.js';
 
 type ProvisionCandidateInput = {
   tenantId: string;
@@ -51,6 +52,15 @@ class AccountingEntityProvisioningService {
       tenantId: input.tenantId,
       entityId: input.entityId,
       publishedBy: input.createdBy || 'system',
+      // Deterministic: a retry for the same (tenant, entity) provision request
+      // dedupes on the outbox UNIQUE constraint.
+      eventId: deriveEventId({
+        eventType: 'accounting.entity.provision.requested',
+        tenantId: input.tenantId,
+        entityId: input.entityId,
+        domainOpId: idempotencyKey,
+        targetApplication: 'accounting',
+      }),
       eventData: {
         idempotencyKey,
         entity: {
