@@ -33,6 +33,7 @@ import adminPromotionRoutes from './features/admin/routes/admin-promotion.js';
 import permissionMatrixRoutes from './features/roles/routes/permission-matrix.js';
 import appSyncRoutes from './features/app-sync/routes/sync-routes.js';
 import healthRoutes from './routes/health.js';
+import jwksRoutes from './routes/jwks.js';
 import permissionSyncRoutes from './features/roles/routes/permission-sync.js';
 import { locationsRoutes, entitiesRoutes } from './features/organizations/index.js';
 import { creditsRoutes, creditExpiryRoutes } from './features/credits/index.js';
@@ -48,7 +49,7 @@ import devTestClockRoutes from './routes/dev-test-clocks.js';
 import emailPreviewRoutes from './routes/email-preview.js';
 import tenantApplicationsReconcileRoutes from './features/admin/routes/tenant-applications-reconcile.js';
 
-import { authMiddleware, csrfProtection } from './middleware/auth/auth.js';
+import { authMiddleware, csrfProtection, releaseRequestDbConnection } from './middleware/auth/auth.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { trialRestrictionMiddleware } from './middleware/restrictions/trial-restriction.js';
 import { restrictInvitedUsers } from './middleware/restrictions/invited-user-restriction.js';
@@ -76,6 +77,19 @@ export async function registerMiddleware(fastify: FastifyInstance): Promise<void
       return;
     }
   });
+  // Release per-request reserved DB connections on BOTH success and error.
+  // Missing either hook would leak connections from the app pool — under
+  // load the pool would saturate within minutes. onResponse fires for
+  // normally-completed requests; onError fires when a handler throws (in
+  // which case onResponse typically still fires too, but we rely on
+  // releaseRequestDbConnection being idempotent rather than ordering).
+  fastify.addHook('onResponse', async (request) => {
+    await releaseRequestDbConnection(request);
+  });
+  fastify.addHook('onError', async (request) => {
+    await releaseRequestDbConnection(request);
+  });
+
   fastify.setErrorHandler(errorHandler);
 }
 
@@ -121,6 +135,9 @@ export async function registerRoutes(fastify: FastifyInstance): Promise<void> {
       checks,
     };
   });
+
+  // Public JWKS endpoint at /.well-known/jwks.json (no prefix, no auth).
+  await fastify.register(jwksRoutes);
 
   await fastify.register(authRoutes, { prefix: '/api/auth' });
   await fastify.register(tenantRoutes, { prefix: '/api/tenants' });

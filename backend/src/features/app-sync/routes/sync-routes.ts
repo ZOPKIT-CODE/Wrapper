@@ -35,40 +35,53 @@ async function authenticateServiceOrToken(request: FastifyRequest, reply: Fastif
     const token = extractBearerToken(request.headers.authorization);
     if (token) {
       try {
-        const secret = process.env.SERVICE_TOKEN_SECRET || process.env.JWT_SECRET;
-        if (!secret) {
-          throw new Error('SERVICE_TOKEN_SECRET or JWT_SECRET must be configured for service auth');
-        }
+        // Validate service token. Accept both HS256 (legacy shared secret / rotation)
+        // and RS256 (asymmetric, public key). When SERVICE_TOKEN_SECRET is set it
+        // takes precedence as the HS256 key with rotation support via JWT_SECRET_PREVIOUS;
+        // otherwise we delegate to the shared verifier which understands JWT_SECRET +
+        // the JWKS public key (RS256).
         const allowedServiceNames = (process.env.ALLOWED_SERVICE_TOKENS || 'crm,accounting,ops,wrapper')
           .split(',')
           .map((s) => s.trim())
           .filter(Boolean);
 
-        // Build the ordered list of candidate keys: primary first, then any
-        // rotation fallbacks from JWT_SECRET_PREVIOUS.
-        const encoder = new TextEncoder();
-        const candidateKeys: Uint8Array[] = [encoder.encode(secret)];
-        const previousSecretsRaw = process.env.JWT_SECRET_PREVIOUS ?? '';
-        for (const extra of previousSecretsRaw.split(',').map((s) => s.trim()).filter(Boolean)) {
-          candidateKeys.push(encoder.encode(extra));
-        }
-
         let decoded: unknown;
-        let lastErr: unknown;
-        for (const key of candidateKeys) {
-          try {
-            const verified = await jwtVerify(token, key, { algorithms: ['HS256'] });
-            decoded = verified.payload;
-            break;
-          } catch (err) {
-            lastErr = err;
-            // Try next candidate. If all fail we fall through to Kinde below.
+        const serviceTokenSecret = process.env.SERVICE_TOKEN_SECRET || process.env.JWT_SECRET;
+        if (serviceTokenSecret) {
+          // Build the ordered list of candidate keys: primary first, then any
+          // rotation fallbacks from JWT_SECRET_PREVIOUS.
+          const encoder = new TextEncoder();
+          const candidateKeys: Uint8Array[] = [encoder.encode(serviceTokenSecret)];
+          const previousSecretsRaw = process.env.JWT_SECRET_PREVIOUS ?? '';
+          for (const extra of previousSecretsRaw.split(',').map((s) => s.trim()).filter(Boolean)) {
+            candidateKeys.push(encoder.encode(extra));
           }
-        }
-        if (!decoded) {
-          // Throw to be caught by the outer catch below, which falls back to
-          // Kinde auth. We preserve the last verification error for logs.
-          throw lastErr ?? new Error('service-token verification failed');
+
+          let lastErr: unknown;
+          for (const key of candidateKeys) {
+            try {
+              const verified = await jwtVerify(token, key, { algorithms: ['HS256'] });
+              decoded = verified.payload;
+              break;
+            } catch (err) {
+              lastErr = err;
+              // Try next candidate. If all fail we fall through to RS256/Kinde below.
+            }
+          }
+          if (!decoded) {
+            // All HS256 candidates failed — try RS256 via jwt-signing verifier.
+            try {
+              const { verifyServiceToken } = await import('../../../utils/jwt-signing.js');
+              decoded = verifyServiceToken(token);
+            } catch {
+              // Throw to be caught by the outer catch below, which falls back to Kinde auth.
+              throw lastErr ?? new Error('service-token verification failed');
+            }
+          }
+        } else {
+          // No symmetric secret configured — use RS256 asymmetric verifier.
+          const { verifyServiceToken } = await import('../../../utils/jwt-signing.js');
+          decoded = verifyServiceToken(token);
         }
 
         if ((decoded as any).type === 'service_token' && allowedServiceNames.includes(String((decoded as any).service || ''))) {

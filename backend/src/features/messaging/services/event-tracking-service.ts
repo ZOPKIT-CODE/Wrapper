@@ -18,6 +18,12 @@ export interface TrackPublishedEventParams {
   eventData?: Record<string, unknown>;
   publishedBy?: string;
   metadata?: Record<string, unknown>;
+  /**
+   * Optional drizzle transaction handle. When provided, the outbox INSERT
+   * participates in the caller's domain transaction so the event is durable
+   * iff the domain write commits. The poller picks it up afterwards.
+   */
+  tx?: typeof db;
 }
 
 /**
@@ -39,9 +45,11 @@ export class EventTrackingService {
     targetApplication,
     eventData,
     publishedBy,
-    metadata = {}
+    metadata = {},
+    tx,
   }: TrackPublishedEventParams): Promise<{ tracked: boolean; storage: string }> {
-    await db.insert(eventTracking).values({
+    const dbHandle = tx ?? db;
+    await dbHandle.insert(eventTracking).values({
       eventId,
       eventType,
       tenantId,
@@ -57,7 +65,7 @@ export class EventTrackingService {
       },
       status: 'pending',
       acknowledged: false,
-    });
+    }).onConflictDoNothing({ target: eventTracking.eventId });
     return { tracked: true, storage: 'database' };
   }
 

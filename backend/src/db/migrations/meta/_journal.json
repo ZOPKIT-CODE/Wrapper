@@ -169,6 +169,13 @@
       "when": 1763200000000,
       "tag": "0023_grant_app_user",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "5",
+      "when": 1763250000000,
+      "tag": "0024_received_events",
+      "breakpoints": true
     }
   ]
 }

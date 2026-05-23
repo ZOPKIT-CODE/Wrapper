@@ -30,9 +30,16 @@ declare global {
 
       // JWT / Sessions
       JWT_SECRET?: string;
+      JWT_SECRET_PREVIOUS?: string;
+      JWT_SIGNING_ALG?: 'HS256' | 'RS256';
+      JWT_PRIVATE_KEY?: string;
+      JWT_PUBLIC_KEY?: string;
+      JWT_KEY_ID?: string;
       SESSION_SECRET?: string;
       OPERATIONS_JWT_SECRET?: string;
       SHARED_APP_JWT_SECRET?: string;
+      SERVICE_TOKEN_SECRET?: string;
+      ALLOWED_SERVICE_TOKENS?: string;
       BCRYPT_ROUNDS?: string;
 
       // Cookies
@@ -103,9 +110,6 @@ declare global {
       // Redis
       REDIS_ENABLED?: string;
       REDIS_URL?: string;
-
-      // Elasticsearch
-      ELASTICSEARCH_URL?: string;
 
       // Temporal
       TEMPORAL_ENABLED?: string;

@@ -193,6 +193,7 @@ class OnboardingOrganizationSetupService {
 
         if (newAppCodes.length > 0) {
           const { InterAppEventService } = await import('../../messaging/services/inter-app-event-service.js');
+          const { deriveEventId } = await import('../../messaging/services/event-id.js');
 
           await Promise.allSettled(
             newAppCodes.map(async (newAppCode) => {
@@ -206,6 +207,15 @@ class OnboardingOrganizationSetupService {
                   tenantId,
                   entityId:          tenantId,
                   publishedBy:       'system',
+                  // Deterministic: retrying the same plan upgrade for the
+                  // same (tenant, app) collapses on the outbox unique key.
+                  eventId: deriveEventId({
+                    eventType: 'tenant.app.provisioned',
+                    tenantId,
+                    entityId: tenantId,
+                    domainOpId: `plan_upgrade:${planId}`,
+                    targetApplication: newAppCode,
+                  }),
                   eventData: {
                     appCode:          newAppCode,
                     tenantId,

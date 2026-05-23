@@ -16,8 +16,7 @@ import { eq, and } from 'drizzle-orm';
 
 import OnboardingValidationService from './onboarding-validation-service.js';
 import { OnboardingFileLogger } from '../../../utils/onboarding-file-logger.js';
-import { InterAppEventService } from '../../../features/messaging/index.js';
-import { BootstrapService } from '../../../features/app-sync/services/bootstrap-service.js';
+import { InterAppEventService, deriveEventId } from '../../../features/messaging/index.js';
 import { invalidateTenantLookupCache, invalidateUserCache } from '../../../middleware/auth/auth.js';
 
 import { OnboardingDbService } from './onboarding-db-service.js';
@@ -512,23 +511,13 @@ export class UnifiedOnboardingService {
     plan: string,
     primaryUseCase?: string,
   ): Promise<void> {
-    // Fetch which apps this tenant has enabled
-    const { organizationApplications, applications } = await import('../../../db/schema/index.js');
+    // Snapshot assembly lives in tenant-snapshot-service so the pull endpoint
+    // (GET /api/internal/tenants/:tenantId/snapshot) returns the IDENTICAL shape.
+    const { getEnabledAppsForTenant, buildTenantSnapshot } = await import(
+      '../../tenants/services/tenant-snapshot-service.js'
+    );
 
-    const enabledApps = await db
-      .select({
-        appCode:          applications.appCode,
-        subscriptionTier: organizationApplications.subscriptionTier,
-        enabledModules:   organizationApplications.enabledModules,
-        expiresAt:        organizationApplications.expiresAt,
-      })
-      .from(organizationApplications)
-      .innerJoin(applications, eq(applications.appId, organizationApplications.appId))
-      .where(and(
-        eq(organizationApplications.tenantId, tenantId),
-        eq(organizationApplications.isEnabled, true),
-        eq(applications.status, 'active'),
-      ));
+    const enabledApps = await getEnabledAppsForTenant(tenantId);
 
     if (!enabledApps.length) {
       // Tenant has no app assignments — publish a broadcast so all apps can
@@ -545,8 +534,8 @@ export class UnifiedOnboardingService {
     // is dropped — no app needs a lazy-bootstrap hint when it already has the snapshot.
     const results = await Promise.allSettled(
       enabledApps.map(async (app) => {
-        const bootstrapService = new BootstrapService();
-        const bootstrapPayload = await bootstrapService.assemble(tenantId, app.appCode);
+        const eventData = await buildTenantSnapshot(tenantId, app.appCode, plan, { enabledApps });
+        if (!eventData) return; // defensive — app was just in enabledApps so should not happen
 
         await InterAppEventService.publishEvent({
           eventType:         'tenant.onboarded',
@@ -555,30 +544,16 @@ export class UnifiedOnboardingService {
           tenantId,
           entityId:          tenantId,
           publishedBy,
-          eventData: {
-            appCode:          app.appCode,
+          eventData: eventData as unknown as Record<string, unknown>,
+          // Deterministic ID so a retry of onboarding completion doesn't
+          // re-publish tenant.onboarded for the same (tenant, app).
+          eventId: deriveEventId({
+            eventType: 'tenant.onboarded',
             tenantId,
-            plan,
-            applications:     enabledApps.map(a => a.appCode),
-            subscriptionTier: app.subscriptionTier ?? null,
-            enabledModules:   Array.isArray(app.enabledModules) ? app.enabledModules : [],
-            expiresAt:        app.expiresAt ? new Date(app.expiresAt).toISOString() : null,
-            tenantName:       bootstrapPayload.tenant?.tenantName ?? '',
-            adminEmail:       bootstrapPayload.users?.find((u) => u.isTenantAdmin)?.email ?? null,
-            kindeOrgId:       bootstrapPayload.tenant?.kindeOrgId ?? null,
-            snapshot: {
-              tenant:              bootstrapPayload.tenant,
-              organizations:       bootstrapPayload.organizations,
-              users:               bootstrapPayload.users,
-              roles:               bootstrapPayload.roles,
-              employeeAssignments: bootstrapPayload.employeeAssignments,
-              roleAssignments:     bootstrapPayload.roleAssignments,
-              creditConfigs:       bootstrapPayload.creditConfigs,
-              entityCredits:       bootstrapPayload.entityCredits,
-              // onboardingProfile carries industry (from tenant record) + user-selected primaryUseCase
-              onboardingProfile: primaryUseCase ? { primaryUseCase } : undefined,
-            },
-          },
+            entityId: tenantId,
+            domainOpId: tenantId,
+            targetApplication: app.appCode,
+          }),
         });
         Logger.log('info', 'general', 'publishAppProvisioningEvents', 'Published tenant.onboarded event', { appCode: app.appCode, tenantId });
       })
