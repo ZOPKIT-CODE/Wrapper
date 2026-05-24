@@ -493,7 +493,10 @@ export class BootstrapService {
 
     for (const r of rows) {
       const flatPerms = this.extractAppPermissions(r.permissions, appCode);
-      if (flatPerms.length > 0 || r.isSystemRole) {
+      // Only include the role for this app if it actually has permissions
+      // scoped to this app. Previously the `|| r.isSystemRole` clause leaked
+      // CRM-only system roles into the FA snapshot as empty stubs.
+      if (flatPerms.length > 0) {
         result.push({
           roleId:       r.roleId,
           roleName:     r.roleName ?? '',
