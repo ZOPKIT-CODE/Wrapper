@@ -2957,15 +2957,55 @@ export function createSuperAdminRoleConfig(selectedPlan: string = 'free', tenant
     return createSuperAdminRoleConfig('free', tenantId, createdBy);
   }
 
-  // Extract permissions from PLAN_ACCESS_MATRIX
-  // The permissions structure is already in nested format: { crm: { leads: [...], contacts: [...] } }
-  const permissions = planAccess.permissions || {};
+  // Build Organization Admin's permission set by *expanding* — for every
+  // (app, module) the plan grants access to, the admin role holds every
+  // permission code that module defines in BUSINESS_SUITE_MATRIX.
+  //
+  // Rationale: previously this copied `planAccess.permissions` verbatim, which
+  // is the curated end-user set (e.g. dashboard:['view'] only). That meant the
+  // app backends — which auto-resolve GET to `read_all` / per-module
+  // operations — denied admins on routes the plan never enumerated. The fix
+  // is NOT an admin-bypass in middleware (anti-pattern: silent privilege
+  // escalation, no audit trail). It's to make the role itself enumerate every
+  // operation an org-level admin should hold, derived from the matrix so it
+  // stays in sync as new modules ship.
+  //
+  // Modules outside the plan stay absent — billing/feature gating still works.
+  const expandedPermissions: Record<string, Record<string, string[]>> = {};
+  const planApps = planAccess.applications ?? [];
+  const planModules = (planAccess.modules ?? {}) as Record<string, string[] | '*'>;
+  for (const appCode of planApps) {
+    const appMatrix = (BUSINESS_SUITE_MATRIX as Record<string, { modules?: Record<string, { permissions?: Array<{ code: string }> }> }>)[appCode];
+    if (!appMatrix?.modules) continue;
+    const allowedModules = planModules[appCode];
+    const moduleAllowed = (moduleCode: string): boolean => {
+      if (allowedModules === '*') return true;
+      if (Array.isArray(allowedModules)) return allowedModules.includes(moduleCode);
+      // No module list for this app on this plan → fall back to plan.permissions.
+      return !!(planAccess.permissions as Record<string, Record<string, unknown>> | undefined)?.[appCode]?.[moduleCode];
+    };
+    expandedPermissions[appCode] = {};
+    for (const [moduleCode, moduleDef] of Object.entries(appMatrix.modules)) {
+      if (!moduleAllowed(moduleCode)) continue;
+      const codes = (moduleDef.permissions ?? []).map((p) => p.code);
+      if (codes.length > 0) {
+        expandedPermissions[appCode][moduleCode] = codes;
+      }
+    }
+    if (Object.keys(expandedPermissions[appCode]).length === 0) delete expandedPermissions[appCode];
+  }
+
+  // Defensive: if matrix expansion produced nothing, fall back to plan-curated
+  // perms so we never ship an empty admin role.
+  const permissions = Object.keys(expandedPermissions).length > 0
+    ? expandedPermissions
+    : (planAccess.permissions || {});
 
   return {
     tenantId,
     organizationId: tenantId, // Set organizationId to tenantId for root organization (will be updated after org creation)
     roleName: 'Organization Admin',
-    description: 'Full administrative access to all features and settings. This role has complete control over the organization.',
+    description: 'Full administrative access to all enabled applications. Holds every operation code in the per-app permission matrix, scoped by the tenant subscription plan. New modules added to the matrix are picked up automatically on next role rebuild.',
     permissions,
     isSystemRole: true,
     isDefault: true,
