@@ -409,6 +409,23 @@ export class UnifiedOnboardingService {
         Logger.log('warning', 'general', 'completeOnboardingWorkflow', 'seedDefaultCrmRoles failed (non-fatal)', { error: (err as Error).message });
       }
 
+      // ── Safety net: ensure free-tier credit grant exists post-commit ──
+      // The credit insert inside the main onboarding transaction can be silently
+      // skipped if an upstream step throws and rolls back. Re-run it here as a
+      // standalone idempotent op so every onboarded tenant ends up with a credits
+      // row — independent of the txn outcome upstream. ON CONFLICT DO NOTHING
+      // keeps it safe for retries and for tenants where the txn already inserted.
+      try {
+        const { ensureFreeTierCreditsForTenant } = await import('../../credits/services/credit-grant-service.js');
+        await ensureFreeTierCreditsForTenant(
+          dbResult.tenant.tenantId,
+          dbResult.organization.organizationId,
+          selectedPlan ?? 'free',
+        );
+      } catch (err: unknown) {
+        Logger.log('warning', 'general', 'completeOnboardingWorkflow', 'ensureFreeTierCreditsForTenant failed (non-fatal)', { error: (err as Error).message });
+      }
+
       // ── Publish thin per-app provisioning events (replaces one fat snapshot event) ──
       // One event per enabled app, routed to that app's MQ queue only.
       // Each app receives a lightweight "you now have this tenant" signal.
