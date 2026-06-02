@@ -197,7 +197,7 @@ fastify.addContentTypeParser(['application/json'], { parseAs: 'buffer' }, functi
 // Register plugins
 async function registerPlugins() {
   const isProductionEnv = process.env.NODE_ENV === 'production';
-  const kindeDomain = process.env.KINDE_DOMAIN || 'https://auth.zopkit.com';
+  const cognitoDomain = process.env.COGNITO_DOMAIN || 'https://auth.zopkit.com';
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
 
   await fastify.register(helmet, {
@@ -207,12 +207,12 @@ async function registerPlugins() {
         scriptSrc: ["'self'"],
         styleSrc: ["'self'", "'unsafe-inline'"],
         imgSrc: ["'self'", 'data:', 'https:'],
-        connectSrc: ["'self'", kindeDomain, frontendUrl, 'https://api.stripe.com', 'https://*.zopkit.com'],
+        connectSrc: ["'self'", cognitoDomain, frontendUrl, 'https://api.stripe.com', 'https://*.zopkit.com'],
         fontSrc: ["'self'", 'https:', 'data:'],
-        frameSrc: [kindeDomain, 'https://js.stripe.com'],
+        frameSrc: [cognitoDomain, 'https://js.stripe.com'],
         objectSrc: ["'none'"],
         baseUri: ["'self'"],
-        formAction: ["'self'", kindeDomain],
+        formAction: ["'self'", cognitoDomain],
         upgradeInsecureRequests: [],
       }
     } : false,

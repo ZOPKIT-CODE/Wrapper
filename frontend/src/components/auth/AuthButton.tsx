@@ -1,5 +1,5 @@
 import React from 'react';
-import { useKindeAuth } from '@kinde-oss/kinde-auth-react';
+import { useKindeAuth } from '@/lib/auth/cognito-auth';
 import { Button } from '../ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { 

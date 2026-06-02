@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo, ReactNode } from 'react';
 import { useLocation } from '@tanstack/react-router';
-import { useKindeAuth } from '@kinde-oss/kinde-auth-react';
+import { useKindeAuth } from '@/lib/auth/cognito-auth';
 import { useAuthStatus, useTenant } from '@/hooks/useSharedQueries';
 import { toast } from 'sonner';
 

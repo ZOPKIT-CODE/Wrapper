@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button"
 import { cn, formatDate } from "@/lib/utils"
 import { useTheme } from "@/components/theme/ThemeProvider"
 import { useUserContextSafe } from "@/contexts/UserContextProvider"
-import { useKindeAuth } from "@kinde-oss/kinde-auth-react"
+import { useKindeAuth } from "@/lib/auth/cognito-auth"
 
 const NotificationManager = React.lazy(() =>
   import("@/features/notifications/NotificationManager").then(m => ({ default: m.NotificationManager }))

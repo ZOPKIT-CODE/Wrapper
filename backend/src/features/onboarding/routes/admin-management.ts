@@ -5,32 +5,21 @@ import { db } from '../../../db/index.js';
 import { tenants, tenantUsers, customRoles, userRoleAssignments } from '../../../db/schema/index.js';
 import { eq } from 'drizzle-orm';
 import ErrorResponses from '../../../utils/error-responses.js';
-import jwt from 'jsonwebtoken';
-import { kindeService } from '../../../features/auth/index.js';
-import { isCognitoIssuer, verifyCognitoToken } from '../../auth/services/cognito-service.js';
+import { verifyCognitoToken } from '../../auth/services/cognito-service.js';
 import { TenantService } from '../../../services/tenant-service.js';
 
 /**
- * Validate a bearer/cookie token, dispatching by issuer (Kinde -> Cognito migration P4).
- * Cognito tokens are verified via verifyCognitoToken and mapped to the legacy
- * { kindeUserId, userId, email, name } shape (sub -> kindeUserId/userId). Other tokens
- * fall back to the Kinde path (removed in a later phase).
+ * Validate a bearer/cookie token (Cognito-only). The token is verified via
+ * verifyCognitoToken and mapped to the legacy { kindeUserId, userId, email, name }
+ * shape (sub -> kindeUserId/userId). An invalid token throws (treated as
+ * unauthenticated by callers).
  */
 async function validateTokenAnyIdp(token: string): Promise<Record<string, unknown>> {
-  let iss: string | undefined;
-  try {
-    iss = (jwt.decode(token) as jwt.JwtPayload | null)?.iss;
-  } catch {
-    iss = undefined;
+  const ci = await verifyCognitoToken(token);
+  if (!ci?.sub) {
+    throw new Error('Invalid Cognito token');
   }
-  if (isCognitoIssuer(iss)) {
-    const ci = await verifyCognitoToken(token);
-    if (!ci?.sub) {
-      throw new Error('Invalid Cognito token');
-    }
-    return { kindeUserId: ci.sub, userId: ci.sub, email: ci.email, name: ci.name };
-  }
-  return kindeService.validateToken(token);
+  return { kindeUserId: ci.sub, userId: ci.sub, email: ci.email, name: ci.name };
 }
 
 /**
@@ -211,8 +200,8 @@ export default async function adminManagementRoutes(
       }
 
       // Org membership lives in the Wrapper DB (organization_memberships / userRoleAssignments),
-      // which is the source of truth — no Kinde org cleanup or org creation needed.
-      // Generate the tenant/org code locally (formerly the Kinde org code).
+      // which is the source of truth — no external IdP org cleanup or org creation needed.
+      // Generate the tenant/org code locally.
       const actualOrgCode = `tenant_${Date.now()}`;
 
       Logger.log('info', 'general', 'create-organization', 'Step 5: Creating new organization', { requestId, companyName, orgCode: actualOrgCode });
@@ -306,7 +295,7 @@ export default async function adminManagementRoutes(
             isAdmin: true
           },
           nextStep: 'setup-profile',
-          loginUrl: `https://${process.env.KINDE_DOMAIN}`
+          loginUrl: `https://${process.env.COGNITO_DOMAIN}`
         }
       };
 

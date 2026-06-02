@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useKindeAuth } from '@kinde-oss/kinde-auth-react'
+import { useKindeAuth } from '@/lib/auth/cognito-auth'
 import { useLocation } from '@tanstack/react-router'
 import { api, subscriptionAPI, creditAPI } from '@/lib/api'
 import { useCreditStatusQuery } from '@/hooks/useSharedQueries'

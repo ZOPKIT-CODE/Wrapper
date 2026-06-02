@@ -1,6 +1,6 @@
 import React from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useKindeAuth } from '@kinde-oss/kinde-auth-react'
+import { useKindeAuth } from '@/lib/auth/cognito-auth'
 import { api, subscriptionAPI } from '@/lib/api'
 import { useLocation } from '@tanstack/react-router'
 

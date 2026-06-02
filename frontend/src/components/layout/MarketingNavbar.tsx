@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { useKindeAuth } from '@kinde-oss/kinde-auth-react';
+import { useKindeAuth } from '@/lib/auth/cognito-auth';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronRight, LayoutDashboard, Menu, Rocket, X } from 'lucide-react';
 import {

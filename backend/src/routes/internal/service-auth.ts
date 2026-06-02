@@ -34,9 +34,10 @@ import { createRemoteJWKSet, jwtVerify } from 'jose';
 import Logger from '../../utils/logger.js';
 
 // Module-level JWKS set for SSO token validation — shared, not recreated per request.
-const ssoKindeIssuerUrl = process.env.KINDE_ISSUER_URL || process.env.KINDE_DOMAIN || 'https://auth.zopkit.com';
+// AWS Cognito issuer: https://cognito-idp.<region>.amazonaws.com/<userPoolId>
+const ssoCognitoIssuerUrl = `https://cognito-idp.${process.env.COGNITO_REGION}.amazonaws.com/${process.env.COGNITO_USER_POOL_ID}`;
 const ssoJwks = createRemoteJWKSet(
-  new URL(`${ssoKindeIssuerUrl}/.well-known/jwks.json`),
+  new URL(`${ssoCognitoIssuerUrl}/.well-known/jwks.json`),
   { cacheMaxAge: 6 * 60 * 60 * 1000 } // 6 hours
 );
 
@@ -110,13 +111,13 @@ export default async function internalServiceAuthRoutes(fastify: FastifyInstance
         }
       }
 
-      Logger.log('info', 'routes', 'validate-sso-token', `💾 Cache MISS: Validating SSO token via Kinde JWT + database`);
+      Logger.log('info', 'routes', 'validate-sso-token', `💾 Cache MISS: Validating SSO token via Cognito JWT + database`);
 
-      // Verify the JWT token using Kinde's JWKS endpoint
+      // Verify the JWT token using Cognito's JWKS endpoint
       let jwtPayload: Record<string, unknown>;
       try {
         const { payload } = await jwtVerify(token, ssoJwks, {
-          issuer: ssoKindeIssuerUrl,
+          issuer: ssoCognitoIssuerUrl,
         });
         jwtPayload = payload as Record<string, unknown>;
       } catch (jwtErr: unknown) {

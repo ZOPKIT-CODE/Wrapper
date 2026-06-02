@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils'
-import { useKindeAuth } from '@kinde-oss/kinde-auth-react'
+import { useKindeAuth } from '@/lib/auth/cognito-auth'
 
 export default function GreetingCard({ className }: { className?: string }) {
     const { user } = useKindeAuth()

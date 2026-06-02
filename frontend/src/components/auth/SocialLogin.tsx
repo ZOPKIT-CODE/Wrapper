@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useKindeAuth } from '@kinde-oss/kinde-auth-react';
+import { useKindeAuth } from '@/lib/auth/cognito-auth';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Shield, Loader2 } from 'lucide-react';

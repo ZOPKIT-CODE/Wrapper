@@ -101,9 +101,6 @@ export default defineConfig(({ mode }) => {
     plugins,
     resolve: {
       alias: {
-        // Kinde->Cognito migration: redirect the Kinde SDK to the Cognito-backed shim
-        // (drop-in useKindeAuth/KindeProvider). Existing consumers stay unchanged.
-        '@kinde-oss/kinde-auth-react': path.resolve(__dirname, './src/lib/auth/cognito-auth.tsx'),
         '@': path.resolve(__dirname, './src'),
         '@components': path.resolve(__dirname, './src/components'),
         '@features': path.resolve(__dirname, './src/features'),
@@ -162,7 +159,6 @@ export default defineConfig(({ mode }) => {
             router: ['@tanstack/react-router'],
             query: ['@tanstack/react-query'],
             'radix-ui': ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-select', '@radix-ui/react-tabs'],
-            auth: ['@kinde-oss/kinde-auth-react'],
             forms: ['react-hook-form', '@hookform/resolvers', 'zod'],
             motion: ['framer-motion'],
             reactflow: ['reactflow'],
@@ -182,7 +178,6 @@ export default defineConfig(({ mode }) => {
         '@tanstack/react-router',
         'zod',
         'react-hook-form',
-        '@kinde-oss/kinde-auth-react',
         'canvas-confetti',
         'sonner',
       ],

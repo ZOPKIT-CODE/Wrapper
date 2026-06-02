@@ -17,16 +17,11 @@ declare global {
       APP_POOL_SIZE?: string;
       SYSTEM_POOL_SIZE?: string;
 
-      // Authentication (Kinde)
-      KINDE_DOMAIN?: string;
-      KINDE_CLIENT_ID?: string;
-      KINDE_CLIENT_SECRET?: string;
-      KINDE_M2M_CLIENT_ID?: string;
-      KINDE_M2M_CLIENT_SECRET?: string;
-      KINDE_REDIRECT_URI?: string;
-      KINDE_LOGOUT_REDIRECT_URI?: string;
-      KINDE_MANAGEMENT_AUDIENCE?: string;
-      KINDE_MANAGEMENT_SCOPES?: string;
+      // Authentication (AWS Cognito)
+      COGNITO_REGION?: string;
+      COGNITO_USER_POOL_ID?: string;
+      COGNITO_CLIENT_ID?: string;
+      COGNITO_DOMAIN?: string;
 
       // JWT / Sessions
       JWT_SECRET?: string;

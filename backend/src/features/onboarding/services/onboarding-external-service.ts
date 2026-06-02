@@ -1,16 +1,14 @@
 /**
  * **ONBOARDING EXTERNAL SERVICE**
  * Handles all external integrations for onboarding:
- * - Kinde authentication validation
- * - Kinde organization/user creation
+ * - Cognito authentication validation
+ * - Cognito user creation
  * - Onboarding completion tracking
  */
 
 import { v4 as uuidv4 } from 'uuid';
-import jwt from 'jsonwebtoken';
-import { kindeService } from '../../../features/auth/index.js';
 import { adminCreateUser } from '../../auth/services/cognito-admin-service.js';
-import { isCognitoIssuer, verifyCognitoToken } from '../../auth/services/cognito-service.js';
+import { verifyCognitoToken } from '../../auth/services/cognito-service.js';
 import { OnboardingFileLogger } from '../../../utils/onboarding-file-logger.js';
 import Logger from '../../../utils/logger.js';
 
@@ -38,41 +36,19 @@ export class OnboardingExternalService {
         return { authenticated: false, user: null };
       }
 
-      // Dispatch by issuer: Cognito tokens (Kinde->Cognito migration) verify against the
-      // shared pool; everything else falls through the Kinde path (removed in a later phase).
-      let iss: string | undefined;
-      try {
-        iss = (jwt.decode(token) as jwt.JwtPayload | null)?.iss;
-      } catch {
-        iss = undefined;
+      // Verify the token against the shared Cognito pool (Cognito-only). A token
+      // that does not validate is treated as unauthenticated.
+      const ci = await verifyCognitoToken(token);
+      if (!ci?.sub) {
+        return { authenticated: false, user: null };
       }
-
-      if (isCognitoIssuer(iss)) {
-        const ci = await verifyCognitoToken(token);
-        if (!ci?.sub) {
-          return { authenticated: false, user: null };
-        }
-        return {
-          authenticated: true,
-          user: {
-            // KEEP the kindeUserId property name for now (renamed in a later phase); carries the Cognito sub.
-            kindeUserId: ci.sub,
-            email: ci.email,
-            name: ci.name
-          }
-        };
-      }
-
-      // Validate token with Kinde
-      const user = await kindeService.validateToken(token);
-
-      const u = user as Record<string, unknown>;
       return {
         authenticated: true,
         user: {
-          kindeUserId: (u.kindeUserId || u.userId) as string,
-          email: u.email as string | undefined,
-          name: (u.name || u.given_name) as string | undefined
+          // KEEP the kindeUserId property name for now (renamed in a later phase); carries the Cognito sub.
+          kindeUserId: ci.sub,
+          email: ci.email,
+          name: ci.name
         }
       };
 
@@ -112,8 +88,8 @@ export class OnboardingExternalService {
       userName = existingUser.name || (existingUser.email && String(existingUser.email).split('@')[0]) || '';
       Logger.log('info', 'general', 'setupKindeIntegration', 'Using authenticated user', { kindeUserId: finalKindeUserId });
     } else {
-      // Ensure the admin user exists in Cognito (replaces kindeService.createUser).
-      // adminCreateUser is idempotent; KEEP the kindeUserId column name for now (renamed in a later phase).
+      // Ensure the admin user exists in Cognito via adminCreateUser, which is
+      // idempotent; KEEP the kindeUserId column name for now (renamed in a later phase).
       try {
         const cognitoUser = await adminCreateUser({ email: adminEmail, firstName, lastName });
 

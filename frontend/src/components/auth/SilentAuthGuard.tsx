@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useLocation } from '@tanstack/react-router';
-import { useKindeAuth } from '@kinde-oss/kinde-auth-react';
+import { useKindeAuth } from '@/lib/auth/cognito-auth';
 import useSilentAuth from '@/hooks/useSilentAuth';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { logger } from '@/lib/logger';

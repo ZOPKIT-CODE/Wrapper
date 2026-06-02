@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useKindeAuth } from '@kinde-oss/kinde-auth-react';
+import { useKindeAuth } from '@/lib/auth/cognito-auth';
 import type { AxiosRequestConfig } from 'axios';
 import api from '@/lib/api';
 

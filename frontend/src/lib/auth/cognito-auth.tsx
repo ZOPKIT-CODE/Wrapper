@@ -1,10 +1,10 @@
 /**
- * Cognito-backed auth shim — a drop-in replacement for `@kinde-oss/kinde-auth-react`.
+ * Cognito-backed auth shim — the app's auth provider (formerly `@kinde-oss/kinde-auth-react`).
  *
- * Part of the Kinde -> Cognito migration. `vite.config.ts` aliases
- * `@kinde-oss/kinde-auth-react` to this module, so every existing `useKindeAuth()` /
- * `KindeProvider` consumer keeps working with ZERO call-site changes — they now run
- * against Cognito via the Wrapper's backend-mediated flow:
+ * Part of the Kinde -> Cognito migration. Consumers import `useKindeAuth()` /
+ * `KindeProvider` directly from this module (`@/lib/auth/cognito-auth`); the names are
+ * kept so the call sites were unchanged by the cutover. They run against Cognito via the
+ * Wrapper's backend-mediated flow:
  *   - login  -> redirect to GET /api/auth/oauth/login (backend builds the Cognito
  *               Hosted-UI + PKCE redirect, sets httpOnly cookies on callback)
  *   - session -> GET /api/auth/me (cookie-authenticated)
@@ -78,7 +78,7 @@ export function CognitoAuthProvider({ children }: { children: React.ReactNode })
   return <CognitoAuthContext.Provider value={value}>{children}</CognitoAuthContext.Provider>;
 }
 
-// Alias-friendly name so `import { KindeProvider } from '@kinde-oss/kinde-auth-react'` resolves here.
+// Kept-name export so existing `import { KindeProvider } from '@/lib/auth/cognito-auth'` call sites work.
 export const KindeProvider = CognitoAuthProvider;
 
 interface LoginOptions {

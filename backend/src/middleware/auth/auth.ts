@@ -1,5 +1,4 @@
 import jwt from 'jsonwebtoken';
-import { kindeService } from '../../features/auth/index.js';
 import { isCognitoIssuer, verifyCognitoToken } from '../../features/auth/services/cognito-service.js';
 import { db, dbManager } from '../../db/index.js';
 import { reserveTenantConnection } from '../../db/request-connection.js';
@@ -408,56 +407,19 @@ export async function releaseRequestDbConnection(request: FastifyRequest): Promi
   }
 }
 
-async function handleTokenRefresh(request: FastifyRequest, reply: FastifyReply, refreshToken: string): Promise<boolean> {
-  try {
-    const tokens = await kindeService.refreshToken(refreshToken);
-
-    const accessToken = tokens.access_token as string;
-    const expiresIn = typeof tokens.expires_in === 'number' ? tokens.expires_in : 3600;
-    reply.setCookie('idp_token', accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: expiresIn,
-      path: '/'
-    });
-
-    const refreshTokenVal = tokens.refresh_token as string | undefined;
-    if (refreshTokenVal) {
-      reply.setCookie('idp_refresh_token', refreshTokenVal, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 30 * 24 * 60 * 60,
-        path: '/'
-      });
-    }
-
-    const kindeUser = tokenIsCognito(accessToken)
-      ? await cognitoTokenToKindeUser(accessToken)
-      : (await kindeService.validateToken(accessToken) as unknown as KindeUser | null);
-    if (!kindeUser?.userId) {
-      throw new Error('Invalid refreshed token');
-    }
-
-    await processAuthenticatedUser(request, reply, kindeUser);
-    return true;
-
-  } catch (refreshError: unknown) {
-    const err = refreshError as Error;
-    if (err.message.includes('invalid_grant')) {
-      reply.code(401).send({
-        error: 'Token Expired',
-        message: 'Your session has expired. Please sign in again.',
-        requiresReauth: true
-      });
-      return false;
-    }
-
-    reply.clearCookie('idp_token', { path: '/' })
-         .clearCookie('idp_refresh_token', { path: '/' });
-    return false;
-  }
+async function handleTokenRefresh(request: FastifyRequest, reply: FastifyReply, _refreshToken: string): Promise<boolean> {
+  // Cognito-only: silent in-middleware refresh is intentionally not performed here.
+  // Token refresh is owned by the dedicated POST /api/auth/refresh route (which exchanges
+  // the Cognito refresh token and re-sets cookies). When the access token is invalid/expired
+  // in the middleware, clear the session cookies and signal re-auth so the SPA re-logs in.
+  reply.clearCookie('idp_token', { path: '/' })
+       .clearCookie('idp_refresh_token', { path: '/' });
+  reply.code(401).send({
+    error: 'Token Expired',
+    message: 'Your session has expired. Please sign in again.',
+    requiresReauth: true
+  });
+  return false;
 }
 
 async function processAuthenticatedUser(request: FastifyRequest, reply: FastifyReply, kindeUser: KindeUser): Promise<void> {
@@ -553,7 +515,7 @@ async function processAuthenticatedUser(request: FastifyRequest, reply: FastifyR
 export async function authMiddleware(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   // Skip if already authenticated by an earlier preHandler in the same request lifecycle.
   // Routes that have both a global hook preHandler AND a per-route preHandler would otherwise
-  // run full Kinde token validation + DB queries twice (400-800ms duplicate cost).
+  // run full token validation + DB queries twice (400-800ms duplicate cost).
   if (request.userContext?.tenantId) return;
 
   // CORS preflight has no auth headers; never 401 here or the browser blocks the real request.
@@ -625,13 +587,15 @@ export async function authMiddleware(request: FastifyRequest, reply: FastifyRepl
           }
         }
       } catch (opsErr: unknown) {
-        if (shouldLogVerbose()) Logger.log('info', 'auth', 'auth-middleware', '⚠️ Operations JWT verification failed, falling through to Kinde', { error: (opsErr as Error).message });
+        if (shouldLogVerbose()) Logger.log('info', 'auth', 'auth-middleware', '⚠️ Operations JWT verification failed, falling through to Cognito', { error: (opsErr as Error).message });
       }
     }
 
-    const authPromise = tokenIsCognito(token)
-      ? cognitoTokenToKindeUser(token)
-      : kindeService.validateToken(token);
+    // Cognito-only: a non-Cognito token is not a valid session token — treat as unauthenticated.
+    if (!tokenIsCognito(token)) {
+      throw new Error('Invalid token response');
+    }
+    const authPromise = cognitoTokenToKindeUser(token);
     const timeoutPromise = new Promise<never>((_, reject) =>
       setTimeout(() => reject(new Error('Authentication timeout')), 10000)
     );

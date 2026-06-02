@@ -1,6 +1,6 @@
 import { useEffect, useState, lazy, Suspense } from 'react'
 import { Navigate } from '@tanstack/react-router'
-import { useKindeAuth } from '@kinde-oss/kinde-auth-react'
+import { useKindeAuth } from '@/lib/auth/cognito-auth'
 import { ZopkitRoundLoader } from '@/components/common/feedback/ZopkitRoundLoader'
 
 const Landing = lazy(() => import('@/features/landing/pages/Landing'))

@@ -755,7 +755,7 @@ export const trackLogin = async (user: { internalUserId?: string | null; userId?
       {
         email: user.email,
         success,
-        loginMethod: 'kinde',
+        loginMethod: 'cognito',
         timestamp: new Date().toISOString()
       },
       requestContext
@@ -772,7 +772,7 @@ export const trackLogin = async (user: { internalUserId?: string | null; userId?
         details: {
           email: user.email,
           success,
-          loginMethod: 'kinde'
+          loginMethod: 'cognito'
         }
       },
       requestContext

@@ -97,7 +97,7 @@ export const swaggerOptions: FastifyDynamicSwaggerOptions = {
           type: 'http',
           scheme: 'bearer',
           bearerFormat: 'JWT',
-          description: 'JWT token from Kinde OAuth2 flow. Pass as: Authorization: Bearer <token>',
+          description: 'JWT token from AWS Cognito OAuth2 flow. Pass as: Authorization: Bearer <token>',
         },
         CookieAuth: {
           type: 'apiKey',

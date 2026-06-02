@@ -4,8 +4,7 @@ import { db } from '../../../db/index.js';
 import { tenants, tenantUsers, onboardingFormData } from '../../../db/schema/index.js';
 import { eq, and } from 'drizzle-orm';
 import ErrorResponses from '../../../utils/error-responses.js';
-import jwt from 'jsonwebtoken';
-import { isCognitoIssuer, verifyCognitoToken } from '../../auth/services/cognito-service.js';
+import { verifyCognitoToken } from '../../auth/services/cognito-service.js';
 
 /**
  * Data Management Routes
@@ -13,27 +12,17 @@ import { isCognitoIssuer, verifyCognitoToken } from '../../auth/services/cognito
  */
 
 /**
- * Validate a bearer token, dispatching by issuer (Kinde -> Cognito migration P4).
- * Cognito tokens are verified via verifyCognitoToken and mapped to the legacy
- * { kindeUserId, userId, email, name } shape (sub -> kindeUserId/userId). Other tokens
- * fall back to the Kinde path (removed in a later phase).
+ * Validate a bearer token (Cognito-only). The token is verified via
+ * verifyCognitoToken and mapped to the legacy { kindeUserId, userId, email, name }
+ * shape (sub -> kindeUserId/userId). An invalid token throws (treated as
+ * unauthenticated by callers).
  */
 async function validateTokenAnyIdp(token: string): Promise<Record<string, unknown>> {
-  let iss: string | undefined;
-  try {
-    iss = (jwt.decode(token) as jwt.JwtPayload | null)?.iss;
-  } catch {
-    iss = undefined;
+  const ci = await verifyCognitoToken(token);
+  if (!ci?.sub) {
+    throw new Error('Invalid Cognito token');
   }
-  if (isCognitoIssuer(iss)) {
-    const ci = await verifyCognitoToken(token);
-    if (!ci?.sub) {
-      throw new Error('Invalid Cognito token');
-    }
-    return { kindeUserId: ci.sub, userId: ci.sub, email: ci.email, name: ci.name };
-  }
-  const { kindeService } = await import('../../auth/index.js');
-  return kindeService.validateToken(token);
+  return { kindeUserId: ci.sub, userId: ci.sub, email: ci.email, name: ci.name };
 }
 
 export default async function dataManagementRoutes(
@@ -160,7 +149,7 @@ export default async function dataManagementRoutes(
       let kindeUserId: string | null = null;
       let userEmail: string | null = null;
 
-      // Require a valid Kinde JWT — reject unauthenticated requests
+      // Require a valid Cognito JWT — reject unauthenticated requests
       const authHeader = request.headers.authorization;
       if (!authHeader?.startsWith('Bearer ')) {
         return reply.code(401).send({ success: false, error: 'Authentication required' });

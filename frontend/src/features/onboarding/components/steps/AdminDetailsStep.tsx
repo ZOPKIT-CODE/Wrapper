@@ -10,7 +10,7 @@ import { UserClassification } from '../FlowSelector';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Info, CheckCircle2, XCircle, Loader2, ShieldCheck } from 'lucide-react';
 import React, { memo, useEffect, useState } from 'react';
-import { useKindeAuth } from '@kinde-oss/kinde-auth-react';
+import { useKindeAuth } from '@/lib/auth/cognito-auth';
 import { useWatch } from 'react-hook-form';
 import { getCountryConfig } from '../../config/countryConfig';
 import { onboardingAPI } from '@/lib/api';

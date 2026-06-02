@@ -1,6 +1,6 @@
 import { Link, useLocation } from "@tanstack/react-router"
 import { useSidebar } from "@/components/ui/sidebar"
-import { useKindeAuth } from "@kinde-oss/kinde-auth-react"
+import { useKindeAuth } from "@/lib/auth/cognito-auth"
 import { useEffect, useState } from "react"
 import {
     LayoutGrid,

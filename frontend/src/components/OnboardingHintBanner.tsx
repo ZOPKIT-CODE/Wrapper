@@ -1,4 +1,4 @@
-import { useKindeAuth } from '@kinde-oss/kinde-auth-react';
+import { useKindeAuth } from '@/lib/auth/cognito-auth';
 import { useLocation, useNavigate } from '@tanstack/react-router';
 import { useAuthStatus } from '@/hooks/useSharedQueries';
 

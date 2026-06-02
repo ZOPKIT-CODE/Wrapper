@@ -1,6 +1,6 @@
 import { ReactNode, useState, useEffect } from 'react';
 import { Navigate } from '@tanstack/react-router';
-import { useKindeAuth } from '@kinde-oss/kinde-auth-react';
+import { useKindeAuth } from '@/lib/auth/cognito-auth';
 import AnimatedLoader from '@/components/common/feedback/AnimatedLoader';
 import { logger } from '@/lib/logger';
 

@@ -1,6 +1,6 @@
 import { createRootRoute, createRoute, createRouter, Outlet, Navigate, useNavigate } from '@tanstack/react-router'
 import { Suspense, useMemo } from 'react'
-import { useKindeAuth } from '@kinde-oss/kinde-auth-react'
+import { useKindeAuth } from '@/lib/auth/cognito-auth'
 import { useUserContextSafe } from '@/contexts/UserContextProvider'
 
 import { ZopkitRoundLoader } from '@/components/common/feedback/ZopkitRoundLoader'

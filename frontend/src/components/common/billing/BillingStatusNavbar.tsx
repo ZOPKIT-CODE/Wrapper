@@ -1,7 +1,7 @@
 import React from 'react';
 import { Coins, Calendar, Crown, AlertTriangle, Clock, Shield, ArrowUp, Sparkles } from 'lucide-react';
 import { useCreditStatusQuery, useSubscriptionCurrent } from '@/hooks/useSharedQueries';
-import { useKindeAuth } from '@kinde-oss/kinde-auth-react';
+import { useKindeAuth } from '@/lib/auth/cognito-auth';
 import { formatDate } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { useNavigate } from '@tanstack/react-router';

@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useKindeAuth } from '@kinde-oss/kinde-auth-react';
+import { useKindeAuth } from '@/lib/auth/cognito-auth';
 import { useTheme } from '@/components/theme/ThemeProvider';
 import { OnboardingForm } from '../components/OnboardingForm';
 import { onboardingLogger } from '../utils/onboardingLogger';

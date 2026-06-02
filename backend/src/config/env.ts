@@ -5,9 +5,6 @@
 
 const REQUIRED_VARS = [
   'DATABASE_URL',
-  'KINDE_CLIENT_ID',
-  'KINDE_CLIENT_SECRET',
-  'KINDE_ISSUER_URL',
   'JWT_SECRET',
 ] as const;
 
@@ -71,10 +68,11 @@ export const env = {
   // Database
   databaseUrl: process.env.DATABASE_URL ?? '',
 
-  // Auth
-  kindeClientId: process.env.KINDE_CLIENT_ID ?? '',
-  kindeClientSecret: process.env.KINDE_CLIENT_SECRET ?? '',
-  kindeIssuerUrl: process.env.KINDE_ISSUER_URL ?? '',
+  // Auth (AWS Cognito)
+  cognitoRegion: process.env.COGNITO_REGION ?? '',
+  cognitoUserPoolId: process.env.COGNITO_USER_POOL_ID ?? '',
+  cognitoClientId: process.env.COGNITO_CLIENT_ID ?? '',
+  cognitoDomain: process.env.COGNITO_DOMAIN ?? '',
   jwtSecret: process.env.JWT_SECRET ?? '',
   /**
    * Previous JWT secrets accepted during rotation. Parsed lazily by verifiers

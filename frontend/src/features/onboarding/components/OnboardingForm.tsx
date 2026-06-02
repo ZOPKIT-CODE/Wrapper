@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useKindeAuth } from '@kinde-oss/kinde-auth-react';
+import { useKindeAuth } from '@/lib/auth/cognito-auth';
 import { queryKeys } from '@/hooks/useSharedQueries';
 import { useOnboardingForm } from '../hooks';
 import { useFormPersistence } from '../hooks/useFormPersistence';

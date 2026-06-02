@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useInfiniteQuery } from '@tanstack/react-query'
-import { useKindeAuth } from '@kinde-oss/kinde-auth-react'
+import { useKindeAuth } from '@/lib/auth/cognito-auth'
 import { tenantAPI } from '@/lib/api'
 import { TimelineTab } from '@/features/billing/components/TimelineTab'
 import { DashboardPageHeader } from '@/components/dashboard/DashboardPageHeader'

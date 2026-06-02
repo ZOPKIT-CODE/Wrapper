@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { useKindeAuth } from '@kinde-oss/kinde-auth-react'
+import { useKindeAuth } from '@/lib/auth/cognito-auth'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { motion } from 'framer-motion'
 import type { MotionProps } from 'framer-motion'

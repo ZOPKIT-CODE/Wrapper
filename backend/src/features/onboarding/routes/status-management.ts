@@ -6,9 +6,7 @@ import { db } from '../../../db/index.js';
 import { tenants, tenantUsers, customRoles, onboardingFormData } from '../../../db/schema/index.js';
 import { eq, and, desc } from 'drizzle-orm';
 import { TenantService } from '../../../services/tenant-service.js';
-import jwt from 'jsonwebtoken';
-import { kindeService } from '../../../features/auth/index.js';
-import { isCognitoIssuer, verifyCognitoToken } from '../../auth/services/cognito-service.js';
+import { verifyCognitoToken } from '../../auth/services/cognito-service.js';
 import { SubscriptionService } from '../../../features/subscriptions/index.js';
 import { shouldLogVerbose } from '../../../utils/verbose-log.js';
 
@@ -18,26 +16,17 @@ import { shouldLogVerbose } from '../../../utils/verbose-log.js';
  */
 
 /**
- * Validate a bearer/cookie token, dispatching by issuer (Kinde -> Cognito migration P4).
- * Cognito tokens are verified via verifyCognitoToken and mapped to the legacy
- * { kindeUserId, userId, email, name } shape (sub -> kindeUserId/userId). Other tokens
- * fall back to the Kinde path (removed in a later phase).
+ * Validate a bearer/cookie token (Cognito-only). The token is verified via
+ * verifyCognitoToken and mapped to the legacy { kindeUserId, userId, email, name }
+ * shape (sub -> kindeUserId/userId). An invalid token throws (treated as
+ * unauthenticated by callers).
  */
 async function validateTokenAnyIdp(token: string): Promise<Record<string, unknown>> {
-  let iss: string | undefined;
-  try {
-    iss = (jwt.decode(token) as jwt.JwtPayload | null)?.iss;
-  } catch {
-    iss = undefined;
+  const ci = await verifyCognitoToken(token);
+  if (!ci?.sub) {
+    throw new Error('Invalid Cognito token');
   }
-  if (isCognitoIssuer(iss)) {
-    const ci = await verifyCognitoToken(token);
-    if (!ci?.sub) {
-      throw new Error('Invalid Cognito token');
-    }
-    return { kindeUserId: ci.sub, userId: ci.sub, email: ci.email, name: ci.name };
-  }
-  return kindeService.validateToken(token);
+  return { kindeUserId: ci.sub, userId: ci.sub, email: ci.email, name: ci.name };
 }
 
 // Helper function to extract token from request
@@ -396,7 +385,7 @@ export default async function statusManagementRoutes(
     }
   });
 
-  // Get onboarding data — requires a valid Kinde JWT
+  // Get onboarding data — requires a valid Cognito JWT
   fastify.post('/get-data', {
     schema: {
       body: z.object({

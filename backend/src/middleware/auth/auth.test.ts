@@ -1,12 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// We must mock DB/Kinde modules because `src/db/index.js` has top-level initialization.
+// We must mock DB/Cognito modules because `src/db/index.js` has top-level initialization.
 const {
   analyzeRequestMock,
   getSystemConnectionMock,
   getAppConnectionMock,
-  validateTokenMock,
-  refreshTokenMock,
+  verifyCognitoTokenMock,
+  isCognitoIssuerMock,
+  jwtDecodeMock,
   jwtVerifyMock,
   dbSelectMock,
   dbSelectTenantUserMock,
@@ -20,11 +21,11 @@ const {
 
   // Use `any` here to avoid Vitest inferring overly-narrow `null` / `never` types,
   // which then breaks `tsc --noEmit` when we override implementations per-test.
-  const validateTokenMock: any = vi.fn(async () => null);
-  const refreshTokenMock = vi.fn(async () => ({
-    access_token: 'new-access',
-    refresh_token: 'new-refresh',
-    expires_in: 3600,
+  const verifyCognitoTokenMock: any = vi.fn(async () => null);
+  // tokenIsCognito() decodes the token and checks the issuer; default to a Cognito issuer.
+  const isCognitoIssuerMock = vi.fn(() => true);
+  const jwtDecodeMock = vi.fn(() => ({
+    iss: 'https://cognito-idp.us-east-1.amazonaws.com/us-east-1_TEST',
   }));
 
   const jwtVerifyMock: any = vi.fn(() => {
@@ -45,8 +46,9 @@ const {
     analyzeRequestMock,
     getSystemConnectionMock,
     getAppConnectionMock,
-    validateTokenMock,
-    refreshTokenMock,
+    verifyCognitoTokenMock,
+    isCognitoIssuerMock,
+    jwtDecodeMock,
     jwtVerifyMock,
     dbSelectMock,
     dbSelectTenantUserMock,
@@ -89,16 +91,15 @@ vi.mock('../../utils/verbose-log.js', () => ({
   shouldLogVerbose: vi.fn(() => false),
 }));
 
-vi.mock('../../features/auth/index.js', () => ({
-  kindeService: {
-    validateToken: validateTokenMock,
-    refreshToken: refreshTokenMock,
-  },
+vi.mock('../../features/auth/services/cognito-service.js', () => ({
+  isCognitoIssuer: isCognitoIssuerMock,
+  verifyCognitoToken: verifyCognitoTokenMock,
 }));
 
 vi.mock('jsonwebtoken', () => ({
   default: {
     verify: jwtVerifyMock,
+    decode: jwtDecodeMock,
   },
 }));
 
@@ -170,9 +171,11 @@ describe('authMiddleware', () => {
   it('returns 408 when token validation times out', async () => {
     vi.useFakeTimers();
     const { authMiddleware } = await loadAuthModule();
-    validateTokenMock.mockImplementationOnce(
+    // tokenIsCognito() is true (jwtDecode -> cognito iss, isCognitoIssuer -> true),
+    // so the middleware calls verifyCognitoToken — make it hang to trip the timeout.
+    verifyCognitoTokenMock.mockImplementationOnce(
       async () =>
-        await new Promise((_resolve) => {
+        await new Promise(() => {
           // never resolves
         })
     );
@@ -195,15 +198,13 @@ describe('authMiddleware', () => {
     vi.useRealTimers();
   });
 
-  it('attempts refresh when access token is invalid but refresh cookie exists', async () => {
+  it('clears cookies and requires re-auth when access token is invalid and refresh cookie exists', async () => {
     const { authMiddleware } = await loadAuthModule();
-    validateTokenMock.mockRejectedValueOnce(new Error('invalid token'));
-    validateTokenMock.mockResolvedValueOnce({
-      userId: 'kinde-u1',
-      email: 'u@example.com',
-      name: 'User',
-      organization: { id: 'org-1' },
-    });
+    // Cognito-only: there is no silent in-middleware refresh anymore. When the access
+    // token is invalid, the catch path calls handleTokenRefresh, which clears the
+    // session cookies and replies 401 with { requiresReauth: true }.
+    // tokenIsCognito() is true, so the main verify (verifyCognitoToken) runs and throws.
+    verifyCognitoTokenMock.mockRejectedValue(new Error('invalid token'));
 
     // Make processAuthenticatedUser fast: avoid tenant lookup by returning null user in DB,
     // and bypass RLS setup.
@@ -217,13 +218,9 @@ describe('authMiddleware', () => {
 
     await authMiddleware(req, reply);
 
-    expect(refreshTokenMock).toHaveBeenCalledWith('refresh');
-    expect(reply.setCookie).toHaveBeenCalledWith(
-      'idp_token',
-      'new-access',
-      expect.objectContaining({ httpOnly: true, path: '/' })
-    );
-    expect(req.userContext?.isAuthenticated).toBe(true);
+    expect(reply.clearCookie).toHaveBeenCalledWith('idp_token', expect.objectContaining({ path: '/' }));
+    expect(reply.code).toHaveBeenCalledWith(401);
+    expect(reply.send).toHaveBeenCalledWith(expect.objectContaining({ requiresReauth: true }));
   });
 
   it('uses operations JWT when configured and tenant+user are found', async () => {

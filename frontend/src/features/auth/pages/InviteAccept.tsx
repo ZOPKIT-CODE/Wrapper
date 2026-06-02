@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useSearch, useNavigate } from '@tanstack/react-router'
-import { useKindeAuth } from '@kinde-oss/kinde-auth-react'
+import { useKindeAuth } from '@/lib/auth/cognito-auth'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import api from '@/lib/api'

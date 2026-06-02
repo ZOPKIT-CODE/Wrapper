@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react'
-import { useKindeAuth } from '@kinde-oss/kinde-auth-react'
+import { useKindeAuth } from '@/lib/auth/cognito-auth'
 import { Navigate, useLocation } from '@tanstack/react-router'
 import { Loader2 } from 'lucide-react'
 import { useAuthStatus, useOnboardingStatus } from '@/hooks/useSharedQueries'

@@ -1,5 +1,4 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { getIdentityProvider } from '../adapters/kinde-adapter.js';
 import {
   isCognitoIssuer, verifyCognitoToken,
   newPkceState, takePkceVerifier, buildCognitoAuthorizeUrl, cognitoIdentityProviderFor,
@@ -119,7 +118,7 @@ async function fetchEnabledApps(tenantId: string): Promise<Array<{
   } catch (err: unknown) {
     // Non-fatal: if organization_applications doesn't exist yet (older tenants)
     // return empty array — downstream apps handle entitlement gracefully.
-    if (shouldLogVerbose()) Logger.log('warning', 'kinde', 'fetch-enabled-apps', 'fetchEnabledApps failed (non-fatal)', { error: (err as Error).message });
+    if (shouldLogVerbose()) Logger.log('warning', 'auth', 'fetch-enabled-apps', 'fetchEnabledApps failed (non-fatal)', { error: (err as Error).message });
     return [];
   }
 }
@@ -182,8 +181,6 @@ export default async function authRoutes(
   fastify: FastifyInstance,
   _options?: Record<string, unknown>
 ): Promise<void> {
-  const identityProvider = getIdentityProvider();
-
   /**
    * GET /oauth/login
    * Generic Cognito Hosted-UI OAuth2 entry point for onboarding (no org context).
@@ -223,10 +220,9 @@ export default async function authRoutes(
   /**
    * GET /oauth/:provider
    * Per-provider convenience routes (google, github, microsoft, apple, linkedin).
-   * All route to the same Kinde /oauth2/auth endpoint — the social connection
-   * the user sees is controlled by the Kinde dashboard config, not by a
-   * query parameter.  A connection_id env var (KINDE_CONNECTION_<PROVIDER>)
-   * is forwarded when present so custom sign-in pages can skip the selector.
+   * All route to the same Cognito Hosted-UI /oauth2/authorize endpoint; the federated
+   * IdP the user is sent to is selected via cognitoIdentityProviderFor(provider), so the
+   * selector can be skipped for a known provider.
    */
   fastify.get('/oauth/:provider', async (request: FastifyRequest, reply: FastifyReply) => {
     const { provider } = request.params as { provider: string };
@@ -308,15 +304,15 @@ export default async function authRoutes(
     const query = request.query as Record<string, string>;
     const { code, state, error: authError } = query;
 
-    if (shouldLogVerbose()) Logger.log('info', 'kinde', 'oauth-callback', 'OAuth callback received', { hasCode: !!code, state, authError });
+    if (shouldLogVerbose()) Logger.log('info', 'cognito', 'oauth-callback', 'OAuth callback received', { hasCode: !!code, state, authError });
 
     if (authError) {
-      Logger.log('error', 'kinde', 'oauth-callback', 'OAuth error in callback', { authError });
+      Logger.log('error', 'cognito', 'oauth-callback', 'OAuth error in callback', { authError });
       return reply.redirect(buildAuthErrorRedirect(parseStateSafe(state), 'auth_failed', 'Authentication failed'));
     }
 
     if (!code) {
-      Logger.log('error', 'kinde', 'oauth-callback', 'No authorization code received');
+      Logger.log('error', 'cognito', 'oauth-callback', 'No authorization code received');
       return reply.redirect(buildAuthErrorRedirect(parseStateSafe(state), 'no_code', 'No authorization code provided'));
     }
 
@@ -363,7 +359,7 @@ export default async function authRoutes(
 
       // App authentication flow (CRM redirect)
       if (parsedState.app_code && parsedState.redirect_url) {
-        if (shouldLogVerbose()) Logger.log('info', 'kinde', 'oauth-callback', 'App auth flow', { appCode: parsedState.app_code });
+        if (shouldLogVerbose()) Logger.log('info', 'cognito', 'oauth-callback', 'App auth flow', { appCode: parsedState.app_code });
         const frontendCallbackUrl = new URL(`${process.env.FRONTEND_URL}/auth/callback`);
         frontendCallbackUrl.searchParams.set('state', JSON.stringify({
           app_code: parsedState.app_code,
@@ -387,7 +383,7 @@ export default async function authRoutes(
 
     } catch (err: unknown) {
       const error = err as Error;
-      Logger.log('error', 'kinde', 'oauth-callback', 'OAuth callback error', { error: error.message });
+      Logger.log('error', 'cognito', 'oauth-callback', 'OAuth callback error', { error: error.message });
       return reply.redirect(buildAuthErrorRedirect(parseStateSafe(state), 'callback_failed', error.message || 'Failed to process authentication'));
     }
   });
@@ -411,7 +407,7 @@ export default async function authRoutes(
       });
     } catch (err: unknown) {
       const error = err as Error;
-      Logger.log('error', 'kinde', 'auth-me', 'Error getting user info', { error: error.message });
+      Logger.log('error', 'auth', 'auth-me', 'Error getting user info', { error: error.message });
       return reply.code(500).send({
         error: 'Internal Server Error',
         message: 'Failed to get user information',
@@ -438,7 +434,7 @@ export default async function authRoutes(
       return reply.send({ success: true, data: { logoutUrl, message: 'Logged out successfully' } });
     } catch (err: unknown) {
       const error = err as Error;
-      Logger.log('error', 'kinde', 'auth-logout', 'Logout error', { error: error.message });
+      Logger.log('error', 'auth', 'auth-logout', 'Logout error', { error: error.message });
       return reply.code(500).send({ error: 'Internal Server Error', message: 'Failed to logout' });
     }
   });
@@ -478,7 +474,7 @@ export default async function authRoutes(
       return reply.send({ success: true, data: { message: 'Token refreshed successfully' } });
     } catch (err: unknown) {
       const error = err as Error;
-      Logger.log('error', 'kinde', 'auth-refresh', 'Token refresh error', { error: error.message });
+      Logger.log('error', 'auth', 'auth-refresh', 'Token refresh error', { error: error.message });
       const clearOpts = { path: '/', domain: getAuthCookieOptions().domain };
       reply.clearCookie('idp_token', clearOpts).clearCookie('idp_refresh_token', clearOpts);
       return reply.code(401).send({ error: 'Unauthorized', message: 'Failed to refresh token' });
@@ -547,7 +543,7 @@ export default async function authRoutes(
         if (shouldLogVerbose()) request.log.debug('[validate-token] cache HIT');
         return reply.send(cachedResponse);
       }
-      if (shouldLogVerbose()) request.log.debug('[validate-token] cache MISS — validating with Kinde');
+      if (shouldLogVerbose()) request.log.debug('[validate-token] cache MISS — validating with Cognito');
       // ─────────────────────────────────────────────────────────────────────
 
       // Try Operations-issued JWT first when shared secret is configured
@@ -578,25 +574,23 @@ export default async function authRoutes(
             }
           }
         } catch (opsErr: unknown) {
-          if (shouldLogVerbose()) Logger.log('warning', 'kinde', 'validate-token', 'Operations JWT verification failed, trying Kinde', { error: (opsErr as Error).message });
+          if (shouldLogVerbose()) Logger.log('warning', 'auth', 'validate-token', 'Operations JWT verification failed, trying Cognito', { error: (opsErr as Error).message });
         }
       }
 
-      // Validate the bearer token. Dual-IdP during the Kinde->Cognito migration: a token
-      // from the shared Cognito pool is verified via Cognito JWKS (issuer + signature);
-      // otherwise fall back to the Kinde path (JWKS -> API -> introspect). Cognito tokens
-      // carry no org_code, so they resolve the tenant by email below (the no-org path).
+      // Validate the bearer token. Cognito-only: a token from the shared Cognito pool is
+      // verified via Cognito JWKS (issuer + signature). A non-Cognito-issuer token is not a
+      // valid session token and yields no userInfo (the !kindeId check below 401s it). Cognito
+      // tokens carry no org_code, so they resolve the tenant by email below (the no-org path).
       let userInfo: Record<string, unknown> | undefined;
       if (isCognitoIssuer((decoded as jwt.JwtPayload).iss)) {
         try {
           const ci = await verifyCognitoToken(token);
           userInfo = ci ? (ci as unknown as Record<string, unknown>) : undefined;
         } catch (cognitoErr: unknown) {
-          if (shouldLogVerbose()) Logger.log('warning', 'kinde', 'validate-token', 'Cognito token verification failed', { error: (cognitoErr as Error).message });
+          if (shouldLogVerbose()) Logger.log('warning', 'cognito', 'validate-token', 'Cognito token verification failed', { error: (cognitoErr as Error).message });
           userInfo = undefined;
         }
-      } else {
-        userInfo = (await identityProvider.getUserInfo(token)) as Record<string, unknown> | undefined;
       }
       const kindeId = (userInfo?.id as string) || (userInfo?.sub as string);
       const orgCode = (userInfo?.org_code as string) || (Array.isArray(userInfo?.org_codes) ? (userInfo?.org_codes as string[])[0] : undefined);
@@ -705,7 +699,7 @@ export default async function authRoutes(
       return reply.send(res);
     } catch (err: unknown) {
       const error = err as Error;
-      Logger.log('error', 'kinde', 'validate-token', 'validate-token error', { error: error.message });
+      Logger.log('error', 'auth', 'validate-token', 'validate-token error', { error: error.message });
       const lowerMessage = (error.message || '').toLowerCase();
       if (lowerMessage.includes('invalid compact jws') || lowerMessage.includes('jwt malformed')) {
         return reply.code(400).send({

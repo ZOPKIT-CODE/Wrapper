@@ -16,9 +16,10 @@ const tenantUserMap = new Map<string, Set<string>>(); // tenantId -> Set of user
 const userTenantMap = new Map<string, string>(); // userId -> tenantId
 
 // Module-level JWKS set — cached once to avoid re-fetching on every connection.
-const kindeIssuerUrl = process.env.KINDE_ISSUER_URL || process.env.KINDE_DOMAIN || 'https://auth.zopkit.com';
+// AWS Cognito issuer: https://cognito-idp.<region>.amazonaws.com/<userPoolId>
+const cognitoIssuerUrl = `https://cognito-idp.${process.env.COGNITO_REGION}.amazonaws.com/${process.env.COGNITO_USER_POOL_ID}`;
 const wsJwks = createRemoteJWKSet(
-  new URL(`${kindeIssuerUrl}/.well-known/jwks.json`),
+  new URL(`${cognitoIssuerUrl}/.well-known/jwks.json`),
   { cacheMaxAge: 6 * 60 * 60 * 1000 } // 6 hours
 );
 
@@ -48,10 +49,10 @@ export function initWebSocketServer(server: Server): WSServer {
       return;
     }
 
-    // Validate JWT token using Kinde's JWKS endpoint
+    // Validate JWT token using Cognito's JWKS endpoint
     try {
       const { payload } = await jwtVerify(token, wsJwks, {
-        issuer: kindeIssuerUrl,
+        issuer: cognitoIssuerUrl,
       });
 
       // Verify token is not expired (jwtVerify handles this, but be explicit)

@@ -12,31 +12,20 @@ import { invalidateUserCache } from '../../../middleware/auth/auth.js';
 import { db } from '../../../db/index.js';
 import { tenants } from '../../../db/schema/index.js';
 import { eq } from 'drizzle-orm';
-import jwt from 'jsonwebtoken';
-import { isCognitoIssuer, verifyCognitoToken } from '../../auth/services/cognito-service.js';
+import { verifyCognitoToken } from '../../auth/services/cognito-service.js';
 
 /**
- * Validate a bearer token, dispatching by issuer (Kinde -> Cognito migration P4).
- * Cognito tokens are verified via verifyCognitoToken and mapped to the legacy
- * { kindeUserId, userId, email, name } shape (sub -> kindeUserId/userId). Other tokens
- * fall back to the Kinde path (removed in a later phase).
+ * Validate a bearer token (Cognito-only). The token is verified via
+ * verifyCognitoToken and mapped to the legacy { kindeUserId, userId, email, name }
+ * shape (sub -> kindeUserId/userId). An invalid token throws (treated as
+ * unauthenticated by callers).
  */
 async function validateTokenAnyIdp(token: string): Promise<Record<string, unknown>> {
-  let iss: string | undefined;
-  try {
-    iss = (jwt.decode(token) as jwt.JwtPayload | null)?.iss;
-  } catch {
-    iss = undefined;
+  const ci = await verifyCognitoToken(token);
+  if (!ci?.sub) {
+    throw new Error('Invalid Cognito token');
   }
-  if (isCognitoIssuer(iss)) {
-    const ci = await verifyCognitoToken(token);
-    if (!ci?.sub) {
-      throw new Error('Invalid Cognito token');
-    }
-    return { kindeUserId: ci.sub, userId: ci.sub, email: ci.email, name: ci.name };
-  }
-  const { kindeService } = await import('../../auth/index.js');
-  return kindeService.validateToken(token);
+  return { kindeUserId: ci.sub, userId: ci.sub, email: ci.email, name: ci.name };
 }
 
 export default async function coreOnboardingRoutes(

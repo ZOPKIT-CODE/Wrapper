@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from '@tanstack/react-router';
-import { useKindeAuth } from '@kinde-oss/kinde-auth-react';
+import { useKindeAuth } from '@/lib/auth/cognito-auth';
 import { ProductData } from '@/types/products';
 import { Check, X, Zap, XCircle, CheckCircle, Minus, AlertCircle, Sparkles, LayoutGrid, ChevronRight, Maximize2, ArrowRight, Play, Calendar } from 'lucide-react';
 import { MiniSparkline } from '@/components/common/MiniSparkline';

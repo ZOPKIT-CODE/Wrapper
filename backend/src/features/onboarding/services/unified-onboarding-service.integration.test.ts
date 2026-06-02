@@ -13,7 +13,7 @@
  *      already taken in the real DB.
  *
  * External side-effects mocked:
- *   - kindeService              (Kinde OAuth2 management API)
+ *   - cognito-admin-service     (Cognito user lifecycle)
  *   - VerificationService       (sandbox.co.in PAN/GSTIN API)
  *   - InterAppEventService      (Amazon MQ publish)
  *   - OnboardingFileLogger      (filesystem writes)
@@ -38,24 +38,15 @@ import { createTestDb, seedTenant, type TestDb } from '../../../db/test-helpers/
 // Module-level mocks (hoisted before imports of the SUT)
 // ---------------------------------------------------------------------------
 
-// 1. kindeService — prevent real HTTP calls to Kinde
-vi.mock('../../../features/auth/index.js', () => ({
-  kindeService: {
-    createOrganization: vi.fn().mockResolvedValue({
-      organization: { code: 'kinde_org_test_123', external_id: 'tenant_ext_test' },
-    }),
-    addUserToOrganization: vi.fn().mockResolvedValue({ success: true }),
-    createUser: vi.fn().mockResolvedValue({
-      id: 'kp_test_user_abc',
-      given_name: 'Test',
-      family_name: 'User',
-    }),
-    validateToken: vi.fn().mockResolvedValue({
-      kindeUserId: 'kp_test_user_abc',
-      email: 'admin@testco.com',
-    }),
-    getUserOrganizations: vi.fn().mockResolvedValue([]),
-  },
+// 1. cognito-admin-service — prevent real AWS Cognito admin API calls.
+//    Onboarding user-creation now goes through adminCreateUser (Cognito user lifecycle),
+//    invoked by OnboardingExternalService.setupKindeIntegration. The other admin fns are
+//    stubbed defensively in case the lifecycle path touches them.
+vi.mock('../../auth/services/cognito-admin-service.js', () => ({
+  adminCreateUser: vi.fn(async () => ({ sub: 'cognito-sub-1', username: 'test@example.com' })),
+  adminGetUserByEmail: vi.fn(),
+  adminDisableUser: vi.fn(),
+  adminDeleteUser: vi.fn(),
 }));
 
 // 2. VerificationService — skip external PAN/GSTIN HTTP calls
