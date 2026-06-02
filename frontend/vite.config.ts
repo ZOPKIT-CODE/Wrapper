@@ -101,6 +101,9 @@ export default defineConfig(({ mode }) => {
     plugins,
     resolve: {
       alias: {
+        // Kinde->Cognito migration: redirect the Kinde SDK to the Cognito-backed shim
+        // (drop-in useKindeAuth/KindeProvider). Existing consumers stay unchanged.
+        '@kinde-oss/kinde-auth-react': path.resolve(__dirname, './src/lib/auth/cognito-auth.tsx'),
         '@': path.resolve(__dirname, './src'),
         '@components': path.resolve(__dirname, './src/components'),
         '@features': path.resolve(__dirname, './src/features'),
