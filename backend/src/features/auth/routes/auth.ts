@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { getIdentityProvider } from '../adapters/kinde-adapter.js';
+import { isCognitoIssuer, verifyCognitoToken } from '../services/cognito-service.js';
 import jwt from 'jsonwebtoken';
 import { db } from '../../../db/index.js';
 import { tenants, tenantUsers, applications, organizationApplications } from '../../../db/schema/index.js';
@@ -548,8 +549,22 @@ export default async function authRoutes(
         }
       }
 
-      // Validate as Kinde RS256 token (JWKS -> API -> introspect)
-      const userInfo = (await identityProvider.getUserInfo(token)) as Record<string, unknown> | undefined;
+      // Validate the bearer token. Dual-IdP during the Kinde->Cognito migration: a token
+      // from the shared Cognito pool is verified via Cognito JWKS (issuer + signature);
+      // otherwise fall back to the Kinde path (JWKS -> API -> introspect). Cognito tokens
+      // carry no org_code, so they resolve the tenant by email below (the no-org path).
+      let userInfo: Record<string, unknown> | undefined;
+      if (isCognitoIssuer((decoded as jwt.JwtPayload).iss)) {
+        try {
+          const ci = await verifyCognitoToken(token);
+          userInfo = ci ? (ci as unknown as Record<string, unknown>) : undefined;
+        } catch (cognitoErr: unknown) {
+          if (shouldLogVerbose()) Logger.log('warning', 'kinde', 'validate-token', 'Cognito token verification failed', { error: (cognitoErr as Error).message });
+          userInfo = undefined;
+        }
+      } else {
+        userInfo = (await identityProvider.getUserInfo(token)) as Record<string, unknown> | undefined;
+      }
       const kindeId = (userInfo?.id as string) || (userInfo?.sub as string);
       const orgCode = (userInfo?.org_code as string) || (Array.isArray(userInfo?.org_codes) ? (userInfo?.org_codes as string[])[0] : undefined);
 
