@@ -1,6 +1,10 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { getIdentityProvider } from '../adapters/kinde-adapter.js';
-import { isCognitoIssuer, verifyCognitoToken } from '../services/cognito-service.js';
+import {
+  isCognitoIssuer, verifyCognitoToken, isCognitoOAuthConfigured,
+  generatePkce, buildCognitoAuthorizeUrl, cognitoIdentityProviderFor,
+  exchangeCognitoCode, refreshCognitoTokens, getCognitoLogoutUrl,
+} from '../services/cognito-service.js';
 import jwt from 'jsonwebtoken';
 import { db } from '../../../db/index.js';
 import { tenants, tenantUsers, applications, organizationApplications } from '../../../db/schema/index.js';
@@ -153,16 +157,26 @@ function buildAuthErrorRedirect(
   return url.toString();
 }
 
-function getDefaultRedirectUri(): string {
-  return `${process.env.FRONTEND_URL || 'http://localhost:3001'}/onboarding`;
-}
-
 function getAuthCookieOptions() {
   return {
     domain: process.env.COOKIE_DOMAIN || (process.env.NODE_ENV === 'production' ? '.zopkit.com' : undefined),
     secure: process.env.COOKIE_SECURE === 'true' || process.env.NODE_ENV === 'production',
     path: '/',
   };
+}
+
+// Cognito Hosted-UI redirects back to the BACKEND callback, which does the PKCE code
+// exchange + sets the session cookies (backend-mediated flow). The PKCE code_verifier is
+// stashed in a short-lived httpOnly cookie at /oauth/login and read at /callback.
+const PKCE_COOKIE = 'cognito_pkce_verifier';
+function cognitoCallbackUri(): string {
+  return `${process.env.BACKEND_URL || 'http://localhost:3000'}/api/auth/callback`;
+}
+function setPkceCookie(reply: FastifyReply, verifier: string): void {
+  const base = getAuthCookieOptions();
+  reply.setCookie(PKCE_COOKIE, verifier, {
+    httpOnly: true, secure: base.secure, sameSite: 'lax', domain: base.domain, path: '/', maxAge: 10 * 60 * 1000,
+  });
 }
 
 export default async function authRoutes(
@@ -173,27 +187,32 @@ export default async function authRoutes(
 
   /**
    * GET /oauth/login
-   * Generic Kinde OAuth2 entry point for onboarding (no org context).
-   * Optional ?provider= routes to a specific social connection if a
-   * connection_id mapping exists in env (KINDE_CONNECTION_<PROVIDER>).
+   * Generic Cognito Hosted-UI OAuth2 entry point for onboarding (no org context).
+   * Optional ?provider=google routes straight to that federated IdP (skips the selector).
+   * Always redirects Cognito back to the BACKEND callback; any post-login destination is
+   * carried in `state` and resolved in /callback.
    */
   fastify.get('/oauth/login', async (request: FastifyRequest, reply: FastifyReply) => {
     const query = request.query as Record<string, string>;
-    const { state, redirect_uri, provider, prompt, login_hint } = query;
+    const { state, provider, prompt, login_hint } = query;
 
-    if (shouldLogVerbose()) Logger.log('info', 'kinde', 'oauth-login', 'OAuth login request', { state, provider });
+    if (shouldLogVerbose()) Logger.log('info', 'cognito', 'oauth-login', 'OAuth login request', { state, provider });
 
     try {
-      const authUrl = identityProvider.getSocialAuthUrl(provider || 'default', {
-        redirectUri: redirect_uri || getDefaultRedirectUri(),
+      const { verifier, challenge } = generatePkce();
+      setPkceCookie(reply, verifier);
+      const authUrl = buildCognitoAuthorizeUrl({
+        redirectUri: cognitoCallbackUri(),
+        codeChallenge: challenge,
         state: state || 'onboarding',
+        identityProvider: cognitoIdentityProviderFor(provider),
         prompt,
         loginHint: login_hint,
       });
       return reply.redirect(authUrl);
     } catch (err: unknown) {
       const error = err as Error;
-      Logger.log('error', 'kinde', 'oauth-login', 'OAuth login error', { error: error.message });
+      Logger.log('error', 'cognito', 'oauth-login', 'OAuth login error', { error: error.message });
       return reply.code(500).send({
         error: 'Internal Server Error',
         message: 'Failed to generate OAuth login URL',
@@ -222,15 +241,19 @@ export default async function authRoutes(
     }
 
     try {
-      const authUrl = identityProvider.getSocialAuthUrl(provider, {
-        redirectUri: redirect_uri || getDefaultRedirectUri(),
+      const { verifier, challenge } = generatePkce();
+      setPkceCookie(reply, verifier);
+      const authUrl = buildCognitoAuthorizeUrl({
+        redirectUri: cognitoCallbackUri(),
+        codeChallenge: challenge,
         state: state || 'onboarding',
-        prompt: prompt || 'select_account',
+        identityProvider: cognitoIdentityProviderFor(provider),
+        prompt,
       });
       return reply.redirect(authUrl);
     } catch (err: unknown) {
       const error = err as Error;
-      Logger.log('error', 'kinde', 'oauth-provider', `${provider} OAuth error`, { provider, error: error.message });
+      Logger.log('error', 'cognito', 'oauth-provider', `${provider} OAuth error`, { provider, error: error.message });
       return reply.code(500).send({
         error: 'Internal Server Error',
         message: `Failed to generate ${provider} OAuth URL`,
@@ -255,18 +278,21 @@ export default async function authRoutes(
     }
 
     try {
-      const redirectUri = `${process.env.BACKEND_URL}/api/auth/callback`;
+      // Cognito has no org_code; the subdomain rides in `state` and the tenant is resolved
+      // post-login by email (validate-token's no-org path).
+      const { verifier, challenge } = generatePkce();
+      setPkceCookie(reply, verifier);
       const state = JSON.stringify({ subdomain, flow: 'login' });
-
-      const authUrl = identityProvider.generateLoginUrl(subdomain, redirectUri, {
+      const authUrl = buildCognitoAuthorizeUrl({
+        redirectUri: cognitoCallbackUri(),
+        codeChallenge: challenge,
         state,
-        prompt: prompt || 'select_account',
+        prompt,
       });
-
       return reply.redirect(authUrl);
     } catch (err: unknown) {
       const error = err as Error;
-      Logger.log('error', 'kinde', 'org-login', 'Organization login error', { error: error.message });
+      Logger.log('error', 'cognito', 'org-login', 'Organization login error', { error: error.message });
       return reply.code(500).send({
         error: 'Internal Server Error',
         message: 'Failed to generate organization login URL',
@@ -305,11 +331,17 @@ export default async function authRoutes(
         }
       }
 
-      const redirectUri = `${process.env.BACKEND_URL}/api/auth/callback`;
-      const tokens = await identityProvider.exchangeCodeForTokens(code, redirectUri);
-      const userInfo = await identityProvider.getEnhancedUserInfo(tokens.access_token as string);
+      const codeVerifier = (request.cookies as Record<string, string | undefined>)[PKCE_COOKIE];
+      if (!codeVerifier) {
+        Logger.log('error', 'cognito', 'oauth-callback', 'PKCE verifier cookie missing (login session expired)');
+        return reply.redirect(buildAuthErrorRedirect(parseStateSafe(state), 'pkce_missing', 'Login session expired — please try again'));
+      }
+      const tokens = await exchangeCognitoCode({ code, redirectUri: cognitoCallbackUri(), codeVerifier });
+      reply.clearCookie(PKCE_COOKIE, { path: '/', domain: getAuthCookieOptions().domain });
 
-      if (shouldLogVerbose()) Logger.log('info', 'kinde', 'oauth-callback', 'Authenticated user', { id: userInfo.id, email: userInfo.email });
+      // Identity comes from the verified Cognito ID token (carries email/sub).
+      const userInfo = tokens.id_token ? await verifyCognitoToken(tokens.id_token) : null;
+      if (shouldLogVerbose()) Logger.log('info', 'cognito', 'oauth-callback', 'Authenticated user', { id: userInfo?.id, email: userInfo?.email });
 
       const base = getAuthCookieOptions();
       const cookieOptions = {
@@ -321,9 +353,12 @@ export default async function authRoutes(
         maxAge: (Number(tokens.expires_in) || 3600) * 1000,
       };
 
+      // The session cookie holds the Cognito ID TOKEN (the identity assertion the auth
+      // middleware + /validate-token verify). Cognito does not rotate refresh tokens on
+      // refresh, so the refresh token is stored once here and reused by /refresh.
       reply
-        .setCookie('kinde_token', tokens.access_token as string, cookieOptions)
-        .setCookie('kinde_refresh_token', tokens.refresh_token as string, {
+        .setCookie('kinde_token', (tokens.id_token || tokens.access_token) as string, cookieOptions)
+        .setCookie('kinde_refresh_token', (tokens.refresh_token as string) || '', {
           ...cookieOptions,
           maxAge: 30 * 24 * 60 * 60 * 1000,
         });
@@ -347,8 +382,8 @@ export default async function authRoutes(
 
       // Default: onboarding flow
       const onboardingUrl = new URL(`${process.env.FRONTEND_URL || 'http://localhost:3001'}/onboarding`);
-      onboardingUrl.searchParams.set('email', (userInfo.email as string) ?? '');
-      onboardingUrl.searchParams.set('name', `${userInfo.given_name ?? ''} ${userInfo.family_name ?? ''}`.trim());
+      onboardingUrl.searchParams.set('email', (userInfo?.email as string) ?? '');
+      onboardingUrl.searchParams.set('name', `${userInfo?.given_name ?? ''} ${userInfo?.family_name ?? ''}`.trim());
       onboardingUrl.searchParams.set('step', '2');
       return reply.redirect(onboardingUrl.toString());
 
@@ -400,7 +435,7 @@ export default async function authRoutes(
       reply.clearCookie('kinde_token', clearOpts).clearCookie('kinde_refresh_token', clearOpts);
 
       const redirectTarget = (redirect_uri as string) || `${process.env.FRONTEND_URL || 'http://localhost:3001'}/login`;
-      const logoutUrl = `${identityProvider.baseURL}/logout?redirect=${encodeURIComponent(redirectTarget)}`;
+      const logoutUrl = getCognitoLogoutUrl(redirectTarget);
 
       return reply.send({ success: true, data: { logoutUrl, message: 'Logged out successfully' } });
     } catch (err: unknown) {
@@ -422,7 +457,7 @@ export default async function authRoutes(
         return reply.code(401).send({ error: 'Unauthorized', message: 'Refresh token not found' });
       }
 
-      const tokens = await identityProvider.refreshToken(refreshToken);
+      const tokens = await refreshCognitoTokens(refreshToken);
 
       const base = getAuthCookieOptions();
       const opts = {
@@ -434,7 +469,7 @@ export default async function authRoutes(
         maxAge: (Number(tokens.expires_in) || 3600) * 1000,
       };
 
-      reply.setCookie('kinde_token', tokens.access_token as string, opts);
+      reply.setCookie('kinde_token', (tokens.id_token || tokens.access_token) as string, opts);
       if (tokens.refresh_token) {
         reply.setCookie('kinde_refresh_token', tokens.refresh_token as string, {
           ...opts,

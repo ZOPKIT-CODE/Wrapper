@@ -1,4 +1,5 @@
 import { createRemoteJWKSet, jwtVerify, type JWTPayload } from 'jose';
+import crypto from 'node:crypto';
 
 /**
  * AWS Cognito token verification for the shared `zopkit-platform` user pool.
@@ -95,4 +96,115 @@ export async function verifyCognitoToken(token: string): Promise<CognitoUserInfo
     name: p.name ?? ([p.given_name, p.family_name].filter(Boolean).join(' ') || undefined),
     token_use: p.token_use,
   };
+}
+
+// ─── Cognito Hosted-UI OAuth (backend-mediated, PKCE — public client, no secret) ───────
+//
+// The Wrapper keeps its secure backend-mediated flow (code exchange + httpOnly cookies). The
+// shared `wrapper-web` Cognito client is PUBLIC, so the authorization_code grant uses PKCE:
+// /oauth/login generates a verifier (stored in a short-lived httpOnly cookie), redirects to
+// Cognito's /oauth2/authorize with the challenge; /callback exchanges code + verifier at
+// /oauth2/token. Mirrors the FA SPA PKCE client, server-side.
+
+function cognitoOAuthConfig(): { domain: string; clientId: string } | null {
+  const domain = (process.env.COGNITO_DOMAIN || '').trim().replace(/\/+$/, '');
+  const clientId = (process.env.COGNITO_CLIENT_ID || '').trim();
+  if (!domain || !clientId) return null;
+  return { domain, clientId };
+}
+
+export function isCognitoOAuthConfigured(): boolean {
+  return cognitoOAuthConfig() !== null;
+}
+
+/** Generate a PKCE (verifier, S256 challenge) pair. */
+export function generatePkce(): { verifier: string; challenge: string } {
+  const verifier = crypto.randomBytes(32).toString('base64url');
+  const challenge = crypto.createHash('sha256').update(verifier).digest('base64url');
+  return { verifier, challenge };
+}
+
+/** Cognito provider name for a social-login slug (only Google is wired in the pool today). */
+export function cognitoIdentityProviderFor(slug?: string): string | undefined {
+  if (!slug) return undefined;
+  const map: Record<string, string> = { google: 'Google' };
+  return map[slug.toLowerCase()];
+}
+
+export function buildCognitoAuthorizeUrl(opts: {
+  redirectUri: string;
+  codeChallenge: string;
+  state?: string;
+  identityProvider?: string;
+  prompt?: string;
+  loginHint?: string;
+}): string {
+  const cfg = cognitoOAuthConfig();
+  if (!cfg) throw new Error('Cognito OAuth not configured (COGNITO_DOMAIN / COGNITO_CLIENT_ID)');
+  const u = new URL(`${cfg.domain}/oauth2/authorize`);
+  u.searchParams.set('client_id', cfg.clientId);
+  u.searchParams.set('response_type', 'code');
+  u.searchParams.set('scope', 'openid email profile');
+  u.searchParams.set('redirect_uri', opts.redirectUri);
+  u.searchParams.set('code_challenge', opts.codeChallenge);
+  u.searchParams.set('code_challenge_method', 'S256');
+  if (opts.state) u.searchParams.set('state', opts.state);
+  if (opts.identityProvider) u.searchParams.set('identity_provider', opts.identityProvider);
+  if (opts.loginHint) u.searchParams.set('login_hint', opts.loginHint);
+  if (opts.prompt === 'login' || opts.prompt === 'none') u.searchParams.set('prompt', opts.prompt);
+  return u.toString();
+}
+
+export interface CognitoTokens {
+  access_token: string;
+  id_token?: string;
+  refresh_token?: string;
+  expires_in?: number;
+  token_type?: string;
+}
+
+export async function exchangeCognitoCode(opts: { code: string; redirectUri: string; codeVerifier: string }): Promise<CognitoTokens> {
+  const cfg = cognitoOAuthConfig();
+  if (!cfg) throw new Error('Cognito OAuth not configured');
+  const body = new URLSearchParams({
+    grant_type: 'authorization_code',
+    client_id: cfg.clientId,
+    code: opts.code,
+    redirect_uri: opts.redirectUri,
+    code_verifier: opts.codeVerifier,
+  });
+  const res = await fetch(`${cfg.domain}/oauth2/token`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body,
+  });
+  if (!res.ok) throw new Error(`Cognito token exchange failed: ${res.status} ${await res.text()}`);
+  return (await res.json()) as CognitoTokens;
+}
+
+export async function refreshCognitoTokens(refreshToken: string): Promise<CognitoTokens> {
+  const cfg = cognitoOAuthConfig();
+  if (!cfg) throw new Error('Cognito OAuth not configured');
+  const body = new URLSearchParams({
+    grant_type: 'refresh_token',
+    client_id: cfg.clientId,
+    refresh_token: refreshToken,
+  });
+  const res = await fetch(`${cfg.domain}/oauth2/token`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body,
+  });
+  if (!res.ok) throw new Error(`Cognito refresh failed: ${res.status} ${await res.text()}`);
+  return (await res.json()) as CognitoTokens;
+}
+
+/** Cognito Hosted-UI logout URL (clears the Cognito session, then redirects back). */
+export function getCognitoLogoutUrl(logoutRedirectUri: string): string {
+  const cfg = cognitoOAuthConfig();
+  if (!cfg) return logoutRedirectUri;
+  const u = new URL(`${cfg.domain}/logout`);
+  u.searchParams.set('client_id', cfg.clientId);
+  u.searchParams.set('logout_uri', logoutRedirectUri);
+  return u.toString();
 }
