@@ -1,5 +1,6 @@
 import { createRemoteJWKSet, jwtVerify, type JWTPayload } from 'jose';
 import crypto from 'node:crypto';
+import { SharedCache } from '../../../utils/shared-cache.js';
 
 /**
  * AWS Cognito token verification for the shared `zopkit-platform` user pool.
@@ -122,6 +123,45 @@ export function generatePkce(): { verifier: string; challenge: string } {
   const verifier = crypto.randomBytes(32).toString('base64url');
   const challenge = crypto.createHash('sha256').update(verifier).digest('base64url');
   return { verifier, challenge };
+}
+
+// PKCE verifier store, keyed by an opaque nonce embedded in the OAuth `state`. The state
+// round-trips through Cognito (set at /oauth/login, returned at /callback), so the verifier
+// survives regardless of host — unlike a cookie, which breaks across localhost<->127.0.0.1 or
+// when /oauth/login (via the frontend) and /callback (the backend redirect_uri) differ in host.
+// SharedCache is Redis-ready (shared across instances) and falls back to in-process.
+const pkceCache = new SharedCache<string>('auth:pkce');
+const PKCE_TTL_MS = 10 * 60 * 1000;
+
+/**
+ * Build an OAuth `state` carrying flow info + a PKCE nonce, and stash the verifier server-side.
+ * Returns the `state` to send to Cognito and the `codeChallenge` for the authorize URL.
+ */
+export async function newPkceState(flowInfo?: Record<string, unknown>): Promise<{ state: string; codeChallenge: string }> {
+  const { verifier, challenge } = generatePkce();
+  const key = crypto.randomBytes(16).toString('base64url');
+  await pkceCache.set(key, verifier, PKCE_TTL_MS);
+  const state = JSON.stringify({ ...(flowInfo || {}), pk: key });
+  return { state, codeChallenge: challenge };
+}
+
+/** Look up + consume (one-time) the PKCE verifier for a returned `state`. */
+export async function takePkceVerifier(state: string | undefined | null): Promise<string | null> {
+  if (!state) return null;
+  let key: string | undefined;
+  try {
+    const parsed = JSON.parse(state) as { pk?: string };
+    key = parsed?.pk;
+  } catch {
+    return null;
+  }
+  if (!key) return null;
+  const verifier = await pkceCache.get(key);
+  if (verifier !== undefined && verifier !== null) {
+    await pkceCache.delete(key);
+    return verifier;
+  }
+  return null;
 }
 
 /** Cognito provider name for a social-login slug (only Google is wired in the pool today). */

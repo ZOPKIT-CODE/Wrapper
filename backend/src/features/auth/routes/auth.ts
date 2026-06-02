@@ -1,8 +1,8 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { getIdentityProvider } from '../adapters/kinde-adapter.js';
 import {
-  isCognitoIssuer, verifyCognitoToken, isCognitoOAuthConfigured,
-  generatePkce, buildCognitoAuthorizeUrl, cognitoIdentityProviderFor,
+  isCognitoIssuer, verifyCognitoToken,
+  newPkceState, takePkceVerifier, buildCognitoAuthorizeUrl, cognitoIdentityProviderFor,
   exchangeCognitoCode, refreshCognitoTokens, getCognitoLogoutUrl,
 } from '../services/cognito-service.js';
 import jwt from 'jsonwebtoken';
@@ -166,17 +166,11 @@ function getAuthCookieOptions() {
 }
 
 // Cognito Hosted-UI redirects back to the BACKEND callback, which does the PKCE code
-// exchange + sets the session cookies (backend-mediated flow). The PKCE code_verifier is
-// stashed in a short-lived httpOnly cookie at /oauth/login and read at /callback.
-const PKCE_COOKIE = 'cognito_pkce_verifier';
+// exchange + sets the session cookies (backend-mediated flow). The PKCE verifier is stored
+// server-side keyed by the OAuth `state` (see cognito-service newPkceState/takePkceVerifier) —
+// NOT a cookie, which breaks across localhost<->127.0.0.1 / host boundaries.
 function cognitoCallbackUri(): string {
   return `${process.env.BACKEND_URL || 'http://localhost:3000'}/api/auth/callback`;
-}
-function setPkceCookie(reply: FastifyReply, verifier: string): void {
-  const base = getAuthCookieOptions();
-  reply.setCookie(PKCE_COOKIE, verifier, {
-    httpOnly: true, secure: base.secure, sameSite: 'lax', domain: base.domain, path: '/', maxAge: 10 * 60 * 1000,
-  });
 }
 
 export default async function authRoutes(
@@ -199,12 +193,13 @@ export default async function authRoutes(
     if (shouldLogVerbose()) Logger.log('info', 'cognito', 'oauth-login', 'OAuth login request', { state, provider });
 
     try {
-      const { verifier, challenge } = generatePkce();
-      setPkceCookie(reply, verifier);
+      let stateObj: Record<string, unknown> = { flow: 'onboarding' };
+      if (state) { try { stateObj = JSON.parse(state); } catch { stateObj = { flow: state }; } }
+      const { state: cognitoState, codeChallenge } = await newPkceState(stateObj);
       const authUrl = buildCognitoAuthorizeUrl({
         redirectUri: cognitoCallbackUri(),
-        codeChallenge: challenge,
-        state: state || 'onboarding',
+        codeChallenge,
+        state: cognitoState,
         identityProvider: cognitoIdentityProviderFor(provider),
         prompt,
         loginHint: login_hint,
@@ -241,12 +236,13 @@ export default async function authRoutes(
     }
 
     try {
-      const { verifier, challenge } = generatePkce();
-      setPkceCookie(reply, verifier);
+      let stateObj: Record<string, unknown> = { flow: 'onboarding' };
+      if (state) { try { stateObj = JSON.parse(state); } catch { stateObj = { flow: state }; } }
+      const { state: cognitoState, codeChallenge } = await newPkceState(stateObj);
       const authUrl = buildCognitoAuthorizeUrl({
         redirectUri: cognitoCallbackUri(),
-        codeChallenge: challenge,
-        state: state || 'onboarding',
+        codeChallenge,
+        state: cognitoState,
         identityProvider: cognitoIdentityProviderFor(provider),
         prompt,
       });
@@ -280,12 +276,10 @@ export default async function authRoutes(
     try {
       // Cognito has no org_code; the subdomain rides in `state` and the tenant is resolved
       // post-login by email (validate-token's no-org path).
-      const { verifier, challenge } = generatePkce();
-      setPkceCookie(reply, verifier);
-      const state = JSON.stringify({ subdomain, flow: 'login' });
+      const { state, codeChallenge } = await newPkceState({ subdomain, flow: 'login' });
       const authUrl = buildCognitoAuthorizeUrl({
         redirectUri: cognitoCallbackUri(),
-        codeChallenge: challenge,
+        codeChallenge,
         state,
         prompt,
       });
@@ -331,13 +325,12 @@ export default async function authRoutes(
         }
       }
 
-      const codeVerifier = (request.cookies as Record<string, string | undefined>)[PKCE_COOKIE];
+      const codeVerifier = await takePkceVerifier(state);
       if (!codeVerifier) {
-        Logger.log('error', 'cognito', 'oauth-callback', 'PKCE verifier cookie missing (login session expired)');
+        Logger.log('error', 'cognito', 'oauth-callback', 'PKCE verifier missing/expired for state (login session expired)');
         return reply.redirect(buildAuthErrorRedirect(parseStateSafe(state), 'pkce_missing', 'Login session expired — please try again'));
       }
       const tokens = await exchangeCognitoCode({ code, redirectUri: cognitoCallbackUri(), codeVerifier });
-      reply.clearCookie(PKCE_COOKIE, { path: '/', domain: getAuthCookieOptions().domain });
 
       // Identity comes from the verified Cognito ID token (carries email/sub).
       const userInfo = tokens.id_token ? await verifyCognitoToken(tokens.id_token) : null;
