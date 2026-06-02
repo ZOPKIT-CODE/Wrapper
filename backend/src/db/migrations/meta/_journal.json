@@ -176,6 +176,13 @@
       "when": 1763250000000,
       "tag": "0024_received_events",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "5",
+      "when": 1763300000000,
+      "tag": "0025_rename_kinde_to_idp",
+      "breakpoints": true
     }
   ]
 }

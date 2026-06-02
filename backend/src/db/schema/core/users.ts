@@ -6,7 +6,7 @@ import { entities } from '../organizations/unified-entities.js';
 export const tenantUsers = pgTable('tenant_users', {
   userId: uuid('user_id').primaryKey().defaultRandom(),
   tenantId: uuid('tenant_id').references(() => tenants.tenantId).notNull(),
-  kindeUserId: varchar('kinde_user_id', { length: 255 }), // Made nullable for pending invitations
+  idpSub: varchar('idp_sub', { length: 255 }), // IdP (Cognito) subject. Made nullable for pending invitations
   
   // Basic Info
   email: varchar('email', { length: 255 }).notNull(),
@@ -43,7 +43,7 @@ export const tenantUsers = pgTable('tenant_users', {
 }, (table) => ({
   tenantIdIdx: index('idx_tenant_users_tenant_id').on(table.tenantId),
   emailIdx: index('idx_tenant_users_email').on(table.email),
-  kindeUserIdIdx: index('idx_tenant_users_kinde_user_id').on(table.kindeUserId),
+  idpSubIdx: index('idx_tenant_users_idp_sub').on(table.idpSub),
 }));
 
 

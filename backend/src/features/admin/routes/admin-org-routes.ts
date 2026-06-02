@@ -259,7 +259,7 @@ export default async function adminOrgRoutes(fastify: FastifyInstance): Promise<
         .from(tenants)
         .innerJoin(tenantUsers, eq(tenants.tenantId, tenantUsers.tenantId))
         .where(and(
-          eq(tenantUsers.kindeUserId, (request as ReqWithUser).userContext!.userId),
+          eq(tenantUsers.idpSub, (request as ReqWithUser).userContext!.userId),
           eq(tenants.isActive, true)
         ))
         .orderBy(tenants.createdAt);
@@ -378,7 +378,7 @@ export default async function adminOrgRoutes(fastify: FastifyInstance): Promise<
             .select({
               tenantId: tenants.tenantId,
               companyName: tenants.companyName,
-              kindeOrgId: tenants.kindeOrgId
+              kindeOrgId: tenants.idpOrgId
             })
             .from(tenants)
             .where(eq(tenants.tenantId, tenantId))

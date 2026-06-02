@@ -84,7 +84,7 @@ export default async function adminManagementRoutes(
           updatedAt: new Date()
         })
         .where(eq(tenantUsers.userId, userIdToReset))
-        .returning({ kindeUserId: tenantUsers.kindeUserId });
+        .returning({ kindeUserId: tenantUsers.idpSub });
 
       if (resetUser?.kindeUserId) {
         void invalidateUserCache(resetUser.kindeUserId);
@@ -264,8 +264,8 @@ export default async function adminManagementRoutes(
           assignedBy: adminUser.userId
         });
 
-      if (adminUser.kindeUserId) {
-        void invalidateUserCache(adminUser.kindeUserId);
+      if (adminUser.idpSub) {
+        void invalidateUserCache(adminUser.idpSub);
       }
       void invalidateRoleCache(adminUser.userId);
 

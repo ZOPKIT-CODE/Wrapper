@@ -95,7 +95,7 @@ async function cognitoTokenToKindeUser(token: string): Promise<KindeUser | null>
   if (ci.email) {
     try {
       const [row] = await db
-        .select({ kindeUserId: tenantUsers.kindeUserId })
+        .select({ kindeUserId: tenantUsers.idpSub })
         .from(tenantUsers)
         .where(and(eq(tenantUsers.email, ci.email), eq(tenantUsers.isActive, true)))
         .limit(1);
@@ -131,8 +131,8 @@ async function findUserInDatabase(kindeUserId: string, tenantId?: string): Promi
     if (shouldLogVerbose()) Logger.log('info', 'auth', 'find-user-in-database', '🔍 Looking up user', { cacheKey });
 
     const whereClause = tenantId
-      ? and(eq(tenantUsers.kindeUserId, kindeUserId), eq(tenantUsers.tenantId, tenantId), eq(tenantUsers.isActive, true))
-      : and(eq(tenantUsers.kindeUserId, kindeUserId), eq(tenantUsers.isActive, true));
+      ? and(eq(tenantUsers.idpSub, kindeUserId), eq(tenantUsers.tenantId, tenantId), eq(tenantUsers.isActive, true))
+      : and(eq(tenantUsers.idpSub, kindeUserId), eq(tenantUsers.isActive, true));
 
     const userRecords = await db
       .select({
@@ -274,7 +274,7 @@ async function findTenantByOrgCode(orgCode: string): Promise<string | null> {
     const [tenant] = await db
       .select({ tenantId: tenants.tenantId })
       .from(tenants)
-      .where(eq(tenants.kindeOrgId, orgCode))
+      .where(eq(tenants.idpOrgId, orgCode))
       .limit(1);
 
     const result = tenant?.tenantId ?? null;
@@ -547,18 +547,18 @@ export async function authMiddleware(request: FastifyRequest, reply: FastifyRepl
         if (decoded?.currentTenantId && decoded?.email) {
           let [tenant] = await db.select().from(tenants).where(eq(tenants.tenantId, decoded.currentTenantId)).limit(1);
           if (!tenant) {
-            [tenant] = await db.select().from(tenants).where(eq(tenants.kindeOrgId, decoded.currentTenantId)).limit(1);
+            [tenant] = await db.select().from(tenants).where(eq(tenants.idpOrgId, decoded.currentTenantId)).limit(1);
           }
           if (tenant) {
             const [u] = await db.select().from(tenantUsers).where(and(eq(tenantUsers.tenantId, tenant.tenantId), eq(tenantUsers.email, decoded.email))).limit(1);
             if (u) {
               const uName = [u.firstName, u.lastName].filter(Boolean).join(' ') || u.email || '';
               request.userContext = {
-                userId: u.kindeUserId || u.userId,
-                kindeUserId: u.kindeUserId || u.userId,
+                userId: u.idpSub || u.userId,
+                kindeUserId: u.idpSub || u.userId,
                 internalUserId: u.userId,
                 tenantId: tenant.tenantId,
-                kindeOrgId: tenant.kindeOrgId,
+                kindeOrgId: tenant.idpOrgId,
                 email: u.email,
                 name: uName,
                 isAuthenticated: true,

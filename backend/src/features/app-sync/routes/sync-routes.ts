@@ -307,7 +307,7 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
       const users = await db
         .select({
           userId: tenantUsers.userId,
-          kindeUserId: tenantUsers.kindeUserId,
+          kindeUserId: tenantUsers.idpSub,
           email: tenantUsers.email,
           firstName: tenantUsers.firstName,
           lastName: tenantUsers.lastName,
@@ -508,7 +508,7 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
         .select({
           userId: tenantUsers.userId,
           tenantId: tenantUsers.tenantId,
-          kindeId: tenantUsers.kindeUserId,
+          kindeId: tenantUsers.idpSub,
           email: tenantUsers.email,
           firstName: tenantUsers.firstName,
           lastName: tenantUsers.lastName,

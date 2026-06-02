@@ -185,7 +185,7 @@ export default async function statusManagementRoutes(
         .update(tenantUsers)
         .set({ onboardingCompleted: true })
         .where(eq(tenantUsers.userId, userId))
-        .returning({ kindeUserId: tenantUsers.kindeUserId });
+        .returning({ kindeUserId: tenantUsers.idpSub });
 
       if (updatedUser?.kindeUserId) {
         void invalidateUserCache(updatedUser.kindeUserId);
@@ -244,7 +244,7 @@ export default async function statusManagementRoutes(
       let lookupType = '';
 
       if (kindeUserId) {
-        userQuery = userQuery.where(eq(tenantUsers.kindeUserId, kindeUserId as string)) as any;
+        userQuery = userQuery.where(eq(tenantUsers.idpSub, kindeUserId as string)) as any;
         lookupType = 'kindeId';
       } else if (userId) {
         userQuery = userQuery.where(eq(tenantUsers.userId, userId as string)) as any;
@@ -350,7 +350,7 @@ export default async function statusManagementRoutes(
             id: user.userId,
             email: user.email,
             name: [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email,
-            kindeUserId: user.kindeUserId
+            kindeUserId: user.idpSub
           }
         },
         authStatus: {
@@ -424,7 +424,7 @@ export default async function statusManagementRoutes(
           .from(onboardingFormData)
           .where(
             and(
-              eq(onboardingFormData.kindeUserId, kindeUserId as string),
+              eq(onboardingFormData.idpSub, kindeUserId as string),
               eq(onboardingFormData.email, email as string)
             )
           )

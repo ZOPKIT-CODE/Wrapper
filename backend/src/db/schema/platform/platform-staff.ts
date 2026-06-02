@@ -31,9 +31,9 @@ export type PlatformPermission = typeof PLATFORM_PERMISSIONS[number];
 export const platformStaff = pgTable('platform_staff', {
   staffId:    uuid('staff_id').primaryKey().defaultRandom(),
 
-  // Links to the staff member's Kinde account.
-  // They log in via the normal Kinde flow — no separate auth system needed.
-  kindeUserId: varchar('kinde_user_id', { length: 255 }).notNull().unique(),
+  // Links to the staff member's IdP (Cognito) account.
+  // They log in via the normal Cognito flow — no separate auth system needed.
+  idpSub: varchar('idp_sub', { length: 255 }).notNull().unique(),
   email:       varchar('email', { length: 255 }).notNull(),
   name:        varchar('name', { length: 255 }).notNull(),
 
@@ -61,7 +61,7 @@ export const platformStaff = pgTable('platform_staff', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => ({
-  kindeUserIdIdx: index('idx_platform_staff_kinde_user_id').on(table.kindeUserId),
+  idpSubIdx: index('idx_platform_staff_idp_sub').on(table.idpSub),
   activeIdx:      index('idx_platform_staff_active').on(table.isActive, table.expiresAt),
 }));
 
@@ -78,7 +78,7 @@ export const platformAuditLogs = pgTable('platform_audit_logs', {
 
   // Who did this.
   staffId:     uuid('staff_id').references(() => platformStaff.staffId).notNull(),
-  kindeUserId: varchar('kinde_user_id', { length: 255 }).notNull(),
+  idpSub:      varchar('idp_sub', { length: 255 }).notNull(),
   staffEmail:  varchar('staff_email',   { length: 255 }).notNull(),
 
   // What they did.

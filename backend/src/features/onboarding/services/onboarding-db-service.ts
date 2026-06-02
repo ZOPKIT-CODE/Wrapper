@@ -33,7 +33,7 @@ export class OnboardingDbService {
         .select()
         .from(onboardingFormData)
         .where(and(
-          eq(onboardingFormData.kindeUserId, kindeUserId),
+          eq(onboardingFormData.idpSub, kindeUserId),
           eq(onboardingFormData.email, email)
         ))
         .limit(1);
@@ -90,7 +90,7 @@ export class OnboardingDbService {
         .select()
         .from(onboardingFormData)
         .where(and(
-          eq(onboardingFormData.kindeUserId, kindeUserId),
+          eq(onboardingFormData.idpSub, kindeUserId),
           eq(onboardingFormData.email, email)
         ))
         .limit(1);
@@ -123,7 +123,7 @@ export class OnboardingDbService {
       await systemDbConnection
         .delete(onboardingFormData)
         .where(and(
-          eq(onboardingFormData.kindeUserId, kindeUserId),
+          eq(onboardingFormData.idpSub, kindeUserId),
           eq(onboardingFormData.email, email)
         ));
       Logger.log('info', 'general', 'deleteStoredOnboardingFormData', 'Deleted stored onboarding form data');
@@ -272,7 +272,7 @@ export class OnboardingDbService {
           tenantId: uuidv4(),
           companyName,
           subdomain,
-          kindeOrgId,
+          idpOrgId: kindeOrgId,
           adminEmail,
           legalCompanyName: companyName,
           companyType: companyType || null,
@@ -329,7 +329,7 @@ export class OnboardingDbService {
           tenantId: tenants.tenantId,
           companyName: tenants.companyName,
           subdomain: tenants.subdomain,
-          kindeOrgId: tenants.kindeOrgId,
+          kindeOrgId: tenants.idpOrgId,
           adminEmail: tenants.adminEmail,
           onboardingCompleted: tenants.onboardingCompleted,
           onboardedAt: tenants.onboardedAt,
@@ -404,7 +404,7 @@ export class OnboardingDbService {
         .insert(tenantUsers)
         .values({
           tenantId: tenant.tenantId,
-          kindeUserId,
+          idpSub: kindeUserId,
           email: adminEmail,
           firstName: firstName ?? null,
           lastName: lastName ?? null,
@@ -811,9 +811,9 @@ export class OnboardingDbService {
     // Clean up temporary onboarding_form_data now that the tenant is fully created.
     // Non-fatal: form data is only needed during the onboarding wizard.
     try {
-      const adminKindeUserId = result.adminUser?.kindeUserId;
+      const adminKindeUserId = result.adminUser?.idpSub;
       if (adminKindeUserId) {
-        await db.delete(onboardingFormData).where(eq(onboardingFormData.kindeUserId, adminKindeUserId));
+        await db.delete(onboardingFormData).where(eq(onboardingFormData.idpSub, adminKindeUserId));
         Logger.log('info', 'general', 'createCompleteOnboardingInTransaction', 'Cleaned up onboarding_form_data', { kindeUserId: adminKindeUserId });
       }
     } catch (cleanupErr: any) {
@@ -888,7 +888,7 @@ export class OnboardingDbService {
            tenantId: uuidv4(),
            companyName,
            subdomain,
-           kindeOrgId,
+           idpOrgId: kindeOrgId,
            adminEmail,
            legalCompanyName: companyName,
            gstin: hasGstin && gstin ? gstin.toUpperCase() : null,
@@ -931,7 +931,7 @@ export class OnboardingDbService {
           tenantId: tenants.tenantId,
           companyName: tenants.companyName,
           subdomain: tenants.subdomain,
-          kindeOrgId: tenants.kindeOrgId,
+          kindeOrgId: tenants.idpOrgId,
           adminEmail: tenants.adminEmail,
           onboardingCompleted: tenants.onboardingCompleted,
           onboardedAt: tenants.onboardedAt,
@@ -1000,7 +1000,7 @@ export class OnboardingDbService {
         .insert(tenantUsers)
         .values({
           tenantId: tenant.tenantId,
-          kindeUserId,
+          idpSub: kindeUserId,
           email: adminEmail,
           firstName: firstName ?? null,
           lastName: lastName ?? null,

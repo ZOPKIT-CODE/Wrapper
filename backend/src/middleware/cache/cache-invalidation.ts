@@ -181,7 +181,7 @@ export class CacheInvalidationService {
       
       const [user] = await db
         .select({
-          kindeUserId: tenantUsers.kindeUserId,
+          kindeUserId: tenantUsers.idpSub,
           // You'd need to join with tenant to get orgCode
         })
         .from(tenantUsers)

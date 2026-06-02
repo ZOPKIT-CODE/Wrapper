@@ -7,7 +7,7 @@ export const tenants = pgTable('tenants', {
   tenantId: uuid('tenant_id').primaryKey().defaultRandom(),
   companyName: varchar('company_name', { length: 255 }).notNull(),
   subdomain: varchar('subdomain', { length: 100 }).notNull().unique(),
-  kindeOrgId: varchar('kinde_org_id', { length: 255 }).notNull().unique(),
+  idpOrgId: varchar('idp_org_id', { length: 255 }).notNull().unique(),
   adminEmail: varchar('admin_email', { length: 255 }).notNull(),
   
   // Essential Company Profile Fields

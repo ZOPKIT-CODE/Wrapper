@@ -352,7 +352,7 @@ export class BootstrapService {
       .select({
         tenantId:         tenants.tenantId,
         companyName:      tenants.companyName,
-        kindeOrgId:       tenants.kindeOrgId,
+        kindeOrgId:       tenants.idpOrgId,
         isActive:         tenants.isActive,
         industry:         tenants.industry,
         organizationSize: tenants.organizationSize,
@@ -444,7 +444,7 @@ export class BootstrapService {
     const rows = await tx
       .select({
         userId:       tenantUsers.userId,
-        kindeUserId:  tenantUsers.kindeUserId,
+        kindeUserId:  tenantUsers.idpSub,
         email:        tenantUsers.email,
         firstName:    tenantUsers.firstName,
         lastName:     tenantUsers.lastName,

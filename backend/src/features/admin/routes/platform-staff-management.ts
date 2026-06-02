@@ -134,7 +134,7 @@ export default async function platformStaffManagementRoutes(
     const [grantor] = await db
       .select({ userId: tenantUsers.userId })
       .from(tenantUsers)
-      .where(eq(tenantUsers.kindeUserId, grantorContext.kindeUserId))
+      .where(eq(tenantUsers.idpSub, grantorContext.kindeUserId))
       .limit(1);
 
     if (!grantor) {
@@ -149,7 +149,7 @@ export default async function platformStaffManagementRoutes(
       .from(platformStaff)
       .where(
         and(
-          eq(platformStaff.kindeUserId, body.kindeUserId),
+          eq(platformStaff.idpSub, body.kindeUserId),
           eq(platformStaff.isActive, true)
         )
       )
@@ -165,7 +165,7 @@ export default async function platformStaffManagementRoutes(
     const [newStaff] = await db
       .insert(platformStaff)
       .values({
-        kindeUserId:        body.kindeUserId.trim(),
+        idpSub:             body.kindeUserId.trim(),
         email:              body.email.trim(),
         name:               body.name.trim(),
         grantedPermissions: body.permissions,
@@ -212,7 +212,7 @@ export default async function platformStaffManagementRoutes(
     const [revoker] = await db
       .select({ userId: tenantUsers.userId })
       .from(tenantUsers)
-      .where(eq(tenantUsers.kindeUserId, revokerContext.kindeUserId))
+      .where(eq(tenantUsers.idpSub, revokerContext.kindeUserId))
       .limit(1);
 
     const updated = await db
@@ -226,7 +226,7 @@ export default async function platformStaffManagementRoutes(
       })
       .where(
         and(
-          eq(platformStaff.kindeUserId, body.kindeUserId),
+          eq(platformStaff.idpSub, body.kindeUserId),
           eq(platformStaff.isActive, true)
         )
       )

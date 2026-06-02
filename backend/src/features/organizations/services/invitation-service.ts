@@ -263,14 +263,14 @@ export async function getInvitationDetails(org: string, email: string) {
     .select({
       tenantId: tenants.tenantId,
       companyName: tenants.companyName,
-      kindeOrgId: tenants.kindeOrgId,
+      kindeOrgId: tenants.idpOrgId,
       subdomain: tenants.subdomain,
       logoUrl: tenants.logoUrl,
       primaryColor: tenants.primaryColor,
       brandingConfig: tenants.brandingConfig
     })
     .from(tenants)
-    .where(eq(tenants.kindeOrgId, org))
+    .where(eq(tenants.idpOrgId, org))
     .limit(1);
 
   if (!tenant) {
@@ -379,7 +379,7 @@ export async function getInvitationByToken(token: string) {
     .select({
       tenantId: tenants.tenantId,
       companyName: tenants.companyName,
-      kindeOrgId: tenants.kindeOrgId
+      kindeOrgId: tenants.idpOrgId
     })
     .from(tenants)
     .where(eq(tenants.tenantId, invitation.tenantId))
@@ -442,10 +442,10 @@ export async function getAdminInvitations(orgCode: string, request: FastifyReque
     .select({
       tenantId: tenants.tenantId,
       companyName: tenants.companyName,
-      kindeOrgId: tenants.kindeOrgId
+      kindeOrgId: tenants.idpOrgId
     })
     .from(tenants)
-    .where(eq(tenants.kindeOrgId, orgCode))
+    .where(eq(tenants.idpOrgId, orgCode))
     .limit(1);
 
   if (!tenant) {
@@ -532,10 +532,10 @@ export async function resendInvitationEmail(orgCode: string, invitationId: strin
     .select({
       tenantId: tenants.tenantId,
       companyName: tenants.companyName,
-      kindeOrgId: tenants.kindeOrgId
+      kindeOrgId: tenants.idpOrgId
     })
     .from(tenants)
-    .where(eq(tenants.kindeOrgId, orgCode))
+    .where(eq(tenants.idpOrgId, orgCode))
     .limit(1);
 
   if (!tenant) {
@@ -675,10 +675,10 @@ export async function cancelInvitation(orgCode: string, invitationId: string) {
     .select({
       tenantId: tenants.tenantId,
       companyName: tenants.companyName,
-      kindeOrgId: tenants.kindeOrgId
+      kindeOrgId: tenants.idpOrgId
     })
     .from(tenants)
-    .where(eq(tenants.kindeOrgId, orgCode))
+    .where(eq(tenants.idpOrgId, orgCode))
     .limit(1);
 
   if (!tenant) {
@@ -743,7 +743,7 @@ export async function createInvitation(params: CreateInvitationParams) {
     .select({
       tenantId: tenants.tenantId,
       companyName: tenants.companyName,
-      kindeOrgId: tenants.kindeOrgId
+      kindeOrgId: tenants.idpOrgId
     })
     .from(tenants)
     .where(eq(tenants.tenantId, tenantId))
@@ -782,7 +782,7 @@ export async function createInvitation(params: CreateInvitationParams) {
     const [inviterUser] = await db
       .select({ userId: tenantUsers.userId })
       .from(tenantUsers)
-      .where(eq(tenantUsers.kindeUserId, inviterContext.kindeUserId ?? ''))
+      .where(eq(tenantUsers.idpSub, inviterContext.kindeUserId ?? ''))
       .limit(1);
     if (!inviterUser) {
       throw new ServiceError(400, {
@@ -903,7 +903,7 @@ export async function createMultiEntityInvitation(params: CreateMultiEntityInvit
       .select({
         tenantId: tenants.tenantId,
         companyName: tenants.companyName,
-        kindeOrgId: tenants.kindeOrgId
+        kindeOrgId: tenants.idpOrgId
       })
       .from(tenants)
       .where(eq(tenants.tenantId, tenantId))
@@ -1315,7 +1315,7 @@ export async function getInvitationDetailsByToken(token: string) {
     .select({
       tenantId: tenants.tenantId,
       companyName: tenants.companyName,
-      kindeOrgId: tenants.kindeOrgId,
+      kindeOrgId: tenants.idpOrgId,
       subdomain: tenants.subdomain,
       logoUrl: tenants.logoUrl,
       primaryColor: tenants.primaryColor,
@@ -1509,7 +1509,7 @@ export async function acceptInvitationByToken(params: AcceptInvitationByTokenPar
     .select({
       tenantId: tenants.tenantId,
       companyName: tenants.companyName,
-      kindeOrgId: tenants.kindeOrgId
+      kindeOrgId: tenants.idpOrgId
     })
     .from(tenants)
     .where(eq(tenants.tenantId, invitation.tenantId))
@@ -1546,7 +1546,7 @@ export async function acceptInvitationByToken(params: AcceptInvitationByTokenPar
             const [parentOrg] = await db
               .select({
                 entityId: entities.entityId,
-                kindeOrgId: tenants.kindeOrgId
+                kindeOrgId: tenants.idpOrgId
               })
               .from(entities)
               .leftJoin(tenants, eq(entities.tenantId, tenants.tenantId))
@@ -1662,7 +1662,7 @@ export async function acceptInvitationByToken(params: AcceptInvitationByTokenPar
         name: `${firstName} ${lastName}`.trim() || newUser.email || '',
         isActive: newUser.isActive !== undefined ? newUser.isActive : true,
         onboardingCompleted: true,
-        kindeUserId: newUser.kindeUserId,
+        kindeUserId: newUser.idpSub,
         invitedBy: invitation.invitedBy,
         invitationId: invitation.invitationId,
         acceptedAt: new Date().toISOString()
@@ -1713,7 +1713,7 @@ export async function acceptInvitationByToken(params: AcceptInvitationByTokenPar
       await snsSqsPublisher.publishUserEventToSuite('user_created', tenant.kindeOrgId, newUser.userId, {
         userId: newUser.userId,
         email: newUser.email,
-        kindeUserId: newUser.kindeUserId,
+        kindeUserId: newUser.idpSub,
         firstName: firstName,
         lastName: lastName,
         name: `${firstName} ${lastName}`.trim() || newUser.email || '',
@@ -1729,7 +1729,7 @@ export async function acceptInvitationByToken(params: AcceptInvitationByTokenPar
         name: `${firstName} ${lastName}`.trim() || newUser.email || '',
         isActive: newUser.isActive !== undefined ? newUser.isActive : true,
         onboardingCompleted: true,
-        kindeUserId: newUser.kindeUserId,
+        kindeUserId: newUser.idpSub,
         invitedBy: invitation.invitedBy,
         invitationId: invitation.invitationId,
         createdAt: newUser.createdAt ? (typeof newUser.createdAt === 'string' ? newUser.createdAt : newUser.createdAt.toISOString()) : new Date().toISOString(),
@@ -2135,8 +2135,8 @@ export async function acceptInvitationByToken(params: AcceptInvitationByTokenPar
   }
 
   await invalidateRoleCache(newUser.userId);
-  if (newUser.kindeUserId) {
-    await invalidateUserCache(newUser.kindeUserId);
+  if (newUser.idpSub) {
+    await invalidateUserCache(newUser.idpSub);
   }
 
   await db.transaction(async (tx) => {

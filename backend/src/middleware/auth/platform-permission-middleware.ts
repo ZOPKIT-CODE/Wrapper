@@ -45,7 +45,7 @@ async function getActivePlatformStaff(
     .from(platformStaff)
     .where(
       and(
-        eq(platformStaff.kindeUserId, kindeUserId),
+        eq(platformStaff.idpSub, kindeUserId),
         eq(platformStaff.isActive, true),
         gt(platformStaff.expiresAt, new Date())
       )
@@ -70,7 +70,7 @@ async function logPlatformAction(
   try {
     await db.insert(platformAuditLogs).values({
       staffId:          staff.staffId,
-      kindeUserId:      staff.kindeUserId,
+      idpSub:           staff.idpSub,
       staffEmail:       staff.email,
       action,
       targetTenantId,

@@ -283,8 +283,8 @@ export default async function adminUserRoutes(
         });
       }
 
-      if (result[0]?.kindeUserId) {
-        void invalidateUserCache(result[0].kindeUserId);
+      if (result[0]?.idpSub) {
+        void invalidateUserCache(result[0].idpSub);
       }
 
       Logger.log('info', 'user', requestId, 'User admin status updated successfully');
@@ -439,8 +439,8 @@ export default async function adminUserRoutes(
       );
 
       void invalidateRoleCache(userId);
-      if (userToDelete.kindeUserId) {
-        void invalidateUserCache(userToDelete.kindeUserId);
+      if (userToDelete.idpSub) {
+        void invalidateUserCache(userToDelete.idpSub);
       }
 
       Logger.log('info', 'user', requestId, 'User removed successfully');

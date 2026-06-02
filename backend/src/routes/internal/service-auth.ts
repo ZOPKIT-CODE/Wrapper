@@ -74,7 +74,7 @@ export default async function internalServiceAuthRoutes(fastify: FastifyInstance
         .select({ id: tenantUsers.userId, isActive: tenantUsers.isActive })
         .from(tenantUsers)
         .where(and(
-          eq(tenantUsers.kindeUserId, kinde_user_id),
+          eq(tenantUsers.idpSub, kinde_user_id),
           eq(tenantUsers.tenantId, tenant.tenantId as string),
         ))
         .limit(1) as any[];
@@ -141,15 +141,15 @@ export default async function internalServiceAuthRoutes(fastify: FastifyInstance
         const [found] = await db
           .select({ tenantId: tenants.tenantId, name: tenants.name })
           .from(tenants)
-          .where(eq(tenants.kindeOrgId, orgCode))
+          .where(eq(tenants.idpOrgId, orgCode))
           .limit(1) as Array<{ tenantId: string; name: string }>;
         tenantRecord = found;
       }
 
       // Look up the user in tenantUsers by kindeUserId (scoped to tenant when available)
       const whereClause = tenantRecord
-        ? and(eq(tenantUsers.kindeUserId, kindeUserId), eq(tenantUsers.tenantId, tenantRecord.tenantId), eq(tenantUsers.isActive, true))
-        : and(eq(tenantUsers.kindeUserId, kindeUserId), eq(tenantUsers.isActive, true));
+        ? and(eq(tenantUsers.idpSub, kindeUserId), eq(tenantUsers.tenantId, tenantRecord.tenantId), eq(tenantUsers.isActive, true))
+        : and(eq(tenantUsers.idpSub, kindeUserId), eq(tenantUsers.isActive, true));
 
       const [userRecord] = await db
         .select({

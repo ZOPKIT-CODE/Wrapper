@@ -117,7 +117,7 @@ export default async function dataManagementRoutes(
           updatedAt: new Date()
         })
         .where(eq(tenantUsers.userId, userId))
-        .returning({ kindeUserId: tenantUsers.kindeUserId });
+        .returning({ kindeUserId: tenantUsers.idpSub });
 
       if (updatedUser?.kindeUserId) {
         void invalidateUserCache(updatedUser.kindeUserId);
@@ -183,7 +183,7 @@ export default async function dataManagementRoutes(
         .from(onboardingFormData)
         .where(
           and(
-            eq(onboardingFormData.kindeUserId, kindeUserId),
+            eq(onboardingFormData.idpSub, kindeUserId),
             eq(onboardingFormData.email, userEmail)
           )
         )
@@ -246,7 +246,7 @@ export default async function dataManagementRoutes(
         const [created] = await db
           .insert(onboardingFormData)
           .values({
-            kindeUserId,
+            idpSub: kindeUserId,
             email: userEmail,
             currentStep: step as string,
             flowType: ((data as Record<string, unknown>)?.flowType as string) || 'newBusiness',

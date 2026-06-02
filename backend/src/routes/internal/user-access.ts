@@ -139,7 +139,7 @@ export default async function internalUserAccessRoutes(fastify: FastifyInstance)
         })
         .from(tenantUsers)
         .where(and(
-          eq(tenantUsers.kindeUserId, kinde_user_id),
+          eq(tenantUsers.idpSub, kinde_user_id),
           eq(tenantUsers.tenantId, tenant.tenantId as string),
         ))
         .limit(1) as any[];
@@ -279,7 +279,7 @@ export default async function internalUserAccessRoutes(fastify: FastifyInstance)
         .select({ id: tenantUsers.userId })
         .from(tenantUsers)
         .where(and(
-          eq(tenantUsers.kindeUserId, kinde_user_id),
+          eq(tenantUsers.idpSub, kinde_user_id),
           eq(tenantUsers.tenantId, tenant.tenantId as string),
         ))
         .limit(1) as any[];

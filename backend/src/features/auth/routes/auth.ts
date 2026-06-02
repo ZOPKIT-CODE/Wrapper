@@ -554,7 +554,7 @@ export default async function authRoutes(
           if (decoded?.currentTenantId && decoded?.email) {
             let [tenant] = await db.select().from(tenants).where(eq(tenants.tenantId, decoded.currentTenantId)).limit(1);
             if (!tenant) {
-              [tenant] = await db.select().from(tenants).where(eq(tenants.kindeOrgId, decoded.currentTenantId)).limit(1);
+              [tenant] = await db.select().from(tenants).where(eq(tenants.idpOrgId, decoded.currentTenantId)).limit(1);
             }
             if (tenant) {
               const [u] = await db.select().from(tenantUsers)
@@ -564,8 +564,8 @@ export default async function authRoutes(
                 const enabledApps = await fetchEnabledApps(tenant.tenantId);
                 const res = {
                   success: true,
-                  user: { id: u.userId, email: u.email, firstName: u.firstName ?? undefined, lastName: u.lastName ?? undefined, name: [u.firstName, u.lastName].filter(Boolean).join(' ') || u.email || '', kindeId: u.kindeUserId },
-                  tenant: { id: tenant.tenantId, name: tenant.companyName, kindeOrgId: tenant.kindeOrgId },
+                  user: { id: u.userId, email: u.email, firstName: u.firstName ?? undefined, lastName: u.lastName ?? undefined, name: [u.firstName, u.lastName].filter(Boolean).join(' ') || u.email || '', kindeId: u.idpSub },
+                  tenant: { id: tenant.tenantId, name: tenant.companyName, kindeOrgId: tenant.idpOrgId },
                   enabledApps,
                 };
                 setValidateTokenCache(token, res);
@@ -607,9 +607,9 @@ export default async function authRoutes(
         }
         const byEmail = await db
           .select({
-            tenantId: tenants.tenantId, companyName: tenants.companyName, kindeOrgId: tenants.kindeOrgId,
+            tenantId: tenants.tenantId, companyName: tenants.companyName, kindeOrgId: tenants.idpOrgId,
             userId: tenantUsers.userId, userEmail: tenantUsers.email, firstName: tenantUsers.firstName,
-            lastName: tenantUsers.lastName, kindeUserId: tenantUsers.kindeUserId,
+            lastName: tenantUsers.lastName, kindeUserId: tenantUsers.idpSub,
           })
           .from(tenantUsers)
           .innerJoin(tenants, eq(tenants.tenantId, tenantUsers.tenantId))
@@ -634,7 +634,7 @@ export default async function authRoutes(
         return reply.send(res);
       }
 
-      let [tenant] = await db.select().from(tenants).where(eq(tenants.kindeOrgId, orgCode)).limit(1);
+      let [tenant] = await db.select().from(tenants).where(eq(tenants.idpOrgId, orgCode)).limit(1);
       if (!tenant) {
         // Fallback for stale/mismatched org context in token:
         // resolve tenant by kinde user membership when exactly one tenant match exists.
@@ -642,16 +642,16 @@ export default async function authRoutes(
           .select({
             tenantId: tenants.tenantId,
             companyName: tenants.companyName,
-            kindeOrgId: tenants.kindeOrgId,
+            kindeOrgId: tenants.idpOrgId,
             userId: tenantUsers.userId,
             userEmail: tenantUsers.email,
             firstName: tenantUsers.firstName,
             lastName: tenantUsers.lastName,
-            kindeUserId: tenantUsers.kindeUserId,
+            kindeUserId: tenantUsers.idpSub,
           })
           .from(tenantUsers)
           .innerJoin(tenants, eq(tenants.tenantId, tenantUsers.tenantId))
-          .where(eq(tenantUsers.kindeUserId, kindeId))
+          .where(eq(tenantUsers.idpSub, kindeId))
           .limit(2);
 
         if (byKindeMembership.length === 1) {
@@ -682,7 +682,7 @@ export default async function authRoutes(
       }
 
       const [u] = await db.select().from(tenantUsers)
-        .where(and(eq(tenantUsers.tenantId, tenant.tenantId), eq(tenantUsers.kindeUserId, kindeId)))
+        .where(and(eq(tenantUsers.tenantId, tenant.tenantId), eq(tenantUsers.idpSub, kindeId)))
         .limit(1);
       if (!u) {
         return reply.code(404).send({ success: false, error: 'User not found', message: 'User not found in tenant' });
@@ -691,8 +691,8 @@ export default async function authRoutes(
       const enabledApps = await fetchEnabledApps(tenant.tenantId);
       const res = {
         success: true,
-        user: { id: u.userId, email: u.email, firstName: u.firstName ?? undefined, lastName: u.lastName ?? undefined, name: [u.firstName, u.lastName].filter(Boolean).join(' ') || u.email || '', kindeId: u.kindeUserId },
-        tenant: { id: tenant.tenantId, name: tenant.companyName, kindeOrgId: tenant.kindeOrgId },
+        user: { id: u.userId, email: u.email, firstName: u.firstName ?? undefined, lastName: u.lastName ?? undefined, name: [u.firstName, u.lastName].filter(Boolean).join(' ') || u.email || '', kindeId: u.idpSub },
+        tenant: { id: tenant.tenantId, name: tenant.companyName, kindeOrgId: tenant.idpOrgId },
         enabledApps,
       };
       setValidateTokenCache(token, res);

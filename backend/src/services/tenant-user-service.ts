@@ -249,7 +249,7 @@ export class TenantUserService {
         // Create user
         const [user] = await tx.insert(tenantUsers).values({
           tenantId: invitation.tenantId,
-          kindeUserId,
+          idpSub: kindeUserId,
           email: userData.email,
           firstName: userData.firstName ?? null,
           lastName: userData.lastName ?? null,
@@ -425,7 +425,7 @@ export class TenantUserService {
           await snsSqsPublisher.publishUserEventToSuite('user_created', invitation.tenantId, user.userId, {
             userId: user.userId,
             email: user.email,
-            kindeUserId: user.kindeUserId,
+            kindeUserId: user.idpSub,
             firstName: firstName,
             lastName: lastName,
             name: [firstName, lastName].filter(Boolean).join(' ') || user.email,
@@ -612,7 +612,7 @@ export class TenantUserService {
         .select({
           userId: tenantUsers.userId,
           tenantId: tenantUsers.tenantId,
-          kindeUserId: tenantUsers.kindeUserId,
+          kindeUserId: tenantUsers.idpSub,
           email: tenantUsers.email,
           firstName: tenantUsers.firstName,
           lastName: tenantUsers.lastName,
@@ -946,7 +946,7 @@ export class TenantUserService {
           .select({
             userId: tenantUsers.userId,
             tenantId: tenantUsers.tenantId,
-            kindeUserId: tenantUsers.kindeUserId,
+            kindeUserId: tenantUsers.idpSub,
             email: tenantUsers.email,
             firstName: tenantUsers.firstName,
             lastName: tenantUsers.lastName,
@@ -1356,10 +1356,10 @@ export class TenantUserService {
           const firstName = user.firstName || '';
           const lastName = user.lastName || '';
           // Use kindeUserId as entityId — FA/CRM look up wrapper_user_id_mapping by kindeId
-          const entityIdForEvent = user.kindeUserId || user.userId;
+          const entityIdForEvent = user.idpSub || user.userId;
           await snsSqsPublisher.publishUserEventToSuite('user_deleted', tenantId, entityIdForEvent, {
             userId: user.userId,
-            kindeUserId: user.kindeUserId,
+            kindeUserId: user.idpSub,
             email: user.email,
             firstName: firstName,
             lastName: lastName,

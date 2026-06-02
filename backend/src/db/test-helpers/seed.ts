@@ -156,13 +156,13 @@ export async function seedTenant(
   const adminEmail  = overrides.adminEmail  ?? `admin-${suffix}@example.com`;
 
   const result = await db.execute(sql`
-    INSERT INTO tenants (company_name, subdomain, kinde_org_id, admin_email)
+    INSERT INTO tenants (company_name, subdomain, idp_org_id, admin_email)
     VALUES (${companyName}, ${subdomain}, ${kindeOrgId}, ${adminEmail})
     RETURNING
       tenant_id    AS "tenantId",
       company_name AS "companyName",
       subdomain    AS "subdomain",
-      kinde_org_id AS "kindeOrgId",
+      idp_org_id   AS "kindeOrgId",
       admin_email  AS "adminEmail"
   `);
 
@@ -195,7 +195,7 @@ export async function seedUser(
   const isAdmin     = overrides.isTenantAdmin ?? false;
 
   const result = await db.execute(sql`
-    INSERT INTO tenant_users (tenant_id, email, name, kinde_user_id, is_tenant_admin)
+    INSERT INTO tenant_users (tenant_id, email, name, idp_sub, is_tenant_admin)
     VALUES (${tenantId}, ${email}, ${name}, ${kindeUserId}, ${isAdmin})
     RETURNING
       user_id   AS "userId",

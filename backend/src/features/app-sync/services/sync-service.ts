@@ -358,7 +358,7 @@ export class WrapperSyncService {
         .select({
           userId: tenantUsers.userId,
           tenantId: tenantUsers.tenantId,
-          kindeId: tenantUsers.kindeUserId,
+          kindeId: tenantUsers.idpSub,
           email: tenantUsers.email,
           firstName: tenantUsers.firstName,
           lastName: tenantUsers.lastName,

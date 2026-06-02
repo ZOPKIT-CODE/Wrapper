@@ -161,7 +161,7 @@ class SnsSqsPublisher {
         const { tenants } = await import('../../../db/schema/index.js');
         const { eq } = await import('drizzle-orm');
         const [row] = await _db
-          .select({ kindeOrgId: tenants.kindeOrgId })
+          .select({ kindeOrgId: tenants.idpOrgId })
           .from(tenants)
           .where(eq(tenants.tenantId, tenantId))
           .limit(1);

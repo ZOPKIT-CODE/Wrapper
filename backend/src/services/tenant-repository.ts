@@ -9,7 +9,7 @@ export class TenantRepository {
         tenantId: tenants.tenantId,
         companyName: tenants.companyName,
         subdomain: tenants.subdomain,
-        kindeOrgId: tenants.kindeOrgId,
+        kindeOrgId: tenants.idpOrgId,
         adminEmail: tenants.adminEmail,
         isActive: tenants.isActive,
         isVerified: tenants.isVerified,
@@ -29,7 +29,7 @@ export class TenantRepository {
         tenantId: tenants.tenantId,
         companyName: tenants.companyName,
         subdomain: tenants.subdomain,
-        kindeOrgId: tenants.kindeOrgId,
+        kindeOrgId: tenants.idpOrgId,
         adminEmail: tenants.adminEmail,
         isActive: tenants.isActive,
         isVerified: tenants.isVerified,
@@ -37,7 +37,7 @@ export class TenantRepository {
         updatedAt: tenants.updatedAt,
       })
       .from(tenants)
-      .where(eq(tenants.kindeOrgId, kindeOrgId))
+      .where(eq(tenants.idpOrgId, kindeOrgId))
       .limit(1);
 
     return tenant || null;

@@ -7,7 +7,7 @@ import { pgTable, uuid, varchar, jsonb, timestamp, index } from 'drizzle-orm/pg-
 
 export const onboardingFormData = pgTable('onboarding_form_data', {
   id: uuid('id').defaultRandom().primaryKey(),
-  kindeUserId: varchar('kinde_user_id', { length: 255 }).notNull(),
+  idpSub: varchar('idp_sub', { length: 255 }).notNull(),
   email: varchar('email', { length: 255 }).notNull(),
   currentStep: varchar('current_step', { length: 50 }),
   flowType: varchar('flow_type', { length: 50 }), // 'newBusiness' or 'existingBusiness'
@@ -17,8 +17,8 @@ export const onboardingFormData = pgTable('onboarding_form_data', {
   createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull(),
 }, (table) => ({
-  kindeUserIdIdx: index('idx_onboarding_form_data_kinde_user_id').on(table.kindeUserId),
+  idpSubIdx: index('idx_onboarding_form_data_idp_sub').on(table.idpSub),
   emailIdx: index('idx_onboarding_form_data_email').on(table.email),
-  kindeUserIdEmailIdx: index('idx_onboarding_form_data_kinde_user_email').on(table.kindeUserId, table.email),
+  idpSubEmailIdx: index('idx_onboarding_form_data_idp_sub_email').on(table.idpSub, table.email),
 }));
 

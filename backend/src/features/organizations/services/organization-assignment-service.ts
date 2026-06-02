@@ -52,9 +52,9 @@ export class OrganizationAssignmentService {
   static async lookupUserIdentifiers(userId: string) {
     try {
       const [row] = await dbSql`
-        SELECT kinde_user_id, email FROM tenant_users WHERE user_id = ${userId} LIMIT 1
+        SELECT idp_sub, email FROM tenant_users WHERE user_id = ${userId} LIMIT 1
       `;
-      return row ? { userKindeId: row.kinde_user_id || null, userEmail: row.email || null } : {};
+      return row ? { userKindeId: row.idp_sub || null, userEmail: row.email || null } : {};
     } catch (err: unknown) {
       const e = err as Error;
       Logger.log('warning', 'user', 'org-assignment', 'Could not look up user identifiers', { error: e.message });

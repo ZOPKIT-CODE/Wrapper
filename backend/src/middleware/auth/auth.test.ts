@@ -66,7 +66,7 @@ vi.mock('../../db/index.js', () => ({
 }));
 
 vi.mock('../../db/schema/index.js', () => ({
-  tenants: { tenantId: 'tenantId', kindeOrgId: 'kindeOrgId' },
+  tenants: { tenantId: 'tenantId', idpOrgId: 'idpOrgId' },
   tenantUsers: {
     userId: 'userId',
     tenantId: 'tenantId',
@@ -75,7 +75,7 @@ vi.mock('../../db/schema/index.js', () => ({
     onboardingCompleted: 'onboardingCompleted',
     isActive: 'isActive',
     isTenantAdmin: 'isTenantAdmin',
-    kindeUserId: 'kindeUserId',
+    idpSub: 'idpSub',
   },
   customRoles: { roleName: 'roleName', isSystemRole: 'isSystemRole', tenantId: 'tenantId' },
   userRoleAssignments: { userId: 'userId', roleId: 'roleId', organizationId: 'organizationId' },
@@ -232,7 +232,7 @@ describe('authMiddleware', () => {
     dbSelectMock.mockImplementationOnce(() => ({
       from: vi.fn(() => ({
         where: vi.fn(() => ({
-          limit: vi.fn(async () => [{ tenantId: 'tenant-1', kindeOrgId: 'org-ops' }]),
+          limit: vi.fn(async () => [{ tenantId: 'tenant-1', idpOrgId: 'org-ops' }]),
         })),
       })),
     }));
@@ -243,7 +243,7 @@ describe('authMiddleware', () => {
           limit: dbSelectTenantUserMock.mockResolvedValueOnce([
             {
               userId: 'u-internal',
-              kindeUserId: 'kinde-u2',
+              idpSub: 'kinde-u2',
               tenantId: 'tenant-1',
               email: 'ops@example.com',
               name: 'Ops User',

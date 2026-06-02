@@ -18,7 +18,7 @@ class PostgresAppSyncRepository implements AppSyncRepository {
     [row] = await db
       .select({ tenantId: tenants.tenantId })
       .from(tenants)
-      .where(eq(tenants.kindeOrgId, tenantIdParam))
+      .where(eq(tenants.idpOrgId, tenantIdParam))
       .limit(1) as { tenantId: string }[];
 
     return row ? row.tenantId : null;

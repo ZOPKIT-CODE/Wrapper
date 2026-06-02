@@ -18,9 +18,9 @@ export const customRoles = pgTable('custom_roles', {
   description: text('description'),
   color: varchar('color', { length: 7 }).default('#6b7280'), // For UI display
 
-  // Kinde Integration
-  kindeRoleId: varchar('kinde_role_id', { length: 255 }),
-  kindeRoleKey: varchar('kinde_role_key', { length: 255 }),
+  // IdP (Cognito) role mapping
+  idpRoleId: varchar('idp_role_id', { length: 255 }),
+  idpRoleKey: varchar('idp_role_key', { length: 255 }),
 
   // Permissions Structure
   permissions: jsonb('permissions').notNull(),

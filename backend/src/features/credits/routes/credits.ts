@@ -38,7 +38,7 @@ export default async function creditRoutes(
           const onboardingResponse = await db
             .select()
             .from(tenantUsers)
-            .where(eq(tenantUsers.kindeUserId, userId))
+            .where(eq(tenantUsers.idpSub, userId))
             .limit(1);
 
           Logger.log('info', 'billing', 'get-credit-balance', 'Database query successful', { recordCount: onboardingResponse.length });

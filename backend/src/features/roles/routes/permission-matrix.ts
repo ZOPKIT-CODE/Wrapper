@@ -117,7 +117,7 @@ export default async function permissionMatrixRoutes(fastify: FastifyInstance, _
           const [targetUser] = await db
             .select({ tenantId: tenantUsers.tenantId })
             .from(tenantUsers)
-            .where(eq(tenantUsers.kindeUserId, targetUserId))
+            .where(eq(tenantUsers.idpSub, targetUserId))
             .limit(1);
           
           targetUserInSameTenant = targetUser && targetUser.tenantId === tenantId;

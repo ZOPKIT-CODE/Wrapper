@@ -85,11 +85,11 @@ export default async function entityRoutes(
         .select({
           id: tenants.tenantId,
           name: tenants.companyName,
-          kindeOrgId: tenants.kindeOrgId,
+          kindeOrgId: tenants.idpOrgId,
           code: tenants.subdomain,
         })
         .from(tenants)
-        .where(eq(tenants.kindeOrgId, kindeOrgId))
+        .where(eq(tenants.idpOrgId, kindeOrgId))
         .limit(1);
 
       if (!tenant) {

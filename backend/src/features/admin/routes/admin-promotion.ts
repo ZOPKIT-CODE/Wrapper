@@ -341,7 +341,7 @@ export default async function adminPromotionRoutes(fastify: FastifyInstance, _op
         .select({
           tenantId: tenants.tenantId,
           companyName: tenants.companyName,
-          kindeOrgId: tenants.kindeOrgId
+          kindeOrgId: tenants.idpOrgId
         })
         .from(tenants)
         .where(eq(tenants.tenantId, tenantId))
@@ -530,7 +530,7 @@ export default async function adminPromotionRoutes(fastify: FastifyInstance, _op
         .select({
           tenantId: tenants.tenantId,
           companyName: tenants.companyName,
-          kindeOrgId: tenants.kindeOrgId
+          kindeOrgId: tenants.idpOrgId
         })
         .from(tenants)
         .where(eq(tenants.tenantId, tenantId))

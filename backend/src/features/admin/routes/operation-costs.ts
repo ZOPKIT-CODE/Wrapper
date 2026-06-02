@@ -315,7 +315,7 @@ export default async function operationCostRoutes(fastify: FastifyInstance, _opt
           const [kindeUser] = await db
             .select({ userId: tenantUsers.userId })
             .from(tenantUsers)
-            .where(eq(tenantUsers.kindeUserId, kindeUserId))
+            .where(eq(tenantUsers.idpSub, kindeUserId))
             .limit(1);
           creatorUserId = kindeUser?.userId || null;
         }
@@ -464,7 +464,7 @@ export default async function operationCostRoutes(fastify: FastifyInstance, _opt
           const [kindeUser] = await db
             .select({ userId: tenantUsers.userId })
             .from(tenantUsers)
-            .where(eq(tenantUsers.kindeUserId, kindeUserId))
+            .where(eq(tenantUsers.idpSub, kindeUserId))
             .limit(1);
           userId = kindeUser?.userId || null;
         }

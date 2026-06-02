@@ -62,7 +62,7 @@ export const deleteTenantData = async (tenantId: string): Promise<{
 
       // 0. Capture kindeOrgId before deletion so callers can clean up Kinde orgs
       const [tenantRow] = await tx
-        .select({ kindeOrgId: tenants.kindeOrgId })
+        .select({ kindeOrgId: tenants.idpOrgId })
         .from(tenants)
         .where(eq(tenants.tenantId, tenantId));
       deletionResults.kindeOrgId = tenantRow?.kindeOrgId ?? null;
