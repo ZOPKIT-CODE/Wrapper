@@ -158,9 +158,14 @@ function buildAuthErrorRedirect(
 }
 
 function getAuthCookieOptions() {
+  // Apply a cross-subdomain cookie domain ONLY in production. In dev the host is
+  // localhost/127.0.0.1, where a `.zopkit.com` Domain makes the browser REJECT the session
+  // cookie entirely (host mismatch) — so dev cookies are host-only. The old Kinde dev flow
+  // masked this by carrying a client-side Bearer from the SDK; the Cognito flow is cookie-only.
+  const isProd = process.env.NODE_ENV === 'production';
   return {
-    domain: process.env.COOKIE_DOMAIN || (process.env.NODE_ENV === 'production' ? '.zopkit.com' : undefined),
-    secure: process.env.COOKIE_SECURE === 'true' || process.env.NODE_ENV === 'production',
+    domain: isProd ? (process.env.COOKIE_DOMAIN || '.zopkit.com') : undefined,
+    secure: process.env.COOKIE_SECURE === 'true' || isProd,
     path: '/',
   };
 }
