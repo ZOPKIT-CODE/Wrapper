@@ -9,7 +9,6 @@ import {
 } from '../../../db/schema/index.js';
 import { eq, and, isNull, ne, count } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
-import { kindeService } from '../../auth/index.js';
 import Logger from '../../../utils/logger.js';
 
 type PromotionOptions = {
@@ -59,7 +58,7 @@ export class AdminPromotionService {
         }
 
         const data = validation.data as ValidationData;
-        const { currentAdmin, newAdmin, tenant } = data;
+        const { currentAdmin, newAdmin } = data;
 
         // 2. PRE-PROMOTION AUDIT
         Logger.log('info', 'user', 'promote-admin', 'Phase 2: Pre-promotion audit', { transactionId });
@@ -113,18 +112,9 @@ export class AdminPromotionService {
           })
           .where(eq(tenants.tenantId, tenantId));
 
-        // 8. SYNC WITH KINDE
-        Logger.log('info', 'user', 'promote-admin', 'Phase 8: Syncing with Kinde', { transactionId });
-
-        try {
-          await this._syncAdminChangeWithKinde(
-            newAdmin, currentAdmin, tenant, transactionId
-          );
-        } catch (err: unknown) {
-          const kindeError = err as Error;
-          Logger.log('warning', 'kinde', 'promote-admin', 'Kinde sync failed', { transactionId, error: kindeError.message });
-          // Don't fail the entire operation for Kinde sync issues
-        }
+        // Admin/org/role state is owned by the Wrapper DB (tenantUsers,
+        // userRoleAssignments). The previous Kinde org-admin one-way sync has
+        // been removed; no external identity-provider sync is needed here.
 
         // 9. POST-PROMOTION AUDIT
         Logger.log('info', 'user', 'promote-admin', 'Phase 9: Post-promotion audit', { transactionId });
@@ -475,37 +465,6 @@ export class AdminPromotionService {
 
     // Could assign a default role here if needed
     Logger.log('info', 'user', 'promote-admin', 'Current admin demoted successfully', { transactionId });
-  }
-
-  /**
-   * Sync admin change with Kinde
-   */
-  static async _syncAdminChangeWithKinde(
-    newAdmin: ValidationData['newAdmin'],
-    currentAdmin: ValidationData['currentAdmin'],
-    tenant: ValidationData['tenant'],
-    transactionId: string
-  ): Promise<void> {
-    Logger.log('info', 'kinde', 'promote-admin', 'Syncing with Kinde', { transactionId });
-
-    try {
-      // Update organization admin in Kinde (if method exists on KindeService)
-      const kinde = kindeService as { updateOrganizationAdmin?: (orgId: string, userId: string, opts: { previousAdminId?: string | null }) => Promise<void> };
-      if (newAdmin.kindeUserId && tenant.kindeOrgId && kinde.updateOrganizationAdmin) {
-        await kinde.updateOrganizationAdmin(
-          tenant.kindeOrgId,
-          newAdmin.kindeUserId,
-          {
-            previousAdminId: currentAdmin.kindeUserId ?? undefined
-          }
-        );
-      }
-
-      Logger.log('info', 'kinde', 'promote-admin', 'Kinde sync completed', { transactionId });
-    } catch (error) {
-      Logger.log('error', 'kinde', 'promote-admin', 'Kinde sync failed', { transactionId, error: (error as Error).message });
-      throw error;
-    }
   }
 
   /**

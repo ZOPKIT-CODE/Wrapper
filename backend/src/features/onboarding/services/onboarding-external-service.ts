@@ -7,7 +7,10 @@
  */
 
 import { v4 as uuidv4 } from 'uuid';
+import jwt from 'jsonwebtoken';
 import { kindeService } from '../../../features/auth/index.js';
+import { adminCreateUser } from '../../auth/services/cognito-admin-service.js';
+import { isCognitoIssuer, verifyCognitoToken } from '../../auth/services/cognito-service.js';
 import { OnboardingFileLogger } from '../../../utils/onboarding-file-logger.js';
 import Logger from '../../../utils/logger.js';
 
@@ -35,6 +38,31 @@ export class OnboardingExternalService {
         return { authenticated: false, user: null };
       }
 
+      // Dispatch by issuer: Cognito tokens (Kinde->Cognito migration) verify against the
+      // shared pool; everything else falls through the Kinde path (removed in a later phase).
+      let iss: string | undefined;
+      try {
+        iss = (jwt.decode(token) as jwt.JwtPayload | null)?.iss;
+      } catch {
+        iss = undefined;
+      }
+
+      if (isCognitoIssuer(iss)) {
+        const ci = await verifyCognitoToken(token);
+        if (!ci?.sub) {
+          return { authenticated: false, user: null };
+        }
+        return {
+          authenticated: true,
+          user: {
+            // KEEP the kindeUserId property name for now (renamed in a later phase); carries the Cognito sub.
+            kindeUserId: ci.sub,
+            email: ci.email,
+            name: ci.name
+          }
+        };
+      }
+
       // Validate token with Kinde
       const user = await kindeService.validateToken(token);
 
@@ -56,134 +84,57 @@ export class OnboardingExternalService {
   }
 
   /**
-   * 🏢 **SETUP KINDE INTEGRATION**
-   * Create organization and user in Kinde
+   * 🏢 **SETUP IDENTITY INTEGRATION**
+   * Ensure the admin user exists in Cognito. (Kinde->Cognito migration, P4.)
+   *
+   * The Wrapper OWNS tenancy/orgs/roles in its own DB (tenants, organization_memberships,
+   * userRoleAssignments, ...), so there is no longer any org create / add-user-to-org sync to an
+   * external IdP — those Wrapper-DB rows are written natively elsewhere. This function now only
+   * ensures the Cognito user exists (so they can sign in) and returns the org-code / externalId /
+   * userId / userName that callers persist to the Wrapper DB.
    */
   static async setupKindeIntegration(params: { companyName: string; adminEmail: string; firstName?: string; lastName?: string; subdomain: string; existingUser?: { kindeUserId?: string; name?: string; email?: string } | null }, logger: OnboardingFileLogger | null = null): Promise<Record<string, unknown>> {
     const { companyName, adminEmail, firstName, lastName, subdomain, existingUser } = params;
-    if (logger) (logger as any).kinde.start('Setting up Kinde integration', { companyName, adminEmail });
+    if (logger) (logger as any).kinde.start('Setting up identity integration', { companyName, adminEmail });
 
-    // Create Kinde organization with fallback
-    let kindeOrg: Record<string, unknown>;
-    let actualOrgCode: string;
-    let orgCreatedWithFallback = false;
+    // Org identifiers are owned by the Wrapper DB — generate them locally (no external IdP sync).
     const externalId = `tenant_${uuidv4()}`;
+    const actualOrgCode = `org_${subdomain}_${Date.now()}`;
 
-    try {
-      if (logger) logger.kinde.start('Creating Kinde organization', { companyName, externalId });
-
-      kindeOrg = await kindeService.createOrganization({
-        name: companyName,
-        external_id: externalId,
-        feature_flags: {
-          theme: {
-            button_text_color: '#ffffff'
-          }
-        }
-      });
-
-      // Store the actual Kinde organization code and external_id
-      const kindeOrgObj = kindeOrg as Record<string, unknown> & { organization?: { code?: string; external_id?: string }; code?: string };
-      actualOrgCode = (kindeOrgObj?.organization?.code || kindeOrgObj?.code || '') as string;
-      const kindeExternalId = (kindeOrgObj?.organization?.external_id || externalId) as string;
-
-      if (!actualOrgCode) {
-        if (logger) (logger as any).kinde.error('Kinde response missing organization code', null, { kindeOrg });
-        throw new Error('Failed to get organization code from Kinde response');
-      }
-
-      if (logger) (logger as any).kinde.success('Kinde organization created', {
-        orgCode: actualOrgCode,
-        externalId: kindeExternalId
-      });
-    } catch (err: unknown) {
-      const kindeError = err as Error & { response?: { status?: number; data?: unknown }; code?: string };
-      if (logger) (logger as any).kinde.error('Kinde organization creation failed', kindeError, {
-        status: kindeError.response?.status,
-        data: kindeError.response?.data
-      });
-
-      // Use fallback organization code
-      actualOrgCode = `org_${subdomain}_${Date.now()}`;
-      orgCreatedWithFallback = true;
-      kindeOrg = {
-        organization: { code: actualOrgCode, name: companyName, external_id: externalId as string },
-        created_with_fallback: true
-      };
-      if (logger) (logger as any).kinde.warning('Using fallback organization code', { orgCode: actualOrgCode });
-    }
-
-    // Handle user creation/assignment
+    // Handle user creation/assignment. Membership lives in organization_memberships /
+    // userRoleAssignments (written natively elsewhere), so we no longer add the user to an org here.
     let finalKindeUserId;
     let userName;
 
     if (existingUser) {
-      // Use existing authenticated user and add them to the new organization
+      // Use the already-authenticated user; their Cognito identity already exists.
       finalKindeUserId = existingUser.kindeUserId as string;
       userName = existingUser.name || (existingUser.email && String(existingUser.email).split('@')[0]) || '';
       Logger.log('info', 'general', 'setupKindeIntegration', 'Using authenticated user', { kindeUserId: finalKindeUserId });
-
-      // Add the existing user to the newly created organization
-      try {
-        Logger.log('info', 'general', 'setupKindeIntegration', 'Adding existing user to organization', { kindeUserId: finalKindeUserId, orgCode: actualOrgCode });
-
-        // Only try to add if organization was actually created in Kinde (not fallback)
-        if (!orgCreatedWithFallback) {
-          const addResult = await kindeService.addUserToOrganization(finalKindeUserId, actualOrgCode, { skipRoleAssignment: true });
-
-          if (addResult?.success) {
-            Logger.log('info', 'general', 'setupKindeIntegration', 'User successfully added to Kinde organization');
-          } else {
-            Logger.log('warning', 'general', 'setupKindeIntegration', 'addUserToOrganization returned non-success (non-fatal, onboarding continues)', {
-              error: addResult?.error,
-              details: addResult?.details,
-            });
-          }
-        } else {
-          Logger.log('info', 'general', 'setupKindeIntegration', 'Skipping Kinde user addition (organization created with fallback)');
-        }
-      } catch (err: unknown) {
-        // Non-fatal: user is already provisioned in Kinde via org creation.
-        // Role assignment is best-effort; failure must not abort onboarding.
-        const addUserError = err as Error & { response?: { status?: number } };
-        Logger.log('warning', 'general', 'setupKindeIntegration', 'addUserToOrganization threw unexpectedly (non-fatal, onboarding continues)', { error: addUserError.message });
-      }
     } else {
-      // Create new user in Kinde
+      // Ensure the admin user exists in Cognito (replaces kindeService.createUser).
+      // adminCreateUser is idempotent; KEEP the kindeUserId column name for now (renamed in a later phase).
       try {
-        const kindeUser = await kindeService.createUser({
-          profile: {
-            given_name: firstName || '',
-            family_name: lastName || ''
-          },
-          identities: [{
-            type: 'email',
-            details: { email: adminEmail }
-          }],
-          organization_code: actualOrgCode
-        });
+        const cognitoUser = await adminCreateUser({ email: adminEmail, firstName, lastName });
 
-        finalKindeUserId = kindeUser?.id;
-        userName = kindeUser ? `${kindeUser.given_name || ''} ${kindeUser.family_name || ''}`.trim() : adminEmail.split('@')[0];
+        finalKindeUserId = cognitoUser.sub;
+        userName = (firstName || lastName) ? `${firstName || ''} ${lastName || ''}`.trim() : adminEmail.split('@')[0];
 
-        Logger.log('info', 'general', 'setupKindeIntegration', 'New Kinde user created', { kindeUserId: finalKindeUserId });
+        Logger.log('info', 'general', 'setupKindeIntegration', 'Cognito user ensured', { kindeUserId: finalKindeUserId });
       } catch (err: unknown) {
         const error = err as Error;
-        Logger.log('warning', 'general', 'setupKindeIntegration', 'Kinde user creation failed, using fallback', { error: error.message });
+        Logger.log('warning', 'general', 'setupKindeIntegration', 'Cognito user creation failed, using fallback', { error: error.message });
         finalKindeUserId = `user_${String(adminEmail).replace('@', '_').replace('.', '_')}_${Date.now()}`;
         userName = firstName && lastName ? `${firstName} ${lastName}` : String(adminEmail).split('@')[0];
         Logger.log('info', 'general', 'setupKindeIntegration', 'Using fallback user ID', { kindeUserId: finalKindeUserId });
       }
     }
 
-    const kindeOrgFinal = kindeOrg as { organization?: { external_id?: string } };
     return {
       orgCode: actualOrgCode,
-      externalId: (kindeOrgFinal?.organization?.external_id ?? externalId) as string,
+      externalId,
       userId: finalKindeUserId as string,
-      userName: userName as string,
-      kindeOrg,
-      kindeUser: existingUser ? null : { id: finalKindeUserId }
+      userName: userName as string
     };
   }
 

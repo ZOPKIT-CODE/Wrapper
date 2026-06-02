@@ -5,8 +5,33 @@ import { db } from '../../../db/index.js';
 import { tenants, tenantUsers, customRoles, userRoleAssignments } from '../../../db/schema/index.js';
 import { eq } from 'drizzle-orm';
 import ErrorResponses from '../../../utils/error-responses.js';
+import jwt from 'jsonwebtoken';
 import { kindeService } from '../../../features/auth/index.js';
+import { isCognitoIssuer, verifyCognitoToken } from '../../auth/services/cognito-service.js';
 import { TenantService } from '../../../services/tenant-service.js';
+
+/**
+ * Validate a bearer/cookie token, dispatching by issuer (Kinde -> Cognito migration P4).
+ * Cognito tokens are verified via verifyCognitoToken and mapped to the legacy
+ * { kindeUserId, userId, email, name } shape (sub -> kindeUserId/userId). Other tokens
+ * fall back to the Kinde path (removed in a later phase).
+ */
+async function validateTokenAnyIdp(token: string): Promise<Record<string, unknown>> {
+  let iss: string | undefined;
+  try {
+    iss = (jwt.decode(token) as jwt.JwtPayload | null)?.iss;
+  } catch {
+    iss = undefined;
+  }
+  if (isCognitoIssuer(iss)) {
+    const ci = await verifyCognitoToken(token);
+    if (!ci?.sub) {
+      throw new Error('Invalid Cognito token');
+    }
+    return { kindeUserId: ci.sub, userId: ci.sub, email: ci.email, name: ci.name };
+  }
+  return kindeService.validateToken(token);
+}
 
 /**
  * Admin Management Routes
@@ -149,9 +174,9 @@ export default async function adminManagementRoutes(
         return reply.code(401).send({ error: 'Authentication required' });
       }
 
-      Logger.log('info', 'general', 'create-organization', 'Step 2: Validating token with Kinde', { requestId });
+      Logger.log('info', 'general', 'create-organization', 'Step 2: Validating authentication token', { requestId });
 
-      const kindeUser = await kindeService.validateToken(token);
+      const kindeUser = await validateTokenAnyIdp(token);
       const kindeUserId = kindeUser.kindeUserId || kindeUser.userId;
 
       Logger.log('info', 'general', 'create-organization', 'User authenticated successfully', { requestId, kindeUserId, email: adminEmail });
@@ -185,51 +210,12 @@ export default async function adminManagementRoutes(
         });
       }
 
-      Logger.log('info', 'general', 'create-organization', 'Step 5: Cleaning up user from existing organizations', { requestId, kindeUserId });
+      // Org membership lives in the Wrapper DB (organization_memberships / userRoleAssignments),
+      // which is the source of truth — no Kinde org cleanup or org creation needed.
+      // Generate the tenant/org code locally (formerly the Kinde org code).
+      const actualOrgCode = `tenant_${Date.now()}`;
 
-      try {
-        const userOrgs = await kindeService.getUserOrganizations(kindeUserId as string);
-        const orgsList = userOrgs.organizations as Array<{ code: string; name?: string; is_default?: boolean }> | undefined;
-        Logger.log('info', 'general', 'create-organization', 'User organizations response', { requestId, organizationsCount: orgsList?.length || 0 });
-
-        if (userOrgs.organizations && userOrgs.organizations.length > 0) {
-          Logger.log('info', 'general', 'create-organization', 'Removing user from all organizations', { requestId, count: userOrgs.organizations.length });
-
-          for (const org of userOrgs.organizations as Array<{ code: string; name?: string; is_default?: boolean }>) {
-            Logger.log('info', 'general', 'create-organization', 'Removing user from organization', { requestId, orgCode: org.code });
-            try {
-              await kindeService.removeUserFromOrganization(kindeUserId as string, org.code);
-              Logger.log('info', 'general', 'create-organization', 'Successfully removed from organization', { requestId, orgCode: org.code });
-            } catch (removeError: unknown) {
-              Logger.log('warning', 'general', 'create-organization', 'Failed to remove user from organization', { requestId, orgCode: org.code, error: (removeError as Error).message });
-            }
-          }
-        }
-
-        Logger.log('info', 'general', 'create-organization', 'Organization cleanup completed', { requestId });
-      } catch (cleanupError: unknown) {
-        Logger.log('warning', 'general', 'create-organization', 'Organization cleanup failed, continuing with onboarding', { requestId, error: (cleanupError as Error).message });
-      }
-
-      // Create new organization
-      Logger.log('info', 'general', 'create-organization', 'Step 6: Creating new Kinde organization', { requestId, companyName });
-
-      const kindeOrg = await kindeService.createOrganization({
-        name: companyName,
-        external_id: `tenant_${Date.now()}`,
-        feature_flags: {
-          theme: {
-            button_text_color: '#ffffff'
-          }
-        }
-      });
-
-      const actualOrgCode = (kindeOrg as { organization?: { code?: string } }).organization?.code;
-      if (!actualOrgCode) {
-        throw new Error('Failed to get organization code from Kinde response');
-      }
-
-      Logger.log('info', 'general', 'create-organization', 'Kinde organization created', { requestId, orgCode: actualOrgCode });
+      Logger.log('info', 'general', 'create-organization', 'Step 5: Creating new organization', { requestId, companyName, orgCode: actualOrgCode });
 
       // Create tenant in database
       Logger.log('info', 'general', 'create-organization', 'Step 7: Creating tenant in database', { requestId });
@@ -296,14 +282,8 @@ export default async function adminManagementRoutes(
 
       Logger.log('info', 'general', 'create-organization', 'Admin role created and assigned', { requestId });
 
-      // Assign user to organization
-      Logger.log('info', 'general', 'create-organization', 'Step 10: Assigning user to organization', { requestId });
-      try {
-        await kindeService.addUserToOrganization(kindeUserId as string, actualOrgCode, { exclusive: true });
-        Logger.log('info', 'general', 'create-organization', 'User assigned to organization successfully', { requestId });
-      } catch (assignError: unknown) {
-        Logger.log('warning', 'general', 'create-organization', 'Organization assignment failed', { requestId, error: (assignError as Error).message });
-      }
+      // Org membership is written natively above (tenant_users + userRoleAssignments); the
+      // Wrapper DB is the source of truth, so no external org-assignment sync is needed.
 
       const totalTime = Date.now() - startTime;
       Logger.log('info', 'general', 'create-organization', 'Onboarding completed', { requestId, totalTime, companyName, orgCode: actualOrgCode, adminName, adminEmail, selectedPlan });

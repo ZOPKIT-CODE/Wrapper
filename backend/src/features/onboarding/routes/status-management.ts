@@ -6,7 +6,9 @@ import { db } from '../../../db/index.js';
 import { tenants, tenantUsers, customRoles, onboardingFormData } from '../../../db/schema/index.js';
 import { eq, and, desc } from 'drizzle-orm';
 import { TenantService } from '../../../services/tenant-service.js';
+import jwt from 'jsonwebtoken';
 import { kindeService } from '../../../features/auth/index.js';
+import { isCognitoIssuer, verifyCognitoToken } from '../../auth/services/cognito-service.js';
 import { SubscriptionService } from '../../../features/subscriptions/index.js';
 import { shouldLogVerbose } from '../../../utils/verbose-log.js';
 
@@ -14,6 +16,29 @@ import { shouldLogVerbose } from '../../../utils/verbose-log.js';
  * Status Management Routes
  * Handles onboarding status, completion, and related management endpoints
  */
+
+/**
+ * Validate a bearer/cookie token, dispatching by issuer (Kinde -> Cognito migration P4).
+ * Cognito tokens are verified via verifyCognitoToken and mapped to the legacy
+ * { kindeUserId, userId, email, name } shape (sub -> kindeUserId/userId). Other tokens
+ * fall back to the Kinde path (removed in a later phase).
+ */
+async function validateTokenAnyIdp(token: string): Promise<Record<string, unknown>> {
+  let iss: string | undefined;
+  try {
+    iss = (jwt.decode(token) as jwt.JwtPayload | null)?.iss;
+  } catch {
+    iss = undefined;
+  }
+  if (isCognitoIssuer(iss)) {
+    const ci = await verifyCognitoToken(token);
+    if (!ci?.sub) {
+      throw new Error('Invalid Cognito token');
+    }
+    return { kindeUserId: ci.sub, userId: ci.sub, email: ci.email, name: ci.name };
+  }
+  return kindeService.validateToken(token);
+}
 
 // Helper function to extract token from request
 function extractToken(request: FastifyRequest): string | null {
@@ -198,7 +223,7 @@ export default async function statusManagementRoutes(
       try {
         const token = extractToken(request);
         if (token) {
-          const kindeUser = await kindeService.validateToken(token);
+          const kindeUser = await validateTokenAnyIdp(token);
           kindeUserId = kindeUser.kindeUserId || kindeUser.userId;
           userId = kindeUser.userId;
           email = kindeUser.email;
@@ -392,7 +417,7 @@ export default async function statusManagementRoutes(
       }
       try {
         const token = authHeader.substring(7);
-        const user = await kindeService.validateToken(token);
+        const user = await validateTokenAnyIdp(token);
         kindeUserId = (user.kindeUserId || user.userId) as string;
       } catch (authErr: unknown) {
         return reply.code(401).send({ success: false, error: 'Invalid authentication token' });

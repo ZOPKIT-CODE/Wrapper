@@ -1,13 +1,10 @@
 import { db, dbManager } from '../../../db/index.js';
 import { tenants, tenantUsers, customRoles, userRoleAssignments, tenantInvitations, organizationMemberships, entities } from '../../../db/schema/index.js';
 import { eq, and, desc, isNull, sql } from 'drizzle-orm';
-import { kindeService } from '../../auth/index.js';
 import { v4 as uuidv4 } from 'uuid';
 import { invalidateRoleCache, invalidateUserCache } from '../../../middleware/auth/auth.js';
 import type { FastifyRequest } from 'fastify';
 import Logger from '../../../utils/logger.js';
-
-type OrgItem = { code: string; name?: string };
 
 // ---------------------------------------------------------------------------
 // ServiceError — thrown by service functions to signal an HTTP error response
@@ -26,48 +23,18 @@ export class ServiceError extends Error {
 // Low-level helpers (also exported for direct use when needed)
 // ---------------------------------------------------------------------------
 
-// Enhanced function to ensure user is in correct Kinde organization
+// Ensure the user is associated with the correct organization.
+//
+// Org membership now lives natively in the Wrapper DB (organization_memberships /
+// userRoleAssignments, written during invitation acceptance), so this is no longer a Kinde
+// one-way sync. The Wrapper DB is the source of truth, so this is a no-op that reports success.
+// Kept as an exported helper so existing callers keep compiling.
 export async function ensureUserInCorrectOrganization(
-  kindeUserId: string,
-  email: string,
+  _kindeUserId: string,
+  _email: string,
   targetOrgCode: string
-) {
-  try {
-    const userOrgs = await kindeService.getUserOrganizations(kindeUserId);
-    const orgs = (userOrgs.organizations ?? []) as OrgItem[];
-    const isAlreadyInTarget = orgs.some((org: OrgItem) => org.code === targetOrgCode);
-
-    if (!isAlreadyInTarget) {
-      const result = await kindeService.addUserToOrganization(
-        kindeUserId,
-        targetOrgCode as string,
-        { exclusive: true }
-      );
-
-      if (!result.success) {
-        // One retry on failure
-        const retry = await kindeService.addUserToOrganization(
-          kindeUserId,
-          targetOrgCode as string,
-          { exclusive: true }
-        );
-        if (!retry.success) {
-          return { success: false, error: retry.error || 'Failed to add user to organization' };
-        }
-      }
-    } else {
-      // Clean up other orgs in background — don't block
-      kindeService.addUserToOrganization(kindeUserId, targetOrgCode, { exclusive: true })
-        .catch((err: unknown) => {
-          Logger.log('warning', 'user', 'invitation-background', 'Background org sync failed', { error: (err as Error).message });
-        });
-    }
-
-    return { success: true, targetOrg: targetOrgCode };
-  } catch (err) {
-    const error = err as Error;
-    return { success: false, error: error.message };
-  }
+): Promise<{ success: boolean; targetOrg: string; error?: string }> {
+  return { success: true, targetOrg: targetOrgCode };
 }
 
 // Permission validation helper for multi-entity invitations

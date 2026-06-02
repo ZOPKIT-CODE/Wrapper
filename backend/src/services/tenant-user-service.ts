@@ -19,7 +19,7 @@ import {
   auditLogs,
 } from '../db/schema/index.js';
 import { v4 as uuidv4 } from 'uuid';
-import { kindeService } from '../features/auth/index.js';
+import { adminCreateUser } from '../features/auth/services/cognito-admin-service.js';
 import { getEmailProvider } from '../features/notifications/adapters/brevo-adapter.js';
 import { snsSqsPublisher } from '../features/messaging/utils/sns-sqs-publisher.js';
 import { TenantCoreService } from './tenant-core-service.js';
@@ -399,20 +399,23 @@ export class TenantUserService {
           })
           .where(eq(tenantInvitations.invitationId, invitation.invitationId));
 
-        // Trigger Kinde organization assignment asynchronously (best effort)
-        const tenant = await TenantCoreService.getTenantDetails(invitation.tenantId) as { kindeOrgId?: string };
-        if (tenant?.kindeOrgId && kindeService?.addUserToOrganization) {
-          kindeService.addUserToOrganization(kindeUserId, tenant.kindeOrgId, { exclusive: true })
-            .then((result: { success?: boolean; error?: string; message?: string }) => {
-              if (!result?.success) {
-                Logger.log('warning', 'kinde', 'accept-invitation', 'Kinde org assignment reported failure', { error: result?.error || result?.message });
-              }
-            })
-            .catch((err: unknown) => {
-              const e = err as Error;
-              Logger.log('warning', 'kinde', 'accept-invitation', 'Failed to assign user to Kinde organization', { error: e.message });
+        // Ensure the invited user has a Cognito account so they can sign in (best effort).
+        // Org membership itself is owned by the Wrapper DB (written above), so there is no
+        // org-sync step — only the Cognito user-lifecycle create that used to ride along
+        // with the Kinde org assignment.
+        setImmediate(async () => {
+          try {
+            await adminCreateUser({
+              email: userData.email,
+              firstName: userData.firstName,
+              lastName: userData.lastName,
             });
-        }
+            Logger.log('info', 'cognito', 'accept-invitation', 'Ensured Cognito account for invited user', { email: userData.email });
+          } catch (err: unknown) {
+            const e = err as Error;
+            Logger.log('warning', 'cognito', 'accept-invitation', 'Failed to ensure Cognito account for invited user', { error: e.message });
+          }
+        });
 
         // Publish user creation event to Amazon MQ for suite sync
         try {

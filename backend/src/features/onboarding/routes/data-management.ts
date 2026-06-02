@@ -4,11 +4,37 @@ import { db } from '../../../db/index.js';
 import { tenants, tenantUsers, onboardingFormData } from '../../../db/schema/index.js';
 import { eq, and } from 'drizzle-orm';
 import ErrorResponses from '../../../utils/error-responses.js';
+import jwt from 'jsonwebtoken';
+import { isCognitoIssuer, verifyCognitoToken } from '../../auth/services/cognito-service.js';
 
 /**
  * Data Management Routes
  * Handles data retrieval, organization info, and step tracking endpoints
  */
+
+/**
+ * Validate a bearer token, dispatching by issuer (Kinde -> Cognito migration P4).
+ * Cognito tokens are verified via verifyCognitoToken and mapped to the legacy
+ * { kindeUserId, userId, email, name } shape (sub -> kindeUserId/userId). Other tokens
+ * fall back to the Kinde path (removed in a later phase).
+ */
+async function validateTokenAnyIdp(token: string): Promise<Record<string, unknown>> {
+  let iss: string | undefined;
+  try {
+    iss = (jwt.decode(token) as jwt.JwtPayload | null)?.iss;
+  } catch {
+    iss = undefined;
+  }
+  if (isCognitoIssuer(iss)) {
+    const ci = await verifyCognitoToken(token);
+    if (!ci?.sub) {
+      throw new Error('Invalid Cognito token');
+    }
+    return { kindeUserId: ci.sub, userId: ci.sub, email: ci.email, name: ci.name };
+  }
+  const { kindeService } = await import('../../auth/index.js');
+  return kindeService.validateToken(token);
+}
 
 export default async function dataManagementRoutes(
   fastify: FastifyInstance,
@@ -140,9 +166,8 @@ export default async function dataManagementRoutes(
         return reply.code(401).send({ success: false, error: 'Authentication required' });
       }
       try {
-        const { kindeService } = await import('../../auth/index.js');
         const token = authHeader.substring(7);
-        const user = await kindeService.validateToken(token);
+        const user = await validateTokenAnyIdp(token);
         kindeUserId = (user.kindeUserId || user.userId) as string;
         // Prefer email from the verified token; fall back to body
         userEmail = ((user.email || email) as unknown) as string | null;
