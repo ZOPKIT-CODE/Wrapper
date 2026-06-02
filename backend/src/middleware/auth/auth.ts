@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { kindeService } from '../../features/auth/index.js';
+import { isCognitoIssuer, verifyCognitoToken } from '../../features/auth/services/cognito-service.js';
 import { db, dbManager } from '../../db/index.js';
 import { reserveTenantConnection } from '../../db/request-connection.js';
 import { enterRequestDbScope } from '../../db/request-context.js';
@@ -70,6 +71,41 @@ interface KindeUser {
   email?: string;
   name?: string;
   organization?: { id: string; name?: string } | null;
+}
+
+// Returns true when a bearer/cookie token is a Cognito pool token (Kinde->Cognito migration).
+function tokenIsCognito(token: string): boolean {
+  try {
+    return isCognitoIssuer((jwt.decode(token) as jwt.JwtPayload | null)?.iss);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Verify a Cognito session token and shape it as the middleware's `KindeUser`.
+ * The Cognito `sub` does NOT match the Kinde-era `tenant_users.kinde_user_id`, so the user
+ * is resolved by EMAIL and mapped to its existing kinde_user_id (no sub-backfill during the
+ * dual-IdP window). Cognito carries no org_code, so `organization` is null and the tenant is
+ * derived from the matched user's row in processAuthenticatedUser.
+ */
+async function cognitoTokenToKindeUser(token: string): Promise<KindeUser | null> {
+  const ci = await verifyCognitoToken(token);
+  if (!ci?.sub) return null;
+  let userId = ci.sub;
+  if (ci.email) {
+    try {
+      const [row] = await db
+        .select({ kindeUserId: tenantUsers.kindeUserId })
+        .from(tenantUsers)
+        .where(and(eq(tenantUsers.email, ci.email), eq(tenantUsers.isActive, true)))
+        .limit(1);
+      if (row?.kindeUserId) userId = row.kindeUserId;
+    } catch (e) {
+      Logger.log('warning', 'auth', 'cognito-resolve', 'email->user lookup failed', { error: (e as Error).message });
+    }
+  }
+  return { userId, email: ci.email, name: ci.name, organization: null };
 }
 
 async function findUserInDatabase(kindeUserId: string, tenantId?: string): Promise<UserRecord | null> {
@@ -397,7 +433,9 @@ async function handleTokenRefresh(request: FastifyRequest, reply: FastifyReply, 
       });
     }
 
-    const kindeUser = await kindeService.validateToken(accessToken) as unknown as KindeUser | null;
+    const kindeUser = tokenIsCognito(accessToken)
+      ? await cognitoTokenToKindeUser(accessToken)
+      : (await kindeService.validateToken(accessToken) as unknown as KindeUser | null);
     if (!kindeUser?.userId) {
       throw new Error('Invalid refreshed token');
     }
@@ -591,8 +629,10 @@ export async function authMiddleware(request: FastifyRequest, reply: FastifyRepl
       }
     }
 
-    const authPromise = kindeService.validateToken(token);
-    const timeoutPromise = new Promise<never>((_, reject) => 
+    const authPromise = tokenIsCognito(token)
+      ? cognitoTokenToKindeUser(token)
+      : kindeService.validateToken(token);
+    const timeoutPromise = new Promise<never>((_, reject) =>
       setTimeout(() => reject(new Error('Authentication timeout')), 10000)
     );
 
