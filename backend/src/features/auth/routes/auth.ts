@@ -355,8 +355,8 @@ export default async function authRoutes(
       // middleware + /validate-token verify). Cognito does not rotate refresh tokens on
       // refresh, so the refresh token is stored once here and reused by /refresh.
       reply
-        .setCookie('kinde_token', (tokens.id_token || tokens.access_token) as string, cookieOptions)
-        .setCookie('kinde_refresh_token', (tokens.refresh_token as string) || '', {
+        .setCookie('idp_token', (tokens.id_token || tokens.access_token) as string, cookieOptions)
+        .setCookie('idp_refresh_token', (tokens.refresh_token as string) || '', {
           ...cookieOptions,
           maxAge: 30 * 24 * 60 * 60 * 1000,
         });
@@ -430,7 +430,7 @@ export default async function authRoutes(
 
     try {
       const clearOpts = { path: '/', domain: getAuthCookieOptions().domain };
-      reply.clearCookie('kinde_token', clearOpts).clearCookie('kinde_refresh_token', clearOpts);
+      reply.clearCookie('idp_token', clearOpts).clearCookie('idp_refresh_token', clearOpts);
 
       const redirectTarget = (redirect_uri as string) || `${process.env.FRONTEND_URL || 'http://localhost:3001'}/login`;
       const logoutUrl = getCognitoLogoutUrl(redirectTarget);
@@ -445,12 +445,12 @@ export default async function authRoutes(
 
   /**
    * POST /refresh
-   * Exchange the httpOnly kinde_refresh_token cookie for a new access token.
+   * Exchange the httpOnly idp_refresh_token cookie for a new access token.
    * Kinde automatically rotates refresh tokens on each exchange.
    */
   fastify.post('/refresh', async (request: FastifyRequest, reply: FastifyReply) => {
     try {
-      const refreshToken = (request.cookies as Record<string, string | undefined>).kinde_refresh_token;
+      const refreshToken = (request.cookies as Record<string, string | undefined>).idp_refresh_token;
       if (!refreshToken) {
         return reply.code(401).send({ error: 'Unauthorized', message: 'Refresh token not found' });
       }
@@ -467,9 +467,9 @@ export default async function authRoutes(
         maxAge: (Number(tokens.expires_in) || 3600) * 1000,
       };
 
-      reply.setCookie('kinde_token', (tokens.id_token || tokens.access_token) as string, opts);
+      reply.setCookie('idp_token', (tokens.id_token || tokens.access_token) as string, opts);
       if (tokens.refresh_token) {
-        reply.setCookie('kinde_refresh_token', tokens.refresh_token as string, {
+        reply.setCookie('idp_refresh_token', tokens.refresh_token as string, {
           ...opts,
           maxAge: 30 * 24 * 60 * 60 * 1000,
         });
@@ -480,7 +480,7 @@ export default async function authRoutes(
       const error = err as Error;
       Logger.log('error', 'kinde', 'auth-refresh', 'Token refresh error', { error: error.message });
       const clearOpts = { path: '/', domain: getAuthCookieOptions().domain };
-      reply.clearCookie('kinde_token', clearOpts).clearCookie('kinde_refresh_token', clearOpts);
+      reply.clearCookie('idp_token', clearOpts).clearCookie('idp_refresh_token', clearOpts);
       return reply.code(401).send({ error: 'Unauthorized', message: 'Failed to refresh token' });
     }
   });

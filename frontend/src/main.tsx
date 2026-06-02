@@ -58,8 +58,8 @@ const startupStorageResetEnabled = import.meta.env.VITE_RESET_AUTH_STORAGE_ON_BO
 if (startupStorageResetEnabled) {
   const explicitSensitiveKeys = new Set([
     "kinde_backup_token",
-    "kinde_token",
-    "kinde_refresh_token",
+    "idp_token",
+    "idp_refresh_token",
     "authToken",
     "auth_token",
   ])

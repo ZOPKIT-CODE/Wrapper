@@ -16,7 +16,7 @@ import { TenantService } from '../../../services/tenant-service.js';
 // Helper function to extract token from request
 function extractToken(request: FastifyRequest): string | null {
   // First try to get token from cookie
-  const cookieToken = request.cookies?.kinde_token;
+  const cookieToken = request.cookies?.idp_token;
   if (cookieToken) {
     return cookieToken;
   }

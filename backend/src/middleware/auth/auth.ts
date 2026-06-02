@@ -414,7 +414,7 @@ async function handleTokenRefresh(request: FastifyRequest, reply: FastifyReply, 
 
     const accessToken = tokens.access_token as string;
     const expiresIn = typeof tokens.expires_in === 'number' ? tokens.expires_in : 3600;
-    reply.setCookie('kinde_token', accessToken, {
+    reply.setCookie('idp_token', accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
@@ -424,7 +424,7 @@ async function handleTokenRefresh(request: FastifyRequest, reply: FastifyReply, 
 
     const refreshTokenVal = tokens.refresh_token as string | undefined;
     if (refreshTokenVal) {
-      reply.setCookie('kinde_refresh_token', refreshTokenVal, {
+      reply.setCookie('idp_refresh_token', refreshTokenVal, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
@@ -454,8 +454,8 @@ async function handleTokenRefresh(request: FastifyRequest, reply: FastifyReply, 
       return false;
     }
 
-    reply.clearCookie('kinde_token', { path: '/' })
-         .clearCookie('kinde_refresh_token', { path: '/' });
+    reply.clearCookie('idp_token', { path: '/' })
+         .clearCookie('idp_refresh_token', { path: '/' });
     return false;
   }
 }
@@ -658,7 +658,7 @@ export async function authMiddleware(request: FastifyRequest, reply: FastifyRepl
       return;
     }
 
-    const refreshToken = (request as any).cookies?.kinde_refresh_token;
+    const refreshToken = (request as any).cookies?.idp_refresh_token;
     if (refreshToken) {
       try {
         const refreshSuccess = await handleTokenRefresh(request, reply, refreshToken);
@@ -808,7 +808,7 @@ function isPublicRoute(url: string): boolean {
 }
 
 function extractToken(request: FastifyRequest): string | null {
-  const cookieToken = (request as any).cookies?.kinde_token;
+  const cookieToken = (request as any).cookies?.idp_token;
   if (cookieToken) {
     return cookieToken;
   }

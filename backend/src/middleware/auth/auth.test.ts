@@ -179,7 +179,7 @@ describe('authMiddleware', () => {
 
     const req = makeRequest({
       url: '/api/notifications',
-      cookies: { kinde_token: 't' },
+      cookies: { idp_token: 't' },
     });
     const reply = makeReply();
 
@@ -211,7 +211,7 @@ describe('authMiddleware', () => {
 
     const req = makeRequest({
       url: '/api/notifications',
-      cookies: { kinde_token: 'bad', kinde_refresh_token: 'refresh' },
+      cookies: { idp_token: 'bad', idp_refresh_token: 'refresh' },
     });
     const reply = makeReply();
 
@@ -219,7 +219,7 @@ describe('authMiddleware', () => {
 
     expect(refreshTokenMock).toHaveBeenCalledWith('refresh');
     expect(reply.setCookie).toHaveBeenCalledWith(
-      'kinde_token',
+      'idp_token',
       'new-access',
       expect.objectContaining({ httpOnly: true, path: '/' })
     );
