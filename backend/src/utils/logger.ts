@@ -4,27 +4,19 @@
  * Provides structured logging for debugging onboarding, user management, roles, billing, and Stripe operations
  */
 
-import winston from 'winston';
+import pino from 'pino';
 import { getTraceFields } from './trace-context.js';
 
-// Inject the active OTel span's trace_id/span_id into every record so logs can
-// be joined to their distributed trace in Sentry/Tempo and CloudWatch.
-const traceCorrelation = winston.format((info) => Object.assign(info, getTraceFields()));
-
-const winstonLogger = winston.createLogger({
+// pino replaces winston (fleet-standard logger — matches CRM/FA). The `mixin`
+// injects the active OTel span's trace_id/span_id into every record for log↔trace
+// correlation. JSON to stdout in prod; pretty-printed in dev. The public Logger
+// API below is unchanged, so its 150+ call sites are untouched.
+const baseLogger = pino({
   level: process.env.LOG_LEVEL ?? 'info',
-  format: winston.format.combine(
-    traceCorrelation(),
-    winston.format.timestamp(),
-    winston.format.json()
-  ),
-  transports: [
-    new winston.transports.Console({
-      format: process.env.NODE_ENV === 'production'
-        ? winston.format.json()
-        : winston.format.combine(winston.format.colorize(), winston.format.simple())
-    })
-  ]
+  mixin: () => getTraceFields(),
+  ...(process.env.NODE_ENV !== 'production'
+    ? { transport: { target: 'pino-pretty', options: { colorize: true, ignore: 'pid,hostname', translateTime: 'SYS:standard' } } }
+    : {}),
 });
 
 class Logger {
@@ -62,11 +54,11 @@ class Logger {
     const timestamp = this.getTimestamp();
     const emoji = this.getEmoji(level, category);
     
-    winstonLogger.info(`\n${emoji} [${requestId}] ${category}: ${message}`);
-    winstonLogger.info(`⏰ Timestamp: ${timestamp}`);
+    baseLogger.info(`\n${emoji} [${requestId}] ${category}: ${message}`);
+    baseLogger.info(`⏰ Timestamp: ${timestamp}`);
 
     if (Object.keys(data).length > 0) {
-      winstonLogger.info(`📊 Data: ${JSON.stringify(data, null, 2)}`);
+      baseLogger.info(`📊 Data: ${JSON.stringify(data, null, 2)}`);
     }
   }
 
@@ -99,43 +91,43 @@ class Logger {
   // Onboarding specific logs
   onboarding = {
     start: (requestId: string, data: Record<string, unknown>) => {
-      winstonLogger.info('\n🚀 =================== ONBOARDING STARTED ===================');
-      winstonLogger.info(`📋 Request ID: ${requestId}`);
-      winstonLogger.info(`⏰ Timestamp: ${this.getTimestamp()}`);
-      winstonLogger.info(`🌍 Environment: ${process.env.NODE_ENV}`);
-      winstonLogger.info(`📦 Request Data: ${JSON.stringify(data, null, 2)}`);
+      baseLogger.info('\n🚀 =================== ONBOARDING STARTED ===================');
+      baseLogger.info(`📋 Request ID: ${requestId}`);
+      baseLogger.info(`⏰ Timestamp: ${this.getTimestamp()}`);
+      baseLogger.info(`🌍 Environment: ${process.env.NODE_ENV}`);
+      baseLogger.info(`📦 Request Data: ${JSON.stringify(data, null, 2)}`);
     },
 
     step: (requestId: string, stepNumber: number, description: string, data: Record<string, unknown> = {}) => {
-      winstonLogger.info(`\n🔄 [${requestId}] Step ${stepNumber}: ${description}`);
+      baseLogger.info(`\n🔄 [${requestId}] Step ${stepNumber}: ${description}`);
       if (Object.keys(data).length > 0) {
-        winstonLogger.info(`📊 [${requestId}] Data: ${JSON.stringify(data, null, 2)}`);
+        baseLogger.info(`📊 [${requestId}] Data: ${JSON.stringify(data, null, 2)}`);
       }
     },
 
     success: (requestId: string, message: string, data: Record<string, unknown> = {}) => {
-      winstonLogger.info(`✅ [${requestId}] ${message}`);
+      baseLogger.info(`✅ [${requestId}] ${message}`);
       if (Object.keys(data).length > 0) {
-        winstonLogger.info(`📊 [${requestId}] Result: ${JSON.stringify(data, null, 2)}`);
+        baseLogger.info(`📊 [${requestId}] Result: ${JSON.stringify(data, null, 2)}`);
       }
     },
 
     error: (requestId: string, message: string, error: Error & { code?: string; statusCode?: number }, startTime: number) => {
-      winstonLogger.error(`❌ [${requestId}] ${message}`);
-      winstonLogger.error(`📋 [${requestId}] Error: ${error.message}`);
-      if (error.code) winstonLogger.error(`🔢 [${requestId}] Error Code: ${error.code}`);
-      if (error.statusCode) winstonLogger.error(`🌐 [${requestId}] Status Code: ${error.statusCode}`);
-      if (error.stack) winstonLogger.error(`📋 [${requestId}] Stack: ${error.stack}`);
-      winstonLogger.info(`⏱️ [${requestId}] Failed after ${this.getDuration(startTime)}`);
+      baseLogger.error(`❌ [${requestId}] ${message}`);
+      baseLogger.error(`📋 [${requestId}] Error: ${error.message}`);
+      if (error.code) baseLogger.error(`🔢 [${requestId}] Error Code: ${error.code}`);
+      if (error.statusCode) baseLogger.error(`🌐 [${requestId}] Status Code: ${error.statusCode}`);
+      if (error.stack) baseLogger.error(`📋 [${requestId}] Stack: ${error.stack}`);
+      baseLogger.info(`⏱️ [${requestId}] Failed after ${this.getDuration(startTime)}`);
     },
 
     complete: (requestId: string, startTime: number, data: Record<string, unknown> = {}) => {
-      winstonLogger.info(`\n🎉 [${requestId}] ONBOARDING COMPLETED SUCCESSFULLY!`);
-      winstonLogger.info(`⏱️ [${requestId}] Total Duration: ${this.getDuration(startTime)}`);
+      baseLogger.info(`\n🎉 [${requestId}] ONBOARDING COMPLETED SUCCESSFULLY!`);
+      baseLogger.info(`⏱️ [${requestId}] Total Duration: ${this.getDuration(startTime)}`);
       if (Object.keys(data).length > 0) {
-        winstonLogger.info(`📊 [${requestId}] Final Result: ${JSON.stringify(data, null, 2)}`);
+        baseLogger.info(`📊 [${requestId}] Final Result: ${JSON.stringify(data, null, 2)}`);
       }
-      winstonLogger.info('🚀 =================== ONBOARDING ENDED ===================\n');
+      baseLogger.info('🚀 =================== ONBOARDING ENDED ===================\n');
     }
   };
 
@@ -143,31 +135,31 @@ class Logger {
   user = {
     invitation: {
       start: (requestId: string, data: Record<string, unknown>) => {
-        winstonLogger.info('\n👤 ================ USER INVITATION STARTED ================');
-        winstonLogger.info(`📋 Request ID: ${requestId}`);
-        winstonLogger.info(`⏰ Timestamp: ${this.getTimestamp()}`);
-        winstonLogger.info(`📧 Invitation Data: ${JSON.stringify(data, null, 2)}`);
+        baseLogger.info('\n👤 ================ USER INVITATION STARTED ================');
+        baseLogger.info(`📋 Request ID: ${requestId}`);
+        baseLogger.info(`⏰ Timestamp: ${this.getTimestamp()}`);
+        baseLogger.info(`📧 Invitation Data: ${JSON.stringify(data, null, 2)}`);
       },
 
       step: (requestId: string, step: string, description: string, data: Record<string, unknown> = {}) => {
-        winstonLogger.info(`\n📧 [${requestId}] ${step}: ${description}`);
+        baseLogger.info(`\n📧 [${requestId}] ${step}: ${description}`);
         if (Object.keys(data).length > 0) {
-          winstonLogger.info(`📊 [${requestId}] Data: ${JSON.stringify(data, null, 2)}`);
+          baseLogger.info(`📊 [${requestId}] Data: ${JSON.stringify(data, null, 2)}`);
         }
       },
 
       success: (requestId: string, startTime: number, data: Record<string, unknown> = {}) => {
-        winstonLogger.info(`\n✅ [${requestId}] USER INVITATION COMPLETED!`);
-        winstonLogger.info(`⏱️ [${requestId}] Duration: ${this.getDuration(startTime)}`);
-        winstonLogger.info(`📊 [${requestId}] Result: ${JSON.stringify(data, null, 2)}`);
-        winstonLogger.info('👤 ================ USER INVITATION ENDED ================\n');
+        baseLogger.info(`\n✅ [${requestId}] USER INVITATION COMPLETED!`);
+        baseLogger.info(`⏱️ [${requestId}] Duration: ${this.getDuration(startTime)}`);
+        baseLogger.info(`📊 [${requestId}] Result: ${JSON.stringify(data, null, 2)}`);
+        baseLogger.info('👤 ================ USER INVITATION ENDED ================\n');
       },
 
       error: (requestId: string, error: Error, startTime: number) => {
-        winstonLogger.error(`\n❌ [${requestId}] USER INVITATION FAILED!`);
-        winstonLogger.error(`📋 [${requestId}] Error: ${error.message}`);
-        winstonLogger.info(`⏱️ [${requestId}] Failed after ${this.getDuration(startTime)}`);
-        winstonLogger.info('👤 ================ USER INVITATION ENDED ================\n');
+        baseLogger.error(`\n❌ [${requestId}] USER INVITATION FAILED!`);
+        baseLogger.error(`📋 [${requestId}] Error: ${error.message}`);
+        baseLogger.info(`⏱️ [${requestId}] Failed after ${this.getDuration(startTime)}`);
+        baseLogger.info('👤 ================ USER INVITATION ENDED ================\n');
       }
     }
   };
@@ -176,40 +168,40 @@ class Logger {
   role = {
     create: {
       start: (requestId: string, data: Record<string, unknown>) => {
-        winstonLogger.info('\n🔐 ================ ROLE CREATION STARTED ================');
-        winstonLogger.info(`📋 Request ID: ${requestId}`);
-        winstonLogger.info(`⏰ Timestamp: ${this.getTimestamp()}`);
-        winstonLogger.info(`🔐 Role Data: ${JSON.stringify(data, null, 2)}`);
+        baseLogger.info('\n🔐 ================ ROLE CREATION STARTED ================');
+        baseLogger.info(`📋 Request ID: ${requestId}`);
+        baseLogger.info(`⏰ Timestamp: ${this.getTimestamp()}`);
+        baseLogger.info(`🔐 Role Data: ${JSON.stringify(data, null, 2)}`);
       },
 
       step: (requestId: string, step: string, description: string, data: Record<string, unknown> = {}) => {
-        winstonLogger.info(`\n🔐 [${requestId}] ${step}: ${description}`);
+        baseLogger.info(`\n🔐 [${requestId}] ${step}: ${description}`);
         if (Object.keys(data).length > 0) {
-          winstonLogger.info(`📊 [${requestId}] Data: ${JSON.stringify(data, null, 2)}`);
+          baseLogger.info(`📊 [${requestId}] Data: ${JSON.stringify(data, null, 2)}`);
         }
       },
 
       success: (requestId: string, startTime: number, data: Record<string, unknown> = {}) => {
-        winstonLogger.info(`\n✅ [${requestId}] ROLE CREATED SUCCESSFULLY!`);
-        winstonLogger.info(`⏱️ [${requestId}] Duration: ${this.getDuration(startTime)}`);
-        winstonLogger.info(`📊 [${requestId}] Role: ${JSON.stringify(data, null, 2)}`);
-        winstonLogger.info('🔐 ================ ROLE CREATION ENDED ================\n');
+        baseLogger.info(`\n✅ [${requestId}] ROLE CREATED SUCCESSFULLY!`);
+        baseLogger.info(`⏱️ [${requestId}] Duration: ${this.getDuration(startTime)}`);
+        baseLogger.info(`📊 [${requestId}] Role: ${JSON.stringify(data, null, 2)}`);
+        baseLogger.info('🔐 ================ ROLE CREATION ENDED ================\n');
       }
     },
 
     assign: {
       start: (requestId: string, data: Record<string, unknown>) => {
-        winstonLogger.info('\n👥 ================ ROLE ASSIGNMENT STARTED ================');
-        winstonLogger.info(`📋 Request ID: ${requestId}`);
-        winstonLogger.info(`⏰ Timestamp: ${this.getTimestamp()}`);
-        winstonLogger.info(`👥 Assignment Data: ${JSON.stringify(data, null, 2)}`);
+        baseLogger.info('\n👥 ================ ROLE ASSIGNMENT STARTED ================');
+        baseLogger.info(`📋 Request ID: ${requestId}`);
+        baseLogger.info(`⏰ Timestamp: ${this.getTimestamp()}`);
+        baseLogger.info(`👥 Assignment Data: ${JSON.stringify(data, null, 2)}`);
       },
 
       success: (requestId: string, startTime: number, data: Record<string, unknown> = {}) => {
-        winstonLogger.info(`\n✅ [${requestId}] ROLE ASSIGNED SUCCESSFULLY!`);
-        winstonLogger.info(`⏱️ [${requestId}] Duration: ${this.getDuration(startTime)}`);
-        winstonLogger.info(`📊 [${requestId}] Assignment: ${JSON.stringify(data, null, 2)}`);
-        winstonLogger.info('👥 ================ ROLE ASSIGNMENT ENDED ================\n');
+        baseLogger.info(`\n✅ [${requestId}] ROLE ASSIGNED SUCCESSFULLY!`);
+        baseLogger.info(`⏱️ [${requestId}] Duration: ${this.getDuration(startTime)}`);
+        baseLogger.info(`📊 [${requestId}] Assignment: ${JSON.stringify(data, null, 2)}`);
+        baseLogger.info('👥 ================ ROLE ASSIGNMENT ENDED ================\n');
       }
     }
   };
@@ -217,44 +209,44 @@ class Logger {
   // Billing and Stripe logs
   billing = {
     start: (requestId: string, operation: string, data: Record<string, unknown>) => {
-      winstonLogger.info(`\n💳 ================ ${operation.toUpperCase()} STARTED ================`);
-      winstonLogger.info(`📋 Request ID: ${requestId}`);
-      winstonLogger.info(`⏰ Timestamp: ${this.getTimestamp()}`);
-      winstonLogger.info(`💳 Billing Data: ${JSON.stringify(data, null, 2)}`);
+      baseLogger.info(`\n💳 ================ ${operation.toUpperCase()} STARTED ================`);
+      baseLogger.info(`📋 Request ID: ${requestId}`);
+      baseLogger.info(`⏰ Timestamp: ${this.getTimestamp()}`);
+      baseLogger.info(`💳 Billing Data: ${JSON.stringify(data, null, 2)}`);
     },
 
     stripe: {
       request: (requestId: string, method: string, endpoint: string, data: Record<string, unknown> = {}) => {
-        winstonLogger.info(`\n🟢 [${requestId}] Stripe API Request:`);
-        winstonLogger.info(`🌐 [${requestId}] Method: ${method}`);
-        winstonLogger.info(`🔗 [${requestId}] Endpoint: ${endpoint}`);
+        baseLogger.info(`\n🟢 [${requestId}] Stripe API Request:`);
+        baseLogger.info(`🌐 [${requestId}] Method: ${method}`);
+        baseLogger.info(`🔗 [${requestId}] Endpoint: ${endpoint}`);
         if (Object.keys(data).length > 0) {
-          winstonLogger.info(`📊 [${requestId}] Payload: ${JSON.stringify(data, null, 2)}`);
+          baseLogger.info(`📊 [${requestId}] Payload: ${JSON.stringify(data, null, 2)}`);
         }
       },
 
       response: (requestId: string, status: number | string, data: Record<string, unknown> = {}) => {
-        winstonLogger.info(`🟢 [${requestId}] Stripe API Response:`);
-        winstonLogger.info(`📊 [${requestId}] Status: ${status}`);
-        winstonLogger.info(`📄 [${requestId}] Data: ${JSON.stringify(data, null, 2)}`);
+        baseLogger.info(`🟢 [${requestId}] Stripe API Response:`);
+        baseLogger.info(`📊 [${requestId}] Status: ${status}`);
+        baseLogger.info(`📄 [${requestId}] Data: ${JSON.stringify(data, null, 2)}`);
       },
 
       error: (requestId: string, error: Error & { code?: string; statusCode?: number; decline_code?: string }) => {
-        winstonLogger.error(`❌ [${requestId}] Stripe API Error:`);
-        winstonLogger.error(`📋 [${requestId}] Message: ${error.message}`);
-        winstonLogger.error(`🔢 [${requestId}] Code: ${error.code}`);
-        winstonLogger.error(`🌐 [${requestId}] Status: ${error.statusCode}`);
+        baseLogger.error(`❌ [${requestId}] Stripe API Error:`);
+        baseLogger.error(`📋 [${requestId}] Message: ${error.message}`);
+        baseLogger.error(`🔢 [${requestId}] Code: ${error.code}`);
+        baseLogger.error(`🌐 [${requestId}] Status: ${error.statusCode}`);
         if (error.decline_code) {
-          winstonLogger.error(`💳 [${requestId}] Decline Code: ${error.decline_code}`);
+          baseLogger.error(`💳 [${requestId}] Decline Code: ${error.decline_code}`);
         }
       }
     },
 
     success: (requestId: string, operation: string, startTime: number, data: Record<string, unknown> = {}) => {
-      winstonLogger.info(`\n✅ [${requestId}] ${operation.toUpperCase()} COMPLETED!`);
-      winstonLogger.info(`⏱️ [${requestId}] Duration: ${this.getDuration(startTime)}`);
-      winstonLogger.info(`📊 [${requestId}] Result: ${JSON.stringify(data, null, 2)}`);
-      winstonLogger.info(`💳 ================ ${operation.toUpperCase()} ENDED ================\n`);
+      baseLogger.info(`\n✅ [${requestId}] ${operation.toUpperCase()} COMPLETED!`);
+      baseLogger.info(`⏱️ [${requestId}] Duration: ${this.getDuration(startTime)}`);
+      baseLogger.info(`📊 [${requestId}] Result: ${JSON.stringify(data, null, 2)}`);
+      baseLogger.info(`💳 ================ ${operation.toUpperCase()} ENDED ================\n`);
     }
   };
 
@@ -262,29 +254,29 @@ class Logger {
   database = {
     transaction: {
       start: (requestId: string, description: string) => {
-        winstonLogger.info(`\n💾 [${requestId}] Database Transaction Started: ${description}`);
-        winstonLogger.info(`⏰ [${requestId}] Timestamp: ${this.getTimestamp()}`);
+        baseLogger.info(`\n💾 [${requestId}] Database Transaction Started: ${description}`);
+        baseLogger.info(`⏰ [${requestId}] Timestamp: ${this.getTimestamp()}`);
       },
 
       step: (requestId: string, operation: string, table: string, data: Record<string, unknown> = {}) => {
-        winstonLogger.info(`📝 [${requestId}] ${operation} → ${table}`);
+        baseLogger.info(`📝 [${requestId}] ${operation} → ${table}`);
         if (Object.keys(data).length > 0) {
-          winstonLogger.info(`📊 [${requestId}] Data: ${JSON.stringify(data, null, 2)}`);
+          baseLogger.info(`📊 [${requestId}] Data: ${JSON.stringify(data, null, 2)}`);
         }
       },
 
       success: (requestId: string, description: string, duration: string, data: Record<string, unknown> = {}) => {
-        winstonLogger.info(`✅ [${requestId}] Transaction Completed: ${description}`);
-        winstonLogger.info(`⏱️ [${requestId}] Duration: ${duration}`);
+        baseLogger.info(`✅ [${requestId}] Transaction Completed: ${description}`);
+        baseLogger.info(`⏱️ [${requestId}] Duration: ${duration}`);
         if (Object.keys(data).length > 0) {
-          winstonLogger.info(`📊 [${requestId}] Result: ${JSON.stringify(data, null, 2)}`);
+          baseLogger.info(`📊 [${requestId}] Result: ${JSON.stringify(data, null, 2)}`);
         }
       },
 
       error: (requestId: string, error: Error & { code?: string }, duration: string) => {
-        winstonLogger.error(`❌ [${requestId}] Transaction Failed after ${duration}`);
-        winstonLogger.error(`📋 [${requestId}] Error: ${error.message}`);
-        if (error.code) winstonLogger.error(`🔢 [${requestId}] Error Code: ${error.code}`);
+        baseLogger.error(`❌ [${requestId}] Transaction Failed after ${duration}`);
+        baseLogger.error(`📋 [${requestId}] Error: ${error.message}`);
+        if (error.code) baseLogger.error(`🔢 [${requestId}] Error Code: ${error.code}`);
       }
     }
   };
@@ -292,11 +284,11 @@ class Logger {
   // Activity logs
   activity = {
     log: (requestId: string, action: string, resourceType: string, resourceId: string, data: Record<string, unknown> = {}) => {
-      winstonLogger.info(`📋 [${requestId}] Activity Logged:`);
-      winstonLogger.info(`🎯 [${requestId}] Action: ${action}`);
-      winstonLogger.info(`📦 [${requestId}] Resource: ${resourceType} (${resourceId})`);
+      baseLogger.info(`📋 [${requestId}] Activity Logged:`);
+      baseLogger.info(`🎯 [${requestId}] Action: ${action}`);
+      baseLogger.info(`📦 [${requestId}] Resource: ${resourceType} (${resourceId})`);
       if (Object.keys(data).length > 0) {
-        winstonLogger.info(`📊 [${requestId}] Details: ${JSON.stringify(data, null, 2)}`);
+        baseLogger.info(`📊 [${requestId}] Details: ${JSON.stringify(data, null, 2)}`);
       }
     }
   };
@@ -304,42 +296,42 @@ class Logger {
   // Email logs
   email = {
     send: (requestId: string, type: string, recipient: string, data: Record<string, unknown> = {}) => {
-      winstonLogger.info(`📧 [${requestId}] Sending Email:`);
-      winstonLogger.info(`📮 [${requestId}] Type: ${type}`);
-      winstonLogger.info(`👤 [${requestId}] To: ${recipient}`);
+      baseLogger.info(`📧 [${requestId}] Sending Email:`);
+      baseLogger.info(`📮 [${requestId}] Type: ${type}`);
+      baseLogger.info(`👤 [${requestId}] To: ${recipient}`);
       if (Object.keys(data).length > 0) {
-        winstonLogger.info(`📊 [${requestId}] Data: ${JSON.stringify(data, null, 2)}`);
+        baseLogger.info(`📊 [${requestId}] Data: ${JSON.stringify(data, null, 2)}`);
       }
     },
 
     success: (requestId: string, type: string, recipient: string) => {
-      winstonLogger.info(`✅ [${requestId}] Email sent successfully: ${type} to ${recipient}`);
+      baseLogger.info(`✅ [${requestId}] Email sent successfully: ${type} to ${recipient}`);
     },
 
     error: (requestId: string, type: string, recipient: string, error: Error) => {
-      winstonLogger.error(`❌ [${requestId}] Email failed: ${type} to ${recipient}`);
-      winstonLogger.error(`📋 [${requestId}] Error: ${error.message}`);
+      baseLogger.error(`❌ [${requestId}] Email failed: ${type} to ${recipient}`);
+      baseLogger.error(`📋 [${requestId}] Error: ${error.message}`);
     }
   };
 
   // Trial and subscription logs
   trial = {
     start: (requestId: string, tenantId: string, duration: string) => {
-      winstonLogger.info(`⏰ [${requestId}] Trial Started:`);
-      winstonLogger.info(`🏢 [${requestId}] Tenant: ${tenantId}`);
-      winstonLogger.info(`⏱️ [${requestId}] Duration: ${duration}`);
+      baseLogger.info(`⏰ [${requestId}] Trial Started:`);
+      baseLogger.info(`🏢 [${requestId}] Tenant: ${tenantId}`);
+      baseLogger.info(`⏱️ [${requestId}] Duration: ${duration}`);
     },
 
     expiry: (requestId: string, tenantId: string, expiredAt: string) => {
-      winstonLogger.info(`⏰ [${requestId}] Trial Expired:`);
-      winstonLogger.info(`🏢 [${requestId}] Tenant: ${tenantId}`);
-      winstonLogger.info(`📅 [${requestId}] Expired at: ${expiredAt}`);
+      baseLogger.info(`⏰ [${requestId}] Trial Expired:`);
+      baseLogger.info(`🏢 [${requestId}] Tenant: ${tenantId}`);
+      baseLogger.info(`📅 [${requestId}] Expired at: ${expiredAt}`);
     },
 
     reminder: (requestId: string, tenantId: string, timeLeft: string) => {
-      winstonLogger.info(`⏰ [${requestId}] Trial Reminder:`);
-      winstonLogger.info(`🏢 [${requestId}] Tenant: ${tenantId}`);
-      winstonLogger.info(`⏱️ [${requestId}] Time left: ${timeLeft}`);
+      baseLogger.info(`⏰ [${requestId}] Trial Reminder:`);
+      baseLogger.info(`🏢 [${requestId}] Tenant: ${tenantId}`);
+      baseLogger.info(`⏱️ [${requestId}] Time left: ${timeLeft}`);
     }
   };
 }

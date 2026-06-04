@@ -83,9 +83,10 @@
     "postgres": "^3.4.3",
     "razorpay": "^2.9.6",
     "stripe": "^14.8.0",
+    "pino": "^9.7.0",
+    "pino-elasticsearch": "^8.1.0",
+    "pino-pretty": "^13.0.0",
     "uuid": "^9.0.1",
-    "winston": "^3.11.0",
-    "winston-elasticsearch": "^0.15.9",
     "ws": "^8.18.3",
     "zod": "^3.22.4"
   },
