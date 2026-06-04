@@ -19,7 +19,7 @@ export interface OnboardingError extends Error {
 
 /** Result of createCompleteOnboardingInTransaction */
 export interface DbOnboardingResult {
-  tenant: { tenantId: string; companyName?: string; subdomain?: string; kindeOrgId?: string; adminEmail?: string; onboardingCompleted?: boolean; onboardedAt?: Date; trialStartedAt?: Date };
+  tenant: { tenantId: string; companyName?: string; subdomain?: string; idpOrgId?: string; adminEmail?: string; onboardingCompleted?: boolean; onboardedAt?: Date; trialStartedAt?: Date };
   organization: { organizationId: string; organizationName?: string };
   adminUser: { userId: string };
   adminRole?: Record<string, unknown>;

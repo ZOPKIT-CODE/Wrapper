@@ -30,7 +30,7 @@ export async function requireTenantId(request: FastifyRequest, reply: FastifyRep
     Logger.log('info', 'validation', 'require-tenant-id', `❌ [${requestId}] No tenantId found for user`, {
       userId: request.userContext?.userId,
       email: request.userContext?.email,
-      kindeUserId: request.userContext?.kindeUserId
+      idpSub: request.userContext?.idpSub
     });
 
     return ErrorResponses.unauthorized(reply, 'User is not associated with any organization. Please complete onboarding first.', {

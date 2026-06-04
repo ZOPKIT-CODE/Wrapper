@@ -66,14 +66,14 @@ export default async function entityRoutes(
   });
 
   // Resolve tenant by Kinde org ID (bootstrap helper endpoint)
-  fastify.get('/by-kinde-id/:kindeOrgId', async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.get('/by-idp-org-id/:idpOrgId', async (request: FastifyRequest, reply: FastifyReply) => {
     const params = request.params as Record<string, string>;
     try {
-      const kindeOrgId = params.kindeOrgId ?? '';
-      if (!kindeOrgId) {
+      const idpOrgId = params.idpOrgId ?? '';
+      if (!idpOrgId) {
         return reply.code(400).send({
           success: false,
-          message: 'kindeOrgId is required',
+          message: 'idpOrgId is required',
         });
       }
 
@@ -85,11 +85,11 @@ export default async function entityRoutes(
         .select({
           id: tenants.tenantId,
           name: tenants.companyName,
-          kindeOrgId: tenants.idpOrgId,
+          idpOrgId: tenants.idpOrgId,
           code: tenants.subdomain,
         })
         .from(tenants)
-        .where(eq(tenants.idpOrgId, kindeOrgId))
+        .where(eq(tenants.idpOrgId, idpOrgId))
         .limit(1);
 
       if (!tenant) {

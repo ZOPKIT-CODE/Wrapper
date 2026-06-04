@@ -74,6 +74,21 @@ const assignRoleSchema = z.object({
   expiresAt: z.string().datetime().optional(),
 });
 
+const assignOrganizationSchema = z.preprocess(
+  (raw) => {
+    if (!raw || typeof raw !== 'object') return raw;
+    const b = raw as Record<string, unknown>;
+    return {
+      entityId: b.entityId ?? b.entity_id ?? b.organizationId ?? b.organization_id,
+      accessLevel: b.accessLevel ?? b.access_level,
+    };
+  },
+  z.object({
+    entityId: z.string().uuid(),
+    accessLevel: z.enum(['admin', 'manager', 'standard', 'limited']).optional(),
+  }),
+);
+
 // ---------------------------------------------------------------------------
 // Helper: generate a simple request ID
 // ---------------------------------------------------------------------------
@@ -531,6 +546,56 @@ export default async function userRoutes(fastify: FastifyInstance): Promise<void
           success: false,
           error: message,
         });
+      }
+    },
+  );
+
+  // -----------------------------------------------------------------------
+  // POST /:userId/organizations — assign user to an organization (admin only)
+  // -----------------------------------------------------------------------
+  fastify.post(
+    '/:userId/organizations',
+    { preHandler: [authenticateToken] },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const reqId = requestId('add-org-membership');
+      try {
+        const { tenantId, isTenantAdmin, internalUserId } = request.userContext as {
+          tenantId: string;
+          isTenantAdmin: boolean;
+          internalUserId: string | null;
+        };
+
+        if (!tenantId) {
+          return reply.code(400).send({ success: false, error: 'Missing tenant context' });
+        }
+
+        if (!isTenantAdmin) {
+          return reply.code(403).send({ success: false, error: 'Admin access required' });
+        }
+
+        const { userId } = request.params as { userId: string };
+        const parsed = assignOrganizationSchema.safeParse(request.body);
+        if (!parsed.success) {
+          return reply.code(400).send({
+            success: false,
+            error: 'Validation error',
+            details: parsed.error.issues,
+          });
+        }
+
+        const data = await UserManagementService.addOrganizationMembership(tenantId, userId, parsed.data, {
+          createdByInternalUserId: internalUserId,
+        });
+        return reply.code(201).send({ success: true, data });
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Failed to assign organization';
+        Logger.log('error', 'user', reqId, 'Error assigning organization', { error: message });
+        const statusCode = message.includes('not found')
+          ? 404
+          : message.includes('already a member')
+            ? 409
+            : 500;
+        return reply.code(statusCode).send({ success: false, error: message });
       }
     },
   );

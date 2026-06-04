@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo, ReactNode } from 'react';
 import { useLocation } from '@tanstack/react-router';
-import { useKindeAuth } from '@/lib/auth/cognito-auth';
+import { useAuth } from '@/lib/auth/cognito-auth';
 import { useAuthStatus, useTenant } from '@/hooks/useSharedQueries';
 import { toast } from 'sonner';
 
@@ -21,7 +21,7 @@ export interface UserRole {
 
 export interface UserContextData {
   userId: string;
-  kindeUserId: string;
+  idpSub: string;
   email: string;
   name: string;
   tenantId: string;
@@ -71,7 +71,7 @@ export const UserContextProvider: React.FC<UserContextProviderProps> = React.mem
   children,
   refreshInterval = 30000
 }) => {
-  const { isAuthenticated, user: kindeUser } = useKindeAuth();
+  const { isAuthenticated, user: idpUser } = useAuth();
   const location = useLocation();
   const [user, setUser] = useState<UserContextData | null>(null);
   const [tenant, setTenant] = useState<TenantData | null>(null);
@@ -91,29 +91,29 @@ export const UserContextProvider: React.FC<UserContextProviderProps> = React.mem
   // Refs to avoid putting authData/tenantData/kindeUser in effect deps (prevents infinite re-renders from new object refs)
   const authDataRef = useRef(authData);
   const tenantDataRef = useRef(tenantData);
-  const kindeUserRef = useRef(kindeUser);
+  const idpUserRef = useRef(idpUser);
   authDataRef.current = authData;
   tenantDataRef.current = tenantData;
-  kindeUserRef.current = kindeUser;
+  idpUserRef.current = idpUser;
 
   // Fetch user context from API (reads latest auth/tenant/kindeUser from refs so deps stay stable)
   const fetchUserContext = useCallback(async (showToast = false) => {
     const authData = authDataRef.current;
     const tenantData = tenantDataRef.current;
-    const kindeUser = kindeUserRef.current;
+    const idpUser = idpUserRef.current;
     try {
 
       if (authData?.success && authData.authStatus) {
         const authStatus = authData.authStatus;
 
         // Create user object from authStatus with Kinde user data
-        const userName = kindeUser?.givenName
-          ? `${kindeUser.givenName}${kindeUser.familyName ? ' ' + kindeUser.familyName : ''}`
+        const userName = idpUser?.givenName
+          ? `${idpUser.givenName}${idpUser.familyName ? ' ' + idpUser.familyName : ''}`
           : authStatus.email || 'Unknown';
 
         const userData: UserContextData = {
           userId: authStatus.userId,
-          kindeUserId: authStatus.userId,
+          idpSub: authStatus.userId,
           email: authStatus.email,
           name: userName,
           tenantId: authStatus.tenantId,

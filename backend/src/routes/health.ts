@@ -150,18 +150,18 @@ export default async function healthRoutes(fastify: FastifyInstance, _options?: 
         }
       }
 
-      // Amazon MQ health check
+      // SNS/SQS health check
       try {
         const { snsSqsPublisher } = await import('../features/messaging/utils/sns-sqs-publisher.js');
         const status = snsSqsPublisher.getStatus();
-        (detailedHealth.services as Record<string, unknown>).amazonMq = {
+        (detailedHealth.services as Record<string, unknown>).snsSqs = {
           status: status.isConnected ? 'healthy' : 'unhealthy',
           reconnectAttempts: status.reconnectAttempts,
           timestamp: new Date().toISOString()
         };
       } catch (err: unknown) {
         const error = err as Error;
-        (detailedHealth.services as Record<string, unknown>).amazonMq = {
+        (detailedHealth.services as Record<string, unknown>).snsSqs = {
           status: 'unhealthy',
           error: error.message,
           timestamp: new Date().toISOString()
@@ -267,26 +267,18 @@ export default async function healthRoutes(fastify: FastifyInstance, _options?: 
       }
 
       // Redis removed - no Redis readiness check needed
-      (readiness.checks as Record<string, string>).redis = 'removed'; // Redis has been removed, using AWS MQ instead
-      if (false) { // Redis removed
-        try {
-          // Redis removed
-        } catch (_err: unknown) {
-          (readiness.checks as Record<string, string>).redis = 'not_ready';
-          readiness.ready = false;
-        }
-      }
+      (readiness.checks as Record<string, string>).redis = 'removed';
 
-      // MQ readiness check
+      // SNS/SQS readiness check
       try {
         const { snsSqsPublisher } = await import('../features/messaging/utils/sns-sqs-publisher.js');
         const status = snsSqsPublisher.getStatus();
-        (readiness.checks as Record<string, string>).amazonMq = status.isConnected ? 'ready' : 'not_ready';
+        (readiness.checks as Record<string, string>).snsSqs = status.isConnected ? 'ready' : 'not_ready';
         if (!status.isConnected) {
           readiness.ready = false;
         }
       } catch (_err: unknown) {
-        (readiness.checks as Record<string, string>).amazonMq = 'not_ready';
+        (readiness.checks as Record<string, string>).snsSqs = 'not_ready';
         readiness.ready = false;
       }
 

@@ -303,11 +303,11 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
         conditions.push(eq(tenantUsers.isActive, true));
       }
 
-      // Get user profiles - only select fields that exist in database (include kindeUserId for Operations sync: UUID→kinde map for role assignments)
+      // Get user profiles - only select fields that exist in database (include idpSub for Operations sync: UUID→idpSub map for role assignments)
       const users = await db
         .select({
           userId: tenantUsers.userId,
-          kindeUserId: tenantUsers.idpSub,
+          idpSub: tenantUsers.idpSub,
           email: tenantUsers.email,
           firstName: tenantUsers.firstName,
           lastName: tenantUsers.lastName,
@@ -326,7 +326,7 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
       const transformedUsers = users.map(user => {
         return {
           userId: user.userId,
-          kindeId: user.kindeUserId ?? null,
+          idpSub: user.idpSub ?? null,
           employeeCode: user.userId, // Use userId as employee code for now
           personalInfo: {
             firstName: user.firstName || '',
@@ -508,7 +508,7 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
         .select({
           userId: tenantUsers.userId,
           tenantId: tenantUsers.tenantId,
-          kindeId: tenantUsers.idpSub,
+          idpSub: tenantUsers.idpSub,
           email: tenantUsers.email,
           firstName: tenantUsers.firstName,
           lastName: tenantUsers.lastName,
@@ -530,7 +530,7 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
         return {
           userId: user.userId,
           tenantId: user.tenantId,
-          kindeId: user.kindeId,
+          idpSub: user.idpSub,
           email: user.email || '',
           firstName: user.firstName || '',
           lastName: user.lastName || '',
@@ -1337,7 +1337,7 @@ export default async function wrapperCrmSyncRoutes(fastify: FastifyInstance, _op
       });
     }
 
-    // Resolve tenantId (accept UUID or kindeOrgId)
+    // Resolve tenantId (accept UUID or idpOrgId)
     const resolvedTenantId = await appSyncRepository.resolveTenantId(rawTenantId);
     if (!resolvedTenantId) {
       return reply.code(404).send({ success: false, error: 'Tenant not found' });

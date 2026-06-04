@@ -1,9 +1,9 @@
 export interface UserContext {
   userId: string;
-  kindeUserId: string;
+  idpSub: string;
   internalUserId: string | null;
   tenantId: string | null;
-  kindeOrgId?: string;
+  idpOrgId?: string;
   email: string;
   name: string;
   isAuthenticated: boolean;

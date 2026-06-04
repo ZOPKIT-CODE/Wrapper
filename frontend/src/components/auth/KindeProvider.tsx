@@ -1,10 +1,10 @@
 import React, { useEffect } from 'react';
 import { toast } from 'sonner';
 import { CognitoAuthProvider } from '@/lib/auth/cognito-auth';
-import { setKindeTokenGetter } from '@/lib/api';
+import { setIdpTokenGetter } from '@/lib/api';
 
 /**
- * App auth provider — Cognito-backed (Kinde->Cognito migration).
+ * App auth provider — Cognito-backed (Kinde→Cognito migration (complete)).
  *
  * Login/session/logout run through the Wrapper backend's Cognito flow (see
  * src/lib/auth/cognito-auth.tsx). API auth rides the httpOnly Cognito session cookie
@@ -15,7 +15,7 @@ import { setKindeTokenGetter } from '@/lib/api';
 // Point the API client's Bearer getter at "nothing": auth is carried by the httpOnly cookie.
 function TokenGetterSetup() {
   useEffect(() => {
-    setKindeTokenGetter(async () => null);
+    setIdpTokenGetter(async () => null);
   }, []);
   return null;
 }

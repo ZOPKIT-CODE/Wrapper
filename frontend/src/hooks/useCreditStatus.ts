@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useKindeAuth } from '@/lib/auth/cognito-auth'
+import { useAuth } from '@/lib/auth/cognito-auth'
 import { useLocation } from '@tanstack/react-router'
 import { api, subscriptionAPI, creditAPI } from '@/lib/api'
 import { useCreditStatusQuery } from '@/hooks/useSharedQueries'
@@ -49,7 +49,7 @@ export interface CreditExpiredData {
 }
 
 export function useCreditStatus() {
-  const { isAuthenticated, user } = useKindeAuth()
+  const { isAuthenticated, user } = useAuth()
   const location = useLocation()
 
   // Don't make credit API calls during onboarding - user hasn't set up organization yet

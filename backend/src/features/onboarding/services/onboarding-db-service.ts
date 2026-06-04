@@ -23,17 +23,17 @@ export class OnboardingDbService {
    * 💾 **STORE ONBOARDING FORM DATA FOR RETRY**
    * Stores form data when onboarding fails so user can retry
    */
-  static async storeOnboardingFormDataForRetry(params: { kindeUserId: string; email: string; formData: Record<string, unknown>; error: Record<string, unknown> }): Promise<void> {
-    const { kindeUserId, email, formData, error } = params;
+  static async storeOnboardingFormDataForRetry(params: { idpSub: string; email: string; formData: Record<string, unknown>; error: Record<string, unknown> }): Promise<void> {
+    const { idpSub, email, formData, error } = params;
     try {
-      Logger.log('info', 'general', 'storeOnboardingFormDataForRetry', 'Storing onboarding form data for retry', { kindeUserId, email });
+      Logger.log('info', 'general', 'storeOnboardingFormDataForRetry', 'Storing onboarding form data for retry', { idpSub, email });
 
       // Check if form data already exists
       const existing = await systemDbConnection
         .select()
         .from(onboardingFormData)
         .where(and(
-          eq(onboardingFormData.idpSub, kindeUserId),
+          eq(onboardingFormData.idpSub, idpSub),
           eq(onboardingFormData.email, email)
         ))
         .limit(1);
@@ -58,7 +58,7 @@ export class OnboardingDbService {
         await systemDbConnection
           .insert(onboardingFormData)
           .values({
-            kindeUserId,
+            idpSub,
             email,
             flowType: (formData.type as string) || 'frontend',
             formData: formData as Record<string, unknown>,
@@ -84,13 +84,13 @@ export class OnboardingDbService {
    * 📥 **GET STORED ONBOARDING FORM DATA**
    * Retrieves stored form data for retry
    */
-  static async getStoredOnboardingFormData(kindeUserId: string, email: string): Promise<Record<string, unknown> | null> {
+  static async getStoredOnboardingFormData(idpSub: string, email: string): Promise<Record<string, unknown> | null> {
     try {
       const [stored] = await systemDbConnection
         .select()
         .from(onboardingFormData)
         .where(and(
-          eq(onboardingFormData.idpSub, kindeUserId),
+          eq(onboardingFormData.idpSub, idpSub),
           eq(onboardingFormData.email, email)
         ))
         .limit(1);
@@ -118,12 +118,12 @@ export class OnboardingDbService {
    * 🗑️ **DELETE STORED ONBOARDING FORM DATA**
    * Deletes stored form data after successful retry
    */
-  static async deleteStoredOnboardingFormData(kindeUserId: string, email: string): Promise<void> {
+  static async deleteStoredOnboardingFormData(idpSub: string, email: string): Promise<void> {
     try {
       await systemDbConnection
         .delete(onboardingFormData)
         .where(and(
-          eq(onboardingFormData.idpSub, kindeUserId),
+          eq(onboardingFormData.idpSub, idpSub),
           eq(onboardingFormData.email, email)
         ));
       Logger.log('info', 'general', 'deleteStoredOnboardingFormData', 'Deleted stored onboarding form data');
@@ -148,8 +148,8 @@ export class OnboardingDbService {
     firstName?: string;
     lastName?: string;
     termsAccepted?: boolean;
-    kindeUserId: string;
-    kindeOrgId: string;
+    idpSub: string;
+    idpOrgId: string;
     selectedPlan: string;
     gstin?: string | null;
     hasGstin?: boolean;
@@ -206,8 +206,8 @@ export class OnboardingDbService {
     firstName,
     lastName,
     termsAccepted,
-    kindeUserId,
-    kindeOrgId,
+    idpSub,
+    idpOrgId,
     selectedPlan,
     gstin,
     hasGstin,
@@ -272,7 +272,7 @@ export class OnboardingDbService {
           tenantId: uuidv4(),
           companyName,
           subdomain,
-          idpOrgId: kindeOrgId,
+          idpOrgId: idpOrgId,
           adminEmail,
           legalCompanyName: companyName,
           companyType: companyType || null,
@@ -329,7 +329,7 @@ export class OnboardingDbService {
           tenantId: tenants.tenantId,
           companyName: tenants.companyName,
           subdomain: tenants.subdomain,
-          kindeOrgId: tenants.idpOrgId,
+          idpOrgId: tenants.idpOrgId,
           adminEmail: tenants.adminEmail,
           onboardingCompleted: tenants.onboardingCompleted,
           onboardedAt: tenants.onboardedAt,
@@ -404,7 +404,7 @@ export class OnboardingDbService {
         .insert(tenantUsers)
         .values({
           tenantId: tenant.tenantId,
-          idpSub: kindeUserId,
+          idpSub: idpSub,
           email: adminEmail,
           firstName: firstName ?? null,
           lastName: lastName ?? null,
@@ -814,7 +814,7 @@ export class OnboardingDbService {
       const adminKindeUserId = result.adminUser?.idpSub;
       if (adminKindeUserId) {
         await db.delete(onboardingFormData).where(eq(onboardingFormData.idpSub, adminKindeUserId));
-        Logger.log('info', 'general', 'createCompleteOnboardingInTransaction', 'Cleaned up onboarding_form_data', { kindeUserId: adminKindeUserId });
+        Logger.log('info', 'general', 'createCompleteOnboardingInTransaction', 'Cleaned up onboarding_form_data', { idpSub: adminKindeUserId });
       }
     } catch (cleanupErr: any) {
       Logger.log('warning', 'general', 'createCompleteOnboardingInTransaction', 'Failed to clean up onboarding_form_data (non-fatal)', { error: cleanupErr?.message });
@@ -837,8 +837,8 @@ export class OnboardingDbService {
     firstName?: string;
     lastName?: string;
     termsAccepted?: boolean;
-    kindeUserId: string;
-    kindeOrgId: string;
+    idpSub: string;
+    idpOrgId: string;
     selectedPlan: string;
     gstin?: string | null;
     hasGstin?: boolean;
@@ -874,7 +874,7 @@ export class OnboardingDbService {
     billingZip?: string | null;
     billingCountry?: string | null;
   }, logger: OnboardingFileLogger | null = null): Promise<Record<string, unknown>> {
-    const { type, companyName, subdomain, adminEmail, adminName, firstName, lastName, termsAccepted, kindeUserId, kindeOrgId, selectedPlan, gstin, hasGstin, companySize, businessType, primaryUseCase, country, timezone, currency, taxRegistered, vatGstRegistered, billingEmail, contactJobTitle, preferredContactMethod, mailingAddressSameAsRegistered, mailingStreet, mailingCity, mailingState, mailingZip, mailingCountry, billingCountry, supportEmail, contactSalutation, contactMiddleName, contactDepartment, contactDirectPhone, contactMobilePhone, contactPreferredContactMethod, contactAuthorityLevel, taxRegistrationDetails } = params;
+    const { type, companyName, subdomain, adminEmail, adminName, firstName, lastName, termsAccepted, idpSub, idpOrgId, selectedPlan, gstin, hasGstin, companySize, businessType, primaryUseCase, country, timezone, currency, taxRegistered, vatGstRegistered, billingEmail, contactJobTitle, preferredContactMethod, mailingAddressSameAsRegistered, mailingStreet, mailingCity, mailingState, mailingZip, mailingCountry, billingCountry, supportEmail, contactSalutation, contactMiddleName, contactDepartment, contactDirectPhone, contactMobilePhone, contactPreferredContactMethod, contactAuthorityLevel, taxRegistrationDetails } = params;
     Logger.log('info', 'general', 'createDatabaseRecords', 'Creating database records for tenant', { companyName });
 
     const currentTime = new Date();
@@ -888,7 +888,7 @@ export class OnboardingDbService {
            tenantId: uuidv4(),
            companyName,
            subdomain,
-           idpOrgId: kindeOrgId,
+           idpOrgId: idpOrgId,
            adminEmail,
            legalCompanyName: companyName,
            gstin: hasGstin && gstin ? gstin.toUpperCase() : null,
@@ -931,7 +931,7 @@ export class OnboardingDbService {
           tenantId: tenants.tenantId,
           companyName: tenants.companyName,
           subdomain: tenants.subdomain,
-          kindeOrgId: tenants.idpOrgId,
+          idpOrgId: tenants.idpOrgId,
           adminEmail: tenants.adminEmail,
           onboardingCompleted: tenants.onboardingCompleted,
           onboardedAt: tenants.onboardedAt,
@@ -1000,7 +1000,7 @@ export class OnboardingDbService {
         .insert(tenantUsers)
         .values({
           tenantId: tenant.tenantId,
-          idpSub: kindeUserId,
+          idpSub: idpSub,
           email: adminEmail,
           firstName: firstName ?? null,
           lastName: lastName ?? null,

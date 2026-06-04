@@ -1,6 +1,6 @@
 import { Link, useLocation } from "@tanstack/react-router"
 import { useSidebar } from "@/components/ui/sidebar"
-import { useKindeAuth } from "@/lib/auth/cognito-auth"
+import { useAuth } from "@/lib/auth/cognito-auth"
 import { useEffect, useState } from "react"
 import {
     LayoutGrid,
@@ -216,7 +216,7 @@ export function ModernSidebar({
     className?: string
 }) {
     const { state } = useSidebar()
-    const { logout } = useKindeAuth()
+    const { logout } = useAuth()
     const location = useLocation()
     const isCollapsed = state === "collapsed"
 

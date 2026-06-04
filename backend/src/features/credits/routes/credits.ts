@@ -931,8 +931,7 @@ export default async function creditRoutes(
     preHandler: authenticateToken
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
-      const tenantId = (request.userContext as { userId: string; tenantId?: string | null; internalUserId?: string }).tenantId;
-      const userId = (request.userContext as { userId: string; tenantId?: string | null; internalUserId?: string }).userId;
+      const { tenantId, internalUserId } = request.userContext as { userId: string; tenantId?: string | null; internalUserId?: string };
 
       if (!tenantId) {
         return ErrorResponses.notFound(reply, 'Organization', 'User is not associated with any organization');
@@ -961,7 +960,7 @@ export default async function creditRoutes(
         targetApplication: targetApplication as string,
         creditAmount: parseFloat(String(creditAmount)),
         allocationPurpose: (allocationPurpose as string) || '',
-        initiatedBy: userId
+        initiatedBy: internalUserId ?? null
       });
 
       return {

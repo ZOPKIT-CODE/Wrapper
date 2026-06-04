@@ -17,8 +17,8 @@ import { shouldLogVerbose } from '../../../utils/verbose-log.js';
 
 /**
  * Validate a bearer/cookie token (Cognito-only). The token is verified via
- * verifyCognitoToken and mapped to the legacy { kindeUserId, userId, email, name }
- * shape (sub -> kindeUserId/userId). An invalid token throws (treated as
+ * verifyCognitoToken and mapped to { idpSub, userId, email, name }
+ * shape (sub -> idpSub/userId). An invalid token throws (treated as
  * unauthenticated by callers).
  */
 async function validateTokenAnyIdp(token: string): Promise<Record<string, unknown>> {
@@ -26,7 +26,7 @@ async function validateTokenAnyIdp(token: string): Promise<Record<string, unknow
   if (!ci?.sub) {
     throw new Error('Invalid Cognito token');
   }
-  return { kindeUserId: ci.sub, userId: ci.sub, email: ci.email, name: ci.name };
+  return { idpSub: ci.sub, userId: ci.sub, email: ci.email, name: ci.name };
 }
 
 // Helper function to extract token from request
@@ -185,10 +185,10 @@ export default async function statusManagementRoutes(
         .update(tenantUsers)
         .set({ onboardingCompleted: true })
         .where(eq(tenantUsers.userId, userId))
-        .returning({ kindeUserId: tenantUsers.idpSub });
+        .returning({ idpSub: tenantUsers.idpSub });
 
-      if (updatedUser?.kindeUserId) {
-        void invalidateUserCache(updatedUser.kindeUserId);
+      if (updatedUser?.idpSub) {
+        void invalidateUserCache(updatedUser.idpSub);
       }
 
       return {
@@ -207,25 +207,25 @@ export default async function statusManagementRoutes(
     try {
       let userId = null;
       let email = null;
-      let kindeUserId = null;
+      let idpSub = null;
 
       try {
         const token = extractToken(request);
         if (token) {
-          const kindeUser = await validateTokenAnyIdp(token);
-          kindeUserId = kindeUser.kindeUserId || kindeUser.userId;
-          userId = kindeUser.userId;
-          email = kindeUser.email;
+          const idpToken = await validateTokenAnyIdp(token);
+          idpSub = idpToken.idpSub || idpToken.userId;
+          userId = idpToken.userId;
+          email = idpToken.email;
         }
       } catch (authErr: unknown) {
         if (shouldLogVerbose()) Logger.log('info', 'general', 'onboarding-status', 'Token validation failed, using query params', { error: (authErr as Error).message });
         const q = request.query as Record<string, string | undefined>;
-        if (q?.kindeUserId) kindeUserId = q.kindeUserId;
+        if (q?.idpSub) idpSub = q.idpSub;
         if (q?.email) email = q.email;
       }
 
       const q2 = request.query as Record<string, string | undefined>;
-      if (!kindeUserId && !userId && q2?.kindeUserId) kindeUserId = q2.kindeUserId;
+      if (!idpSub && !userId && q2?.idpSub) idpSub = q2.idpSub;
       if (!email && q2?.email) email = q2.email;
 
       if (!userId && !email) {
@@ -243,9 +243,9 @@ export default async function statusManagementRoutes(
       let userQuery = db.select().from(tenantUsers);
       let lookupType = '';
 
-      if (kindeUserId) {
-        userQuery = userQuery.where(eq(tenantUsers.idpSub, kindeUserId as string)) as any;
-        lookupType = 'kindeId';
+      if (idpSub) {
+        userQuery = userQuery.where(eq(tenantUsers.idpSub, idpSub as string)) as any;
+        lookupType = 'idpSub';
       } else if (userId) {
         userQuery = userQuery.where(eq(tenantUsers.userId, userId as string)) as any;
         lookupType = 'userId';
@@ -259,7 +259,7 @@ export default async function statusManagementRoutes(
       if (!user) {
         if (shouldLogVerbose()) Logger.log('info', 'general', 'onboarding-status', 'No user found', { lookupType });
 
-        if (kindeUserId && email) {
+        if (idpSub && email) {
           return {
             success: true,
             data: {
@@ -268,8 +268,8 @@ export default async function statusManagementRoutes(
               onboardingStep: '1',
               savedFormData: {},
               message: 'User authenticated but needs to complete onboarding',
-              kindeUser: {
-                id: kindeUserId,
+              idpUser: {
+                id: idpSub,
                 email: email
               }
             }
@@ -323,15 +323,16 @@ export default async function statusManagementRoutes(
         if (Object.keys(fallback).length > 0) formData = fallback;
       }
 
-      // Invited users should never be sent to onboarding
-      const isInvitedUser = user.onboardingCompleted === true && 
-                           ((user.preferences as { userType?: string })?.userType === 'INVITED_USER' || 
+      // Invited users join an already-onboarded tenant and must never be sent to the
+      // onboarding wizard — regardless of their own onboarding_completed flag. (Not gated
+      // on onboardingCompleted; tenant_users has no invited_by column, so detection uses
+      // preferences.userType / isInvitedUser and the invitedAt timestamp.)
+      const isInvitedUser = (user.preferences as { userType?: string })?.userType === 'INVITED_USER' ||
                             (user.preferences as { isInvitedUser?: boolean })?.isInvitedUser === true ||
-                            (user as { invitedBy?: string | null }).invitedBy !== null ||
-                            user.invitedAt !== null);
+                            user.invitedAt != null;
 
       const isOnboarded = user.onboardingCompleted === true;
-      const needsOnboarding = user.onboardingCompleted !== true;
+      const needsOnboarding = !isOnboarded && !isInvitedUser;
 
       const result = {
         success: true,
@@ -350,12 +351,12 @@ export default async function statusManagementRoutes(
             id: user.userId,
             email: user.email,
             name: [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email,
-            kindeUserId: user.idpSub
+            idpSub: user.idpSub
           }
         },
         authStatus: {
           isAuthenticated: true,
-          userId: kindeUserId || userId,
+          userId: idpSub || userId,
           internalUserId: user.userId,
           tenantId: user.tenantId,
           email: user.email,
@@ -390,41 +391,43 @@ export default async function statusManagementRoutes(
     schema: {
       body: z.object({
         email: z.string().email(),
-        kindeUserId: z.string().optional()
+        idpSub: z.string().optional()
       })
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const body = request.body as Record<string, unknown>;
       const { email } = body;
-      let kindeUserId: string | undefined;
+      let idpSub: string | undefined;
 
-      // Require a valid Kinde JWT — extract kindeUserId from the token
+      // Cognito session rides the httpOnly idp_token cookie (matches the global
+      // auth middleware's extractToken); a Bearer header is an optional fallback.
       const authHeader = request.headers.authorization;
-      if (!authHeader?.startsWith('Bearer ')) {
+      const token = (request as { cookies?: { idp_token?: string } }).cookies?.idp_token
+        ?? (authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : undefined);
+      if (!token) {
         return reply.code(401).send({ success: false, error: 'Authentication required' });
       }
       try {
-        const token = authHeader.substring(7);
         const user = await validateTokenAnyIdp(token);
-        kindeUserId = (user.kindeUserId || user.userId) as string;
+        idpSub = (user.idpSub || user.userId) as string;
       } catch (authErr: unknown) {
         return reply.code(401).send({ success: false, error: 'Invalid authentication token' });
       }
-      if (!kindeUserId) {
+      if (!idpSub) {
         return reply.code(401).send({ success: false, error: 'Authentication required' });
       }
 
       // First, try to get data from onboarding_form_data table (for users not yet created)
       let formDataFromTable = null;
       
-      if (kindeUserId) {
+      if (idpSub) {
         const [onboardingData] = await db
           .select()
           .from(onboardingFormData)
           .where(
             and(
-              eq(onboardingFormData.idpSub, kindeUserId as string),
+              eq(onboardingFormData.idpSub, idpSub as string),
               eq(onboardingFormData.email, email as string)
             )
           )

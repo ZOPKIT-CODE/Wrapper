@@ -1,14 +1,15 @@
 /**
- * CRMDemoFull — complete 85-second / 2550-frame composition
+ * CRMDemoFull — complete 91-second / 2730-frame composition
  *
  * Structure:
- *   Hero       0–179      180f   6s
- *   Problem  180–359      180f   6s
- *   Promise  360–539      180f   6s
- *   Modules  540–2114  21×75f  52.5s  (each module = 2.5s)
- *   Outcome 2115–2324     210f   7s
- *   CTA     2325–2549     225f   7.5s
- *   Total                2550f  85s
+ *   Hero        0–179      180f   6s
+ *   Problem   180–359      180f   6s
+ *   Promise   360–539      180f   6s
+ *   AgentChat 540–719      180f   6s
+ *   Modules   720–2294  21×75f  52.5s  (each module = 2.5s)
+ *   Outcome  2295–2504     210f   7s
+ *   CTA      2505–2729     225f   7.5s
+ *   Total                2730f  91s
  *
  * Audio stubs: drop WAV/MP3 files into public/ then uncomment the Audio blocks.
  */
@@ -17,6 +18,7 @@ import { AbsoluteFill, Series, useCurrentFrame } from "remotion";
 import { Hero }              from "./sections/Hero";
 import { Problem }           from "./sections/Problem";
 import { Promise as Prms }   from "./sections/Promise";
+import { AgentChat }         from "./sections/AgentChat";
 import { Outcome }           from "./sections/Outcome";
 import { CTA }               from "./sections/CTA";
 import { ModuleSlide }       from "./components/ModuleSlide";
@@ -26,19 +28,21 @@ import { MODULES }           from "./data";
 import { PRM } from "./tokens";
 
 // ─── timing ───────────────────────────────────────────────────────────────────
-const HERO_DUR    = 180;
-const PROBLEM_DUR = 180;
-const PROMISE_DUR = 180;
-const MODULE_DUR  = 75;
-const OUTCOME_DUR = 210;
-const CTA_DUR     = 225;
+const HERO_DUR       = 180;
+const PROBLEM_DUR    = 180;
+const PROMISE_DUR    = 180;
+const AGENT_CHAT_DUR = 180;
+const MODULE_DUR     = 75;
+const OUTCOME_DUR    = 210;
+const CTA_DUR        = 225;
 
-const MODULE_START = HERO_DUR + PROBLEM_DUR + PROMISE_DUR; // 540
+const MODULE_START = HERO_DUR + PROBLEM_DUR + PROMISE_DUR + AGENT_CHAT_DUR; // 720
 
 // Wipe boundaries (global frame numbers — one per section transition)
 const BOUNDARIES: number[] = [
   HERO_DUR,
   HERO_DUR + PROBLEM_DUR,
+  HERO_DUR + PROBLEM_DUR + PROMISE_DUR,
   MODULE_START,
   ...Array.from({ length: 21 }, (_, k) => MODULE_START + (k + 1) * MODULE_DUR),
   MODULE_START + 21 * MODULE_DUR + OUTCOME_DUR,
@@ -65,6 +69,10 @@ export const CRMDemoFull: React.FC<Props> = ({ showCaptions = true }) => {
 
         <Series.Sequence durationInFrames={PROMISE_DUR}>
           <Prms showCaptions={showCaptions} />
+        </Series.Sequence>
+
+        <Series.Sequence durationInFrames={AGENT_CHAT_DUR}>
+          <AgentChat showCaptions={showCaptions} />
         </Series.Sequence>
 
         {MODULES.map((mod, idx) => (

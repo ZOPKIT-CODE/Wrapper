@@ -55,7 +55,7 @@ export interface SeededTenant {
   tenantId:    string;
   companyName: string;
   subdomain:   string;
-  kindeOrgId:  string;
+  idpOrgId:    string;
   adminEmail:  string;
 }
 
@@ -137,7 +137,7 @@ function rows<T>(result: unknown): T[] {
 export type SeedTenantOverrides = Partial<{
   companyName: string;
   subdomain:   string;
-  kindeOrgId:  string;
+  idpOrgId:    string;
   adminEmail:  string;
 }>;
 
@@ -152,17 +152,17 @@ export async function seedTenant(
   const suffix      = randomUUID().slice(0, 8);
   const companyName = overrides.companyName ?? `Test Co ${suffix}`;
   const subdomain   = overrides.subdomain   ?? `test-${suffix}`;
-  const kindeOrgId  = overrides.kindeOrgId  ?? `kinde_${suffix}`;
+  const idpOrgId    = overrides.idpOrgId    ?? `idp_${suffix}`;
   const adminEmail  = overrides.adminEmail  ?? `admin-${suffix}@example.com`;
 
   const result = await db.execute(sql`
     INSERT INTO tenants (company_name, subdomain, idp_org_id, admin_email)
-    VALUES (${companyName}, ${subdomain}, ${kindeOrgId}, ${adminEmail})
+    VALUES (${companyName}, ${subdomain}, ${idpOrgId}, ${adminEmail})
     RETURNING
       tenant_id    AS "tenantId",
       company_name AS "companyName",
       subdomain    AS "subdomain",
-      idp_org_id   AS "kindeOrgId",
+      idp_org_id   AS "idpOrgId",
       admin_email  AS "adminEmail"
   `);
 
@@ -176,7 +176,7 @@ export async function seedTenant(
 export type SeedUserOverrides = Partial<{
   email:         string;
   name:          string;
-  kindeUserId:   string;
+  idpSub:        string;
   isTenantAdmin: boolean;
 }>;
 
@@ -191,12 +191,12 @@ export async function seedUser(
   const suffix      = randomUUID().slice(0, 8);
   const email       = overrides.email         ?? `user-${suffix}@example.com`;
   const name        = overrides.name          ?? `User ${suffix}`;
-  const kindeUserId = overrides.kindeUserId   ?? `kinde_user_${suffix}`;
-  const isAdmin     = overrides.isTenantAdmin ?? false;
+  const idpSub  = overrides.idpSub        ?? `idp_user_${suffix}`;
+  const isAdmin = overrides.isTenantAdmin ?? false;
 
   const result = await db.execute(sql`
     INSERT INTO tenant_users (tenant_id, email, name, idp_sub, is_tenant_admin)
-    VALUES (${tenantId}, ${email}, ${name}, ${kindeUserId}, ${isAdmin})
+    VALUES (${tenantId}, ${email}, ${name}, ${idpSub}, ${isAdmin})
     RETURNING
       user_id   AS "userId",
       tenant_id AS "tenantId",

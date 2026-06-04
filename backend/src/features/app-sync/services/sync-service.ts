@@ -358,7 +358,7 @@ export class WrapperSyncService {
         .select({
           userId: tenantUsers.userId,
           tenantId: tenantUsers.tenantId,
-          kindeId: tenantUsers.idpSub,
+          idpSub: tenantUsers.idpSub,
           email: tenantUsers.email,
           firstName: tenantUsers.firstName,
           lastName: tenantUsers.lastName,
@@ -620,7 +620,7 @@ export class WrapperSyncService {
           required: false,
           description: 'Detailed user information',
           fields: [
-            'userId', 'tenantId', 'kindeId', 'email', 'firstName', 'lastName',
+            'userId', 'tenantId', 'idpSub', 'email', 'firstName', 'lastName',
             'primaryOrganizationId', 'isResponsiblePerson', 'isTenantAdmin',
             'isVerified', 'onboardingCompleted', 'lastLoginAt', 'loginCount',
             'preferences', 'profile', 'security', 'metadata'

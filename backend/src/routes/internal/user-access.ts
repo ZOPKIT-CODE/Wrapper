@@ -124,7 +124,7 @@ export default async function internalUserAccessRoutes(fastify: FastifyInstance)
 
       Logger.log('info', 'routes', 'user-permissions', `💾 Cache MISS: Fetching fresh data from database`);
 
-      const tenant = await TenantService.getByKindeOrgId(kinde_org_code);
+      const tenant = await TenantService.getByIdpOrgId(kinde_org_code);
       if (!tenant) {
         return ErrorResponses.notFound(reply, 'Tenant', 'Tenant not found', { kinde_org_code } as any);
       }
@@ -272,7 +272,7 @@ export default async function internalUserAccessRoutes(fastify: FastifyInstance)
     const kinde_org_code = (body.kinde_org_code as string) ?? '';
 
     try {
-      const tenant = await TenantService.getByKindeOrgId(kinde_org_code);
+      const tenant = await TenantService.getByIdpOrgId(kinde_org_code);
       if (!tenant) return ErrorResponses.notFound(reply, 'Tenant', 'Tenant not found');
 
       const userResult = await db

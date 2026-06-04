@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useKindeAuth } from '@/lib/auth/cognito-auth';
+import { useAuth } from '@/lib/auth/cognito-auth';
 import { clearStaleAuthStorage, isInvalidGrantError, markSessionRecoveryReason } from '@/lib/auth/session-recovery';
 
 interface SilentAuthState {
@@ -21,18 +21,18 @@ interface SilentAuthResult extends SilentAuthState {
 }
 
 /**
- * Custom hook for handling Kinde silent authentication with domain cookies
+ * Custom hook for handling silent authentication with domain cookies
  * This enables seamless authentication across subdomains
  */
 export const useSilentAuth = (): SilentAuthResult => {
   const { 
-    isAuthenticated: kindeIsAuthenticated, 
+    isAuthenticated: idpIsAuthenticated, 
     isLoading,
     user, 
     login, 
     logout, 
     getToken
-  } = useKindeAuth();
+  } = useAuth();
 
   const [state, setState] = useState<SilentAuthState>({
     isChecking: false,
@@ -55,7 +55,7 @@ export const useSilentAuth = (): SilentAuthResult => {
     try {
 
       // First check if user is already authenticated locally
-      if (kindeIsAuthenticated && user) {
+      if (idpIsAuthenticated && user) {
         setState(prev => ({ 
           ...prev, 
           isAuthenticated: true, 
@@ -67,12 +67,12 @@ export const useSilentAuth = (): SilentAuthResult => {
 
             // Check for domain cookies that might indicate authentication
       const allCookies = document.cookie.split(';').map(c => c.trim().split('=')[0]);
-      const hasKindeCookie = document.cookie
+      const hasIdpCookie = document.cookie
         .split(';')
         .some(cookie => {
           const [name] = cookie.trim().split('=');
           return name && (
-            name.includes('kinde') ||
+            name.includes('idp') || name.includes('kinde') ||
             name.includes('auth') ||
             name === 'session' ||
             name === 'access_token' ||
@@ -83,11 +83,11 @@ export const useSilentAuth = (): SilentAuthResult => {
 
       // Check for .zopkit.com domain cookies specifically
       const hasZopkitDomainCookie = allCookies.some(name => 
-        name && (name.includes('kinde') || name.includes('kbte') || name.includes('enduser'))
+        name && (name.includes('idp') || name.includes('kinde') || name.includes('kbte') || name.includes('enduser'))
       );
 
       // Don't attempt silent auth without cookies - it will cause redirect loops
-      if (!hasKindeCookie) {
+      if (!hasIdpCookie) {
         setState(prev => ({ 
           ...prev, 
           isAuthenticated: false, 
@@ -117,7 +117,7 @@ export const useSilentAuth = (): SilentAuthResult => {
         await performSilentLogin();
         
         // After silent login, check if we're now authenticated
-        const isNowAuthenticated = kindeIsAuthenticated;
+        const isNowAuthenticated = idpIsAuthenticated;
         
         setState(prev => ({ 
           ...prev, 
@@ -153,7 +153,7 @@ export const useSilentAuth = (): SilentAuthResult => {
       }));
       return false;
     }
-  }, [kindeIsAuthenticated, user, isLoading, state.isChecking, state.isAuthenticated]);
+  }, [idpIsAuthenticated, user, isLoading, state.isChecking, state.isAuthenticated]);
 
   /**
    * Perform silent login using hidden iframe
@@ -269,7 +269,7 @@ export const useSilentAuth = (): SilentAuthResult => {
    */
   const getAuthState = useCallback(async () => {
     try {
-      const isAuth = kindeIsAuthenticated && !!user;
+      const isAuth = idpIsAuthenticated && !!user;
       let accessToken = null;
 
       if (isAuth) {
@@ -293,14 +293,14 @@ export const useSilentAuth = (): SilentAuthResult => {
         accessToken: null,
       };
     }
-  }, [kindeIsAuthenticated, user, getToken]);
+  }, [idpIsAuthenticated, user, getToken]);
 
   // Auto-check silent authentication on mount
   useEffect(() => {
     if (!state.hasChecked && !isLoading) {
       const timer = setTimeout(() => {
         checkSilentAuth();
-      }, 100); // Small delay to ensure Kinde is initialized
+      }, 100); // Small delay to ensure auth is initialized
 
       return () => clearTimeout(timer);
     }
@@ -311,10 +311,10 @@ export const useSilentAuth = (): SilentAuthResult => {
     if (!isLoading && state.hasChecked) {
       setState(prev => ({ 
         ...prev, 
-        isAuthenticated: kindeIsAuthenticated && !!user 
+        isAuthenticated: idpIsAuthenticated && !!user 
       }));
     }
-  }, [kindeIsAuthenticated, user, isLoading, state.hasChecked]);
+  }, [idpIsAuthenticated, user, isLoading, state.hasChecked]);
 
   return {
     ...state,

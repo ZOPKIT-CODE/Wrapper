@@ -455,7 +455,7 @@ export default async function tenantRoutes(
       const params = request.params as Record<string, string>;
       const { token } = params;
 
-      const result = await TenantService.acceptInvitation(token, request.userContext.kindeUserId ?? '', {
+      const result = await TenantService.acceptInvitation(token, request.userContext.idpSub ?? '', {
         email: request.userContext.email,
         firstName: request.userContext.name?.split(' ')[0],
         lastName: request.userContext.name?.split(' ').slice(1).join(' ') || undefined

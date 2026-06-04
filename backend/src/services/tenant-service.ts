@@ -4,7 +4,7 @@
  * All implementations have been extracted into focused modules:
  *   - tenant-core-service.ts   → tenant CRUD, settings, onboarding
  *   - tenant-user-service.ts   → invitations, user listing, removal, role updates
- *   - tenant-repository.ts     → pure DB queries (subdomain, kindeOrgId lookups)
+ *   - tenant-repository.ts     → pure DB queries (subdomain, idpOrgId lookups)
  *
  * This file re-exports everything from those modules so that all existing
  * callers continue to work without any import changes.
@@ -27,8 +27,8 @@ export class TenantService {
     return TenantCoreService.getBySubdomain(subdomain);
   }
 
-  static async getByKindeOrgId(kindeOrgId: string): Promise<Record<string, unknown> | null> {
-    return TenantCoreService.getByKindeOrgId(kindeOrgId);
+  static async getByIdpOrgId(idpOrgId: string): Promise<Record<string, unknown> | null> {
+    return TenantCoreService.getByIdpOrgId(idpOrgId);
   }
 
   static async getTenantDetails(tenantId: string): Promise<Record<string, unknown>> {
@@ -77,10 +77,10 @@ export class TenantService {
 
   static async acceptInvitation(
     invitationToken: string,
-    kindeUserId: string,
+    idpSub: string,
     userData: { email: string; firstName?: string; lastName?: string }
   ): Promise<ReturnType<typeof TenantUserService.acceptInvitation>> {
-    return TenantUserService.acceptInvitation(invitationToken, kindeUserId, userData);
+    return TenantUserService.acceptInvitation(invitationToken, idpSub, userData);
   }
 
   static async getPendingInvitations(tenantId: string): ReturnType<typeof TenantUserService.getPendingInvitations> {

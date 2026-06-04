@@ -6,7 +6,7 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { onboardingAPIOptimized } from '@/lib/api/client';
-import { useKindeAuth } from '@/lib/auth/cognito-auth';
+import { useAuth } from '@/lib/auth/cognito-auth';
 import { secureStore, secureRetrieve, secureClear } from '../utils/secureStorage';
 import { onboardingLogger } from '../utils/onboardingLogger';
 import { applyIndiaRegionalDefaultsIfMissing, resolveCountryCode } from '../config/countryConfig';
@@ -71,7 +71,7 @@ export const useFormPersistence = ({
   autoSave = true,
   autoRestore = true,
 }: UseFormPersistenceOptions) => {
-  const { user } = useKindeAuth();
+  const { user } = useAuth();
   const hasRestoredRef = useRef(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 

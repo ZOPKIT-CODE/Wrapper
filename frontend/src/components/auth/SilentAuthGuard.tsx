@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useLocation } from '@tanstack/react-router';
-import { useKindeAuth } from '@/lib/auth/cognito-auth';
+import { useAuth } from '@/lib/auth/cognito-auth';
 import useSilentAuth from '@/hooks/useSilentAuth';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { logger } from '@/lib/logger';
@@ -16,7 +16,7 @@ interface SilentAuthGuardProps {
 export const SilentAuthGuard: React.FC<SilentAuthGuardProps> = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isAuthenticated, isLoading, user } = useKindeAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   const { 
     checkSilentAuth, 
     isChecking, 

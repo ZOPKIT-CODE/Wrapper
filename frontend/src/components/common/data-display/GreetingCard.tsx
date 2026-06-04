@@ -1,8 +1,8 @@
 import { cn } from '@/lib/utils'
-import { useKindeAuth } from '@/lib/auth/cognito-auth'
+import { useAuth } from '@/lib/auth/cognito-auth'
 
 export default function GreetingCard({ className }: { className?: string }) {
-    const { user } = useKindeAuth()
+    const { user } = useAuth()
     if (!user) {
         return null
     }

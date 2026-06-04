@@ -16,8 +16,8 @@ import { verifyCognitoToken } from '../../auth/services/cognito-service.js';
 
 /**
  * Validate a bearer token (Cognito-only). The token is verified via
- * verifyCognitoToken and mapped to the legacy { kindeUserId, userId, email, name }
- * shape (sub -> kindeUserId/userId). An invalid token throws (treated as
+ * verifyCognitoToken and mapped to { idpSub, userId, email, name }
+ * shape (sub -> idpSub/userId). An invalid token throws (treated as
  * unauthenticated by callers).
  */
 async function validateTokenAnyIdp(token: string): Promise<Record<string, unknown>> {
@@ -25,7 +25,7 @@ async function validateTokenAnyIdp(token: string): Promise<Record<string, unknow
   if (!ci?.sub) {
     throw new Error('Invalid Cognito token');
   }
-  return { kindeUserId: ci.sub, userId: ci.sub, email: ci.email, name: ci.name };
+  return { idpSub: ci.sub, userId: ci.sub, email: ci.email, name: ci.name };
 }
 
 export default async function coreOnboardingRoutes(
@@ -377,7 +377,7 @@ export default async function coreOnboardingRoutes(
 
       Logger.log('info', 'general', 'onboard-frontend', 'Frontend onboarding complete');
 
-      const res = result as { tenant: { tenantId: string; subdomain: string }; adminUser: { userId: string; kindeUserId?: string }; organization: { organizationId: string }; adminRole: { roleId: string }; redirectUrl?: string; creditAllocated?: number; onboardingType?: string };
+      const res = result as { tenant: { tenantId: string; subdomain: string }; adminUser: { userId: string; idpSub?: string }; organization: { organizationId: string }; adminRole: { roleId: string }; redirectUrl?: string; creditAllocated?: number; onboardingType?: string };
 
       // Invalidate the user record cache using the kindeUserId from the result.
       // This MUST use the result — this route is public (no auth middleware), so
@@ -385,9 +385,9 @@ export default async function coreOnboardingRoutes(
       // middleware cached the user as `null` (no tenant_users row yet). Without
       // invalidation, that null entry persists for 5 minutes, causing every
       // post-onboarding request to fail with 401 ("Unauthorized") until TTL expires.
-      const kindeUserIdFromResult = res.adminUser.kindeUserId;
-      if (kindeUserIdFromResult) {
-        await invalidateUserCache(kindeUserIdFromResult);
+      const idpSubFromResult = res.adminUser.idpSub;
+      if (idpSubFromResult) {
+        await invalidateUserCache(idpSubFromResult);
       }
       return reply.code(201).send({
         success: true,
@@ -574,21 +574,23 @@ export default async function coreOnboardingRoutes(
       const query = request.query as Record<string, string>;
       const { email } = query;
       
-      // Extract authentication to get kindeUserId
+      // Cognito session rides the httpOnly idp_token cookie (matches the global
+      // auth middleware's extractToken); a Bearer header is an optional fallback.
       const authHeader = request.headers.authorization;
-      let kindeUserId = null;
-      
-      if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = (request as { cookies?: { idp_token?: string } }).cookies?.idp_token
+        ?? (authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : undefined);
+      let idpSub = null;
+
+      if (token) {
         try {
-          const token = authHeader.substring(7);
           const user = await validateTokenAnyIdp(token);
-          kindeUserId = user.kindeUserId || user.userId;
+          idpSub = user.idpSub || user.userId;
         } catch (authErr: unknown) {
           Logger.log('warning', 'general', 'retry-data', 'Could not validate token for retry data', { error: (authErr as Error).message });
         }
       }
 
-      if (!kindeUserId) {
+      if (!idpSub) {
         return reply.code(401).send({
           success: false,
           error: 'Authentication required',
@@ -597,7 +599,7 @@ export default async function coreOnboardingRoutes(
       }
 
       const UnifiedOnboardingService = (await import('../services/unified-onboarding-service.js')).default;
-      const storedData = await UnifiedOnboardingService.getStoredOnboardingFormData(String(kindeUserId), String(email));
+      const storedData = await UnifiedOnboardingService.getStoredOnboardingFormData(String(idpSub), String(email));
 
       if (!storedData) {
         return reply.code(404).send({
@@ -646,9 +648,12 @@ export default async function coreOnboardingRoutes(
       const body = request.body as Record<string, unknown>;
       const { email, useStoredData = true } = body;
 
-      // Extract authentication
+      // Cognito session rides the httpOnly idp_token cookie (matches the global
+      // auth middleware's extractToken); a Bearer header is an optional fallback.
       const authHeader = request.headers.authorization;
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      const token = (request as { cookies?: { idp_token?: string } }).cookies?.idp_token
+        ?? (authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : undefined);
+      if (!token) {
         return reply.code(401).send({
           success: false,
           error: 'Authentication required',
@@ -656,16 +661,15 @@ export default async function coreOnboardingRoutes(
         });
       }
 
-      const token = authHeader.substring(7);
-      const user = await validateTokenAnyIdp(token) as { kindeUserId?: string; userId?: string };
-      const kindeUserId = user.kindeUserId || user.userId;
+      const user = await validateTokenAnyIdp(token) as { idpSub?: string; userId?: string };
+      const idpSub = user.idpSub || user.userId;
 
       const UnifiedOnboardingServiceImport = (await import('../services/unified-onboarding-service.js')).default;
 
       // Get stored form data if requested
       let onboardingData = (body.formData as Record<string, unknown>) || {};
       if (useStoredData) {
-        const storedData = await (UnifiedOnboardingServiceImport as { getStoredOnboardingFormData: (a: string, b: string) => Promise<{ formData?: Record<string, unknown> } | null> }).getStoredOnboardingFormData(kindeUserId as string, email as string);
+        const storedData = await (UnifiedOnboardingServiceImport as { getStoredOnboardingFormData: (a: string, b: string) => Promise<{ formData?: Record<string, unknown> } | null> }).getStoredOnboardingFormData(idpSub as string, email as string);
         if (storedData && storedData.formData) {
           // Merge stored data with any new data provided
           onboardingData = {
@@ -687,7 +691,7 @@ export default async function coreOnboardingRoutes(
       // Delete stored form data after successful retry
       if (useStoredData) {
         try {
-          await (UnifiedOnboardingServiceImport as { deleteStoredOnboardingFormData: (a: string, b: string) => Promise<void> }).deleteStoredOnboardingFormData(kindeUserId as string, email as string);
+          await (UnifiedOnboardingServiceImport as { deleteStoredOnboardingFormData: (a: string, b: string) => Promise<void> }).deleteStoredOnboardingFormData(idpSub as string, email as string);
         } catch (deleteErr: unknown) {
           Logger.log('warning', 'general', 'onboard-retry', 'Failed to delete stored form data (non-critical)', { error: (deleteErr as Error).message });
         }

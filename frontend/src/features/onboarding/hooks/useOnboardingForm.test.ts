@@ -13,16 +13,16 @@ vi.mock('../schemas/onboardingValidation', () => ({
   createOnboardingSchemaWithClassification: () => ({}),
 }));
 
-describe('useOnboardingForm — Kinde pre-fill', () => {
-  it('sets firstName and lastName from kindeUser.givenName / familyName in defaultValues', () => {
-    const kindeUser = {
+describe('useOnboardingForm — IdP pre-fill', () => {
+  it('sets firstName and lastName from idpUser.givenName / familyName in defaultValues', () => {
+    const idpUser = {
       givenName: 'Dinesh',
       familyName: 'Chinta',
       email: 'dinesh@example.com',
     };
 
     const { result } = renderHook(() =>
-      useOnboardingForm('newBusiness', undefined, kindeUser)
+      useOnboardingForm('newBusiness', undefined, idpUser)
     );
 
     const values = result.current.getValues();
@@ -31,7 +31,7 @@ describe('useOnboardingForm — Kinde pre-fill', () => {
     expect((values as Record<string, unknown>).adminEmail).toBe('dinesh@example.com');
   });
 
-  it('leaves name fields empty when kindeUser is null', () => {
+  it('leaves name fields empty when idpUser is null', () => {
     const { result } = renderHook(() =>
       useOnboardingForm('newBusiness', undefined, null)
     );
@@ -41,11 +41,11 @@ describe('useOnboardingForm — Kinde pre-fill', () => {
     expect(values.lastName).toBe('');
   });
 
-  it('uses empty string fallback when given/family name is missing from kindeUser', () => {
-    const kindeUser = { email: 'test@example.com' };
+  it('uses empty string fallback when given/family name is missing from idpUser', () => {
+    const idpUser = { email: 'test@example.com' };
 
     const { result } = renderHook(() =>
-      useOnboardingForm('newBusiness', undefined, kindeUser)
+      useOnboardingForm('newBusiness', undefined, idpUser)
     );
 
     const values = result.current.getValues();

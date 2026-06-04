@@ -221,13 +221,13 @@ export class UnifiedOnboardingService {
           () => OnboardingExternalService.extractAndValidateAuthentication(request, logger as OnboardingFileLogger | null)
         ),
       ]);
-      logger.onboarding.success('Authentication validated', { userId: authResult.user?.kindeUserId });
+      logger.onboarding.success('Authentication validated', { userId: authResult.user?.idpSub });
 
-      // 4. SETUP KINDE ORGANIZATION AND USER (needs both subdomain + auth result)
-      logger.onboarding.step(4, 'KINDE_SETUP', 'Setting up Kinde organization and user');
-      const kindeResult = await Sentry.startSpan(
-        { name: 'onboarding.step4.kindeSetup', op: 'onboarding.kinde' },
-        () => OnboardingExternalService.setupKindeIntegration({
+      // 4. SETUP IDP USER (needs both subdomain + auth result)
+      logger.onboarding.step(4, 'IDP_SETUP', 'Ensuring admin user exists in Cognito');
+      const idpResult = await Sentry.startSpan(
+        { name: 'onboarding.step4.idpSetup', op: 'onboarding.idp' },
+        () => OnboardingExternalService.setupIdpIntegration({
           companyName: companyName ?? '',
           adminEmail: adminEmail ?? '',
           firstName,
@@ -241,7 +241,6 @@ export class UnifiedOnboardingService {
       // This ensures atomicity - if any step fails, everything rolls back
       logger.onboarding.step(5, 'TRANSACTIONAL_DATABASE_CREATION', 'Creating all database records in single transaction');
       let dbResult: DbOnboardingResult;
-      const kindeOrgIdForCleanup: string = String(kindeResult.orgCode ?? ''); // Store for potential cleanup
 
       try {
         dbResult = await Sentry.startSpan(
@@ -252,12 +251,12 @@ export class UnifiedOnboardingService {
           subdomain: finalSubdomain,
           adminEmail: adminEmail ?? '',
           adminName: firstName && lastName ? `${firstName} ${lastName}`.trim() :
-            (kindeResult.userName as string) || String(adminEmail).split('@')[0],
+            (idpResult.userName as string) || String(adminEmail).split('@')[0],
           firstName,
           lastName,
           termsAccepted,
-          kindeUserId: kindeResult.userId as string,
-          kindeOrgId: kindeResult.orgCode as string,
+          idpSub: idpResult.userId as string,
+          idpOrgId: idpResult.orgCode as string,
           selectedPlan: selectedPlan ?? 'free',
           gstin: hasGstin ? gstin ?? null : null,
           hasGstin,
@@ -315,43 +314,22 @@ export class UnifiedOnboardingService {
         });
       } catch (err: unknown) {
         const transactionError = err as Error;
-        // Transaction failed - everything rolled back automatically
+        // Transaction failed - everything rolled back automatically.
+        // Form data storage is handled by the outer catch (covers all failure modes).
         Logger.log('error', 'general', 'completeOnboardingWorkflow', 'Transaction failed, all changes rolled back', { error: transactionError.message });
-
-        // Store form data for retry
-        const retryAuthResult = await OnboardingExternalService.extractAndValidateAuthentication(request, logger as OnboardingFileLogger | null);
-        const kindeUserId = retryAuthResult.user?.kindeUserId || kindeResult.userId;
-
-        if (kindeUserId && adminEmail) {
-          await OnboardingDbService.storeOnboardingFormDataForRetry({
-            kindeUserId: kindeUserId as string,
-            email: adminEmail,
-            formData: onboardingData,
-            error: {
-              message: transactionError.message,
-              name: transactionError.name,
-              step: 'database_transaction_failed'
-            }
-          });
-        }
-
-        // Note: Kinde organization was created but DB transaction failed
-        // We could optionally clean up Kinde org here, but leaving it for now
-        // as it doesn't cause issues and user can retry
-
         throw transactionError;
       }
 
       // 6+7. MARK ONBOARDING COMPLETE + DELETE STORED FORM DATA (parallel — independent ops)
       logger.onboarding.step(6, 'MARKING_COMPLETE', 'Marking onboarding as complete + cleaning form data in parallel');
-      const kindeUserIdForCleanup = kindeResult.userId as string;
+      const idpUserId = idpResult.userId as string;
       await Promise.all([
         db
           .update(tenants)
           .set({ onboardingCompleted: true, updatedAt: new Date() })
           .where(eq(tenants.tenantId, dbResult.tenant.tenantId)),
-        kindeUserIdForCleanup && adminEmail
-          ? OnboardingDbService.deleteStoredOnboardingFormData(kindeUserIdForCleanup, adminEmail as string).catch(
+        idpUserId && adminEmail
+          ? OnboardingDbService.deleteStoredOnboardingFormData(idpUserId, adminEmail as string).catch(
               (err: unknown) => Logger.log('warning', 'general', 'completeOnboardingWorkflow', 'Failed to delete stored form data (non-critical)', { error: (err as Error).message })
             )
           : Promise.resolve(),
@@ -362,9 +340,9 @@ export class UnifiedOnboardingService {
       // the very next authenticated request re-reads tenant_users and sees
       // onboardingCompleted=true and the correct tenantId — not a stale null entry
       // from pre-onboarding page loads.
-      await invalidateTenantLookupCache(kindeResult.orgCode as string);
-      await invalidateUserCache(kindeResult.userId as string);
-      Logger.log('info', 'general', 'completeOnboardingWorkflow', 'Cache busted after onboarding', { kindeUserId: kindeResult.userId, orgCode: kindeResult.orgCode, tenantId: dbResult.tenant.tenantId });
+      await invalidateTenantLookupCache(idpResult.orgCode as string);
+      await invalidateUserCache(idpResult.userId as string);
+      Logger.log('info', 'general', 'completeOnboardingWorkflow', 'Cache busted after onboarding', { idpUserId: idpResult.userId, orgCode: idpResult.orgCode, tenantId: dbResult.tenant.tenantId });
 
       // 8. POST-ONBOARDING ASYNC WORK (fire-and-forget — does NOT block the response)
       // All of these are non-critical: failures are logged but never surfaced to the user.
@@ -491,11 +469,11 @@ export class UnifiedOnboardingService {
       // Store form data for retry if we got past validation
       try {
         const authResult = await OnboardingExternalService.extractAndValidateAuthentication(request, logger as OnboardingFileLogger | null);
-        const kindeUserId = authResult.user?.kindeUserId || null;
+        const idpUserId = authResult.user?.idpSub || null;
 
-        if (kindeUserId && adminEmail) {
+        if (idpUserId && adminEmail) {
           await OnboardingDbService.storeOnboardingFormDataForRetry({
-            kindeUserId,
+            idpSub: idpUserId,
             email: adminEmail as string,
             formData: onboardingData,
             error: {
@@ -639,24 +617,24 @@ export class UnifiedOnboardingService {
   // (routes, tests) don't break. They simply forward to the focused modules.
   // ─────────────────────────────────────────────────────────────────────────
 
-  static async storeOnboardingFormDataForRetry(params: { kindeUserId: string; email: string; formData: Record<string, unknown>; error: Record<string, unknown> }): Promise<void> {
+  static async storeOnboardingFormDataForRetry(params: { idpSub: string; email: string; formData: Record<string, unknown>; error: Record<string, unknown> }): Promise<void> {
     return OnboardingDbService.storeOnboardingFormDataForRetry(params);
   }
 
-  static async getStoredOnboardingFormData(kindeUserId: string, email: string): Promise<Record<string, unknown> | null> {
-    return OnboardingDbService.getStoredOnboardingFormData(kindeUserId, email);
+  static async getStoredOnboardingFormData(idpSub: string, email: string): Promise<Record<string, unknown> | null> {
+    return OnboardingDbService.getStoredOnboardingFormData(idpSub, email);
   }
 
-  static async deleteStoredOnboardingFormData(kindeUserId: string, email: string): Promise<void> {
-    return OnboardingDbService.deleteStoredOnboardingFormData(kindeUserId, email);
+  static async deleteStoredOnboardingFormData(idpSub: string, email: string): Promise<void> {
+    return OnboardingDbService.deleteStoredOnboardingFormData(idpSub, email);
   }
 
-  static async extractAndValidateAuthentication(request: unknown, logger: OnboardingFileLogger | null = null): Promise<{ authenticated: boolean; user: { kindeUserId: string; email?: string; name?: string } | null }> {
+  static async extractAndValidateAuthentication(request: unknown, logger: OnboardingFileLogger | null = null): Promise<{ authenticated: boolean; user: { idpSub: string; email?: string; name?: string } | null }> {
     return OnboardingExternalService.extractAndValidateAuthentication(request, logger);
   }
 
-  static async setupKindeIntegration(params: { companyName: string; adminEmail: string; firstName?: string; lastName?: string; subdomain: string; existingUser?: { kindeUserId?: string; name?: string; email?: string } | null }, logger: OnboardingFileLogger | null = null): Promise<Record<string, unknown>> {
-    return OnboardingExternalService.setupKindeIntegration(params, logger);
+  static async setupIdpIntegration(params: { companyName: string; adminEmail: string; firstName?: string; lastName?: string; subdomain: string; existingUser?: { idpSub?: string; name?: string; email?: string } | null }, logger: OnboardingFileLogger | null = null): Promise<Record<string, unknown>> {
+    return OnboardingExternalService.setupIdpIntegration(params, logger);
   }
 
   static async createCompleteOnboardingInTransaction(params: Parameters<typeof OnboardingDbService.createCompleteOnboardingInTransaction>[0], logger: OnboardingFileLogger | null = null): Promise<Record<string, unknown>> {

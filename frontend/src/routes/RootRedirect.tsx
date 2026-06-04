@@ -1,6 +1,6 @@
 import { useEffect, useState, lazy, Suspense } from 'react'
 import { Navigate } from '@tanstack/react-router'
-import { useKindeAuth } from '@/lib/auth/cognito-auth'
+import { useAuth } from '@/lib/auth/cognito-auth'
 import { ZopkitRoundLoader } from '@/components/common/feedback/ZopkitRoundLoader'
 
 const Landing = lazy(() => import('@/features/landing/pages/Landing'))
@@ -15,7 +15,7 @@ const Landing = lazy(() => import('@/features/landing/pages/Landing'))
  * and its own CTA buttons handle navigation to Dashboard / Onboarding / Sign In.
  */
 export function RootRedirect() {
-  const { isLoading } = useKindeAuth()
+  const { isLoading } = useAuth()
   const [isChecking, setIsChecking] = useState(true)
   const [redirectTo, setRedirectTo] = useState<string | null>(null)
 

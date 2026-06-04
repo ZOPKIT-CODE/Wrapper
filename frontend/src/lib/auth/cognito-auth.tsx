@@ -25,7 +25,7 @@ export interface AuthUser {
   [key: string]: unknown;
 }
 
-interface KindeAuthContextValue {
+interface CognitoAuthContextValue {
   user: AuthUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -33,7 +33,7 @@ interface KindeAuthContextValue {
   refresh: () => Promise<void>;
 }
 
-const CognitoAuthContext = createContext<KindeAuthContextValue | null>(null);
+const CognitoAuthContext = createContext<CognitoAuthContextValue | null>(null);
 
 async function fetchMe(): Promise<AuthUser | null> {
   try {
@@ -70,7 +70,7 @@ export function CognitoAuthProvider({ children }: { children: React.ReactNode })
 
   useEffect(() => { void refresh(); }, [refresh]);
 
-  const value = useMemo<KindeAuthContextValue>(
+  const value = useMemo<CognitoAuthContextValue>(
     () => ({ user, isAuthenticated: !!user, isLoading, error, refresh }),
     [user, isLoading, error, refresh],
   );
@@ -86,7 +86,7 @@ interface LoginOptions {
   state?: string;
   app_code?: string;
   redirect_url?: string;
-  // Kinde-shaped options are accepted but largely ignored; provider/state are honored.
+  // Options accepted; provider/state are honored.
   authUrlParams?: Record<string, string>;
   [key: string]: unknown;
 }
@@ -121,10 +121,10 @@ async function backendLogout(): Promise<void> {
 }
 
 /**
- * Drop-in `useKindeAuth()` — same surface the app already consumes
+ * `useAuth()` — auth hook (formerly `useKindeAuth`, alias kept for migration) the app already consumes
  * (isAuthenticated, isLoading, user, error, getToken, login, logout, getPermission(s)).
  */
-export function useKindeAuth() {
+export function useAuth() {
   const ctx = useContext(CognitoAuthContext);
   const user = ctx?.user ?? null;
   const permissions: string[] = Array.isArray(user?.permissions) ? (user!.permissions as string[]) : [];
@@ -147,4 +147,6 @@ export function useKindeAuth() {
   };
 }
 
-export default { KindeProvider, CognitoAuthProvider, useKindeAuth };
+/** @deprecated use useAuth() */
+export const useKindeAuth = useAuth;
+export default { KindeProvider, CognitoAuthProvider, useAuth, useKindeAuth };

@@ -64,7 +64,7 @@ export default async function internalServiceAuthRoutes(fastify: FastifyInstance
 
       Logger.log('info', 'routes', 'validate-session', `💾 Cache MISS: Validating session in database`);
 
-      const tenant = await TenantService.getByKindeOrgId(kinde_org_code);
+      const tenant = await TenantService.getByIdpOrgId(kinde_org_code);
       if (!tenant) {
         await (DistributedSSOCache as any).cacheSessionValidation?.(kinde_user_id, kinde_org_code, false);
         return { valid: false, error: 'Tenant not found' };
@@ -127,11 +127,11 @@ export default async function internalServiceAuthRoutes(fastify: FastifyInstance
       }
 
       // Extract claims from the verified token
-      const kindeUserId = jwtPayload.sub as string | undefined;
+      const idpSub = jwtPayload.sub as string | undefined;
       const orgCode = (jwtPayload.org_code ?? jwtPayload.organization ?? jwtPayload.organization_code) as string | undefined;
       const tokenExp = jwtPayload.exp as number | undefined;
 
-      if (!kindeUserId) {
+      if (!idpSub) {
         return reply.code(401).send({ valid: false, error: 'Token missing subject claim' });
       }
 
@@ -148,8 +148,8 @@ export default async function internalServiceAuthRoutes(fastify: FastifyInstance
 
       // Look up the user in tenantUsers by kindeUserId (scoped to tenant when available)
       const whereClause = tenantRecord
-        ? and(eq(tenantUsers.idpSub, kindeUserId), eq(tenantUsers.tenantId, tenantRecord.tenantId), eq(tenantUsers.isActive, true))
-        : and(eq(tenantUsers.idpSub, kindeUserId), eq(tenantUsers.isActive, true));
+        ? and(eq(tenantUsers.idpSub, idpSub), eq(tenantUsers.tenantId, tenantRecord.tenantId), eq(tenantUsers.isActive, true))
+        : and(eq(tenantUsers.idpSub, idpSub), eq(tenantUsers.isActive, true));
 
       const [userRecord] = await db
         .select({

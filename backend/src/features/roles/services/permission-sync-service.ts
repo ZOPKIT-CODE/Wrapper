@@ -123,7 +123,7 @@ export class AutoPermissionSyncService {
     
     // In a real implementation, you might:
     // - Send HTTP webhooks to registered endpoints
-    // - Publish to a message queue (Redis, RabbitMQ)
+    // - Publish to a message queue (SNS/SQS)
     // - Send WebSocket notifications to connected clients
     // - Update cache invalidation headers
     

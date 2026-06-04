@@ -29,7 +29,7 @@ interface DeletedRecords {
  */
 export const deleteTenantData = async (tenantId: string): Promise<{
   tenantId: string;
-  kindeOrgId: string | null;
+  idpOrgId: string | null;
   deletedRecords: DeletedRecords;
   startTime: Date;
   endTime: Date | null;
@@ -40,7 +40,7 @@ export const deleteTenantData = async (tenantId: string): Promise<{
 
   const deletionResults: {
     tenantId: string;
-    kindeOrgId: string | null;
+    idpOrgId: string | null;
     deletedRecords: DeletedRecords;
     startTime: Date;
     endTime: Date | null;
@@ -48,7 +48,7 @@ export const deleteTenantData = async (tenantId: string): Promise<{
     errors: string[];
   } = {
     tenantId,
-    kindeOrgId: null,
+    idpOrgId: null,
     deletedRecords: {},
     startTime: new Date(),
     endTime: null,
@@ -60,12 +60,12 @@ export const deleteTenantData = async (tenantId: string): Promise<{
     // Start transaction to ensure atomicity
     await db.transaction(async (tx) => {
 
-      // 0. Capture kindeOrgId before deletion so callers can clean up Kinde orgs
+      // 0. Capture idpOrgId before deletion
       const [tenantRow] = await tx
-        .select({ kindeOrgId: tenants.idpOrgId })
+        .select({ idpOrgId: tenants.idpOrgId })
         .from(tenants)
         .where(eq(tenants.tenantId, tenantId));
-      deletionResults.kindeOrgId = tenantRow?.kindeOrgId ?? null;
+      deletionResults.idpOrgId = tenantRow?.idpOrgId ?? null;
 
       // 1. Delete user role assignments first (has FKs to both tenantUsers and customRoles)
       Logger.log('info', 'tenant', 'cleanup-tenant', 'Deleting user role assignments...', { tenantId });

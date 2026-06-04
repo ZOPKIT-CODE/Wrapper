@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useKindeAuth } from '@/lib/auth/cognito-auth';
+import { useAuth } from '@/lib/auth/cognito-auth';
 import { useTheme } from '@/components/theme/ThemeProvider';
 import { OnboardingForm } from '../components/OnboardingForm';
 import { onboardingLogger } from '../utils/onboardingLogger';
@@ -8,7 +8,7 @@ import { onboardingLogger } from '../utils/onboardingLogger';
  * Main Onboarding Page
  */
 const OnboardingPage: React.FC = () => {
-    const { isLoading: isKindeLoading } = useKindeAuth();
+    const { isLoading: isAuthLoading } = useAuth();
     const { theme, setTheme } = useTheme();
 
     // Force light theme for onboarding page - use ref to prevent infinite loops
@@ -36,12 +36,12 @@ const OnboardingPage: React.FC = () => {
         };
     }, []); // Only run on mount/unmount - remove theme dependency to prevent loops
 
-    if (isKindeLoading) {
-        onboardingLogger.debug('Onboarding page: Kinde loading');
+    if (isAuthLoading) {
+        onboardingLogger.debug('Onboarding page: auth loading');
     }
 
     // Show loading while determining authentication status
-    if (isKindeLoading) {
+    if (isAuthLoading) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
                 <div className="text-center">

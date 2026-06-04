@@ -20,6 +20,7 @@
     "test:ui": "vitest --ui",
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:integration:watch": "vitest --config vitest.integration.config.ts",
+    "test:cache": "vitest run --config vitest.cache.config.ts",
     "db:generate": "drizzle-kit generate:pg",
     "db:migrate": "node --import tsx src/db/run-migrations.ts",
     "db:migrate:fa-entity-fields": "node src/db/migrations/scripts/run-fa-entity-fields-migration.js",

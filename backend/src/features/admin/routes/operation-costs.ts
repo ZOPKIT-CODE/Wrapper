@@ -309,15 +309,15 @@ export default async function operationCostRoutes(fastify: FastifyInstance, _opt
       // looking up their Kinde user ID in tenant_users.
       let creatorUserId = userId;
       if (!creatorUserId) {
-        const kindeUserId = (request as any).userContext?.userId;
-        if (kindeUserId) {
+        const idpSub = (request as any).userContext?.userId;
+        if (idpSub) {
           const { tenantUsers } = await import('../../../db/schema/index.js');
-          const [kindeUser] = await db
+          const [idpUser] = await db
             .select({ userId: tenantUsers.userId })
             .from(tenantUsers)
-            .where(eq(tenantUsers.idpSub, kindeUserId))
+            .where(eq(tenantUsers.idpSub, idpSub))
             .limit(1);
-          creatorUserId = kindeUser?.userId || null;
+          creatorUserId = idpUser?.userId || null;
         }
       }
 
@@ -458,15 +458,15 @@ export default async function operationCostRoutes(fastify: FastifyInstance, _opt
 
       // Resolve userId from Kinde for platform staff without internalUserId
       if (!userId) {
-        const kindeUserId = (request as any).userContext?.userId;
-        if (kindeUserId) {
+        const idpSub = (request as any).userContext?.userId;
+        if (idpSub) {
           const { tenantUsers } = await import('../../../db/schema/index.js');
-          const [kindeUser] = await db
+          const [idpUser] = await db
             .select({ userId: tenantUsers.userId })
             .from(tenantUsers)
-            .where(eq(tenantUsers.idpSub, kindeUserId))
+            .where(eq(tenantUsers.idpSub, idpSub))
             .limit(1);
-          userId = kindeUser?.userId || null;
+          userId = idpUser?.userId || null;
         }
       }
 

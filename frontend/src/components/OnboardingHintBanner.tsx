@@ -1,4 +1,4 @@
-import { useKindeAuth } from '@/lib/auth/cognito-auth';
+import { useAuth } from '@/lib/auth/cognito-auth';
 import { useLocation, useNavigate } from '@tanstack/react-router';
 import { useAuthStatus } from '@/hooks/useSharedQueries';
 
@@ -16,7 +16,7 @@ function isMarketingPath(pathname: string): boolean {
  * z-[99] keeps it below UpdateAvailableBanner (z-120) and NetworkQualityBanner.
  */
 export function OnboardingHintBanner() {
-  const { isAuthenticated, user } = useKindeAuth();
+  const { isAuthenticated, user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const { data: authData } = useAuthStatus();

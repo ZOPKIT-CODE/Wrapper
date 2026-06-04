@@ -341,7 +341,7 @@ export default async function adminPromotionRoutes(fastify: FastifyInstance, _op
         .select({
           tenantId: tenants.tenantId,
           companyName: tenants.companyName,
-          kindeOrgId: tenants.idpOrgId
+          idpOrgId: tenants.idpOrgId
         })
         .from(tenants)
         .where(eq(tenants.tenantId, tenantId))
@@ -374,7 +374,7 @@ export default async function adminPromotionRoutes(fastify: FastifyInstance, _op
           ...resultData,
           organizationInfo: {
             name: orgInfo?.companyName,
-            kindeOrgId: orgInfo?.kindeOrgId
+            idpOrgId: orgInfo?.idpOrgId
           },
           promotionDetails: {
             wasForced: forceTransfer,
@@ -530,7 +530,7 @@ export default async function adminPromotionRoutes(fastify: FastifyInstance, _op
         .select({
           tenantId: tenants.tenantId,
           companyName: tenants.companyName,
-          kindeOrgId: tenants.idpOrgId
+          idpOrgId: tenants.idpOrgId
         })
         .from(tenants)
         .where(eq(tenants.tenantId, tenantId))
@@ -559,7 +559,7 @@ export default async function adminPromotionRoutes(fastify: FastifyInstance, _op
           canPromote,
           organizationInfo: {
             name: orgInfo?.companyName,
-            kindeOrgId: orgInfo?.kindeOrgId,
+            idpOrgId: orgInfo?.idpOrgId,
             totalEligibleUsers: eligibleUsers.length
           },
           policies: {

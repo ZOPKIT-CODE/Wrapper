@@ -260,7 +260,6 @@ admin/
 | POST | `/current/users/invite` | Invite user |
 | POST | `/invite/:token/accept` | Accept invitation |
 | POST | `/current/invitations/:id/resend` | Resend invitation |
-| POST | `/test/kinde-organization` | Test Kinde org assignment |
 | POST | `/current/users/:userId/promote` | Promote user to admin |
 | POST | `/current/users/:userId/deactivate` | Deactivate user |
 | POST | `/current/users/:userId/reactivate` | Reactivate user |
@@ -297,4 +296,4 @@ admin/
 | **EntityAdminService** | Entity listing with filters/pagination, entity details, hierarchy, statistics |
 | **CreditAdminService** | Credit overview, distribution tracking, low balance alerts, transaction history, analytics |
 | **SeasonalCreditService** | Campaign lifecycle (create, distribute, extend, expire), expiry warnings, tenant allocations |
-| **AdminPromotionService** | System Administrator promotion with validation, Kinde sync, audit trail, emergency recovery |
+| **AdminPromotionService** | System Administrator promotion with validation, audit trail, and emergency recovery. Roles are written natively to the Wrapper DB (`userRoleAssignments`); no external identity-provider sync is performed. |

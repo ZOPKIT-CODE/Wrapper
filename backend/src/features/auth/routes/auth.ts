@@ -564,8 +564,8 @@ export default async function authRoutes(
                 const enabledApps = await fetchEnabledApps(tenant.tenantId);
                 const res = {
                   success: true,
-                  user: { id: u.userId, email: u.email, firstName: u.firstName ?? undefined, lastName: u.lastName ?? undefined, name: [u.firstName, u.lastName].filter(Boolean).join(' ') || u.email || '', kindeId: u.idpSub },
-                  tenant: { id: tenant.tenantId, name: tenant.companyName, kindeOrgId: tenant.idpOrgId },
+                  user: { id: u.userId, email: u.email, firstName: u.firstName ?? undefined, lastName: u.lastName ?? undefined, name: [u.firstName, u.lastName].filter(Boolean).join(' ') || u.email || '', idpSub: u.idpSub },
+                  tenant: { id: tenant.tenantId, name: tenant.companyName, idpOrgId: tenant.idpOrgId },
                   enabledApps,
                 };
                 setValidateTokenCache(token, res);
@@ -580,7 +580,7 @@ export default async function authRoutes(
 
       // Validate the bearer token. Cognito-only: a token from the shared Cognito pool is
       // verified via Cognito JWKS (issuer + signature). A non-Cognito-issuer token is not a
-      // valid session token and yields no userInfo (the !kindeId check below 401s it). Cognito
+      // valid session token and yields no userInfo (the !idpSub check below 401s it). Cognito
       // tokens carry no org_code, so they resolve the tenant by email below (the no-org path).
       let userInfo: Record<string, unknown> | undefined;
       if (isCognitoIssuer((decoded as jwt.JwtPayload).iss)) {
@@ -592,10 +592,10 @@ export default async function authRoutes(
           userInfo = undefined;
         }
       }
-      const kindeId = (userInfo?.id as string) || (userInfo?.sub as string);
+      const idpSub = (userInfo?.id as string) || (userInfo?.sub as string);
       const orgCode = (userInfo?.org_code as string) || (Array.isArray(userInfo?.org_codes) ? (userInfo?.org_codes as string[])[0] : undefined);
 
-      if (!kindeId) {
+      if (!idpSub) {
         return reply.code(401).send({ success: false, error: 'Invalid token', message: 'Token did not contain a user identifier' });
       }
 
@@ -607,9 +607,9 @@ export default async function authRoutes(
         }
         const byEmail = await db
           .select({
-            tenantId: tenants.tenantId, companyName: tenants.companyName, kindeOrgId: tenants.idpOrgId,
+            tenantId: tenants.tenantId, companyName: tenants.companyName, idpOrgId: tenants.idpOrgId,
             userId: tenantUsers.userId, userEmail: tenantUsers.email, firstName: tenantUsers.firstName,
-            lastName: tenantUsers.lastName, kindeUserId: tenantUsers.idpSub,
+            lastName: tenantUsers.lastName, idpSub: tenantUsers.idpSub,
           })
           .from(tenantUsers)
           .innerJoin(tenants, eq(tenants.tenantId, tenantUsers.tenantId))
@@ -626,8 +626,8 @@ export default async function authRoutes(
         const enabledApps = await fetchEnabledApps(row.tenantId);
         const res = {
           success: true,
-          user: { id: row.userId, email: row.userEmail, firstName: row.firstName ?? undefined, lastName: row.lastName ?? undefined, name: [row.firstName, row.lastName].filter(Boolean).join(' '), kindeId: row.kindeUserId },
-          tenant: { id: row.tenantId, name: row.companyName, kindeOrgId: row.kindeOrgId },
+          user: { id: row.userId, email: row.userEmail, firstName: row.firstName ?? undefined, lastName: row.lastName ?? undefined, name: [row.firstName, row.lastName].filter(Boolean).join(' '), idpSub: row.idpSub },
+          tenant: { id: row.tenantId, name: row.companyName, idpOrgId: row.idpOrgId },
           enabledApps,
         };
         setValidateTokenCache(token, res);
@@ -642,16 +642,16 @@ export default async function authRoutes(
           .select({
             tenantId: tenants.tenantId,
             companyName: tenants.companyName,
-            kindeOrgId: tenants.idpOrgId,
+            idpOrgId: tenants.idpOrgId,
             userId: tenantUsers.userId,
             userEmail: tenantUsers.email,
             firstName: tenantUsers.firstName,
             lastName: tenantUsers.lastName,
-            kindeUserId: tenantUsers.idpSub,
+            idpSub: tenantUsers.idpSub,
           })
           .from(tenantUsers)
           .innerJoin(tenants, eq(tenants.tenantId, tenantUsers.tenantId))
-          .where(eq(tenantUsers.idpSub, kindeId))
+          .where(eq(tenantUsers.idpSub, idpSub))
           .limit(2);
 
         if (byKindeMembership.length === 1) {
@@ -665,12 +665,12 @@ export default async function authRoutes(
               firstName: row.firstName ?? undefined,
               lastName: row.lastName ?? undefined,
               name: [row.firstName, row.lastName].filter(Boolean).join(' '),
-              kindeId: row.kindeUserId,
+              idpSub: row.idpSub,
             },
             tenant: {
               id: row.tenantId,
               name: row.companyName,
-              kindeOrgId: row.kindeOrgId,
+              idpOrgId: row.idpOrgId,
             },
             enabledApps,
           };
@@ -682,7 +682,7 @@ export default async function authRoutes(
       }
 
       const [u] = await db.select().from(tenantUsers)
-        .where(and(eq(tenantUsers.tenantId, tenant.tenantId), eq(tenantUsers.idpSub, kindeId)))
+        .where(and(eq(tenantUsers.tenantId, tenant.tenantId), eq(tenantUsers.idpSub, idpSub)))
         .limit(1);
       if (!u) {
         return reply.code(404).send({ success: false, error: 'User not found', message: 'User not found in tenant' });
@@ -691,8 +691,8 @@ export default async function authRoutes(
       const enabledApps = await fetchEnabledApps(tenant.tenantId);
       const res = {
         success: true,
-        user: { id: u.userId, email: u.email, firstName: u.firstName ?? undefined, lastName: u.lastName ?? undefined, name: [u.firstName, u.lastName].filter(Boolean).join(' ') || u.email || '', kindeId: u.idpSub },
-        tenant: { id: tenant.tenantId, name: tenant.companyName, kindeOrgId: tenant.idpOrgId },
+        user: { id: u.userId, email: u.email, firstName: u.firstName ?? undefined, lastName: u.lastName ?? undefined, name: [u.firstName, u.lastName].filter(Boolean).join(' ') || u.email || '', idpSub: u.idpSub },
+        tenant: { id: tenant.tenantId, name: tenant.companyName, idpOrgId: tenant.idpOrgId },
         enabledApps,
       };
       setValidateTokenCache(token, res);

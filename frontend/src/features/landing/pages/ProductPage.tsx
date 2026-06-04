@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from '@tanstack/react-router';
-import { useKindeAuth } from '@/lib/auth/cognito-auth';
+import { useAuth } from '@/lib/auth/cognito-auth';
 import { ProductData } from '@/types/products';
 import { Check, X, Zap, XCircle, CheckCircle, Minus, AlertCircle, Sparkles, LayoutGrid, ChevronRight, Maximize2, ArrowRight, Play, Calendar } from 'lucide-react';
 import { MiniSparkline } from '@/components/common/MiniSparkline';
@@ -1075,7 +1075,7 @@ const FeatureCard: React.FC<FeatureCardProps> = ({ feature, i, productId }) => {
 const ProductPage: React.FC = () => {
     const { productId } = useParams({ strict: false });
     const navigate = useNavigate();
-    const { login } = useKindeAuth();
+    const { login } = useAuth();
 
     // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
     const [isLoading, setIsLoading] = useState(false);
@@ -1091,14 +1091,8 @@ const ProductPage: React.FC = () => {
     const handleLogin = async () => {
         setIsLoading(true);
         try {
-            const googleConnectionId = import.meta.env.VITE_KINDE_GOOGLE_CONNECTION_ID;
-            
-            if (!googleConnectionId) {
-                console.error('❌ VITE_KINDE_GOOGLE_CONNECTION_ID is not configured');
-                await login();
-            } else {
-                await login({ connectionId: googleConnectionId });
-            }
+            // Cognito: route straight to Google federation (skips the hosted-UI selector).
+            await login({ provider: 'google' });
         } catch (error) {
             console.error('Login error:', error);
         } finally {

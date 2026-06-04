@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react'
-import { useKindeAuth } from '@/lib/auth/cognito-auth'
+import { useAuth } from '@/lib/auth/cognito-auth'
 import { Navigate, useLocation } from '@tanstack/react-router'
 import { Loader2 } from 'lucide-react'
 import { useAuthStatus, useOnboardingStatus } from '@/hooks/useSharedQueries'
@@ -19,8 +19,8 @@ interface OnboardingStatus {
 }
 
 export const OnboardingGuard = React.memo(({ children, redirectTo = '/login' }: OnboardingGuardProps) => {
-  const { isAuthenticated, isLoading: kindeLoading, user } = useKindeAuth()
-  const { data: authData, isLoading: authLoading } = useAuthStatus()
+  const { isAuthenticated, isLoading: authLoading, user } = useAuth()
+  const { data: authData, isLoading: authStatusLoading } = useAuthStatus()
   const { data: onboardingResponse, isLoading: onboardingLoading } = useOnboardingStatus()
 
   const [onboardingStatus, setOnboardingStatus] = useState<OnboardingStatus | null>(null)
@@ -36,7 +36,7 @@ export const OnboardingGuard = React.memo(({ children, redirectTo = '/login' }: 
   onboardingDataRef.current = onboardingData
 
   // Stable primitives for deps - never use backendAuthStatus/onboardingData (objects) in deps
-  const authReady = !authLoading && !!authData
+  const authReady = !authStatusLoading && !!authData
   const onboardingReady = !!onboardingResponse && !!onboardingData
   const pathname = location.pathname
   const search = location.searchStr
@@ -113,10 +113,10 @@ export const OnboardingGuard = React.memo(({ children, redirectTo = '/login' }: 
         hasTenant: !!backendAuthStatus.tenantId
       })
     }
-  }, [isAuthenticated, kindeLoading, user?.email, authReady, onboardingReady, pathname, search])
+  }, [isAuthenticated, authLoading, user?.email, authReady, onboardingReady, pathname, search])
 
   // Show loading while checking authentication and onboarding status
-  if (kindeLoading || (isAuthenticated && (authLoading || onboardingLoading))) {
+  if (authLoading || (isAuthenticated && (authLoading || onboardingLoading))) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
         <div className="text-center">
@@ -129,8 +129,8 @@ export const OnboardingGuard = React.memo(({ children, redirectTo = '/login' }: 
 
   // If not authenticated AND Kinde is not loading, redirect to login
   // This prevents redirect loops while Kinde is still initializing
-  if (!isAuthenticated && !kindeLoading) {
-    logger.debug('🔄 OnboardingGuard - Not authenticated (Kinde loaded), redirecting to:', redirectTo)
+  if (!isAuthenticated && !authLoading) {
+    logger.debug('🔄 OnboardingGuard - Not authenticated (auth loaded), redirecting to:', redirectTo)
     return <Navigate to={redirectTo} replace />
   }
 

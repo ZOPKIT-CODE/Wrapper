@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useKindeAuth } from '@/lib/auth/cognito-auth';
+import { useAuth } from '@/lib/auth/cognito-auth';
 import type { AxiosRequestConfig } from 'axios';
 import api from '@/lib/api';
 
@@ -24,7 +24,7 @@ interface ActivityLog {
 }
 
 const SuiteDashboard: React.FC = () => {
-  const { user, isAuthenticated } = useKindeAuth();
+  const { user, isAuthenticated } = useAuth();
   const [applications, setApplications] = useState<Application[]>([]);
   const [activities, setActivities] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(false);

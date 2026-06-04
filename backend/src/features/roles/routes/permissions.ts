@@ -209,7 +209,7 @@ export default async function permissionRoutes(fastify: FastifyInstance, _option
       const params = request.params as Record<string, string>;
       const roleId = params.roleId;
       const body = request.body as Record<string, unknown>;
-      const updatedBy = request.userContext?.kindeUserId ?? request.user?.id;
+      const updatedBy = request.userContext?.idpSub ?? request.user?.id;
       const updateData = {
         ...body,
         updatedBy: updatedBy ?? undefined
@@ -454,7 +454,7 @@ export default async function permissionRoutes(fastify: FastifyInstance, _option
       const roleId = body.roleId as string;
       const expiresAt = body.expiresAt as string | undefined;
       const conditions = body.conditions as unknown;
-      const assignedBy = (request.userContext?.kindeUserId ?? request.user?.id) ?? '';
+      const assignedBy = (request.userContext?.idpSub ?? request.user?.id) ?? '';
       
       // Get tenant ID from user context
       const tenantId = getTenantId(request);
@@ -509,7 +509,7 @@ export default async function permissionRoutes(fastify: FastifyInstance, _option
       const params = request.params as Record<string, string>;
       const assignmentId = params.assignmentId;
       const tenantId = getTenantId(request);
-      const removedBy = (request.userContext?.kindeUserId ?? request.user?.id) ?? '';
+      const removedBy = (request.userContext?.idpSub ?? request.user?.id) ?? '';
       
       await permissionService.removeRoleAssignmentById(
         tenantId,
@@ -555,7 +555,7 @@ export default async function permissionRoutes(fastify: FastifyInstance, _option
       const userId = params.userId;
       const roleId = params.roleId;
       const tenantId = getTenantId(request);
-      const removedBy = (request.userContext?.kindeUserId ?? request.user?.id) ?? '';
+      const removedBy = (request.userContext?.idpSub ?? request.user?.id) ?? '';
       
       await permissionService.removeRoleAssignment(
         tenantId,
@@ -627,7 +627,7 @@ export default async function permissionRoutes(fastify: FastifyInstance, _option
       const userId = body.userId as string | undefined;
       const resource = body.resource;
       const context = body.context;
-      const targetUserId = userId || (request.userContext as unknown as Record<string, unknown>)?.kindeUserId || (request.user as unknown as Record<string, unknown>)?.id;
+      const targetUserId = userId || (request.userContext as unknown as Record<string, unknown>)?.idpSub || (request.user as unknown as Record<string, unknown>)?.id;
       
       const results = await (permissionService as unknown as { checkPermissions: (tid: string, uid: string, perms: unknown, opts: unknown) => Promise<unknown> }).checkPermissions(
         getTenantId(request),
@@ -684,7 +684,7 @@ export default async function permissionRoutes(fastify: FastifyInstance, _option
       const results = await (permissionService as unknown as { bulkAssignRoles: (tid: string, assignments: unknown, by?: string) => Promise<unknown> }).bulkAssignRoles(
         getTenantId(request),
         assignments,
-        (request.userContext?.kindeUserId ?? request.user?.id) ?? undefined
+        (request.userContext?.idpSub ?? request.user?.id) ?? undefined
       );
       
       return {

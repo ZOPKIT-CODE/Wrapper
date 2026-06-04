@@ -16,7 +16,7 @@ export function useOrganizationAuth() {
     if (!user || !authData?.authStatus) return null;
 
     return {
-      userId: user.kindeUserId || user.userId,
+      userId: user.idpSub || user.userId,
       internalUserId: authData.authStatus.userId,
       tenantId: authData.authStatus.tenantId || user.tenantId || tenant?.tenantId,
       roles: authData.authStatus.userRoles || [],

@@ -17,7 +17,7 @@ interface User {
 }
 
 // Extended interface for Kinde UserProfile compatibility
-interface KindeUserProfile {
+interface IdpUserProfile {
   id: string;
   email?: string;
   givenName?: string;
@@ -42,7 +42,7 @@ class JWTService {
    * Generate a secure JWT token specifically for CRM authentication
    * This replaces the custom code generation that was causing infinite redirects
    */
-  generateCRMToken(user: User | KindeUserProfile): string {
+  generateCRMToken(user: User | IdpUserProfile): string {
     try {
       // Create a secure token payload for CRM
       const payload = {

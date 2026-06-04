@@ -26,7 +26,7 @@ export interface UserContext {
   isAuthenticated?: boolean;
   tenantId?: string;
   internalUserId?: string;
-  kindeUserId?: string;
+  idpSub?: string;
   email?: string;
   name?: string;
   isAdmin?: boolean;
@@ -575,35 +575,6 @@ export async function assignUserToOrganization(
   const hasPrimaryOrg = !!(user[0] as { primaryOrganizationId?: string | null })
     .primaryOrganizationId;
 
-  const newMembership = await db
-    .insert(organizationMemberships)
-    .values({
-      membershipId,
-      userId,
-      tenantId,
-      entityId: organizationId,
-      entityType: 'organization',
-      membershipType: assignmentType || 'direct',
-      membershipStatus: 'active',
-      accessLevel: 'standard',
-      isPrimary: !hasPrimaryOrg,
-      createdBy: assignedByUserId,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    } as any)
-    .returning();
-
-  if (!hasPrimaryOrg) {
-    await db
-      .update(tenantUsers)
-      .set({ primaryOrganizationId: organizationId, updatedAt: new Date() })
-      .where(and(eq(tenantUsers.userId, userId), eq(tenantUsers.tenantId, tenantId)));
-  }
-
-  if (newMembership.length === 0) {
-    return { success: false, message: 'Failed to create organization membership' };
-  }
-
   const assignmentData = {
     assignmentId: membershipId,
     tenantId,
@@ -618,12 +589,43 @@ export async function assignUserToOrganization(
     metadata,
   };
 
-  try {
-    await OrganizationAssignmentService.publishOrgAssignmentCreated(assignmentData);
-  } catch (publishErr) {
-    Logger.log('error', 'general', 'assign-organization', 'Failed to publish assignment event', {
-      error: (publishErr as Error).message,
-    });
+  // Atomic: the membership insert (+ primary-org update) and the
+  // organization.assignment.created event commit in ONE tx (tx-bound publish skips
+  // synchronous SNS; the poller delivers post-commit; a failure rolls the write back).
+  const newMembership = await db.transaction(async (tx) => {
+    const inserted = await tx
+      .insert(organizationMemberships)
+      .values({
+        membershipId,
+        userId,
+        tenantId,
+        entityId: organizationId,
+        entityType: 'organization',
+        membershipType: assignmentType || 'direct',
+        membershipStatus: 'active',
+        accessLevel: 'standard',
+        isPrimary: !hasPrimaryOrg,
+        createdBy: assignedByUserId,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as any)
+      .returning();
+
+    if (inserted.length === 0) return inserted; // skip publish; soft-fail below
+
+    if (!hasPrimaryOrg) {
+      await tx
+        .update(tenantUsers)
+        .set({ primaryOrganizationId: organizationId, updatedAt: new Date() })
+        .where(and(eq(tenantUsers.userId, userId), eq(tenantUsers.tenantId, tenantId)));
+    }
+
+    await OrganizationAssignmentService.publishOrgAssignmentCreated(assignmentData, {}, tx);
+    return inserted;
+  });
+
+  if (newMembership.length === 0) {
+    return { success: false, message: 'Failed to create organization membership' };
   }
 
   await ActivityLogger.logActivity(
@@ -696,16 +698,6 @@ export async function updateUserOrganizationAssignment(
   if (changes?.organizationId != null)
     updateData.primaryOrganizationId = changes.organizationId as string | null;
 
-  const updatedUser = await db
-    .update(tenantUsers)
-    .set(updateData)
-    .where(and(eq(tenantUsers.userId, userId), eq(tenantUsers.tenantId, tenantId)))
-    .returning();
-
-  if (updatedUser.length === 0) {
-    return { success: false, message: 'User not found' };
-  }
-
   const eventData = {
     assignmentId: assignmentId || `${userId}_${organizationId}_${Date.now()}`,
     tenantId,
@@ -715,24 +707,24 @@ export async function updateUserOrganizationAssignment(
     updatedBy: updatedByUserId,
   };
 
-  try {
-    await OrganizationAssignmentService.publishOrgAssignmentUpdated(eventData);
-    Logger.log(
-      'info',
-      'general',
-      'update-organization',
-      'Published organization assignment updated event',
-      { userId }
-    );
-  } catch (publishErr) {
-    const publishError = publishErr as Error;
-    Logger.log(
-      'warning',
-      'general',
-      'update-organization',
-      'Failed to publish assignment update event',
-      { error: publishError.message }
-    );
+  // Atomic: the user update and the organization.assignment.updated event commit
+  // in ONE tx (tx-bound publish; a publish/outbox failure rolls the write back).
+  const updatedUser = await db.transaction(async (tx) => {
+    const rows = await tx
+      .update(tenantUsers)
+      .set(updateData)
+      .where(and(eq(tenantUsers.userId, userId), eq(tenantUsers.tenantId, tenantId)))
+      .returning();
+
+    if (rows.length === 0) return rows; // skip publish; soft-fail below
+
+    await OrganizationAssignmentService.publishOrgAssignmentUpdated(eventData, {}, tx);
+    Logger.log('info', 'general', 'update-organization', 'Queued organization assignment updated event (tx)', { userId });
+    return rows;
+  });
+
+  if (updatedUser.length === 0) {
+    return { success: false, message: 'User not found' };
   }
 
   await ActivityLogger.logActivity(
@@ -800,53 +792,6 @@ export async function removeUserFromOrganization(
     return { success: false, message: 'User organization membership not found' };
   }
 
-  const updatedMembership = await db
-    .update(organizationMemberships)
-    .set({
-      membershipStatus: 'inactive',
-      updatedBy: removedByUserId,
-      updatedAt: new Date(),
-    })
-    .where(eq(organizationMemberships.membershipId, membership[0].membershipId))
-    .returning();
-
-  if (updatedMembership.length === 0) {
-    return { success: false, message: 'Failed to remove organization membership' };
-  }
-
-  // If this was the primary organization, promote another or clear it
-  if (membership[0].isPrimary) {
-    const otherMemberships = await db
-      .select()
-      .from(organizationMemberships)
-      .where(
-        and(
-          eq(organizationMemberships.userId, userId),
-          eq(organizationMemberships.tenantId, tenantId),
-          eq(organizationMemberships.membershipStatus, 'active')
-        )
-      );
-
-    if (otherMemberships.length > 0) {
-      await db
-        .update(organizationMemberships)
-        .set({ isPrimary: true, updatedBy: removedByUserId, updatedAt: new Date() })
-        .where(
-          eq(organizationMemberships.membershipId, otherMemberships[0].membershipId)
-        );
-
-      await db
-        .update(tenantUsers)
-        .set({ primaryOrganizationId: otherMemberships[0].entityId, updatedAt: new Date() })
-        .where(and(eq(tenantUsers.userId, userId), eq(tenantUsers.tenantId, tenantId)));
-    } else {
-      await db
-        .update(tenantUsers)
-        .set({ primaryOrganizationId: null, updatedAt: new Date() })
-        .where(and(eq(tenantUsers.userId, userId), eq(tenantUsers.tenantId, tenantId)));
-    }
-  }
-
   const assignmentData = {
     assignmentId: membership[0].membershipId,
     tenantId,
@@ -856,24 +801,62 @@ export async function removeUserFromOrganization(
     reason,
   };
 
-  try {
-    await OrganizationAssignmentService.publishOrgAssignmentDeleted(assignmentData);
-    Logger.log(
-      'info',
-      'general',
-      'remove-organization',
-      'Published organization assignment deleted event',
-      { userId }
-    );
-  } catch (publishErr) {
-    const publishError = publishErr as Error;
-    Logger.log(
-      'warning',
-      'general',
-      'remove-organization',
-      'Failed to publish assignment deletion event',
-      { error: publishError.message }
-    );
+  // Atomic: the membership deactivation (+ primary-org promotion/clear) and the
+  // organization.assignment.deleted event commit in ONE tx (tx-bound publish;
+  // a publish/outbox failure rolls back all of it).
+  const updatedMembership = await db.transaction(async (tx) => {
+    const rows = await tx
+      .update(organizationMemberships)
+      .set({
+        membershipStatus: 'inactive',
+        updatedBy: removedByUserId,
+        updatedAt: new Date(),
+      })
+      .where(eq(organizationMemberships.membershipId, membership[0].membershipId))
+      .returning();
+
+    if (rows.length === 0) return rows; // skip publish; soft-fail below
+
+    // If this was the primary organization, promote another or clear it
+    if (membership[0].isPrimary) {
+      const otherMemberships = await tx
+        .select()
+        .from(organizationMemberships)
+        .where(
+          and(
+            eq(organizationMemberships.userId, userId),
+            eq(organizationMemberships.tenantId, tenantId),
+            eq(organizationMemberships.membershipStatus, 'active')
+          )
+        );
+
+      if (otherMemberships.length > 0) {
+        await tx
+          .update(organizationMemberships)
+          .set({ isPrimary: true, updatedBy: removedByUserId, updatedAt: new Date() })
+          .where(
+            eq(organizationMemberships.membershipId, otherMemberships[0].membershipId)
+          );
+
+        await tx
+          .update(tenantUsers)
+          .set({ primaryOrganizationId: otherMemberships[0].entityId, updatedAt: new Date() })
+          .where(and(eq(tenantUsers.userId, userId), eq(tenantUsers.tenantId, tenantId)));
+      } else {
+        await tx
+          .update(tenantUsers)
+          .set({ primaryOrganizationId: null, updatedAt: new Date() })
+          .where(and(eq(tenantUsers.userId, userId), eq(tenantUsers.tenantId, tenantId)));
+      }
+    }
+
+    await OrganizationAssignmentService.publishOrgAssignmentDeleted(assignmentData, tx);
+    Logger.log('info', 'general', 'remove-organization', 'Queued organization assignment deleted event (tx)', { userId });
+    return rows;
+  });
+
+  if (updatedMembership.length === 0) {
+    return { success: false, message: 'Failed to remove organization membership' };
   }
 
   await ActivityLogger.logActivity(

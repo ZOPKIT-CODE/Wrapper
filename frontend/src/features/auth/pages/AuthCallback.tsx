@@ -1,11 +1,11 @@
 import React, { useEffect, useRef } from 'react'
-import { useKindeAuth } from '@/lib/auth/cognito-auth'
+import { useAuth } from '@/lib/auth/cognito-auth'
 import { ZopkitRoundLoader } from '@/components/common/feedback/ZopkitRoundLoader'
 import { useNavigate } from '@tanstack/react-router'
 import { clearStaleAuthStorage, isInvalidGrantError, markSessionRecoveryReason } from '@/lib/auth/session-recovery'
 
 export function AuthCallback() {
-  const { isLoading, isAuthenticated, error, user } = useKindeAuth()
+  const { isLoading, isAuthenticated, error, user } = useAuth()
   const navigate = useNavigate()
   const hasProcessedRef = useRef(false)
   const processingRef = useRef(false)
@@ -68,7 +68,7 @@ export function AuthCallback() {
             return
           }
 
-          console.error('❌ AuthCallback: Kinde SDK error:', error)
+          console.error('❌ AuthCallback: auth error:', error)
           hasProcessedRef.current = true
           return
         }

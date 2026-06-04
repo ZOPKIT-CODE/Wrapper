@@ -8,7 +8,7 @@ import { applications as applicationsSchema, organizationApplications } from '..
 import { eq, and } from 'drizzle-orm';
 import Logger from '../../../utils/logger.js';
 import ActivityLogger, { ACTIVITY_TYPES } from '../../../services/activityLogger.js';
-// crmSyncStreams removed - migrated to RabbitMQ (AmazonMQPublisher)
+// crmSyncStreams removed - migrated to SNS+SQS (snsSqsPublisher)
 import { PermissionMatrixUtils } from '../../../data/permission-matrix.js';
 import { PERMISSIONS } from '../../../constants/permissions.js';
 
@@ -21,7 +21,11 @@ export async function publishRoleEventToApplications(
   eventType: string,
   tenantId: string,
   roleId: string,
-  roleData: Record<string, unknown>
+  roleData: Record<string, unknown>,
+  /** Caller's domain tx — when provided, each app's outbox row is written in that
+   *  tx (atomic with the domain write), synchronous SNS is skipped, and failures
+   *  propagate so the caller's transaction rolls back. */
+  tx?: typeof db,
 ): Promise<void> {
   try {
     // NOTE: kindeOrgId translation now happens inside snsSqsPublisher.publishInterAppEvent
@@ -89,48 +93,44 @@ export async function publishRoleEventToApplications(
 
     Logger.log('info', 'role', 'publish-role-event', `Publishing ${eventType} event for role`, { roleId, applications });
 
-    // Publish event to each relevant application using their specific stream
+    const publishedBy = (roleData.createdBy || roleData.updatedBy || roleData.deletedBy || 'system') as string;
+    const buildEventData = (appCode: string) => ({
+      roleId: roleId,
+      roleName: roleData.roleName || roleData.name,
+      description: roleData.description,
+      // Only permissions for this app
+      permissions: PermissionMatrixUtils.filterPermissionsByApplication(permissions as Record<string, unknown>, appCode),
+      restrictions: roleData.restrictions,
+      metadata: roleData.metadata,
+      ...(eventType === 'role.created' && { createdBy: roleData.createdBy, createdAt: roleData.createdAt }),
+      ...(eventType === 'role.updated' && { updatedBy: roleData.updatedBy, updatedAt: roleData.updatedAt }),
+      ...(eventType === 'role.deleted' && {
+        deletedBy: roleData.deletedBy,
+        deletedAt: roleData.deletedAt,
+        transferredToRoleId: roleData.transferredToRoleId,
+        affectedUsersCount: roleData.affectedUsersCount,
+      }),
+    });
+
+    const { snsSqsPublisher } = await import('../../messaging/utils/sns-sqs-publisher.js');
+
+    if (tx) {
+      // tx mode: write each app's outbox row in the caller's tx, sequentially.
+      // No per-app catch — a failure propagates so the caller's transaction rolls
+      // back (events stay atomic with the role write). No synchronous SNS; the
+      // outbox poller delivers after the caller commits.
+      for (const appCode of applications) {
+        await snsSqsPublisher.publishRoleEvent(appCode, eventType, tenantId, roleId, buildEventData(appCode), publishedBy, tx);
+        Logger.log('info', 'role', 'publish-role-event', `Queued ${eventType} event to application (tx)`, { appCode, roleId });
+      }
+      Logger.log('info', 'role', 'publish-role-event', `Completed queuing ${eventType} events for role (tx)`, { roleId });
+      return;
+    }
+
+    // Non-tx (best-effort): publish per app, swallowing individual failures.
     const publishPromises = applications.map(async (appCode) => {
-      // Filter permissions for this specific application
-      const appPermissions = PermissionMatrixUtils.filterPermissionsByApplication(permissions as Record<string, unknown>, appCode);
-
-      // Prepare event data with only relevant permissions
-      const eventData = {
-        roleId: roleId,
-        roleName: roleData.roleName || roleData.name,
-        description: roleData.description,
-        permissions: appPermissions, // Only permissions for this app
-        restrictions: roleData.restrictions,
-        metadata: roleData.metadata,
-        ...(eventType === 'role.created' && {
-          createdBy: roleData.createdBy,
-          createdAt: roleData.createdAt
-        }),
-        ...(eventType === 'role.updated' && {
-          updatedBy: roleData.updatedBy,
-          updatedAt: roleData.updatedAt
-        }),
-        ...(eventType === 'role.deleted' && {
-          deletedBy: roleData.deletedBy,
-          deletedAt: roleData.deletedAt,
-          transferredToRoleId: roleData.transferredToRoleId,
-          affectedUsersCount: roleData.affectedUsersCount
-        })
-      };
-
       try {
-        // Use SNS/SQS publisher to publish role event
-        const { snsSqsPublisher } = await import('../../messaging/utils/sns-sqs-publisher.js');
-        
-        await snsSqsPublisher.publishRoleEvent(
-          appCode, // Target application (crm, hr, etc.)
-          eventType, // Already in format: role.created, role.updated, role.deleted
-          tenantId,
-          roleId,
-          eventData,
-          (roleData.createdBy || roleData.updatedBy || roleData.deletedBy || 'system') as string
-        );
-
+        await snsSqsPublisher.publishRoleEvent(appCode, eventType, tenantId, roleId, buildEventData(appCode), publishedBy);
         Logger.log('info', 'role', 'publish-role-event', `Published ${eventType} event to application`, { appCode, roleId });
       } catch (err: unknown) {
         const error = err as Error;
@@ -144,7 +144,10 @@ export async function publishRoleEventToApplications(
   } catch (err: unknown) {
     const error = err as Error;
     Logger.log('error', 'role', 'publish-role-event', 'Error publishing role events', { error: error.message });
-    // Don't throw - event publishing failure shouldn't break the API response
+    // tx mode: surface the failure so the caller's transaction rolls back (the
+    // outbox write must be atomic with the domain write). Non-tx: stay best-effort —
+    // event publishing failure shouldn't break the API response.
+    if (tx) throw err;
   }
 }
 

@@ -32,13 +32,11 @@ export interface TenantSnapshotEventData {
   appCode: string;
   tenantId: string;
   plan: string;
-  applications: string[];
   subscriptionTier: string | null;
   enabledModules: string[];
   expiresAt: string | null;
   tenantName: string;
-  adminEmail: string | null;
-  kindeOrgId: string | null;
+  idpOrgId: string | null;
   snapshot: {
     tenant: BootstrapPayload['tenant'];
     organizations: BootstrapPayload['organizations'];
@@ -88,20 +86,17 @@ function buildEventDataForApp(
   tenantId: string,
   plan: string,
   app: TenantSnapshotEnabledApp,
-  allAppCodes: string[],
   bootstrap: BootstrapPayload,
 ): TenantSnapshotEventData {
   return {
     appCode:          app.appCode,
     tenantId,
     plan,
-    applications:     allAppCodes,
     subscriptionTier: app.subscriptionTier,
     enabledModules:   app.enabledModules,
     expiresAt:        app.expiresAt,
     tenantName:       bootstrap.tenant?.tenantName ?? '',
-    adminEmail:       bootstrap.users?.find((u) => u.isTenantAdmin)?.email ?? null,
-    kindeOrgId:       bootstrap.tenant?.kindeOrgId ?? null,
+    idpOrgId:         bootstrap.tenant?.idpOrgId ?? null,
     snapshot: {
       tenant:              bootstrap.tenant,
       organizations:       bootstrap.organizations,
@@ -137,13 +132,7 @@ export async function buildTenantSnapshot(
   if (!app) return null;
 
   const bootstrap = await new BootstrapService().assemble(tenantId, appCode);
-  return buildEventDataForApp(
-    tenantId,
-    plan,
-    app,
-    enabledApps.map((a) => a.appCode),
-    bootstrap,
-  );
+  return buildEventDataForApp(tenantId, plan, app, bootstrap);
 }
 
 /**
@@ -159,13 +148,12 @@ export async function buildAllTenantSnapshots(
   const enabledApps = await getEnabledAppsForTenant(tenantId);
   if (!enabledApps.length) return {};
 
-  const allAppCodes = enabledApps.map((a) => a.appCode);
   const out: Record<string, TenantSnapshotEventData> = {};
 
   // Sequential to avoid hammering the DB; each assemble() already fans out internally.
   for (const app of enabledApps) {
     const bootstrap = await new BootstrapService().assemble(tenantId, app.appCode);
-    out[app.appCode] = buildEventDataForApp(tenantId, plan, app, allAppCodes, bootstrap);
+    out[app.appCode] = buildEventDataForApp(tenantId, plan, app, bootstrap);
   }
   return out;
 }

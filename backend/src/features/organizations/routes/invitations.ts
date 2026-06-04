@@ -149,7 +149,7 @@ export default async function invitationRoutes(
         inviterContext: {
           internalUserId: (request.userContext as { internalUserId?: string }).internalUserId,
           userId: (request.userContext as { userId?: string }).userId,
-          kindeUserId: request.userContext.kindeUserId,
+          idpSub: request.userContext.idpSub,
           name: request.userContext.name
         },
         message: (body.message as string) || undefined,
@@ -255,8 +255,8 @@ export default async function invitationRoutes(
       const body = request.body as Record<string, unknown>;
       const { token } = body;
 
-      // Use server-validated identity — never trust user-supplied kindeUserId
-      const kindeUserId = request.userContext.kindeUserId;
+      // Use server-validated identity — never trust user-supplied idpSub
+      const idpSub = request.userContext.idpSub;
       const authenticatedEmail = request.userContext.email;
 
       if (!token) {
@@ -266,7 +266,7 @@ export default async function invitationRoutes(
         });
       }
 
-      if (!kindeUserId || !authenticatedEmail) {
+      if (!idpSub || !authenticatedEmail) {
         return reply.code(401).send({
           error: 'Unauthorized',
           message: 'Authentication required'
@@ -275,7 +275,7 @@ export default async function invitationRoutes(
 
       const result = await acceptInvitationByToken({
         token: token as string,
-        kindeUserId,
+        idpSub,
         authenticatedEmail
       });
 

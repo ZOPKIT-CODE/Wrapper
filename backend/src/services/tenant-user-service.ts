@@ -223,7 +223,7 @@ export class TenantUserService {
   // Accept invitation
   static async acceptInvitation(
     invitationToken: string,
-    kindeUserId: string,
+    idpSub: string,
     userData: { email: string; firstName?: string; lastName?: string }
   ): Promise<typeof tenantUsers.$inferSelect> {
     try {
@@ -249,7 +249,7 @@ export class TenantUserService {
         // Create user
         const [user] = await tx.insert(tenantUsers).values({
           tenantId: invitation.tenantId,
-          idpSub: kindeUserId,
+          idpSub: idpSub,
           email: userData.email,
           firstName: userData.firstName ?? null,
           lastName: userData.lastName ?? null,
@@ -341,53 +341,49 @@ export class TenantUserService {
             })
             .where(eq(tenantUsers.userId, user.userId));
 
-          // Publish organization assignment created event (async, don't wait)
-          setImmediate(async () => {
-            try {
-              const { OrganizationAssignmentService } = await import('../features/organizations/services/organization-assignment-service.js');
+          // Publish organization.assignment.created in the SAME transaction (tx-bound
+          // outbox; the poller delivers post-commit; a failure rolls the acceptance back).
+          {
+            const { OrganizationAssignmentService } = await import('../features/organizations/services/organization-assignment-service.js');
 
-              // Get organization details for event
-              const primaryId = invitation.primaryEntityId;
-              const [organization] = primaryId
-                ? await db
-                    .select({
-                      entityId: entities.entityId,
-                      entityName: entities.entityName,
-                    })
-                    .from(entities)
-                    .where(and(
-                      eq(entities.entityId, primaryId),
-                      eq(entities.tenantId, invitation.tenantId)
-                    ))
-                    .limit(1)
-                : [];
+            // Get organization details for event
+            const primaryId = invitation.primaryEntityId;
+            const [orgRow] = primaryId
+              ? await tx
+                  .select({
+                    entityId: entities.entityId,
+                    entityName: entities.entityName,
+                  })
+                  .from(entities)
+                  .where(and(
+                    eq(entities.entityId, primaryId),
+                    eq(entities.tenantId, invitation.tenantId)
+                  ))
+                  .limit(1)
+              : [];
 
-              if (organization) {
-                const assignmentData = {
-                  assignmentId: `${user.userId}_${invitation.primaryEntityId}_${Date.now()}`,
-                  tenantId: invitation.tenantId,
-                  userId: user.userId,
-                  organizationId: invitation.primaryEntityId,
-                  organizationCode: organization.entityId,
-                  assignmentType: 'primary',
-                  isActive: true,
-                  assignedAt: new Date().toISOString(),
-                  priority: 1,
-                  assignedBy: invitation.invitedBy,
-                  metadata: {
-                    source: 'invitation_acceptance',
-                    invitationId: invitation.invitationId
-                  }
-                };
+            if (orgRow) {
+              const assignmentData = {
+                assignmentId: `${user.userId}_${invitation.primaryEntityId}_${Date.now()}`,
+                tenantId: invitation.tenantId,
+                userId: user.userId,
+                organizationId: invitation.primaryEntityId,
+                organizationCode: orgRow.entityId,
+                assignmentType: 'primary',
+                isActive: true,
+                assignedAt: new Date().toISOString(),
+                priority: 1,
+                assignedBy: invitation.invitedBy,
+                metadata: {
+                  source: 'invitation_acceptance',
+                  invitationId: invitation.invitationId
+                }
+              };
 
-                await OrganizationAssignmentService.publishOrgAssignmentCreated(assignmentData);
-                Logger.log('info', 'user', 'accept-invitation', 'Published organization assignment created event', { email: user.email });
-              }
-            } catch (err: unknown) {
-              const publishError = err as Error;
-              Logger.log('error', 'user', 'accept-invitation', 'Failed to publish org assignment event', { error: publishError.message });
+              await OrganizationAssignmentService.publishOrgAssignmentCreated(assignmentData, {}, tx);
+              Logger.log('info', 'user', 'accept-invitation', 'Queued organization assignment created event (tx)', { email: user.email });
             }
-          });
+          }
         }
 
         // Update invitation status
@@ -417,52 +413,44 @@ export class TenantUserService {
           }
         });
 
-        // Publish user creation event to Amazon MQ for suite sync
-        try {
+        // Publish user_created in the SAME transaction (tx-bound outbox — no
+        // synchronous SNS during the tx; the poller delivers post-commit; a
+        // publish/outbox failure rolls the invitation acceptance back).
+        {
           const firstName = user.firstName || '';
           const lastName = user.lastName || '';
 
           await snsSqsPublisher.publishUserEventToSuite('user_created', invitation.tenantId, user.userId, {
             userId: user.userId,
             email: user.email,
-            kindeUserId: user.idpSub,
+            idpSub: user.idpSub,
             firstName: firstName,
             lastName: lastName,
             name: [firstName, lastName].filter(Boolean).join(' ') || user.email,
             isActive: user.isActive !== undefined ? user.isActive : true,
             createdAt: user.createdAt ? (typeof user.createdAt === 'string' ? user.createdAt : user.createdAt.toISOString()) : new Date().toISOString()
-          });
-          Logger.log('info', 'user', 'accept-invitation', 'Published user_created event to Amazon MQ');
-        } catch (err: unknown) {
-          const streamError = err as Error;
-          Logger.log('error', 'user', 'accept-invitation', 'Failed to publish user_created event', { error: streamError.message });
+          }, 'system', tx);
+          Logger.log('info', 'user', 'accept-invitation', 'Queued user_created event (tx)');
         }
 
-        // Publish role_assigned for each role so other apps get the role (after transaction commits)
+        // Publish role_assigned for each role in the SAME transaction (tx-bound;
+        // the poller delivers post-commit; a failure rolls the acceptance back).
         if (roleAssignmentsToPublish.length > 0) {
           const tenantId = invitation.tenantId;
           const userId = user.userId;
           const assignedBy = invitation.invitedBy;
-          const assignments = roleAssignmentsToPublish;
-          setImmediate(async () => {
-            try {
-              for (const a of assignments) {
-                await snsSqsPublisher.publishRoleEventToSuite('role_assigned', tenantId, a.roleId, {
-                  assignmentId: a.id,
-                  userId,
-                  roleId: a.roleId,
-                  assignedAt: a.assignedAt ? (typeof a.assignedAt === 'string' ? a.assignedAt : a.assignedAt.toISOString()) : new Date().toISOString(),
-                  assignedBy,
-                  expiresAt: (a as { expiresAt?: Date | string }).expiresAt,
-                  entityId: (a as { organizationId?: string }).organizationId
-                });
-              }
-              Logger.log('info', 'user', 'accept-invitation', 'Published role_assigned events', { count: assignments.length });
-            } catch (err: unknown) {
-              const publishError = err as Error;
-              Logger.log('error', 'user', 'accept-invitation', 'Failed to publish role_assigned events', { error: publishError.message });
-            }
-          });
+          for (const a of roleAssignmentsToPublish) {
+            await snsSqsPublisher.publishRoleEventToSuite('role_assigned', tenantId, a.roleId, {
+              assignmentId: a.id,
+              userId,
+              roleId: a.roleId,
+              assignedAt: a.assignedAt ? (typeof a.assignedAt === 'string' ? a.assignedAt : a.assignedAt.toISOString()) : new Date().toISOString(),
+              assignedBy,
+              expiresAt: (a as { expiresAt?: Date | string }).expiresAt,
+              entityId: (a as { organizationId?: string }).organizationId
+            }, 'system', tx);
+          }
+          Logger.log('info', 'user', 'accept-invitation', 'Queued role_assigned events (tx)', { count: roleAssignmentsToPublish.length });
         }
 
         return user;
@@ -612,7 +600,7 @@ export class TenantUserService {
         .select({
           userId: tenantUsers.userId,
           tenantId: tenantUsers.tenantId,
-          kindeUserId: tenantUsers.idpSub,
+          idpSub: tenantUsers.idpSub,
           email: tenantUsers.email,
           firstName: tenantUsers.firstName,
           lastName: tenantUsers.lastName,
@@ -746,7 +734,7 @@ export class TenantUserService {
             user: {
               userId: user.userId,
               tenantId: user.tenantId,
-              kindeUserId: user.kindeUserId,
+              idpSub: user.idpSub,
               email: user.email,
               firstName: user.firstName,
               lastName: user.lastName,
@@ -946,7 +934,7 @@ export class TenantUserService {
           .select({
             userId: tenantUsers.userId,
             tenantId: tenantUsers.tenantId,
-            kindeUserId: tenantUsers.idpSub,
+            idpSub: tenantUsers.idpSub,
             email: tenantUsers.email,
             firstName: tenantUsers.firstName,
             lastName: tenantUsers.lastName,
@@ -1351,15 +1339,17 @@ export class TenantUserService {
           .returning();
         Logger.log('info', 'user', 'remove-user', 'Cancelled tenant invitations', { count: cancelledInvitations.length, email: user.email });
 
-        // 6. Publish user deletion event to Amazon MQ before deletion
-        try {
+        // 6. Publish user deletion event in the SAME transaction (tx-bound outbox —
+        // no synchronous SNS during the tx; the poller delivers post-commit; a
+        // publish/outbox failure rolls the removal back).
+        {
           const firstName = user.firstName || '';
           const lastName = user.lastName || '';
-          // Use kindeUserId as entityId — FA/CRM look up wrapper_user_id_mapping by kindeId
+          // Use idpSub as entityId — FA/CRM look up wrapper_user_id_mapping by idp id
           const entityIdForEvent = user.idpSub || user.userId;
           await snsSqsPublisher.publishUserEventToSuite('user_deleted', tenantId, entityIdForEvent, {
             userId: user.userId,
-            kindeUserId: user.idpSub,
+            idpSub: user.idpSub,
             email: user.email,
             firstName: firstName,
             lastName: lastName,
@@ -1367,11 +1357,8 @@ export class TenantUserService {
             deletedAt: new Date().toISOString(),
             deletedBy: removedBy,
             reason: 'user_removed_from_tenant'
-          });
-          Logger.log('info', 'user', 'remove-user', 'Published user_deleted event to AWS MQ');
-        } catch (err: unknown) {
-          const streamError = err as Error;
-          Logger.log('error', 'user', 'remove-user', 'Failed to publish user_deleted event', { error: streamError.message });
+          }, 'system', tx);
+          Logger.log('info', 'user', 'remove-user', 'Queued user_deleted event (tx)');
         }
 
         // 6b. Clear audit_logs reference to this user so FK does not block delete (preserve logs, dissociate user)
@@ -1410,42 +1397,41 @@ export class TenantUserService {
   // Remove active user
   static async removeActiveUser(userId: string, tenantId: string): Promise<{ success: boolean; message: string; data: typeof tenantUsers.$inferSelect }> {
     try {
-      const [updatedUser] = await db
-        .update(tenantUsers)
-        .set({
-          isActive: false,
-          updatedAt: new Date()
-        })
-        .where(and(
-          eq(tenantUsers.userId, userId),
-          eq(tenantUsers.tenantId, tenantId)
-        ))
-        .returning();
+      // Atomic: the deactivation and the user_deactivated event commit in ONE tx
+      // (tx-bound publish; the poller delivers post-commit; a failure rolls back).
+      const [updatedUser] = await db.transaction(async (tx) => {
+        const rows = await tx
+          .update(tenantUsers)
+          .set({
+            isActive: false,
+            updatedAt: new Date()
+          })
+          .where(and(
+            eq(tenantUsers.userId, userId),
+            eq(tenantUsers.tenantId, tenantId)
+          ))
+          .returning();
 
-      if (!updatedUser) {
-        throw new Error('User not found');
-      }
+        if (rows.length === 0) {
+          throw new Error('User not found');
+        }
 
-      // Publish user deactivation event to Amazon MQ
-      try {
-        const firstName = updatedUser.firstName || '';
-        const lastName = updatedUser.lastName || '';
-
-        await snsSqsPublisher.publishUserEventToSuite('user_deactivated', tenantId, updatedUser.userId, {
-          userId: updatedUser.userId,
-          email: updatedUser.email,
+        const u = rows[0];
+        const firstName = u.firstName || '';
+        const lastName = u.lastName || '';
+        await snsSqsPublisher.publishUserEventToSuite('user_deactivated', tenantId, u.userId, {
+          userId: u.userId,
+          email: u.email,
           firstName: firstName,
           lastName: lastName,
-          name: [firstName, lastName].filter(Boolean).join(' ') || updatedUser.email,
+          name: [firstName, lastName].filter(Boolean).join(' ') || u.email,
           deactivatedAt: new Date().toISOString(),
           deactivatedBy: null, // System-initiated deactivation
           reason: 'user_deactivated'
-        });
-        Logger.log('info', 'user', 'remove-active-user', 'Published user_deactivated event to AWS MQ');
-      } catch (err: unknown) {
-        const publishError = err as Error;
-        Logger.log('error', 'user', 'remove-active-user', 'Failed to publish user_deactivated event', { error: publishError.message });
-      }
+        }, 'system', tx);
+        Logger.log('info', 'user', 'remove-active-user', 'Queued user_deactivated event (tx)');
+        return rows;
+      });
 
       return {
         success: true,
@@ -1501,9 +1487,13 @@ export class TenantUserService {
           .from(userRoleAssignments)
           .where(eq(userRoleAssignments.userId, userId));
 
-        // Publish role unassignment events for removed roles
-        for (const assignment of existingAssignments) {
-          try {
+        // Atomic: the role swap (delete old + insert new) and ALL its events
+        // (role_unassigned per removed role + role_assigned for the new role) commit
+        // in ONE tx (tx-bound publishes; the poller delivers post-commit; a failure
+        // rolls the whole swap back).
+        const newRoleAssignment = await db.transaction(async (tx) => {
+          // Unassignment events for the roles being removed
+          for (const assignment of existingAssignments) {
             await snsSqsPublisher.publishRoleEventToSuite('role_unassigned', tenantId, assignment.roleId, {
               assignmentId: assignment.id,
               userId: userId,
@@ -1511,47 +1501,38 @@ export class TenantUserService {
               unassignedAt: new Date().toISOString(),
               unassignedBy: null, // Will be set by caller if available
               reason: 'Role updated to new assignment'
-            });
-            Logger.log('info', 'role', 'update-user-role', 'Published role unassignment event successfully');
-          } catch (err: unknown) {
-            const streamError = err as Error;
-            Logger.log('error', 'role', 'update-user-role', 'Failed to publish role_unassigned event', { error: streamError.message });
+            }, 'system', tx);
           }
-        }
 
-        // Remove existing role assignments
-        await db
-          .delete(userRoleAssignments)
-          .where(eq(userRoleAssignments.userId, userId));
+          // Remove existing role assignments
+          await tx
+            .delete(userRoleAssignments)
+            .where(eq(userRoleAssignments.userId, userId));
 
-        // Add new role assignment (assignedBy is required by schema; use userId as fallback)
-        const [newRoleAssignment] = await db
-          .insert(userRoleAssignments)
-          .values({
-            userId: userId,
-            roleId: roleId,
-            assignedBy: userId,
-            assignedAt: new Date(),
-            isActive: true
-          })
-          .returning();
+          // Add new role assignment (assignedBy is required by schema; use userId as fallback)
+          const [created] = await tx
+            .insert(userRoleAssignments)
+            .values({
+              userId: userId,
+              roleId: roleId,
+              assignedBy: userId,
+              assignedAt: new Date(),
+              isActive: true
+            })
+            .returning();
 
-        // Publish role assignment event for new role
-        try {
           await snsSqsPublisher.publishRoleEventToSuite('role_assigned', tenantId, roleId, {
-            assignmentId: newRoleAssignment.id,
+            assignmentId: created.id,
             userId: userId,
             roleId: roleId,
-            assignedAt: newRoleAssignment.assignedAt ? (typeof newRoleAssignment.assignedAt === 'string' ? newRoleAssignment.assignedAt : newRoleAssignment.assignedAt.toISOString()) : new Date().toISOString(),
+            assignedAt: created.assignedAt ? (typeof created.assignedAt === 'string' ? created.assignedAt : created.assignedAt.toISOString()) : new Date().toISOString(),
             assignedBy: null, // Will be set by caller if available
-            expiresAt: (newRoleAssignment as { expiresAt?: Date | string }).expiresAt,
-            entityId: (newRoleAssignment as { organizationId?: string }).organizationId
-          });
-          Logger.log('info', 'role', 'update-user-role', 'Published role assignment event successfully');
-        } catch (err: unknown) {
-          const streamError = err as Error;
-          Logger.log('error', 'role', 'update-user-role', 'Failed to publish role_assigned event', { error: streamError.message });
-        }
+            expiresAt: (created as { expiresAt?: Date | string }).expiresAt,
+            entityId: (created as { organizationId?: string }).organizationId
+          }, 'system', tx);
+          Logger.log('info', 'role', 'update-user-role', 'Queued role unassign/assign events (tx)');
+          return created;
+        });
 
         return {
           success: true,

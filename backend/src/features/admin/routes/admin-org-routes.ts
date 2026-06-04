@@ -187,19 +187,23 @@ export default async function adminOrgRoutes(fastify: FastifyInstance): Promise<
           if (user) {
             const u = user as Record<string, unknown>;
             const prefs = u.preferences as Record<string, unknown> | undefined;
+            // tenant_users has no invited_by column, so detect via preferences and the
+            // invitedAt timestamp. (The old `invitedBy !== null` branch was `undefined !==
+            // null` → always true.) Not gated on onboardingCompleted: invited users join
+            // an already-onboarded tenant and must skip onboarding regardless of that flag.
             isInvitedUser = prefs?.userType === 'INVITED_USER' ||
                           prefs?.isInvitedUser === true ||
-                          (u.invitedBy as unknown) !== null ||
-                          (u.invitedAt as unknown) !== null;
+                          (u.invitedAt as unknown) != null;
 
             if (isInvitedUser && !user.isTenantAdmin) {
               userType = 'INVITED_USER';
             } else if (user.onboardingCompleted) {
               userType = 'EXISTING_USER';
             }
-            // Use DB as source of truth so auth-status matches onboarding state
+            // Use DB as source of truth so auth-status matches onboarding state. Invited
+            // users never need onboarding even if their own flag is still false.
             onboardingCompleted = user.onboardingCompleted === true;
-            needsOnboarding = !onboardingCompleted;
+            needsOnboarding = !onboardingCompleted && !(isInvitedUser && !user.isTenantAdmin);
           }
         } catch (err: unknown) {
           const error = err as Error;
@@ -378,7 +382,7 @@ export default async function adminOrgRoutes(fastify: FastifyInstance): Promise<
             .select({
               tenantId: tenants.tenantId,
               companyName: tenants.companyName,
-              kindeOrgId: tenants.idpOrgId
+              idpOrgId: tenants.idpOrgId
             })
             .from(tenants)
             .where(eq(tenants.tenantId, tenantId))

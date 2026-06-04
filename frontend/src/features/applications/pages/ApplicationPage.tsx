@@ -13,7 +13,7 @@ import {
 import { useNavigate } from "@tanstack/react-router";
 import { useApplications } from "@/hooks/useApplications";
 import { useUserContextSafe } from "@/contexts/UserContextProvider";
-import { useKindeAuth } from "@/lib/auth/cognito-auth";
+import { useAuth } from "@/lib/auth/cognito-auth";
 import { LoadingState } from "@/features/applications/components/LoadingState";
 import { Application } from "@/types/application";
 import { config } from "@/lib/config";
@@ -902,7 +902,7 @@ function InvitedMarketplaceView({ applications, onLaunch, onDetails }: {
     useMarketplaceStyles()
 
     const ctx = useUserContextSafe()
-    const { user: kindeUser } = useKindeAuth()
+    const { user: idpUser } = useAuth()
     const navigate = useNavigate()
 
     const user = ctx?.user ?? null
@@ -912,8 +912,8 @@ function InvitedMarketplaceView({ applications, onLaunch, onDetails }: {
 
     // Prefer Kinde's explicit name fields (givenName + familyName) over user.name
     // which can hold the company/account name instead of the person's name.
-    const kindeFullName = [kindeUser?.givenName, kindeUser?.familyName].filter(Boolean).join(' ')
-    const fullName = kindeFullName || user?.name || kindeUser?.email?.split('@')[0] || 'there'
+    const idpFullName = [idpUser?.givenName, idpUser?.familyName].filter(Boolean).join(' ')
+    const fullName = idpFullName || user?.name || idpUser?.email?.split('@')[0] || 'there'
 
     const companyName = tenant?.companyName || 'Zopkit'
 

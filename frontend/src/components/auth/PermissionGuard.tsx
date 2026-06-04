@@ -1,6 +1,6 @@
 import { ReactNode, useState, useEffect } from 'react';
 import { Navigate } from '@tanstack/react-router';
-import { useKindeAuth } from '@/lib/auth/cognito-auth';
+import { useAuth } from '@/lib/auth/cognito-auth';
 import AnimatedLoader from '@/components/common/feedback/AnimatedLoader';
 import { logger } from '@/lib/logger';
 
@@ -11,14 +11,14 @@ interface PermissionGuardProps {
 }
 
 /**
- * PermissionGuard - Protects routes based on Kinde permissions
+ * PermissionGuard - Protects routes based on IdP permissions
  * 
  * Usage:
  * <PermissionGuard requiredPermission="admin:dashboard:view">
  *   <AdminDashboard />
  * </PermissionGuard>
  * 
- * Configure permissions in Kinde Dashboard:
+ * Configure permissions in the IdP dashboard:
  * 1. Go to Settings > Permissions
  * 2. Create permission with key: "admin:dashboard:view"
  * 3. Assign to appropriate roles
@@ -29,7 +29,7 @@ export function PermissionGuard({
     requiredPermission,
     fallbackPath = '/dashboard/applications'
 }: PermissionGuardProps) {
-    const { isLoading, isAuthenticated, getPermission, getPermissions } = useKindeAuth();
+    const { isLoading, isAuthenticated, getPermission, getPermissions } = useAuth();
     const [permissionChecked, setPermissionChecked] = useState(false);
     const [hasPermission, setHasPermission] = useState(false);
 
@@ -43,7 +43,7 @@ export function PermissionGuard({
                 // getPermissions() returns a Promise, so we need to await it
                 const allPermissions = await getPermissions();
 
-                logger.debug('🔍 All Kinde Permissions:', allPermissions);
+                logger.debug('🔍 All Permissions:', allPermissions);
 
                 // Handle different permission formats from Kinde
                 let hasRequiredPermission = false;
@@ -79,7 +79,7 @@ export function PermissionGuard({
                 if (!hasRequiredPermission) {
                     logger.warn(`❌ Access denied: Missing permission "${requiredPermission}"`);
                     logger.debug('💡 Troubleshooting steps:');
-                    logger.debug('1. Verify permission exists in Kinde Dashboard: Settings > Permissions');
+                    logger.debug('1. Verify permission exists in the IdP dashboard: Settings > Permissions');
                     logger.debug('2. Check permission key matches exactly:', requiredPermission);
                     logger.debug('3. Ensure permission is assigned to user via role or directly');
                     logger.debug('4. **IMPORTANT**: Log out and log back in to refresh permissions');
@@ -139,7 +139,7 @@ export function MultiPermissionGuard({
     requiredPermissions,
     fallbackPath = '/dashboard/applications'
 }: MultiPermissionGuardProps) {
-    const { isLoading, isAuthenticated, getPermissions } = useKindeAuth();
+    const { isLoading, isAuthenticated, getPermissions } = useAuth();
 
     if (isLoading) {
         return (
@@ -186,7 +186,7 @@ export function AnyPermissionGuard({
     requiredPermissions,
     fallbackPath = '/dashboard/applications'
 }: AnyPermissionGuardProps) {
-    const { isLoading, isAuthenticated, getPermissions } = useKindeAuth();
+    const { isLoading, isAuthenticated, getPermissions } = useAuth();
 
     if (isLoading) {
         return (

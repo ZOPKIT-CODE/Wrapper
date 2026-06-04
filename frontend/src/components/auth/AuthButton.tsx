@@ -1,5 +1,5 @@
 import React from 'react';
-import { useKindeAuth } from '@/lib/auth/cognito-auth';
+import { useAuth } from '@/lib/auth/cognito-auth';
 import { Button } from '../ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { 
@@ -59,7 +59,7 @@ export const AuthButton: React.FC<AuthButtonProps> = ({
   redirectUri,
   isCreateOrg = false // Add default value
 }) => {
-  const { login, logout, isAuthenticated, isLoading, user } = useKindeAuth();
+  const { login, logout, isAuthenticated, isLoading, user } = useAuth();
 
   const config = providerConfig[provider];
 
@@ -67,25 +67,8 @@ export const AuthButton: React.FC<AuthButtonProps> = ({
   const finalOrgCode = orgCode;
 
   const handleLogin = () => {
-    const loginOptions: any = {};
-
-    // Use custom auth with connection ID for Google if configured
-    if (provider === 'google') {
-      const googleConnectionId = import.meta.env.VITE_KINDE_GOOGLE_CONNECTION_ID;
-      if (googleConnectionId) {
-        // Try both camelCase and snake_case for compatibility
-        loginOptions.connectionId = googleConnectionId;
-        loginOptions.connection_id = googleConnectionId;
-        logger.debug('🔐 AuthButton: Using custom auth with Google connection ID:', googleConnectionId);
-      } else {
-        // Fallback to connection_id if connection ID not configured
-        loginOptions.connection_id = provider;
-        logger.debug('🔐 AuthButton: Using standard auth with connection_id (custom auth not configured)');
-      }
-    } else {
-      // For other providers, use connection_id
-      loginOptions.connection_id = provider;
-    }
+    // Cognito: pass the provider straight through to federate (skips the hosted-UI selector).
+    const loginOptions: any = { provider };
 
     // Add organization creation flag if specified
     if (isCreateOrg) {

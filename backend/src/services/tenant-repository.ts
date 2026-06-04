@@ -9,7 +9,7 @@ export class TenantRepository {
         tenantId: tenants.tenantId,
         companyName: tenants.companyName,
         subdomain: tenants.subdomain,
-        kindeOrgId: tenants.idpOrgId,
+        idpOrgId: tenants.idpOrgId,
         adminEmail: tenants.adminEmail,
         isActive: tenants.isActive,
         isVerified: tenants.isVerified,
@@ -23,13 +23,13 @@ export class TenantRepository {
     return tenant || null;
   }
 
-  static async getByKindeOrgId(kindeOrgId: string): Promise<Record<string, unknown> | null> {
+  static async getByIdpOrgId(idpOrgId: string): Promise<Record<string, unknown> | null> {
     const [tenant] = await db
       .select({
         tenantId: tenants.tenantId,
         companyName: tenants.companyName,
         subdomain: tenants.subdomain,
-        kindeOrgId: tenants.idpOrgId,
+        idpOrgId: tenants.idpOrgId,
         adminEmail: tenants.adminEmail,
         isActive: tenants.isActive,
         isVerified: tenants.isVerified,
@@ -37,7 +37,7 @@ export class TenantRepository {
         updatedAt: tenants.updatedAt,
       })
       .from(tenants)
-      .where(eq(tenants.idpOrgId, kindeOrgId))
+      .where(eq(tenants.idpOrgId, idpOrgId))
       .limit(1);
 
     return tenant || null;

@@ -1,6 +1,6 @@
 import { createRootRoute, createRoute, createRouter, Outlet, Navigate, useNavigate } from '@tanstack/react-router'
 import { Suspense, useMemo } from 'react'
-import { useKindeAuth } from '@/lib/auth/cognito-auth'
+import { useAuth } from '@/lib/auth/cognito-auth'
 import { useUserContextSafe } from '@/contexts/UserContextProvider'
 
 import { ZopkitRoundLoader } from '@/components/common/feedback/ZopkitRoundLoader'
@@ -86,7 +86,7 @@ function DashboardIndexRedirect() {
 }
 
 function RootLayout() {
-  const { isAuthenticated, isLoading } = useKindeAuth()
+  const { isAuthenticated, isLoading } = useAuth()
 
   const authState = useMemo(
     () => ({ isAuthenticated: !!isAuthenticated, isLoading: !!isLoading }),
@@ -114,7 +114,7 @@ function RootLayout() {
 }
 
 function AuthRedirectLanding() {
-  const { isAuthenticated } = useKindeAuth()
+  const { isAuthenticated } = useAuth()
   if (isAuthenticated) return <Navigate to="/" />
   return <Landing />
 }

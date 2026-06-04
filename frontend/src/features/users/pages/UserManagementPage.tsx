@@ -19,6 +19,7 @@ import {
   useRemoveUser,
   useAssignRole,
   useRemoveRoleAssignment,
+  useAddOrganizationMembership,
   useRemoveOrganizationMembership,
   useResendInvitation,
   useCancelInvitation,
@@ -219,6 +220,7 @@ export default function UserManagementPage() {
   const removeUser = useRemoveUser()
   const assignRole = useAssignRole()
   const removeRoleAssignment = useRemoveRoleAssignment()
+  const addOrganizationMembership = useAddOrganizationMembership()
   const removeOrganizationMembership = useRemoveOrganizationMembership()
   const resendInvitation = useResendInvitation()
   const cancelInvitation = useCancelInvitation()
@@ -432,10 +434,14 @@ export default function UserManagementPage() {
               { onSuccess: () => setMembershipRemoveTarget(null) },
             )
           }
+          onAddOrganizationMembership={(userId, data) =>
+            addOrganizationMembership.mutate({ userId, data })
+          }
           updateProfileIsPending={updateProfile.isPending}
           updateStatusIsPending={updateStatus.isPending}
           removeRoleAssignmentIsPending={removeRoleAssignment.isPending}
           removeMembershipIsPending={removeOrganizationMembership.isPending}
+          addMembershipIsPending={addOrganizationMembership.isPending}
           removingMembershipId={removeOrganizationMembership.variables?.membershipId ?? null}
           detailPhoneDraft={detailPhoneDraft}
           setDetailPhoneDraft={setDetailPhoneDraft}

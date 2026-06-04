@@ -65,9 +65,17 @@ export const PERMISSIONS = {
   CREDIT_CONFIG_MANAGE: 'credit_config.settings.manage',
 
   // ── CRM ───────────────────────────────────────────────────────────
-  CRM_SYSTEM_SETTINGS_READ: 'crm.system.settings_read',
-  CRM_SYSTEM_USERS_READ: 'crm.system.users_read',
-  CRM_SYSTEM_USERS_UPDATE: 'crm.system.users_update',
+  // Note: the standalone `crm.system.*` and `crm.custom_fields.*` codes were
+  // consolidated under `crm.layouts.*` (per-module admin umbrella) — see
+  // data/permission-matrix.ts. Org-wide admin moved to wrapper tenant admin.
+  CRM_LAYOUTS_READ: 'crm.layouts.read',
+  CRM_LAYOUTS_MANAGE: 'crm.layouts.manage',
+  CRM_LAYOUTS_FIELDS_READ: 'crm.layouts.fields_read',
+  CRM_LAYOUTS_FIELDS_MANAGE: 'crm.layouts.fields_manage',
+  CRM_LAYOUTS_SYSCONFIG_READ: 'crm.layouts.sysconfig_read',
+  CRM_LAYOUTS_SYSCONFIG_CREATE: 'crm.layouts.sysconfig_create',
+  CRM_LAYOUTS_SYSCONFIG_UPDATE: 'crm.layouts.sysconfig_update',
+  CRM_LAYOUTS_SYSCONFIG_DELETE: 'crm.layouts.sysconfig_delete',
 
   // ── Permissions ───────────────────────────────────────────────────
   PERMISSIONS_ASSIGNMENT_READ: 'permissions.assignment.read',

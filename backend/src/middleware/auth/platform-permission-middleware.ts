@@ -19,7 +19,7 @@ import Logger from '../../utils/logger.js';
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Short-lived in-process cache to avoid a DB hit on every request.
-// Key = kindeUserId, value = the staff row + expiry.
+// Key = idpSub, value = the staff row + expiry.
 const STAFF_CACHE_TTL_MS = 60 * 1000; // 1 minute — short so revocations propagate quickly
 interface StaffCacheEntry {
   staff: typeof platformStaff.$inferSelect | null;
@@ -27,15 +27,15 @@ interface StaffCacheEntry {
 }
 const staffCache = new Map<string, StaffCacheEntry>();
 
-function invalidateStaffCache(kindeUserId: string): void {
-  staffCache.delete(kindeUserId);
+function invalidateStaffCache(idpSub: string): void {
+  staffCache.delete(idpSub);
 }
 export { invalidateStaffCache };
 
 async function getActivePlatformStaff(
-  kindeUserId: string
+  idpSub: string
 ): Promise<typeof platformStaff.$inferSelect | null> {
-  const cached = staffCache.get(kindeUserId);
+  const cached = staffCache.get(idpSub);
   if (cached && Date.now() - cached.cachedAt < STAFF_CACHE_TTL_MS) {
     return cached.staff;
   }
@@ -45,7 +45,7 @@ async function getActivePlatformStaff(
     .from(platformStaff)
     .where(
       and(
-        eq(platformStaff.idpSub, kindeUserId),
+        eq(platformStaff.idpSub, idpSub),
         eq(platformStaff.isActive, true),
         gt(platformStaff.expiresAt, new Date())
       )
@@ -53,7 +53,7 @@ async function getActivePlatformStaff(
     .limit(1);
 
   const result = staff ?? null;
-  staffCache.set(kindeUserId, { staff: result, cachedAt: Date.now() });
+  staffCache.set(idpSub, { staff: result, cachedAt: Date.now() });
   return result;
 }
 
@@ -142,14 +142,14 @@ export function requirePlatformPermission(permission: PlatformPermission) {
     }
 
     // Resolve Kinde user id for optional platform staff lookup.
-    const kindeUserId = userContext.kindeUserId ?? userContext.userId;
-    if (kindeUserId) {
-      const staff = await getActivePlatformStaff(kindeUserId);
+    const idpSub = userContext.idpSub ?? userContext.userId;
+    if (idpSub) {
+      const staff = await getActivePlatformStaff(idpSub);
 
       if (staff) {
         // Check expiry explicitly (belt-and-suspenders — the DB query already filters).
         if (new Date() > staff.expiresAt) {
-          invalidateStaffCache(kindeUserId);
+          invalidateStaffCache(idpSub);
           reply.code(403).send({
             error: 'Forbidden',
             message: `Your platform access expired at ${staff.expiresAt.toISOString()}. Request a renewal.`,

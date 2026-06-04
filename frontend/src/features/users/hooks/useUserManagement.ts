@@ -6,6 +6,7 @@ import {
   InviteUserData,
   UpdateProfileData,
   AssignRoleData,
+  AssignOrganizationData,
 } from '@/lib/api/users'
 import { toast } from 'sonner'
 
@@ -165,6 +166,21 @@ export function useRemoveRoleAssignment() {
     },
     onError: (err: Error & { response?: { data?: { error?: string } } }) => {
       toast.error(err?.response?.data?.error || 'Failed to remove role')
+    },
+  })
+}
+
+export function useAddOrganizationMembership() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ userId, data }: { userId: string; data: AssignOrganizationData }) =>
+      usersAPI.addOrganizationMembership(userId, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: userKeys.all })
+      toast.success('Organization assigned')
+    },
+    onError: (err: Error & { response?: { data?: { error?: string } } }) => {
+      toast.error(err?.response?.data?.error || 'Failed to assign organization')
     },
   })
 }

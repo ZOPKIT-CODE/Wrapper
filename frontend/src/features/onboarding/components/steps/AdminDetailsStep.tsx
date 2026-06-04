@@ -10,7 +10,7 @@ import { UserClassification } from '../FlowSelector';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Info, CheckCircle2, XCircle, Loader2, ShieldCheck } from 'lucide-react';
 import React, { memo, useEffect, useState } from 'react';
-import { useKindeAuth } from '@/lib/auth/cognito-auth';
+import { useAuth } from '@/lib/auth/cognito-auth';
 import { useWatch } from 'react-hook-form';
 import { getCountryConfig } from '../../config/countryConfig';
 import { onboardingAPI } from '@/lib/api';
@@ -36,7 +36,7 @@ interface AdminDetailsStepProps {
 }
 
 export const AdminDetailsStep = memo(({ form, userClassification }: AdminDetailsStepProps) => {
-  const { user } = useKindeAuth();
+  const { user } = useAuth();
   const { addToast } = useToast();
   
   // Watch tax registration and PAN fields
@@ -91,10 +91,10 @@ export const AdminDetailsStep = memo(({ form, userClassification }: AdminDetails
   
   // Sync Admin Email (and name) from Kinde only once on mount so form state matches display.
   // Run only once when user is available to avoid overwriting user-typed/cleared values (fixes state issues when typing and backspacing).
-  const hasSyncedFromKindeRef = React.useRef(false);
+  const hasSyncedFromIdpRef = React.useRef(false);
   React.useLayoutEffect(() => {
-    if (!user?.email || hasSyncedFromKindeRef.current) return;
-    hasSyncedFromKindeRef.current = true;
+    if (!user?.email || hasSyncedFromIdpRef.current) return;
+    hasSyncedFromIdpRef.current = true;
     const updates: Array<{ field: any; value: any }> = [];
     const currentAdminEmail = form.getValues('adminEmail');
     if (!currentAdminEmail || (typeof currentAdminEmail === 'string' && !currentAdminEmail.trim())) {
@@ -277,7 +277,7 @@ export const AdminDetailsStep = memo(({ form, userClassification }: AdminDetails
                         </TooltipTrigger>
                         <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                           <p className="font-semibold mb-1">Mandatory Field</p>
-                          <p>Primary email address for the administrator account. Automatically filled from your Kinde authentication. Used for login, account recovery, important notifications, and official communications.</p>
+                          <p>Primary email address for the administrator account. Automatically filled from your account. Used for login, account recovery, important notifications, and official communications.</p>
                         </TooltipContent>
                       </Tooltip>
                 </FormLabel>
@@ -291,7 +291,7 @@ export const AdminDetailsStep = memo(({ form, userClassification }: AdminDetails
                     placeholder={personalizedContent.emailPlaceholder}
                   />
                 </FormControl>
-                {/* Don't show validation error when field is read-only and auto-filled from Kinde */}
+                {/* Don't show validation error when field is read-only and auto-filled from auth provider */}
                 {!user?.email && <FormMessage />}
                 {personalizedContent.showDomainIntegration && (
                   <p className="text-xs text-green-600 mt-1 font-medium flex items-center gap-1">

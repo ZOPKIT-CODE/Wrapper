@@ -29,20 +29,20 @@ export class CacheInvalidationService {
     try {
       Logger.log('info', 'cache', 'invalidate-user-role-cache', `🗑️ Invalidating cache for user role change: ${userId}`);
 
-      // Get the user's Kinde info to invalidate the right cache keys
-      const user = await this.getUserKindeInfo(userId);
+      // Get the user's IdP info to invalidate the right cache keys
+      const user = await this.getUserIdpInfo(userId);
       if (!user) {
-        Logger.log('warning', 'cache', 'invalidate-user-role-cache', `⚠️ Could not find Kinde info for user ${userId}`);
+        Logger.log('warning', 'cache', 'invalidate-user-role-cache', `⚠️ Could not find IdP info for user ${userId}`);
         return;
       }
 
       // Invalidate user-specific cache
       await DistributedSSOCache.invalidateUserCache(userId, tenantId);
 
-      // Also invalidate auth cache if we have Kinde info (orgCode from tenant join if needed)
-      const userWithOrg = user as { kindeUserId: string | null; orgCode?: string };
-      if (userWithOrg.kindeUserId && userWithOrg.orgCode) {
-        const authKey = `auth:${userWithOrg.kindeUserId}:${userWithOrg.orgCode}`;
+      // Also invalidate auth cache if we have IdP info (orgCode from tenant join if needed)
+      const userWithOrg = user as { idpSub: string | null; orgCode?: string };
+      if (userWithOrg.idpSub && userWithOrg.orgCode) {
+        const authKey = `auth:${userWithOrg.idpSub}:${userWithOrg.orgCode}`;
         await DistributedSSOCache.invalidateUserCache(authKey);
       }
 
@@ -68,9 +68,8 @@ export class CacheInvalidationService {
       Logger.log('info', 'cache', 'invalidate-user-permissions-cache', `🗑️ Invalidating permissions cache: ${userId}${appCode ? ` for ${appCode}` : ''}`);
 
       if (appCode) {
-        // Invalidate specific app permissions
-        const permKey = `perms:${userId}:${tenantId}:${appCode}`;
-        await DistributedSSOCache.invalidateAppCache(permKey);
+        // Invalidate this user's permissions for the specific app (exact key).
+        await DistributedSSOCache.invalidateUserAppPermissions(userId, tenantId, appCode);
       } else {
         // Invalidate all user permissions
         await DistributedSSOCache.invalidateUserCache(userId, tenantId);
@@ -172,7 +171,7 @@ export class CacheInvalidationService {
   
   // Helper methods
   
-  static async getUserKindeInfo(userId: string): Promise<{ kindeUserId: string | null; orgCode?: string } | null> {
+  static async getUserIdpInfo(userId: string): Promise<{ idpSub: string | null; orgCode?: string } | null> {
     try {
       // This would query your database to get Kinde user info
       const { db } = await import('../../db/index.js');
@@ -181,7 +180,7 @@ export class CacheInvalidationService {
       
       const [user] = await db
         .select({
-          kindeUserId: tenantUsers.idpSub,
+          idpSub: tenantUsers.idpSub,
           // You'd need to join with tenant to get orgCode
         })
         .from(tenantUsers)

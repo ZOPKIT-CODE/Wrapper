@@ -327,7 +327,13 @@ class PermissionService {
       updates.restrictions = restrictions ?? null;
     }
 
-    const updatedRole = await db
+    // Atomic: update the role + queue the role_updated and role_permissions_changed
+    // events in ONE tx (tx-bound publishes write the outbox rows in this tx and skip
+    // synchronous SNS — the poller delivers after commit; a publish/outbox failure
+    // rolls back the role update). NOTE: logAuditEvent runs on its own db handle
+    // (no tx param), matching the rest of the fleet — audit is best-effort, not atomic.
+    const updatedRole = await db.transaction(async (tx) => {
+      const rows = await tx
       .update(customRoles)
       .set(updates as Partial<typeof customRoles.$inferInsert>)
       .where(
@@ -349,9 +355,8 @@ class PermissionService {
       newValues: updates
     });
 
-    // Publish role change event to AWS MQ for real-time sync
-    try {
-      const row = updatedRole[0] as typeof customRoles.$inferSelect;
+    // Publish role change event to the suite (tx-bound outbox).
+      const row = rows[0] as typeof customRoles.$inferSelect;
       await snsSqsPublisher.publishRoleEventToSuite('role_updated', tenantId, row.roleId, {
         roleId: row.roleId,
         roleName: row.roleName,
@@ -362,7 +367,7 @@ class PermissionService {
           : null,
         updatedBy: updatedBy,
         updatedAt: (row.updatedAt ?? new Date()).toISOString()
-      });
+      }, 'system', tx);
 
       Logger.log('info', 'role', 'update-role', 'Published role_updated event');
 
@@ -373,40 +378,39 @@ class PermissionService {
         eventType: 'role_permissions_changed',
         tenantId: tenantId,
         entityType: 'role',
-        entityId: (updatedRole[0] as typeof customRoles.$inferSelect).roleId,
+        entityId: row.roleId,
         action: 'permissions_updated',
         data: {
-          roleId: (updatedRole[0] as typeof customRoles.$inferSelect).roleId,
-          roleName: (updatedRole[0] as typeof customRoles.$inferSelect).roleName,
-          permissions: typeof (updatedRole[0] as typeof customRoles.$inferSelect).permissions === 'string' ? JSON.parse((updatedRole[0] as typeof customRoles.$inferSelect).permissions as string) : (updatedRole[0] as typeof customRoles.$inferSelect).permissions,
+          roleId: row.roleId,
+          roleName: row.roleName,
+          permissions: typeof row.permissions === 'string' ? JSON.parse(row.permissions as string) : row.permissions,
           isActive: true,
-          description: (updatedRole[0] as typeof customRoles.$inferSelect).description,
-          scope: ((updatedRole[0] as Record<string, unknown>).scope as string) || 'organization'
+          description: row.description,
+          scope: ((row as Record<string, unknown>).scope as string) || 'organization'
         },
         metadata: {
-          correlationId: `role_permissions_${(updatedRole[0] as typeof customRoles.$inferSelect).roleId}_${Date.now()}`,
+          correlationId: `role_permissions_${row.roleId}_${Date.now()}`,
           version: '1.0',
           sourceTimestamp: new Date().toISOString(),
           sourceApp: 'wrapper'
         }
       };
 
-      // Publish to AWS MQ
+      // Publish to the suite (tx-bound outbox).
       const result = await snsSqsPublisher.publishInterAppEvent({
         eventType: 'role_permissions_changed',
         sourceApplication: 'wrapper',
         targetApplication: 'crm',
         tenantId: tenantId,
         entityId: roleId,
-        eventData: eventData
+        eventData: eventData,
+        tx,
       });
 
       Logger.log('info', 'role', 'update-role', 'Published role permissions change event to AWS MQ', { roleId, eventId: result?.eventId });
-    } catch (err: unknown) {
-      const error = err as Error;
-      Logger.log('warning', 'role', 'update-role', 'Failed to publish role change event', { error: error.message });
-      // Don't fail the role update if event publishing fails
-    }
+
+      return rows;
+    });
 
     return updatedRole[0] as typeof customRoles.$inferSelect;
   }
@@ -603,77 +607,70 @@ class PermissionService {
     if (existing.length > 0) {
       Logger.log('info', 'role', 'assign-role', 'Updating existing role assignment', { existingAssignmentId: existing[0].id, wasActive: existing[0].isActive });
       
-      // Update existing assignment
-      const updated = await db
-        .update(userRoleAssignments)
-        .set({
-          isActive: true,
-          expiresAt: expiresAt ? new Date(expiresAt) : null,
-          assignedBy,
-          assignedAt: new Date()
-        })
-        .where(eq(userRoleAssignments.id, existing[0].id))
-        .returning();
+      // Atomic: update the assignment and queue the role_assigned event in ONE tx
+      // (tx-bound publish writes the outbox rows in this tx and skips synchronous
+      // SNS — the poller delivers after commit; a publish failure rolls back).
+      const updated = await db.transaction(async (tx) => {
+        const rows = await tx
+          .update(userRoleAssignments)
+          .set({
+            isActive: true,
+            expiresAt: expiresAt ? new Date(expiresAt) : null,
+            assignedBy,
+            assignedAt: new Date()
+          })
+          .where(eq(userRoleAssignments.id, existing[0].id))
+          .returning();
 
-      Logger.log('info', 'role', 'assign-role', 'Role assignment updated successfully');
-      void invalidateRoleCache(userId);
-      
-      // Publish role assignment event (reassignment)
-      try {
         await snsSqsPublisher.publishRoleEventToSuite('role_assigned', tenantId, roleId, {
-          assignmentId: updated[0].id ?? '',
+          assignmentId: rows[0].id ?? '',
           userId: userId,
           roleId: roleId,
           assignedAt: new Date().toISOString(),
           assignedBy: assignedBy,
           expiresAt: expiresAt ? new Date(expiresAt).toISOString() : undefined,
-          entityId: (updated[0] as { organizationId?: string }).organizationId
-        });
-        Logger.log('info', 'role', 'assign-role', 'Published role reassignment event successfully');
-      } catch (err: unknown) {
-        const error = err as Error;
-        Logger.log('warning', 'role', 'assign-role', 'Failed to publish role reassignment event', { error: error.message });
-      }
-      
+          entityId: (rows[0] as { organizationId?: string }).organizationId
+        }, 'system', tx);
+        return rows;
+      });
+
+      Logger.log('info', 'role', 'assign-role', 'Role assignment updated + event queued (tx)');
+      void invalidateRoleCache(userId); // post-commit local cache flush
       return updated[0];
     }
 
     // Create new assignment - 'id' is auto-generated by schema
     Logger.log('info', 'role', 'assign-role', 'Creating new role assignment');
     
-    const assignment = await db
-      .insert(userRoleAssignments)
-      .values({
-        userId,
-        roleId,
-        isActive: true,
-        isTemporary: !!expiresAt,
-        expiresAt: expiresAt ? new Date(expiresAt) : null,
-        assignedBy,
-        assignedAt: new Date()
-      })
-      .returning();
+    // Atomic: insert the assignment and queue the role_assigned event in ONE tx.
+    const assignment = await db.transaction(async (tx) => {
+      const rows = await tx
+        .insert(userRoleAssignments)
+        .values({
+          userId,
+          roleId,
+          isActive: true,
+          isTemporary: !!expiresAt,
+          expiresAt: expiresAt ? new Date(expiresAt) : null,
+          assignedBy,
+          assignedAt: new Date()
+        })
+        .returning();
 
-    Logger.log('info', 'role', 'assign-role', 'New role assignment created successfully');
-    void invalidateRoleCache(userId);
-    
-    // Publish role assignment event
-    try {
       await snsSqsPublisher.publishRoleEventToSuite('role_assigned', tenantId, roleId, {
-        assignmentId: assignment[0].id,
+        assignmentId: rows[0].id,
         userId: userId,
         roleId: roleId,
         assignedAt: new Date().toISOString(),
         assignedBy: assignedBy,
         expiresAt: expiresAt ? new Date(expiresAt).toISOString() : undefined,
-        entityId: (assignment[0] as { organizationId?: string }).organizationId
-      });
-      Logger.log('info', 'role', 'assign-role', 'Published role assignment event successfully');
-    } catch (err: unknown) {
-      const error = err as Error;
-      Logger.log('warning', 'role', 'assign-role', 'Failed to publish role assignment event', { error: error.message });
-    }
-    
+        entityId: (rows[0] as { organizationId?: string }).organizationId
+      }, 'system', tx);
+      return rows;
+    });
+
+    Logger.log('info', 'role', 'assign-role', 'New role assignment created + event queued (tx)');
+    void invalidateRoleCache(userId); // post-commit local cache flush
     return assignment[0];
   }
 
@@ -698,17 +695,13 @@ class PermissionService {
     }
 
     const assignment = existing[0];
-    
-    // Delete the assignment - use 'id' field from schema, not 'assignmentId'
-    await db
-      .delete(userRoleAssignments)
-      .where(eq(userRoleAssignments.id, assignment.id));
 
-    Logger.log('info', 'role', 'remove-role-assignment', 'Role assignment removed successfully');
-    void invalidateRoleCache(userId);
+    // Atomic: delete the assignment and queue the role_unassigned event in ONE tx.
+    await db.transaction(async (tx) => {
+      await tx
+        .delete(userRoleAssignments)
+        .where(eq(userRoleAssignments.id, assignment.id));
 
-    // Publish role unassignment event
-    try {
       await snsSqsPublisher.publishRoleEventToSuite('role_unassigned', tenantId, roleId, {
         assignmentId: assignment.id ?? '',
         userId: userId,
@@ -716,12 +709,11 @@ class PermissionService {
         unassignedAt: new Date().toISOString(),
         unassignedBy: removedBy,
         reason: 'Manual removal'
-      });
-      Logger.log('info', 'role', 'remove-role-assignment', 'Published role unassignment event successfully');
-    } catch (err: unknown) {
-      const error = err as Error;
-      Logger.log('warning', 'role', 'remove-role-assignment', 'Failed to publish role unassignment event', { error: error.message });
-    }
+      }, 'system', tx);
+    });
+
+    Logger.log('info', 'role', 'remove-role-assignment', 'Role assignment removed + event queued (tx)');
+    void invalidateRoleCache(userId); // post-commit local cache flush
 
     return { success: true, assignmentId: assignment.id ?? '' };
   }
@@ -742,17 +734,13 @@ class PermissionService {
     }
 
     const assignment = existing[0];
-    
-    // Delete the assignment - use 'id' field from schema
-    await db
-      .delete(userRoleAssignments)
-      .where(eq(userRoleAssignments.id, assignmentId));
 
-    Logger.log('info', 'role', 'remove-role-assignment-by-id', 'Role assignment removed successfully');
-    void invalidateRoleCache(assignment.userId);
+    // Atomic: delete the assignment and queue the role_unassigned event in ONE tx.
+    await db.transaction(async (tx) => {
+      await tx
+        .delete(userRoleAssignments)
+        .where(eq(userRoleAssignments.id, assignmentId));
 
-    // Publish role unassignment event
-    try {
       await snsSqsPublisher.publishRoleEventToSuite('role_unassigned', tenantId, assignment.roleId, {
         assignmentId: assignment.id, // Use 'id' as assignmentId in event
         userId: assignment.userId,
@@ -760,13 +748,12 @@ class PermissionService {
         unassignedAt: new Date().toISOString(),
         unassignedBy: removedBy,
         reason: 'Manual removal'
-      });
-      Logger.log('info', 'role', 'remove-role-assignment-by-id', 'Published role unassignment event successfully');
-    } catch (err: unknown) {
-      const error = err as Error;
-      Logger.log('warning', 'role', 'remove-role-assignment-by-id', 'Failed to publish role unassignment event', { error: error.message });
-    }
-    
+      }, 'system', tx);
+    });
+
+    Logger.log('info', 'role', 'remove-role-assignment-by-id', 'Role assignment removed + event queued (tx)');
+    void invalidateRoleCache(assignment.userId); // post-commit local cache flush
+
     return { success: true, assignmentId: assignment.id ?? '' };
   }
 
@@ -1829,25 +1816,31 @@ class PermissionService {
     }
 
       Logger.log('info', 'role', 'update-advanced-role', 'Updating role in database');
-    const updatedRole = await db
-      .update(customRoles)
-      .set(updates as Partial<typeof customRoles.$inferInsert>)
-      .where(
-        and(
-          eq(customRoles.tenantId, tenantId),
-          eq(customRoles.roleId, roleId)
+    // Atomic: update the role row and queue the role_updated event in ONE tx
+    // (tx-bound publish writes the outbox rows in this tx and skips synchronous
+    // SNS — the poller delivers after commit; a publish failure rolls back).
+    // logAuditEvent stays on its own db handle (no tx param), so audit remains
+    // best-effort, consistent with the rest of the fleet.
+    const updatedRole = await db.transaction(async (tx) => {
+      const rows = await tx
+        .update(customRoles)
+        .set(updates as Partial<typeof customRoles.$inferInsert>)
+        .where(
+          and(
+            eq(customRoles.tenantId, tenantId),
+            eq(customRoles.roleId, roleId)
+          )
         )
-      )
-      .returning();
+        .returning();
 
-      if (!updatedRole.length) {
+      if (!rows.length) {
         Logger.log('error', 'role', 'update-advanced-role', 'No rows updated in database');
         throw new Error('Failed to update role - no rows affected');
       }
 
       Logger.log('info', 'role', 'update-advanced-role', 'Role updated successfully in database');
 
-    // Log the update
+    // Log the update (best-effort; uses its own db handle, not the tx)
       try {
     await this.logAuditEvent({
       tenantId,
@@ -1864,23 +1857,21 @@ class PermissionService {
         // Don't fail the entire operation for audit logging
       }
 
-      // Publish role update event to AWS MQ
-      try {
-        const row = updatedRole[0] as typeof customRoles.$inferSelect;
-        await snsSqsPublisher.publishRoleEventToSuite('role_updated', tenantId, row.roleId, {
-          roleId: row.roleId,
-          roleName: row.roleName,
-          description: row.description,
-          permissions: typeof row.permissions === 'string' ? JSON.parse(row.permissions as string) : row.permissions,
-          restrictions: typeof row.restrictions === 'string' ? JSON.parse(row.restrictions as string) : row.restrictions,
-          updatedBy: updatedBy ?? 'system',
-          updatedAt: (row.updatedAt ?? new Date()).toISOString()
-        });
-        Logger.log('info', 'role', 'update-advanced-role', 'Published role_updated event to AWS MQ');
-      } catch (err: unknown) {
-        const publishError = err as Error;
-        Logger.log('warning', 'role', 'update-advanced-role', 'Failed to publish role_updated event', { error: publishError.message });
-      }
+      // Publish role update event to the suite (tx-bound outbox; rolls back on failure)
+      const row = rows[0] as typeof customRoles.$inferSelect;
+      await snsSqsPublisher.publishRoleEventToSuite('role_updated', tenantId, row.roleId, {
+        roleId: row.roleId,
+        roleName: row.roleName,
+        description: row.description,
+        permissions: typeof row.permissions === 'string' ? JSON.parse(row.permissions as string) : row.permissions,
+        restrictions: typeof row.restrictions === 'string' ? JSON.parse(row.restrictions as string) : row.restrictions,
+        updatedBy: updatedBy ?? 'system',
+        updatedAt: (row.updatedAt ?? new Date()).toISOString()
+      }, 'system', tx);
+      Logger.log('info', 'role', 'update-advanced-role', 'Queued role_updated event (tx outbox)');
+
+      return rows;
+    });
 
       Logger.log('info', 'role', 'update-advanced-role', 'updateAdvancedRole completed successfully');
     return updatedRole[0] as typeof customRoles.$inferSelect;

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useSearch, useNavigate } from '@tanstack/react-router'
-import { useKindeAuth } from '@/lib/auth/cognito-auth'
+import { useAuth } from '@/lib/auth/cognito-auth'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import api from '@/lib/api'
@@ -26,7 +26,7 @@ export function InviteAccept() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { invalidateAuthStatus, invalidateOnboardingStatus } = useInvalidateQueries()
-  const { isAuthenticated, user, isLoading, login } = useKindeAuth()
+  const { isAuthenticated, user, isLoading, login } = useAuth()
 
   const [invitation, setInvitation] = useState<InvitationDetails | null>(null)
   const [inviteLoading, setInviteLoading] = useState(true)
@@ -106,8 +106,8 @@ export function InviteAccept() {
   }, [token, navigate])
 
   // ── Auto-accept as soon as auth + invitation are both ready ────────────
-  // autoAcceptFired prevents repeated calls when Kinde's user/auth objects
-  // get new references across re-renders (which would otherwise re-trigger
+  // autoAcceptFired prevents repeated calls when the auth context's user/auth
+  // objects get new references across re-renders (which would otherwise re-trigger
   // this effect and spam the API after a 403 or transient error).
   useEffect(() => {
     if (isAuthenticated && !isLoading && user && invitation && !autoAcceptFired.current) {
@@ -136,12 +136,9 @@ export function InviteAccept() {
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true)
     try {
-      const googleConnectionId = (import.meta as any).env.VITE_KINDE_GOOGLE_CONNECTION_ID
-      const opts: any = { popup: true }
-      if (googleConnectionId) {
-        opts.connectionId = googleConnectionId
-        opts.connection_id = googleConnectionId
-      }
+      // Cognito: `provider: 'google'` routes straight to Google federation via the
+      // backend /oauth/login?provider=google handler (no Kinde connection-id needed).
+      const opts: any = { provider: 'google', popup: true }
       if (invitation?.orgCode) opts.org_code = invitation.orgCode
       await login(opts)
     } catch (err) {
@@ -162,7 +159,7 @@ export function InviteAccept() {
         response = await api.post('/invitations/accept-by-token', { token })
       } else {
         response = await api.post('/invitations/accept', {
-          org: invitation.orgCode, email: invitation.email, kindeUserId: user.id,
+          org: invitation.orgCode, email: invitation.email, idpSub: user.id,
         })
       }
 

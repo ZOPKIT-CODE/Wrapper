@@ -70,6 +70,7 @@ export class InterAppEventService {
     // Skip the synchronous SNS publish — the outbox poller delivers after the
     // caller's tx commits, so the event is atomic with the domain write.
     if (tx) {
+      // Audit row (event_tracking) in the caller's tx.
       await EventTrackingService.trackPublishedEvent({
         eventId,
         eventType,
@@ -78,6 +79,21 @@ export class InterAppEventService {
         streamKey: 'inter-app-events',
         sourceApplication,
         targetApplication,
+        eventData,
+        publishedBy,
+        tx,
+      });
+      // Delivery row (inter_app_outbox) in the SAME tx. This is what the outbox
+      // poller actually delivers from — the audit row above is never polled, so
+      // without this the tx-path would track-but-never-deliver. publishInterAppEvent
+      // with `tx` writes the outbox row in the caller's tx and skips synchronous SNS.
+      await snsSqsPublisher.publishInterAppEvent({
+        eventId,
+        eventType,
+        sourceApplication,
+        targetApplication,
+        tenantId,
+        entityId: entityId ?? '',
         eventData,
         publishedBy,
         tx,

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { useKindeAuth } from '@/lib/auth/cognito-auth';
+import { useAuth } from '@/lib/auth/cognito-auth';
 import { useLocation, useNavigate } from '@tanstack/react-router';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
@@ -133,7 +133,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = React.memo(({
     isAuthenticated,
     isLoading,
     user
-  } = useKindeAuth();
+  } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const { data: authData, isLoading: authStatusLoading } = useAuthStatus();
@@ -150,8 +150,8 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = React.memo(({
     onboardingData?.onboardingStep === 'completed';
 
   const isReady = !isLoading && !authStatusLoading && !onboardingStatusLoading;
-  const needsKindeLogin = isReady && (!isAuthenticated || !user);
-  const needsBackendLogin = isReady && !needsKindeLogin && !backendAuthStatus?.isAuthenticated;
+  const needsIdpLogin = isReady && (!isAuthenticated || !user);
+  const needsBackendLogin = isReady && !needsIdpLogin && !backendAuthStatus?.isAuthenticated;
 
   const isInvitedOrOnboarded =
     backendAuthStatus?.onboardingCompleted === true ||
@@ -161,14 +161,14 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = React.memo(({
 
   const needsOnboarding =
     isReady &&
-    !needsKindeLogin &&
+    !needsIdpLogin &&
     !needsBackendLogin &&
     !skipOnboardingCheck &&
     location.pathname !== '/onboarding' &&
     backendAuthStatus?.needsOnboarding &&
     !isInvitedOrOnboarded;
 
-  const shouldRedirect = needsKindeLogin || needsBackendLogin || needsOnboarding;
+  const shouldRedirect = needsIdpLogin || needsBackendLogin || needsOnboarding;
 
   // Perform all redirects via useEffect to avoid synchronous router state
   // updates during render, which cause "Maximum update depth exceeded" loops.
@@ -176,9 +176,9 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = React.memo(({
     if (!shouldRedirect || redirectingRef.current) return;
     redirectingRef.current = true;
 
-    if (needsKindeLogin || needsBackendLogin) {
+    if (needsIdpLogin || needsBackendLogin) {
       logger.debug('🚫 ProtectedRoute: Not authenticated, redirecting to login', {
-        kindeAuth: !needsKindeLogin,
+        idpAuth: !needsIdpLogin,
         backendAuth: !needsBackendLogin,
         pathname: location.pathname,
       });
@@ -194,7 +194,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = React.memo(({
       });
       navigate({ to: '/onboarding', replace: true });
     }
-  }, [shouldRedirect, needsKindeLogin, needsBackendLogin, needsOnboarding, redirectTo, navigate, location.pathname, backendAuthStatus, user?.email]);
+  }, [shouldRedirect, needsIdpLogin, needsBackendLogin, needsOnboarding, redirectTo, navigate, location.pathname, backendAuthStatus, user?.email]);
 
   // Reset the redirect guard when auth state changes (e.g. user logs back in)
   useEffect(() => {

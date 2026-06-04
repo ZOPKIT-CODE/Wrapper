@@ -146,28 +146,12 @@ export default async function customRolesRoutes(
         metadata,
         updatedBy: (request as any).userContext?.internalUserId ?? ''
       } as any);
-      
-      try {
-        const { snsSqsPublisher } = await import('../../messaging/utils/sns-sqs-publisher.js');
-        await snsSqsPublisher.publishRoleEventToSuite('role_updated', tenantId, updatedRole.roleId, {
-          roleId: updatedRole.roleId,
-          roleName: updatedRole.roleName,
-          description: updatedRole.description,
-          permissions: typeof updatedRole.permissions === 'string' 
-            ? JSON.parse(updatedRole.permissions) 
-            : updatedRole.permissions,
-          restrictions: typeof updatedRole.restrictions === 'string'
-            ? JSON.parse(updatedRole.restrictions)
-            : updatedRole.restrictions,
-          updatedBy: (request as any).userContext?.internalUserId ?? '',
-          updatedAt: updatedRole.updatedAt || new Date().toISOString()
-        });
-        Logger.log('info', 'role', 'update-from-builder', 'Published role_updated event to Redis streams');
-      } catch (publishErr: unknown) {
-        const publishError = publishErr as Error;
-        Logger.log('warning', 'role', 'update-from-builder', 'Failed to publish role_updated event', { error: publishError.message });
-      }
-      
+      // role_updated (+ role_permissions_changed) are published atomically inside
+      // CustomRoleService.updateRoleFromAppsAndModules' tx (transactional outbox).
+      // The previous route-level publish here was a duplicate that fired AFTER that
+      // tx committed (non-atomic, swallowed on failure) — removed to avoid a second
+      // copy of the same event and a silent-loss dual-write.
+
       return {
         success: true,
         message: `Updated custom role "${roleName}"`,

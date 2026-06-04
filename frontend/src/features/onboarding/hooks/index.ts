@@ -12,7 +12,7 @@ import {
   createOnboardingSchemaWithClassification 
 } from '../schemas/onboardingValidation';
 
-interface KindeUserProfile {
+interface IdpUserProfile {
   givenName?: string | null;
   familyName?: string | null;
   email?: string | null;
@@ -21,7 +21,7 @@ interface KindeUserProfile {
 export const useOnboardingForm = (
   _flowType: 'newBusiness' | 'existingBusiness',
   userClassification?: string,
-  kindeUser?: KindeUserProfile | null
+  idpUser?: IdpUserProfile | null
 ) => {
   // Create schema with user classification if provided
   const schema = userClassification
@@ -35,9 +35,9 @@ export const useOnboardingForm = (
     shouldUnregister: false,
     shouldFocusError: true,
     defaultValues: {
-      firstName: kindeUser?.givenName ?? '',
-      lastName: kindeUser?.familyName ?? '',
-      adminEmail: kindeUser?.email ?? '',
+      firstName: idpUser?.givenName ?? '',
+      lastName: idpUser?.familyName ?? '',
+      adminEmail: idpUser?.email ?? '',
       teamMembers: [],
       taxRegistered: false,
       vatGstRegistered: false,

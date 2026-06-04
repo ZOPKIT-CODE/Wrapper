@@ -297,7 +297,7 @@ export default async function companyTenantSettingsRoutes(fastify: FastifyInstan
 
       global.logToES('info', '[admin] tenant.deleted', {
         tenantId,
-        kindeOrgId: summary.kindeOrgId,
+        idpOrgId: summary.idpOrgId,
         requestId,
         requestedBy: (request as ReqWithUser).userContext?.userId,
       });
@@ -314,7 +314,7 @@ export default async function companyTenantSettingsRoutes(fastify: FastifyInstan
         publishedBy: String((request as ReqWithUser).userContext?.userId ?? 'system'),
         eventData: {
           tenantId,
-          kindeOrgId: summary.kindeOrgId,
+          idpOrgId: summary.idpOrgId,
           deletedAt: new Date().toISOString(),
         },
       }).catch((err: unknown) => {

@@ -7,13 +7,13 @@ import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { useDashboardTabParam } from '@/hooks/useDashboardTabParam'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useKindeAuth } from '@/lib/auth/cognito-auth'
+import { useAuth } from '@/lib/auth/cognito-auth'
 import { toast } from 'sonner'
 
 import {
   subscriptionAPI,
   creditAPI,
-  setKindeTokenGetter,
+  setIdpTokenGetter,
   api
 } from '@/lib/api'
 import { useSubscriptionCurrent } from '@/hooks/useSharedQueries'
@@ -96,7 +96,7 @@ export function useBilling() {
   const [profileCompleted, setProfileCompleted] = useState<boolean | null>(null)
   const [isCheckingProfile, setIsCheckingProfile] = useState(false)
 
-  const { isAuthenticated, isLoading, user, getToken, login } = useKindeAuth()
+  const { isAuthenticated, isLoading, user, getToken, login } = useAuth()
 
   const upgradeMode = search['upgrade'] === 'true'
   const paymentCancelled = search['payment'] === 'cancelled'
@@ -119,18 +119,18 @@ export function useBilling() {
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated && !mockMode) {
-      toast.error('Not authenticated with Kinde. Please log in first.')
+      toast.error('Not authenticated. Please log in first.')
     }
   }, [isAuthenticated, isLoading, mockMode])
 
   useEffect(() => {
     if (getToken) {
-      setKindeTokenGetter(async () => {
+      setIdpTokenGetter(async () => {
         try {
           const token = await getToken()
           return token || null
         } catch (error) {
-          console.error('Kinde token getter error:', error)
+          console.error('Auth token getter error:', error)
           return null
         }
       })
@@ -342,9 +342,7 @@ export function useBilling() {
 
   const handleCreditPurchase = async (creditAmount: number) => {
     if (!isAuthenticated) {
-      const googleConnectionId = import.meta.env.VITE_KINDE_GOOGLE_CONNECTION_ID
-      if (googleConnectionId) login({ connectionId: googleConnectionId })
-      else login()
+      login({ provider: 'google' })
       return
     }
     setSelectedPlan(`credits_${creditAmount}`)
@@ -373,9 +371,7 @@ export function useBilling() {
 
   const handlePlanPurchase = async (planId: string) => {
     if (!isAuthenticated) {
-      const googleConnectionId = import.meta.env.VITE_KINDE_GOOGLE_CONNECTION_ID
-      if (googleConnectionId) login({ connectionId: googleConnectionId })
-      else login()
+      login({ provider: 'google' })
       return
     }
     setSelectedPlan(planId)

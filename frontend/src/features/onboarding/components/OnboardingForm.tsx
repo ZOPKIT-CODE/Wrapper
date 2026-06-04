@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useKindeAuth } from '@/lib/auth/cognito-auth';
+import { useAuth } from '@/lib/auth/cognito-auth';
 import { queryKeys } from '@/hooks/useSharedQueries';
 import { useOnboardingForm } from '../hooks';
 import { useFormPersistence } from '../hooks/useFormPersistence';
@@ -138,7 +138,7 @@ export const determineUserClassification = (
 
 export const OnboardingForm = () => {
   const queryClient = useQueryClient();
-  const { user: kindeUser } = useKindeAuth();
+  const { user: idpUser } = useAuth();
   const [selectedFlow] = useState<'newBusiness' | 'existingBusiness'>('newBusiness');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
@@ -155,7 +155,7 @@ export const OnboardingForm = () => {
     return classification || 'aspiringFounder';
   });
 
-  const form = useOnboardingForm(selectedFlow, userClassification, kindeUser);
+  const form = useOnboardingForm(selectedFlow, userClassification, idpUser);
   const { isRateLimited, recordAttempt, getTimeUntilReset } = useRateLimit({
     maxAttempts: 3,
     windowMs: 60000
@@ -232,12 +232,12 @@ export const OnboardingForm = () => {
   // Sync Kinde profile into admin fields once the SDK resolves (it loads async).
   // Only backfill — don't overwrite values the user has already typed.
   useEffect(() => {
-    if (!kindeUser) return;
+    if (!idpUser) return;
     const { getValues, setValue } = form;
-    if (!getValues('firstName') && kindeUser.givenName) setValue('firstName', kindeUser.givenName, { shouldValidate: false });
-    if (!getValues('lastName') && kindeUser.familyName) setValue('lastName', kindeUser.familyName, { shouldValidate: false });
-    if (!getValues('adminEmail') && kindeUser.email) setValue('adminEmail', kindeUser.email, { shouldValidate: false });
-  }, [kindeUser, form]);
+    if (!getValues('firstName') && idpUser.givenName) setValue('firstName', idpUser.givenName, { shouldValidate: false });
+    if (!getValues('lastName') && idpUser.familyName) setValue('lastName', idpUser.familyName, { shouldValidate: false });
+    if (!getValues('adminEmail') && idpUser.email) setValue('adminEmail', idpUser.email, { shouldValidate: false });
+  }, [idpUser, form]);
 
   // Listen for step restoration events
   useEffect(() => {

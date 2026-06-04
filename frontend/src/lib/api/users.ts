@@ -41,6 +41,11 @@ export interface AssignRoleData {
   expiresAt?: string
 }
 
+export interface AssignOrganizationData {
+  entityId: string
+  accessLevel?: 'admin' | 'manager' | 'standard' | 'limited'
+}
+
 export const usersAPI = {
   getUsers: (params?: UserListParams) =>
     api.get('/users', { params }),
@@ -77,6 +82,9 @@ export const usersAPI = {
 
   removeRoleAssignment: (userId: string, assignmentId: string) =>
     api.delete(`/users/${userId}/roles/${assignmentId}`),
+
+  addOrganizationMembership: (userId: string, data: AssignOrganizationData) =>
+    api.post(`/users/${userId}/organizations`, data),
 
   removeOrganizationMembership: (userId: string, membershipId: string) =>
     api.delete(`/users/${userId}/organizations/${membershipId}`),

@@ -1,206 +1,276 @@
+/**
+ * Distributed SSO Cache
+ *
+ * Caches SSO auth / permissions / roles used by the internal cross-app access
+ * routes (/api/internal/user-permissions, service-auth).
+ *
+ * Single-tier design: when Valkey/Redis is enabled and connected (shared client
+ * in ./valkey-client), every read/write/invalidation goes to Valkey so the cache
+ * is shared across horizontally-scaled instances — an invalidation on one
+ * instance is visible to all. Falls back to in-process Maps when Valkey is
+ * disabled or unreachable (single instance / dev), so the app still works.
+ *
+ * Keys are namespaced under `sso:` so they never collide with the auth
+ * middleware's SharedCache (`auth:*`) entries in the same Valkey.
+ */
+import { getValkey, isValkeyReady } from './valkey-client.js';
+
 interface CacheEntry<T> {
   value: T;
   expiresAt?: number;
 }
 
-/**
- * Distributed SSO Cache Service
- * In-memory cache for SSO-related data
- * Redis removed - using in-memory Map for caching
- */
+const AUTH_PREFIX = 'sso:auth:';
+const PERM_PREFIX = 'sso:perm:';
+const ROLES_PREFIX = 'sso:roles:';
+
+// Escape redis glob metacharacters in user-supplied identifiers so a `*`/`?`/`[`
+// in an id can't widen a SCAN MATCH pattern.
+function escapeGlob(s: string): string {
+  return s.replace(/[*?[\]\\^-]/g, '\\$&');
+}
+
 class DistributedSSOCache {
+  // In-process fallback stores (used only when Valkey is disabled/unreachable).
   private userAuth: Map<string, CacheEntry<unknown>>;
   private userPermissions: Map<string, CacheEntry<unknown>>;
   private userRoles: Map<string, CacheEntry<unknown>>;
 
   constructor() {
-    // In-memory storage (replaces Redis)
-    this.userAuth = new Map(); // key -> auth data
-    this.userPermissions = new Map(); // key -> permissions
-    this.userRoles = new Map(); // key -> roles
+    this.userAuth = new Map();
+    this.userPermissions = new Map();
+    this.userRoles = new Map();
 
-    // Cleanup expired entries periodically
-    setInterval(() => this._cleanupExpired(), 3600000); // Every hour
+    // Periodically evict expired fallback entries (Valkey handles its own TTLs).
+    const timer = setInterval(() => this._cleanupExpired(), 3600000); // hourly
+    // Don't keep the process alive just for cache cleanup.
+    (timer as { unref?: () => void }).unref?.();
   }
 
-  /**
-   * Clean up expired entries
-   */
-  _cleanupExpired() {
-    const now = Date.now();
-    for (const [key, entry] of this.userAuth.entries()) {
-      if (entry.expiresAt && now > entry.expiresAt) {
-        this.userAuth.delete(key);
-      }
-    }
-    for (const [key, entry] of this.userPermissions.entries()) {
-      if (entry.expiresAt && now > entry.expiresAt) {
-        this.userPermissions.delete(key);
-      }
-    }
-    for (const [key, entry] of this.userRoles.entries()) {
-      if (entry.expiresAt && now > entry.expiresAt) {
-        this.userRoles.delete(key);
-      }
-    }
+  // ── Key builders ──────────────────────────────────────────────────────────
+  _getAuthKey(idpSub: string, orgCode: string): string {
+    return `${AUTH_PREFIX}${idpSub}:${orgCode}`;
   }
-
-  /**
-   * Get cache key for user auth
-   */
-  _getAuthKey(kindeUserId: string, orgCode: string): string {
-    return `auth:${kindeUserId}:${orgCode}`;
-  }
-
-  /**
-   * Get cache key for user permissions
-   */
   _getPermissionsKey(userId: string, tenantId: string, app: string): string {
-    return `permissions:${userId}:${tenantId}:${app}`;
+    return `${PERM_PREFIX}${userId}:${tenantId}:${app}`;
   }
-
-  /**
-   * Get cache key for user roles
-   */
   _getRolesKey(userId: string, tenantId: string): string {
-    return `roles:${userId}:${tenantId}`;
+    return `${ROLES_PREFIX}${userId}:${tenantId}`;
   }
 
-  /**
-   * Get user auth from cache
-   */
-  async getUserAuth(kindeUserId: string, orgCode: string): Promise<unknown> {
-    const key = this._getAuthKey(kindeUserId, orgCode);
-    const entry = this.userAuth.get(key);
+  // ── Valkey helpers ────────────────────────────────────────────────────────
+  private async _scanDel(pattern: string): Promise<boolean> {
+    const vk = getValkey();
+    if (!vk || !isValkeyReady()) return false;
+    try {
+      let cursor = '0';
+      do {
+        const [next, batch] = await vk.scan(cursor, 'MATCH', pattern, 'COUNT', 250);
+        cursor = next;
+        if (batch.length) await vk.del(...batch);
+      } while (cursor !== '0');
+      return true;
+    } catch {
+      return false; // caller falls back to the in-process Map
+    }
+  }
+
+  private async _scanCount(pattern: string): Promise<number> {
+    const vk = getValkey();
+    if (!vk || !isValkeyReady()) return 0;
+    let cursor = '0';
+    let n = 0;
+    try {
+      do {
+        const [next, batch] = await vk.scan(cursor, 'MATCH', pattern, 'COUNT', 250);
+        cursor = next;
+        n += batch.length;
+      } while (cursor !== '0');
+    } catch {
+      /* best-effort count — return what we have so far */
+    }
+    return n;
+  }
+
+  private _mapGet(store: Map<string, CacheEntry<unknown>>, key: string): unknown {
+    const entry = store.get(key);
     if (!entry) return null;
-    
     if (entry.expiresAt && Date.now() > entry.expiresAt) {
-      this.userAuth.delete(key);
+      store.delete(key);
       return null;
     }
-    
     return entry.value;
   }
 
-  /**
-   * Cache user auth
-   */
-  async cacheUserAuth(kindeUserId: string, orgCode: string, authData: unknown, ttl = 3600): Promise<void> {
-    const key = this._getAuthKey(kindeUserId, orgCode);
-    const expiresAt = Date.now() + (ttl * 1000);
-    this.userAuth.set(key, { value: authData, expiresAt });
+  // ── Auth ──────────────────────────────────────────────────────────────────
+  async getUserAuth(idpSub: string, orgCode: string): Promise<unknown> {
+    const key = this._getAuthKey(idpSub, orgCode);
+    const vk = getValkey();
+    if (vk && isValkeyReady()) {
+      try {
+        const raw = await vk.get(key);
+        if (raw !== null) {
+          try { return JSON.parse(raw); } catch { return null; }
+        }
+        return null;
+      } catch {
+        /* fall through to map */
+      }
+    }
+    return this._mapGet(this.userAuth, key);
   }
 
-  /**
-   * Get user permissions from cache
-   */
+  async cacheUserAuth(idpSub: string, orgCode: string, authData: unknown, ttl = 3600): Promise<void> {
+    const key = this._getAuthKey(idpSub, orgCode);
+    const vk = getValkey();
+    if (vk && isValkeyReady()) {
+      try { await vk.set(key, JSON.stringify(authData), 'EX', ttl); return; } catch { /* fall through */ }
+    }
+    this.userAuth.set(key, { value: authData, expiresAt: Date.now() + ttl * 1000 });
+  }
+
+  // ── Permissions ─────────────────────────────────────────────────────────��─
   async getUserPermissions(userId: string, tenantId: string, app: string): Promise<unknown> {
     const key = this._getPermissionsKey(userId, tenantId, app);
-    const entry = this.userPermissions.get(key);
-    if (!entry) return null;
-    
-    if (entry.expiresAt && Date.now() > entry.expiresAt) {
-      this.userPermissions.delete(key);
-      return null;
+    const vk = getValkey();
+    if (vk && isValkeyReady()) {
+      try {
+        const raw = await vk.get(key);
+        if (raw !== null) {
+          try { return JSON.parse(raw); } catch { return null; }
+        }
+        return null;
+      } catch {
+        /* fall through to map */
+      }
     }
-    
-    return entry.value;
+    return this._mapGet(this.userPermissions, key);
   }
 
-  /**
-   * Cache user permissions
-   */
   async cacheUserPermissions(userId: string, tenantId: string, app: string, permissions: unknown, ttl = 3600): Promise<void> {
     const key = this._getPermissionsKey(userId, tenantId, app);
-    const expiresAt = Date.now() + (ttl * 1000);
-    this.userPermissions.set(key, { value: permissions, expiresAt });
+    const vk = getValkey();
+    if (vk && isValkeyReady()) {
+      try { await vk.set(key, JSON.stringify(permissions), 'EX', ttl); return; } catch { /* fall through */ }
+    }
+    this.userPermissions.set(key, { value: permissions, expiresAt: Date.now() + ttl * 1000 });
   }
 
-  /**
-   * Cache user roles
-   */
+  // ── Roles ───────────────────────────────────────────────────────────────��─
   async cacheUserRoles(userId: string, tenantId: string, roles: unknown, ttl = 3600): Promise<void> {
     const key = this._getRolesKey(userId, tenantId);
-    const expiresAt = Date.now() + (ttl * 1000);
-    this.userRoles.set(key, { value: roles, expiresAt });
+    const vk = getValkey();
+    if (vk && isValkeyReady()) {
+      try { await vk.set(key, JSON.stringify(roles), 'EX', ttl); return; } catch { /* fall through */ }
+    }
+    this.userRoles.set(key, { value: roles, expiresAt: Date.now() + ttl * 1000 });
   }
 
-  /**
-   * Get cache stats
-   */
+  // ── Stats ───────────────────────────────────────────────────────────────��─
   async getCacheStats(): Promise<{ userAuth: number; userPermissions: number; userRoles: number; total: number }> {
+    if (getValkey() && isValkeyReady()) {
+      try {
+        const [a, p, r] = await Promise.all([
+          this._scanCount(`${AUTH_PREFIX}*`),
+          this._scanCount(`${PERM_PREFIX}*`),
+          this._scanCount(`${ROLES_PREFIX}*`),
+        ]);
+        return { userAuth: a, userPermissions: p, userRoles: r, total: a + p + r };
+      } catch {
+        /* fall through to map sizes */
+      }
+    }
     return {
       userAuth: this.userAuth.size,
       userPermissions: this.userPermissions.size,
       userRoles: this.userRoles.size,
-      total: this.userAuth.size + this.userPermissions.size + this.userRoles.size
+      total: this.userAuth.size + this.userPermissions.size + this.userRoles.size,
     };
   }
 
-  /**
-   * Invalidate user cache
-   */
+  // ── Invalidation ────────────────────────────────────────────────────────��─
+  /** Remove every cached entry (auth/permissions/roles) whose key contains `identifier`. */
   async invalidateUserCache(identifier: string, _tenantId?: string): Promise<void> {
-    // Remove all entries for this user
-    for (const [key] of this.userAuth.entries()) {
-      if (key.includes(identifier)) {
-        this.userAuth.delete(key);
-      }
+    if (getValkey() && isValkeyReady()) {
+      // Valkey is the store. _scanDel is best-effort — any key missed on a
+      // transient error expires via its TTL. The in-process Map is not consulted
+      // in Valkey mode (it is empty), so we return without touching it.
+      const needle = escapeGlob(identifier);
+      await Promise.all([
+        this._scanDel(`${AUTH_PREFIX}*${needle}*`),
+        this._scanDel(`${PERM_PREFIX}*${needle}*`),
+        this._scanDel(`${ROLES_PREFIX}*${needle}*`),
+      ]);
+      return;
     }
-    for (const [key] of this.userPermissions.entries()) {
-      if (key.includes(identifier)) {
-        this.userPermissions.delete(key);
-      }
-    }
-    for (const [key] of this.userRoles.entries()) {
-      if (key.includes(identifier)) {
-        this.userRoles.delete(key);
+    for (const store of [this.userAuth, this.userPermissions, this.userRoles]) {
+      for (const key of store.keys()) {
+        if (key.includes(identifier)) store.delete(key);
       }
     }
   }
 
-  /**
-   * Invalidate tenant cache
-   */
+  /** Remove permissions + roles entries scoped to a tenant. */
   async invalidateTenantCache(tenantId: string): Promise<void> {
-    // Remove all entries for this tenant
-    for (const [key] of this.userPermissions.entries()) {
-      if (key.includes(tenantId)) {
-        this.userPermissions.delete(key);
-      }
+    if (getValkey() && isValkeyReady()) {
+      const needle = escapeGlob(tenantId);
+      await Promise.all([
+        this._scanDel(`${PERM_PREFIX}*${needle}*`),
+        this._scanDel(`${ROLES_PREFIX}*${needle}*`),
+      ]);
+      return;
     }
-    for (const [key] of this.userRoles.entries()) {
-      if (key.includes(tenantId)) {
-        this.userRoles.delete(key);
+    for (const store of [this.userPermissions, this.userRoles]) {
+      for (const key of store.keys()) {
+        if (key.includes(tenantId)) store.delete(key);
       }
     }
   }
 
-  /**
-   * Invalidate app cache
-   */
+  /** Remove permission entries for a given app (across all users/tenants). */
   async invalidateAppCache(app: string): Promise<void> {
-    // Remove all entries for this app
-    for (const [key] of this.userPermissions.entries()) {
-      if (key.includes(`:${app}`)) {
-        this.userPermissions.delete(key);
+    if (getValkey() && isValkeyReady()) {
+      await this._scanDel(`${PERM_PREFIX}*:${escapeGlob(app)}*`);
+      return;
+    }
+    for (const key of this.userPermissions.keys()) {
+      if (key.includes(`:${app}`)) this.userPermissions.delete(key);
+    }
+  }
+
+  /** Remove a single user's cached permissions for one app (exact key, no scan). */
+  async invalidateUserAppPermissions(userId: string, tenantId: string, app: string): Promise<void> {
+    const key = this._getPermissionsKey(userId, tenantId, app);
+    const vk = getValkey();
+    if (vk && isValkeyReady()) {
+      try { await vk.del(key); return; } catch { /* fall through to map */ }
+    }
+    this.userPermissions.delete(key);
+  }
+
+  // ── Fallback cleanup ─────────────────────────────────────────────────────��
+  _cleanupExpired() {
+    const now = Date.now();
+    for (const store of [this.userAuth, this.userPermissions, this.userRoles]) {
+      for (const [key, entry] of store.entries()) {
+        if (entry.expiresAt && now > entry.expiresAt) store.delete(key);
       }
     }
   }
 }
 
-// Cache TTL constants
+// Cache TTL constants (seconds)
 export const CacheTTL = {
-  USER_AUTH: 3600, // 1 hour
-  USER_PERMISSIONS: 3600, // 1 hour
-  USER_ROLES: 3600 // 1 hour
+  USER_AUTH: 3600,
+  USER_PERMISSIONS: 3600,
+  USER_ROLES: 3600,
 };
 
 // Cache key constants
 export const CacheKeys = {
   USER_AUTH: 'auth',
   USER_PERMISSIONS: 'permissions',
-  USER_ROLES: 'roles'
+  USER_ROLES: 'roles',
 };
 
 // Export singleton instance

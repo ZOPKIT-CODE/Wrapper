@@ -129,29 +129,27 @@ export default async function adminRoleRoutes(fastify: FastifyInstance): Promise
     try {
       Logger.log('info', 'role', requestId, 'Updating role', { roleId, tenantId });
 
-      const result = await (db.update(customRoles) as any)
-        .set({
-          ...(updateData as Record<string, unknown>),
-          permissions: (updateData as any).permissions ? JSON.stringify((updateData as any).permissions) : undefined,
-          updatedAt: new Date()
-        })
-        .where(and(
-          eq(customRoles.roleId, roleId),
-          eq(customRoles.tenantId, tenantId)
-        ))
-        .returning();
+      // Domain write + inter-app publish must commit atomically (transactional outbox).
+      const result = await db.transaction(async (tx) => {
+        const updated = await (tx.update(customRoles) as any)
+          .set({
+            ...(updateData as Record<string, unknown>),
+            permissions: (updateData as any).permissions ? JSON.stringify((updateData as any).permissions) : undefined,
+            updatedAt: new Date()
+          })
+          .where(and(
+            eq(customRoles.roleId, roleId),
+            eq(customRoles.tenantId, tenantId)
+          ))
+          .returning();
 
-      if (result.length === 0) {
-        return ErrorResponses.notFound(reply, 'Role', 'Role not found', {
-          requestId
-        });
-      }
+        // No-op (role not found / wrong tenant): skip publish, commit nothing meaningful.
+        if (updated.length === 0) {
+          return updated;
+        }
 
-      Logger.log('info', 'role', requestId, 'Role updated successfully');
-
-      // Publish role update event to AWS MQ
-      try {
-        const updatedRole = result[0];
+        // Publish role update event via the transactional outbox (atomic with the update).
+        const updatedRole = updated[0];
         await snsSqsPublisher.publishRoleEventToSuite('role_updated', tenantId, updatedRole.roleId, {
           roleId: updatedRole.roleId,
           roleName: updatedRole.roleName,
@@ -164,13 +162,19 @@ export default async function adminRoleRoutes(fastify: FastifyInstance): Promise
             : updatedRole.restrictions,
           updatedBy: ((request as ReqWithUser).userContext?.internalUserId ?? '') as string,
           updatedAt: updatedRole.updatedAt || new Date().toISOString()
+        }, 'system', tx);
+
+        return updated;
+      });
+
+      if (result.length === 0) {
+        return ErrorResponses.notFound(reply, 'Role', 'Role not found', {
+          requestId
         });
-        Logger.log('info', 'role', requestId, 'Published role_updated event');
-      } catch (publishErr: unknown) {
-        const publishError = publishErr as Error;
-        Logger.log('warning', 'role', requestId, 'Failed to publish role_updated event', { error: publishError.message });
-        // Don't fail the request if event publishing fails
       }
+
+      Logger.log('info', 'role', requestId, 'Role updated successfully');
+      Logger.log('info', 'role', requestId, 'Published role_updated event');
 
       return {
         success: true,

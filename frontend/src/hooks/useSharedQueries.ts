@@ -1,6 +1,6 @@
 import React from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useKindeAuth } from '@/lib/auth/cognito-auth'
+import { useAuth } from '@/lib/auth/cognito-auth'
 import { api, subscriptionAPI } from '@/lib/api'
 import { useLocation } from '@tanstack/react-router'
 
@@ -24,7 +24,7 @@ export const queryKeys = {
 
 // Shared auth status hook to prevent duplicate API calls
 export function useAuthStatus() {
-  const { isAuthenticated, user } = useKindeAuth()
+  const { isAuthenticated, user } = useAuth()
 
   return useQuery({
     queryKey: queryKeys.authStatus,
@@ -45,7 +45,7 @@ export function useAuthStatus() {
 
 // Shared entity scope hook with caching
 export function useEntityScope() {
-  const { isAuthenticated, user } = useKindeAuth()
+  const { isAuthenticated, user } = useAuth()
   const location = useLocation()
   const { data: authData } = useAuthStatus()
   
@@ -82,7 +82,7 @@ export function useEntityScope() {
 
 // Shared tenant hook with caching
 export function useTenant(tenantId?: string) {
-  const { isAuthenticated, user } = useKindeAuth()
+  const { isAuthenticated, user } = useAuth()
   const location = useLocation()
   const { data: authData } = useAuthStatus()
   
@@ -122,7 +122,7 @@ export function useTenant(tenantId?: string) {
 // Uses /api/applications which works for all authenticated users (including invited users).
 // The admin tenant-apps endpoint requires platform permission and blocks invited users.
 export function useTenantApplications(tenantId?: string) {
-  const { isAuthenticated, user } = useKindeAuth()
+  const { isAuthenticated, user } = useAuth()
   const { data: authData } = useAuthStatus()
   
   const effectiveTenantId = tenantId || authData?.authStatus?.tenantId
@@ -159,7 +159,7 @@ export function useTenantApplications(tenantId?: string) {
 
 // Shared application allocations hook with caching
 export function useApplicationAllocations(entityId?: string) {
-  const { isAuthenticated, user } = useKindeAuth()
+  const { isAuthenticated, user } = useAuth()
 
   return useQuery({
     queryKey: queryKeys.applicationAllocations(entityId),
@@ -207,7 +207,7 @@ export function useNotifications(options: {
   type?: string;
   priority?: string;
 } = DEFAULT_NOTIFICATION_OPTIONS) {
-  const { isAuthenticated, user } = useKindeAuth()
+  const { isAuthenticated, user } = useAuth()
 
   // Stable key: only include non-default options to avoid different {} refs
   const hasCustomOptions = options !== DEFAULT_NOTIFICATION_OPTIONS && Object.keys(options).length > 0;
@@ -258,7 +258,7 @@ export function useUnreadCount() {
 
 // Shared credit status hook
 export function useCreditStatusQuery(enabled: boolean = true) {
-  const { isAuthenticated, user } = useKindeAuth()
+  const { isAuthenticated, user } = useAuth()
 
   return useQuery({
     queryKey: [...queryKeys.creditStatus, user?.id],
@@ -283,7 +283,7 @@ export function useCreditUsageSummary(params?: {
   startDate?: string;
   endDate?: string;
 }) {
-  const { isAuthenticated, user } = useKindeAuth()
+  const { isAuthenticated, user } = useAuth()
 
   return useQuery({
     queryKey: ['credit', 'usage-summary', params],
@@ -303,7 +303,7 @@ export function useCreditUsageSummary(params?: {
 
 // Shared credit statistics hook
 export function useCreditStats() {
-  const { isAuthenticated, user } = useKindeAuth()
+  const { isAuthenticated, user } = useAuth()
 
   return useQuery({
     queryKey: ['credit', 'stats'],
@@ -329,7 +329,7 @@ export function useCreditTransactionHistory(params?: {
   startDate?: string;
   endDate?: string;
 }) {
-  const { isAuthenticated, user } = useKindeAuth()
+  const { isAuthenticated, user } = useAuth()
 
   return useQuery({
     queryKey: ['credit', 'transactions', params],
@@ -349,7 +349,7 @@ export function useCreditTransactionHistory(params?: {
 
 // Shared subscription current hook with caching
 export function useSubscriptionCurrent() {
-  const { isAuthenticated, user } = useKindeAuth()
+  const { isAuthenticated, user } = useAuth()
 
   return useQuery({
     queryKey: queryKeys.subscriptionCurrent,
@@ -381,7 +381,7 @@ export function useSubscriptionCurrent() {
 
 // Shared users hook with caching
 export function useUsers(entityId?: string | null) {
-  const { isAuthenticated, user } = useKindeAuth()
+  const { isAuthenticated, user } = useAuth()
 
   return useQuery({
     queryKey: queryKeys.users(entityId),
@@ -409,7 +409,7 @@ export function useUsers(entityId?: string | null) {
 
 // Shared roles hook with caching
 export function useRoles(filters?: { search?: string; type?: 'all' | 'custom' | 'system' }) {
-  const { isAuthenticated, user } = useKindeAuth()
+  const { isAuthenticated, user } = useAuth()
 
   return useQuery({
     queryKey: queryKeys.roles(filters),
@@ -472,7 +472,7 @@ export function useRoles(filters?: { search?: string; type?: 'all' | 'custom' | 
 
 // Shared onboarding status hook
 export function useOnboardingStatus() {
-  const { isAuthenticated, user } = useKindeAuth()
+  const { isAuthenticated, user } = useAuth()
 
   return useQuery({
     queryKey: queryKeys.onboardingStatus,
@@ -481,7 +481,7 @@ export function useOnboardingStatus() {
       // Build query params with user info as fallback for token validation failures
       const params = new URLSearchParams()
       if (user?.id) {
-        params.append('kindeUserId', user.id)
+        params.append('idpSub', user.id)
       }
       if (user?.email) {
         params.append('email', user.email)

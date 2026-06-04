@@ -1,7 +1,7 @@
 import React from 'react';
 import { Coins, Calendar, Crown, AlertTriangle, Clock, Shield, ArrowUp, Sparkles } from 'lucide-react';
 import { useCreditStatusQuery, useSubscriptionCurrent } from '@/hooks/useSharedQueries';
-import { useKindeAuth } from '@/lib/auth/cognito-auth';
+import { useAuth } from '@/lib/auth/cognito-auth';
 import { formatDate } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { useNavigate } from '@tanstack/react-router';
@@ -11,7 +11,7 @@ interface BillingStatusNavbarProps {
 }
 
 export function BillingStatusNavbar({ className }: BillingStatusNavbarProps) {
-  const { isAuthenticated } = useKindeAuth();
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   // Fetch credit status

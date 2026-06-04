@@ -4,7 +4,6 @@ import { CrmRoleTemplatesSection } from './components/CrmRoleTemplatesSection';
 import { ShieldPlus, MoreVertical, Eye, Edit, Copy, Trash2, Search, Download, Archive, RefreshCw, Shield, Plus, Crown, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { PearlButton } from '@/components/ui/pearl-button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -644,11 +643,15 @@ export function RoleManagementDashboard() {
           title="Role Management"
           description="Manage roles, permissions, and access control"
           actions={(
-            <PearlButton onClick={handleCreateRole} className="gap-2">
+            <Button
+              onClick={handleCreateRole}
+              className="gap-2 rounded-lg px-5 text-sm font-semibold shadow-sm"
+              style={{ background: 'var(--zk-navy)' }}
+            >
               <ShieldPlus className="w-4 h-4" />
               <span className="hidden sm:inline">Build Role</span>
               <span className="sm:hidden">New Role</span>
-            </PearlButton>
+            </Button>
           )}
         />
 

@@ -704,24 +704,29 @@ export class UserManagementService {
       }
     }
 
-    const [updated] = await db
-      .update(tenantUsers)
-      .set(updateData)
-      .where(and(eq(tenantUsers.tenantId, tenantId), eq(tenantUsers.userId, userId)))
-      .returning();
+    // Atomic: the profile update and the user.updated event commit in ONE tx
+    // (tx-bound publish skips synchronous SNS; the poller delivers post-commit; a
+    // publish/outbox failure rolls the update back — the dual-write fix).
+    const updated = await db.transaction(async (tx) => {
+      const [row] = await tx
+        .update(tenantUsers)
+        .set(updateData)
+        .where(and(eq(tenantUsers.tenantId, tenantId), eq(tenantUsers.userId, userId)))
+        .returning();
 
-    if (!updated) {
-      throw new Error('User not found');
-    }
+      if (!row) {
+        throw new Error('User not found');
+      }
 
-    snsSqsPublisher.publishUserEventToSuite('user.updated', tenantId, userId, {
-      userId,
-      email: updated.email,
-      firstName: updated.firstName,
-      lastName: updated.lastName,
-      isActive: updated.isActive,
-    }).catch((err: Error) => {
-      Logger.log('warning', 'users', 'update-user-profile', 'Failed to publish user.updated event', { userId, error: err.message });
+      await snsSqsPublisher.publishUserEventToSuite('user.updated', tenantId, userId, {
+        userId,
+        email: row.email,
+        firstName: row.firstName,
+        lastName: row.lastName,
+        isActive: row.isActive,
+      }, 'system', tx);
+
+      return row;
     });
 
     return updated;
@@ -887,30 +892,33 @@ export class UserManagementService {
 
     await UserManagementService.assertSingleOrganizationAdminSlotAvailable(tenantId, roleId);
 
-    const [assignment] = await db
-      .insert(userRoleAssignments)
-      .values({
+    // Atomic: the assignment insert and the user.role.assigned event commit in ONE tx.
+    const assignment = await db.transaction(async (tx) => {
+      const [row] = await tx
+        .insert(userRoleAssignments)
+        .values({
+          userId,
+          roleId,
+          organizationId: null,
+          locationId: null,
+          scope: 'global',
+          assignedBy,
+          isTemporary: isTemporary ?? false,
+          expiresAt: expiresAt ? new Date(expiresAt) : null,
+          isActive: true,
+        })
+        .returning();
+
+      await snsSqsPublisher.publishUserEventToSuite('role_assigned', tenantId, roleId, {
         userId,
         roleId,
-        organizationId: null,
-        locationId: null,
-        scope: 'global',
+        assignmentId: row.id,
         assignedBy,
         isTemporary: isTemporary ?? false,
-        expiresAt: expiresAt ? new Date(expiresAt) : null,
-        isActive: true,
-      })
-      .returning();
+        expiresAt: expiresAt ?? null,
+      }, 'system', tx);
 
-    snsSqsPublisher.publishUserEventToSuite('user.role.assigned', tenantId, userId, {
-      userId,
-      roleId,
-      assignmentId: assignment.id,
-      assignedBy,
-      isTemporary: isTemporary ?? false,
-      expiresAt: expiresAt ?? null,
-    }).catch((err: Error) => {
-      Logger.log('warning', 'users', 'assign-role', 'Failed to publish user.role.assigned event', { userId, roleId, error: err.message });
+      return row;
     });
 
     return assignment;
@@ -940,21 +948,128 @@ export class UserManagementService {
       throw new Error('Role assignment not found');
     }
 
-    const [removed] = await db
-      .update(userRoleAssignments)
-      .set({ isActive: false, deactivatedAt: new Date() })
-      .where(eq(userRoleAssignments.id, assignmentId))
-      .returning();
+    // Atomic: the soft-delete and the user.role.removed event commit in ONE tx.
+    const removed = await db.transaction(async (tx) => {
+      const [row] = await tx
+        .update(userRoleAssignments)
+        .set({ isActive: false, deactivatedAt: new Date() })
+        .where(eq(userRoleAssignments.id, assignmentId))
+        .returning();
 
-    snsSqsPublisher.publishUserEventToSuite('user.role.removed', tenantId, assignment.userId, {
-      userId: assignment.userId,
-      roleId: removed.roleId,
-      assignmentId,
-    }).catch((err: Error) => {
-      Logger.log('warning', 'users', 'remove-role-assignment', 'Failed to publish user.role.removed event', { assignmentId, error: err.message });
+      await snsSqsPublisher.publishUserEventToSuite('role_unassigned', tenantId, row.roleId, {
+        userId: assignment.userId,
+        roleId: row.roleId,
+        assignmentId,
+      }, 'system', tx);
+
+      return row;
     });
 
     return removed;
+  }
+
+  /**
+   * Add an organization/entity membership to an existing user.
+   * Mirrors the assignment side of `removeOrganizationMembership`: validates the user and
+   * entity belong to the tenant, prevents duplicate active memberships, then publishes a
+   * `organization.assignment.created` event so CRM/Ops/Accounting stay in sync.
+   */
+  static async addOrganizationMembership(
+    tenantId: string,
+    targetUserId: string,
+    data: { entityId: string; accessLevel?: string },
+    options?: { createdByInternalUserId?: string | null },
+  ) {
+    const { entityId } = data;
+    const accessLevel = data.accessLevel ?? 'standard';
+
+    // Verify user belongs to tenant
+    const [user] = await db
+      .select({ userId: tenantUsers.userId })
+      .from(tenantUsers)
+      .where(and(eq(tenantUsers.tenantId, tenantId), eq(tenantUsers.userId, targetUserId)))
+      .limit(1);
+
+    if (!user) {
+      throw new Error('User not found in this tenant');
+    }
+
+    // Verify entity exists (entities are tenant-scoped)
+    const [entity] = await db
+      .select({ entityId: entities.entityId, entityType: entities.entityType, entityName: entities.entityName })
+      .from(entities)
+      .where(and(eq(entities.entityId, entityId), eq(entities.tenantId, tenantId)))
+      .limit(1);
+
+    if (!entity) {
+      throw new Error('Organization not found in this tenant');
+    }
+
+    // Prevent duplicate active membership for the same entity
+    const [existing] = await db
+      .select({ membershipId: organizationMemberships.membershipId })
+      .from(organizationMemberships)
+      .where(
+        and(
+          eq(organizationMemberships.tenantId, tenantId),
+          eq(organizationMemberships.userId, targetUserId),
+          eq(organizationMemberships.entityId, entityId),
+          eq(organizationMemberships.membershipStatus, 'active'),
+        ),
+      )
+      .limit(1);
+
+    if (existing) {
+      throw new Error('User is already a member of this organization');
+    }
+
+    const createdBy = options?.createdByInternalUserId ?? targetUserId;
+
+    // Atomic: the membership insert and organization.assignment.created event commit
+    // in ONE tx (tx-bound publish skips synchronous SNS; the poller delivers
+    // post-commit; a publish/outbox failure rolls the insert back — the dual-write fix).
+    const membership = await db.transaction(async (tx) => {
+      const [m] = await tx
+        .insert(organizationMemberships)
+        .values({
+          userId: targetUserId,
+          tenantId,
+          entityId,
+          entityType: entity.entityType ?? 'organization',
+          membershipType: 'direct',
+          membershipStatus: 'active',
+          accessLevel,
+          isPrimary: false,
+          invitedBy: options?.createdByInternalUserId ?? null,
+          invitedAt: new Date(),
+          joinedAt: new Date(),
+          createdBy,
+        })
+        .returning();
+
+      const { OrganizationAssignmentService } = await import(
+        '../../organizations/services/organization-assignment-service.js'
+      );
+      await OrganizationAssignmentService.publishOrgAssignmentCreated({
+        tenantId,
+        userId: targetUserId,
+        organizationId: entityId,
+        assignmentId: m.membershipId,
+        accessLevel,
+        isPrimary: false,
+        assignedBy: options?.createdByInternalUserId ?? undefined,
+      }, {}, tx);
+      return m;
+    });
+
+    return {
+      membershipId: membership.membershipId,
+      entityId,
+      entityName: entity.entityName,
+      entityType: membership.entityType,
+      accessLevel,
+      isPrimary: false,
+    };
   }
 
   /**
@@ -994,12 +1109,14 @@ export class UserManagementService {
 
     const entityId = membership.entityId;
 
-    await db
-      .delete(organizationMemberships)
-      .where(eq(organizationMemberships.membershipId, membershipId));
+    // Atomic: the membership delete and organization.assignment.deleted event commit
+    // in ONE tx (tx-bound publish; poller delivers post-commit; failure rolls back).
+    await db.transaction(async (tx) => {
+      await tx
+        .delete(organizationMemberships)
+        .where(eq(organizationMemberships.membershipId, membershipId));
 
-    if (options?.deletedByInternalUserId) {
-      try {
+      if (options?.deletedByInternalUserId) {
         const { OrganizationAssignmentService } = await import(
           '../../organizations/services/organization-assignment-service.js'
         );
@@ -1010,11 +1127,9 @@ export class UserManagementService {
           assignmentId: membershipId,
           deletedBy: options.deletedByInternalUserId,
           reason: 'user_removed',
-        });
-      } catch {
-        // non-critical
+        }, tx);
       }
-    }
+    });
 
     return { membershipId, entityId };
   }

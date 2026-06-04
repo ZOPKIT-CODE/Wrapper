@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { useKindeAuth } from '@/lib/auth/cognito-auth';
+import { useAuth } from '@/lib/auth/cognito-auth';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronRight, LayoutDashboard, Menu, Rocket, X } from 'lucide-react';
 import {
@@ -53,7 +53,7 @@ interface CtaConfig {
 
 function useMarketingCta(): CtaConfig {
   const navigate = useNavigate();
-  const { login, isAuthenticated } = useKindeAuth();
+  const { login, isAuthenticated } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [onboardingCompleted, setOnboardingCompleted] = useState(false);
   const [backendAuthenticated, setBackendAuthenticated] = useState<boolean | null>(null);
@@ -85,12 +85,8 @@ function useMarketingCta(): CtaConfig {
   const handleLogin = async () => {
     setIsLoading(true);
     try {
-      const googleConnectionId = import.meta.env.VITE_KINDE_GOOGLE_CONNECTION_ID;
-      if (googleConnectionId) {
-        await login({ connectionId: googleConnectionId });
-      } else {
-        await login();
-      }
+      // Cognito: route straight to Google federation (skips the hosted-UI selector).
+      await login({ provider: 'google' });
     } catch {
       // ignore
     } finally {

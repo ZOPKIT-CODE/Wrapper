@@ -14,7 +14,7 @@ export default async function applicationsRoutes(
       }
 
       request.log.info({ tenantId }, 'Getting applications for tenant');
-      Logger.log('info', 'routes', 'get-applications', `[APPS] tenantId="${tenantId}" kindeOrgId="${(request as any).userContext?.kindeOrgId}" internalUserId="${(request as any).userContext?.internalUserId}"`);
+      Logger.log('info', 'routes', 'get-applications', `[APPS] tenantId="${tenantId}" idpOrgId="${(request as any).userContext?.idpOrgId}" internalUserId="${(request as any).userContext?.internalUserId}"`);
       const userApps = await tenantApplicationsService.getEnabledApplicationsForTenant(tenantId);
       Logger.log('info', 'routes', 'get-applications', `[APPS] returned ${userApps.length} apps for tenantId="${tenantId}"`);
       return { success: true, data: userApps };

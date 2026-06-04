@@ -1,6 +1,6 @@
 import React from 'react'
 import { Navigate } from '@tanstack/react-router'
-import { useKindeAuth } from '@/lib/auth/cognito-auth'
+import { useAuth } from '@/lib/auth/cognito-auth'
 import { useAuthStatus, useOnboardingStatus } from '@/hooks/useSharedQueries'
 import AnimatedLoader from '@/components/common/feedback/AnimatedLoader'
 
@@ -9,15 +9,15 @@ interface OnboardingPageGuardProps {
 }
 
 export const OnboardingPageGuard = ({ children }: OnboardingPageGuardProps) => {
-  const { isAuthenticated, isLoading: kindeLoading } = useKindeAuth()
-  const { data: authData, isLoading: authLoading } = useAuthStatus()
+  const { isAuthenticated, isLoading: authLoading } = useAuth()
+  const { data: authData, isLoading: authStatusLoading } = useAuthStatus()
   const { data: onboardingResponse, isLoading: onboardingLoading } = useOnboardingStatus()
 
   const onboardingData = onboardingResponse?.data
   const backendAuthStatus = authData?.authStatus
 
   // Show loading while checking authentication and onboarding status
-  if (kindeLoading || (isAuthenticated && (authLoading || onboardingLoading))) {
+  if (authLoading || (isAuthenticated && (authLoading || onboardingLoading))) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
         <div className="text-center">
@@ -29,7 +29,7 @@ export const OnboardingPageGuard = ({ children }: OnboardingPageGuardProps) => {
   }
 
   // If not authenticated, redirect to landing
-  if (!isAuthenticated && !kindeLoading) {
+  if (!isAuthenticated && !authLoading) {
     return <Navigate to="/landing" replace />
   }
 

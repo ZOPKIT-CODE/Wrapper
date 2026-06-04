@@ -75,7 +75,7 @@ export default async function platformStaffManagementRoutes(
   // Grant platform staff access to a user. Super admin only.
   //
   // Body:
-  //   kindeUserId   – the staff member's Kinde user ID
+  //   idpSub   – the staff member's Cognito sub / IdP subject
   //   email         – for display and notification
   //   name          – display name
   //   permissions   – array of PlatformPermission values
@@ -86,7 +86,7 @@ export default async function platformStaffManagementRoutes(
 
     const grantorContext = (request as any).userContext;
     const body = request.body as {
-      kindeUserId:   string;
+      idpSub: string;
       email:         string;
       name:          string;
       permissions:   string[];
@@ -95,8 +95,8 @@ export default async function platformStaffManagementRoutes(
     };
 
     // ── Validate input ────────────────────────────────────────────────────
-    if (!body.kindeUserId?.trim()) {
-      return reply.code(400).send({ error: 'kindeUserId is required' });
+    if (!body.idpSub?.trim()) {
+      return reply.code(400).send({ error: 'idpSub is required' });
     }
     if (!body.email?.trim()) {
       return reply.code(400).send({ error: 'email is required' });
@@ -134,7 +134,7 @@ export default async function platformStaffManagementRoutes(
     const [grantor] = await db
       .select({ userId: tenantUsers.userId })
       .from(tenantUsers)
-      .where(eq(tenantUsers.idpSub, grantorContext.kindeUserId))
+      .where(eq(tenantUsers.idpSub, grantorContext.idpSub))
       .limit(1);
 
     if (!grantor) {
@@ -149,7 +149,7 @@ export default async function platformStaffManagementRoutes(
       .from(platformStaff)
       .where(
         and(
-          eq(platformStaff.idpSub, body.kindeUserId),
+          eq(platformStaff.idpSub, body.idpSub),
           eq(platformStaff.isActive, true)
         )
       )
@@ -165,7 +165,7 @@ export default async function platformStaffManagementRoutes(
     const [newStaff] = await db
       .insert(platformStaff)
       .values({
-        idpSub:             body.kindeUserId.trim(),
+        idpSub:             body.idpSub.trim(),
         email:              body.email.trim(),
         name:               body.name.trim(),
         grantedPermissions: body.permissions,
@@ -175,7 +175,7 @@ export default async function platformStaffManagementRoutes(
       })
       .returning();
 
-    invalidateStaffCache(body.kindeUserId);
+    invalidateStaffCache(body.idpSub);
 
     return reply.code(201).send({
       success: true,
@@ -194,16 +194,16 @@ export default async function platformStaffManagementRoutes(
   // Immediately revoke platform access. Super admin only.
   //
   // Body:
-  //   kindeUserId – whose access to revoke
+  //   idpSub – whose access to revoke
   //   reason      – why (required)
   fastify.post('/revoke', async (request: FastifyRequest, reply: FastifyReply) => {
     if (!requireSuperAdmin(request, reply)) return;
 
     const revokerContext = (request as any).userContext;
-    const body = request.body as { kindeUserId: string; reason: string };
+    const body = request.body as { idpSub: string; reason: string };
 
-    if (!body.kindeUserId?.trim()) {
-      return reply.code(400).send({ error: 'kindeUserId is required' });
+    if (!body.idpSub?.trim()) {
+      return reply.code(400).send({ error: 'idpSub is required' });
     }
     if (!body.reason?.trim() || body.reason.trim().length < 5) {
       return reply.code(400).send({ error: 'reason is required (min 5 characters)' });
@@ -212,7 +212,7 @@ export default async function platformStaffManagementRoutes(
     const [revoker] = await db
       .select({ userId: tenantUsers.userId })
       .from(tenantUsers)
-      .where(eq(tenantUsers.idpSub, revokerContext.kindeUserId))
+      .where(eq(tenantUsers.idpSub, revokerContext.idpSub))
       .limit(1);
 
     const updated = await db
@@ -226,13 +226,13 @@ export default async function platformStaffManagementRoutes(
       })
       .where(
         and(
-          eq(platformStaff.idpSub, body.kindeUserId),
+          eq(platformStaff.idpSub, body.idpSub),
           eq(platformStaff.isActive, true)
         )
       )
       .returning({ staffId: platformStaff.staffId, email: platformStaff.email });
 
-    invalidateStaffCache(body.kindeUserId);
+    invalidateStaffCache(body.idpSub);
 
     if (updated.length === 0) {
       return reply.code(404).send({

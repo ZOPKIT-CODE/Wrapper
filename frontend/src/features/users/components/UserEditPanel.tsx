@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -54,6 +54,7 @@ import {
   RoleAssignment,
   MembershipRow,
   HierarchyEntity,
+  ENTITY_TYPE_LABELS,
   getUserInitials,
   displayName,
   relativeTime,
@@ -300,10 +301,15 @@ export interface UserDetailSheetProps {
   onUpdateProfile: (userId: string, data: { firstName?: string; lastName?: string; phone?: string }) => void
   onRemoveRoleAssignment: (userId: string, assignmentId: string) => void
   onRemoveOrganizationMembership: (userId: string, membershipId: string) => void
+  onAddOrganizationMembership: (
+    userId: string,
+    data: { entityId: string; accessLevel?: 'admin' | 'manager' | 'standard' | 'limited' },
+  ) => void
   updateProfileIsPending: boolean
   updateStatusIsPending: boolean
   removeRoleAssignmentIsPending: boolean
   removeMembershipIsPending: boolean
+  addMembershipIsPending: boolean
   removingMembershipId: string | null
   detailPhoneDraft: string
   setDetailPhoneDraft: (v: string) => void
@@ -327,10 +333,12 @@ export function UserDetailSheet({
   onUpdateProfile,
   onRemoveRoleAssignment,
   onRemoveOrganizationMembership,
+  onAddOrganizationMembership,
   updateProfileIsPending,
   updateStatusIsPending,
   removeRoleAssignmentIsPending,
   removeMembershipIsPending,
+  addMembershipIsPending,
   removingMembershipId,
   detailPhoneDraft,
   setDetailPhoneDraft,
@@ -339,6 +347,36 @@ export function UserDetailSheet({
   detailLastNameDraft,
   setDetailLastNameDraft,
 }: UserDetailSheetProps) {
+  const [addOrgEntityId, setAddOrgEntityId] = useState('')
+  const [addOrgAccessLevel, setAddOrgAccessLevel] =
+    useState<'admin' | 'manager' | 'standard' | 'limited'>('standard')
+
+  // Reset the add-organization form whenever a different user is opened
+  useEffect(() => {
+    setAddOrgEntityId('')
+    setAddOrgAccessLevel('standard')
+  }, [selectedUserId])
+
+  // Organizations from the hierarchy the user is NOT already an active member of
+  const memberEntityIds = useMemo(() => {
+    const ud = userDetail as UserDetailRecord | null
+    return new Set((ud?.memberships ?? []).map((m) => m.entityId))
+  }, [userDetail])
+
+  const availableOrgs = useMemo(() => {
+    const flat: { entityId: string; entityName: string; entityType: string; depth: number }[] = []
+    const walk = (nodes: HierarchyEntity[], depth: number) => {
+      for (const n of nodes) {
+        if (!memberEntityIds.has(n.entityId)) {
+          flat.push({ entityId: n.entityId, entityName: n.entityName, entityType: n.entityType, depth })
+        }
+        if (n.children?.length) walk(n.children, depth + 1)
+      }
+    }
+    walk(hierarchyTree, 0)
+    return flat
+  }, [hierarchyTree, memberEntityIds])
+
   return (
     <>
       <Sheet open={!!selectedUserId} onOpenChange={(open) => !open && onCloseDetail()}>
@@ -476,26 +514,103 @@ export function UserDetailSheet({
 
                 <Separator />
 
-                {ud.memberships && ud.memberships.length > 0 && (
-                  <>
-                    <div>
-                      <h4 className="mb-3 flex items-center gap-2" style={{ fontSize: 16, fontFamily: 'var(--zk-display)', fontWeight: 600, letterSpacing: '-0.025em', color: 'var(--zk-ink)' }}>
-                        <Building2 className="h-4 w-4" /> Assigned organizations
-                      </h4>
-                      <p className="mb-2 text-[12px] text-muted-foreground">
-                        Shown in hierarchy order; memberships match entities in your org tree.
-                      </p>
-                      <AssignedOrganizationsBlock
-                        memberships={ud.memberships}
-                        hierarchyTree={hierarchyTree}
-                        onRequestRemoveMembership={(row) => onSetMembershipRemoveTarget(row)}
-                        removeMembershipPending={removeMembershipIsPending}
-                        removingMembershipId={removingMembershipId}
-                      />
+                <div>
+                  <h4 className="mb-3 flex items-center gap-2" style={{ fontSize: 16, fontFamily: 'var(--zk-display)', fontWeight: 600, letterSpacing: '-0.025em', color: 'var(--zk-ink)' }}>
+                    <Building2 className="h-4 w-4" /> Assigned organizations
+                  </h4>
+                  <p className="mb-2 text-[12px] text-muted-foreground">
+                    Shown in hierarchy order; memberships match entities in your org tree.
+                  </p>
+
+                  {/* Add organization */}
+                  {availableOrgs.length > 0 ? (
+                    <div className="mb-3 flex flex-col gap-2 rounded-lg border bg-muted/20 p-3 sm:flex-row sm:items-end">
+                      <div className="min-w-0 flex-1 space-y-1.5">
+                        <Label style={{ fontSize: 12, fontWeight: 500, color: 'var(--zk-muted)', fontFamily: 'var(--zk-font)' }}>
+                          Organization
+                        </Label>
+                        <Select value={addOrgEntityId} onValueChange={setAddOrgEntityId}>
+                          <SelectTrigger className="rounded-lg">
+                            <SelectValue placeholder="Select an organization" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableOrgs.map((o) => (
+                              <SelectItem key={o.entityId} value={o.entityId}>
+                                <span className="flex items-center gap-2">
+                                  <span className="font-medium" style={{ paddingLeft: `${o.depth * 12}px` }}>
+                                    {o.entityName}
+                                  </span>
+                                  <Badge variant="outline" className="text-[10px] py-0 px-1.5">
+                                    {ENTITY_TYPE_LABELS[o.entityType] ?? o.entityType}
+                                  </Badge>
+                                </span>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1.5 sm:w-36">
+                        <Label style={{ fontSize: 12, fontWeight: 500, color: 'var(--zk-muted)', fontFamily: 'var(--zk-font)' }}>
+                          Access
+                        </Label>
+                        <Select
+                          value={addOrgAccessLevel}
+                          onValueChange={(v) => setAddOrgAccessLevel(v as 'admin' | 'manager' | 'standard' | 'limited')}
+                        >
+                          <SelectTrigger className="rounded-lg">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="standard">Standard</SelectItem>
+                            <SelectItem value="manager">Manager</SelectItem>
+                            <SelectItem value="admin">Admin</SelectItem>
+                            <SelectItem value="limited">Limited</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <Button
+                        type="button"
+                        className="shrink-0 rounded-lg"
+                        style={{ background: 'var(--zk-navy)' }}
+                        disabled={addMembershipIsPending || !addOrgEntityId}
+                        onClick={() => {
+                          if (!selectedUserId || !addOrgEntityId) return
+                          onAddOrganizationMembership(selectedUserId, {
+                            entityId: addOrgEntityId,
+                            accessLevel: addOrgAccessLevel,
+                          })
+                          setAddOrgEntityId('')
+                          setAddOrgAccessLevel('standard')
+                        }}
+                      >
+                        {addMembershipIsPending ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <UserPlus className="mr-1 h-3 w-3" />
+                        )}
+                        Add
+                      </Button>
                     </div>
-                    <Separator />
-                  </>
-                )}
+                  ) : (
+                    <p className="mb-3 rounded-lg border border-dashed px-3 py-2 text-[12px] text-muted-foreground">
+                      No more organizations available to assign.
+                    </p>
+                  )}
+
+                  {ud.memberships && ud.memberships.length > 0 ? (
+                    <AssignedOrganizationsBlock
+                      memberships={ud.memberships}
+                      hierarchyTree={hierarchyTree}
+                      onRequestRemoveMembership={(row) => onSetMembershipRemoveTarget(row)}
+                      removeMembershipPending={removeMembershipIsPending}
+                      removingMembershipId={removingMembershipId}
+                    />
+                  ) : (
+                    <p className="text-sm italic text-muted-foreground">No organizations assigned yet.</p>
+                  )}
+                </div>
+
+                <Separator />
 
                 <div>
                   <div className="mb-3 flex items-center justify-between">

@@ -44,7 +44,7 @@ import { subscriptions } from '../../../db/schema/billing/subscriptions.js';
 export interface BootstrapTenantRecord {
   tenantId: string;
   tenantName: string;
-  kindeOrgId: string | null;
+  idpOrgId: string | null;
   isActive: boolean;
   industry: string | null;
   organizationSize: string | null;
@@ -72,7 +72,7 @@ export interface BootstrapOrganization {
 
 export interface BootstrapUser {
   userId: string;
-  kindeId: string | null;
+  idpSub: string | null;
   email: string;
   firstName: string;
   lastName: string;
@@ -352,7 +352,7 @@ export class BootstrapService {
       .select({
         tenantId:         tenants.tenantId,
         companyName:      tenants.companyName,
-        kindeOrgId:       tenants.idpOrgId,
+        idpOrgId:         tenants.idpOrgId,
         isActive:         tenants.isActive,
         industry:         tenants.industry,
         organizationSize: tenants.organizationSize,
@@ -384,7 +384,7 @@ export class BootstrapService {
     return {
       tenantId:         r.tenantId,
       tenantName:       r.companyName ?? '',
-      kindeOrgId:       r.kindeOrgId ?? null,
+      idpOrgId:         r.idpOrgId ?? null,
       isActive:         r.isActive ?? true,
       industry:         r.industry ?? null,
       organizationSize: r.organizationSize ?? null,
@@ -444,7 +444,7 @@ export class BootstrapService {
     const rows = await tx
       .select({
         userId:       tenantUsers.userId,
-        kindeUserId:  tenantUsers.idpSub,
+        idpSub:       tenantUsers.idpSub,
         email:        tenantUsers.email,
         firstName:    tenantUsers.firstName,
         lastName:     tenantUsers.lastName,
@@ -462,7 +462,7 @@ export class BootstrapService {
       const lastName  = r.lastName ?? '';
       return {
         userId:       r.userId,
-        kindeId:      r.kindeUserId ?? null,
+        idpSub:       r.idpSub ?? null,
         email:        r.email ?? '',
         firstName,
         lastName,

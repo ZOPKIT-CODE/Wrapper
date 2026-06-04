@@ -6,15 +6,6 @@ interface ImportMetaEnv {
   readonly VITE_API_BASE_URL: string
   readonly VITE_APP_URL: string
 
-  // Kinde Auth
-  readonly VITE_KINDE_DOMAIN: string
-  readonly VITE_KINDE_CLIENT_ID: string
-  readonly VITE_KINDE_REDIRECT_URI: string
-  readonly VITE_KINDE_LOGOUT_URI: string
-  readonly VITE_KINDE_GOOGLE_CONNECTION_ID: string
-  readonly VITE_KINDE_MANAGEMENT_AUDIENCE: string
-  readonly VITE_KINDE_MANAGEMENT_SCOPES: string
-
   // App domains
   readonly VITE_WRAPPER_DOMAIN: string
   readonly VITE_CRM_DOMAIN: string

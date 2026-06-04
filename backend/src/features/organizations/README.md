@@ -81,4 +81,4 @@ organizations/
 |---------|-------------|
 | **OrganizationService** | Legacy organization operations still used by some internal flows |
 | **LocationService** | Location CRUD in unified entities table, locations by organization or tenant, entity hierarchy with locations, validation |
-| **OrganizationAssignmentService** | Publishes organization-assignment events (created/updated/deactivated/activated/deleted) to RabbitMQ with retries, validation, enrichment, and user lookup. Supports bulk publish and rate limiting |
+| **OrganizationAssignmentService** | Publishes organization-assignment events (created/updated/deactivated/activated/deleted) via SNS (fanned out to per-app SQS queues) with retries, validation, enrichment, and user lookup. Supports bulk publish and rate limiting |

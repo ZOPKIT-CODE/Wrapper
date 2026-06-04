@@ -325,7 +325,7 @@ export default async function adminUserRoutes(
         userId,
         roleId,
         expiresAt,
-        assignedBy: ((request as ReqWithUser).userContext?.kindeUserId ?? (request as ReqWithUser).userContext?.internalUserId ?? '') as string,
+        assignedBy: ((request as ReqWithUser).userContext?.idpSub ?? (request as ReqWithUser).userContext?.internalUserId ?? '') as string,
         tenantId
       } as any);
 
@@ -373,7 +373,7 @@ export default async function adminUserRoutes(
         tenantId,
         userId,
         roleId,
-        ((request as ReqWithUser).userContext?.kindeUserId ?? (request as ReqWithUser).userContext?.internalUserId ?? '') as string
+        ((request as ReqWithUser).userContext?.idpSub ?? (request as ReqWithUser).userContext?.internalUserId ?? '') as string
       );
 
       Logger.log('info', 'role', requestId, 'Role deassigned successfully');
@@ -695,48 +695,51 @@ export default async function adminUserRoutes(
 
       // Check if this should be primary
       const isPrimary = assignmentType === 'primary';
-      if (isPrimary) {
-        // Remove primary flag from other assignments
-        await (db.update(organizationMemberships) as any)
-          .set({ isPrimary: false })
-          .where(and(
-            eq(organizationMemberships.userId, userId),
-            eq(organizationMemberships.tenantId, tenantId)
-          ));
-      }
-
       const membershipId = uuidv4();
-      const result = await (db.insert(organizationMemberships) as any)
-        .values({
-          membershipId,
-          userId,
-          tenantId,
-          entityId: organizationId,
-          entityType: 'organization',
-          roleId: roleId || null,
-          membershipType: 'direct',
-          membershipStatus: 'active',
-          isPrimary,
-          createdBy: ((request as ReqWithUser).userContext?.internalUserId ?? '') as string,
-          joinedAt: new Date()
-        })
-        .returning();
+      const { snsSqsPublisher } = await import('../../../features/messaging/utils/sns-sqs-publisher.js');
 
-      Logger.log('info', 'user', requestId, 'Organization assigned successfully');
+      // Atomic: the membership write (+ primary-flag clear) and the
+      // user.membership.assigned event commit in ONE tx (tx-bound publish skips
+      // synchronous SNS; the poller delivers post-commit; a failure rolls back and
+      // surfaces via the handler's catch below).
+      const result = await db.transaction(async (tx) => {
+        if (isPrimary) {
+          // Remove primary flag from other assignments
+          await (tx.update(organizationMemberships) as any)
+            .set({ isPrimary: false })
+            .where(and(
+              eq(organizationMemberships.userId, userId),
+              eq(organizationMemberships.tenantId, tenantId)
+            ));
+        }
 
-      // Publish user.membership.assigned so CRM/FA know about the new org link.
-      try {
-        const { snsSqsPublisher } = await import('../../../features/messaging/utils/sns-sqs-publisher.js');
+        const inserted = await (tx.insert(organizationMemberships) as any)
+          .values({
+            membershipId,
+            userId,
+            tenantId,
+            entityId: organizationId,
+            entityType: 'organization',
+            roleId: roleId || null,
+            membershipType: 'direct',
+            membershipStatus: 'active',
+            isPrimary,
+            createdBy: ((request as ReqWithUser).userContext?.internalUserId ?? '') as string,
+            joinedAt: new Date()
+          })
+          .returning();
+
         await snsSqsPublisher.publishUserEventToSuite('user.membership.assigned', tenantId, userId, {
           userId,
           entityId: organizationId,
           membershipId,
           isPrimary,
           membershipType: 'direct',
-        });
-      } catch (pubErr: unknown) {
-        Logger.log('warning', 'user', requestId, 'Failed to publish user.membership.assigned', { error: (pubErr as Error).message });
-      }
+        }, 'system', tx);
+        return inserted;
+      });
+
+      Logger.log('info', 'user', requestId, 'Organization assigned successfully');
 
       return {
         success: true,
@@ -829,40 +832,41 @@ export default async function adminUserRoutes(
         });
       }
 
-      // If setting as primary, remove primary status from other organizations
-      if (isPrimary) {
-        await (db.update(organizationMemberships) as any)
-          .set({ isPrimary: false })
-          .where(and(
-            eq(organizationMemberships.userId, userId),
-            eq(organizationMemberships.tenantId, tenantId)
-          ));
-      }
-
       // Create the membership
       const membershipId = uuidv4();
-      await (db.insert(organizationMemberships) as any).values({
-        membershipId,
-        userId,
-        entityId,
-        entityType: entity.entityType, // Set the correct entity type (organization or location)
-        tenantId,
-        roleId: roleId || null,
-        membershipType,
-        membershipStatus: 'active',
-        accessLevel: 'member',
-        isPrimary,
-        createdBy: (request as ReqWithUser).userContext.internalUserId,
-        joinedAt: new Date(),
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
+      const { OrganizationAssignmentService } = await import('../../../features/organizations/services/organization-assignment-service.js');
 
-      Logger.log('info', 'user', requestId, 'Organization assigned successfully', { membershipId });
+      // Atomic: the membership write (+ primary-flag clear) and the
+      // organization.assignment.created event commit in ONE tx (tx-bound publish;
+      // a publish/outbox failure rolls back and surfaces via the handler's catch).
+      await db.transaction(async (tx) => {
+        // If setting as primary, remove primary status from other organizations
+        if (isPrimary) {
+          await (tx.update(organizationMemberships) as any)
+            .set({ isPrimary: false })
+            .where(and(
+              eq(organizationMemberships.userId, userId),
+              eq(organizationMemberships.tenantId, tenantId)
+            ));
+        }
 
-      // Publish organization assignment created event (optional - don't fail if eventPublisher is not available)
-      try {
-        const { OrganizationAssignmentService } = await import('../../../features/organizations/services/organization-assignment-service.js');
+        await (tx.insert(organizationMemberships) as any).values({
+          membershipId,
+          userId,
+          entityId,
+          entityType: entity.entityType, // Set the correct entity type (organization or location)
+          tenantId,
+          roleId: roleId || null,
+          membershipType,
+          membershipStatus: 'active',
+          accessLevel: 'member',
+          isPrimary,
+          createdBy: (request as ReqWithUser).userContext.internalUserId,
+          joinedAt: new Date(),
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+
         await OrganizationAssignmentService.publishOrgAssignmentCreated({
           tenantId,
             userId,
@@ -876,12 +880,10 @@ export default async function adminUserRoutes(
           roleId: roleId || undefined,
           assignedBy: (request as ReqWithUser).userContext.internalUserId, // Use internalUserId (UUID) instead of userId (Kinde ID)
           assignedAt: new Date().toISOString()
-        });
-        Logger.log('info', 'user', requestId, 'Published organization assignment event');
-      } catch (eventErr: unknown) {
-        const eventError = eventErr as Error;
-        Logger.log('warning', 'user', requestId, 'Event publishing failed (non-critical)', { error: eventError.message });
-      }
+        }, {}, tx);
+      });
+
+      Logger.log('info', 'user', requestId, 'Organization assigned successfully', { membershipId });
 
       return {
         success: true,
@@ -956,16 +958,15 @@ export default async function adminUserRoutes(
       // Store entity info for event publishing before deletion
       const entityId = membership.entityId;
 
-      await db
-        .delete(organizationMemberships)
-        .where(eq(organizationMemberships.membershipId, membershipId))
-        .returning();
+      const { OrganizationAssignmentService } = await import('../../../features/organizations/services/organization-assignment-service.js');
 
-      Logger.log('info', 'user', requestId, 'Organization assignment removed successfully');
+      // Atomic: the membership delete and the organization.assignment.deleted event
+      // commit in ONE tx (tx-bound publish; a failure rolls back, surfacing via catch).
+      await db.transaction(async (tx) => {
+        await tx
+          .delete(organizationMemberships)
+          .where(eq(organizationMemberships.membershipId, membershipId));
 
-      // Publish organization assignment deleted event (optional - don't fail if eventPublisher is not available)
-      try {
-        const { OrganizationAssignmentService } = await import('../../../features/organizations/services/organization-assignment-service.js');
         await OrganizationAssignmentService.publishOrgAssignmentDeleted({
           tenantId,
           userId,
@@ -973,12 +974,10 @@ export default async function adminUserRoutes(
           assignmentId: membershipId,
           deletedBy: (request as ReqWithUser).userContext.internalUserId, // Use internalUserId (UUID) instead of userId (Kinde ID)
           reason: 'user_removed'
-        });
-        Logger.log('info', 'user', requestId, 'Published organization assignment deleted event');
-      } catch (eventErr: unknown) {
-        const eventError = eventErr as Error;
-        Logger.log('warning', 'user', requestId, 'Event publishing failed (non-critical)', { error: eventError.message });
-      }
+        }, tx);
+      });
+
+      Logger.log('info', 'user', requestId, 'Organization assignment removed successfully');
 
       return {
         success: true,
@@ -1049,19 +1048,18 @@ export default async function adminUserRoutes(
         }
       }
 
-      // Update the role
-      await (db.update(organizationMemberships) as any)
-        .set({
-          roleId: (roleId as string) || null,
-          updatedAt: new Date()
-        })
-        .where(eq(organizationMemberships.membershipId, membershipId));
+      const { OrganizationAssignmentService } = await import('../../../features/organizations/services/organization-assignment-service.js');
 
-      Logger.log('info', 'user', requestId, 'Organization role updated successfully');
+      // Atomic: the role update and the organization.assignment.updated event commit
+      // in ONE tx (tx-bound publish; a failure rolls back, surfacing via the catch).
+      await db.transaction(async (tx) => {
+        await (tx.update(organizationMemberships) as any)
+          .set({
+            roleId: (roleId as string) || null,
+            updatedAt: new Date()
+          })
+          .where(eq(organizationMemberships.membershipId, membershipId));
 
-      // Publish organization assignment updated event (optional - don't fail if eventPublisher is not available)
-      try {
-        const { OrganizationAssignmentService } = await import('../../../features/organizations/services/organization-assignment-service.js');
         await OrganizationAssignmentService.publishOrgAssignmentUpdated({
           tenantId,
             userId,
@@ -1077,12 +1075,10 @@ export default async function adminUserRoutes(
           changes: {
             roleId: roleId
           }
-        });
-        Logger.log('info', 'user', requestId, 'Published organization assignment updated event');
-      } catch (eventErr: unknown) {
-        const eventError = eventErr as Error;
-        Logger.log('warning', 'user', requestId, 'Event publishing failed (non-critical)', { error: eventError.message });
-      }
+        }, {}, tx);
+      });
+
+      Logger.log('info', 'user', requestId, 'Organization role updated successfully');
 
       return {
         success: true,

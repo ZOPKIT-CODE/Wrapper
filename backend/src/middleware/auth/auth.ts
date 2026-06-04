@@ -28,6 +28,7 @@ const PUBLIC_ROUTES: string[] = [
   '/api/auth/logout',
   '/api/auth/validate-token',
   '/api/auth/login/',
+  '/api/auth/refresh',
   '/api/version',
   '/api/plans',
   '/api/webhooks',
@@ -62,17 +63,16 @@ interface UserRecord {
   preferences?: Record<string, unknown>;
   invitedBy?: string | null;
   invitedAt?: string | null;
-  kindeUserId?: string;
 }
 
-interface KindeUser {
+interface IdpUser {
   userId: string;
   email?: string;
   name?: string;
   organization?: { id: string; name?: string } | null;
 }
 
-// Returns true when a bearer/cookie token is a Cognito pool token (Kinde->Cognito migration).
+// Returns true when a bearer/cookie token is from the Cognito pool.
 function tokenIsCognito(token: string): boolean {
   try {
     return isCognitoIssuer((jwt.decode(token) as jwt.JwtPayload | null)?.iss);
@@ -82,34 +82,51 @@ function tokenIsCognito(token: string): boolean {
 }
 
 /**
- * Verify a Cognito session token and shape it as the middleware's `KindeUser`.
- * The Cognito `sub` does NOT match the Kinde-era `tenant_users.kinde_user_id`, so the user
- * is resolved by EMAIL and mapped to its existing kinde_user_id (no sub-backfill during the
- * dual-IdP window). Cognito carries no org_code, so `organization` is null and the tenant is
+ * Verify a Cognito session token and shape it as the middleware's `IdpUser`.
+ * The user is resolved by email to find their existing idp_sub in tenant_users.
+ * Cognito carries no org_code, so `organization` is null and the tenant is
  * derived from the matched user's row in processAuthenticatedUser.
  */
-async function cognitoTokenToKindeUser(token: string): Promise<KindeUser | null> {
+async function cognitoTokenToIdpUser(token: string): Promise<IdpUser | null> {
   const ci = await verifyCognitoToken(token);
   if (!ci?.sub) return null;
-  let userId = ci.sub;
+  // The live Cognito `sub` is the canonical identity. A tenant_users row may still
+  // carry a stale idp_sub from the pre-Cognito (Kinde) era; rather than letting it
+  // override the live sub, heal the row to the Cognito sub so lookups, invitation
+  // acceptance, and downstream events converge on Cognito identity instead of
+  // re-persisting the stale value. The heal writes once per migrated user, then no-ops.
+  const userId = ci.sub;
   if (ci.email) {
     try {
-      const [row] = await db
-        .select({ kindeUserId: tenantUsers.idpSub })
+      const rows = await db
+        .select({ idpSub: tenantUsers.idpSub, tenantId: tenantUsers.tenantId })
         .from(tenantUsers)
-        .where(and(eq(tenantUsers.email, ci.email), eq(tenantUsers.isActive, true)))
-        .limit(1);
-      if (row?.kindeUserId) userId = row.kindeUserId;
+        .where(and(eq(tenantUsers.email, ci.email), eq(tenantUsers.isActive, true)));
+      const stale = rows.filter((r) => r.idpSub && r.idpSub !== ci.sub);
+      if (stale.length > 0) {
+        await db
+          .update(tenantUsers)
+          .set({ idpSub: ci.sub })
+          .where(and(eq(tenantUsers.email, ci.email), eq(tenantUsers.isActive, true)));
+        // Drop cache entries keyed by the old sub so the next lookup hits the healed row.
+        for (const r of stale) {
+          await invalidateUserCache(r.idpSub as string, r.tenantId);
+        }
+        Logger.log('info', 'auth', 'cognito-resolve', 'Healed stale idp_sub to live Cognito sub', {
+          email: ci.email,
+          healedRows: stale.length,
+        });
+      }
     } catch (e) {
-      Logger.log('warning', 'auth', 'cognito-resolve', 'email->user lookup failed', { error: (e as Error).message });
+      Logger.log('warning', 'auth', 'cognito-resolve', 'email->user heal failed', { error: (e as Error).message });
     }
   }
   return { userId, email: ci.email, name: ci.name, organization: null };
 }
 
-async function findUserInDatabase(kindeUserId: string, tenantId?: string): Promise<UserRecord | null> {
+async function findUserInDatabase(idpSub: string, tenantId?: string): Promise<UserRecord | null> {
   // Cache key includes tenantId so multi-tenant users get correct records per tenant.
-  const cacheKey = tenantId ? `${kindeUserId}:${tenantId}` : kindeUserId;
+  const cacheKey = tenantId ? `${idpSub}:${tenantId}` : idpSub;
 
   // Check shared cache first — eliminates a DB round-trip on every request
   // for the same user within the 5-minute TTL window.
@@ -131,8 +148,8 @@ async function findUserInDatabase(kindeUserId: string, tenantId?: string): Promi
     if (shouldLogVerbose()) Logger.log('info', 'auth', 'find-user-in-database', '🔍 Looking up user', { cacheKey });
 
     const whereClause = tenantId
-      ? and(eq(tenantUsers.idpSub, kindeUserId), eq(tenantUsers.tenantId, tenantId), eq(tenantUsers.isActive, true))
-      : and(eq(tenantUsers.idpSub, kindeUserId), eq(tenantUsers.isActive, true));
+      ? and(eq(tenantUsers.idpSub, idpSub), eq(tenantUsers.tenantId, tenantId), eq(tenantUsers.isActive, true))
+      : and(eq(tenantUsers.idpSub, idpSub), eq(tenantUsers.isActive, true));
 
     const userRecords = await db
       .select({
@@ -143,7 +160,11 @@ async function findUserInDatabase(kindeUserId: string, tenantId?: string): Promi
         lastName: tenantUsers.lastName,
         onboardingCompleted: tenantUsers.onboardingCompleted,
         isActive: tenantUsers.isActive,
-        isTenantAdmin: tenantUsers.isTenantAdmin
+        isTenantAdmin: tenantUsers.isTenantAdmin,
+        // Needed to detect invited users (who join an already-onboarded tenant and
+        // must skip the onboarding wizard) in determineOnboardingStatus().
+        preferences: tenantUsers.preferences,
+        invitedAt: tenantUsers.invitedAt
       })
       .from(tenantUsers)
       .where(whereClause) as UserRecord[];
@@ -168,7 +189,7 @@ async function findUserInDatabase(kindeUserId: string, tenantId?: string): Promi
 
 // ── User record cache ─────────────────────────────────────────────────────
 // findUserInDatabase() runs on every authenticated request and is the single
-// most expensive repeated DB call. Cache by kindeUserId with a 5-minute TTL.
+// most expensive repeated DB call. Cache by idpSub with a 5-minute TTL.
 // Invalidate via invalidateUserCache() whenever onboarding/isActive changes.
 // Backed by SharedCache (async, Redis-ready); falls back to in-process Map.
 const USER_RECORD_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
@@ -176,17 +197,14 @@ const USER_RECORD_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 // distinguished from undefined (cache miss).
 const userRecordCache = new SharedCache<{ v: UserRecord | null }>('auth:user');
 
-export async function invalidateUserCache(kindeUserId: string, tenantId?: string): Promise<void> {
-  await userRecordCache.delete(kindeUserId); // bare key (legacy)
+export async function invalidateUserCache(idpSub: string, tenantId?: string): Promise<void> {
+  await userRecordCache.delete(idpSub); // bare key (legacy)
   if (tenantId) {
-    await userRecordCache.delete(`${kindeUserId}:${tenantId}`);
+    await userRecordCache.delete(`${idpSub}:${tenantId}`);
   } else {
-    // Delete all tenant-specific keys for this user (in-process key scan).
-    const toDelete: string[] = [];
-    for (const key of userRecordCache.keys()) {
-      if (key.startsWith(`${kindeUserId}:`)) toDelete.push(key);
-    }
-    await Promise.all(toDelete.map(k => userRecordCache.delete(k)));
+    // Delete all tenant-specific keys for this user. Shared across instances when
+    // Valkey is enabled (SCAN+DEL); in-process key scan otherwise.
+    await userRecordCache.deleteByPrefix(`${idpSub}:`);
   }
 }
 // ─────────────────────────────────────────────────────────────────────────
@@ -303,11 +321,14 @@ function determineOnboardingStatus(userRecord: UserRecord | null, tenantId: stri
   const isTenantAdmin = userRecord.isTenantAdmin === true;
   const onboardingCompleted = userRecord.onboardingCompleted === true;
   
-  const isInvitedUser = onboardingCompleted === true && (
+  // Invited users join an ALREADY-onboarded tenant, so they must skip the onboarding
+  // wizard regardless of their own onboarding_completed flag. (Previously this was gated
+  // behind onboardingCompleted===true, which made the check dead — an invited user whose
+  // row still had onboarding_completed=false was wrongly routed into /onboarding.)
+  const isInvitedUser = (
     (userRecord.preferences as any)?.userType === 'INVITED_USER' ||
     (userRecord.preferences as any)?.isInvitedUser === true ||
-    userRecord.invitedBy !== null ||
-    userRecord.invitedAt !== null
+    userRecord.invitedAt != null
   );
 
   if (isInvitedUser) {
@@ -422,16 +443,16 @@ async function handleTokenRefresh(request: FastifyRequest, reply: FastifyReply, 
   return false;
 }
 
-async function processAuthenticatedUser(request: FastifyRequest, reply: FastifyReply, kindeUser: KindeUser): Promise<void> {
+async function processAuthenticatedUser(request: FastifyRequest, reply: FastifyReply, idpUser: IdpUser): Promise<void> {
   // Resolve tenantId first so findUserInDatabase can use it as part of the cache key.
   // This ensures multi-tenant users always get the correct record for their active org.
   let tenantId: string | null = null;
-  if (kindeUser.organization?.id) {
-    tenantId = await findTenantByOrgCode(kindeUser.organization.id);
+  if (idpUser.organization?.id) {
+    tenantId = await findTenantByOrgCode(idpUser.organization.id);
   }
 
-  // Look up the user scoped to the resolved tenant (cache key: kindeUserId:tenantId).
-  const userRecord = await findUserInDatabase(kindeUser.userId, tenantId ?? undefined);
+  // Look up the user scoped to the resolved tenant (cache key: idpSub:tenantId).
+  const userRecord = await findUserInDatabase(idpUser.userId, tenantId ?? undefined);
 
   // Fallback: if tenantId couldn't be resolved from the org, derive it from the DB record.
   if (!tenantId && userRecord?.tenantId) {
@@ -473,13 +494,13 @@ async function processAuthenticatedUser(request: FastifyRequest, reply: FastifyR
 
   const isTenantAdmin = effectiveUserRecord?.isTenantAdmin || false;
   request.userContext = {
-    userId: kindeUser.userId,
-    kindeUserId: kindeUser.userId,
+    userId: idpUser.userId,
+    idpSub: idpUser.userId,
     internalUserId: effectiveUserRecord?.userId || null,
     tenantId,
-    kindeOrgId: kindeUser.organization?.id,
-    email: effectiveUserRecord?.email || kindeUser.email || '',
-    name: [effectiveUserRecord?.firstName, effectiveUserRecord?.lastName].filter(Boolean).join(' ') || kindeUser.name || '',
+    idpOrgId: idpUser.organization?.id,
+    email: effectiveUserRecord?.email || idpUser.email || '',
+    name: [effectiveUserRecord?.firstName, effectiveUserRecord?.lastName].filter(Boolean).join(' ') || idpUser.name || '',
     isAuthenticated: true,
     needsOnboarding,
     onboardingCompleted: effectiveUserRecord?.onboardingCompleted || false,
@@ -490,8 +511,8 @@ async function processAuthenticatedUser(request: FastifyRequest, reply: FastifyR
   };
 
   request.user = {
-    id: kindeUser.userId,
-    userId: kindeUser.userId,
+    id: idpUser.userId,
+    userId: idpUser.userId,
     internalUserId: userRecord?.userId || null,
     tenantId,
     email: request.userContext.email,
@@ -505,7 +526,7 @@ async function processAuthenticatedUser(request: FastifyRequest, reply: FastifyR
 
   if (shouldLogVerbose()) {
     Logger.log('info', 'auth', 'process-authenticated-user', '✅ User authenticated', {
-      userId: kindeUser.userId,
+      userId: idpUser.userId,
       tenantId,
       needsOnboarding
     });
@@ -555,10 +576,10 @@ export async function authMiddleware(request: FastifyRequest, reply: FastifyRepl
               const uName = [u.firstName, u.lastName].filter(Boolean).join(' ') || u.email || '';
               request.userContext = {
                 userId: u.idpSub || u.userId,
-                kindeUserId: u.idpSub || u.userId,
+                idpSub: u.idpSub || u.userId,
                 internalUserId: u.userId,
                 tenantId: tenant.tenantId,
-                kindeOrgId: tenant.idpOrgId,
+                idpOrgId: tenant.idpOrgId,
                 email: u.email,
                 name: uName,
                 isAuthenticated: true,
@@ -595,18 +616,18 @@ export async function authMiddleware(request: FastifyRequest, reply: FastifyRepl
     if (!tokenIsCognito(token)) {
       throw new Error('Invalid token response');
     }
-    const authPromise = cognitoTokenToKindeUser(token);
+    const authPromise = cognitoTokenToIdpUser(token);
     const timeoutPromise = new Promise<never>((_, reject) =>
       setTimeout(() => reject(new Error('Authentication timeout')), 10000)
     );
 
-    const kindeUser = await Promise.race([authPromise, timeoutPromise]) as unknown as KindeUser | null;
-    
-    if (!kindeUser?.userId) {
+    const idpUser = await Promise.race([authPromise, timeoutPromise]) as unknown as IdpUser | null;
+
+    if (!idpUser?.userId) {
       throw new Error('Invalid token response');
     }
 
-    await processAuthenticatedUser(request, reply, kindeUser);
+    await processAuthenticatedUser(request, reply, idpUser);
     if (shouldLogVerbose()) Logger.log('info', 'auth', 'auth-middleware', '✅ Authentication successful');
 
   } catch (error: unknown) {

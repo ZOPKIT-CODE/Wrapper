@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { sql as dbSql } from '../../../db/index.js';
+import { sql as dbSql, type db } from '../../../db/index.js';
 import Logger from '../../../utils/logger.js';
 
 /**
@@ -46,7 +46,7 @@ export class OrganizationAssignmentService {
   }
 
   /**
-   * Look up user's kindeUserId and email from the DB so consumers can resolve the user
+   * Look up user's idpSub and email from the DB so consumers can resolve the user
    * without needing a separate wrapper_user_id_mapping table.
    */
   static async lookupUserIdentifiers(userId: string) {
@@ -54,7 +54,7 @@ export class OrganizationAssignmentService {
       const [row] = await dbSql`
         SELECT idp_sub, email FROM tenant_users WHERE user_id = ${userId} LIMIT 1
       `;
-      return row ? { userKindeId: row.idp_sub || null, userEmail: row.email || null } : {};
+      return row ? { userIdpSub: row.idp_sub || null, userEmail: row.email || null } : {};
     } catch (err: unknown) {
       const e = err as Error;
       Logger.log('warning', 'user', 'org-assignment', 'Could not look up user identifiers', { error: e.message });
@@ -87,7 +87,7 @@ export class OrganizationAssignmentService {
   /**
    * Publish organization assignment created event with enhanced error handling
    */
-  static async publishOrgAssignmentCreated(assignmentData: Record<string, unknown>, options: Record<string, unknown> = {}) {
+  static async publishOrgAssignmentCreated(assignmentData: Record<string, unknown>, options: Record<string, unknown> = {}, tx?: typeof db) {
     const startTime = Date.now();
 
     Logger.log('info', 'user', 'publish-org-assignment-created', 'Publishing creation event', {
@@ -119,8 +119,8 @@ export class OrganizationAssignmentService {
         data: {
           assignmentId: enrichedData.assignmentId || `assignment-${Date.now()}`,
           userId: enrichedData.userId,
-          userKindeId: userIds.userKindeId || null,
-          userEmail: userIds.userEmail || null,
+          idpSub: userIds.userIdpSub || null,
+          email: userIds.userEmail || null,
           organizationId: enrichedData.organizationId,
           organizationCode: enrichedData.organizationCode,
           assignmentType: enrichedData.assignmentType,
@@ -134,8 +134,8 @@ export class OrganizationAssignmentService {
         }
       };
 
-      // Publish with retry logic
-      const result = await this.publishWithRetry(event, String(enrichedData.tenantId ?? ''));
+      // Publish with retry logic (tx-bound when a caller transaction is supplied)
+      const result = await this.publishWithRetry(event, String(enrichedData.tenantId ?? ''), tx);
 
       // Log success with performance metrics
       const duration = Date.now() - startTime;
@@ -165,6 +165,10 @@ export class OrganizationAssignmentService {
         tenantId: assignmentData.tenantId
       });
 
+      // tx mode: surface the failure so the caller's transaction rolls back (the
+      // event must be atomic with the membership write). Non-tx: stay best-effort.
+      if (tx) throw err;
+
       return {
         success: false,
         error: error.message,
@@ -178,7 +182,25 @@ export class OrganizationAssignmentService {
    * Core publishing logic with retry mechanism
    * Publishes via SNS
    */
-  static async publishWithRetry(event: Record<string, unknown>, tenantId: string) {
+  static async publishWithRetry(event: Record<string, unknown>, tenantId: string, tx?: typeof db) {
+    if (tx) {
+      // tx mode: write the outbox rows in the caller's transaction, ONE attempt
+      // (no retry — a failed statement aborts the tx), and propagate so the caller
+      // rolls back. No synchronous SNS; the poller delivers after commit.
+      const { snsSqsPublisher } = await import('../../messaging/utils/sns-sqs-publisher.js');
+      const eventData = (event.data || event) as Record<string, unknown>;
+      const eventType = String(event.eventType ?? eventData.eventType ?? '');
+      const results = await snsSqsPublisher.publishOrgAssignmentEventToSuite(
+        eventType,
+        tenantId,
+        eventData,
+        String(eventData.assignedBy ?? eventData.updatedBy ?? 'system'),
+        tx,
+      );
+      const res = (results.find((r: { success?: boolean }) => r.success) ?? results[0]) as { eventId?: string; routingKey?: string };
+      return { success: results.some((r: { success?: boolean }) => r.success), eventId: res?.eventId, routingKey: res?.routingKey, attempts: 1 };
+    }
+
     let lastError: unknown;
 
     for (let attempt = 1; attempt <= this.MAX_RETRY_ATTEMPTS; attempt++) {
@@ -191,7 +213,7 @@ export class OrganizationAssignmentService {
         const eventType = String(event.eventType ?? eventData.eventType ?? '');
         const assignmentData = eventData;
 
-        // Publish to RabbitMQ - publish to all business suite apps
+        // Publish via SNS - fan out to all business suite app SQS queues
         const results = await snsSqsPublisher.publishOrgAssignmentEventToSuite(
           eventType,
           tenantId,
@@ -237,7 +259,7 @@ export class OrganizationAssignmentService {
   /**
    * Publish organization assignment updated event
    */
-  static async publishOrgAssignmentUpdated(assignmentData: Record<string, unknown>, options: Record<string, unknown> = {}) {
+  static async publishOrgAssignmentUpdated(assignmentData: Record<string, unknown>, options: Record<string, unknown> = {}, tx?: typeof db) {
     const startTime = Date.now();
 
     try {
@@ -264,8 +286,8 @@ export class OrganizationAssignmentService {
         data: {
           assignmentId: enrichedData.assignmentId,
           userId: enrichedData.userId,
-          userKindeId: userIds.userKindeId || null,
-          userEmail: userIds.userEmail || null,
+          idpSub: userIds.userIdpSub || null,
+          email: userIds.userEmail || null,
           organizationId: enrichedData.organizationId,
           organizationCode: enrichedData.organizationCode,
           assignmentType: enrichedData.assignmentType,
@@ -282,8 +304,8 @@ export class OrganizationAssignmentService {
         }
       };
 
-      // Publish with retry logic
-      const result = await this.publishWithRetry(event, String(enrichedData.tenantId ?? ''));
+      // Publish with retry logic (tx-bound when a caller transaction is supplied)
+      const result = await this.publishWithRetry(event, String(enrichedData.tenantId ?? ''), tx);
 
       // Log success with performance metrics
       const duration = Date.now() - startTime;
@@ -302,6 +324,9 @@ export class OrganizationAssignmentService {
       const duration = Date.now() - startTime;
       Logger.log('error', 'user', 'publish-org-assignment-updated', 'Failed to publish org assignment updated', { durationMs: duration, error: error.message });
 
+      // tx mode: surface so the caller's transaction rolls back. Non-tx: best-effort.
+      if (tx) throw err;
+
       return {
         success: false,
         error: error.message,
@@ -314,7 +339,7 @@ export class OrganizationAssignmentService {
   /**
    * Publish organization assignment deactivated event
    */
-  static async publishOrgAssignmentDeactivated(assignmentData: Record<string, unknown>) {
+  static async publishOrgAssignmentDeactivated(assignmentData: Record<string, unknown>, tx?: typeof db) {
     const eventId = uuidv4();
 
     const event = {
@@ -334,8 +359,8 @@ export class OrganizationAssignmentService {
     };
 
     try {
-      // Use publishWithRetry which now uses RabbitMQ
-      const result = await this.publishWithRetry(event, String(assignmentData.tenantId ?? ''));
+      // Use publishWithRetry (publishes via SNS → SQS)
+      const result = await this.publishWithRetry(event, String(assignmentData.tenantId ?? ''), tx);
       Logger.log('info', 'user', 'publish-org-assignment-deactivated', 'Published organization assignment deactivated event', { assignmentId: event.data.assignmentId });
       return result;
     } catch (err: unknown) {
@@ -348,7 +373,7 @@ export class OrganizationAssignmentService {
   /**
    * Publish organization assignment activated event
    */
-  static async publishOrgAssignmentActivated(assignmentData: Record<string, unknown>) {
+  static async publishOrgAssignmentActivated(assignmentData: Record<string, unknown>, tx?: typeof db) {
     const eventId = uuidv4();
 
     const event = {
@@ -367,8 +392,8 @@ export class OrganizationAssignmentService {
     };
 
     try {
-      // Use publishWithRetry which now uses RabbitMQ
-      const result = await this.publishWithRetry(event, String(assignmentData.tenantId ?? ''));
+      // Use publishWithRetry (publishes via SNS → SQS)
+      const result = await this.publishWithRetry(event, String(assignmentData.tenantId ?? ''), tx);
       Logger.log('info', 'user', 'publish-org-assignment-activated', 'Published organization assignment activated event', { assignmentId: event.data.assignmentId });
       return result;
     } catch (err: unknown) {
@@ -381,7 +406,7 @@ export class OrganizationAssignmentService {
   /**
    * Publish organization assignment deleted event
    */
-  static async publishOrgAssignmentDeleted(assignmentData: Record<string, unknown>) {
+  static async publishOrgAssignmentDeleted(assignmentData: Record<string, unknown>, tx?: typeof db) {
     const eventId = uuidv4();
     const startTime = Date.now();
 
@@ -412,8 +437,8 @@ export class OrganizationAssignmentService {
     };
 
     try {
-      // Use publishWithRetry which now uses RabbitMQ
-      const result = await this.publishWithRetry(event, String(assignmentData.tenantId ?? ''));
+      // Use publishWithRetry (tx-bound when a caller transaction is supplied)
+      const result = await this.publishWithRetry(event, String(assignmentData.tenantId ?? ''), tx);
       const duration = Date.now() - startTime;
       Logger.log('info', 'user', 'publish-org-assignment-deleted', 'Successfully published deletion event', { assignmentId: event.data.assignmentId, durationMs: duration });
       return result;

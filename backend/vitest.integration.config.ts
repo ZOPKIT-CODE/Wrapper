@@ -59,6 +59,8 @@ export default defineConfig({
     exclude: [
       'node_modules/**',
       'dist/**',
+      // Valkey-only cache tests run via their own config (no DB global-setup).
+      'src/**/cache-valkey.integration.test.{ts,js}',
     ],
   },
 });

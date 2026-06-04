@@ -9,6 +9,7 @@ import { maybeOffloadToS3 } from './large-payload-store.js';
 import Logger from '../../../utils/logger.js';
 import { injectTraceContext } from '../../../utils/trace-context.js';
 import { deriveEventId } from '../services/event-id.js';
+import { resolveEnvelopeTenant, applyCanonicalStamp, TENANT_UUID_RE } from './tenant-stamp.js';
 
 // Off by default. Set VALIDATE_OUTGOING_EVENTS=true in dev/staging to log a
 // warning whenever an outbound payload does not match the canonical
@@ -129,6 +130,7 @@ class SnsSqsPublisher {
     eventData = {},
     publishedBy = 'system',
     eventId,
+    tx,
   }: {
     eventType: string;
     sourceApplication: string;
@@ -138,8 +140,14 @@ class SnsSqsPublisher {
     eventData?: Record<string, unknown>;
     publishedBy?: string;
     eventId?: string;
+    /** Caller's domain transaction — when provided, the outbox INSERT joins it
+     *  (atomic with the domain write) and the synchronous SNS publish is skipped. */
+    tx?: typeof db;
   }): Promise<{ success: boolean; eventId: string; routingKey: string; messageId: string }> {
-    if (!this.isConfigured()) {
+    // In tx mode we only write the outbox row (no synchronous SNS publish), so the
+    // SNS topic doesn't need to be configured here — the poller handles delivery.
+    // This keeps the SNS-config requirement from rolling back the caller's domain tx.
+    if (!tx && !this.isConfigured()) {
       Logger.log('error', 'general', 'publishInterAppEvent', `Event DROPPED: ${sourceApplication} → ${targetApplication} (${eventType}) — SNS_INTER_APP_TOPIC_ARN not set`);
       throw new Error(
         'SNS publisher is not configured. Set SNS_INTER_APP_TOPIC_ARN environment variable.'
@@ -149,31 +157,47 @@ class SnsSqsPublisher {
     const t0 = Date.now();
 
     // Bug 1/3 fix — single chokepoint for tenantId-envelope translation.
-    // Downstream apps (CRM, FA, …) join on `kinde_org_id`, not the wrapper's
-    // internal tenant UUID. Many producers pass the wrapper UUID; translate
-    // here so every convenience method (publishRoleEvent, publishUserEventToSuite,
-    // publishOrgEventToSuite, publishCreditEvent, publishOrgAssignmentEventToSuite,
-    // publishInterAppEvent direct callers) gets the fix without per-callsite churn.
-    // Heuristic: kindeOrgId starts with "org_"; UUIDs look uuid-shaped. Skip the
-    // lookup for already-good values and for empty inputs.
-    if (tenantId && !tenantId.startsWith('org_') && /^[0-9a-f-]{36}$/i.test(tenantId)) {
+    // Downstream apps (CRM, FA, …) join on `kinde_org_id`/`idp_org_id`, not the
+    // wrapper's internal tenant UUID. Many producers pass the wrapper UUID;
+    // translate here so every convenience method gets the fix without per-callsite churn.
+    //
+    // Tenant-UUID-divergence fix: in addition to translating the envelope tenantId
+    // to the idpOrgId, we stamp the wrapper's CANONICAL tenant UUID onto
+    // `eventData.wrapperTenantId`. This is the single source of truth that lets a
+    // downstream app (FA especially, whose tenant_id is a text PK) pin its local
+    // tenant row to the SAME id the wrapper uses — even when an incremental event
+    // (org.assignment / user / role) arrives BEFORE tenant.onboarded and the app
+    // would otherwise mint a divergent id. Resolved in BOTH directions so the
+    // canonical UUID is always present regardless of which form the caller passed.
+    if (tenantId) {
+      let idpOrgIdForUuid: string | null | undefined;
+      let uuidForIdpOrg:   string | null | undefined;
       try {
         const { db: _db } = await import('../../../db/index.js');
         const { tenants } = await import('../../../db/schema/index.js');
         const { eq } = await import('drizzle-orm');
-        const [row] = await _db
-          .select({ kindeOrgId: tenants.idpOrgId })
-          .from(tenants)
-          .where(eq(tenants.tenantId, tenantId))
-          .limit(1);
-        if (row?.kindeOrgId) {
-          tenantId = row.kindeOrgId;
-        } else {
-          Logger.log('warning', 'general', 'publishInterAppEvent', 'kindeOrgId lookup miss — falling back to raw tenantId (downstream lookups will likely fail)', { tenantId, eventType, targetApplication });
+
+        if (tenantId.startsWith('org_')) {
+          const [row] = await _db
+            .select({ tenantId: tenants.tenantId })
+            .from(tenants).where(eq(tenants.idpOrgId, tenantId)).limit(1);
+          uuidForIdpOrg = row?.tenantId ?? null;
+        } else if (TENANT_UUID_RE.test(tenantId)) {
+          const [row] = await _db
+            .select({ idpOrgId: tenants.idpOrgId })
+            .from(tenants).where(eq(tenants.tenantId, tenantId)).limit(1);
+          idpOrgIdForUuid = row?.idpOrgId ?? null;
+          if (!row?.idpOrgId) {
+            Logger.log('warning', 'general', 'publishInterAppEvent', 'idpOrgId lookup miss — falling back to raw tenantId (downstream lookups will likely fail)', { tenantId, eventType, targetApplication });
+          }
         }
       } catch (err: unknown) {
-        Logger.log('warning', 'general', 'publishInterAppEvent', 'kindeOrgId lookup failed — falling back to raw tenantId', { tenantId, eventType, error: (err as Error).message });
+        Logger.log('warning', 'general', 'publishInterAppEvent', 'tenant id resolution failed — falling back to raw tenantId', { tenantId, eventType, error: (err as Error).message });
       }
+
+      const resolution = resolveEnvelopeTenant({ tenantId, idpOrgIdForUuid, uuidForIdpOrg });
+      tenantId = resolution.envelopeTenantId;
+      eventData = applyCanonicalStamp(eventData as Record<string, unknown>, resolution.wrapperTenantId) as typeof eventData;
     }
 
     Logger.log('info', 'general', 'publishInterAppEvent', `Publishing event: ${sourceApplication} → ${targetApplication} (${eventType})`, { tenantId, eventType, targetApplication, payloadSize: JSON.stringify(eventData).length });
@@ -231,16 +255,15 @@ class SnsSqsPublisher {
     // stored attributes carry it too — poller replays preserve the trace link.
     injectTraceContext(messageAttributes);
 
-    // Outbox-first pattern: persist the event to inter_app_outbox BEFORE
-    // attempting the SNS publish. If SNS fails (circuit open, network error),
-    // we leave published_at NULL — the outbox poller will retry. Domain
-    // transactions can safely commit because the event is durable in our DB.
+    // Outbox-first pattern: persist the event to inter_app_outbox, then attempt
+    // the SNS publish. If SNS fails, published_at stays NULL and the poller retries.
     //
-    // NOTE: this is a dual-write (no shared transaction with caller's domain
-    // write). Acceptable tradeoff: caller would need to thread a tx handle
-    // into publishInterAppEvent() to share — which the existing public API
-    // does not support. The outbox row + idempotent event_id is still strictly
-    // better than the previous "throw on circuit-open and lose the event" path.
+    // Atomicity: when the caller threads its domain `tx`, the outbox INSERT joins
+    // that transaction (committing atomically with the domain write — no dual-write
+    // window) and the synchronous SNS publish is skipped (the poller delivers after
+    // commit). Without a `tx`, this is a dual-write: the outbox row is written on a
+    // separate connection right after the SNS attempt — durable, but with a small
+    // window if the process dies between the caller's commit and this insert.
     return this.enqueueEvent({
       eventId: resolvedEventId,
       eventType,
@@ -252,6 +275,7 @@ class SnsSqsPublisher {
       message,
       messageAttributes,
       startedAt: t0,
+      tx,
     });
   }
 
@@ -274,6 +298,10 @@ class SnsSqsPublisher {
     message: Record<string, unknown>;
     messageAttributes: Record<string, { DataType: string; StringValue: string }>;
     startedAt: number;
+    /** Caller's domain transaction. When provided, the outbox row is written in
+     *  that tx (atomic with the domain write) and the synchronous SNS publish is
+     *  skipped — the outbox poller delivers after the caller's tx commits. */
+    tx?: typeof db;
   }): Promise<{ success: boolean; eventId: string; routingKey: string; messageId: string }> {
     const {
       eventId,
@@ -286,7 +314,28 @@ class SnsSqsPublisher {
       message,
       messageAttributes,
       startedAt,
+      tx,
     } = params;
+
+    // tx-bound path: write the outbox row in the CALLER's transaction so it commits
+    // atomically with the domain write — no dual-write window, and no phantom event
+    // if the caller's tx rolls back. Skip the synchronous SNS publish; the outbox
+    // poller delivers (published_at IS NULL) after the caller commits.
+    if (tx) {
+      await tx.execute(drizzleSql`
+        INSERT INTO inter_app_outbox (event_id, event_type, target_application, payload, message_attributes)
+        VALUES (
+          ${eventId},
+          ${eventType},
+          ${targetApplication},
+          ${JSON.stringify(message)}::jsonb,
+          ${JSON.stringify(messageAttributes)}::jsonb
+        )
+        ON CONFLICT (event_id) DO NOTHING
+      `);
+      // messageId = eventId until the poller assigns an SNS message-id on delivery.
+      return { success: true, eventId, routingKey, messageId: eventId };
+    }
 
     // 1. Durable insert into outbox first.
     // ON CONFLICT (event_id) DO NOTHING makes this idempotent if a caller
@@ -512,7 +561,8 @@ class SnsSqsPublisher {
     tenantId: string,
     roleId: string,
     roleData: Record<string, unknown>,
-    publishedBy = 'system'
+    publishedBy = 'system',
+    tx?: typeof db,
   ): Promise<Array<{ targetApp: string; success?: boolean; eventId?: string; error?: string }>> {
     // H-3: Reject empty/missing roleId before touching SNS — prevents phantom events
     if (!roleId || typeof roleId !== 'string' || roleId.trim().length === 0) {
@@ -523,6 +573,14 @@ class SnsSqsPublisher {
     const results: Array<{ targetApp: string; success?: boolean; eventId?: string; error?: string }> =
       [];
     for (const targetApp of this.businessSuiteApps) {
+      if (tx) {
+        // tx mode: one attempt, no retry, no per-app catch — a failure MUST
+        // propagate so the caller's transaction rolls back (outbox rows stay
+        // atomic with the domain write). No synchronous SNS; poller delivers.
+        const result = await this.publishRoleEvent(targetApp, eventType, tenantId, roleId, roleData, publishedBy, tx);
+        results.push({ targetApp, ...result });
+        continue;
+      }
       // H-6: Retry each per-app publish up to 2 times with exponential backoff
       try {
         const result = await this.withRetry(() =>
@@ -544,9 +602,11 @@ class SnsSqsPublisher {
     tenantId: string,
     roleId: string,
     roleData: Record<string, unknown>,
-    publishedBy = 'system'
+    publishedBy = 'system',
+    tx?: typeof db,
   ): Promise<{ success: boolean; eventId: string; routingKey: string; messageId: string }> {
     return this.publishInterAppEvent({
+      tx,
       eventType,
       sourceApplication: 'wrapper',
       targetApplication,
@@ -620,11 +680,19 @@ class SnsSqsPublisher {
     tenantId: string,
     userId: string,
     userData: Record<string, unknown>,
-    publishedBy = 'system'
+    publishedBy = 'system',
+    tx?: typeof db,
   ): Promise<Array<{ targetApp: string; success?: boolean; eventId?: string; error?: string }>> {
     const results: Array<{ targetApp: string; success?: boolean; eventId?: string; error?: string }> =
       [];
     for (const targetApp of this.businessSuiteApps) {
+      if (tx) {
+        // tx mode: one attempt, no retry, no per-app catch — a failure MUST
+        // propagate so the caller's transaction rolls back (atomic with the write).
+        const result = await this.publishUserEvent(targetApp, eventType, tenantId, userId, userData, publishedBy, tx);
+        results.push({ targetApp, ...result });
+        continue;
+      }
       try {
         const result = await this.withRetry(() =>
           this.publishUserEvent(targetApp, eventType, tenantId, userId, userData, publishedBy)
@@ -645,7 +713,8 @@ class SnsSqsPublisher {
     tenantId: string,
     userId: string,
     userData: Record<string, unknown>,
-    publishedBy = 'system'
+    publishedBy = 'system',
+    tx?: typeof db,
   ): Promise<{ success: boolean; eventId: string; routingKey: string; messageId: string }> {
     const toIso = (v: unknown): string =>
       typeof v === 'string'
@@ -663,9 +732,10 @@ class SnsSqsPublisher {
     if (userData.deletedAt != null) eventData.deletedAt = toIso(userData.deletedAt);
     if (userData.deletedBy != null) eventData.deletedBy = userData.deletedBy;
     if (userData.reason != null) eventData.reason = userData.reason;
-    if (userData.kindeUserId != null) eventData.kindeUserId = userData.kindeUserId;
+    if (userData.idpSub != null) eventData.idpSub = userData.idpSub;
 
     return this.publishInterAppEvent({
+      tx,
       eventType,
       sourceApplication: 'wrapper',
       targetApplication,
@@ -772,11 +842,19 @@ class SnsSqsPublisher {
     eventType: string,
     tenantId: string,
     assignmentData: Record<string, unknown>,
-    publishedBy = 'system'
+    publishedBy = 'system',
+    tx?: typeof db,
   ): Promise<Array<{ targetApp: string; success?: boolean; eventId?: string; error?: string }>> {
     const results: Array<{ targetApp: string; success?: boolean; eventId?: string; error?: string }> =
       [];
     for (const targetApp of this.businessSuiteApps) {
+      if (tx) {
+        // tx mode: one attempt, no retry, no per-app catch — a failure MUST
+        // propagate so the caller's transaction rolls back (atomic with the write).
+        const result = await this.publishOrgAssignmentEvent(targetApp, eventType, tenantId, assignmentData, publishedBy, tx);
+        results.push({ targetApp, ...result });
+        continue;
+      }
       try {
         const result = await this.withRetry(() =>
           this.publishOrgAssignmentEvent(targetApp, eventType, tenantId, assignmentData, publishedBy)
@@ -796,10 +874,12 @@ class SnsSqsPublisher {
     eventType: string,
     tenantId: string,
     assignmentData: Record<string, unknown>,
-    publishedBy = 'system'
+    publishedBy = 'system',
+    tx?: typeof db,
   ): Promise<{ success: boolean; eventId: string; routingKey: string; messageId: string }> {
     const entityId = String(assignmentData.assignmentId ?? assignmentData.userId ?? '');
     return this.publishInterAppEvent({
+      tx,
       eventType,
       sourceApplication: 'wrapper',
       targetApplication,

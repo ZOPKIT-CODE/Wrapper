@@ -7,9 +7,6 @@ interface Config {
   API_BASE_URL: string;
   WRAPPER_DOMAIN: string;
 
-  // Auth
-  KINDE_DOMAIN: string;
-
   // App domains
   CRM_DOMAIN: string;
   CRM_CALLBACK_PATH: string;
@@ -43,8 +40,6 @@ export const config: Config = {
   API_BASE_URL: getEnvVar('VITE_API_BASE_URL', 'http://localhost:3000'),
   WRAPPER_DOMAIN: getEnvVar('VITE_WRAPPER_DOMAIN', 'https://wrapper.zopkit.com'),
 
-  KINDE_DOMAIN: getEnvVar('VITE_KINDE_DOMAIN', 'https://auth.zopkit.com'),
-
   CRM_DOMAIN: getEnvVar('VITE_CRM_DOMAIN', 'https://crm.zopkit.com'),
   CRM_CALLBACK_PATH: getEnvVar('VITE_CRM_CALLBACK_PATH', '/callback'),
   HR_APP_URL: getEnvVar('VITE_HR_APP_URL', 'http://localhost:3003'),
@@ -72,7 +67,6 @@ export const {
   API_BASE_URL,
   CRM_DOMAIN,
   CRM_CALLBACK_PATH,
-  KINDE_DOMAIN,
   HR_APP_URL,
   AFFILIATE_APP_URL,
   LOGO_URL,

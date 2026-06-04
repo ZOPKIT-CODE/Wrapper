@@ -18,20 +18,18 @@ export class OnboardingExternalService {
    * 🔐 **EXTRACT AND VALIDATE AUTHENTICATION**
    * Centralized authentication handling
    */
-  static async extractAndValidateAuthentication(request: unknown, logger: OnboardingFileLogger | null = null): Promise<{ authenticated: boolean; user: { kindeUserId: string; email?: string; name?: string } | null }> {
+  static async extractAndValidateAuthentication(request: unknown, logger: OnboardingFileLogger | null = null): Promise<{ authenticated: boolean; user: { idpSub: string; email?: string; name?: string } | null }> {
     if (!request) {
       return { authenticated: false, user: null };
     }
 
     try {
-      // Extract token from request headers
-      const req = request as { headers?: { authorization?: string } };
+      // Cognito session rides the httpOnly idp_token cookie (matches the global
+      // auth middleware's extractToken); a Bearer header is an optional fallback.
+      const req = request as { headers?: { authorization?: string }; cookies?: { idp_token?: string } };
       const authHeader = req.headers?.authorization;
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return { authenticated: false, user: null };
-      }
-
-      const token = authHeader.substring(7);
+      const token = req.cookies?.idp_token
+        ?? (authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : undefined);
       if (!token || token.trim() === '' || token.length < 10) {
         return { authenticated: false, user: null };
       }
@@ -45,8 +43,7 @@ export class OnboardingExternalService {
       return {
         authenticated: true,
         user: {
-          // KEEP the kindeUserId property name for now (renamed in a later phase); carries the Cognito sub.
-          kindeUserId: ci.sub,
+          idpSub: ci.sub,
           email: ci.email,
           name: ci.name
         }
@@ -69,9 +66,9 @@ export class OnboardingExternalService {
    * ensures the Cognito user exists (so they can sign in) and returns the org-code / externalId /
    * userId / userName that callers persist to the Wrapper DB.
    */
-  static async setupKindeIntegration(params: { companyName: string; adminEmail: string; firstName?: string; lastName?: string; subdomain: string; existingUser?: { kindeUserId?: string; name?: string; email?: string } | null }, logger: OnboardingFileLogger | null = null): Promise<Record<string, unknown>> {
+  static async setupIdpIntegration(params: { companyName: string; adminEmail: string; firstName?: string; lastName?: string; subdomain: string; existingUser?: { idpSub?: string; name?: string; email?: string } | null }, logger: OnboardingFileLogger | null = null): Promise<Record<string, unknown>> {
     const { companyName, adminEmail, firstName, lastName, subdomain, existingUser } = params;
-    if (logger) (logger as any).kinde.start('Setting up identity integration', { companyName, adminEmail });
+    if (logger) (logger as any).idp?.start('Setting up identity integration', { companyName, adminEmail });
 
     // Org identifiers are owned by the Wrapper DB — generate them locally (no external IdP sync).
     const externalId = `tenant_${uuidv4()}`;
@@ -79,37 +76,36 @@ export class OnboardingExternalService {
 
     // Handle user creation/assignment. Membership lives in organization_memberships /
     // userRoleAssignments (written natively elsewhere), so we no longer add the user to an org here.
-    let finalKindeUserId;
+    let finalIdpSub;
     let userName;
 
     if (existingUser) {
       // Use the already-authenticated user; their Cognito identity already exists.
-      finalKindeUserId = existingUser.kindeUserId as string;
+      finalIdpSub = existingUser.idpSub as string;
       userName = existingUser.name || (existingUser.email && String(existingUser.email).split('@')[0]) || '';
-      Logger.log('info', 'general', 'setupKindeIntegration', 'Using authenticated user', { kindeUserId: finalKindeUserId });
+      Logger.log('info', 'general', 'setupIdpIntegration', 'Using authenticated user', { idpSub: finalIdpSub });
     } else {
-      // Ensure the admin user exists in Cognito via adminCreateUser, which is
-      // idempotent; KEEP the kindeUserId column name for now (renamed in a later phase).
+      // Ensure the admin user exists in Cognito via adminCreateUser (idempotent).
       try {
         const cognitoUser = await adminCreateUser({ email: adminEmail, firstName, lastName });
 
-        finalKindeUserId = cognitoUser.sub;
+        finalIdpSub = cognitoUser.sub;
         userName = (firstName || lastName) ? `${firstName || ''} ${lastName || ''}`.trim() : adminEmail.split('@')[0];
 
-        Logger.log('info', 'general', 'setupKindeIntegration', 'Cognito user ensured', { kindeUserId: finalKindeUserId });
+        Logger.log('info', 'general', 'setupIdpIntegration', 'Cognito user ensured', { idpSub: finalIdpSub });
       } catch (err: unknown) {
         const error = err as Error;
-        Logger.log('warning', 'general', 'setupKindeIntegration', 'Cognito user creation failed, using fallback', { error: error.message });
-        finalKindeUserId = `user_${String(adminEmail).replace('@', '_').replace('.', '_')}_${Date.now()}`;
+        Logger.log('warning', 'general', 'setupIdpIntegration', 'Cognito user creation failed, using fallback', { error: error.message });
+        finalIdpSub = `user_${String(adminEmail).replace('@', '_').replace('.', '_')}_${Date.now()}`;
         userName = firstName && lastName ? `${firstName} ${lastName}` : String(adminEmail).split('@')[0];
-        Logger.log('info', 'general', 'setupKindeIntegration', 'Using fallback user ID', { kindeUserId: finalKindeUserId });
+        Logger.log('info', 'general', 'setupIdpIntegration', 'Using fallback user ID', { idpSub: finalIdpSub });
       }
     }
 
     return {
       orgCode: actualOrgCode,
       externalId,
-      userId: finalKindeUserId as string,
+      userId: finalIdpSub as string,
       userName: userName as string
     };
   }

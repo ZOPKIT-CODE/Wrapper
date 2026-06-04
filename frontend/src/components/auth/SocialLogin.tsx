@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useKindeAuth } from '@/lib/auth/cognito-auth';
+import { useAuth } from '@/lib/auth/cognito-auth';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Shield, Loader2 } from 'lucide-react';
@@ -54,7 +54,7 @@ export const SocialLogin: React.FC<SocialLoginProps> = ({
   onSuccess,
   onError
 }) => {
-  const { login, isLoading, isAuthenticated, user } = useKindeAuth();
+  const { login, isLoading, isAuthenticated, user } = useAuth();
   const [loadingProvider, setLoadingProvider] = useState<string | null>(null);
 
   // Use provided organization code - no auto-detection
@@ -70,24 +70,9 @@ export const SocialLogin: React.FC<SocialLoginProps> = ({
   const handleLogin = async (provider: string) => {
     try {
       setLoadingProvider(provider);
-      
-      // Get connection ID from environment variable for custom auth
-      const googleConnectionId = import.meta.env.VITE_KINDE_GOOGLE_CONNECTION_ID;
-      
-      // Build login options for custom auth
-      const loginOptions: any = {};
-      
-      // Use connection ID for Google (custom auth)
-      if (provider === 'google' && googleConnectionId) {
-        // Try both camelCase and snake_case for compatibility
-        loginOptions.connectionId = googleConnectionId;
-        loginOptions.connection_id = googleConnectionId;
-        logger.debug('🔐 SocialLogin: Using custom auth with Google connection ID:', googleConnectionId);
-      } else {
-        // Fallback to connection_id for other providers or if connection ID not configured
-        loginOptions.connection_id = provider;
-        logger.debug('🔐 SocialLogin: Using standard auth with connection_id');
-      }
+
+      // Cognito: pass the provider straight through to federate (skips the hosted-UI selector).
+      const loginOptions: any = { provider };
 
       // Add organization context if available
       if (finalOrgCode) {

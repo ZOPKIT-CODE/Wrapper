@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button"
 import { cn, formatDate } from "@/lib/utils"
 import { useTheme } from "@/components/theme/ThemeProvider"
 import { useUserContextSafe } from "@/contexts/UserContextProvider"
-import { useKindeAuth } from "@/lib/auth/cognito-auth"
+import { useAuth } from "@/lib/auth/cognito-auth"
 
 const NotificationManager = React.lazy(() =>
   import("@/features/notifications/NotificationManager").then(m => ({ default: m.NotificationManager }))
@@ -232,7 +232,7 @@ export function DashboardLayout() {
   const ctx = useUserContextSafe()
   const user = ctx?.user ?? null
   const tenant = ctx?.tenant ?? null
-  const { user: kindeUser } = useKindeAuth()
+  const { user: idpUser } = useAuth()
 
   // Seasonal credits congratulatory popup
   const {
@@ -270,14 +270,14 @@ export function DashboardLayout() {
 
   // Prepare user data for sidebar
   const userData = useMemo(() => {
-    if (!user && !kindeUser) return undefined;
+    if (!user && !idpUser) return undefined;
 
     return {
-      name: user?.name || kindeUser?.givenName || kindeUser?.email || 'User',
-      email: user?.email || kindeUser?.email || 'user@example.com',
-      avatar: kindeUser?.picture,
+      name: user?.name || idpUser?.givenName || idpUser?.email || 'User',
+      email: user?.email || idpUser?.email || 'user@example.com',
+      avatar: idpUser?.picture,
     };
-  }, [user, kindeUser])
+  }, [user, idpUser])
 
   // Prepare tenant data for sidebar.
   // Only populated once the tenant object arrives — avoids showing the misleading

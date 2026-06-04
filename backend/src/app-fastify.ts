@@ -468,6 +468,15 @@ async function gracefulShutdown() {
       console.warn('⚠️ Error stopping SQS consumer:', (sqsErr as Error).message);
     }
 
+    // Close the shared Valkey connection.
+    try {
+      const { closeValkey } = await import('./utils/valkey-client.js');
+      await closeValkey();
+      console.log('✅ Valkey connection closed.');
+    } catch (vkErr: unknown) {
+      console.warn('⚠️ Error closing Valkey:', (vkErr as Error).message);
+    }
+
     // Disconnect SNS/SQS publisher (no-op for stateless SDK, but kept for clean shutdown)
     try {
       const { snsSqsPublisher } = await import('./features/messaging/utils/sns-sqs-publisher.js');
@@ -637,38 +646,23 @@ async function start() {
     // // Initialize trial monitoring system after app setup
     // await initializeTrialSystem();
 
-    // Redis connection disabled - app will run without Redis
-    // To re-enable Redis, uncomment the code below and ensure Redis is running
-    /*
+    // ── Shared cache (ElastiCache Valkey) ───────────────────────────────────
+    // Single-tier shared cache: when REDIS_ENABLED=true and a target is set, all
+    // SharedCache instances (auth user/role/tenant-lookup caches) read & write to
+    // Valkey, so reads, writes, and invalidations are shared across instances —
+    // required for correct permission propagation under horizontal scaling.
+    // Falls back to an in-process Map (single instance) when disabled/unreachable.
     try {
-      const redisManager = (await import('./utils/redis.js')).default;
-      
-      // Set a timeout for Redis connection (5 seconds)
-      const connectPromise = redisManager.connect();
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Redis connection timeout')), 5000)
-      );
-      
-      await Promise.race([connectPromise, timeoutPromise]);
-      console.log('✅ Redis sync services initialized');
-
-      // Verify Redis connection
-      if (!redisManager.isConnected) {
-        console.warn('⚠️ Redis connected but isConnected flag is false');
+      const { getValkey, isValkeyEnabled } = await import('./utils/valkey-client.js');
+      if (isValkeyEnabled()) {
+        getValkey(); // warm the connection at boot; readiness is logged via events
+        console.log('🔌 Valkey shared cache enabled (REDIS_ENABLED=true)');
       } else {
-        console.log('✅ Redis connection verified');
+        console.log('ℹ️ Valkey disabled (REDIS_ENABLED!=true) — using in-process cache (single instance only)');
       }
     } catch (error) {
-      // Redis is optional - log warning but don't fail startup
-      console.warn('⚠️ Redis not available - continuing without Redis');
-      console.warn('   Redis is used for caching and sync services');
-      console.warn('   To enable Redis:');
-      console.warn('   1. Start Redis: redis-server');
-      console.warn('   2. Or set REDIS_URL environment variable for cloud Redis');
-      console.warn('   App will continue to run without Redis (some features may be limited)');
+      console.warn('⚠️ Valkey init skipped:', (error as Error).message);
     }
-    */
-    console.log('ℹ️ Redis optional; app running without Redis. Uncomment Redis init in app.js to enable.');
 
     // Setup graceful shutdown
     process.on('SIGTERM', gracefulShutdown);

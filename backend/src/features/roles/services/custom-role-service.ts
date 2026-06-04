@@ -322,25 +322,28 @@ export class CustomRoleService {
       processedRestrictions = JSON.stringify(restrictions);
     }
 
-    const [role] = await db.insert(customRoles).values({
-      tenantId,
-      roleName,
-      description,
-      permissions: JSON.stringify(hierarchicalPermissions) as unknown as Record<string, unknown>, // Store in hierarchical format
-      restrictions: (processedRestrictions as unknown) as Record<string, unknown>, // Handle restrictions properly
-      isSystemRole: false, // This is a custom role
-      createdBy: createdBy!,
-      lastModifiedBy: createdBy!
-    }).returning();
+    // Atomic outbox: the role insert and its role.created event are written in ONE
+    // transaction (tx-bound publish skips synchronous SNS — the poller delivers
+    // after commit). A publish/outbox failure rolls the insert back instead of
+    // committing a role whose event was silently lost (the dual-write fix).
+    const role = await db.transaction(async (tx) => {
+      const [created] = await tx.insert(customRoles).values({
+        tenantId,
+        roleName,
+        description,
+        permissions: JSON.stringify(hierarchicalPermissions) as unknown as Record<string, unknown>, // Store in hierarchical format
+        restrictions: (processedRestrictions as unknown) as Record<string, unknown>, // Handle restrictions properly
+        isSystemRole: false, // This is a custom role
+        createdBy: createdBy!,
+        lastModifiedBy: createdBy!
+      }).returning();
 
-    Logger.log('info', 'role', 'create-custom-role', 'Created role with hierarchical permissions structure', { roleName });
+      Logger.log('info', 'role', 'create-custom-role', 'Created role with hierarchical permissions structure', { roleName });
 
-    // Publish role creation event to relevant applications (only apps with permissions)
-    try {
       await publishRoleEventToApplications(
         'role.created',
         tenantId,
-        role?.roleId ?? '',
+        created?.roleId ?? '',
         {
           roleName: roleName,
           description: description,
@@ -348,15 +351,13 @@ export class CustomRoleService {
           restrictions: processedRestrictions,
           metadata: metadata,
           createdBy: createdBy,
-          createdAt: role.createdAt
-        }
+          createdAt: created.createdAt
+        },
+        tx,
       );
-      Logger.log('info', 'role', 'create-custom-role', 'Role creation event published', { roleId: role?.roleId });
-    } catch (err: unknown) {
-      const publishError = err as Error;
-      Logger.log('warning', 'role', 'create-custom-role', 'Failed to publish role creation event', { error: publishError.message });
-      // Don't fail the role creation if event publishing fails
-    }
+      Logger.log('info', 'role', 'create-custom-role', 'Role creation event queued atomically', { roleId: created?.roleId });
+      return created;
+    });
 
     return role!;
   }
@@ -494,46 +495,46 @@ export class CustomRoleService {
       processedRestrictions = JSON.stringify(restrictions);
     }
 
-    const [updatedRole] = await db
-      .update(customRoles)
-      .set({
-        roleName,
-        description,
-        permissions: JSON.stringify(hierarchicalPermissions) as unknown as Record<string, unknown>,
-        restrictions: (processedRestrictions as unknown) as Record<string, unknown>,
-        lastModifiedBy: updatedBy!,
-        updatedAt: new Date()
-      })
-      .where(and(
-        eq(customRoles.roleId, roleId),
-        eq(customRoles.tenantId, tenantId)
-      ))
-      .returning();
+    // Atomic outbox: the role update and its events commit in ONE transaction
+    // (tx-bound publish skips synchronous SNS — the poller delivers after commit).
+    // A publish/outbox failure rolls the update back rather than committing a role
+    // whose event was silently lost (the dual-write fix).
+    const updatedRole = await db.transaction(async (tx) => {
+      const [updated] = await tx
+        .update(customRoles)
+        .set({
+          roleName,
+          description,
+          permissions: JSON.stringify(hierarchicalPermissions) as unknown as Record<string, unknown>,
+          restrictions: (processedRestrictions as unknown) as Record<string, unknown>,
+          lastModifiedBy: updatedBy!,
+          updatedAt: new Date()
+        })
+        .where(and(
+          eq(customRoles.roleId, roleId),
+          eq(customRoles.tenantId, tenantId)
+        ))
+        .returning();
 
-    Logger.log('info', 'role', 'update-custom-role', 'Updated role with hierarchical permissions structure', { roleName });
+      Logger.log('info', 'role', 'update-custom-role', 'Updated role with hierarchical permissions structure', { roleName });
 
-    // Publish role change event to Redis streams for real-time sync
-    try {
-      // Redis removed - using AWS MQ publisher
-
-      // Publish using standard publishRoleEvent method for consistency
       const { snsSqsPublisher } = await import('../../messaging/utils/sns-sqs-publisher.js');
-      await snsSqsPublisher.publishRoleEventToSuite('role_updated', tenantId, updatedRole.roleId, {
-        roleId: updatedRole.roleId,
-        roleName: updatedRole.roleName,
-        description: updatedRole.description,
-        permissions: typeof updatedRole.permissions === 'string'
-          ? JSON.parse(updatedRole.permissions)
-          : updatedRole.permissions,
-        restrictions: typeof updatedRole.restrictions === 'string'
-          ? JSON.parse(updatedRole.restrictions)
-          : updatedRole.restrictions,
+      await snsSqsPublisher.publishRoleEventToSuite('role_updated', tenantId, updated.roleId, {
+        roleId: updated.roleId,
+        roleName: updated.roleName,
+        description: updated.description,
+        permissions: typeof updated.permissions === 'string'
+          ? JSON.parse(updated.permissions)
+          : updated.permissions,
+        restrictions: typeof updated.restrictions === 'string'
+          ? JSON.parse(updated.restrictions)
+          : updated.restrictions,
         updatedBy: updatedBy,
-        updatedAt: updatedRole.updatedAt || new Date().toISOString(),
-        isSystemRole: updatedRole.isSystemRole || false
-      });
+        updatedAt: updated.updatedAt || new Date().toISOString(),
+        isSystemRole: updated.isSystemRole || false
+      }, 'system', tx);
 
-      Logger.log('info', 'role', 'update-custom-role', 'Published role_updated event', { roleName });
+      Logger.log('info', 'role', 'update-custom-role', 'Queued role_updated event (tx)', { roleName });
 
       // Also publish to custom stream for backward compatibility
       const eventData = {
@@ -542,40 +543,37 @@ export class CustomRoleService {
         eventType: 'role_permissions_changed',
         tenantId: tenantId,
         entityType: 'role',
-        entityId: updatedRole.roleId,
+        entityId: updated.roleId,
         action: 'permissions_updated',
         data: {
-          roleId: updatedRole.roleId,
-          roleName: updatedRole.roleName,
-          permissions: typeof updatedRole.permissions === 'string' ? JSON.parse(updatedRole.permissions) : (updatedRole.permissions ?? {}),
-          isActive: (updatedRole as Record<string, unknown>).isActive !== false,
-          description: updatedRole.description,
-          scope: updatedRole.scope || 'organization'
+          roleId: updated.roleId,
+          roleName: updated.roleName,
+          permissions: typeof updated.permissions === 'string' ? JSON.parse(updated.permissions) : (updated.permissions ?? {}),
+          isActive: (updated as Record<string, unknown>).isActive !== false,
+          description: updated.description,
+          scope: updated.scope || 'organization'
         },
         metadata: {
-          correlationId: `role_permissions_${updatedRole.roleId}_${Date.now()}`,
+          correlationId: `role_permissions_${updated.roleId}_${Date.now()}`,
           version: '1.0',
           sourceTimestamp: new Date().toISOString(),
           sourceApp: 'wrapper'
         }
       };
 
-      // Publish to AWS MQ (reusing snsSqsPublisher from above)
       const result = await snsSqsPublisher.publishInterAppEvent({
         eventType: 'role_permissions_changed',
         sourceApplication: 'wrapper',
         targetApplication: 'crm',
         tenantId: tenantId,
-        entityId: updatedRole.roleId,
-        eventData: eventData
+        entityId: updated.roleId,
+        eventData: eventData,
+        tx,
       });
 
-      Logger.log('info', 'role', 'update-custom-role', 'Published role permissions change event to AWS MQ', { roleName, eventId: result?.eventId });
-    } catch (err: unknown) {
-      const publishError = err as Error;
-      Logger.log('warning', 'role', 'update-custom-role', 'Failed to publish role change event', { error: publishError.message });
-      // Don't fail the role update if event publishing fails
-    }
+      Logger.log('info', 'role', 'update-custom-role', 'Queued role permissions change event (tx)', { roleName, eventId: result?.eventId });
+      return updated;
+    });
 
     return updatedRole!;
   }

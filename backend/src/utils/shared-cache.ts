@@ -1,13 +1,18 @@
 /**
- * Shared cache with async interface.
+ * Shared cache with an async interface.
  *
- * Currently backed by in-process Maps (single-instance / dev setups).
- * To enable Redis for horizontal scaling: install `ioredis`, set REDIS_URL,
- * and uncomment the Redis branch in getRedisClient() below.
+ * Single-tier design: when Valkey/Redis is enabled and connected (see
+ * ./valkey-client), every get/set/delete goes to Valkey ONLY — there is no
+ * in-process L1 in front of it. That means an invalidation (delete) performed by
+ * any one instance is immediately visible to all instances on their next read,
+ * which is what makes this correct under horizontal scaling.
  *
- * The public API is fully async so the call-sites are forward-compatible —
- * swapping in Redis requires no changes outside this file.
+ * When Valkey is disabled or unreachable, it falls back to an in-process Map so
+ * single-instance / dev setups still work (just not shared across instances).
+ *
+ * The public API is fully async, so call-sites are agnostic to the backend.
  */
+import { getValkey, isValkeyReady } from './valkey-client.js';
 
 interface CacheEntry<T> { value: T; expiresAt: number }
 
@@ -36,90 +41,98 @@ class InProcessCache<T> {
     this.store.clear();
   }
 
-  /** Returns all non-expired keys (for prefix-scan invalidation patterns). */
-  keys(): IterableIterator<string> {
+  /** Returns all non-expired keys (for prefix-scan invalidation in fallback mode). */
+  keys(): string[] {
     const now = Date.now();
-    const live = new Map<string, CacheEntry<T>>();
+    const live: string[] = [];
     for (const [k, v] of this.store) {
-      if (now <= v.expiresAt) live.set(k, v);
+      if (now <= v.expiresAt) live.push(k);
     }
-    return live.keys();
+    return live;
   }
 }
-
-// ── Redis client (optional) ────────────────────────────────────────────────
-// Uncomment and install `ioredis` to enable Redis-backed shared cache.
-//
-// let redisClient: {
-//   get: (k: string) => Promise<string | null>;
-//   set: (k: string, v: string, opts: { EX: number }) => Promise<unknown>;
-//   del: (k: string) => Promise<unknown>;
-// } | null = null;
-//
-// async function getRedisClient() {
-//   if (redisClient) return redisClient;
-//   const url = process.env.REDIS_URL;
-//   if (!url) return null;
-//   try {
-//     const { default: Redis } = await import('ioredis');
-//     const client = new Redis(url, { lazyConnect: true, enableOfflineQueue: false, maxRetriesPerRequest: 1 });
-//     await client.connect().catch(() => null);
-//     redisClient = {
-//       get: (k) => client.get(k),
-//       set: (k, v, { EX }) => client.set(k, v, 'EX', EX),
-//       del: (k) => client.del(k),
-//     };
-//     return redisClient;
-//   } catch {
-//     return null;
-//   }
-// }
-// ──────────────────────────────────────────────────────────────────────────
 
 export class SharedCache<T> {
   private fallback: InProcessCache<T>;
 
   constructor(
-    /** Namespace prefix — used as a Redis key prefix when Redis is enabled. */
+    /** Namespace prefix — used as the Valkey key prefix when Valkey is enabled. */
     readonly namespace: string,
   ) {
     this.fallback = new InProcessCache<T>();
   }
 
+  private redisKey(key: string): string {
+    return `${this.namespace}:${key}`;
+  }
+
   async get(key: string): Promise<T | undefined> {
-    // Redis branch (future):
-    // const redis = await getRedisClient();
-    // if (redis) {
-    //   const raw = await redis.get(`${this.namespace}:${key}`).catch(() => null);
-    //   if (raw === null) return undefined;
-    //   try { return JSON.parse(raw) as T; } catch { return undefined; }
-    // }
+    const vk = getValkey();
+    if (vk && isValkeyReady()) {
+      try {
+        const raw = await vk.get(this.redisKey(key));
+        if (raw === null) return undefined;
+        try {
+          return JSON.parse(raw) as T;
+        } catch {
+          return undefined; // corrupt entry — treat as miss
+        }
+      } catch {
+        // Transient Valkey error — fall back to in-process so we don't hammer the DB.
+      }
+    }
     return this.fallback.get(key);
   }
 
   async set(key: string, value: T, ttlMs: number): Promise<void> {
-    // Redis branch (future):
-    // const redis = await getRedisClient();
-    // if (redis) {
-    //   await redis.set(`${this.namespace}:${key}`, JSON.stringify(value), { EX: Math.ceil(ttlMs / 1000) }).catch(() => null);
-    //   return;
-    // }
+    const vk = getValkey();
+    if (vk && isValkeyReady()) {
+      try {
+        await vk.set(this.redisKey(key), JSON.stringify(value), 'PX', ttlMs);
+        return;
+      } catch {
+        // Fall through to in-process on transient errors.
+      }
+    }
     this.fallback.set(key, value, ttlMs);
   }
 
   async delete(key: string): Promise<void> {
-    // Redis branch (future):
-    // const redis = await getRedisClient();
-    // if (redis) { await redis.del(`${this.namespace}:${key}`).catch(() => null); }
+    const vk = getValkey();
+    if (vk && isValkeyReady()) {
+      try {
+        await vk.del(this.redisKey(key));
+        return;
+      } catch {
+        // Fall through to in-process on transient errors.
+      }
+    }
     this.fallback.delete(key);
   }
 
   /**
-   * Returns all live (non-expired) keys in the in-process fallback store.
-   * Used for prefix-scan invalidation (e.g. deleting all keys for a user).
-   * When Redis is active this should be replaced with a SCAN pattern call.
+   * Delete every key whose (un-namespaced) name starts with `prefix`.
+   * Used for fan-out invalidation, e.g. dropping all tenant-scoped entries for a
+   * user. Uses a non-blocking SCAN+DEL against Valkey, or a key scan in fallback.
    */
-  keys(): IterableIterator<string> {
-    return this.fallback.keys();
+  async deleteByPrefix(prefix: string): Promise<void> {
+    const vk = getValkey();
+    if (vk && isValkeyReady()) {
+      try {
+        const match = `${this.namespace}:${prefix}*`;
+        let cursor = '0';
+        do {
+          const [next, batch] = await vk.scan(cursor, 'MATCH', match, 'COUNT', 250);
+          cursor = next;
+          if (batch.length) await vk.del(...batch);
+        } while (cursor !== '0');
+        return;
+      } catch {
+        // Fall through to in-process on transient errors.
+      }
+    }
+    for (const key of this.fallback.keys()) {
+      if (key.startsWith(prefix)) this.fallback.delete(key);
+    }
   }
 }

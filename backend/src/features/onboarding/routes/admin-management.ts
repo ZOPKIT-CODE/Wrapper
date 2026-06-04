@@ -10,8 +10,8 @@ import { TenantService } from '../../../services/tenant-service.js';
 
 /**
  * Validate a bearer/cookie token (Cognito-only). The token is verified via
- * verifyCognitoToken and mapped to the legacy { kindeUserId, userId, email, name }
- * shape (sub -> kindeUserId/userId). An invalid token throws (treated as
+ * verifyCognitoToken and mapped to { idpSub, userId, email, name }
+ * shape (sub -> idpSub/userId). An invalid token throws (treated as
  * unauthenticated by callers).
  */
 async function validateTokenAnyIdp(token: string): Promise<Record<string, unknown>> {
@@ -19,7 +19,7 @@ async function validateTokenAnyIdp(token: string): Promise<Record<string, unknow
   if (!ci?.sub) {
     throw new Error('Invalid Cognito token');
   }
-  return { kindeUserId: ci.sub, userId: ci.sub, email: ci.email, name: ci.name };
+  return { idpSub: ci.sub, userId: ci.sub, email: ci.email, name: ci.name };
 }
 
 /**
@@ -84,10 +84,10 @@ export default async function adminManagementRoutes(
           updatedAt: new Date()
         })
         .where(eq(tenantUsers.userId, userIdToReset))
-        .returning({ kindeUserId: tenantUsers.idpSub });
+        .returning({ idpSub: tenantUsers.idpSub });
 
-      if (resetUser?.kindeUserId) {
-        void invalidateUserCache(resetUser.kindeUserId);
+      if (resetUser?.idpSub) {
+        void invalidateUserCache(resetUser.idpSub);
       }
 
       return {
@@ -165,10 +165,10 @@ export default async function adminManagementRoutes(
 
       Logger.log('info', 'general', 'create-organization', 'Step 2: Validating authentication token', { requestId });
 
-      const kindeUser = await validateTokenAnyIdp(token);
-      const kindeUserId = kindeUser.kindeUserId || kindeUser.userId;
+      const idpToken = await validateTokenAnyIdp(token);
+      const idpSub = idpToken.idpSub || idpToken.userId;
 
-      Logger.log('info', 'general', 'create-organization', 'User authenticated successfully', { requestId, kindeUserId, email: adminEmail });
+      Logger.log('info', 'general', 'create-organization', 'User authenticated successfully', { requestId, idpSub, email: adminEmail });
 
       // Check if organization already exists
       Logger.log('info', 'general', 'create-organization', 'Step 3: Checking if organization already exists', { requestId, adminEmail });
@@ -214,7 +214,7 @@ export default async function adminManagementRoutes(
           tenantId: actualOrgCode,
           companyName,
           subdomain,
-          kindeOrgId: actualOrgCode,
+          idpOrgId: actualOrgCode,
           adminEmail,
           industry: industry || null,
           onboardingCompleted: false,
@@ -229,9 +229,9 @@ export default async function adminManagementRoutes(
       const [adminUser] = await db
         .insert(tenantUsers)
         .values({
-          userId: kindeUserId,
+          userId: idpSub,
           tenantId: tenant.tenantId,
-          kindeUserId,
+          idpSub,
           email: adminEmail,
           name: adminName,
           isActive: true,

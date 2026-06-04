@@ -13,8 +13,8 @@ import { verifyCognitoToken } from '../../auth/services/cognito-service.js';
 
 /**
  * Validate a bearer token (Cognito-only). The token is verified via
- * verifyCognitoToken and mapped to the legacy { kindeUserId, userId, email, name }
- * shape (sub -> kindeUserId/userId). An invalid token throws (treated as
+ * verifyCognitoToken and mapped to { idpSub, userId, email, name }
+ * shape (sub -> idpSub/userId). An invalid token throws (treated as
  * unauthenticated by callers).
  */
 async function validateTokenAnyIdp(token: string): Promise<Record<string, unknown>> {
@@ -22,7 +22,7 @@ async function validateTokenAnyIdp(token: string): Promise<Record<string, unknow
   if (!ci?.sub) {
     throw new Error('Invalid Cognito token');
   }
-  return { kindeUserId: ci.sub, userId: ci.sub, email: ci.email, name: ci.name };
+  return { idpSub: ci.sub, userId: ci.sub, email: ci.email, name: ci.name };
 }
 
 export default async function dataManagementRoutes(
@@ -117,10 +117,10 @@ export default async function dataManagementRoutes(
           updatedAt: new Date()
         })
         .where(eq(tenantUsers.userId, userId))
-        .returning({ kindeUserId: tenantUsers.idpSub });
+        .returning({ idpSub: tenantUsers.idpSub });
 
-      if (updatedUser?.kindeUserId) {
-        void invalidateUserCache(updatedUser.kindeUserId);
+      if (updatedUser?.idpSub) {
+        void invalidateUserCache(updatedUser.idpSub);
       }
 
       return {
@@ -146,24 +146,26 @@ export default async function dataManagementRoutes(
     try {
       const body = request.body as Record<string, unknown>;
       const { step, data, formData, email } = body;
-      let kindeUserId: string | null = null;
+      let idpSub: string | null = null;
       let userEmail: string | null = null;
 
-      // Require a valid Cognito JWT — reject unauthenticated requests
+      // Cognito session rides the httpOnly idp_token cookie (matches the global
+      // auth middleware's extractToken); a Bearer header is an optional fallback.
       const authHeader = request.headers.authorization;
-      if (!authHeader?.startsWith('Bearer ')) {
+      const token = (request as { cookies?: { idp_token?: string } }).cookies?.idp_token
+        ?? (authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : undefined);
+      if (!token) {
         return reply.code(401).send({ success: false, error: 'Authentication required' });
       }
       try {
-        const token = authHeader.substring(7);
         const user = await validateTokenAnyIdp(token);
-        kindeUserId = (user.kindeUserId || user.userId) as string;
+        idpSub = (user.idpSub || user.userId) as string;
         // Prefer email from the verified token; fall back to body
         userEmail = ((user.email || email) as unknown) as string | null;
       } catch (authErr: unknown) {
         return reply.code(401).send({ success: false, error: 'Invalid authentication token' });
       }
-      if (!kindeUserId) {
+      if (!idpSub) {
         return reply.code(401).send({ success: false, error: 'Authentication required' });
       }
 
@@ -171,7 +173,7 @@ export default async function dataManagementRoutes(
         userEmail = email as string | null;
       }
 
-      if (!kindeUserId || !userEmail) {
+      if (!idpSub || !userEmail) {
         return reply.code(400).send({
           error: 'Kinde user ID and email are required'
         });
@@ -183,7 +185,7 @@ export default async function dataManagementRoutes(
         .from(onboardingFormData)
         .where(
           and(
-            eq(onboardingFormData.idpSub, kindeUserId),
+            eq(onboardingFormData.idpSub, idpSub),
             eq(onboardingFormData.email, userEmail)
           )
         )
@@ -235,7 +237,7 @@ export default async function dataManagementRoutes(
           message: 'Onboarding step updated successfully',
           data: {
             step,
-            kindeUserId,
+            idpSub,
             email: userEmail,
             formDataId: updated.id,
             updatedAt: updated.updatedAt
@@ -246,7 +248,7 @@ export default async function dataManagementRoutes(
         const [created] = await db
           .insert(onboardingFormData)
           .values({
-            idpSub: kindeUserId,
+            idpSub: idpSub,
             email: userEmail,
             currentStep: step as string,
             flowType: ((data as Record<string, unknown>)?.flowType as string) || 'newBusiness',
@@ -263,7 +265,7 @@ export default async function dataManagementRoutes(
           message: 'Onboarding form data created successfully',
           data: {
             step,
-            kindeUserId,
+            idpSub,
             email: userEmail,
             formDataId: created.id,
             createdAt: created.createdAt

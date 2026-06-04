@@ -22,14 +22,14 @@ import Logger from '../utils/logger.js';
 export type CreateTenantData = {
   companyName: string;
   subdomain: string;
-  kindeOrgId: string;
+  idpOrgId: string;
   adminEmail: string;
   companySize?: string;
   organizationSize?: string;
   industry?: string;
   timezone?: string;
   country?: string;
-  kindeUserId: string;
+  idpSub: string;
   adminFirstName?: string;
   adminLastName?: string;
 };
@@ -45,7 +45,7 @@ export class TenantCoreService {
           tenantId,
           companyName: data.companyName,
           subdomain: data.subdomain,
-          idpOrgId: data.kindeOrgId,
+          idpOrgId: data.idpOrgId,
           adminEmail: data.adminEmail,
           organizationSize: data.organizationSize ?? data.companySize ?? undefined,
           industry: data.industry,
@@ -53,14 +53,14 @@ export class TenantCoreService {
           onboardedAt: new Date(),
         }).returning();
 
-        if (!data.kindeUserId) {
-          throw new Error('kindeUserId is required for tenant creation');
+        if (!data.idpSub) {
+          throw new Error('idpSub is required for tenant creation');
         }
 
         const [adminUser] = await tx.insert(tenantUsers).values({
           userId: adminUserId,
           tenantId,
-          idpSub: data.kindeUserId,
+          idpSub: data.idpSub,
           email: data.adminEmail,
           firstName: data.adminFirstName || null,
           lastName: data.adminLastName || null,
@@ -104,8 +104,8 @@ export class TenantCoreService {
     return TenantRepository.getBySubdomain(subdomain);
   }
 
-  static async getByKindeOrgId(kindeOrgId: string): Promise<Record<string, unknown> | null> {
-    return TenantRepository.getByKindeOrgId(kindeOrgId);
+  static async getByIdpOrgId(idpOrgId: string): Promise<Record<string, unknown> | null> {
+    return TenantRepository.getByIdpOrgId(idpOrgId);
   }
 
   static async getTenantDetails(tenantId: string): Promise<Record<string, unknown>> {
@@ -115,7 +115,7 @@ export class TenantCoreService {
           tenantId: tenants.tenantId,
           companyName: tenants.companyName,
           subdomain: tenants.subdomain,
-          kindeOrgId: tenants.idpOrgId,
+          idpOrgId: tenants.idpOrgId,
           adminEmail: tenants.adminEmail,
           isActive: tenants.isActive,
           isVerified: tenants.isVerified,

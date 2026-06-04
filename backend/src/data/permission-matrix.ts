@@ -253,8 +253,8 @@ export const BUSINESS_SUITE_MATRIX = {
         ]
       },
 
-      activities: {
-        moduleCode: 'activities',
+      activity: {
+        moduleCode: 'activity',
         moduleName: 'Activity Feed',
         description: 'View activity timeline on CRM records',
         isCore: true,
@@ -354,25 +354,34 @@ export const BUSINESS_SUITE_MATRIX = {
         ]
       },
 
-      custom_fields: {
-        moduleCode: 'custom_fields',
-        moduleName: 'Custom Fields',
-        description: 'Admin: configure custom fields on CRM entity types',
-        isCore: false,
-        permissions: [
-          { code: 'read', name: 'View Custom Fields', description: 'View custom field definitions' },
-          { code: 'manage', name: 'Manage Custom Fields', description: 'Create, edit, and delete custom field definitions (admin only)' },
-        ]
-      },
-
+      // ─── LAYOUTS (umbrella module for per-module record-view admin) ───
+      // The CRM admin UI's "Layouts" page already exposes tabs for: Layouts,
+      // Layout Rules, Validation Rules, Fields (custom fields), Links,
+      // Buttons, Summary, Sysconfig (dropdowns), Features, Related Lists.
+      // The standalone `custom_fields` and `system` modules were redundant
+      // top-level entries duplicating the Fields and Sysconfig tabs — they
+      // were removed. Their permissions live here as `fields_*` /
+      // `sysconfig_*` slices.
+      //
+      // Org-wide admin (users/roles/audit/backups/integrations from the old
+      // `system` module) was DROPPED ENTIRELY from this app's surface — those
+      // capabilities live in the wrapper-level tenant admin, not inside a CRM
+      // module. If a future feature needs them re-introduced, prefer adding a
+      // dedicated `org_admin` module rather than folding back into `system`.
       layouts: {
         moduleCode: 'layouts',
         moduleName: 'Layouts',
-        description: 'Admin: configure record view layouts per role',
+        description: 'Per-module admin: page layouts, custom fields, sysconfig dropdowns, layout rules, validation rules',
         isCore: false,
         permissions: [
-          { code: 'read', name: 'View Layouts', description: 'View layout definitions' },
-          { code: 'manage', name: 'Manage Layouts', description: 'Create, edit, and assign layouts (admin only)' },
+          { code: 'read',              name: 'View Layouts',           description: 'View record-view layout definitions' },
+          { code: 'manage',            name: 'Manage Layouts',         description: 'Create, edit, and assign record-view layouts (admin only)' },
+          { code: 'fields_read',       name: 'View Custom Fields',     description: 'View custom field definitions on CRM entity types' },
+          { code: 'fields_manage',     name: 'Manage Custom Fields',   description: 'Create, edit, and delete custom field definitions (admin only)' },
+          { code: 'sysconfig_read',    name: 'View Dropdowns',         description: 'View module dropdown option lists (statuses, sources, stages)' },
+          { code: 'sysconfig_create',  name: 'Create Dropdowns',       description: 'Add new dropdown option values' },
+          { code: 'sysconfig_update',  name: 'Update Dropdowns',       description: 'Modify existing dropdown option values' },
+          { code: 'sysconfig_delete',  name: 'Delete Dropdowns',       description: 'Remove dropdown option values' },
         ]
       },
 
@@ -413,111 +422,403 @@ export const BUSINESS_SUITE_MATRIX = {
         ]
       },
 
-      // ⚙️ SYSTEM MODULE (kept for admin role-builder parity with other apps)
-      system: {
-        moduleCode: 'system',
-        moduleName: 'System Configuration',
-        description: 'System administration and configuration management',
+      // ─── Attachments ────────────────────────────────────────────────────
+      attachments: {
+        moduleCode: 'attachments',
+        moduleName: 'Attachments',
+        description: 'File attachments on CRM records',
         isCore: true,
         permissions: [
-          // Settings Permissions
-          { code: 'settings_read', name: 'View Settings', description: 'View system settings and configurations' },
-          { code: 'settings_update', name: 'Update Settings', description: 'Update system settings' },
-
-          // Configuration Permissions
-          { code: 'configurations_read', name: 'View Configurations', description: 'View system configurations' },
-          { code: 'configurations_create', name: 'Create Configurations', description: 'Create new system configurations' },
-          { code: 'configurations_update', name: 'Update Configurations', description: 'Update existing configurations' },
-          { code: 'configurations_delete', name: 'Delete Configurations', description: 'Delete system configurations' },
-
-          // Tenant Configuration Permissions
-          { code: 'tenant_config_read', name: 'View Tenant Config', description: 'View tenant-specific configurations' },
-          { code: 'tenant_config_update', name: 'Update Tenant Config', description: 'Update tenant configurations' },
-          { code: 'admin.tenants.read', name: 'View All Tenants', description: 'View and list all tenants in the system' },
-
-          // Credit Configuration Permissions
-          { code: 'credit_config.view', name: 'View Credit Configurations', description: 'View tenant credit configuration settings' },
-          { code: 'credit_config.edit', name: 'Edit Credit Configurations', description: 'Edit tenant credit configuration settings' },
-          { code: 'credit_config.reset', name: 'Reset Credit Configurations', description: 'Reset tenant configurations to global defaults' },
-          { code: 'credit_config.bulk_update', name: 'Bulk Update Credit Configurations', description: 'Bulk update multiple credit configuration settings' },
-
-          // System Configuration Permissions
-          { code: 'system_config_read', name: 'View System Config', description: 'View system-level configurations' },
-          { code: 'system_config_update', name: 'Update System Config', description: 'Update system-level configurations' },
-
-          // Dropdown Permissions
-          { code: 'dropdowns_read', name: 'View Dropdowns', description: 'View system dropdown values' },
-          { code: 'dropdowns_create', name: 'Create Dropdowns', description: 'Create new dropdown values' },
-          { code: 'dropdowns_update', name: 'Update Dropdowns', description: 'Update dropdown values' },
-          { code: 'dropdowns_delete', name: 'Delete Dropdowns', description: 'Delete dropdown values' },
-
-          // Integration Permissions
-          { code: 'integrations_read', name: 'View Integrations', description: 'View system integrations' },
-          { code: 'integrations_create', name: 'Create Integrations', description: 'Create new integrations' },
-          { code: 'integrations_update', name: 'Update Integrations', description: 'Update existing integrations' },
-          { code: 'integrations_delete', name: 'Delete Integrations', description: 'Delete integrations' },
-
-          // Backup Permissions
-          { code: 'backup_read', name: 'View Backups', description: 'View backup information and history' },
-          { code: 'backup_create', name: 'Create Backups', description: 'Create system backups' },
-          { code: 'backup_restore', name: 'Restore Backups', description: 'Restore system from backups' },
-
-          // Maintenance Permissions
-          { code: 'maintenance_read', name: 'View Maintenance', description: 'View maintenance schedules and status' },
-          { code: 'maintenance_perform', name: 'Perform Maintenance', description: 'Execute maintenance operations' },
-          { code: 'maintenance_schedule', name: 'Schedule Maintenance', description: 'Schedule maintenance operations' },
-
-          // User Management Permissions
-          { code: 'users_read', name: 'View Users', description: 'View user information' },
-          { code: 'users_read_all', name: 'View All Users', description: 'View all users in organization' },
-          { code: 'users_create', name: 'Create Users', description: 'Create new user accounts' },
-          { code: 'users_update', name: 'Edit Users', description: 'Modify user information' },
-          { code: 'users_delete', name: 'Delete Users', description: 'Remove user accounts' },
-          { code: 'users_activate', name: 'Activate Users', description: 'Activate/deactivate users' },
-          { code: 'users_reset_password', name: 'Reset Passwords', description: 'Reset user passwords' },
-          { code: 'users_export', name: 'Export Users', description: 'Export user data' },
-          { code: 'users_import', name: 'Import Users', description: 'Import users from files' },
-
-          // Role Management Permissions
-          { code: 'roles_read', name: 'View Roles', description: 'View role information' },
-          { code: 'roles_read_all', name: 'View All Roles', description: 'View all roles in organization' },
-          { code: 'roles_create', name: 'Create Roles', description: 'Create new roles' },
-          { code: 'roles_update', name: 'Edit Roles', description: 'Modify role information' },
-          { code: 'roles_delete', name: 'Delete Roles', description: 'Remove roles' },
-          { code: 'roles_assign', name: 'Assign Roles', description: 'Assign roles to users' },
-          { code: 'roles_export', name: 'Export Roles', description: 'Export role data' },
-
-          // Reports Permissions
-          { code: 'reports_read', name: 'View Reports', description: 'View report information' },
-          { code: 'reports_read_all', name: 'View All Reports', description: 'View all reports' },
-          { code: 'reports_create', name: 'Create Reports', description: 'Create new reports' },
-          { code: 'reports_update', name: 'Edit Reports', description: 'Modify existing reports' },
-          { code: 'reports_delete', name: 'Delete Reports', description: 'Remove reports' },
-          { code: 'reports_export', name: 'Export Reports', description: 'Export report data' },
-          { code: 'reports_schedule', name: 'Schedule Reports', description: 'Schedule automated reports' },
-
-          // Audit Logs Permissions
-          { code: 'audit_read', name: 'View Audit Logs', description: 'View basic audit log information' },
-          { code: 'audit_read_all', name: 'View All Audit Logs', description: 'View all audit logs in organization' },
-          { code: 'audit_export', name: 'Export Audit Logs', description: 'Export audit log data to various formats' },
-          { code: 'audit_view_details', name: 'View Audit Details', description: 'View detailed audit log information' },
-          { code: 'audit_filter', name: 'Filter Audit Logs', description: 'Filter audit logs by various criteria' },
-          { code: 'audit_generate_reports', name: 'Generate Reports', description: 'Generate audit reports' },
-          { code: 'audit_archive', name: 'Archive Logs', description: 'Archive old audit logs' },
-          { code: 'audit_purge', name: 'Purge Old Logs', description: 'Purge old audit logs' },
-
-          // Activity Logs Permissions
-          { code: 'activity_logs_read', name: 'View Activity Logs', description: 'View activity log information' },
-          { code: 'activity_logs_read_all', name: 'View All Activity Logs', description: 'View all activity logs in organization' },
-          { code: 'activity_logs_export', name: 'Export Activity Logs', description: 'Export activity log data' },
-          { code: 'activity_logs_view_details', name: 'View Activity Details', description: 'View detailed activity information' },
-          { code: 'activity_logs_filter', name: 'Filter Activity Logs', description: 'Filter activity logs by various criteria' },
-          { code: 'activity_logs_generate_reports', name: 'Generate Reports', description: 'Generate activity log reports' },
-          { code: 'activity_logs_archive', name: 'Archive Logs', description: 'Archive old activity logs' },
-          { code: 'activity_logs_purge', name: 'Purge Old Logs', description: 'Purge old activity logs' }
+          { code: 'read', name: 'View Attachments', description: 'View and download attached files' },
+          { code: 'create', name: 'Upload Attachments', description: 'Attach files to records' },
+          { code: 'delete', name: 'Delete Attachments', description: 'Remove file attachments' },
         ]
       },
-      
+
+      // ─── Analytics / BI ──────────────────────────────────────────────────
+      reports: {
+        moduleCode: 'reports',
+        moduleName: 'Reports',
+        description: 'CRM analytics reports and data exports',
+        isCore: false,
+        permissions: [
+          { code: 'read', name: 'View Reports', description: 'View saved reports and analytics' },
+          { code: 'create', name: 'Create Reports', description: 'Build new custom reports' },
+          { code: 'update', name: 'Edit Reports', description: 'Modify existing reports' },
+          { code: 'delete', name: 'Delete Reports', description: 'Remove reports' },
+        ]
+      },
+
+      dashboards: {
+        moduleCode: 'dashboards',
+        moduleName: 'Dashboards',
+        description: 'CRM analytics dashboards and KPI widgets',
+        isCore: true,
+        permissions: [
+          { code: 'read', name: 'View Dashboards', description: 'View CRM dashboards and KPIs' },
+          { code: 'create', name: 'Create Dashboards', description: 'Build new dashboards' },
+          { code: 'update', name: 'Edit Dashboards', description: 'Modify existing dashboards' },
+          { code: 'delete', name: 'Delete Dashboards', description: 'Remove dashboards' },
+        ]
+      },
+
+      search: {
+        moduleCode: 'search',
+        moduleName: 'Search',
+        description: 'Global CRM search across all modules',
+        isCore: true,
+        permissions: [
+          { code: 'read', name: 'Use Search', description: 'Search across all CRM records' },
+        ]
+      },
+
+      workqueue: {
+        moduleCode: 'workqueue',
+        moduleName: 'Work Queue',
+        description: 'Assigned task queue and action items',
+        isCore: true,
+        permissions: [
+          { code: 'read', name: 'View Work Queue', description: 'View and action items in personal work queue' },
+        ]
+      },
+
+      // ─── Marketing / Outreach ────────────────────────────────────────────
+      marketing_lists: {
+        moduleCode: 'marketing_lists',
+        moduleName: 'Marketing Lists',
+        description: 'Segmented contact lists for targeted campaigns',
+        isCore: false,
+        permissions: [
+          { code: 'read', name: 'View Marketing Lists', description: 'View marketing list definitions' },
+          { code: 'create', name: 'Create Marketing Lists', description: 'Create new marketing lists' },
+          { code: 'update', name: 'Edit Marketing Lists', description: 'Modify existing marketing lists' },
+          { code: 'delete', name: 'Delete Marketing Lists', description: 'Remove marketing lists' },
+        ]
+      },
+
+      marketing_email_sends: {
+        moduleCode: 'marketing_email_sends',
+        moduleName: 'Email Sends',
+        description: 'Bulk email send jobs for marketing campaigns',
+        isCore: false,
+        permissions: [
+          { code: 'read', name: 'View Email Sends', description: 'View email send history and status' },
+          { code: 'create', name: 'Create Email Sends', description: 'Schedule and send email campaigns' },
+          { code: 'update', name: 'Edit Email Sends', description: 'Modify scheduled sends' },
+          { code: 'delete', name: 'Delete Email Sends', description: 'Remove email send records' },
+        ]
+      },
+
+      marketing_sms_sends: {
+        moduleCode: 'marketing_sms_sends',
+        moduleName: 'SMS Sends',
+        description: 'Bulk SMS send jobs',
+        isCore: false,
+        permissions: [
+          { code: 'read', name: 'View SMS Sends', description: 'View SMS send history and status' },
+          { code: 'create', name: 'Create SMS Sends', description: 'Schedule and send SMS campaigns' },
+          { code: 'update', name: 'Edit SMS Sends', description: 'Modify scheduled SMS sends' },
+          { code: 'delete', name: 'Delete SMS Sends', description: 'Remove SMS send records' },
+        ]
+      },
+
+      whatsapp_templates: {
+        moduleCode: 'whatsapp_templates',
+        moduleName: 'WhatsApp Templates',
+        description: 'Approved WhatsApp message templates for outreach',
+        isCore: false,
+        permissions: [
+          { code: 'read', name: 'View WhatsApp Templates', description: 'View WhatsApp template definitions' },
+          { code: 'create', name: 'Create WhatsApp Templates', description: 'Create new WhatsApp templates' },
+          { code: 'update', name: 'Edit WhatsApp Templates', description: 'Modify WhatsApp templates' },
+          { code: 'delete', name: 'Delete WhatsApp Templates', description: 'Remove WhatsApp templates' },
+        ]
+      },
+
+      email_sender: {
+        moduleCode: 'email_sender',
+        moduleName: 'Email Sender',
+        description: 'Email sender identity and domain configuration',
+        isCore: false,
+        permissions: [
+          { code: 'read', name: 'View Email Sender', description: 'View sender configuration' },
+          { code: 'create', name: 'Add Email Sender', description: 'Add new sender identities' },
+          { code: 'update', name: 'Edit Email Sender', description: 'Modify sender configuration' },
+          { code: 'delete', name: 'Delete Email Sender', description: 'Remove sender identities' },
+        ]
+      },
+
+      email_ai: {
+        moduleCode: 'email_ai',
+        moduleName: 'AI Email',
+        description: 'AI-assisted email composition and suggestions',
+        isCore: false,
+        permissions: [
+          { code: 'read', name: 'View AI Email', description: 'Access AI email composer' },
+          { code: 'create', name: 'Use AI Email', description: 'Generate AI-assisted email content' },
+          { code: 'update', name: 'Edit AI Email', description: 'Modify AI email settings' },
+          { code: 'delete', name: 'Delete AI Email', description: 'Remove AI email configurations' },
+        ]
+      },
+
+      email_suppression: {
+        moduleCode: 'email_suppression',
+        moduleName: 'Email Suppression',
+        description: 'Email suppression list management (bounces, unsubscribes)',
+        isCore: false,
+        permissions: [
+          { code: 'read', name: 'View Suppression List', description: 'View suppressed email addresses' },
+          { code: 'create', name: 'Add to Suppression', description: 'Add addresses to suppression list' },
+          { code: 'update', name: 'Edit Suppression', description: 'Modify suppression entries' },
+          { code: 'delete', name: 'Remove Suppression', description: 'Remove addresses from suppression list' },
+        ]
+      },
+
+      // ─── CRM Admin / Config ───────────────────────────────────────────────
+      pipelines: {
+        moduleCode: 'pipelines',
+        moduleName: 'Pipelines',
+        description: 'Sales and support pipeline stage configuration',
+        isCore: false,
+        permissions: [
+          { code: 'read', name: 'View Pipelines', description: 'View pipeline definitions and stages' },
+          { code: 'create', name: 'Create Pipelines', description: 'Create new pipelines' },
+          { code: 'update', name: 'Edit Pipelines', description: 'Modify pipeline stages and settings' },
+          { code: 'delete', name: 'Delete Pipelines', description: 'Remove pipelines' },
+        ]
+      },
+
+      blueprints: {
+        moduleCode: 'blueprints',
+        moduleName: 'Blueprints',
+        description: 'Record lifecycle and state-machine blueprints',
+        isCore: false,
+        permissions: [
+          { code: 'read', name: 'View Blueprints', description: 'View blueprint definitions' },
+          { code: 'create', name: 'Create Blueprints', description: 'Create new blueprints' },
+          { code: 'update', name: 'Edit Blueprints', description: 'Modify blueprint transitions and actions' },
+          { code: 'delete', name: 'Delete Blueprints', description: 'Remove blueprints' },
+        ]
+      },
+
+      assignment_rules: {
+        moduleCode: 'assignment_rules',
+        moduleName: 'Assignment Rules',
+        description: 'Automatic record assignment rules',
+        isCore: false,
+        permissions: [
+          { code: 'read', name: 'View Assignment Rules', description: 'View assignment rule definitions' },
+          { code: 'create', name: 'Create Assignment Rules', description: 'Create new assignment rules' },
+          { code: 'update', name: 'Edit Assignment Rules', description: 'Modify assignment rules' },
+          { code: 'delete', name: 'Delete Assignment Rules', description: 'Remove assignment rules' },
+        ]
+      },
+
+      scoring_rules: {
+        moduleCode: 'scoring_rules',
+        moduleName: 'Scoring Rules',
+        description: 'Lead and record scoring rule configuration',
+        isCore: false,
+        permissions: [
+          { code: 'read', name: 'View Scoring Rules', description: 'View scoring rule definitions' },
+          { code: 'create', name: 'Create Scoring Rules', description: 'Create new scoring rules' },
+          { code: 'update', name: 'Edit Scoring Rules', description: 'Modify scoring rules' },
+          { code: 'delete', name: 'Delete Scoring Rules', description: 'Remove scoring rules' },
+        ]
+      },
+
+      workflow_rules: {
+        moduleCode: 'workflow_rules',
+        moduleName: 'Workflow Rules',
+        description: 'Automated workflow trigger and action rules',
+        isCore: false,
+        permissions: [
+          { code: 'read', name: 'View Workflow Rules', description: 'View workflow rule definitions' },
+          { code: 'create', name: 'Create Workflow Rules', description: 'Create new workflow rules' },
+          { code: 'update', name: 'Edit Workflow Rules', description: 'Modify workflow rules and actions' },
+          { code: 'delete', name: 'Delete Workflow Rules', description: 'Remove workflow rules' },
+        ]
+      },
+
+      validation_rules: {
+        moduleCode: 'validation_rules',
+        moduleName: 'Validation Rules',
+        description: 'Field-level validation rules for CRM records',
+        isCore: false,
+        permissions: [
+          { code: 'read', name: 'View Validation Rules', description: 'View validation rule definitions' },
+          { code: 'create', name: 'Create Validation Rules', description: 'Create new validation rules' },
+          { code: 'update', name: 'Edit Validation Rules', description: 'Modify validation rules' },
+          { code: 'delete', name: 'Delete Validation Rules', description: 'Remove validation rules' },
+        ]
+      },
+
+      custom_fields: {
+        moduleCode: 'custom_fields',
+        moduleName: 'Custom Fields',
+        description: 'CRM module custom field definitions',
+        isCore: false,
+        permissions: [
+          { code: 'read', name: 'View Custom Fields', description: 'View custom field definitions' },
+          { code: 'manage', name: 'Manage Custom Fields', description: 'Create, edit, and delete custom fields (admin only)' },
+        ]
+      },
+
+      custom_modules: {
+        moduleCode: 'custom_modules',
+        moduleName: 'Custom Modules',
+        description: 'Tenant-defined CRM modules',
+        isCore: false,
+        permissions: [
+          { code: 'read', name: 'View Custom Modules', description: 'View custom module definitions' },
+          { code: 'create', name: 'Create Custom Modules', description: 'Create new custom modules' },
+          { code: 'update', name: 'Edit Custom Modules', description: 'Modify custom module schemas' },
+          { code: 'delete', name: 'Delete Custom Modules', description: 'Remove custom modules' },
+        ]
+      },
+
+      client_scripts: {
+        moduleCode: 'client_scripts',
+        moduleName: 'Client Scripts',
+        description: 'Custom JavaScript executed in CRM record views',
+        isCore: false,
+        permissions: [
+          { code: 'read', name: 'View Client Scripts', description: 'View client script definitions' },
+          { code: 'manage', name: 'Manage Client Scripts', description: 'Create, edit, and deploy client scripts (admin only)' },
+          { code: 'execute', name: 'Execute Client Scripts', description: 'Trigger client script execution' },
+        ]
+      },
+
+      dropdowns: {
+        moduleCode: 'dropdowns',
+        moduleName: 'Dropdown Values',
+        description: 'Module dropdown option list management (statuses, sources, stages)',
+        isCore: false,
+        permissions: [
+          { code: 'read', name: 'View Dropdown Values', description: 'View module dropdown option lists' },
+          { code: 'create', name: 'Create Dropdown Values', description: 'Add new option values to dropdowns' },
+          { code: 'update', name: 'Edit Dropdown Values', description: 'Modify existing dropdown option values' },
+          { code: 'delete', name: 'Delete Dropdown Values', description: 'Remove dropdown option values' },
+        ]
+      },
+
+      related_lists: {
+        moduleCode: 'related_lists',
+        moduleName: 'Related Lists',
+        description: 'Related list configuration on CRM record views',
+        isCore: false,
+        permissions: [
+          { code: 'read', name: 'View Related Lists', description: 'View related list definitions' },
+          { code: 'create', name: 'Create Related Lists', description: 'Add new related lists' },
+          { code: 'update', name: 'Edit Related Lists', description: 'Modify related list configuration' },
+          { code: 'delete', name: 'Delete Related Lists', description: 'Remove related lists' },
+        ]
+      },
+
+      lead_conversion_mappings: {
+        moduleCode: 'lead_conversion_mappings',
+        moduleName: 'Lead Conversion Mappings',
+        description: 'Field mappings used when converting leads to accounts/contacts/opportunities',
+        isCore: false,
+        permissions: [
+          { code: 'read', name: 'View Conversion Mappings', description: 'View lead conversion field mappings' },
+          { code: 'create', name: 'Create Conversion Mappings', description: 'Create new conversion mappings' },
+          { code: 'update', name: 'Edit Conversion Mappings', description: 'Modify conversion mappings' },
+          { code: 'delete', name: 'Delete Conversion Mappings', description: 'Remove conversion mappings' },
+        ]
+      },
+
+      tags: {
+        moduleCode: 'tags',
+        moduleName: 'Tags',
+        description: 'Global tag management for CRM records',
+        isCore: false,
+        permissions: [
+          { code: 'read', name: 'View Tags', description: 'View available tags' },
+          { code: 'create', name: 'Create Tags', description: 'Create new tags' },
+          { code: 'update', name: 'Edit Tags', description: 'Rename and modify tags' },
+          { code: 'delete', name: 'Delete Tags', description: 'Remove tags' },
+        ]
+      },
+
+      recycle_bin: {
+        moduleCode: 'recycle_bin',
+        moduleName: 'Recycle Bin',
+        description: 'Soft-deleted CRM records awaiting permanent deletion or restore',
+        isCore: false,
+        permissions: [
+          { code: 'read', name: 'View Recycle Bin', description: 'View soft-deleted records' },
+          { code: 'update', name: 'Restore Records', description: 'Restore records from recycle bin' },
+          { code: 'delete', name: 'Permanently Delete', description: 'Permanently delete records from recycle bin' },
+        ]
+      },
+
+      audit: {
+        moduleCode: 'audit',
+        moduleName: 'Audit Log',
+        description: 'CRM field-level change audit trail',
+        isCore: false,
+        permissions: [
+          { code: 'read', name: 'View Audit Log', description: 'View CRM record change history' },
+        ]
+      },
+
+      vertical_packs: {
+        moduleCode: 'vertical_packs',
+        moduleName: 'Vertical Packs',
+        description: 'Industry-specific CRM configuration packs',
+        isCore: false,
+        permissions: [
+          { code: 'read', name: 'View Vertical Packs', description: 'View available vertical packs' },
+          { code: 'create', name: 'Install Vertical Packs', description: 'Install vertical packs for the tenant' },
+          { code: 'update', name: 'Edit Vertical Packs', description: 'Modify vertical pack settings' },
+          { code: 'delete', name: 'Remove Vertical Packs', description: 'Uninstall vertical packs' },
+        ]
+      },
+
+      inbox_sync: {
+        moduleCode: 'inbox_sync',
+        moduleName: 'Inbox Sync',
+        description: 'Email inbox sync and tracking configuration',
+        isCore: false,
+        permissions: [
+          { code: 'read', name: 'View Inbox Sync', description: 'View inbox sync configuration' },
+          { code: 'create', name: 'Set Up Inbox Sync', description: 'Connect new email inboxes' },
+          { code: 'update', name: 'Edit Inbox Sync', description: 'Modify inbox sync settings' },
+          { code: 'delete', name: 'Remove Inbox Sync', description: 'Disconnect inbox sync' },
+        ]
+      },
+
+      // ─── User / Role Management ──────────────────────────────────────────
+      // Note: /api/users and /api/roles are in PUBLIC_BYPASS_SEGMENTS in the CRM backend
+      // (admin routes self-guard). These permission codes are used for frontend nav
+      // visibility (nav-admin.tsx checks crm.users.read and crm.roles.read).
+      users: {
+        moduleCode: 'users',
+        moduleName: 'User Management',
+        description: 'CRM user accounts and access management',
+        isCore: false,
+        permissions: [
+          { code: 'read', name: 'View Users', description: 'View CRM user accounts' },
+          { code: 'create', name: 'Create Users', description: 'Invite and create CRM users' },
+          { code: 'update', name: 'Edit Users', description: 'Modify user information and access' },
+          { code: 'delete', name: 'Delete Users', description: 'Remove CRM users' },
+        ]
+      },
+
+      roles: {
+        moduleCode: 'roles',
+        moduleName: 'Role Management',
+        description: 'CRM role definitions and permission assignments',
+        isCore: false,
+        permissions: [
+          { code: 'read', name: 'View Roles', description: 'View CRM role definitions' },
+          { code: 'create', name: 'Create Roles', description: 'Create new CRM roles' },
+          { code: 'update', name: 'Edit Roles', description: 'Modify role permissions' },
+          { code: 'delete', name: 'Delete Roles', description: 'Remove CRM roles' },
+        ]
+      },
+
     }
   },
   
@@ -2309,18 +2610,45 @@ export const PLAN_ACCESS_MATRIX = {
   free: {
     applications: ['crm', 'accounting'],
     modules: {
-      crm: ['leads', 'contacts', 'accounts', 'tasks', 'notes', 'activities', 'notifications'],
+      crm: [
+        // Core sales
+        'leads', 'contacts', 'accounts', 'opportunities', 'tickets',
+        // Activities
+        'tasks', 'meetings', 'calls', 'communications', 'notes', 'activity', 'attachments',
+        // Reference
+        'documents', 'notifications', 'calendar',
+        // Navigation essentials
+        'dashboards', 'search', 'workqueue',
+      ],
       accounting: ['dashboard', 'invoices', 'customers', 'bills', 'vendors', 'expense_reports', 'chart_of_accounts', 'reports']
     },
     permissions: {
       crm: {
-        leads:         ['read', 'create', 'update', 'delete'],
-        contacts:      ['read', 'create', 'update', 'delete'],
-        accounts:      ['read', 'create', 'update', 'delete'],
-        tasks:         ['read', 'create', 'update', 'delete'],
-        notes:         ['read', 'create', 'update', 'delete'],
-        activities:    ['read'],
-        notifications: ['read', 'update'],
+        leads:          ['read', 'create', 'update', 'delete'],
+        contacts:       ['read', 'create', 'update', 'delete'],
+        accounts:       ['read', 'create', 'update', 'delete'],
+        opportunities:  ['read', 'create', 'update', 'delete'],
+        tickets:        ['read', 'create', 'update', 'delete'],
+        tasks:          ['read', 'create', 'update', 'delete'],
+        meetings:       ['read', 'create', 'update', 'delete'],
+        calls:          ['read', 'create', 'update', 'delete'],
+        communications: ['read', 'create', 'update', 'delete'],
+        notes:          ['read', 'create', 'update', 'delete'],
+        activity:       ['read'],
+        attachments:    ['read', 'create', 'delete'],
+        documents:      ['read', 'create', 'delete'],
+        notifications:  ['read', 'update'],
+        calendar:       ['read'],
+        dashboards:     ['read', 'create', 'update', 'delete'],
+        search:         ['read'],
+        workqueue:      ['read'],
+        // Rendering infrastructure — every free-plan user needs to read these
+        // to render form layouts, stage selectors, and dropdown fields.
+        layouts:        ['read'],
+        pipelines:      ['read'],
+        dropdowns:      ['read'],
+        custom_fields:  ['read'],
+        custom_modules: ['read'],
       },
       accounting: {
         dashboard: ['view'],
@@ -2350,9 +2678,11 @@ export const PLAN_ACCESS_MATRIX = {
         // Pipeline & support
         'opportunities', 'tickets',
         // Activities
-        'tasks', 'meetings', 'calls', 'communications', 'notes', 'activities',
+        'tasks', 'meetings', 'calls', 'communications', 'notes', 'activity', 'attachments',
         // Reference
         'documents', 'notifications', 'calendar',
+        // Navigation essentials
+        'dashboards', 'search', 'workqueue',
       ],
       hr: ['employees', 'leave', 'dashboard'],
       project_management: ['projects', 'tasks', 'team', 'dashboard'],
@@ -2372,12 +2702,21 @@ export const PLAN_ACCESS_MATRIX = {
         tasks:          ['read', 'create', 'update', 'delete'],
         meetings:       ['read', 'create', 'update', 'delete'],
         calls:          ['read', 'create', 'update', 'delete'],
-        communications: ['read', 'create'],              // write-all unlocked at Professional
+        communications: ['read', 'create', 'update', 'delete'],
         documents:      ['read', 'create', 'delete'],
+        attachments:    ['read', 'create', 'delete'],
         notes:          ['read', 'create', 'update', 'delete'],
-        activities:     ['read'],
+        activity:       ['read'],
         notifications:  ['read', 'update'],
         calendar:       ['read'],
+        dashboards:     ['read', 'create', 'update', 'delete'],
+        search:         ['read'],
+        workqueue:      ['read'],
+        layouts:        ['read'],
+        pipelines:      ['read'],
+        dropdowns:      ['read'],
+        custom_fields:  ['read'],
+        custom_modules: ['read'],
       },
       hr: {
         employees: ['read', 'create', 'update', 'delete'],
@@ -2416,12 +2755,18 @@ export const PLAN_ACCESS_MATRIX = {
       crm: [
         // All Starter modules
         'leads', 'contacts', 'accounts', 'opportunities', 'tickets',
-        'tasks', 'meetings', 'calls', 'communications', 'notes', 'activities',
+        'tasks', 'meetings', 'calls', 'communications', 'notes', 'activity', 'attachments',
         'documents', 'notifications', 'calendar',
+        // Navigation essentials
+        'dashboards', 'search', 'workqueue',
         // Professional additions — commercial pipeline
         'events', 'quotations', 'invoices', 'sales-orders', 'products',
         // Professional additions — data & outreach ops
         'bulk_upload', 'webforms', 'email_templates',
+        // Professional additions — analytics
+        'reports',
+        // Professional additions — config
+        'pipelines', 'assignment_rules',
       ],
       hr: ['employees', 'payroll', 'leave', 'dashboard'],
       project_management: ['projects', 'tasks', 'sprints', 'time_tracking', 'team', 'backlog', 'documents', 'analytics', 'reports', 'chat', 'calendar', 'kanban', 'dashboard', 'notifications', 'workspace'],
@@ -2448,10 +2793,15 @@ export const PLAN_ACCESS_MATRIX = {
         meetings:           ['read', 'create', 'update', 'delete'],
         calls:              ['read', 'create', 'update', 'delete'],
         notes:              ['read', 'create', 'update', 'delete'],
-        activities:         ['read'],
+        activity:           ['read'],
+        attachments:        ['read', 'create', 'delete'],
         documents:          ['read', 'create', 'delete'],
         notifications:      ['read', 'update'],
         calendar:           ['read'],
+        // Navigation essentials
+        dashboards:         ['read'],
+        search:             ['read'],
+        workqueue:          ['read'],
         // Upgraded at Professional
         communications:     ['read', 'create', 'update', 'delete'],  // full CRUD (Starter: read/create only)
         // Commercial pipeline — Professional additions
@@ -2464,11 +2814,14 @@ export const PLAN_ACCESS_MATRIX = {
         bulk_upload:        ['read', 'create', 'delete'],
         webforms:           ['read', 'create', 'update', 'delete'],
         email_templates:    ['read', 'create', 'update', 'delete'],
-        // Basic system access
-        // NOTE: reports_* codes are intentionally absent — the CRM reports module is gated by
-        // requireRole(admin) not requirePermission, so these codes have no effect in the CRM.
-        // Reports access in the CRM is admin-role-only regardless of plan tier.
-        system:             ['settings_read', 'users_read', 'users_read_all', 'users_create', 'users_update', 'users_activate', 'roles_read', 'roles_read_all', 'roles_create', 'roles_update', 'roles_assign', 'audit_read', 'activity_logs_read'],
+        // Analytics — Professional additions
+        reports:            ['read', 'create', 'update', 'delete'],
+        // Config — Professional additions
+        pipelines:          ['read', 'create', 'update', 'delete'],
+        assignment_rules:   ['read', 'create', 'update', 'delete'],
+        // User/role management for plan admins
+        users:              ['read', 'create', 'update', 'delete'],
+        roles:              ['read', 'create', 'update', 'delete'],
       },
       hr: {
         employees: ['read', 'read_all', 'create', 'update', 'delete', 'manage_roles'],
@@ -2541,17 +2894,31 @@ export const PLAN_ACCESS_MATRIX = {
       crm: [
         // All Professional modules
         'leads', 'contacts', 'accounts', 'opportunities', 'tickets',
-        'tasks', 'meetings', 'calls', 'communications', 'notes', 'activities',
+        'tasks', 'meetings', 'calls', 'communications', 'notes', 'activity', 'attachments',
         'documents', 'notifications', 'calendar',
         'events', 'quotations', 'invoices', 'sales-orders', 'products',
         'bulk_upload', 'webforms', 'email_templates',
+        // Navigation essentials
+        'dashboards', 'search', 'workqueue',
+        // Analytics
+        'reports',
         // Enterprise additions — advanced automation & customisation
         'inventory',
         'cadences', 'marketing_campaigns',
+        'marketing_lists', 'marketing_email_sends', 'marketing_sms_sends',
+        'whatsapp_templates', 'email_sender', 'email_ai', 'email_suppression',
         'approval_processes',
-        'custom_fields', 'layouts',
-        'custom_buttons', 'custom_functions',
+        // Enterprise admin config
+        'pipelines', 'blueprints',
+        'assignment_rules', 'scoring_rules', 'workflow_rules', 'validation_rules',
+        'layouts', 'custom_fields',
+        'custom_buttons', 'custom_functions', 'custom_modules', 'client_scripts',
+        'dropdowns', 'related_lists', 'lead_conversion_mappings',
+        'tags', 'recycle_bin', 'audit',
+        'vertical_packs', 'inbox_sync',
         'webhooks',
+        // User/role management
+        'users', 'roles',
       ],
       hr: ['employees', 'payroll', 'leave', 'dashboard'],
       affiliateConnect: ['dashboard', 'products', 'affiliates', 'tracking', 'commissions', 'campaigns', 'influencers', 'payments', 'analytics', 'fraud', 'communications', 'integrations', 'settings', 'support'],
@@ -2585,35 +2952,55 @@ export const PLAN_ACCESS_MATRIX = {
         'sales-orders':     ['read', 'create', 'update', 'delete'],
         products:           ['read', 'create', 'update', 'delete'],
         documents:          ['read', 'create', 'delete'],
+        attachments:        ['read', 'create', 'delete'],
         notes:              ['read', 'create', 'update', 'delete'],
-        activities:         ['read'],
+        activity:           ['read'],
         notifications:      ['read', 'update'],
         calendar:           ['read'],
+        dashboards:         ['read', 'create', 'update', 'delete'],
+        search:             ['read'],
+        workqueue:          ['read'],
+        reports:            ['read', 'create', 'update', 'delete'],
         bulk_upload:        ['read', 'create', 'delete'],
         webforms:           ['read', 'create', 'update', 'delete'],
         email_templates:    ['read', 'create', 'update', 'delete'],
-        // Enterprise additions
+        // Enterprise additions — commercial & inventory
         inventory:          ['read', 'create', 'update', 'delete'],
         cadences:           ['read', 'create', 'update', 'delete'],
         marketing_campaigns: ['read', 'create', 'update', 'delete'],
+        marketing_lists:    ['read', 'create', 'update', 'delete'],
+        marketing_email_sends: ['read', 'create', 'update', 'delete'],
+        marketing_sms_sends: ['read', 'create', 'update', 'delete'],
+        whatsapp_templates: ['read', 'create', 'update', 'delete'],
+        email_sender:       ['read', 'create', 'update', 'delete'],
+        email_ai:           ['read', 'create', 'update', 'delete'],
+        email_suppression:  ['read', 'create', 'update', 'delete'],
         approval_processes: ['read', 'create', 'update', 'delete', 'approve'],
+        // Enterprise additions — admin config
+        pipelines:          ['read', 'create', 'update', 'delete'],
+        blueprints:         ['read', 'create', 'update', 'delete'],
+        assignment_rules:   ['read', 'create', 'update', 'delete'],
+        scoring_rules:      ['read', 'create', 'update', 'delete'],
+        workflow_rules:     ['read', 'create', 'update', 'delete'],
+        validation_rules:   ['read', 'create', 'update', 'delete'],
+        layouts:            ['read', 'manage', 'fields_read', 'fields_manage', 'sysconfig_read', 'sysconfig_create', 'sysconfig_update', 'sysconfig_delete'],
         custom_fields:      ['read', 'manage'],
-        layouts:            ['read', 'manage'],
         custom_buttons:     ['read', 'manage', 'execute'],
         custom_functions:   ['read', 'manage', 'execute'],
+        custom_modules:     ['read', 'create', 'update', 'delete'],
+        client_scripts:     ['read', 'manage', 'execute'],
+        dropdowns:          ['read', 'create', 'update', 'delete'],
+        related_lists:      ['read', 'create', 'update', 'delete'],
+        lead_conversion_mappings: ['read', 'create', 'update', 'delete'],
+        tags:               ['read', 'create', 'update', 'delete'],
+        recycle_bin:        ['read', 'update', 'delete'],
+        audit:              ['read'],
+        vertical_packs:     ['read', 'create', 'update', 'delete'],
+        inbox_sync:         ['read', 'create', 'update', 'delete'],
         webhooks:           ['read', 'create', 'update', 'delete'],
-        // Full system access
-        system: [
-          'settings_read', 'settings_update',
-          'configurations_read', 'configurations_create', 'configurations_update', 'configurations_delete',
-          'users_read', 'users_read_all', 'users_create', 'users_update', 'users_delete', 'users_activate',
-          'roles_read', 'roles_read_all', 'roles_create', 'roles_update', 'roles_delete', 'roles_assign',
-          'audit_read', 'audit_read_all', 'audit_export', 'audit_view_details', 'audit_filter',
-          'activity_logs_read', 'activity_logs_read_all', 'activity_logs_export',
-          'reports_read', 'reports_read_all', 'reports_create', 'reports_update', 'reports_delete', 'reports_export', 'reports_schedule',
-          'dropdowns_read', 'dropdowns_create', 'dropdowns_update', 'dropdowns_delete',
-          'integrations_read', 'integrations_create', 'integrations_update', 'integrations_delete',
-        ],
+        // User/role management
+        users:              ['read', 'create', 'update', 'delete'],
+        roles:              ['read', 'create', 'update', 'delete'],
       },
       hr: {
         employees: ['read', 'read_all', 'create', 'update', 'delete', 'view_salary', 'export'],
@@ -2970,23 +3357,18 @@ export function createSuperAdminRoleConfig(selectedPlan: string = 'free', tenant
   // operation an org-level admin should hold, derived from the matrix so it
   // stays in sync as new modules ship.
   //
-  // Modules outside the plan stay absent — billing/feature gating still works.
+  // Organization Admin gets every operation in every module for each app the plan
+  // includes. Plan module restrictions apply to regular roles only — the admin
+  // role enumerates all operations so it never silently lacks access to a module
+  // that exists in the matrix. App-level gating (planApps) still limits which
+  // apps the tenant has enabled.
   const expandedPermissions: Record<string, Record<string, string[]>> = {};
   const planApps = planAccess.applications ?? [];
-  const planModules = (planAccess.modules ?? {}) as Record<string, string[] | '*'>;
   for (const appCode of planApps) {
     const appMatrix = (BUSINESS_SUITE_MATRIX as Record<string, { modules?: Record<string, { permissions?: Array<{ code: string }> }> }>)[appCode];
     if (!appMatrix?.modules) continue;
-    const allowedModules = planModules[appCode];
-    const moduleAllowed = (moduleCode: string): boolean => {
-      if (allowedModules === '*') return true;
-      if (Array.isArray(allowedModules)) return allowedModules.includes(moduleCode);
-      // No module list for this app on this plan → fall back to plan.permissions.
-      return !!(planAccess.permissions as Record<string, Record<string, unknown>> | undefined)?.[appCode]?.[moduleCode];
-    };
     expandedPermissions[appCode] = {};
     for (const [moduleCode, moduleDef] of Object.entries(appMatrix.modules)) {
-      if (!moduleAllowed(moduleCode)) continue;
       const codes = (moduleDef.permissions ?? []).map((p) => p.code);
       if (codes.length > 0) {
         expandedPermissions[appCode][moduleCode] = codes;

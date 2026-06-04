@@ -15,14 +15,14 @@ beforeAll(() => {
 afterAll(() => endDb());
 
 describe('tenant repository/service integration', () => {
-  it('fetches tenant by subdomain and kindeOrgId', async () => {
+  it('fetches tenant by subdomain and idpOrgId', async () => {
     const tenant = await seedTenant(db);
 
     const bySubdomain = await TenantRepository.getBySubdomain(tenant.subdomain);
     expect(bySubdomain).not.toBeNull();
     expect(bySubdomain?.tenantId).toBe(tenant.tenantId);
 
-    const byOrgId = await TenantRepository.getByKindeOrgId(tenant.kindeOrgId);
+    const byOrgId = await TenantRepository.getByIdpOrgId(tenant.idpOrgId);
     expect(byOrgId).not.toBeNull();
     expect(byOrgId?.tenantId).toBe(tenant.tenantId);
   });
@@ -41,9 +41,9 @@ describe('tenant repository/service integration', () => {
     const tenant = await seedTenant(db);
 
     const bySubdomain = await TenantService.getBySubdomain(tenant.subdomain);
-    const byKindeOrgId = await TenantService.getByKindeOrgId(tenant.kindeOrgId);
+    const byIdpOrgId = await TenantService.getByIdpOrgId(tenant.idpOrgId);
 
     expect(bySubdomain?.tenantId).toBe(tenant.tenantId);
-    expect(byKindeOrgId?.tenantId).toBe(tenant.tenantId);
+    expect(byIdpOrgId?.tenantId).toBe(tenant.tenantId);
   });
 });

@@ -126,16 +126,21 @@ const getRequestKey = (requestConfig: any): string => {
   return `${method} ${base}${url}`
 }
 
-let kindeTokenGetter: (() => Promise<string | null>) | null = null;
+let idpTokenGetter: (() => Promise<string | null>) | null = null;
 
-export const setKindeTokenGetter = (getter: () => Promise<string | null>) => {
-  kindeTokenGetter = getter;
+export const setIdpTokenGetter = (getter: () => Promise<string | null>) => {
+  idpTokenGetter = getter;
 };
 
 // ─── 5-minute token cache (merged from apiOptimized.ts) ──────────────────────
 let cachedToken: string | null = null;
 let tokenCacheTime: number = 0;
 const TOKEN_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+// Single-flight silent refresh: shared across concurrent 401s so a lapsed
+// session triggers exactly one POST /auth/refresh, then the original requests
+// are replayed against the freshly-issued idp_token cookie.
+let refreshPromise: Promise<unknown> | null = null;
 
 const isValidJWT = (token: string): boolean => {
   if (!token || typeof token !== 'string') return false;
@@ -167,33 +172,33 @@ const isTokenExpired = (token: string): boolean => {
 };
 
 /**
- * Get authentication token from the Kinde SDK only.
+ * Get authentication token from the IdP.
  * Tokens are never read from localStorage/sessionStorage/cookies by JS — cookies
  * are httpOnly and sent automatically via withCredentials. The Bearer header is set
- * from the Kinde SDK's in-memory token for cases where cookie flow doesn't apply.
+ * from the IdP's in-memory token for cases where cookie flow doesn't apply.
  *
  * Includes a 5-minute short-lived cache to avoid repeated async calls on rapid
  * sequential requests (merged from apiOptimized.ts).
  */
-export const getKindeToken = async (): Promise<string | null> => {
+export const getIdpToken = async (): Promise<string | null> => {
   const now = Date.now();
   if (cachedToken && (now - tokenCacheTime) < TOKEN_CACHE_DURATION) {
     return cachedToken;
   }
 
-  if (kindeTokenGetter) {
+  if (idpTokenGetter) {
     try {
-      const token = await kindeTokenGetter();
+      const token = await idpTokenGetter();
       if (token && isValidJWT(token) && !isTokenExpired(token)) {
         cachedToken = token;
         tokenCacheTime = now;
         return token;
       }
       if (token && isTokenExpired(token)) {
-        logger.debug('🔑 getKindeToken: Token is expired, skipping to avoid 401 spam');
+        logger.debug('🔑 getIdpToken: Token is expired, skipping to avoid 401 spam');
       }
     } catch (error) {
-      logger.debug('Kinde SDK getToken() failed:', error);
+      logger.debug('IdP getToken() failed:', error);
     }
   }
 
@@ -225,7 +230,7 @@ api.interceptors.request.use(async (config) => {
     }, SLOW_REQUEST_THRESHOLD_MS)
   }
 
-  const authToken = await getKindeToken();
+  const authToken = await getIdpToken();
   
   if (authToken) {
     if (!config.headers) config.headers = {} as any;
@@ -384,12 +389,32 @@ api.interceptors.response.use(
       })
     }
 
-    // ── 401 Unauthorized — stale session ───────────────────────────────────
+    // ── 401 Unauthorized — one-shot silent refresh, then replay ────────────
     if (status === 401) {
-      logger.debug('Authentication required — session may have expired')
       cachedToken = null
       tokenCacheTime = 0
-      notifySessionExpired()
+
+      const original = requestConfig as (typeof requestConfig & { _refreshRetried?: boolean }) | undefined
+      const url: string = original?.url || ''
+      const isRefreshCall = url.includes('/auth/refresh')
+
+      if (original && !original._refreshRetried && !isRefreshCall) {
+        original._refreshRetried = true
+        try {
+          logger.debug('401 — attempting silent token refresh')
+          // Exchange the httpOnly idp_refresh_token cookie for a fresh idp_token.
+          // Deduped so concurrent 401s trigger only one refresh round-trip.
+          refreshPromise = refreshPromise ?? api.post('/auth/refresh', {}).finally(() => { refreshPromise = null })
+          await refreshPromise
+          // Backend has set a new httpOnly idp_token cookie; replay the original request.
+          return api(original)
+        } catch {
+          notifySessionExpired()
+          return Promise.reject(error)
+        }
+      }
+
+      if (!isRefreshCall) notifySessionExpired()
     }
 
     // ── 403 Forbidden — platform/role permission denied ────────────────────
@@ -468,14 +493,14 @@ export const onboardingAPIOptimized = {
   getUserOrganization: () =>
     api.get('/onboarding/user-organization'),
 
-  getDataByEmail: (email: string, kindeUserId?: string) =>
-    api.post('/onboarding/get-data', { email, kindeUserId }),
+  getDataByEmail: (email: string, idpSub?: string) =>
+    api.post('/onboarding/get-data', { email, idpSub }),
 
   markComplete: (organizationId: string) =>
     api.post('/onboarding/mark-complete', { organizationId }),
 
-  updateStep: (step: string, data?: any, email?: string, formData?: any, kindeUserId?: string) =>
-    api.post('/onboarding/update-step', { step, data, email, formData, kindeUserId }),
+  updateStep: (step: string, data?: any, email?: string, formData?: any, idpSub?: string) =>
+    api.post('/onboarding/update-step', { step, data, email, formData, idpSub }),
 
   reset: (targetUserId?: string) =>
     api.post('/onboarding/reset', targetUserId ? { targetUserId } : {}),

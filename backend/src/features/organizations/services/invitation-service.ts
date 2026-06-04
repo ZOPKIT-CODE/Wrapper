@@ -23,6 +23,28 @@ export class ServiceError extends Error {
 // Low-level helpers (also exported for direct use when needed)
 // ---------------------------------------------------------------------------
 
+// Canonicalize an email for equality comparison during invitation acceptance.
+// Lowercases/trims, and treats Gmail dot- and plus-aliases as the same mailbox
+// (gmail delivers j.smith+x@gmail.com and jsmith@gmail.com to the same inbox),
+// plus strips +tags for other providers (a near-universal aliasing convention).
+// This only affects matching the *authenticated* user to the invited address —
+// it stays fail-closed: an unrelated address still won't match.
+export function normalizeEmailForMatch(email: string): string {
+  const e = (email || '').trim().toLowerCase();
+  const at = e.lastIndexOf('@');
+  if (at < 0) return e;
+  let local = e.slice(0, at);
+  let domain = e.slice(at + 1);
+  // Strip +tag for all providers.
+  local = local.split('+')[0];
+  // Gmail/Googlemail ignore dots in the local-part and are a single domain.
+  if (domain === 'gmail.com' || domain === 'googlemail.com') {
+    local = local.replace(/\./g, '');
+    domain = 'gmail.com';
+  }
+  return `${local}@${domain}`;
+}
+
 // Ensure the user is associated with the correct organization.
 //
 // Org membership now lives natively in the Wrapper DB (organization_memberships /
@@ -30,7 +52,7 @@ export class ServiceError extends Error {
 // one-way sync. The Wrapper DB is the source of truth, so this is a no-op that reports success.
 // Kept as an exported helper so existing callers keep compiling.
 export async function ensureUserInCorrectOrganization(
-  _kindeUserId: string,
+  _idpSub: string,
   _email: string,
   targetOrgCode: string
 ): Promise<{ success: boolean; targetOrg: string; error?: string }> {
@@ -263,7 +285,7 @@ export async function getInvitationDetails(org: string, email: string) {
     .select({
       tenantId: tenants.tenantId,
       companyName: tenants.companyName,
-      kindeOrgId: tenants.idpOrgId,
+      idpOrgId: tenants.idpOrgId,
       subdomain: tenants.subdomain,
       logoUrl: tenants.logoUrl,
       primaryColor: tenants.primaryColor,
@@ -281,7 +303,7 @@ export async function getInvitationDetails(org: string, email: string) {
   Logger.log('info', 'email', 'get-invitation-details', 'Found organization', {
     tenantId: tenant.tenantId,
     companyName: tenant.companyName,
-    kindeOrgId: tenant.kindeOrgId
+    idpOrgId: tenant.idpOrgId
   });
 
   const [invitedUser] = await db
@@ -342,7 +364,7 @@ export async function getInvitationDetails(org: string, email: string) {
       organizationName: tenant.companyName,
       inviterName: inviter?.name || 'Team Member',
       roles: userRoles.map(r => r.roleName),
-      orgCode: tenant.kindeOrgId
+      orgCode: tenant.idpOrgId
     }
   };
 }
@@ -379,7 +401,7 @@ export async function getInvitationByToken(token: string) {
     .select({
       tenantId: tenants.tenantId,
       companyName: tenants.companyName,
-      kindeOrgId: tenants.idpOrgId
+      idpOrgId: tenants.idpOrgId
     })
     .from(tenants)
     .where(eq(tenants.tenantId, invitation.tenantId))
@@ -422,7 +444,7 @@ export async function getInvitationByToken(token: string) {
       email: invitation.email,
       name: invitation.email.split('@')[0],
       organizationName: tenant.companyName,
-      orgCode: tenant.kindeOrgId,
+      orgCode: tenant.idpOrgId,
       invitationToken: invitation.invitationToken,
       invitationUrl: invitation.invitationUrl,
       expiresAt: invitation.expiresAt,
@@ -442,7 +464,7 @@ export async function getAdminInvitations(orgCode: string, request: FastifyReque
     .select({
       tenantId: tenants.tenantId,
       companyName: tenants.companyName,
-      kindeOrgId: tenants.idpOrgId
+      idpOrgId: tenants.idpOrgId
     })
     .from(tenants)
     .where(eq(tenants.idpOrgId, orgCode))
@@ -513,7 +535,7 @@ export async function getAdminInvitations(orgCode: string, request: FastifyReque
     organization: {
       tenantId: tenant.tenantId,
       companyName: tenant.companyName,
-      kindeOrgId: tenant.kindeOrgId
+      idpOrgId: tenant.idpOrgId
     },
     invitations: formattedInvitations,
     summary: {
@@ -532,7 +554,7 @@ export async function resendInvitationEmail(orgCode: string, invitationId: strin
     .select({
       tenantId: tenants.tenantId,
       companyName: tenants.companyName,
-      kindeOrgId: tenants.idpOrgId
+      idpOrgId: tenants.idpOrgId
     })
     .from(tenants)
     .where(eq(tenants.idpOrgId, orgCode))
@@ -675,7 +697,7 @@ export async function cancelInvitation(orgCode: string, invitationId: string) {
     .select({
       tenantId: tenants.tenantId,
       companyName: tenants.companyName,
-      kindeOrgId: tenants.idpOrgId
+      idpOrgId: tenants.idpOrgId
     })
     .from(tenants)
     .where(eq(tenants.idpOrgId, orgCode))
@@ -727,7 +749,7 @@ export interface CreateInvitationParams {
   inviterContext: {
     internalUserId?: string;
     userId?: string;
-    kindeUserId?: string;
+    idpSub?: string;
     name?: string;
   };
   message?: string;
@@ -743,7 +765,7 @@ export async function createInvitation(params: CreateInvitationParams) {
     .select({
       tenantId: tenants.tenantId,
       companyName: tenants.companyName,
-      kindeOrgId: tenants.idpOrgId
+      idpOrgId: tenants.idpOrgId
     })
     .from(tenants)
     .where(eq(tenants.tenantId, tenantId))
@@ -782,7 +804,7 @@ export async function createInvitation(params: CreateInvitationParams) {
     const [inviterUser] = await db
       .select({ userId: tenantUsers.userId })
       .from(tenantUsers)
-      .where(eq(tenantUsers.idpSub, inviterContext.kindeUserId ?? ''))
+      .where(eq(tenantUsers.idpSub, inviterContext.idpSub ?? ''))
       .limit(1);
     if (!inviterUser) {
       throw new ServiceError(400, {
@@ -903,7 +925,7 @@ export async function createMultiEntityInvitation(params: CreateMultiEntityInvit
       .select({
         tenantId: tenants.tenantId,
         companyName: tenants.companyName,
-        kindeOrgId: tenants.idpOrgId
+        idpOrgId: tenants.idpOrgId
       })
       .from(tenants)
       .where(eq(tenants.tenantId, tenantId))
@@ -1315,7 +1337,7 @@ export async function getInvitationDetailsByToken(token: string) {
     .select({
       tenantId: tenants.tenantId,
       companyName: tenants.companyName,
-      kindeOrgId: tenants.idpOrgId,
+      idpOrgId: tenants.idpOrgId,
       subdomain: tenants.subdomain,
       logoUrl: tenants.logoUrl,
       primaryColor: tenants.primaryColor,
@@ -1384,7 +1406,7 @@ export async function getInvitationDetailsByToken(token: string) {
       targetEntities: targetEntityDetails,
       primaryEntityId: invitation.primaryEntityId,
       primaryEntityName: targetEntityDetails.find(e => e.isPrimary)?.entityName,
-      orgCode: tenant.kindeOrgId,
+      orgCode: tenant.idpOrgId,
       expiresAt: invitation.expiresAt
     };
   } else {
@@ -1405,7 +1427,7 @@ export async function getInvitationDetailsByToken(token: string) {
       inviterName: inviter?.name || 'Team Member',
       invitationScope: invitation.invitationScope || 'organization',
       roles: role ? [role.roleName] : ['Member'],
-      orgCode: tenant.kindeOrgId,
+      orgCode: tenant.idpOrgId,
       roleName: role?.roleName || 'Member',
       expiresAt: invitation.expiresAt
     };
@@ -1419,14 +1441,14 @@ export async function getInvitationDetailsByToken(token: string) {
 
 export interface AcceptInvitationByTokenParams {
   token: string;
-  kindeUserId: string;
+  idpSub: string;
   authenticatedEmail: string;
 }
 
 export async function acceptInvitationByToken(params: AcceptInvitationByTokenParams) {
-  const { token, kindeUserId, authenticatedEmail } = params;
+  const { token, idpSub, authenticatedEmail } = params;
 
-  Logger.log('info', 'email', 'accept-invitation-by-token', 'Accepting invitation by token', { token, kindeUserId });
+  Logger.log('info', 'email', 'accept-invitation-by-token', 'Accepting invitation by token', { token, idpSub });
 
   const tokenStr = token;
   let [invitation] = await db
@@ -1455,7 +1477,8 @@ export async function acceptInvitationByToken(params: AcceptInvitationByTokenPar
   }
 
   // SECURITY: Verify the authenticated user's email matches the invitation email.
-  if (authenticatedEmail.toLowerCase() !== invitation.email.toLowerCase()) {
+  // Normalized to tolerate Gmail dot/plus aliases (same mailbox) while staying fail-closed.
+  if (normalizeEmailForMatch(authenticatedEmail) !== normalizeEmailForMatch(invitation.email)) {
     Logger.log('error', 'email', 'accept-invitation-by-token', 'Email mismatch — authenticated user does not match invitation', {
       authenticated: authenticatedEmail,
       invited: invitation.email
@@ -1479,6 +1502,27 @@ export async function acceptInvitationByToken(params: AcceptInvitationByTokenPar
       .limit(1);
 
     if (existingUser) {
+      // Self-heal: rows created before the invited-user flags were written (or by a
+      // non-acceptance path) can have onboarding_completed=false and no INVITED_USER
+      // marker, which would wrongly route the user into the onboarding wizard. Repair
+      // them here so the auth/onboarding guards recognize them as invited.
+      const prefs = (existingUser.preferences as Record<string, unknown>) || {};
+      const needsHeal =
+        existingUser.onboardingCompleted !== true ||
+        (prefs.userType !== 'INVITED_USER' && prefs.isInvitedUser !== true);
+      if (needsHeal) {
+        await db.update(tenantUsers)
+          .set({
+            onboardingCompleted: true,
+            invitedAt: existingUser.invitedAt ?? invitation.createdAt,
+            preferences: { ...prefs, userType: 'INVITED_USER', isInvitedUser: true },
+          })
+          .where(eq(tenantUsers.userId, existingUser.userId));
+        // Bust the stale cached auth record so the next request sees the healed row.
+        if (existingUser.idpSub) await invalidateUserCache(existingUser.idpSub);
+        Logger.log('info', 'email', 'accept-invitation-by-token', 'Healed already-accepted invited-user flags', { userId: existingUser.userId });
+      }
+
       return {
         alreadyAccepted: true,
         success: true,
@@ -1509,7 +1553,7 @@ export async function acceptInvitationByToken(params: AcceptInvitationByTokenPar
     .select({
       tenantId: tenants.tenantId,
       companyName: tenants.companyName,
-      kindeOrgId: tenants.idpOrgId
+      idpOrgId: tenants.idpOrgId
     })
     .from(tenants)
     .where(eq(tenants.tenantId, invitation.tenantId))
@@ -1519,9 +1563,9 @@ export async function acceptInvitationByToken(params: AcceptInvitationByTokenPar
     throw new ServiceError(404, { error: 'Organization not found' });
   }
 
-  const roleAssignmentsToPublish = [];
+  const roleAssignmentsToPublish: any[] = [];
 
-  Logger.log('info', 'email', 'accept-invitation-by-token', 'Ensuring user is in correct Kinde organizations for invitation');
+  Logger.log('info', 'email', 'accept-invitation-by-token', 'Ensuring user is in correct organizations for invitation');
 
   const targetEntitiesList = (invitation.targetEntities ?? []) as Array<{ entityId: string; entityType?: string }>;
   if (invitation.invitationScope === 'multi-entity' && targetEntitiesList.length > 0) {
@@ -1546,20 +1590,20 @@ export async function acceptInvitationByToken(params: AcceptInvitationByTokenPar
             const [parentOrg] = await db
               .select({
                 entityId: entities.entityId,
-                kindeOrgId: tenants.idpOrgId
+                idpOrgId: tenants.idpOrgId
               })
               .from(entities)
               .leftJoin(tenants, eq(entities.tenantId, tenants.tenantId))
               .where(eq(entities.entityId, entityRecord.parentEntityId))
               .limit(1);
 
-            if (parentOrg?.kindeOrgId) {
-              targetOrgIds.add(parentOrg.kindeOrgId);
-              Logger.log('info', 'email', 'accept-invitation-by-token', 'Added parent organization for location', { kindeOrgId: parentOrg.kindeOrgId });
+            if (parentOrg?.idpOrgId) {
+              targetOrgIds.add(parentOrg.idpOrgId);
+              Logger.log('info', 'email', 'accept-invitation-by-token', 'Added parent organization for location', { idpOrgId: parentOrg.idpOrgId });
             }
           } else if (entityRecord.entityType === 'organization') {
-            targetOrgIds.add(tenant.kindeOrgId);
-            Logger.log('info', 'email', 'accept-invitation-by-token', 'Added direct organization', { kindeOrgId: tenant.kindeOrgId });
+            targetOrgIds.add(tenant.idpOrgId);
+            Logger.log('info', 'email', 'accept-invitation-by-token', 'Added direct organization', { idpOrgId: tenant.idpOrgId });
           }
         }
       }
@@ -1572,7 +1616,7 @@ export async function acceptInvitationByToken(params: AcceptInvitationByTokenPar
       try {
         Logger.log('info', 'email', 'accept-invitation-by-token', 'Adding user to organization', { orgId });
         const orgResult = await ensureUserInCorrectOrganization(
-          kindeUserId as string,
+          idpSub as string,
           invitation.email,
           orgId as string
         );
@@ -1587,20 +1631,20 @@ export async function acceptInvitationByToken(params: AcceptInvitationByTokenPar
       }
     }
   } else {
-    Logger.log('info', 'email', 'accept-invitation-by-token', 'Processing single-entity invitation, adding to tenant organization', { kindeOrgId: tenant.kindeOrgId });
+    Logger.log('info', 'email', 'accept-invitation-by-token', 'Processing single-entity invitation, adding to tenant organization', { idpOrgId: tenant.idpOrgId });
 
     try {
       let orgResult = await ensureUserInCorrectOrganization(
-        kindeUserId as string,
+        idpSub as string,
         invitation.email,
-        tenant.kindeOrgId
+        tenant.idpOrgId
       );
 
-      if (!orgResult.success && tenant.kindeOrgId.startsWith('org_')) {
-        const orgCodeWithoutPrefix = tenant.kindeOrgId.replace('org_', '');
+      if (!orgResult.success && tenant.idpOrgId.startsWith('org_')) {
+        const orgCodeWithoutPrefix = tenant.idpOrgId.replace('org_', '');
         Logger.log('info', 'email', 'accept-invitation-by-token', 'Retrying with org code without prefix', { orgCodeWithoutPrefix });
         orgResult = await ensureUserInCorrectOrganization(
-          kindeUserId as string,
+          idpSub as string,
           invitation.email,
           orgCodeWithoutPrefix
         );
@@ -1609,10 +1653,10 @@ export async function acceptInvitationByToken(params: AcceptInvitationByTokenPar
       if (orgResult.success) {
         Logger.log('info', 'email', 'accept-invitation-by-token', 'User organization assignment completed');
       } else {
-        Logger.log('warning', 'email', 'accept-invitation-by-token', 'Kinde organization assignment failed, but continuing — this is expected if your M2M client lacks organization management permissions', { error: orgResult.error });
+        Logger.log('warning', 'email', 'accept-invitation-by-token', 'Organization assignment failed, but continuing — this is expected if your M2M client lacks organization management permissions', { error: orgResult.error });
       }
     } catch (orgError) {
-      Logger.log('warning', 'email', 'accept-invitation-by-token', 'Kinde organization assignment threw error, but continuing — this is expected if your M2M client lacks organization management permissions', { error: (orgError as Error).message });
+      Logger.log('warning', 'email', 'accept-invitation-by-token', 'Organization assignment helper threw, but continuing — org membership is written natively to the Wrapper DB below', { error: (orgError as Error).message });
     }
   }
 
@@ -1627,16 +1671,22 @@ export async function acceptInvitationByToken(params: AcceptInvitationByTokenPar
     ))
     .limit(1);
 
-  let newUser;
+  let newUser: any;
+  // Transactional outbox: all DB writes + inter-app publishes for the accept
+  // operation share ONE transaction. Each publish is threaded with `tx`, so it
+  // writes its outbox row in this transaction and skips synchronous SNS (the
+  // poller delivers post-commit). A publish/outbox failure throws and rolls the
+  // whole transaction back. External (Cognito) org-assignment ran above, outside.
+  await db.transaction(async (tx) => {
   if (existingUser) {
     Logger.log('info', 'email', 'accept-invitation-by-token', 'Updating existing user record', { userId: existingUser.userId });
 
     const existingPreferences = existingUser.preferences || {};
 
-    [newUser] = await db
+    [newUser] = await tx
       .update(tenantUsers)
       .set({
-        kindeUserId: kindeUserId as string,
+        idpSub: idpSub as string,
         isActive: true,
         onboardingCompleted: true,
         preferences: {
@@ -1650,11 +1700,11 @@ export async function acceptInvitationByToken(params: AcceptInvitationByTokenPar
       .where(eq(tenantUsers.userId, existingUser.userId))
       .returning();
 
-    try {
+    {
       const { snsSqsPublisher } = await import('../../messaging/utils/sns-sqs-publisher.js');
       const firstName = newUser.firstName || '';
       const lastName = newUser.lastName || '';
-      await snsSqsPublisher.publishUserEventToSuite('user_invitation_accepted', tenant.kindeOrgId, newUser.userId, {
+      await snsSqsPublisher.publishUserEventToSuite('user_invitation_accepted', tenant.idpOrgId, newUser.userId, {
         userId: newUser.userId,
         email: newUser.email,
         firstName: firstName,
@@ -1662,14 +1712,12 @@ export async function acceptInvitationByToken(params: AcceptInvitationByTokenPar
         name: `${firstName} ${lastName}`.trim() || newUser.email || '',
         isActive: newUser.isActive !== undefined ? newUser.isActive : true,
         onboardingCompleted: true,
-        kindeUserId: newUser.idpSub,
+        idpSub: newUser.idpSub,
         invitedBy: invitation.invitedBy,
         invitationId: invitation.invitationId,
         acceptedAt: new Date().toISOString()
-      });
+      }, 'system', tx);
       Logger.log('info', 'email', 'accept-invitation-by-token', 'Published user_invitation_accepted event to all applications (existing user)');
-    } catch (publishErr) {
-      Logger.log('warning', 'email', 'accept-invitation-by-token', 'Failed to publish user_invitation_accepted (existing user)', { error: (publishErr as Error).message });
     }
   } else {
     Logger.log('info', 'email', 'accept-invitation-by-token', 'Creating new user record', {
@@ -1677,11 +1725,11 @@ export async function acceptInvitationByToken(params: AcceptInvitationByTokenPar
       tenantId: invitation.tenantId,
       invitedBy: invitation.invitedBy
     });
-    [newUser] = await db
+    [newUser] = await tx
       .insert(tenantUsers)
       .values({
         tenantId: invitation.tenantId,
-        kindeUserId: kindeUserId as string,
+        idpSub: idpSub as string,
         email: invitation.email,
         name: invitation.email.split('@')[0],
         isActive: true,
@@ -1705,23 +1753,23 @@ export async function acceptInvitationByToken(params: AcceptInvitationByTokenPar
       isActive: newUser.isActive
     });
 
-    try {
+    {
       const { snsSqsPublisher } = await import('../../messaging/utils/sns-sqs-publisher.js');
       const firstName = newUser.firstName || '';
       const lastName = newUser.lastName || '';
 
-      await snsSqsPublisher.publishUserEventToSuite('user_created', tenant.kindeOrgId, newUser.userId, {
+      await snsSqsPublisher.publishUserEventToSuite('user_created', tenant.idpOrgId, newUser.userId, {
         userId: newUser.userId,
         email: newUser.email,
-        kindeUserId: newUser.idpSub,
+        idpSub: newUser.idpSub,
         firstName: firstName,
         lastName: lastName,
         name: `${firstName} ${lastName}`.trim() || newUser.email || '',
         isActive: newUser.isActive !== undefined ? newUser.isActive : true,
         createdAt: newUser.createdAt ? (typeof newUser.createdAt === 'string' ? newUser.createdAt : newUser.createdAt.toISOString()) : new Date().toISOString()
-      });
+      }, 'system', tx);
       Logger.log('info', 'email', 'accept-invitation-by-token', 'Published user_created event to AWS MQ');
-      await snsSqsPublisher.publishUserEventToSuite('user_invitation_accepted', tenant.kindeOrgId, newUser.userId, {
+      await snsSqsPublisher.publishUserEventToSuite('user_invitation_accepted', tenant.idpOrgId, newUser.userId, {
         userId: newUser.userId,
         email: newUser.email,
         firstName,
@@ -1729,15 +1777,13 @@ export async function acceptInvitationByToken(params: AcceptInvitationByTokenPar
         name: `${firstName} ${lastName}`.trim() || newUser.email || '',
         isActive: newUser.isActive !== undefined ? newUser.isActive : true,
         onboardingCompleted: true,
-        kindeUserId: newUser.idpSub,
+        idpSub: newUser.idpSub,
         invitedBy: invitation.invitedBy,
         invitationId: invitation.invitationId,
         createdAt: newUser.createdAt ? (typeof newUser.createdAt === 'string' ? newUser.createdAt : newUser.createdAt.toISOString()) : new Date().toISOString(),
         acceptedAt: new Date().toISOString()
-      });
+      }, 'system', tx);
       Logger.log('info', 'email', 'accept-invitation-by-token', 'Published user_invitation_accepted event to all applications (new user)');
-    } catch (streamError) {
-      Logger.log('warning', 'email', 'accept-invitation-by-token', 'Failed to publish user creation event to AWS MQ', { error: (streamError as Error).message });
     }
   }
 
@@ -1750,7 +1796,7 @@ export async function acceptInvitationByToken(params: AcceptInvitationByTokenPar
     const assignedRoleIds = new Set<string>();
 
     for (const targetEntity of acceptTargetEntities) {
-      const [existingMembership] = await db
+      const [existingMembership] = await tx
         .select()
         .from(organizationMemberships)
         .where(and(
@@ -1770,7 +1816,7 @@ export async function acceptInvitationByToken(params: AcceptInvitationByTokenPar
         orgAssignmentsToPublish.push({ entityId: targetEntity.entityId, isPrimary: targetEntity.entityId === invitation.primaryEntityId });
 
         if (targetEntity.roleId && !assignedRoleIds.has(targetEntity.roleId)) {
-          const [existingRoleAssignment] = await db
+          const [existingRoleAssignment] = await tx
             .select()
             .from(userRoleAssignments)
             .where(and(
@@ -1781,7 +1827,7 @@ export async function acceptInvitationByToken(params: AcceptInvitationByTokenPar
 
           if (!existingRoleAssignment) {
             try {
-              const [inserted] = await db
+              const [inserted] = await tx
                 .insert(userRoleAssignments)
                 .values({
                   userId: newUser.userId,
@@ -1811,7 +1857,7 @@ export async function acceptInvitationByToken(params: AcceptInvitationByTokenPar
       }
 
       try {
-        const [membership] = await db
+        const [membership] = await tx
           .insert(organizationMemberships)
           .values({
             userId: newUser.userId,
@@ -1840,7 +1886,7 @@ export async function acceptInvitationByToken(params: AcceptInvitationByTokenPar
         const membershipError = err as Error & { code?: string };
         if (membershipError.code === '23505') {
           Logger.log('info', 'email', 'accept-invitation-by-token', 'Membership already exists (race condition), skipping duplicate');
-          const [existing] = await db
+          const [existing] = await tx
             .select()
             .from(organizationMemberships)
             .where(and(
@@ -1860,7 +1906,7 @@ export async function acceptInvitationByToken(params: AcceptInvitationByTokenPar
       }
 
       if (targetEntity.roleId && !assignedRoleIds.has(targetEntity.roleId)) {
-        const [existingRoleAssignment] = await db
+        const [existingRoleAssignment] = await tx
           .select()
           .from(userRoleAssignments)
           .where(and(
@@ -1871,7 +1917,7 @@ export async function acceptInvitationByToken(params: AcceptInvitationByTokenPar
 
         if (!existingRoleAssignment) {
           try {
-            const [inserted] = await db
+            const [inserted] = await tx
               .insert(userRoleAssignments)
               .values({
                 userId: newUser.userId,
@@ -1901,7 +1947,7 @@ export async function acceptInvitationByToken(params: AcceptInvitationByTokenPar
     }
 
     if (invitation.primaryEntityId) {
-      await db
+      await tx
         .update(tenantUsers)
         .set({
           primaryOrganizationId: invitation.primaryEntityId as string,
@@ -1915,7 +1961,7 @@ export async function acceptInvitationByToken(params: AcceptInvitationByTokenPar
     Logger.log('info', 'email', 'accept-invitation-by-token', 'Processing single-entity invitation');
 
     if (invitation.roleId) {
-      const [inserted] = await db
+      const [inserted] = await tx
         .insert(userRoleAssignments)
         .values({
           userId: newUser.userId,
@@ -1933,7 +1979,7 @@ export async function acceptInvitationByToken(params: AcceptInvitationByTokenPar
     let targetEntityId = invitation.primaryEntityId;
 
     if (!targetEntityId) {
-      const [tenantEntity] = await db
+      const [tenantEntity] = await tx
         .select({
           entityId: entities.entityId
         })
@@ -1951,7 +1997,7 @@ export async function acceptInvitationByToken(params: AcceptInvitationByTokenPar
     }
 
     if (targetEntityId) {
-      const [existingMembership] = await db
+      const [existingMembership] = await tx
         .select()
         .from(organizationMemberships)
         .where(and(
@@ -1969,7 +2015,7 @@ export async function acceptInvitationByToken(params: AcceptInvitationByTokenPar
         });
         orgAssignmentsToPublish.push({ entityId: targetEntityId, isPrimary: true });
       } else {
-        const [entityRecord] = await db
+        const [entityRecord] = await tx
           .select({
             entityId: entities.entityId,
             entityType: entities.entityType
@@ -1981,7 +2027,7 @@ export async function acceptInvitationByToken(params: AcceptInvitationByTokenPar
         const entityType = entityRecord?.entityType || 'organization';
 
         try {
-          const [membership] = await db
+          const [membership] = await tx
             .insert(organizationMemberships)
             .values({
               userId: newUser.userId,
@@ -2022,7 +2068,7 @@ export async function acceptInvitationByToken(params: AcceptInvitationByTokenPar
       }
 
       if (invitation.roleId) {
-        const [existingRoleAssignment] = await db
+        const [existingRoleAssignment] = await tx
           .select()
           .from(userRoleAssignments)
           .where(and(
@@ -2033,7 +2079,7 @@ export async function acceptInvitationByToken(params: AcceptInvitationByTokenPar
 
         if (!existingRoleAssignment) {
           try {
-            const [inserted] = await db
+            const [inserted] = await tx
               .insert(userRoleAssignments)
               .values({
                 userId: newUser.userId,
@@ -2058,7 +2104,7 @@ export async function acceptInvitationByToken(params: AcceptInvitationByTokenPar
         }
       }
 
-      await db
+      await tx
         .update(tenantUsers)
         .set({
           primaryOrganizationId: targetEntityId,
@@ -2073,90 +2119,84 @@ export async function acceptInvitationByToken(params: AcceptInvitationByTokenPar
   }
 
   if (roleAssignmentsToPublish.length > 0) {
-    try {
-      const { snsSqsPublisher } = await import('../../messaging/utils/sns-sqs-publisher.js');
-      for (const a of roleAssignmentsToPublish) {
-        await snsSqsPublisher.publishRoleEventToSuite('role_assigned', tenant.kindeOrgId, a.roleId, {
-          assignmentId: a.id,
-          userId: newUser.userId,
-          roleId: a.roleId,
-          assignedAt: a.assignedAt ? (typeof a.assignedAt === 'string' ? a.assignedAt : a.assignedAt.toISOString()) : new Date().toISOString(),
-          assignedBy: invitation.invitedBy,
-          expiresAt: (a as { expiresAt?: Date | string }).expiresAt,
-          entityId: (a as { organizationId?: string }).organizationId
-        });
-      }
-      Logger.log('info', 'email', 'accept-invitation-by-token', 'Published role_assigned events for invitation acceptance', { count: roleAssignmentsToPublish.length });
-    } catch (publishError) {
-      Logger.log('warning', 'email', 'accept-invitation-by-token', 'Failed to publish role assignment events (invitation accept)', { error: (publishError as Error).message });
+    const { snsSqsPublisher } = await import('../../messaging/utils/sns-sqs-publisher.js');
+    for (const a of roleAssignmentsToPublish) {
+      await snsSqsPublisher.publishRoleEventToSuite('role_assigned', tenant.idpOrgId, a.roleId, {
+        assignmentId: a.id,
+        userId: newUser.userId,
+        roleId: a.roleId,
+        assignedAt: a.assignedAt ? (typeof a.assignedAt === 'string' ? a.assignedAt : a.assignedAt.toISOString()) : new Date().toISOString(),
+        assignedBy: invitation.invitedBy,
+        expiresAt: (a as { expiresAt?: Date | string }).expiresAt,
+        entityId: (a as { organizationId?: string }).organizationId
+      }, 'system', tx);
     }
+    Logger.log('info', 'email', 'accept-invitation-by-token', 'Published role_assigned events for invitation acceptance', { count: roleAssignmentsToPublish.length });
   }
 
   if (orgAssignmentsToPublish.length > 0) {
-    try {
-      const { OrganizationAssignmentService } = await import('../services/organization-assignment-service.js');
-      for (const { entityId, isPrimary } of orgAssignmentsToPublish) {
-        const [organization] = await db
-          .select({
-            entityId: entities.entityId,
-            entityName: entities.entityName,
-          })
-          .from(entities)
-          .where(and(
-            eq(entities.entityId, entityId),
-            eq(entities.tenantId, invitation.tenantId)
-          ))
-          .limit(1);
+    const { OrganizationAssignmentService } = await import('../services/organization-assignment-service.js');
+    for (const { entityId, isPrimary } of orgAssignmentsToPublish) {
+      const [organization] = await tx
+        .select({
+          entityId: entities.entityId,
+          entityName: entities.entityName,
+        })
+        .from(entities)
+        .where(and(
+          eq(entities.entityId, entityId),
+          eq(entities.tenantId, invitation.tenantId)
+        ))
+        .limit(1);
 
-        if (organization) {
-          const assignmentData = {
-            assignmentId: `${newUser.userId}_${entityId}_${Date.now()}`,
-            tenantId: invitation.tenantId,
-            userId: newUser.userId,
-            organizationId: entityId,
-            organizationCode: organization.entityId,
-            assignmentType: isPrimary ? 'primary' : 'direct',
-            isActive: true,
-            assignedAt: new Date().toISOString(),
-            priority: isPrimary ? 1 : 2,
-            assignedBy: invitation.invitedBy,
-            metadata: {
-              source: 'invitation_acceptance',
-              invitationId: invitation.invitationId
-            }
-          };
-          await OrganizationAssignmentService.publishOrgAssignmentCreated(assignmentData);
-        }
+      if (organization) {
+        const assignmentData = {
+          assignmentId: `inv_${invitation.invitationId}_${entityId}`,
+          tenantId: invitation.tenantId,
+          userId: newUser.userId,
+          organizationId: entityId,
+          organizationCode: organization.entityId,
+          assignmentType: isPrimary ? 'primary' : 'direct',
+          isActive: true,
+          assignedAt: new Date().toISOString(),
+          priority: isPrimary ? 1 : 2,
+          assignedBy: invitation.invitedBy,
+          metadata: {
+            source: 'invitation_acceptance',
+            invitationId: invitation.invitationId
+          }
+        };
+        await OrganizationAssignmentService.publishOrgAssignmentCreated(assignmentData, {}, tx);
       }
-      Logger.log('info', 'email', 'accept-invitation-by-token', 'Published organization.assignment.created events for invitation acceptance', { count: orgAssignmentsToPublish.length });
-    } catch (publishError) {
-      Logger.log('warning', 'email', 'accept-invitation-by-token', 'Failed to publish organization assignment events (invitation accept)', { error: (publishError as Error).message });
     }
+    Logger.log('info', 'email', 'accept-invitation-by-token', 'Published organization.assignment.created events for invitation acceptance', { count: orgAssignmentsToPublish.length });
   }
 
+  // Mark the invitation accepted within the SAME transaction so the status
+  // flip is atomic with the user/membership/role writes and their outbox rows.
+  await tx
+    .update(tenantInvitations)
+    .set({
+      status: 'accepted',
+      acceptedAt: new Date()
+    } as any)
+    .where(and(
+      eq(tenantInvitations.invitationId, invitation.invitationId),
+      eq(tenantInvitations.status, 'pending')
+    ));
+  });
+
+  // Post-commit, in-memory cache invalidation (not part of the DB transaction).
   await invalidateRoleCache(newUser.userId);
   if (newUser.idpSub) {
     await invalidateUserCache(newUser.idpSub);
   }
 
-  await db.transaction(async (tx) => {
-    await tx
-      .update(tenantInvitations)
-      .set({
-        status: 'accepted',
-        acceptedAt: new Date()
-      } as any)
-      .where(and(
-        eq(tenantInvitations.invitationId, invitation.invitationId),
-        eq(tenantInvitations.status, 'pending')
-      ));
-  });
-
   Logger.log('info', 'email', 'accept-invitation-by-token', 'Invitation accepted successfully', {
     userId: newUser.userId,
     email: newUser.email,
     tenantId: newUser.tenantId,
-    invitedOrg: tenant.kindeOrgId,
+    invitedOrg: tenant.idpOrgId,
     invitationScope: invitation.invitationScope,
     targetEntities: invitation.invitationScope === 'multi-entity' ? ((invitation.targetEntities as unknown[])?.length ?? 0) : 1,
     isActive: newUser.isActive,

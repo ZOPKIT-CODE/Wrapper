@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useInfiniteQuery } from '@tanstack/react-query'
-import { useKindeAuth } from '@/lib/auth/cognito-auth'
+import { useAuth } from '@/lib/auth/cognito-auth'
 import { tenantAPI } from '@/lib/api'
 import { TimelineTab } from '@/features/billing/components/TimelineTab'
 import { DashboardPageHeader } from '@/components/dashboard/DashboardPageHeader'
@@ -8,7 +8,7 @@ import { DashboardPageHeader } from '@/components/dashboard/DashboardPageHeader'
 const TIMELINE_PAGE_SIZE = 20
 
 export function ActivityPage() {
-  const { isAuthenticated } = useKindeAuth()
+  const { isAuthenticated } = useAuth()
 
   const {
     data: timelinePages,

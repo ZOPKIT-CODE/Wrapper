@@ -13,10 +13,10 @@ import {
   User
 } from '@/data/mockPermissions'
 import {
-  kindePermissions,
+  idpPermissions,
   granularRestrictions,
   customRoleTemplates,
-  KindePermission,
+  IdpPermission,
   GranularRestriction,
   CustomRole
 } from '@/data/kindeIntegratedData'
@@ -44,7 +44,7 @@ function PermissionsContent() {
   const [users, setUsers] = useState<EnhancedUser[]>(enhancedUsers)
   const [roles, setRoles] = useState<CustomRole[]>(customRoleTemplates)
   const [permissions, setPermissions] = useState<PermissionItem[]>(mockPermissions)
-  const [featureFlags, setFeatureFlags] = useState<KindePermission[]>(kindePermissions)
+  const [featureFlags, setFeatureFlags] = useState<IdpPermission[]>(idpPermissions)
 
   // UI State
   const [viewMode, setViewMode] = useState<'workspace' | 'matrix' | 'overview'>('overview')

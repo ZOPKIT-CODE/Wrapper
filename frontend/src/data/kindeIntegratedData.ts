@@ -1,7 +1,7 @@
 import { PermissionItem, User, Role } from './mockPermissions'
 
 // Kinde Layer - Basic Tool Access
-export interface KindePermission {
+export interface IdpPermission {
   id: string
   name: string
   description: string
@@ -13,7 +13,7 @@ export interface KindePermission {
 
 // Enhanced Permission with Granular Controls
 export interface GranularPermission extends PermissionItem {
-  kindePermissionId?: string
+  idpPermissionId?: string
   restrictions: GranularRestriction[]
   contexts: PermissionContext[]
   valueConstraints: ValueConstraint[]
@@ -192,7 +192,7 @@ export const granularRestrictions: GranularRestriction[] = [
 ]
 
 // Kinde Permissions (Tool-level access)
-export const kindePermissions: KindePermission[] = [
+export const idpPermissions: IdpPermission[] = [
   {
     id: 'kinde_crm_access',
     name: 'CRM Tool Access',

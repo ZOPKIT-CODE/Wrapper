@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { useKindeAuth } from '@/lib/auth/cognito-auth'
+import { useAuth } from '@/lib/auth/cognito-auth'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { motion } from 'framer-motion'
 import type { MotionProps } from 'framer-motion'
@@ -210,7 +210,7 @@ function LoadingView({ message }: { message: string }) {
 export function Login() {
   const navigate = useNavigate()
   const search = useSearch({ strict: false }) as Record<string, string>
-  const { isAuthenticated, user, isLoading, getToken, login } = useKindeAuth()
+  const { isAuthenticated, user, isLoading, getToken, login } = useAuth()
 
   const [isRedirecting, setIsRedirecting] = useState(false)
   const [isLoggingIn, setIsLoggingIn] = useState(false)
@@ -301,13 +301,21 @@ export function Login() {
           navigate({ to: '/onboarding', replace: true })
         }
       } catch (err) {
+        // A canceled request (effect re-run / unmount) is NOT a real failure —
+        // don't fall through to the onboarding redirect on it, or an already
+        // onboarded user gets wrongly bounced to /onboarding.
+        const e = err as { code?: string; name?: string }
+        if (e?.code === 'ERR_CANCELED' || e?.name === 'CanceledError') return
         console.error('❌ Error checking onboarding status:', err)
         navigate({ to: '/onboarding', replace: true })
       }
     }
     handlePostLoginRedirect()
     return () => cancel()
-  }, [isAuthenticated, user, isLoading, returnTo, navigate, isRedirecting])
+    // NOTE: isRedirecting is intentionally NOT a dependency — it is set inside
+    // this effect, and including it caused the effect to tear down mid-request
+    // and cancel the status check.
+  }, [isAuthenticated, user, isLoading, returnTo, navigate])
 
   const handleBackToCRM = () => {
     if (returnTo && validateCrmReturnToUrl(returnTo)) {
@@ -320,13 +328,8 @@ export function Login() {
   const handleLogin = async () => {
     try {
       setIsLoggingIn(true)
-      const googleConnectionId = (import.meta as any).env.VITE_KINDE_GOOGLE_CONNECTION_ID
-      if (!googleConnectionId) {
-        console.error('❌ VITE_KINDE_GOOGLE_CONNECTION_ID is not configured')
-        await login()
-        return
-      }
-      await login({ connectionId: googleConnectionId })
+      // Cognito: route straight to Google federation (skips the hosted-UI selector).
+      await login({ provider: 'google' })
     } catch (err) {
       console.error('❌ Login error:', err)
       toast.error('Failed to start login process. Please try again.')

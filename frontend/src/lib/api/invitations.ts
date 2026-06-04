@@ -19,7 +19,7 @@ export const invitationAPI = {
   getInvitationDetails: (org: string, email: string) => 
     api.get('/invitations/details', { params: { org, email } }),
 
-  acceptInvitation: (data: { org: string; email: string; kindeUserId: string }) =>
+  acceptInvitation: (data: { org: string; email: string; idpSub: string }) =>
     api.post('/invitations/accept', data),
 
   assignOrganizationToUser: (userId: string, data: {
