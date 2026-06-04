@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/node';
 import { sql as drizzleSql } from 'drizzle-orm';
 import { db } from '../../../db/index.js';
 import Logger from '../../../utils/logger.js';
@@ -79,40 +80,48 @@ export class OutboxPoller {
     }
     this.running = true;
 
-    let lockAcquired = false;
+    // Root span for the tick so the DB/SNS calls below have a parent and the
+    // retry batch shows up as one trace. No-op when telemetry is disabled.
     try {
-      const lockRows = await db.execute(
-        drizzleSql`SELECT pg_try_advisory_lock(${drizzleSql.raw(String(OUTBOX_POLLER_LOCK_KEY))}) AS acquired`,
-      );
-      // Postgres returns the value as boolean; node-postgres types it loosely.
-      lockAcquired = !!(lockRows as any)?.[0]?.acquired;
-
-      if (!lockAcquired) {
-        // Another pod is processing — that's fine.
-        return;
-      }
-
-      const rows = await this.fetchBatch();
-      if (rows.length === 0) return;
-
-      Logger.log('info', 'general', 'outbox-poller', `Processing ${rows.length} unpublished outbox rows`);
-
-      for (const row of rows) {
-        await this.processRow(row);
-      }
-    } catch (err) {
-      const errMsg = err instanceof Error ? err.message : String(err);
-      Logger.log('error', 'general', 'outbox-poller', 'Tick failed (non-fatal — next tick will retry)', { error: errMsg });
-    } finally {
-      if (lockAcquired) {
+      await Sentry.startSpan({ name: 'outbox-poller.tick', op: 'queue.process' }, async () => {
+        let lockAcquired = false;
         try {
-          await db.execute(
-            drizzleSql`SELECT pg_advisory_unlock(${drizzleSql.raw(String(OUTBOX_POLLER_LOCK_KEY))})`,
+          const lockRows = await db.execute(
+            drizzleSql`SELECT pg_try_advisory_lock(${drizzleSql.raw(String(OUTBOX_POLLER_LOCK_KEY))}) AS acquired`,
           );
-        } catch {
-          // No-op: a lock we never acquired can't be released.
+          // Postgres returns the value as boolean; node-postgres types it loosely.
+          lockAcquired = !!(lockRows as any)?.[0]?.acquired;
+
+          if (!lockAcquired) {
+            // Another pod is processing — that's fine.
+            return;
+          }
+
+          const rows = await this.fetchBatch();
+          if (rows.length === 0) return;
+
+          Logger.log('info', 'general', 'outbox-poller', `Processing ${rows.length} unpublished outbox rows`);
+
+          for (const row of rows) {
+            await this.processRow(row);
+          }
+        } catch (err) {
+          const errMsg = err instanceof Error ? err.message : String(err);
+          Logger.log('error', 'general', 'outbox-poller', 'Tick failed (non-fatal — next tick will retry)', { error: errMsg });
+          Sentry.captureException(err, { tags: { component: 'outbox-poller' } });
+        } finally {
+          if (lockAcquired) {
+            try {
+              await db.execute(
+                drizzleSql`SELECT pg_advisory_unlock(${drizzleSql.raw(String(OUTBOX_POLLER_LOCK_KEY))})`,
+              );
+            } catch {
+              // No-op: a lock we never acquired can't be released.
+            }
+          }
         }
-      }
+      });
+    } finally {
       this.running = false;
     }
   }
@@ -196,6 +205,11 @@ export class OutboxPoller {
           eventType: row.eventType,
           targetApplication: row.targetApplication,
           error: errMsg,
+        });
+        Sentry.captureException(err instanceof Error ? err : new Error(errMsg), {
+          level: 'error',
+          tags: { component: 'outbox-poller', alert: 'outbox-row-stuck', targetApplication: row.targetApplication },
+          extra: { eventId: row.eventId, eventType: row.eventType, attemptCount: nextAttempt },
         });
       } else {
         Logger.log('warning', 'general', 'outbox-poller', `Retry failed (will try again next tick): ${row.eventType} → ${row.targetApplication}`, {

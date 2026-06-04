@@ -5,10 +5,16 @@
  */
 
 import winston from 'winston';
+import { getTraceFields } from './trace-context.js';
+
+// Inject the active OTel span's trace_id/span_id into every record so logs can
+// be joined to their distributed trace in Sentry/Tempo and CloudWatch.
+const traceCorrelation = winston.format((info) => Object.assign(info, getTraceFields()));
 
 const winstonLogger = winston.createLogger({
   level: process.env.LOG_LEVEL ?? 'info',
   format: winston.format.combine(
+    traceCorrelation(),
     winston.format.timestamp(),
     winston.format.json()
   ),

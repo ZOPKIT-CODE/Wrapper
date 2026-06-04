@@ -12,6 +12,11 @@ import winston from 'winston';
 import { ElasticsearchTransport } from 'winston-elasticsearch';
 import * as Sentry from '@sentry/node';
 import BaseLogger from './logger.js';
+import { getTraceFields } from './trace-context.js';
+
+// Inject the active OTel span's trace_id/span_id into every Elasticsearch record
+// for log↔trace correlation.
+const traceCorrelation = winston.format((info) => Object.assign(info, getTraceFields()));
 
 const SERVICE_NAME = process.env.SERVICE_NAME || 'wrapper-backend';
 const ELASTICSEARCH_URL = process.env.ELASTICSEARCH_URL || 'http://localhost:9200';
@@ -80,6 +85,7 @@ const winstonLogger = winston.createLogger({
     env: NODE_ENV
   },
   format: winston.format.combine(
+    traceCorrelation(),
     winston.format.timestamp(),
     winston.format.errors({ stack: true }),
     winston.format.json()

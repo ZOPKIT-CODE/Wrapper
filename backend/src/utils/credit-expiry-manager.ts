@@ -1,4 +1,5 @@
 import cron, { ScheduledTask } from 'node-cron';
+import * as Sentry from '@sentry/node';
 import { sql as drizzleSql } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import { CreditExpiryService } from '../features/credits/services/credit-expiry-service.js';
@@ -49,6 +50,7 @@ class CreditExpiryManager {
           this.errorCount++;
           const err = error as Error;
           Logger.log('error', 'credits', 'expiry-cron', `[CreditExpiryManager] Expiry check failed (${this.errorCount}/${this.maxErrors})`, { errorCount: this.errorCount, maxErrors: this.maxErrors, error: err.message, stack: err.stack });
+          Sentry.captureException(err, { tags: { cron: 'credit-expiry', component: 'credit-expiry-manager' } });
 
           if (this.errorCount >= this.maxErrors) {
             Logger.log('error', 'credits', 'expiry-cron', '[CreditExpiryManager] Too many consecutive errors, stopping expiry monitoring', { errorCount: this.errorCount });
@@ -83,6 +85,7 @@ class CreditExpiryManager {
         } catch (error) {
           const err = error as Error;
           Logger.log('error', 'credits', 'expiry-warnings', '[CreditExpiryManager] Warning job failed', { error: err.message, stack: err.stack });
+          Sentry.captureException(err, { tags: { cron: 'credit-expiry-warnings', component: 'credit-expiry-manager' } });
         } finally {
           await db.execute(drizzleSql`SELECT pg_advisory_unlock(${drizzleSql.raw(String(CREDIT_WARNING_LOCK_ID))})`);
         }
@@ -110,6 +113,7 @@ class CreditExpiryManager {
     } catch (error) {
       const err = error as Error;
       Logger.log('error', 'credits', 'expiry-monitor-start', '[CreditExpiryManager] Failed to start expiry monitoring', { error: err.message, stack: err.stack });
+      Sentry.captureException(err, { tags: { cron: 'credit-expiry', component: 'credit-expiry-manager', phase: 'start' } });
       this.stopExpiryMonitoring();
     }
   }

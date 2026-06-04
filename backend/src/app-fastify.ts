@@ -1,5 +1,6 @@
 import './startup/run-first-heavy.js';
 import Fastify from 'fastify';
+import * as Sentry from '@sentry/node';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
@@ -11,6 +12,7 @@ import swaggerUi from '@fastify/swagger-ui';
 import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod';
 import { swaggerOptions, swaggerUiOptions } from './config/swagger.js';
 import 'dotenv/config';
+import { getTraceFields } from './utils/trace-context.js';
 import { validateEnv } from './config/env.js';
 import { shouldLogVerbose } from './utils/verbose-log.js';
 import './startup/run-after-core.js';
@@ -45,6 +47,9 @@ const fastify = Fastify({
   requestTimeout: Number(process.env.FASTIFY_REQUEST_TIMEOUT_MS ?? 30_000),
   logger: DISABLE_ALL_LOGGING ? false : {
     level: process.env.LOG_LEVEL || 'info',
+    // Attach the active trace's trace_id/span_id to every request log line so
+    // logs join to their distributed trace in Sentry/Tempo and CloudWatch.
+    mixin: () => getTraceFields(),
   },
   // Allow union types in JSON schema (fixes strict mode warnings for isActive, limit, etc.)
   ajv: {
@@ -287,7 +292,9 @@ async function registerPlugins() {
       'Sec-Fetch-Dest',       // Modern browser security
       'Sec-Fetch-Mode',       // Modern browser security
       'Sec-Fetch-Site',       // Modern browser security
-      'User-Agent'            // Browser identification
+      'User-Agent',           // Browser identification
+      'sentry-trace',         // Sentry/OTel distributed tracing (frontend → backend)
+      'baggage'               // W3C baggage — rides with sentry-trace for trace continuation
     ],
     exposedHeaders: [
       'X-Total-Count',
@@ -470,10 +477,22 @@ async function gracefulShutdown() {
       console.warn('⚠️ Error closing SNS/SQS publisher:', (mqError as Error).message);
     }
 
+    // Flush telemetry LAST, once intake is stopped and in-flight work has drained.
+    // Sentry.flush() also force-flushes the OTLP BatchSpanProcessor (it shares the
+    // provider), so this single call drains both Sentry events and pending spans.
+    try {
+      await Sentry.flush(3000);
+      console.log('✅ Telemetry flushed.');
+    } catch (flushErr: unknown) {
+      console.warn('⚠️ Error flushing telemetry:', (flushErr as Error).message);
+    }
+
     console.log('✅ Graceful shutdown completed.');
     process.exit(0);
   } catch (err: unknown) {
     console.error('❌ Error during shutdown:', err);
+    // Best-effort flush so the failure itself is not lost.
+    await Sentry.flush(2000).catch(() => {});
     process.exit(1);
   }
 }
@@ -664,12 +683,15 @@ async function start() {
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  Sentry.captureException(reason, { tags: { source: 'unhandledRejection' } });
+  // gracefulShutdown() flushes telemetry before exiting, so the captured event ships.
   gracefulShutdown();
 });
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (error) => {
   console.error('Uncaught Exception:', error);
+  Sentry.captureException(error, { tags: { source: 'uncaughtException' } });
   gracefulShutdown();
 });
 

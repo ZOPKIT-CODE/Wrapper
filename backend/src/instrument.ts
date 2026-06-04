@@ -1,61 +1,95 @@
 /* eslint-disable no-console */
 import 'dotenv/config';
 import * as Sentry from '@sentry/node';
+import { BatchSpanProcessor, type SpanProcessor } from '@opentelemetry/sdk-trace-base';
+import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
+import { IORedisInstrumentation } from '@opentelemetry/instrumentation-ioredis';
 
-// ─── OpenTelemetry ────────────────────────────────────────────────────────────
-// Must be initialised before any other imports so the auto-instrumentations
-// can patch Node.js built-ins (http, pg, etc.) before they are first required.
-// Set OTEL_EXPORTER_OTLP_ENDPOINT to send traces to any OTLP-compatible backend
-// (Jaeger, Grafana Tempo, Honeycomb, Lightstep, etc.).
-const otlpEndpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
-if (otlpEndpoint) {
-  const { NodeSDK } = await import('@opentelemetry/sdk-node');
-  const { getNodeAutoInstrumentations } = await import('@opentelemetry/auto-instrumentations-node');
-  const { OTLPTraceExporter } = await import('@opentelemetry/exporter-trace-otlp-http');
-
-  // service.version and deployment.environment can be passed via
-  // OTEL_RESOURCE_ATTRIBUTES=service.version=1.0.0,deployment.environment=production
-  const sdk = new NodeSDK({
-    serviceName: process.env.SERVICE_NAME || 'wrapper-backend',
-    traceExporter: new OTLPTraceExporter({
-      url: `${otlpEndpoint}/v1/traces`,
-    }),
-    instrumentations: [
-      getNodeAutoInstrumentations({
-        // fs instrumentation is extremely noisy and rarely useful
-        '@opentelemetry/instrumentation-fs': { enabled: false },
-        // DNS spans add noise without actionable info in most setups
-        '@opentelemetry/instrumentation-dns': { enabled: false },
-      }),
-    ],
-  });
-
-  sdk.start();
-  console.log(`✅ OpenTelemetry tracing initialised (exporting to ${otlpEndpoint})`);
-
-  // Flush spans on graceful shutdown
-  process.on('SIGTERM', () => { void sdk.shutdown(); });
-  process.on('SIGINT',  () => { void sdk.shutdown(); });
-} else {
-  if (process.env.NODE_ENV === 'production') {
-    console.warn('⚠️  OTEL_EXPORTER_OTLP_ENDPOINT not set — distributed tracing is disabled');
-  }
-}
-
-// ─── Sentry ───────────────────────────────────────────────────────────────────
+/**
+ * Telemetry bootstrap. MUST be the first import in every entry point
+ * (see bootstrap.ts) so OpenTelemetry can patch http/pg/ioredis/etc. before
+ * they are first required.
+ *
+ * Architecture (decided against the standalone-NodeSDK approach that used to
+ * live here): `@sentry/node` v10 is *built on* OpenTelemetry — `Sentry.init()`
+ * already registers the global TracerProvider, SentrySampler, SentryPropagator
+ * and SentryContextManager, and auto-instruments http/express/fastify/pg/etc.
+ * Running a second, standalone `@opentelemetry/sdk-node` alongside it (as the
+ * previous version did) double-registered the global provider/propagator and
+ * silently severed trace propagation + dropped spans.
+ *
+ * Instead we let Sentry own the single provider and attach our own OTLP exporter
+ * to it via the supported `openTelemetrySpanProcessors` option. The result:
+ * every span goes to BOTH Sentry AND (when configured) an OTLP backend
+ * (collector → Tempo/etc.) through one provider, one sampling decision, intact
+ * propagation. `Sentry.flush()` flushes the OTLP processor too (they share the
+ * provider), so shutdown is a single coordinated flush in app-fastify.ts.
+ *
+ * Enabled when EITHER SENTRY_DSN or OTEL_EXPORTER_OTLP_ENDPOINT is set. With
+ * neither set this is a complete no-op (no provider/propagator registered) —
+ * the kill-switch for local/test runs.
+ */
 const dsn = process.env.SENTRY_DSN;
+const otlpEndpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
+const serviceName = process.env.OTEL_SERVICE_NAME || process.env.SERVICE_NAME || 'wrapper-backend';
+const isProd = process.env.NODE_ENV === 'production';
 
-if (dsn) {
+// Health/readiness/metrics probes are high-volume and trace-noise; never sample them.
+const isProbePath = (urlPath: string): boolean =>
+  /^\/(health|healthz|ready|readyz|livez|liveness|readiness|metrics)\b/.test(urlPath);
+
+if (dsn || otlpEndpoint) {
+  // Extra span processor: export the same Sentry-sampled spans to an OTLP
+  // backend (e.g. the node-local OTel Collector agent). Only added when an
+  // endpoint is configured; otherwise spans go to Sentry only.
+  const spanProcessors: SpanProcessor[] = [];
+  if (otlpEndpoint) {
+    spanProcessors.push(
+      new BatchSpanProcessor(
+        new OTLPTraceExporter({ url: `${otlpEndpoint.replace(/\/+$/, '')}/v1/traces` }),
+        {
+          scheduledDelayMillis: 2000,
+          exportTimeoutMillis: 5000,
+          maxQueueSize: 4096,
+          maxExportBatchSize: 512,
+        },
+      ),
+    );
+  }
+
   Sentry.init({
     dsn,
+    // A client is still created when DSN is absent (OTLP-only mode); `enabled`
+    // keeps it from trying to ship events to Sentry in that case.
+    enabled: !!dsn,
     environment: process.env.NODE_ENV || 'development',
-    release: process.env.npm_package_version || '1.0.0',
-    tracesSampleRate: process.env.NODE_ENV === 'production'
-      ? Number(process.env.SENTRY_TRACES_SAMPLE_RATE ?? 0.1)
-      : 1.0, // 100% sampling in dev/test — capture everything during testing
-    _experiments: { enableLogs: true },
+    release: process.env.SENTRY_RELEASE || process.env.npm_package_version || '1.0.0',
+    // Financial-grade default: never auto-attach IPs, cookies, request bodies.
+    sendDefaultPii: false,
+    // v10 top-level logs (replaces the deprecated `_experiments.enableLogs`).
+    enableLogs: true,
+    // Emit W3C `traceparent` alongside `sentry-trace`/`baggage` so non-Sentry
+    // peers and the OTLP backend can continue traces.
+    propagateTraceparent: true,
+    // 100% in dev/test to capture everything; env-driven (default 10%) in prod.
+    // SentrySampler honors this for BOTH the Sentry and OTLP egress.
+    tracesSampleRate: isProd ? Number(process.env.SENTRY_TRACES_SAMPLE_RATE ?? 0.1) : 1.0,
+    // Attach our OTLP exporter to the provider Sentry sets up.
+    openTelemetrySpanProcessors: spanProcessors,
+    // Sentry bundles http/express/fastify/pg/mysql/mongo/graphql instrumentation.
+    // ioredis is not bundled — add it for Valkey/Redis cache spans.
+    // (aws-sdk SNS/SQS instrumentation + manual queue propagation land in a later
+    // phase, together with empty-poll span suppression.)
+    openTelemetryInstrumentations: [new IORedisInstrumentation()],
+    integrations: [
+      Sentry.httpIntegration({
+        // Drop incoming probe requests entirely (no span created).
+        ignoreIncomingRequests: (urlPath: string) => isProbePath(urlPath),
+      }),
+    ],
     beforeSend(event) {
-      // Strip sensitive headers
+      // Strip sensitive headers from error events (defense in depth on top of
+      // sendDefaultPii:false).
       if (event.request?.headers) {
         delete event.request.headers['authorization'];
         delete event.request.headers['cookie'];
@@ -63,7 +97,17 @@ if (dsn) {
       return event;
     },
   });
-  console.log('✅ Sentry initialized');
+
+  Sentry.setTag('service', serviceName);
+
+  console.log(
+    `✅ Telemetry initialised — Sentry: ${dsn ? 'on' : 'off'}, ` +
+      `OTLP: ${otlpEndpoint ? `exporting to ${otlpEndpoint}` : 'off'} (service=${serviceName})`,
+  );
 } else {
-  console.warn('⚠️ SENTRY_DSN not set — Sentry error tracking is disabled');
+  if (isProd) {
+    console.warn(
+      '⚠️  Neither SENTRY_DSN nor OTEL_EXPORTER_OTLP_ENDPOINT set — error tracking & distributed tracing are disabled',
+    );
+  }
 }

@@ -26,6 +26,15 @@ if (!process.execArgv.some((arg) => arg.includes('tsx')) && !process.env.NODE_OP
 // before any module that reads it at top level (temporal-shared/client.js).
 import './load-env.js';
 
+// Telemetry: must initialise AFTER env is loaded but BEFORE @temporalio/worker
+// (and any instrumented module) so OpenTelemetry can patch http/ioredis/etc.
+// Resolved by tsx's .js→.ts mapping, like the rest of this worker. NOTE: the
+// activity span context does NOT cross the workflow boundary yet — wiring
+// @temporalio/interceptors-opentelemetry (version-matched to @temporalio 1.8)
+// is a follow-up; for now we get activity HTTP spans + error capture.
+import '../src/instrument.js';
+import * as Sentry from '@sentry/node';
+
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { NativeConnection, Worker } from '@temporalio/worker';
@@ -36,6 +45,8 @@ const __dirname = dirname(__filename);
 import * as interAppActivities from './activities/inter-app-activities.js';
 import * as organizationActivities from './activities/organization-activities.js';
 import * as tenantOnboardingActivities from './activities/tenant-onboarding-activities.js';
+
+Sentry.setTag('runtime', 'temporal-worker');
 
 async function run() {
   console.log('🚀 Starting Wrapper Temporal Worker...');
@@ -108,6 +119,8 @@ async function run() {
       } catch (error) {
         console.error('❌ Error closing connection:', error);
       }
+      // Flush telemetry (Sentry events + OTLP spans share one provider) before exit.
+      await Sentry.flush(2000).catch(() => {});
       process.exit(0);
     };
 
@@ -117,12 +130,16 @@ async function run() {
     await worker.run();
   } catch (error) {
     console.error('❌ Wrapper Worker error:', error);
+    Sentry.captureException(error, { tags: { component: 'temporal-worker' } });
+    await Sentry.flush(2000).catch(() => {});
     process.exit(1);
   }
 }
 
-run().catch((err) => {
+run().catch(async (err) => {
   console.error('❌ Failed to start Wrapper Worker:', err);
+  Sentry.captureException(err, { tags: { component: 'temporal-worker', phase: 'startup' } });
+  await Sentry.flush(2000).catch(() => {});
   process.exit(1);
 });
 

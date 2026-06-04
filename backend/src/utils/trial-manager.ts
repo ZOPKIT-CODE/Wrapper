@@ -5,6 +5,7 @@ import { eq, and, lt, ne, gt, or, isNull, sql as drizzleSql } from 'drizzle-orm'
 import { EmailService } from '../utils/email.js';
 import Logger from './logger.js';
 import cron from 'node-cron';
+import * as Sentry from '@sentry/node';
 import { snsSqsPublisher } from '../features/messaging/utils/sns-sqs-publisher.js';
 
 // Schema may have been migrated; trial columns asserted for type compatibility where used
@@ -62,6 +63,7 @@ class TrialManager {
           this.errorCount++;
           const error = err as Error;
           Logger.log('error', 'trial', 'expiry-cron', `Trial expiry check failed (${this.errorCount}/${this.maxErrors})`, { errorCount: this.errorCount, maxErrors: this.maxErrors, error: error.message, stack: error.stack });
+          Sentry.captureException(error, { tags: { cron: 'trial-expiry', component: 'trial-manager' } });
 
           if (this.errorCount >= this.maxErrors) {
             Logger.log('error', 'trial', 'monitor-stop', 'Too many consecutive errors, stopping trial monitoring', { errorCount: this.errorCount });
@@ -85,6 +87,7 @@ class TrialManager {
         } catch (error) {
           const err = error as Error;
           Logger.log('error', 'trial', 'reminder-cron', 'Trial reminder job failed', { error: err.message, stack: err.stack });
+          Sentry.captureException(err, { tags: { cron: 'trial-reminder', component: 'trial-manager' } });
         } finally {
           await db.execute(drizzleSql`SELECT pg_advisory_unlock(${drizzleSql.raw(String(TRIAL_REMINDER_LOCK_ID))})`);
         }
@@ -103,6 +106,7 @@ class TrialManager {
         } catch (error) {
           const err = error as Error;
           Logger.log('error', 'trial', 'plan-validity-cron', 'Plan validity check failed', { error: err.message, stack: err.stack });
+          Sentry.captureException(err, { tags: { cron: 'trial-plan-validity', component: 'trial-manager' } });
         } finally {
           await db.execute(drizzleSql`SELECT pg_advisory_unlock(${drizzleSql.raw(String(TRIAL_PLAN_VALIDITY_LOCK_ID))})`);
         }
@@ -130,6 +134,7 @@ class TrialManager {
     } catch (error) {
       const err = error as Error;
       Logger.log('error', 'trial', 'monitor-start', 'Failed to start trial monitoring system', { error: err.message, stack: err.stack });
+      Sentry.captureException(err, { tags: { cron: 'trial', component: 'trial-manager', phase: 'start' } });
       this.stopTrialMonitoring();
     }
   }
