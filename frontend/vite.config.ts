@@ -4,6 +4,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 import { visualizer } from 'rollup-plugin-visualizer'
 import path from 'path'
 import tailwindcss from "@tailwindcss/vite"
+import { sentryVitePlugin } from '@sentry/vite-plugin'
 import { execSync } from 'node:child_process'
 
 // Read version from package.json + unique build timestamp for version detection
@@ -97,6 +98,18 @@ export default defineConfig(({ mode }) => {
     }))
   }
 
+  // Sentry sourcemap upload — LAST plugin. No-op locally (only runs in CI where
+  // SENTRY_AUTH_TOKEN is set). Uploads + deletes the hidden sourcemaps so stack
+  // traces are readable in Sentry without exposing maps to users.
+  if (process.env.SENTRY_AUTH_TOKEN) {
+    plugins.push(sentryVitePlugin({
+      org: process.env.SENTRY_ORG,
+      project: process.env.SENTRY_PROJECT,
+      authToken: process.env.SENTRY_AUTH_TOKEN,
+      release: { name: gitSha },
+    }))
+  }
+
   return {
     plugins,
     resolve: {
@@ -151,7 +164,9 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       outDir: 'dist',
-      sourcemap: mode !== 'production',
+      // 'hidden' in prod: generate sourcemaps for Sentry upload but don't
+      // reference them in the bundles (not exposed to users).
+      sourcemap: mode === 'production' ? 'hidden' : true,
       rollupOptions: {
         output: {
           manualChunks: {
