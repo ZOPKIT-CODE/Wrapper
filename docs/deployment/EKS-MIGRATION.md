@@ -52,7 +52,7 @@
                           ┌─────────▼────────────▼────────────▼──────────────┐
                           │  External Services                                │
                           │  - Supabase PostgreSQL (db.supabase.co)          │
-                          │  - Amazon MQ / RabbitMQ                           │
+                          │  - AWS SNS + SQS (inter-app messaging)            │
                           │  - Kinde (OAuth2/OIDC)                            │
                           │  - Stripe (billing)                               │
                           │  - Brevo (email)                                  │
@@ -130,7 +130,7 @@
                      │                                                      │
                      │  External (unchanged):                               │
                      │  - Supabase PostgreSQL                               │
-                     │  - Amazon MQ / RabbitMQ                              │
+                     │  - AWS SNS + SQS (inter-app messaging)               │
                      │  - Kinde, Stripe, Brevo, Elasticsearch               │
                      └──────────────────────────────────────────────────────┘
 ```
@@ -1124,18 +1124,22 @@ spec:
       remoteRef:
         key: zopkit/production/brevo
         property: api_key
-    - secretKey: AMAZON_MQ_URL
+    - secretKey: SNS_INTER_APP_TOPIC_ARN
       remoteRef:
-        key: zopkit/production/amazonmq
-        property: url
-    - secretKey: AMAZON_MQ_USERNAME
+        key: zopkit/production/messaging
+        property: sns_inter_app_topic_arn
+    - secretKey: SNS_BROADCAST_TOPIC_ARN
       remoteRef:
-        key: zopkit/production/amazonmq
-        property: username
-    - secretKey: AMAZON_MQ_PASSWORD
+        key: zopkit/production/messaging
+        property: sns_broadcast_topic_arn
+    - secretKey: SQS_WRAPPER_QUEUE_URL
       remoteRef:
-        key: zopkit/production/amazonmq
-        property: password
+        key: zopkit/production/messaging
+        property: sqs_wrapper_queue_url
+    - secretKey: SNS_LARGE_PAYLOAD_BUCKET
+      remoteRef:
+        key: zopkit/production/messaging
+        property: sns_large_payload_bucket
     - secretKey: AWS_ACCESS_KEY_ID
       remoteRef:
         key: zopkit/production/aws
@@ -2569,26 +2573,34 @@ Then change `DATABASE_URL` in the app container to `postgresql://user:pass@local
 
 **Recommendation**: Start with reduced pool sizes (Option 1). Add PgBouncer sidecar only if you hit connection pressure under load.
 
-### 6.5 Amazon MQ Connection Management
+### 6.5 SNS + SQS Considerations
 
-**Problem**: Each pod opens its own AMQP connection to Amazon MQ. The `amazon-mq-publisher.ts` creates a singleton connection per process.
+**Background**: Inter-app messaging uses AWS SNS (fan-out publish) and SQS (per-app inbox + direct job queues). The publisher (`sns-sqs-publisher.ts`) uses the AWS SDK over HTTPS — there are no long-lived broker connections to manage.
 
-**Analysis**: Amazon MQ broker limits depend on the instance type:
-- `mq.m5.large`: 1,000 connections
-- `mq.t3.micro`: 100 connections
+**Why this is simpler than a broker**:
+- No connection pool to size: every `PublishCommand` / `ReceiveMessageCommand` is an HTTPS call. SDK keep-alive handles socket reuse per process.
+- No broker instance to scale: SNS and SQS are fully managed and scale automatically.
+- IAM is the only authentication: no usernames, passwords, or AMQPS endpoints in env.
 
-With 14 pods (6 wrapper + 4 CRM + 4 HRMS), that is 14 connections -- well within limits even for `mq.t3.micro`.
+**What to verify before the EKS migration**:
 
-**Action required**: None for the initial migration. Just verify your Amazon MQ instance type supports your max pod count:
+| Item | Why |
+|------|-----|
+| Pod IAM role has `sns:Publish` on both topic ARNs | Without it, publishes 403 silently into the outbox retry loop |
+| Pod IAM role has `sqs:ReceiveMessage`, `sqs:DeleteMessage`, `sqs:ChangeMessageVisibility`, `sqs:GetQueueAttributes` on its inbox queue | Required for the consumer to drain messages |
+| Pod IAM role has `s3:PutObject` / `s3:GetObject` on `SNS_LARGE_PAYLOAD_BUCKET` | Required for >200 KB payload claim-check |
+| Each app's SQS queue has a DLQ + `RedrivePolicy` with `maxReceiveCount: 3` | Caps retries on poison messages |
+| SNS subscription on each queue has a filter policy: `{ "targetApplication": ["wrapper"\|"crm"\|"accounting"] }` | Server-side filtering — keeps each app's queue clean |
 
-```
-Max MQ connections needed = max_wrapper_pods + max_crm_pods + max_hrms_pods
-                          = 6 + 4 + 4 = 14 connections
+**Quotas worth knowing**:
+- SQS message size: **256 KB hard limit** — that's why we have the S3 claim-check (`large-payload-store.ts`).
+- SQS receive throughput: 3,000 receives/sec per queue (much more with batching) — well above anything we generate.
+- SNS publish rate: 30,000/sec per topic — non-issue.
 
-Recommended: mq.m5.large (1,000 connections) for production headroom.
-```
-
-Monitor MQ connection count via CloudWatch metric `ConnectionCount` on the broker.
+Monitor via CloudWatch:
+- `NumberOfMessagesPublished` on each SNS topic
+- `ApproximateNumberOfMessagesVisible` and `ApproximateNumberOfMessagesNotVisible` on each SQS queue
+- `ApproximateNumberOfMessagesVisible` on each DLQ (should be 0; alarms here)
 
 ### 6.6 Frontend Serving -> S3 + CloudFront
 
@@ -3264,8 +3276,8 @@ aws secretsmanager create-secret \
   --secret-string '{"api_key":"xkeysib-xxx"}'
 
 aws secretsmanager create-secret \
-  --name zopkit/production/amazonmq \
-  --secret-string '{"url":"amqps://xxx.mq.us-east-1.amazonaws.com:5671","username":"admin","password":"xxx"}'
+  --name zopkit/production/messaging \
+  --secret-string '{"sns_inter_app_topic_arn":"arn:aws:sns:us-east-1:xxx:inter-app-events","sns_broadcast_topic_arn":"arn:aws:sns:us-east-1:xxx:inter-app-broadcast","sqs_wrapper_queue_url":"https://sqs.us-east-1.amazonaws.com/xxx/wrapper-events","sns_large_payload_bucket":"zopkit-messaging-large-payloads"}'
 
 aws secretsmanager create-secret \
   --name zopkit/production/elasticsearch \
@@ -3964,9 +3976,10 @@ All state is external (Supabase PostgreSQL, Amazon MQ, Secrets Manager), so the 
 | `STRIPE_SECRET_KEY` | External Secret | wrapper-backend |
 | `STRIPE_WEBHOOK_SECRET` | External Secret | wrapper-backend |
 | `BREVO_API_KEY` | External Secret | wrapper-backend |
-| `AMAZON_MQ_URL` | External Secret | wrapper-backend |
-| `AMAZON_MQ_USERNAME` | External Secret | wrapper-backend |
-| `AMAZON_MQ_PASSWORD` | External Secret | wrapper-backend |
+| `SNS_INTER_APP_TOPIC_ARN` | External Secret | wrapper-backend |
+| `SNS_BROADCAST_TOPIC_ARN` | External Secret | wrapper-backend |
+| `SQS_WRAPPER_QUEUE_URL` | External Secret | wrapper-backend |
+| `SNS_LARGE_PAYLOAD_BUCKET` | External Secret | wrapper-backend |
 | `REDIS_HOST` | ConfigMap | All services |
 | `REDIS_PORT` | ConfigMap | All services |
 | `REDIS_TLS` | ConfigMap | All services |

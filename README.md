@@ -14,7 +14,7 @@ Multi-tenant SaaS platform — centralized auth, billing, RBAC, credit managemen
 | Frontend | React 19 · Vite 7 · TanStack Router/Query · Zustand · shadcn/ui · Tailwind 4 |
 | Auth | Kinde (OAuth2/OIDC) · JWT (Jose) |
 | Billing | Stripe (subscriptions, webhooks, credits) |
-| Messaging | Amazon MQ / RabbitMQ (AMQP) |
+| Messaging | AWS SNS + SQS |
 | Email | Brevo (Sendinblue) |
 | DNS | AWS Route 53 (tenant subdomains) |
 | Logging | Winston · Elasticsearch · Sentry |
