@@ -7,7 +7,9 @@ import {
   type Message,
 } from '@aws-sdk/client-sqs';
 import * as Sentry from '@sentry/node';
+import { context } from '@opentelemetry/api';
 import { sql } from 'drizzle-orm';
+import { extractTraceContext } from '../../../utils/trace-context.js';
 import { snsSqsPublisher } from '../utils/sns-sqs-publisher.js';
 import { resolvePayload } from '../utils/large-payload-store.js';
 import { db } from '../../../db/index.js';
@@ -271,7 +273,16 @@ class SqsInterAppConsumer {
     await this.recordReceivedEvent(event, rawEnvelope, msg);
 
     try {
-      const handled = await this.handleEventByType(event);
+      // Continue the producer's trace: extract the context injected into the
+      // SNS/SQS MessageAttributes and run the handler inside it as a consumer
+      // transaction, so this work is linked to the originating request's trace.
+      const parentCtx = extractTraceContext(msg.MessageAttributes as Record<string, { StringValue?: string; Value?: string }> | undefined);
+      const handled = await context.with(parentCtx, () =>
+        Sentry.startSpan(
+          { name: `consume ${event.eventType}`, op: 'queue.process', forceTransaction: true },
+          () => this.handleEventByType(event),
+        ),
+      );
       // Success path — remove the message from the queue
       await this.deleteMessage(msg);
 

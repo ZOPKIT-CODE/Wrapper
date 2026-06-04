@@ -7,6 +7,7 @@ import { db } from '../../../db/index.js';
 import { PersistentCircuitBreaker } from '../../../utils/persistent-circuit-breaker.js';
 import { maybeOffloadToS3 } from './large-payload-store.js';
 import Logger from '../../../utils/logger.js';
+import { injectTraceContext } from '../../../utils/trace-context.js';
 import { deriveEventId } from '../services/event-id.js';
 
 // Off by default. Set VALIDATE_OUTGOING_EVENTS=true in dev/staging to log a
@@ -225,6 +226,10 @@ class SnsSqsPublisher {
       eventType: { DataType: 'String', StringValue: eventType },
       tenantId: { DataType: 'String', StringValue: tenantId },
     };
+    // Inject the active trace context (sentry-trace + baggage) so the consumer
+    // continues this trace. Injected BEFORE the outbox INSERT below, so the
+    // stored attributes carry it too — poller replays preserve the trace link.
+    injectTraceContext(messageAttributes);
 
     // Outbox-first pattern: persist the event to inter_app_outbox BEFORE
     // attempting the SNS publish. If SNS fails (circuit open, network error),
@@ -466,10 +471,10 @@ class SnsSqsPublisher {
         new PublishCommand({
           TopicArn: process.env.SNS_BROADCAST_TOPIC_ARN,
           Message: JSON.stringify(message),
-          MessageAttributes: {
+          MessageAttributes: injectTraceContext({
             eventType: { DataType: 'String', StringValue: eventType },
             broadcast: { DataType: 'String', StringValue: 'true' },
-          },
+          }),
         })
       );
 
