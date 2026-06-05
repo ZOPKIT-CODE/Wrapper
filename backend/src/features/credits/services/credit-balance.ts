@@ -238,7 +238,10 @@ export async function getCurrentBalance(tenantId: string, entityType = 'organiza
         .sort()[0] ?? null;
     } else {
     // Slow path: compute from DB and persist to cache.
-    const { seasonalCreditAllocations } = await import('../../../db/schema/billing/seasonal-credits.js');
+    // credit_batches is the canonical table (seasonal_credit_allocations was renamed
+    // to it in prod). Querying the old name silently returned [] via the .catch below,
+    // undercounting batch-allocated credits in the balance.
+    const { creditBatches } = await import('../../../db/schema/billing/credit-batches.js');
 
     const readDb = getReadDb();
     const [subscriptionResult, purchaseTransactionsResult, activeAllocationsResult] = await Promise.all([
@@ -277,21 +280,21 @@ export async function getCurrentBalance(tenantId: string, entityType = 'organiza
 
       readDb
         .select({
-          allocatedCredits: seasonalCreditAllocations.allocatedCredits,
-          usedCredits: seasonalCreditAllocations.usedCredits,
-          expiresAt: seasonalCreditAllocations.expiresAt,
-          targetApplication: seasonalCreditAllocations.targetApplication
+          allocatedCredits: creditBatches.allocatedCredits,
+          usedCredits: creditBatches.usedCredits,
+          expiresAt: creditBatches.expiresAt,
+          targetApplication: creditBatches.targetApplication
         })
-        .from(seasonalCreditAllocations)
+        .from(creditBatches)
         .where(and(
-          eq(seasonalCreditAllocations.tenantId, tenantId),
-          eq(seasonalCreditAllocations.entityId, String(searchEntityId)),
-          eq(seasonalCreditAllocations.isActive, true),
-          eq(seasonalCreditAllocations.isExpired, false),
-          isNotNull(seasonalCreditAllocations.expiresAt),
-          gte(seasonalCreditAllocations.expiresAt, new Date())
+          eq(creditBatches.tenantId, tenantId),
+          eq(creditBatches.entityId, String(searchEntityId)),
+          eq(creditBatches.isActive, true),
+          eq(creditBatches.isExpired, false),
+          isNotNull(creditBatches.expiresAt),
+          gte(creditBatches.expiresAt, new Date())
         ))
-        .orderBy(seasonalCreditAllocations.expiresAt)
+        .orderBy(creditBatches.expiresAt)
         .catch((err: unknown) => {
           Logger.log('warning', 'billing', 'get-current-balance', 'Error fetching seasonal credit expiry', { error: (err as Error).message });
           return [] as { allocatedCredits: string; usedCredits: string | null; expiresAt: Date; targetApplication: string | null }[];

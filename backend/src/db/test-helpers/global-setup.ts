@@ -196,6 +196,24 @@ async function applyMigrationsAndSchemaPatches(connectionUrl: string): Promise<v
         ALTER COLUMN user_id TYPE varchar(255) USING COALESCE(user_id::text, NULL)
     `;
 
+    // tenant_users — the journal's 0000 created a NOT NULL `name` column, but prod
+    // dropped it (verified against the live DB): the TS schema + app code use
+    // first_name/last_name and never set `name`. Relax NOT NULL so the onboarding
+    // code (which doesn't set `name`) can insert, while legacy test helpers that
+    // still pass `name` keep working. Test-only. (Prod has no `name` column at all.)
+    await syncSql`
+      ALTER TABLE tenant_users
+        ALTER COLUMN name DROP NOT NULL
+    `;
+    // tenant_users.primary_organization_id — the journal's 0000 wrongly FK-references
+    // tenants(tenant_id); prod correctly references entities(entity_id) (verified
+    // against the live DB). The onboarding code sets it to an entity_id, which the
+    // stale constraint rejects. Drop the wrong FK to match prod. Test-only.
+    await syncSql`
+      ALTER TABLE tenant_users
+        DROP CONSTRAINT IF EXISTS tenant_users_primary_organization_id_tenants_tenant_id_fk
+    `;
+
     // payments — refund tracking, tax, metadata, and audit columns added after initial migration.
     await syncSql`
       ALTER TABLE payments
@@ -209,16 +227,51 @@ async function applyMigrationsAndSchemaPatches(connectionUrl: string): Promise<v
         ADD COLUMN IF NOT EXISTS updated_at       timestamp       DEFAULT now()
     `;
 
-    // seasonal_credit_allocations — used by credit-balance/transfer flows.
-    // Some migration paths in tests may not include this table yet.
+    // seasonal_credit_campaigns — parent of credit_batches (campaign_id FK).
+    // Created by the create_seasonal_credit_tables ad-hoc script in prod; not in the
+    // drizzle journal, so the test DB needs it created here. Required-but-defaulted
+    // columns are given defaults so partial test inserts don't break.
     await syncSql`
-      CREATE TABLE IF NOT EXISTS seasonal_credit_allocations (
+      CREATE TABLE IF NOT EXISTS seasonal_credit_campaigns (
+        campaign_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        tenant_id uuid NOT NULL,
+        campaign_name varchar(255) NOT NULL DEFAULT '',
+        credit_type varchar(50) NOT NULL DEFAULT 'free',
+        description text,
+        total_credits numeric(15, 4) NOT NULL DEFAULT '0',
+        credits_per_tenant numeric(15, 4),
+        distribution_method varchar(50) DEFAULT 'equal',
+        target_all_tenants boolean DEFAULT false,
+        target_tenant_ids uuid[],
+        target_applications jsonb DEFAULT '["crm","hr","affiliate","system"]'::jsonb,
+        distribution_status varchar(50) DEFAULT 'pending',
+        distributed_count integer DEFAULT 0,
+        failed_count integer DEFAULT 0,
+        starts_at timestamp DEFAULT now(),
+        expires_at timestamp NOT NULL DEFAULT now() + interval '30 days',
+        distributed_at timestamp,
+        is_active boolean DEFAULT true,
+        created_by uuid,
+        created_at timestamp DEFAULT now(),
+        updated_at timestamp DEFAULT now(),
+        metadata jsonb,
+        send_notifications boolean DEFAULT true,
+        notification_template text
+      )
+    `;
+
+    // credit_batches — canonical name (renamed from seasonal_credit_allocations in
+    // prod via the rename_seasonal_allocations_to_credit_batches ad-hoc script). Used
+    // by credit-balance / credit-expiry / credit-operations. Not in the drizzle journal.
+    await syncSql`
+      CREATE TABLE IF NOT EXISTS credit_batches (
         allocation_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
         campaign_id uuid,
         tenant_id uuid NOT NULL,
         entity_id uuid NOT NULL,
         entity_type varchar(50) DEFAULT 'organization',
         target_application varchar(50),
+        credit_type varchar(20) DEFAULT 'free',
         allocated_credits numeric(15, 4) NOT NULL DEFAULT '0',
         used_credits numeric(15, 4) NOT NULL DEFAULT '0',
         distribution_status varchar(50) DEFAULT 'pending',

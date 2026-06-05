@@ -65,7 +65,7 @@ async function seedAllocation(
   `) as Array<{ campaignId: string }>;
 
   const result = await db.execute(sql`
-    INSERT INTO seasonal_credit_allocations
+    INSERT INTO credit_batches
       (campaign_id, tenant_id, entity_id, allocated_credits, used_credits, expires_at, is_active, is_expired, target_application)
     VALUES
       (${campaign.campaignId}, ${input.tenantId}, ${input.entityId}, ${allocatedCredits}, ${usedCredits},
@@ -107,7 +107,7 @@ describe('CreditExpiryService.processExpiredCredits', () => {
     // Confirm the allocation row is marked expired
     const [row] = await db.execute(sql`
       SELECT is_expired AS "isExpired", is_active AS "isActive"
-      FROM seasonal_credit_allocations
+      FROM credit_batches
       WHERE allocation_id = ${allocationId}
     `) as Array<{ isExpired: boolean; isActive: boolean }>;
 
@@ -250,7 +250,7 @@ describe('CreditExpiryService.processExpiredCredits', () => {
 
     const [row] = await db.execute(sql`
       SELECT is_expired AS "isExpired"
-      FROM seasonal_credit_allocations
+      FROM credit_batches
       WHERE allocation_id = ${allocationId}
     `) as Array<{ isExpired: boolean }>;
 
