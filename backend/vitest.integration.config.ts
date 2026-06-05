@@ -12,7 +12,14 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   resolve: {
-    conditions: ['import', 'module', 'default'],
+    // NOTE: deliberately omit the 'module' export condition. Some deps
+    // (@opentelemetry/api, @smithy/*, @aws-sdk/*) ship a `module` ESM build that
+    // uses extensionless internal imports — fine under Vite's transform (the unit
+    // suite's threads pool), but the integration `forks` pool loads externalized
+    // deps via Node's native ESM loader, which rejects them (ERR_MODULE_NOT_FOUND).
+    // Dropping 'module' makes those resolve to their CJS `default` build, which Node
+    // loads cleanly. ('import' still wins for properly-packaged ESM deps.)
+    conditions: ['import', 'default'],
   },
   plugins: [
     {
