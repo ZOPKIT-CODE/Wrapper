@@ -38,7 +38,9 @@ describe('PaymentRepository – create', () => {
     expect(payment).toBeDefined();
     expect(payment.tenantId).toBe(tenant.tenantId);
     expect(payment.amount).toBe('75.00');
-    expect(payment.status).toBe('succeeded');
+    // PaymentRepository normalizes 'succeeded'/'paid' -> 'completed' to satisfy the
+    // chk_payment_status DB constraint (pending/completed/failed/refunded/processing/cancelled).
+    expect(payment.status).toBe('completed');
     expect(payment.stripePaymentIntentId).toBe(intentId);
     expect(payment.paymentId).toBeTruthy();
 
@@ -100,7 +102,8 @@ describe('PaymentRepository – updateByPaymentIntentId', () => {
     });
 
     expect(updated).toBeDefined();
-    expect(updated!.status).toBe('succeeded');
+    // 'succeeded' is normalized to 'completed' by the repository (see create test above).
+    expect(updated!.status).toBe('completed');
     expect(updated!.stripePaymentIntentId).toBe(intentId);
   });
 

@@ -174,7 +174,12 @@ describe('findRootOrganization', () => {
   });
 
   // -------------------------------------------------------------------------
-  it('Priority 2 (isDefault) — prefers the default org over others', async () => {
+  // SKIPPED: this asserts an "isDefault" preference that the current code does NOT
+  // implement. `entities.is_default` was dropped in migration 0015_drop_unused_columns
+  // and findRootOrganization's priority is: primary membership → first active root org →
+  // oldest root org (no isDefault tier). Re-enable (and implement the tier) only if the
+  // "default org" concept is intentionally reintroduced. See also seed.ts isDefault note.
+  it.skip('Priority 2 (isDefault) — prefers the default org over others', async () => {
     const tenant = await seedTenant(db);
 
     const ordinary = await seedOrganization(db, tenant.tenantId, { entityName: 'Ordinary' });

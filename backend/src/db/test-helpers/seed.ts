@@ -231,12 +231,14 @@ export async function seedOrganization(
   const entityType     = overrides.entityType     ?? 'organization';
   const entityName     = overrides.entityName     ?? `Org ${suffix}`;
   const parentEntityId = overrides.parentEntityId ?? null;
-  const isDefault      = overrides.isDefault      ?? false;
   const isActive       = overrides.isActive       ?? true;
+  // NOTE: `entities.is_default` was dropped in migration 0015_drop_unused_columns.
+  // The `overrides.isDefault` field is still accepted for call-site compatibility
+  // but is no longer persisted (findRootOrganization does not key off it).
 
   const result = await db.execute(sql`
-    INSERT INTO entities (tenant_id, entity_type, entity_name, parent_entity_id, is_default, is_active)
-    VALUES (${tenantId}, ${entityType}, ${entityName}, ${parentEntityId}, ${isDefault}, ${isActive})
+    INSERT INTO entities (tenant_id, entity_type, entity_name, parent_entity_id, is_active)
+    VALUES (${tenantId}, ${entityType}, ${entityName}, ${parentEntityId}, ${isActive})
     RETURNING
       entity_id        AS "entityId",
       tenant_id        AS "tenantId",
