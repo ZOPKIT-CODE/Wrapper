@@ -1,0 +1,52 @@
+name: CI (PR gate)
+
+# Blocking checks on every PR — so a bad migration or an app<->schema mismatch
+# cannot be merged. (deploy-ec2.yml only runs on push-to-main; the integration
+# suite there is advisory. This is the gate that actually blocks merges.)
+
+on:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  db-integrity:
+    name: Migration journal + schema drift
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Migration journal sanity (idx/when monotonic, no orphan SQL)
+        run: pnpm --filter wrapper-backend run db:check:journal
+      - name: Schema drift gate (migrations must reproduce schema.sql)
+        run: pnpm --filter wrapper-backend run db:drift
+
+  backend-tests:
+    name: Backend unit + integration (blocking)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Unit tests (backend)
+        working-directory: backend
+        run: pnpm test
+      # Integration tests build a fresh DB from the migrations (Testcontainers) and
+      # run against the REAL schema — this is what catches app<->schema drift.
+      - name: Integration tests (backend)
+        working-directory: backend
+        run: pnpm test:integration
+        timeout-minutes: 12

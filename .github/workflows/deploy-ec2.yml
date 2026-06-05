@@ -43,17 +43,13 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Guard committed DB migrations
+      - name: Guard committed DB migrations (journal sanity + schema drift)
+        # The repo uses a pg_dump baseline (no drizzle snapshot lineage), so this
+        # validates the journal and asserts the migrations reproduce schema.sql,
+        # rather than running `drizzle-kit generate`. See src/db/migrations/README.md.
         run: |
-          pnpm --filter wrapper-backend run db:generate
-          pnpm --filter wrapper-backend run db:check:registry
-          if [ -n "$(git status --porcelain -- backend/src/db/migrations)" ]; then
-            echo "::error::Schema changes detected without committed migration files."
-            echo "Run: pnpm --filter wrapper-backend run db:generate"
-            echo "Then commit changes under backend/src/db/migrations."
-            git status --short -- backend/src/db/migrations
-            exit 1
-          fi
+          pnpm --filter wrapper-backend run db:check:journal
+          pnpm --filter wrapper-backend run db:drift
 
       - name: Type-check backend
         working-directory: backend

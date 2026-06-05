@@ -1,0 +1,33 @@
+name: Production schema drift
+
+# Catches OUT-OF-BAND production changes (manual ALTERs that bypass migrations) —
+# the failure mode that created the original drift. Diffs the LIVE prod schema
+# against the committed schema.sql.
+#
+# Requires the `PROD_DB_URL` repo secret = a read-capable production connection.
+# NOTE: use the Supabase POOLER url (aws-0-<region>.pooler.supabase.com, IPv4) —
+# GitHub runners have no IPv6, and the direct db.<ref>.supabase.co endpoint is
+# IPv6-only. Enable AFTER the pending migrations (0002/0003) are deployed to prod,
+# otherwise it correctly reports those as drift.
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'   # Mondays 06:00 UTC
+  workflow_dispatch:
+
+jobs:
+  prod-drift:
+    name: prod vs schema.sql
+    runs-on: ubuntu-latest
+    if: ${{ github.repository_owner != '' }}   # skip on forks without the secret
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check production schema drift
+        env:
+          PROD_DB_URL: ${{ secrets.PROD_DB_URL }}
+        run: |
+          if [ -z "$PROD_DB_URL" ]; then
+            echo "::warning::PROD_DB_URL secret not set — skipping prod drift check."
+            exit 0
+          fi
+          bash backend/scripts/db/check-prod-drift.sh
