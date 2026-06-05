@@ -57,7 +57,8 @@ describe('recordPayment', () => {
     expect(payment.tenantId).toBe(tenant.tenantId);
     expect(Number(payment.amount)).toBeCloseTo(49.99, 2);
     expect(payment.currency).toBe('USD');
-    expect(payment.status).toBe('succeeded');
+    // 'succeeded' is normalized to 'completed' to satisfy the chk_payment_status constraint.
+    expect(payment.status).toBe('completed');
   });
 
   // -------------------------------------------------------------------------
