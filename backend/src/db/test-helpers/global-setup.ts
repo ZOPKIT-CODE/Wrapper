@@ -2,25 +2,29 @@
  * Vitest Global Setup — Integration Tests
  *
  * Lifecycle (runs in the MAIN process, before any worker is spawned):
- *   setup()    — pull/start a PostgreSQL container, run Drizzle migrations,
- *                write the connection URL to process.env.DATABASE_URL so every
- *                test worker inherits it automatically.
+ *   setup()    — pull/start a PostgreSQL container, apply the migrations (the
+ *                squashed baseline + any later migrations) via the SAME applier
+ *                the runtime uses, write the connection URL to
+ *                process.env.DATABASE_URL so every test worker inherits it.
  *   teardown() — stop & remove the container after all tests finish.
  *
  * The container is shared across the entire integration-test run to keep
  * startup cost low (~10–30 s on first Docker pull, <5 s on subsequent runs
  * because the image is cached locally).
  *
- * Each test is responsible for creating its own isolated data (unique UUIDs)
- * so tests never interfere with each other.
+ * NOTE: there is deliberately NO schema-drift shim here anymore. The baseline
+ * (0000_baseline.sql) is a faithful pg_dump of production, so a fresh test DB
+ * already matches prod. If a test ever needs a column the migrations don't
+ * create, that is REAL drift — fix it with a migration (and the schema-drift CI
+ * gate will catch it), do not patch it here.
  */
 
 import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import postgres from 'postgres';
-import { drizzle } from 'drizzle-orm/postgres-js';
-import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import path from 'path';
 import { fileURLToPath } from 'url';
+
+import { applyAllMigrations } from '../apply-migrations.js';
 
 // ---------------------------------------------------------------------------
 // Resolve the migrations folder relative to this file
@@ -32,29 +36,21 @@ const MIGRATIONS_FOLDER = path.resolve(__dirname, '../migrations');
 // Keep a reference so teardown() can stop the container.
 let container: StartedPostgreSqlContainer;
 
-async function applyMigrationsAndSchemaPatches(connectionUrl: string): Promise<void> {
-  // -------------------------------------------------------------------------
-  // Run Drizzle migrations against the test database.
-  // We create a dedicated, short-lived connection — NOT the singleton from
-  // src/db/index.ts — to avoid any module-initialization side effects.
-  // -------------------------------------------------------------------------
+async function applyMigrations(connectionUrl: string): Promise<void> {
   console.log(`📦  [global-setup] Applying migrations from: ${MIGRATIONS_FOLDER}`);
 
+  // Dedicated, short-lived connection — NOT the singleton from src/db/index.ts —
+  // to avoid any module-initialization side effects.
   const migrationSql = postgres(connectionUrl, {
     max: 1,
     onnotice: () => {}, // silence noisy NOTICE messages during CREATE TABLE
   });
 
-  const migrationDb = drizzle(migrationSql);
-
   try {
-    // Provision DB roles that the migrations GRANT to / assume already exist.
-    // In real environments `app_user` (the app's runtime role) and
-    // `wrapper_migration_user` are created by infra/bootstrap; the ephemeral
-    // testcontainer only has the container superuser, so migration 0023
-    // (`GRANT … TO app_user`) fails without them. Create them idempotently here
-    // before migrating. Test-only — mirrors the prod role model without
-    // touching the canonical migration files.
+    // Provision the DB roles that 0001_grant_app_user GRANTs to. In real
+    // environments `app_user` (the app's runtime role) and `wrapper_migration_user`
+    // are created by infra/bootstrap; the ephemeral testcontainer only has the
+    // container superuser, so create them idempotently before migrating.
     await migrationSql.unsafe(`
       DO $$
       BEGIN
@@ -67,230 +63,13 @@ async function applyMigrationsAndSchemaPatches(connectionUrl: string): Promise<v
       END $$;
     `);
 
-    await migrate(migrationDb, { migrationsFolder: MIGRATIONS_FOLDER });
-    console.log('✅  [global-setup] Migrations applied successfully');
+    const applied = await applyAllMigrations(migrationSql, MIGRATIONS_FOLDER);
+    console.log(`✅  [global-setup] Migrations applied (${applied.length}: ${applied.join(', ')})`);
   } catch (err) {
     console.error('❌  [global-setup] Migration failed:', err);
     throw err; // abort — tests would all fail anyway
   } finally {
     await migrationSql.end();
-  }
-
-  // -------------------------------------------------------------------------
-  // Schema-drift sync
-  //
-  // Some columns exist in the TypeScript Drizzle schema but were never added
-  // to the canonical migration SQL files (the developer updated the TypeScript
-  // types but forgot to generate a migration).  Application code that uses
-  // `.select()` without arguments will try to SELECT all schema columns, which
-  // fails if any column is absent from the DB.
-  //
-  // We patch the test DB here with ADD COLUMN IF NOT EXISTS so that:
-  //   a) Application-under-test code can run unmodified.
-  //   b) We don't have to modify the production migration files.
-  //
-  // This is intentionally a test-only shim.  The proper long-term fix is to
-  // generate the missing migration using `pnpm db:generate` and commit it.
-  // -------------------------------------------------------------------------
-  const syncSql = postgres(connectionUrl, { max: 1, onnotice: () => {} });
-
-  try {
-    console.log('🔧  [global-setup] Applying schema-drift patches…');
-
-    // entities — columns added to TypeScript schema but missing from 0000 migration
-    await syncSql`
-      ALTER TABLE entities
-        ADD COLUMN IF NOT EXISTS contact_email  varchar(255),
-        ADD COLUMN IF NOT EXISTS contact_phone  varchar(50)
-    `;
-
-    // tenants — columns added to TypeScript schema but never migrated
-    await syncSql`
-      ALTER TABLE tenants
-        ADD COLUMN IF NOT EXISTS tax_registered                  boolean DEFAULT false,
-        ADD COLUMN IF NOT EXISTS vat_gst_registered              boolean DEFAULT false,
-        ADD COLUMN IF NOT EXISTS organization_size               varchar(50),
-        ADD COLUMN IF NOT EXISTS contact_job_title               varchar(150),
-        ADD COLUMN IF NOT EXISTS preferred_contact_method        varchar(20),
-        ADD COLUMN IF NOT EXISTS contact_salutation              varchar(20),
-        ADD COLUMN IF NOT EXISTS contact_middle_name             varchar(100),
-        ADD COLUMN IF NOT EXISTS contact_department              varchar(100),
-        ADD COLUMN IF NOT EXISTS contact_direct_phone            varchar(50),
-        ADD COLUMN IF NOT EXISTS contact_mobile_phone            varchar(50),
-        ADD COLUMN IF NOT EXISTS contact_preferred_contact_method varchar(20),
-        ADD COLUMN IF NOT EXISTS contact_authority_level         varchar(50),
-        ADD COLUMN IF NOT EXISTS tax_registration_details        jsonb,
-        ADD COLUMN IF NOT EXISTS billing_email                   varchar(255),
-        ADD COLUMN IF NOT EXISTS mailing_address_same_as_registered boolean DEFAULT true,
-        ADD COLUMN IF NOT EXISTS mailing_street                  varchar(255),
-        ADD COLUMN IF NOT EXISTS mailing_city                    varchar(100),
-        ADD COLUMN IF NOT EXISTS mailing_state                   varchar(100),
-        ADD COLUMN IF NOT EXISTS mailing_zip                     varchar(20),
-        ADD COLUMN IF NOT EXISTS mailing_country                 varchar(100),
-        ADD COLUMN IF NOT EXISTS support_email                   varchar(255),
-        ADD COLUMN IF NOT EXISTS support_phone                   varchar(50),
-        ADD COLUMN IF NOT EXISTS gstin                           varchar(20),
-        ADD COLUMN IF NOT EXISTS website                         varchar(255),
-        ADD COLUMN IF NOT EXISTS industry                        varchar(100),
-        ADD COLUMN IF NOT EXISTS company_name                    varchar(255),
-        ADD COLUMN IF NOT EXISTS legal_company_name              varchar(255),
-        ADD COLUMN IF NOT EXISTS company_type                    varchar(50),
-        ADD COLUMN IF NOT EXISTS billing_street                  varchar(255),
-        ADD COLUMN IF NOT EXISTS billing_city                    varchar(100),
-        ADD COLUMN IF NOT EXISTS billing_state                   varchar(100),
-        ADD COLUMN IF NOT EXISTS billing_zip                     varchar(20),
-        ADD COLUMN IF NOT EXISTS billing_country                 varchar(100),
-        ADD COLUMN IF NOT EXISTS phone                           varchar(50),
-        ADD COLUMN IF NOT EXISTS default_language                varchar(10),
-        ADD COLUMN IF NOT EXISTS default_locale                  varchar(20),
-        ADD COLUMN IF NOT EXISTS default_currency                varchar(3),
-        ADD COLUMN IF NOT EXISTS default_timezone                varchar(50),
-        ADD COLUMN IF NOT EXISTS fiscal_year_start_month         integer,
-        ADD COLUMN IF NOT EXISTS fiscal_year_end_month           integer,
-        ADD COLUMN IF NOT EXISTS fiscal_year_start_day           integer,
-        ADD COLUMN IF NOT EXISTS fiscal_year_end_day             integer,
-        ADD COLUMN IF NOT EXISTS bank_name                       varchar(255),
-        ADD COLUMN IF NOT EXISTS bank_branch                     varchar(255),
-        ADD COLUMN IF NOT EXISTS account_holder_name             varchar(255),
-        ADD COLUMN IF NOT EXISTS account_number                  varchar(50),
-        ADD COLUMN IF NOT EXISTS account_type                    varchar(20),
-        ADD COLUMN IF NOT EXISTS bank_account_currency           varchar(3),
-        ADD COLUMN IF NOT EXISTS swift_bic_code                  varchar(20),
-        ADD COLUMN IF NOT EXISTS iban                            varchar(50),
-        ADD COLUMN IF NOT EXISTS routing_number_us               varchar(20),
-        ADD COLUMN IF NOT EXISTS sort_code_uk                    varchar(20),
-        ADD COLUMN IF NOT EXISTS ifsc_code_india                 varchar(20),
-        ADD COLUMN IF NOT EXISTS bsb_number_australia            varchar(20),
-        ADD COLUMN IF NOT EXISTS payment_terms                   varchar(50),
-        ADD COLUMN IF NOT EXISTS credit_limit                    numeric(15,2),
-        ADD COLUMN IF NOT EXISTS preferred_payment_method        varchar(50),
-        ADD COLUMN IF NOT EXISTS tax_residence_country           varchar(100),
-        ADD COLUMN IF NOT EXISTS tax_exempt_status               varchar(50),
-        ADD COLUMN IF NOT EXISTS tax_exemption_certificate_number varchar(100),
-        ADD COLUMN IF NOT EXISTS tax_exemption_expiry_date       date,
-        ADD COLUMN IF NOT EXISTS withholding_tax_applicable      boolean DEFAULT false,
-        ADD COLUMN IF NOT EXISTS withholding_tax_rate            numeric(5,2),
-        ADD COLUMN IF NOT EXISTS tax_treaty_country              varchar(100),
-        ADD COLUMN IF NOT EXISTS w9_status_us                    varchar(50),
-        ADD COLUMN IF NOT EXISTS w8_form_type_us                 varchar(50),
-        ADD COLUMN IF NOT EXISTS reverse_charge_mechanism        boolean DEFAULT false,
-        ADD COLUMN IF NOT EXISTS vat_gst_rate_applicable         numeric(5,2),
-        ADD COLUMN IF NOT EXISTS regulatory_compliance_status    varchar(50),
-        ADD COLUMN IF NOT EXISTS industry_specific_licenses      jsonb,
-        ADD COLUMN IF NOT EXISTS data_protection_registration    varchar(100),
-        ADD COLUMN IF NOT EXISTS professional_indemnity_insurance boolean DEFAULT false,
-        ADD COLUMN IF NOT EXISTS insurance_policy_number         varchar(100),
-        ADD COLUMN IF NOT EXISTS insurance_expiry_date           date
-    `;
-
-    // audit_logs — user_id is typed UUID in the migration, but the application
-    // uses the literal string 'system' as a placeholder for background operations
-    // (e.g. createRole's internal logAuditEvent call).  Drop the FK first, then
-    // widen the column to varchar so both UUIDs and 'system' are accepted.
-    await syncSql`
-      ALTER TABLE audit_logs
-        DROP CONSTRAINT IF EXISTS audit_logs_user_id_tenant_users_user_id_fk
-    `;
-    await syncSql`
-      ALTER TABLE audit_logs
-        ALTER COLUMN user_id TYPE varchar(255) USING COALESCE(user_id::text, NULL)
-    `;
-
-    // tenant_users — the journal's 0000 created a NOT NULL `name` column, but prod
-    // dropped it (verified against the live DB): the TS schema + app code use
-    // first_name/last_name and never set `name`. Relax NOT NULL so the onboarding
-    // code (which doesn't set `name`) can insert, while legacy test helpers that
-    // still pass `name` keep working. Test-only. (Prod has no `name` column at all.)
-    await syncSql`
-      ALTER TABLE tenant_users
-        ALTER COLUMN name DROP NOT NULL
-    `;
-    // tenant_users.primary_organization_id — the journal's 0000 wrongly FK-references
-    // tenants(tenant_id); prod correctly references entities(entity_id) (verified
-    // against the live DB). The onboarding code sets it to an entity_id, which the
-    // stale constraint rejects. Drop the wrong FK to match prod. Test-only.
-    await syncSql`
-      ALTER TABLE tenant_users
-        DROP CONSTRAINT IF EXISTS tenant_users_primary_organization_id_tenants_tenant_id_fk
-    `;
-
-    // payments — refund tracking, tax, metadata, and audit columns added after initial migration.
-    await syncSql`
-      ALTER TABLE payments
-        ADD COLUMN IF NOT EXISTS amount_refunded  numeric(10, 2)  DEFAULT 0,
-        ADD COLUMN IF NOT EXISTS refund_reason    varchar(100),
-        ADD COLUMN IF NOT EXISTS is_partial_refund boolean        DEFAULT false,
-        ADD COLUMN IF NOT EXISTS refunded_at      timestamp,
-        ADD COLUMN IF NOT EXISTS tax_amount       numeric(10, 2)  DEFAULT 0,
-        ADD COLUMN IF NOT EXISTS metadata         jsonb           DEFAULT '{}',
-        ADD COLUMN IF NOT EXISTS stripe_raw_data  jsonb           DEFAULT '{}',
-        ADD COLUMN IF NOT EXISTS updated_at       timestamp       DEFAULT now()
-    `;
-
-    // seasonal_credit_campaigns — parent of credit_batches (campaign_id FK).
-    // Created by the create_seasonal_credit_tables ad-hoc script in prod; not in the
-    // drizzle journal, so the test DB needs it created here. Required-but-defaulted
-    // columns are given defaults so partial test inserts don't break.
-    await syncSql`
-      CREATE TABLE IF NOT EXISTS seasonal_credit_campaigns (
-        campaign_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-        tenant_id uuid NOT NULL,
-        campaign_name varchar(255) NOT NULL DEFAULT '',
-        credit_type varchar(50) NOT NULL DEFAULT 'free',
-        description text,
-        total_credits numeric(15, 4) NOT NULL DEFAULT '0',
-        credits_per_tenant numeric(15, 4),
-        distribution_method varchar(50) DEFAULT 'equal',
-        target_all_tenants boolean DEFAULT false,
-        target_tenant_ids uuid[],
-        target_applications jsonb DEFAULT '["crm","hr","affiliate","system"]'::jsonb,
-        distribution_status varchar(50) DEFAULT 'pending',
-        distributed_count integer DEFAULT 0,
-        failed_count integer DEFAULT 0,
-        starts_at timestamp DEFAULT now(),
-        expires_at timestamp NOT NULL DEFAULT now() + interval '30 days',
-        distributed_at timestamp,
-        is_active boolean DEFAULT true,
-        created_by uuid,
-        created_at timestamp DEFAULT now(),
-        updated_at timestamp DEFAULT now(),
-        metadata jsonb,
-        send_notifications boolean DEFAULT true,
-        notification_template text
-      )
-    `;
-
-    // credit_batches — canonical name (renamed from seasonal_credit_allocations in
-    // prod via the rename_seasonal_allocations_to_credit_batches ad-hoc script). Used
-    // by credit-balance / credit-expiry / credit-operations. Not in the drizzle journal.
-    await syncSql`
-      CREATE TABLE IF NOT EXISTS credit_batches (
-        allocation_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-        campaign_id uuid,
-        tenant_id uuid NOT NULL,
-        entity_id uuid NOT NULL,
-        entity_type varchar(50) DEFAULT 'organization',
-        target_application varchar(50),
-        credit_type varchar(20) DEFAULT 'free',
-        allocated_credits numeric(15, 4) NOT NULL DEFAULT '0',
-        used_credits numeric(15, 4) NOT NULL DEFAULT '0',
-        distribution_status varchar(50) DEFAULT 'pending',
-        distribution_error text,
-        is_active boolean DEFAULT true,
-        is_expired boolean DEFAULT false,
-        allocated_at timestamp DEFAULT now(),
-        expires_at timestamp NOT NULL DEFAULT now() + interval '30 days',
-        created_at timestamp DEFAULT now(),
-        updated_at timestamp DEFAULT now()
-      )
-    `;
-
-    console.log('✅  [global-setup] Schema-drift patches applied');
-  } catch (err) {
-    console.error('❌  [global-setup] Schema-drift patch failed:', err);
-    throw err;
-  } finally {
-    await syncSql.end();
   }
 }
 
@@ -310,7 +89,7 @@ export async function setup(): Promise<void> {
     process.env.DATABASE_URL = externalUrl;
     process.env.TEST_DATABASE_URL = externalUrl;
 
-    await applyMigrationsAndSchemaPatches(externalUrl as string);
+    await applyMigrations(externalUrl as string);
     return;
   }
 
@@ -336,7 +115,7 @@ export async function setup(): Promise<void> {
   // -------------------------------------------------------------------------
   process.env.DATABASE_URL = connectionUrl;
   process.env.TEST_DATABASE_URL = connectionUrl; // convenience alias
-  await applyMigrationsAndSchemaPatches(connectionUrl);
+  await applyMigrations(connectionUrl);
 }
 
 // ---------------------------------------------------------------------------

@@ -1,0 +1,188 @@
+{
+  "version": "5",
+  "dialect": "pg",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1758117227922,
+      "tag": "0000_brief_sir_ram",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1758272835607,
+      "tag": "0001_bright_raider",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1760505685115,
+      "tag": "0002_furry_wolverine",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1760505719483,
+      "tag": "0003_far_wolf_cub",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1760872846303,
+      "tag": "0004_ambitious_orphan",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1762183744136,
+      "tag": "0005_tearful_iron_lad",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1762367400000,
+      "tag": "0006_restore_payment_refund_columns",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1762400000000,
+      "tag": "0007_add_fa_entity_fields",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "5",
+      "when": 1762450000000,
+      "tag": "0008_perf_auth_indexes",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "5",
+      "when": 1762500000000,
+      "tag": "0009_add_trial_started_at",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "5",
+      "when": 1762550000000,
+      "tag": "0010_drop_duplicate_indexes",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "5",
+      "when": 1762600000000,
+      "tag": "0011_add_missing_indexes",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "5",
+      "when": 1762650000000,
+      "tag": "0012_drop_tenants_trial_columns",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "5",
+      "when": 1762700000000,
+      "tag": "0013_fix_billing_cycle_free_plans",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "5",
+      "when": 1762750000000,
+      "tag": "0014_enable_rls_tenant_isolation",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "5",
+      "when": 1762800000000,
+      "tag": "0015_drop_unused_columns",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "5",
+      "when": 1762850000000,
+      "tag": "0016_idx_tenants_admin_email",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "5",
+      "when": 1762900000000,
+      "tag": "0017_drop_credit_purchases_deprecated_col",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "5",
+      "when": 1762950000000,
+      "tag": "0018_perf_onboarding_indexes",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "5",
+      "when": 1763000000000,
+      "tag": "0019_organization_applications_rls",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "5",
+      "when": 1763050000000,
+      "tag": "0020_circuit_breaker_state",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "5",
+      "when": 1763100000000,
+      "tag": "0021_credit_category_snapshot",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "5",
+      "when": 1763150000000,
+      "tag": "0022_inter_app_outbox",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "5",
+      "when": 1763200000000,
+      "tag": "0023_grant_app_user",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "5",
+      "when": 1763250000000,
+      "tag": "0024_received_events",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "5",
+      "when": 1763300000000,
+      "tag": "0025_rename_kinde_to_idp",
+      "breakpoints": true
+    }
+  ]
+}

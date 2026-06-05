@@ -51,7 +51,10 @@ export const tenantUsers = pgTable('tenant_users', {
 export const auditLogs = pgTable('audit_logs', {
   logId: uuid('log_id').primaryKey().defaultRandom(),
   tenantId: uuid('tenant_id').references(() => tenants.tenantId).notNull(),
-  userId: uuid('user_id').references(() => tenantUsers.userId),
+  // Flexible actor id: the app logs 'system' (background/admin ops) and ids that
+  // need not exist in tenant_users (platform staff, deleted users). Audit logs are
+  // append-only action records, so this is a varchar with NO FK to tenant_users.
+  userId: varchar('user_id', { length: 255 }),
 
   // Entity Context for Hierarchical Access
   organizationId: uuid('organization_id').references(() => tenants.tenantId),

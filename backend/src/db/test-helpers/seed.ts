@@ -194,14 +194,15 @@ export async function seedUser(
   const idpSub  = overrides.idpSub        ?? `idp_user_${suffix}`;
   const isAdmin = overrides.isTenantAdmin ?? false;
 
+  // tenant_users has first_name/last_name (NOT a `name` column) — matches prod.
   const result = await db.execute(sql`
-    INSERT INTO tenant_users (tenant_id, email, name, idp_sub, is_tenant_admin)
+    INSERT INTO tenant_users (tenant_id, email, first_name, idp_sub, is_tenant_admin)
     VALUES (${tenantId}, ${email}, ${name}, ${idpSub}, ${isAdmin})
     RETURNING
-      user_id   AS "userId",
-      tenant_id AS "tenantId",
-      email     AS "email",
-      name      AS "name"
+      user_id    AS "userId",
+      tenant_id  AS "tenantId",
+      email      AS "email",
+      first_name AS "name"
   `);
 
   return rows<SeededUser>(result)[0];

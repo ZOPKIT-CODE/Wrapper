@@ -1,0 +1,44 @@
+name: DB schema drift
+
+# Builds a fresh database purely from the migrations and asserts it reproduces the
+# committed canonical snapshot (backend/src/db/migrations/schema.sql). Fails if a
+# migration changed the schema without regenerating the snapshot, or if schema.sql
+# was hand-edited — the exact "ad-hoc SQL never made it into the journal" failure
+# mode that the squashed baseline replaced.
+#
+# To refresh after adding a migration:
+#   cd backend && WRITE=1 bash scripts/db/check-schema-drift.sh && git add src/db/migrations/schema.sql
+
+on:
+  pull_request:
+    paths:
+      - 'backend/src/db/migrations/**'
+      - 'backend/src/db/schema/**'
+      - 'backend/scripts/db/**'
+      - '.github/workflows/db-schema-drift.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'backend/src/db/migrations/**'
+      - 'backend/src/db/schema/**'
+
+jobs:
+  schema-drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Schema drift check (migrations must reproduce schema.sql)
+        run: bash backend/scripts/db/check-schema-drift.sh

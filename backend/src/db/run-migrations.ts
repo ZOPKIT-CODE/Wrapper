@@ -1,9 +1,9 @@
 import 'dotenv/config';
-import crypto from 'node:crypto';
-import fs from 'node:fs';
 import path from 'node:path';
 
 import postgres from 'postgres';
+
+import { loadMigrations, applyMigration } from './apply-migrations.js';
 
 async function runMigrations(): Promise<void> {
   // Use privileged URL for migrations when set (e.g. Supabase postgres / migration user)
@@ -15,27 +15,11 @@ async function runMigrations(): Promise<void> {
 
   const client = postgres(databaseUrl, { max: 1 });
   const migrationsFolder = path.resolve(process.cwd(), 'src/db/migrations');
-  const journalPath = path.join(migrationsFolder, 'meta', '_journal.json');
 
   try {
     console.log(`🗄️ Applying versioned migrations from: ${migrationsFolder}`);
 
-    const journalRaw = fs.readFileSync(journalPath, 'utf8');
-    const journal = JSON.parse(journalRaw) as {
-      entries: Array<{ tag: string; when: number }>;
-    };
-
-    const migrations = journal.entries.map((entry) => {
-      const sqlPath = path.join(migrationsFolder, `${entry.tag}.sql`);
-      const sqlContent = fs.readFileSync(sqlPath, 'utf8');
-      const hash = crypto.createHash('sha256').update(sqlContent).digest('hex');
-      const statements = sqlContent
-        .split('--> statement-breakpoint')
-        .map((s) => s.trim())
-        .filter(Boolean);
-
-      return { tag: entry.tag, when: entry.when, hash, statements };
-    });
+    const migrations = loadMigrations(migrationsFolder);
 
     try {
       await client`
@@ -91,9 +75,7 @@ async function runMigrations(): Promise<void> {
       if (migration.when <= lastApplied) continue;
 
       console.log(`➡️ Applying migration: ${migration.tag}`);
-      for (const statement of migration.statements) {
-        await client.unsafe(statement);
-      }
+      await applyMigration(client, migration);
 
       await client`
         INSERT INTO public.__drizzle_migrations (hash, created_at)
