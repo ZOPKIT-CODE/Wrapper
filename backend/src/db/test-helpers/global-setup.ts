@@ -48,6 +48,25 @@ async function applyMigrationsAndSchemaPatches(connectionUrl: string): Promise<v
   const migrationDb = drizzle(migrationSql);
 
   try {
+    // Provision DB roles that the migrations GRANT to / assume already exist.
+    // In real environments `app_user` (the app's runtime role) and
+    // `wrapper_migration_user` are created by infra/bootstrap; the ephemeral
+    // testcontainer only has the container superuser, so migration 0023
+    // (`GRANT … TO app_user`) fails without them. Create them idempotently here
+    // before migrating. Test-only — mirrors the prod role model without
+    // touching the canonical migration files.
+    await migrationSql.unsafe(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'app_user') THEN
+          CREATE ROLE app_user;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'wrapper_migration_user') THEN
+          CREATE ROLE wrapper_migration_user;
+        END IF;
+      END $$;
+    `);
+
     await migrate(migrationDb, { migrationsFolder: MIGRATIONS_FOLDER });
     console.log('✅  [global-setup] Migrations applied successfully');
   } catch (err) {
