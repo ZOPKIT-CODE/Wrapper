@@ -104,7 +104,7 @@ if (!DISABLE_ALL_LOGGING) {
           method: request.method,
           url: request.url,
           statusCode: reply.statusCode,
-          responseTime: reply.getResponseTime(),
+          responseTime: reply.elapsedTime,
           requestId: request.id,
           service: process.env.SERVICE_NAME || 'wrapper-backend',
           env: process.env.NODE_ENV || 'development'

@@ -139,7 +139,7 @@ export default async function internalServiceAuthRoutes(fastify: FastifyInstance
       let tenantRecord: { tenantId: string; name: string } | undefined;
       if (orgCode) {
         const [found] = await db
-          .select({ tenantId: tenants.tenantId, name: tenants.name })
+          .select({ tenantId: tenants.tenantId, name: tenants.companyName })
           .from(tenants)
           .where(eq(tenants.idpOrgId, orgCode))
           .limit(1) as Array<{ tenantId: string; name: string }>;
@@ -172,7 +172,7 @@ export default async function internalServiceAuthRoutes(fastify: FastifyInstance
       let resolvedTenantName = tenantRecord?.name;
       if (!resolvedTenantName) {
         const [tenantRow] = await db
-          .select({ name: tenants.name })
+          .select({ name: tenants.companyName })
           .from(tenants)
           .where(eq(tenants.tenantId, resolvedTenantId))
           .limit(1) as Array<{ name: string }>;

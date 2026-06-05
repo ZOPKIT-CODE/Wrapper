@@ -796,13 +796,13 @@ class ActivityLogger {
     request: Record<string, unknown> & {
       ip?: string;
       headers?: Record<string, string | undefined>;
-      connection?: { remoteAddress?: string };
+      socket?: { remoteAddress?: string };
     },
     sessionId: string | null = null
   ): RequestContext {
     const headers = (request.headers ?? {}) as Record<string, string | undefined>;
     return {
-      ipAddress: (request.ip as string) || headers['x-forwarded-for'] || (request.connection?.remoteAddress as string),
+      ipAddress: (request.ip as string) || headers['x-forwarded-for'] || (request.socket?.remoteAddress as string),
       userAgent: headers['user-agent'],
       sessionId: sessionId ?? headers['x-session-id'] ?? null,
       source: headers['x-source'] || 'web'
