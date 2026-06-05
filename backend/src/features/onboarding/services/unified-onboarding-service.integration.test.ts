@@ -66,22 +66,12 @@ vi.mock('../../../features/messaging/index.js', () => ({
 
 // 4. OnboardingFileLogger — prevent filesystem writes
 vi.mock('../../../utils/onboarding-file-logger.js', () => ({
-  OnboardingFileLogger: vi.fn().mockImplementation(() => ({
-    onboarding: {
-      start:   vi.fn(),
-      step:    vi.fn(),
-      success: vi.fn(),
-      warning: vi.fn(),
-      error:   vi.fn(),
-    },
-    kinde: {
-      start:   vi.fn(),
-      success: vi.fn(),
-      error:   vi.fn(),
-      warning: vi.fn(),
-    },
-    finalize: vi.fn().mockResolvedValue({ logFile: null }),
-  })),
+  // Use a class (unambiguously a constructor — the code does `new OnboardingFileLogger`).
+  OnboardingFileLogger: class {
+    onboarding = { start: vi.fn(), step: vi.fn(), success: vi.fn(), warning: vi.fn(), error: vi.fn() };
+    kinde      = { start: vi.fn(), success: vi.fn(), error: vi.fn(), warning: vi.fn() };
+    finalize   = vi.fn().mockResolvedValue({ logFile: null });
+  },
 }));
 
 // 5. OnboardingVerificationService (dynamically imported) — return "all verified"
@@ -133,19 +123,25 @@ afterEach(async () => {
   if (createdTenantIds.length === 0) return;
 
   for (const tenantId of createdTenantIds) {
-    // cascade order: role assignments → roles → memberships → users → entities
-    //                → subscriptions → credits → credit_transactions → tenants
-    await db.execute(sql`DELETE FROM user_role_assignments  WHERE organization_id = ${tenantId}`);
-    await db.execute(sql`DELETE FROM custom_roles           WHERE tenant_id       = ${tenantId}`);
-    await db.execute(sql`DELETE FROM organization_memberships WHERE tenant_id     = ${tenantId}`);
-    await db.execute(sql`DELETE FROM tenant_users           WHERE tenant_id       = ${tenantId}`);
-    await db.execute(sql`DELETE FROM responsible_persons    WHERE tenant_id       = ${tenantId}`);
-    await db.execute(sql`DELETE FROM entities               WHERE tenant_id       = ${tenantId}`);
-    await db.execute(sql`DELETE FROM subscriptions          WHERE tenant_id       = ${tenantId}`);
-    await db.execute(sql`DELETE FROM credit_transactions    WHERE tenant_id       = ${tenantId}`);
-    await db.execute(sql`DELETE FROM credits                WHERE tenant_id       = ${tenantId}`);
-    await db.execute(sql`DELETE FROM onboarding_events      WHERE tenant_id       = ${tenantId}`);
-    await db.execute(sql`DELETE FROM tenants                WHERE tenant_id       = ${tenantId}`);
+    // The onboarding graph has many interdependent FKs (memberships/assignments ->
+    // roles & entities, entities <-> tenant_users, credit_transactions -> entities,
+    // ...). Rather than chase a perfect delete order, disable FK triggers for the
+    // per-tenant cleanup. SET LOCAL is scoped to this transaction and resets on
+    // commit, so it does not leak to other tests; tester is the container superuser.
+    await db.transaction(async (tx) => {
+      await tx.execute(sql`SET LOCAL session_replication_role = replica`);
+      await tx.execute(sql`DELETE FROM user_role_assignments    WHERE organization_id = ${tenantId}`);
+      await tx.execute(sql`DELETE FROM organization_memberships WHERE tenant_id       = ${tenantId}`);
+      await tx.execute(sql`DELETE FROM custom_roles             WHERE tenant_id       = ${tenantId}`);
+      await tx.execute(sql`DELETE FROM responsible_persons      WHERE tenant_id       = ${tenantId}`);
+      await tx.execute(sql`DELETE FROM credit_transactions      WHERE tenant_id       = ${tenantId}`);
+      await tx.execute(sql`DELETE FROM credits                  WHERE tenant_id       = ${tenantId}`);
+      await tx.execute(sql`DELETE FROM entities                 WHERE tenant_id       = ${tenantId}`);
+      await tx.execute(sql`DELETE FROM tenant_users             WHERE tenant_id       = ${tenantId}`);
+      await tx.execute(sql`DELETE FROM subscriptions            WHERE tenant_id       = ${tenantId}`);
+      await tx.execute(sql`DELETE FROM onboarding_events        WHERE tenant_id       = ${tenantId}`);
+      await tx.execute(sql`DELETE FROM tenants                  WHERE tenant_id       = ${tenantId}`);
+    });
   }
 
   createdTenantIds.length = 0;
@@ -227,12 +223,12 @@ describe('UnifiedOnboardingService.completeOnboardingWorkflow', () => {
       `) as unknown as Array<{ role_id: string; role_name: string }>;
       expect(roleRow).toBeDefined();
 
-      // ---- user_role_assignments row ----
+      // ---- user_role_assignments row (PK column is `id`, not `assignment_id`) ----
       const [assignmentRow] = await db.execute(sql`
-        SELECT assignment_id FROM user_role_assignments
+        SELECT id FROM user_role_assignments
         WHERE organization_id = ${tenantId}
         LIMIT 1
-      `) as unknown as Array<{ assignment_id: string }>;
+      `) as unknown as Array<{ id: string }>;
       expect(assignmentRow).toBeDefined();
 
       // ---- subscriptions row ----
@@ -262,7 +258,7 @@ describe('UnifiedOnboardingService.completeOnboardingWorkflow', () => {
       expect(creditRow).toBeDefined();
       expect(Number(creditRow.available_credits)).toBeGreaterThan(0);
     },
-    { timeout: 30_000 },
+    30_000,
   );
 
   // -------------------------------------------------------------------------
@@ -296,7 +292,7 @@ describe('UnifiedOnboardingService.completeOnboardingWorkflow', () => {
         );
       });
     },
-    { timeout: 30_000 },
+    30_000,
   );
 
   // -------------------------------------------------------------------------
@@ -335,7 +331,7 @@ describe('UnifiedOnboardingService.completeOnboardingWorkflow', () => {
       // Restore the real module for subsequent tests
       vi.doUnmock('../../../data/permission-matrix.js');
     },
-    { timeout: 30_000 },
+    30_000,
   );
 
   // -------------------------------------------------------------------------
@@ -360,6 +356,6 @@ describe('UnifiedOnboardingService.completeOnboardingWorkflow', () => {
       expect(generated).not.toBe(baseSubdomain);
       expect(generated).toMatch(/^acme-corp-\d+$/);
     },
-    { timeout: 30_000 },
+    30_000,
   );
 });

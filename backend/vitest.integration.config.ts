@@ -45,6 +45,10 @@ export default defineConfig({
     // process.env.DATABASE_URL so every worker inherits it automatically.
     globalSetup: ['./src/db/test-helpers/global-setup.ts'],
 
+    // Per-worker setup: install globals the app normally registers at server startup
+    // (e.g. global.logToES) so service code paths that call them don't throw.
+    setupFiles: ['./src/db/test-helpers/integration-setup.ts'],
+
     // Container startup + migration can take 20–40 s on a cold Docker pull.
     // Individual test timeouts are kept tight to catch slow queries early.
     testTimeout:  30_000,  // 30 s per test
