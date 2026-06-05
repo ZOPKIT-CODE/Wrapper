@@ -1,6 +1,6 @@
 import { db } from '../../../db/index.js';
 import { eventTracking } from '../../../db/schema/index.js';
-import { eq, and, inArray, sql } from 'drizzle-orm';
+import { eq, and, inArray, lt, sql } from 'drizzle-orm';
 import { snsSqsPublisher } from '../utils/sns-sqs-publisher.js';
 import Logger from '../../../utils/logger.js';
 
@@ -177,7 +177,7 @@ export class EventTrackingService {
         .where(and(
           eq(eventTracking.tenantId, tenantId),
           eq(eventTracking.acknowledged, false),
-          sql`${eventTracking.publishedAt} < ${cutoffTime}`
+          lt(eventTracking.publishedAt, cutoffTime)
         ))
         .orderBy(eventTracking.publishedAt)
         .limit(limit);
@@ -446,7 +446,7 @@ export class EventTrackingService {
         and(
           eq(eventTracking.acknowledged, false),
           eq(eventTracking.status, 'published'),
-          sql`${eventTracking.createdAt} < ${cutoff}`
+          lt(eventTracking.createdAt, cutoff)
         )
       )
       .limit(maxBatchSize);
@@ -527,7 +527,7 @@ export class EventTrackingService {
 
       const deleteResult = await db
         .delete(eventTracking)
-        .where(sql`${eventTracking.publishedAt} < ${cutoffDate}`);
+        .where(lt(eventTracking.publishedAt, cutoffDate));
       const totalCleaned = (deleteResult as { rowCount?: number })?.rowCount ?? 0;
 
       Logger.log('info', 'general', 'cleanupOldEvents', `Cleaned up ${totalCleaned} old tracked events from database`, { totalCleaned });

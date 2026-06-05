@@ -8,7 +8,7 @@ import { PERMISSIONS } from '../../../constants/permissions.js';
 import { authenticateToken, requirePermission } from '../../../middleware/auth/auth.js';
 import { db } from '../../../db/index.js';
 import { credits, creditTransactions, tenants, entities, subscriptions } from '../../../db/schema/index.js';
-import { eq, and, desc, sql, count, gte, lte, between, isNotNull } from 'drizzle-orm';
+import { eq, and, desc, sql, count, gt, gte, lte, between, isNotNull } from 'drizzle-orm';
 import { SeasonalCreditService } from '../../../features/credits/index.js';
 import Logger from '../../../utils/logger.js';
 
@@ -775,8 +775,8 @@ export default async function adminCreditOverviewRoutes(fastify: FastifyInstance
             .from(subscriptions)
             .where(and(
               eq(subscriptions.status, 'active'),
-              sql`${subscriptions.currentPeriodEnd} IS NOT NULL`,
-              sql`${subscriptions.currentPeriodEnd} <= ${now}`
+              isNotNull(subscriptions.currentPeriodEnd),
+              lte(subscriptions.currentPeriodEnd, now)
             ));
 
           Logger.log('info', 'billing', 'admin-process-expiries', 'Found expired subscriptions', { count: expiredSubscriptions.length });
@@ -854,8 +854,8 @@ export default async function adminCreditOverviewRoutes(fastify: FastifyInstance
         .where(and(
           eq(subscriptions.status, 'active'),
           isNotNull(subscriptions.currentPeriodEnd),
-          sql`${subscriptions.currentPeriodEnd} > ${now}`,
-          sql`${subscriptions.currentPeriodEnd} <= ${futureDate}`
+          gt(subscriptions.currentPeriodEnd, now),
+          lte(subscriptions.currentPeriodEnd, futureDate)
         ));
 
       return reply.send({
