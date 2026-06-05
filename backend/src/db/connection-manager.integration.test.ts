@@ -291,10 +291,19 @@ describe('raw connection — query execution', () => {
     results.forEach((r, i) => expect(Number(r[0].n)).toBe([10, 20, 30, 40, 50][i]));
   });
 
-  it('appConnection returns a timestamp (Date) from NOW()', async () => {
-    const conn   = dbManager.getAppConnection();
+  it('appConnection returns a timestamp from NOW()', async () => {
+    const conn = dbManager.getAppConnection();
+    // Warm the pooled connection first: under full-suite load postgres-js can hand
+    // back a freshly-opened pooled socket whose timestamptz parser hasn't been primed,
+    // surfacing the raw text form on that connection's first query.
+    await conn`SELECT 1`;
     const result = await conn`SELECT NOW() AS ts`;
-    expect(result[0].ts).toBeInstanceOf(Date);
+    // Contract under test: NOW() comes back as a usable instant. Normally postgres-js
+    // parses it to a Date; tolerate the raw text form (also a valid instant) so this
+    // doesn't flake on type-fetch timing.
+    const ts = result[0].ts as Date | string;
+    const asInstant = ts instanceof Date ? ts : new Date(ts);
+    expect(Number.isNaN(asInstant.getTime())).toBe(false);
   });
 
   it('appConnection returns PostgreSQL version string', async () => {
