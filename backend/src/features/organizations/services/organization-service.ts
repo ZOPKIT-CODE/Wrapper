@@ -298,7 +298,7 @@ export class OrganizationService {
         throw new Error('Organization not found');
       }
 
-      Logger.log('info', 'general', 'get-organization-details', 'Organization exists', { organizationId: orgCheck[0].entityId });
+      Logger.log('info', 'general', 'get-organization-details', 'Organization exists', { organizationId: orgCheck[0].organizationId });
 
       // Now get full details
       const organization = await db

@@ -1,0 +1,27 @@
+# Build context is the REPO ROOT (Dockerfile is backend/Dockerfile, context ".").
+# This is the .dockerignore Docker actually honors — backend/.dockerignore is
+# ignored for root-context builds. CRITICAL: keep .env out of the image (secrets
+# must come from Secrets Manager at runtime, never baked in — a baked .env also
+# leaks dev DB hosts/URLs that override the injected ones).
+**/.env
+**/.env.*
+!**/.env.example
+
+# Reinstalled inside the image; excluding speeds the build context massively.
+**/node_modules
+**/dist
+**/build
+
+# Not needed to build the backend image.
+.git
+.github
+frontend
+deploy
+docs
+**/__tests__
+**/*.test.ts
+**/*.spec.ts
+**/coverage
+*.log
+*.md
+.DS_Store

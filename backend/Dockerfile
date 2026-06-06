@@ -34,7 +34,7 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY backend/package.json backend/
 
-RUN pnpm install --frozen-lockfile --prod --filter wrapper-backend
+RUN pnpm install --frozen-lockfile --filter wrapper-backend
 
 COPY backend/ backend/
 

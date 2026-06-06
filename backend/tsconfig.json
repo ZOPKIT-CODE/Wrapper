@@ -20,5 +20,5 @@
     "noPropertyAccessFromIndexSignature": false
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "src/__tests__", "src/db/migrations", "src/scripts", "src/examples"]
+  "exclude": ["node_modules", "dist", "src/__tests__", "src/**/*.test.ts", "src/**/*test-setup.ts", "src/db/migrations", "src/scripts", "src/examples"]
 }

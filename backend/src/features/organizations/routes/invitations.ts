@@ -219,7 +219,7 @@ export default async function invitationRoutes(
         primaryEntityId: primaryEntityId as string | undefined,
         message: message as string | undefined,
         tenantId,
-        inviterInternalUserId: request.userContext.internalUserId,
+        inviterInternalUserId: request.userContext.internalUserId as string,
         inviterName: request.userContext.name,
         request
       });

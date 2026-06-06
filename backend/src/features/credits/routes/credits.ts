@@ -960,7 +960,7 @@ export default async function creditRoutes(
         targetApplication: targetApplication as string,
         creditAmount: parseFloat(String(creditAmount)),
         allocationPurpose: (allocationPurpose as string) || '',
-        initiatedBy: internalUserId ?? null
+        initiatedBy: internalUserId ?? undefined
       });
 
       return {
