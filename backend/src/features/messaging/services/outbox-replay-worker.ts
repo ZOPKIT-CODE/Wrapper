@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/node';
 import { EventTrackingService } from './event-tracking-service.js';
 import { db } from '../../../db/index.js';
 import { sql } from 'drizzle-orm';
@@ -67,28 +68,36 @@ export function startOutboxReplayWorker(): void {
       return;
     }
 
-    try {
-      const replayed = await EventTrackingService.replayPendingEvents(batchSize, maxRetries);
-      if (replayed > 0) {
-        Logger.log('info', 'general', 'startOutboxReplayWorker', `Outbox replay worker republished ${replayed} pending/failed event(s)`, { replayed });
-      }
-    } catch (error: unknown) {
-      Logger.log('error', 'general', 'startOutboxReplayWorker', 'Outbox replay worker (pending) failed', { error: (error as Error)?.message || String(error) });
-    }
+    // Wrap the tick in a span so republished events have a valid, sampled trace
+    // to inject — without it these background republishes would sever the
+    // cross-service trace link (the SQS consumer would start a fresh root).
+    await Sentry.startSpan(
+      { name: 'outbox-replay.tick', op: 'cron', attributes: { 'cron.name': 'outbox-replay' } },
+      async () => {
+        try {
+          const replayed = await EventTrackingService.replayPendingEvents(batchSize, maxRetries);
+          if (replayed > 0) {
+            Logger.log('info', 'general', 'startOutboxReplayWorker', `Outbox replay worker republished ${replayed} pending/failed event(s)`, { replayed });
+          }
+        } catch (error: unknown) {
+          Logger.log('error', 'general', 'startOutboxReplayWorker', 'Outbox replay worker (pending) failed', { error: (error as Error)?.message || String(error) });
+        }
 
-    // 1 s gap: ensures the shared OUTBOX_REPLAY_MAX_TPS token budget refills between
-    // the two replay paths so their chunk boundaries cannot produce a combined TPS burst.
-    await new Promise((r) => setTimeout(r, 1000));
+        // 1 s gap: ensures the shared OUTBOX_REPLAY_MAX_TPS token budget refills between
+        // the two replay paths so their chunk boundaries cannot produce a combined TPS burst.
+        await new Promise((r) => setTimeout(r, 1000));
 
-    // Also reprocess events stuck as published+unacknowledged (MQ was down at publish time)
-    try {
-      const reprocessed = await EventTrackingService.replayUnacknowledgedPublishedEvents();
-      if (reprocessed > 0) {
-        Logger.log('info', 'general', 'startOutboxReplayWorker', `Outbox unack reprocessor redelivered ${reprocessed} event(s)`, { reprocessed });
-      }
-    } catch (error: unknown) {
-      Logger.log('error', 'general', 'startOutboxReplayWorker', 'Outbox replay worker (unack) failed', { error: (error as Error)?.message || String(error) });
-    }
+        // Also reprocess events stuck as published+unacknowledged (MQ was down at publish time)
+        try {
+          const reprocessed = await EventTrackingService.replayUnacknowledgedPublishedEvents();
+          if (reprocessed > 0) {
+            Logger.log('info', 'general', 'startOutboxReplayWorker', `Outbox unack reprocessor redelivered ${reprocessed} event(s)`, { reprocessed });
+          }
+        } catch (error: unknown) {
+          Logger.log('error', 'general', 'startOutboxReplayWorker', 'Outbox replay worker (unack) failed', { error: (error as Error)?.message || String(error) });
+        }
+      },
+    );
   };
 
   // Release advisory lock on graceful shutdown so another pod can take over.

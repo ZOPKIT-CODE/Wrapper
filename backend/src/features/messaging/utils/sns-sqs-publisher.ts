@@ -250,11 +250,20 @@ class SnsSqsPublisher {
       eventType: { DataType: 'String', StringValue: eventType },
       tenantId: { DataType: 'String', StringValue: tenantId },
     };
-    // Inject the active trace context (sentry-trace + baggage) so the consumer
-    // continues this trace. Injected BEFORE the outbox INSERT below, so the
-    // stored attributes carry it too — poller replays preserve the trace link.
-    injectTraceContext(messageAttributes);
 
+    // Producer span. Two reasons this wraps the inject + publish:
+    //   1. injectTraceContext reads context.active() — it only carries a valid
+    //      parent when a recording span is active. Many publishers (credit-expiry
+    //      cron, schedulers, startup tasks) run with NO ambient request span, so
+    //      without this the injected context is empty and the SQS consumer starts a
+    //      fresh root trace — breaking the cross-service link. startSpan guarantees
+    //      a valid span: a child of the request when one exists, or a new root trace
+    //      for background work. Either way the consumer continues THIS trace.
+    //   2. It gives the producer end of the async trace a visible span in Sentry
+    //      (op `queue.publish`, mirroring the consumer's `queue.process`).
+    // Injection happens INSIDE the span and BEFORE the outbox INSERT (in
+    // enqueueEvent), so stored attributes carry the trace — poller replays preserve it.
+    //
     // Outbox-first pattern: persist the event to inter_app_outbox, then attempt
     // the SNS publish. If SNS fails, published_at stays NULL and the poller retries.
     //
@@ -264,19 +273,37 @@ class SnsSqsPublisher {
     // commit). Without a `tx`, this is a dual-write: the outbox row is written on a
     // separate connection right after the SNS attempt — durable, but with a small
     // window if the process dies between the caller's commit and this insert.
-    return this.enqueueEvent({
-      eventId: resolvedEventId,
-      eventType,
-      targetApplication,
-      sourceApplication,
-      tenantId,
-      entityId,
-      routingKey,
-      message,
-      messageAttributes,
-      startedAt: t0,
-      tx,
-    });
+    return Sentry.startSpan(
+      {
+        name: `publish ${eventType}`,
+        op: 'queue.publish',
+        attributes: {
+          'messaging.system': 'aws_sns',
+          'messaging.operation.name': 'publish',
+          'messaging.destination.name': targetApplication,
+          'messaging.message.id': resolvedEventId,
+          'event.type': eventType,
+          'event.source_application': sourceApplication,
+          'event.target_application': targetApplication,
+        },
+      },
+      () => {
+        injectTraceContext(messageAttributes);
+        return this.enqueueEvent({
+          eventId: resolvedEventId,
+          eventType,
+          targetApplication,
+          sourceApplication,
+          tenantId,
+          entityId,
+          routingKey,
+          message,
+          messageAttributes,
+          startedAt: t0,
+          tx,
+        });
+      },
+    );
   }
 
   /**
@@ -516,15 +543,31 @@ class SnsSqsPublisher {
         publishedBy,
       };
 
-      await this.client.send(
-        new PublishCommand({
-          TopicArn: process.env.SNS_BROADCAST_TOPIC_ARN,
-          Message: JSON.stringify(message),
-          MessageAttributes: injectTraceContext({
-            eventType: { DataType: 'String', StringValue: eventType },
-            broadcast: { DataType: 'String', StringValue: 'true' },
-          }),
-        })
+      // Producer span — same rationale as publishInterAppEvent: guarantee a valid
+      // active context for injectTraceContext (broadcasts often fire from
+      // schedulers / startup with no ambient span) and surface the producer end.
+      await Sentry.startSpan(
+        {
+          name: `publish ${eventType}`,
+          op: 'queue.publish',
+          attributes: {
+            'messaging.system': 'aws_sns',
+            'messaging.operation.name': 'publish',
+            'messaging.destination.name': 'broadcast',
+            'event.type': eventType,
+          },
+        },
+        () =>
+          this.client.send(
+            new PublishCommand({
+              TopicArn: process.env.SNS_BROADCAST_TOPIC_ARN,
+              Message: JSON.stringify(message),
+              MessageAttributes: injectTraceContext({
+                eventType: { DataType: 'String', StringValue: eventType },
+                broadcast: { DataType: 'String', StringValue: 'true' },
+              }),
+            }),
+          ),
       );
 
       const durationMs = Date.now() - t0;
@@ -570,30 +613,32 @@ class SnsSqsPublisher {
       return this.businessSuiteApps.map((targetApp) => ({ targetApp, success: false, error: 'invalid roleId' }));
     }
 
-    const results: Array<{ targetApp: string; success?: boolean; eventId?: string; error?: string }> =
-      [];
-    for (const targetApp of this.businessSuiteApps) {
-      if (tx) {
-        // tx mode: one attempt, no retry, no per-app catch — a failure MUST
-        // propagate so the caller's transaction rolls back (outbox rows stay
-        // atomic with the domain write). No synchronous SNS; poller delivers.
-        const result = await this.publishRoleEvent(targetApp, eventType, tenantId, roleId, roleData, publishedBy, tx);
-        results.push({ targetApp, ...result });
-        continue;
+    return this.fanout(eventType, async () => {
+      const results: Array<{ targetApp: string; success?: boolean; eventId?: string; error?: string }> =
+        [];
+      for (const targetApp of this.businessSuiteApps) {
+        if (tx) {
+          // tx mode: one attempt, no retry, no per-app catch — a failure MUST
+          // propagate so the caller's transaction rolls back (outbox rows stay
+          // atomic with the domain write). No synchronous SNS; poller delivers.
+          const result = await this.publishRoleEvent(targetApp, eventType, tenantId, roleId, roleData, publishedBy, tx);
+          results.push({ targetApp, ...result });
+          continue;
+        }
+        // H-6: Retry each per-app publish up to 2 times with exponential backoff
+        try {
+          const result = await this.withRetry(() =>
+            this.publishRoleEvent(targetApp, eventType, tenantId, roleId, roleData, publishedBy)
+          );
+          results.push({ targetApp, ...result });
+        } catch (error: unknown) {
+          const err = error as Error;
+          Logger.log('error', 'general', 'publishRoleEventToSuite', `Failed to publish role event to ${targetApp} after retries`, { targetApp, error: err.message });
+          results.push({ targetApp, success: false, error: err.message });
+        }
       }
-      // H-6: Retry each per-app publish up to 2 times with exponential backoff
-      try {
-        const result = await this.withRetry(() =>
-          this.publishRoleEvent(targetApp, eventType, tenantId, roleId, roleData, publishedBy)
-        );
-        results.push({ targetApp, ...result });
-      } catch (error: unknown) {
-        const err = error as Error;
-        Logger.log('error', 'general', 'publishRoleEventToSuite', `Failed to publish role event to ${targetApp} after retries`, { targetApp, error: err.message });
-        results.push({ targetApp, success: false, error: err.message });
-      }
-    }
-    return results;
+      return results;
+    });
   }
 
   async publishRoleEvent(
@@ -683,28 +728,30 @@ class SnsSqsPublisher {
     publishedBy = 'system',
     tx?: typeof db,
   ): Promise<Array<{ targetApp: string; success?: boolean; eventId?: string; error?: string }>> {
-    const results: Array<{ targetApp: string; success?: boolean; eventId?: string; error?: string }> =
-      [];
-    for (const targetApp of this.businessSuiteApps) {
-      if (tx) {
-        // tx mode: one attempt, no retry, no per-app catch — a failure MUST
-        // propagate so the caller's transaction rolls back (atomic with the write).
-        const result = await this.publishUserEvent(targetApp, eventType, tenantId, userId, userData, publishedBy, tx);
-        results.push({ targetApp, ...result });
-        continue;
+    return this.fanout(eventType, async () => {
+      const results: Array<{ targetApp: string; success?: boolean; eventId?: string; error?: string }> =
+        [];
+      for (const targetApp of this.businessSuiteApps) {
+        if (tx) {
+          // tx mode: one attempt, no retry, no per-app catch — a failure MUST
+          // propagate so the caller's transaction rolls back (atomic with the write).
+          const result = await this.publishUserEvent(targetApp, eventType, tenantId, userId, userData, publishedBy, tx);
+          results.push({ targetApp, ...result });
+          continue;
+        }
+        try {
+          const result = await this.withRetry(() =>
+            this.publishUserEvent(targetApp, eventType, tenantId, userId, userData, publishedBy)
+          );
+          results.push({ targetApp, ...result });
+        } catch (error: unknown) {
+          const err = error as Error;
+          Logger.log('error', 'general', 'publishUserEventToSuite', `Failed to publish user event to ${targetApp} after retries`, { targetApp, error: err.message });
+          results.push({ targetApp, success: false, error: err.message });
+        }
       }
-      try {
-        const result = await this.withRetry(() =>
-          this.publishUserEvent(targetApp, eventType, tenantId, userId, userData, publishedBy)
-        );
-        results.push({ targetApp, ...result });
-      } catch (error: unknown) {
-        const err = error as Error;
-        Logger.log('error', 'general', 'publishUserEventToSuite', `Failed to publish user event to ${targetApp} after retries`, { targetApp, error: err.message });
-        results.push({ targetApp, success: false, error: err.message });
-      }
-    }
-    return results;
+      return results;
+    });
   }
 
   async publishUserEvent(
@@ -753,21 +800,23 @@ class SnsSqsPublisher {
     orgData: Record<string, unknown>,
     publishedBy = 'system'
   ): Promise<Array<{ targetApp: string; success?: boolean; eventId?: string; error?: string }>> {
-    const results: Array<{ targetApp: string; success?: boolean; eventId?: string; error?: string }> =
-      [];
-    for (const targetApp of this.businessSuiteApps) {
-      try {
-        const result = await this.withRetry(() =>
-          this.publishOrgEvent(targetApp, eventType, tenantId, orgId, orgData, publishedBy)
-        );
-        results.push({ targetApp, ...result });
-      } catch (error: unknown) {
-        const err = error as Error;
-        Logger.log('error', 'general', 'publishOrgEventToSuite', `Failed to publish org event to ${targetApp} after retries`, { targetApp, error: err.message });
-        results.push({ targetApp, success: false, error: err.message });
+    return this.fanout(eventType, async () => {
+      const results: Array<{ targetApp: string; success?: boolean; eventId?: string; error?: string }> =
+        [];
+      for (const targetApp of this.businessSuiteApps) {
+        try {
+          const result = await this.withRetry(() =>
+            this.publishOrgEvent(targetApp, eventType, tenantId, orgId, orgData, publishedBy)
+          );
+          results.push({ targetApp, ...result });
+        } catch (error: unknown) {
+          const err = error as Error;
+          Logger.log('error', 'general', 'publishOrgEventToSuite', `Failed to publish org event to ${targetApp} after retries`, { targetApp, error: err.message });
+          results.push({ targetApp, success: false, error: err.message });
+        }
       }
-    }
-    return results;
+      return results;
+    });
   }
 
   async publishOrgEvent(
@@ -845,28 +894,30 @@ class SnsSqsPublisher {
     publishedBy = 'system',
     tx?: typeof db,
   ): Promise<Array<{ targetApp: string; success?: boolean; eventId?: string; error?: string }>> {
-    const results: Array<{ targetApp: string; success?: boolean; eventId?: string; error?: string }> =
-      [];
-    for (const targetApp of this.businessSuiteApps) {
-      if (tx) {
-        // tx mode: one attempt, no retry, no per-app catch — a failure MUST
-        // propagate so the caller's transaction rolls back (atomic with the write).
-        const result = await this.publishOrgAssignmentEvent(targetApp, eventType, tenantId, assignmentData, publishedBy, tx);
-        results.push({ targetApp, ...result });
-        continue;
+    return this.fanout(eventType, async () => {
+      const results: Array<{ targetApp: string; success?: boolean; eventId?: string; error?: string }> =
+        [];
+      for (const targetApp of this.businessSuiteApps) {
+        if (tx) {
+          // tx mode: one attempt, no retry, no per-app catch — a failure MUST
+          // propagate so the caller's transaction rolls back (atomic with the write).
+          const result = await this.publishOrgAssignmentEvent(targetApp, eventType, tenantId, assignmentData, publishedBy, tx);
+          results.push({ targetApp, ...result });
+          continue;
+        }
+        try {
+          const result = await this.withRetry(() =>
+            this.publishOrgAssignmentEvent(targetApp, eventType, tenantId, assignmentData, publishedBy)
+          );
+          results.push({ targetApp, ...result });
+        } catch (error: unknown) {
+          const err = error as Error;
+          Logger.log('error', 'general', 'publishOrgAssignmentEventToSuite', `Failed to publish org assignment event to ${targetApp} after retries`, { targetApp, error: err.message });
+          results.push({ targetApp, success: false, error: err.message });
+        }
       }
-      try {
-        const result = await this.withRetry(() =>
-          this.publishOrgAssignmentEvent(targetApp, eventType, tenantId, assignmentData, publishedBy)
-        );
-        results.push({ targetApp, ...result });
-      } catch (error: unknown) {
-        const err = error as Error;
-        Logger.log('error', 'general', 'publishOrgAssignmentEventToSuite', `Failed to publish org assignment event to ${targetApp} after retries`, { targetApp, error: err.message });
-        results.push({ targetApp, success: false, error: err.message });
-      }
-    }
-    return results;
+      return results;
+    });
   }
 
   async publishOrgAssignmentEvent(
@@ -983,6 +1034,7 @@ class SnsSqsPublisher {
     },
     publishedBy = 'system'
   ): Promise<Array<{ targetApp: string; success?: boolean; eventId?: string; error?: string }>> {
+    return this.fanout('configuration.updated', async () => {
     const results: Array<{ targetApp: string; success?: boolean; eventId?: string; error?: string }> = [];
     for (const targetApp of this.businessSuiteApps) {
       try {
@@ -1012,6 +1064,33 @@ class SnsSqsPublisher {
       }
     }
     return results;
+    });
+  }
+
+  /**
+   * Run a suite fan-out (one publishInterAppEvent per business-suite app) inside a
+   * single parent span. Each per-app publish already opens its own `publish <event>`
+   * span; without a shared parent those spans fragment into N disconnected root
+   * traces whenever the caller has NO active span (background jobs / schedulers).
+   * Wrapping the loop guarantees all N publishes — and their downstream consumers —
+   * stay on ONE trace. With an active caller span this just nests naturally (no-op
+   * for topology). Pass-through return value.
+   */
+  private fanout<T>(eventType: string, run: () => Promise<T>): Promise<T> {
+    return Sentry.startSpan(
+      {
+        name: `fanout ${eventType}`,
+        op: 'queue.publish',
+        attributes: {
+          'messaging.system': 'aws_sns',
+          'messaging.operation.name': 'publish',
+          'messaging.destination.name': 'suite',
+          'messaging.fanout': true,
+          'event.type': eventType,
+        },
+      },
+      run,
+    );
   }
 
   /**

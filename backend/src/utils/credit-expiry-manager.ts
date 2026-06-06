@@ -43,7 +43,14 @@ class CreditExpiryManager {
         }
         try {
           Logger.log('info', 'credits', 'expiry-cron', '[CreditExpiryManager] Running scheduled expiry check...');
-          const result = await CreditExpiryService.processExpiredCredits();
+          // Wrap the sweep in a span so every credit.expired publish it triggers
+          // runs under a valid, sampled trace. Without this the cron has no active
+          // span, the producer's injectTraceContext carries nothing, and the SQS
+          // consumer starts a fresh root — severing the cross-service trace.
+          const result = await Sentry.startSpan(
+            { name: 'credit-expiry.tick', op: 'cron', attributes: { 'cron.name': 'credit-expiry' } },
+            () => CreditExpiryService.processExpiredCredits(),
+          );
           this.errorCount = 0; // Reset error count on success
           Logger.log('info', 'credits', 'expiry-cron', '[CreditExpiryManager] Expiry check completed', { result });
         } catch (error) {
@@ -104,7 +111,10 @@ class CreditExpiryManager {
 
       // Run initial check after 30 seconds
       setTimeout(() => {
-        CreditExpiryService.processExpiredCredits().catch(error => {
+        Sentry.startSpan(
+          { name: 'credit-expiry.tick', op: 'cron', attributes: { 'cron.name': 'credit-expiry', 'cron.initial': true } },
+          () => CreditExpiryService.processExpiredCredits(),
+        ).catch(error => {
           const err = error as Error;
           Logger.log('error', 'credits', 'initial-expiry-check', '[CreditExpiryManager] Initial expiry check failed', { error: err.message, stack: err.stack });
         });

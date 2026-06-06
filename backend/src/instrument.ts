@@ -4,6 +4,7 @@ import * as Sentry from '@sentry/node';
 import { BatchSpanProcessor, type SpanProcessor } from '@opentelemetry/sdk-trace-base';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { IORedisInstrumentation } from '@opentelemetry/instrumentation-ioredis';
+import { AwsInstrumentation } from '@opentelemetry/instrumentation-aws-sdk';
 
 /**
  * Telemetry bootstrap. MUST be the first import in every entry point
@@ -78,9 +79,20 @@ if (dsn || otlpEndpoint) {
     openTelemetrySpanProcessors: spanProcessors,
     // Sentry bundles http/express/fastify/pg/mysql/mongo/graphql instrumentation.
     // ioredis is not bundled — add it for Valkey/Redis cache spans.
-    // (aws-sdk SNS/SQS instrumentation + manual queue propagation land in a later
-    // phase, together with empty-poll span suppression.)
-    openTelemetryInstrumentations: [new IORedisInstrumentation()],
+    openTelemetryInstrumentations: [
+      new IORedisInstrumentation(),
+      // AWS SDK v3 semantic spans: `SNS Publish <topic>`, `SQS ReceiveMessage/
+      // DeleteMessage <queue>`, `S3 <op> <bucket>`, Secrets Manager, etc. — with
+      // messaging attributes + AWS request IDs. suppressInternalInstrumentation
+      // emits ONE semantic span per call instead of that span PLUS a raw
+      // `POST https://sns…amazonaws.com/` http.client child (dedup).
+      // NOTE: cross-service SNS→SQS trace LINKING is carried by our own
+      // inject/extract (trace-context.ts) and is proven working — this layer is
+      // additive infra visibility, not the propagation mechanism. The aws-sdk
+      // SQS `process` span coexists with our manual `consume <event>` span (same
+      // trace, slight redundancy); we keep the manual span as authoritative.
+      new AwsInstrumentation({ suppressInternalInstrumentation: true }),
+    ],
     integrations: [
       Sentry.httpIntegration({
         // Drop incoming probe requests entirely (no span created).
@@ -93,6 +105,23 @@ if (dsn || otlpEndpoint) {
       if (event.request?.headers) {
         delete event.request.headers['authorization'];
         delete event.request.headers['cookie'];
+      }
+      return event;
+    },
+    // With aws-sdk instrumentation on, every SQS long-poll ReceiveMessage that
+    // returns no messages emits a `<queue> receive` root transaction (CONSUMER
+    // span). At long-poll cadence that's constant, zero-value noise. Drop the
+    // empty ones; keep receives that actually delivered messages (count > 0) and
+    // every other transaction.
+    beforeSendTransaction(event) {
+      const d = event.contexts?.trace?.data as Record<string, unknown> | undefined;
+      if (
+        d &&
+        d['messaging.system'] === 'aws_sqs' &&
+        d['messaging.operation.type'] === 'receive' &&
+        Number(d['messaging.batch.message_count'] ?? 0) === 0
+      ) {
+        return null;
       }
       return event;
     },

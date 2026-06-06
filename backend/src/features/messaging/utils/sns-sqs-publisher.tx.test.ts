@@ -22,6 +22,10 @@ vi.mock('./large-payload-store.js', () => ({
 vi.mock('@sentry/node', () => ({
   addBreadcrumb: vi.fn(), withScope: vi.fn((cb: (s: unknown) => void) => cb({ setTag: vi.fn(), setContext: vi.fn() })),
   captureException: vi.fn(), setTag: vi.fn(), setContext: vi.fn(),
+  // Producer-span wrapper around publish — pass through to the callback so the
+  // tx/outbox logic under test runs unchanged.
+  startSpan: vi.fn((_opts: unknown, cb: (span: unknown) => unknown) =>
+    cb({ setStatus: vi.fn(), setAttribute: vi.fn(), end: vi.fn() })),
 }));
 
 import { snsSqsPublisher } from './sns-sqs-publisher';
