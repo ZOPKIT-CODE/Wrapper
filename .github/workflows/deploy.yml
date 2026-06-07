@@ -27,7 +27,7 @@ on:
   # When prod is added: keep main -> staging, add a `production` branch -> prod.
   push:
     branches: [main]
-    paths: ["backend/**", "frontend/**", "deploy/ecs/**"]
+    paths: ["backend/**", "frontend/**", "deploy/ecs/**", "pnpm-lock.yaml", "package.json", "pnpm-workspace.yaml"]
   repository_dispatch:
     types: [deploy-service]
 
