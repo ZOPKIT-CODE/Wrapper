@@ -33,6 +33,7 @@ const MARKETING_NAV_PRODUCTS = [
 
 export const DEFAULT_MARKETING_NAV_ITEMS = [
   { name: 'Pricing', link: '/pricing' },
+  { name: 'Blog', link: '/blog' },
   { name: 'Contact Us', link: '/landing#contact' },
 ] as const;
 

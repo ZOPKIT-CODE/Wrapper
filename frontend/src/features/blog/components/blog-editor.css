@@ -1,0 +1,109 @@
+/* Medium/Notion-style reading + editing typography for the Tiptap editor. */
+.blog-prose {
+  font-size: 1.125rem;
+  line-height: 1.75;
+  color: #1a1a1a;
+  outline: none;
+}
+.blog-prose:focus { outline: none; }
+.blog-prose > * + * { margin-top: 0.9em; }
+.blog-prose h1 { font-size: 2rem; font-weight: 700; line-height: 1.2; margin-top: 1.4em; }
+.blog-prose h2 { font-size: 1.6rem; font-weight: 700; line-height: 1.25; margin-top: 1.4em; scroll-margin-top: 90px; }
+.blog-prose h3 { font-size: 1.3rem; font-weight: 600; line-height: 1.3; margin-top: 1.2em; scroll-margin-top: 90px; }
+.blog-prose p { margin: 0 0 0.2em; }
+.blog-prose ul,
+.blog-prose ol { padding-left: 1.5rem; }
+.blog-prose ul { list-style: disc; }
+.blog-prose ol { list-style: decimal; }
+.blog-prose li { margin: 0.25em 0; }
+.blog-prose blockquote {
+  border-left: 3px solid #111;
+  padding-left: 1rem;
+  color: #444;
+  font-style: italic;
+}
+.blog-prose pre {
+  background: #f6f8fa;
+  border-radius: 8px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  font-size: 0.95rem;
+}
+.blog-prose code {
+  background: #f0f0f0;
+  border-radius: 4px;
+  padding: 0.1em 0.35em;
+  font-size: 0.92em;
+}
+.blog-prose pre code { background: none; padding: 0; }
+.blog-prose a { color: #1a8917; text-decoration: underline; }
+.blog-prose img { max-width: 100%; height: auto; border-radius: 6px; margin: 0.6em 0; }
+/* Medium-style section divider */
+.blog-prose hr { border: none; margin: 2.4em 0; text-align: center; }
+.blog-prose hr::after { content: "• • •"; display: block; color: #9aa0a6; letter-spacing: 0.5em; font-size: 1.05rem; }
+
+/* lowlight (highlight.js) syntax-highlight tokens — github-light theme */
+.blog-prose .hljs-comment, .blog-prose .hljs-quote { color: #6a737d; font-style: italic; }
+.blog-prose .hljs-keyword, .blog-prose .hljs-selector-tag, .blog-prose .hljs-built_in, .blog-prose .hljs-literal { color: #d73a49; }
+.blog-prose .hljs-string, .blog-prose .hljs-attr, .blog-prose .hljs-template-string { color: #032f62; }
+.blog-prose .hljs-number, .blog-prose .hljs-meta { color: #005cc5; }
+.blog-prose .hljs-title, .blog-prose .hljs-section { color: #6f42c1; }
+.blog-prose .hljs-type, .blog-prose .hljs-class .hljs-title { color: #e36209; }
+.blog-prose .hljs-tag, .blog-prose .hljs-name { color: #22863a; }
+.blog-prose .hljs-attribute, .blog-prose .hljs-variable { color: #e36209; }
+
+/* Placeholder (extension-placeholder) */
+.blog-prose p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #adb5bd;
+  pointer-events: none;
+  height: 0;
+}
+
+/* ── Tables (Phase 3) — shared by the editor and the public reader ── */
+.blog-prose table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  margin: 1.6em 0;
+  font-size: 0.98rem;
+  line-height: 1.5;
+}
+.blog-prose th,
+.blog-prose td {
+  position: relative;          /* anchors the selected-cell overlay in the editor */
+  border: 1px solid #e2e4e8;
+  padding: 0.5em 0.75em;
+  text-align: left;
+  vertical-align: top;
+}
+.blog-prose th { background: #f6f8fa; font-weight: 600; }
+/* cells hold paragraphs — drop their block spacing so rows stay compact */
+.blog-prose th > *,
+.blog-prose td > * { margin: 0; }
+.blog-prose th > * + *,
+.blog-prose td > * + * { margin-top: 0.4em; }
+/* editor: ProseMirror tags the active cell(s) for column/row operations */
+.blog-prose .selectedCell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(26, 137, 23, 0.08);
+  pointer-events: none;
+}
+
+/* ── Callouts / admonitions (Phase 3) — shared by editor and reader ── */
+.blog-prose .callout {
+  margin: 1.6em 0;
+  padding: 0.85em 1.1em;
+  border-left: 4px solid #94a3b8;
+  border-radius: 8px;
+  background: #f1f5f9;
+}
+.blog-prose .callout > * { margin: 0; }
+.blog-prose .callout > * + * { margin-top: 0.5em; }
+.blog-prose .callout-info    { background: #eff6ff; border-color: #3b82f6; }
+.blog-prose .callout-success { background: #ecfdf3; border-color: #16a34a; }
+.blog-prose .callout-warning { background: #fffbeb; border-color: #f59e0b; }
+.blog-prose .callout-danger  { background: #fef2f2; border-color: #ef4444; }

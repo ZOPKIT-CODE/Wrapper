@@ -24,6 +24,7 @@ import {
   RolesPage, RoleDetailsPage, RoleBuilderPage, UserManagementPage, OrganizationPage, OrganizationCreatePage,
   Permissions, Settings,   AdminDashboardPage, TenantDetailsPage,
   CampaignDetailsPage, CreateCampaignPage, EmailPreviewPage, InviteAcceptDemo, NotFound,
+  PublicBlogListPage, PublicBlogPostPage, PublicBlogTagPage, PublicBlogSeriesPage, BlogEditorPage,
 } from './lazyPages'
 
 function LoadingScreen() {
@@ -217,6 +218,15 @@ const dashboardSettingsRoute = createRoute({ getParentRoute: () => dashboardLayo
 const dashboardUsersRoute = createRoute({ getParentRoute: () => dashboardLayoutRoute, path: '/users', component: () => <AdminRoute><UserManagementPage /></AdminRoute> })
 const dashboardActivityRoute = createRoute({ getParentRoute: () => dashboardLayoutRoute, path: '/activity', component: () => <AdminRoute><ActivityPage /></AdminRoute> })
 
+// Public blog READER on the marketing site (read-only).
+const blogListRoute = createRoute({ getParentRoute: () => rootRoute, path: '/blog', component: PublicBlogListPage })
+const blogTagRoute = createRoute({ getParentRoute: () => rootRoute, path: '/blog/tag/$tag', component: PublicBlogTagPage })
+const blogSeriesRoute = createRoute({ getParentRoute: () => rootRoute, path: '/blog/series/$slug', component: PublicBlogSeriesPage })
+const blogPostRoute = createRoute({ getParentRoute: () => rootRoute, path: '/blog/$slug', component: PublicBlogPostPage })
+// Blog AUTHORING lives in the company admin area (list is a tab in AdminDashboard).
+const companyAdminBlogNewRoute = createRoute({ getParentRoute: () => rootRoute, path: '/company-admin/blog/new', component: BlogEditorPage })
+const companyAdminBlogEditRoute = createRoute({ getParentRoute: () => rootRoute, path: '/company-admin/blog/$postId/edit', component: BlogEditorPage })
+
 // Company Admin (auth wrappers commented out for local/dev access — restore before production)
 const companyAdminTenantRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -311,6 +321,12 @@ const routeTree = rootRoute.addChildren([
     dashboardUsersRoute,
     dashboardActivityRoute,
   ]),
+  blogListRoute,
+  blogTagRoute,
+  blogSeriesRoute,
+  blogPostRoute,
+  companyAdminBlogNewRoute,
+  companyAdminBlogEditRoute,
   companyAdminTenantRoute,
   companyAdminCampaignRoute,
   companyAdminCreateCampaignRoute,
