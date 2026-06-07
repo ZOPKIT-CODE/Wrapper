@@ -28,7 +28,7 @@ export function useVersionCheck(onUpdateAvailable: (forced: boolean) => void) {
 
     async function check() {
       try {
-        const res = await fetch('/api/version', { cache: 'no-store' });
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL ?? ''}/api/version`, { cache: 'no-store' });
         if (!res.ok) return;
         const { sha, minRequiredVersion } = await res.json();
         if (cancelled) return;

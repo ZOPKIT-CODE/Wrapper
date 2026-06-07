@@ -44,28 +44,10 @@ export function ThemeProvider({
     const root = window.document.documentElement
 
     const updateTheme = () => {
-      let resolvedTheme: 'light' | 'dark' | 'monochrome'
-
-      if (theme === 'system') {
-        const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-        resolvedTheme = systemTheme
-      } else if (theme === 'monochrome') {
-        resolvedTheme = 'monochrome'
-      } else {
-        resolvedTheme = theme
-      }
-
-      setActualTheme(resolvedTheme)
-
-      // Remove all theme classes first
+      // Dark mode removed — the app is always light. Ignore stored/system theme
+      // and never apply the `dark`/`monochrome` root classes.
+      setActualTheme('light')
       root.classList.remove('dark', 'monochrome')
-
-      if (resolvedTheme === 'dark') {
-        root.classList.add('dark')
-      } else if (resolvedTheme === 'monochrome') {
-        root.classList.add('monochrome')
-      } else {
-      }
     }
 
     updateTheme()

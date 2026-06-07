@@ -35,9 +35,14 @@ interface CognitoAuthContextValue {
 
 const CognitoAuthContext = createContext<CognitoAuthContextValue | null>(null);
 
+// Auth talks to the backend host directly. Relative '/api' only works in dev (Vite
+// proxy); in staging/prod the SPA and API are different origins, so prefix with the
+// API base (VITE_API_BASE_URL, e.g. https://api.staging.zopkit.com). Empty -> relative.
+const API_BASE = ((import.meta.env.VITE_API_BASE_URL as string | undefined) ?? '').replace(/\/$/, '');
+
 async function fetchMe(): Promise<AuthUser | null> {
   try {
-    const res = await fetch('/api/auth/me', { credentials: 'include', headers: { Accept: 'application/json' } });
+    const res = await fetch(`${API_BASE}/api/auth/me`, { credentials: 'include', headers: { Accept: 'application/json' } });
     if (!res.ok) return null;
     const body = await res.json().catch(() => null) as { data?: { user?: AuthUser; organization?: unknown } } | null;
     const user = body?.data?.user ?? null;
@@ -101,12 +106,12 @@ function startBackendLogin(opts?: LoginOptions): void {
     params.set('state', opts.state);
   }
   const qs = params.toString();
-  window.location.href = `/api/auth/oauth/login${qs ? `?${qs}` : ''}`;
+  window.location.href = `${API_BASE}/api/auth/oauth/login${qs ? `?${qs}` : ''}`;
 }
 
 async function backendLogout(): Promise<void> {
   try {
-    const res = await fetch('/api/auth/logout', {
+    const res = await fetch(`${API_BASE}/api/auth/logout`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },

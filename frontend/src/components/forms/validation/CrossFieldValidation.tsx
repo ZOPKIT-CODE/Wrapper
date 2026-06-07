@@ -163,7 +163,7 @@ export class AsyncValidation {
    */
   static async emailUnique(email: string): Promise<boolean> {
     try {
-      const response = await fetch(`/api/check-email?email=${encodeURIComponent(email)}`);
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL ?? ''}/api/check-email?email=${encodeURIComponent(email)}`);
       return response.ok;
     } catch {
       return false;
@@ -175,7 +175,7 @@ export class AsyncValidation {
    */
   static async usernameAvailable(username: string): Promise<boolean> {
     try {
-      const response = await fetch(`/api/check-username?username=${encodeURIComponent(username)}`);
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL ?? ''}/api/check-username?username=${encodeURIComponent(username)}`);
       return response.ok;
     } catch {
       return false;
