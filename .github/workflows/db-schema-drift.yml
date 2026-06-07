@@ -28,9 +28,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # No `version:` here — the repo pins pnpm via package.json "packageManager"
+      # (pnpm@9.15.4). Specifying both makes action-setup@v4 error with
+      # "Multiple versions of pnpm specified" (ERR_PNPM_BAD_PM_VERSION).
       - uses: pnpm/action-setup@v4
-        with:
-          version: 9
 
       - uses: actions/setup-node@v4
         with:

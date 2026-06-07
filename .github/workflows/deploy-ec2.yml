@@ -1,5 +1,12 @@
-# Deploy Wrapper to EC2
-# Trigger: push to main, or manual dispatch
+# ⚠️ DEPRECATED — superseded by `.github/workflows/deploy.yml` (ECS Fargate).
+#
+# This was the legacy EC2 deploy (rsync + PM2 + nginx over SSH). The suite now
+# deploys to ECS Fargate via OIDC; this workflow would SSH-deploy to a stale box.
+# Auto-triggers (push to main + nightly cron) have been REMOVED so it can no
+# longer fire on its own. It is also disabled at the GitHub level
+# (`gh workflow disable "Deploy to EC2"`). The `workflow_dispatch` trigger is
+# kept ONLY as a deliberate break-glass path for an emergency EC2 rollback;
+# re-enabling it is a conscious choice. Safe to delete once EC2 is decommissioned.
 #
 # Job flow:
 #   test ──► build ──► deploy
@@ -9,11 +16,7 @@
 name: Deploy to EC2
 
 on:
-  push:
-    branches: [main]
-  workflow_dispatch:
-  schedule:
-    - cron: '0 1 * * *'   # 1 AM UTC every night
+  workflow_dispatch:   # break-glass only — see deprecation banner above
 
 # Cancel in-progress deploy if a newer commit is pushed
 concurrency:
