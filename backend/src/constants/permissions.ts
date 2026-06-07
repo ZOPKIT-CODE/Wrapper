@@ -41,6 +41,10 @@ export const PERMISSIONS = {
   ADMIN_USERS_VIEW: 'admin.users.view',
   ADMIN_USERS_PROMOTE: 'admin.users.promote',
 
+  // Company blog (authored from the company admin dashboard).
+  ADMIN_BLOG_VIEW: 'admin.blog.view',
+  ADMIN_BLOG_MANAGE: 'admin.blog.manage',
+
   // ── Analytics ─────────────────────────────────────────────────────
   ANALYTICS_DATA_READ: 'analytics.data.read',
 

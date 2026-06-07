@@ -49,6 +49,24 @@ const PUBLIC_ROUTES: string[] = [
   '/api/demo',
   '/api/email-preview',
   '/docs',
+  // Public blog READ surface only (the marketing-site reader). Authoring +
+  // management routes under /api/blog stay authenticated (company-admin only).
+  '/api/blog/feed',
+  '/api/blog/search',
+  '/api/blog/by-slug',
+  '/api/blog/media',
+  // Comments: public submit + public approved list; the moderation queue stays gated.
+  '/api/blog/comments/submit',
+  '/api/blog/comments/by-slug',
+  // Series: public series-by-slug page + public series list; admin management stays gated.
+  '/api/blog/series/by-slug',
+  '/api/blog/series/list',
+  // Public SEO artifacts served at the root.
+  '/sitemap.xml',
+  '/rss.xml',
+  '/robots.txt',
+  // Crawler-HTML / SPA-fallback reader (dynamic rendering): /blog and /blog/:slug.
+  '/blog',
 ];
 
 interface UserRecord {
