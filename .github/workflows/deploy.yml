@@ -1,0 +1,155 @@
+# Reusable suite deploy — build → push → terraform release → migrate → smoke.
+# Mirrors deploy/ecs/deploy-service.sh, but in CI with OIDC (no stored AWS keys).
+#
+# Triggers:
+#   • workflow_dispatch        — manual: pick the service (+ optional tag). Rollback = pass an old SHA.
+#   • push to `staging`        — auto-deploys wrapper-web + the wrapper frontend.
+#   • repository_dispatch      — CRM/FA repos fire this AFTER pushing their own image
+#                                (type: deploy-service, payload {service, image_tag}).
+#
+# One-time setup: see deploy/ci/README.md (role ARN is wired below; CRM/FA need a PAT).
+
+name: deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      service:
+        description: "ECS service to deploy"
+        type: choice
+        options: [wrapper-web, crm-web, fa-web, fa-consumer]
+        default: wrapper-web
+      image_tag:
+        description: "Image tag to deploy (blank = build from this commit; for rollback pass an existing SHA)"
+        required: false
+        default: ""
+  # Staging-only for now: pushes to the default branch deploy to staging.
+  # When prod is added: keep main -> staging, add a `production` branch -> prod.
+  push:
+    branches: [main]
+    paths: ["backend/**", "frontend/**", "deploy/ecs/**"]
+  repository_dispatch:
+    types: [deploy-service]
+
+permissions:
+  id-token: write   # OIDC
+  contents: write   # commit the deployed image-tag record
+
+concurrency:
+  group: deploy-${{ github.event.inputs.service || github.event.client_payload.service || 'wrapper-web' }}
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: us-east-1
+  TF_DIR: deploy/ecs/terraform
+  ECR_REGISTRY: 207567767101.dkr.ecr.us-east-1.amazonaws.com
+  ROLE_ARN: arn:aws:iam::207567767101:role/zopkit-staging-github-deploy
+  # service the run targets (dispatch payload > manual input > default for push)
+  SERVICE: ${{ github.event.client_payload.service || github.event.inputs.service || 'wrapper-web' }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve service config
+        id: cfg
+        run: |
+          case "$SERVICE" in
+            wrapper-web) echo "ecr=wrapper-backend"; echo "ecr=wrapper-backend" >>"$GITHUB_OUTPUT"; echo "migrate=true" >>"$GITHUB_OUTPUT"; echo "health=https://api.staging.zopkit.com/health" >>"$GITHUB_OUTPUT"; echo "build_here=true" >>"$GITHUB_OUTPUT" ;;
+            crm-web)     echo "ecr=crm-backend" >>"$GITHUB_OUTPUT"; echo "migrate=true"  >>"$GITHUB_OUTPUT"; echo "health=https://crm-api.staging.zopkit.com/health" >>"$GITHUB_OUTPUT"; echo "build_here=false" >>"$GITHUB_OUTPUT" ;;
+            fa-web)      echo "ecr=fa-backend"  >>"$GITHUB_OUTPUT"; echo "migrate=true"  >>"$GITHUB_OUTPUT"; echo "health=https://accounting-api.staging.zopkit.com/api/health/health/live" >>"$GITHUB_OUTPUT"; echo "build_here=false" >>"$GITHUB_OUTPUT" ;;
+            fa-consumer) echo "ecr=fa-backend"  >>"$GITHUB_OUTPUT"; echo "migrate=false" >>"$GITHUB_OUTPUT"; echo "health=" >>"$GITHUB_OUTPUT"; echo "build_here=false" >>"$GITHUB_OUTPUT" ;;
+            *) echo "Unknown service $SERVICE"; exit 1 ;;
+          esac
+          # Image tag: explicit input/payload, else this commit's short SHA.
+          TAG="${{ github.event.inputs.image_tag || github.event.client_payload.image_tag }}"
+          [ -n "$TAG" ] || TAG="$(git rev-parse --short HEAD)"
+          echo "tag=$TAG" >>"$GITHUB_OUTPUT"
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: aws-actions/amazon-ecr-login@v2
+
+      # Build only when this is the wrapper repo's own service. CRM/FA build+push in
+      # their own repos and dispatch here with the tag already in ECR.
+      - name: Build & push image
+        if: steps.cfg.outputs.build_here == 'true'
+        run: |
+          IMAGE="$ECR_REGISTRY/${{ steps.cfg.outputs.ecr }}:${{ steps.cfg.outputs.tag }}"
+          docker build --platform linux/amd64 -f backend/Dockerfile --target production -t "$IMAGE" .
+          docker push "$IMAGE"
+
+      - uses: hashicorp/setup-terraform@v3
+        with: { terraform_wrapper: false }
+
+      - name: Terraform release (register new task def for this service)
+        working-directory: ${{ env.TF_DIR }}
+        run: |
+          terraform init -input=false
+          # merge this service's tag into the committed tag record
+          node -e 'const fs=require("fs");const f="image-tags.auto.tfvars.json";const j=fs.existsSync(f)?JSON.parse(fs.readFileSync(f)):{service_image_tags:{}};j.service_image_tags=j.service_image_tags||{};j.service_image_tags[process.argv[1]]=process.argv[2];fs.writeFileSync(f,JSON.stringify(j,null,2)+"\n")' "$SERVICE" "${{ steps.cfg.outputs.tag }}"
+          terraform apply -auto-approve -target="module.services[\"$SERVICE\"]"
+
+      - name: Run DB migrations (web services)
+        if: steps.cfg.outputs.migrate == 'true'
+        working-directory: ${{ env.TF_DIR }}
+        run: |
+          CL=zopkit-staging-ecs; SVC=zopkit-staging-$SERVICE
+          TD=$(aws ecs describe-services --cluster $CL --services $SVC --query 'services[0].taskDefinition' --output text)
+          SUB=$(aws ecs describe-services --cluster $CL --services $SVC --query 'services[0].networkConfiguration.awsvpcConfiguration.subnets' --output text | tr '\t' ',')
+          SG=$(aws ecs describe-services --cluster $CL --services $SVC --query 'services[0].networkConfiguration.awsvpcConfiguration.securityGroups[0]' --output text)
+          T=$(aws ecs run-task --cluster $CL --launch-type FARGATE --task-definition "$TD" \
+            --overrides "{\"containerOverrides\":[{\"name\":\"$SERVICE\",\"command\":[\"node\",\"dist/db/run-migrations.js\"]}]}" \
+            --network-configuration "awsvpcConfiguration={subnets=[$SUB],securityGroups=[$SG],assignPublicIp=ENABLED}" --query 'tasks[0].taskArn' --output text)
+          aws ecs wait tasks-stopped --cluster $CL --tasks "$T"
+          EC=$(aws ecs describe-tasks --cluster $CL --tasks "$T" --query 'tasks[0].containers[0].exitCode' --output text)
+          [ "$EC" = "0" ] || { echo "::error::migration exited $EC"; exit 1; }
+
+      - name: Wait for steady state
+        run: aws ecs wait services-stable --cluster zopkit-staging-ecs --services zopkit-staging-$SERVICE
+
+      - name: Smoke test
+        if: steps.cfg.outputs.health != ''
+        run: |
+          for i in $(seq 1 12); do
+            c=$(curl -s -o /dev/null -w '%{http_code}' "${{ steps.cfg.outputs.health }}" || true)
+            [ "$c" = "200" ] && { echo "health 200"; exit 0; }
+            echo "($i) $c"; sleep 6
+          done; echo "::error::health never 200"; exit 1
+
+      - name: Commit deployed tag record
+        if: steps.cfg.outputs.build_here == 'true'
+        run: |
+          cd ${{ env.TF_DIR }}
+          git config user.name "github-actions"; git config user.email "actions@github.com"
+          git add image-tags.auto.tfvars.json
+          git diff --cached --quiet || git commit -m "ci(deploy): $SERVICE -> ${{ steps.cfg.outputs.tag }} [skip ci]"
+          git push || true
+
+  # Wrapper frontend: only on the wrapper repo's own deploys of wrapper-web.
+  frontend:
+    needs: deploy
+    if: ${{ (github.event.inputs.service || 'wrapper-web') == 'wrapper-web' && github.event_name != 'repository_dispatch' }}
+    runs-on: ubuntu-latest
+    permissions: { id-token: write, contents: read }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with: { role-to-assume: "arn:aws:iam::207567767101:role/zopkit-staging-github-deploy", aws-region: us-east-1 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: Build SPA
+        working-directory: frontend
+        run: corepack enable && pnpm install --frozen-lockfile && npx vite build --mode staging
+      - name: Deploy SPA
+        working-directory: frontend
+        run: |
+          B=zopkit-staging-wrapper-fe; D=E34U1BABF6H31O
+          aws s3 sync dist s3://$B --delete --cache-control "public,max-age=31536000,immutable" --exclude index.html --exclude "sw.js*"
+          aws s3 sync dist s3://$B --cache-control "no-cache" --exclude "*" --include index.html --include "sw.js*"
+          aws cloudfront create-invalidation --distribution-id $D --paths "/*"
