@@ -17,6 +17,7 @@ import ApplicationAssignmentManager from './ApplicationAssignmentManager';
 import CreditOperationCostManager from './credit-configuration/CreditOperationCostManager';
 import SeasonalCreditsManagement from './SeasonalCreditsManagement';
 import { ContactSubmissionsTable } from './ContactSubmissionsTable';
+import BlogAdminPanel from '@/features/blog/components/BlogAdminPanel';
 
 interface DashboardStats {
   tenantStats: {
@@ -61,6 +62,7 @@ const AdminDashboard: React.FC = () => {
       'clients',
       'operation-costs',
       'seasonal-credits',
+      'blog',
     ] as const,
     defaultTab: 'overview',
   });
@@ -166,7 +168,7 @@ const AdminDashboard: React.FC = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-7 bg-[#1B2E5A] text-white">
+        <TabsList className="grid w-full grid-cols-8 bg-[#1B2E5A] text-white">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="tenants-entities">Tenants & Entities</TabsTrigger>
           <TabsTrigger value="credits">Credits</TabsTrigger>
@@ -174,6 +176,7 @@ const AdminDashboard: React.FC = () => {
           <TabsTrigger value="clients">Clients</TabsTrigger>
           <TabsTrigger value="operation-costs">Operation Costs</TabsTrigger>
           <TabsTrigger value="seasonal-credits">Seasonal Credits</TabsTrigger>
+          <TabsTrigger value="blog">Blog</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -295,6 +298,10 @@ const AdminDashboard: React.FC = () => {
 
         <TabsContent value="seasonal-credits">
           <SeasonalCreditsManagement />
+        </TabsContent>
+
+        <TabsContent value="blog">
+          <BlogAdminPanel />
         </TabsContent>
       </Tabs>
     </Container>
