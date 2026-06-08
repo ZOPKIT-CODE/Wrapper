@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import { setUpdateAvailableHandler } from '@/lib/pwa/registerSW';
 import { onPeerReloaded } from '@/lib/pwa/crossTabSync';
 
 const POLL_INTERVAL = 5 * 60 * 1000; // 5 minutes
@@ -93,8 +92,8 @@ export function useVersionCheck(onUpdateAvailable: (forced: boolean) => void) {
     document.addEventListener('visibilitychange', visHandler);
     const id = window.setInterval(check, POLL_INTERVAL);
 
-    // Also surface SW-detected updates through the same callback.
-    setUpdateAvailableHandler(() => onUpdateAvailable(false));
+    // (Service worker removed — new-version detection is purely /api/version
+    // polling above, plus the cross-tab signal below.)
 
     // Cross-tab sync: when another tab reloads for a newer version, schedule a
     // gentle notification in THIS tab after a short delay. This lets users finish

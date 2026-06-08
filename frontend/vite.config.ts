@@ -37,6 +37,17 @@ export default defineConfig(({ mode }) => {
     react(),
     tailwindcss(),
     VitePWA({
+      // SERVICE WORKER REMOVED. selfDestroying ships a tiny sw.js that, when an
+      // existing client's browser does its independent sw.js update check,
+      // UNREGISTERS the old service worker, deletes its caches, and reloads the
+      // page — so users who already had the PWA installed are cleanly migrated
+      // off it (they otherwise keep serving the old cached app forever). New
+      // visitors effectively get no SW. Freshness now comes purely from
+      // CloudFront (index.html is no-cache + invalidated per deploy) and the
+      // /api/version banner that prompts a reload. The workbox/manifest options
+      // below are ignored while selfDestroying is on; kept so a future revert is
+      // a one-line change. Once telemetry shows old SWs are gone, drop VitePWA.
+      selfDestroying: true,
       registerType: 'prompt',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
