@@ -15,3 +15,5 @@ Organized documentation by domain:
   - `ONBOARDING_VERIFICATION.md` - onboarding verification flows and checks.
 - `operations/`
   - `BACKEND_LOG_ISSUES.md` - backend logging issues and operational debugging notes.
+
+- [New Developer Guide](NEW_DEVELOPER_GUIDE.md) — full lifecycle: codebase → feature → review → ship, with the legacy-safety rules.
