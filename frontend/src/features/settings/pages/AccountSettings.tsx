@@ -14,6 +14,7 @@ import {
   Save,
 } from 'lucide-react'
 import { api } from '@/lib/api'
+import axios from 'axios'
 import { useToast } from '@/features/onboarding/components/Toast'
 import { useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '@/hooks/useSharedQueries'
@@ -162,7 +163,7 @@ export const AccountSettings: React.FC = () => {
         if (tenantData.logoUrl && isMounted) {
           setLogoPreview(tenantData.logoUrl)
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         if (!isMounted) return
         console.error('Failed to load tenant data:', error)
         addToast('Failed to load account settings. Please try again.', {
@@ -250,11 +251,13 @@ export const AccountSettings: React.FC = () => {
         // Refresh tenant cache so logo/name updates appear in sidebar immediately
         queryClient.invalidateQueries({ queryKey: queryKeys.tenant })
         addToast('Account settings updated successfully', { type: 'success' })
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('Failed to save account settings:', error)
+        const serverError = axios.isAxiosError(error)
+          ? (error.response?.data as { error?: string } | undefined)?.error
+          : undefined
         addToast(
-          error.response?.data?.error ||
-            'Failed to save account settings. Please try again.',
+          serverError || 'Failed to save account settings. Please try again.',
           { type: 'error' }
         )
       } finally {

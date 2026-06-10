@@ -59,8 +59,8 @@ type DashboardRole = Role
 
 // Normalize permissions - convert JSON strings to objects
 const normalizePermissions = (
-  permissions: any
-): Record<string, any> | string[] => {
+  permissions: unknown
+): Record<string, unknown> | string[] => {
   if (typeof permissions === 'string') {
     try {
       return JSON.parse(permissions)
@@ -69,11 +69,13 @@ const normalizePermissions = (
       return {}
     }
   }
-  return permissions
+  return permissions as Record<string, unknown> | string[]
 }
 
 // Utility function to handle both permission formats and provide consistent summaries
-const getPermissionSummary = (permissions: Record<string, any> | string[]) => {
+const getPermissionSummary = (
+  permissions: Record<string, unknown> | string[]
+) => {
   // Normalize permissions first
   const normalizedPerms = normalizePermissions(permissions)
   // Use the imported utility function
@@ -149,7 +151,7 @@ export function RoleManagementDashboard() {
 
       // Apply sorting
       filteredRoles.sort((a, b) => {
-        let aVal: any, bVal: any
+        let aVal: string | number, bVal: string | number
         switch (sortBy) {
           case 'name':
             aVal = a.roleName?.toLowerCase() || ''
@@ -245,9 +247,10 @@ export function RoleManagementDashboard() {
         } else {
           toast.error(response.data.error || 'Failed to delete role')
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('Failed to delete role:', error)
-        toast.error(error.response?.data?.message || 'Failed to delete role')
+        const apiError = error as { response?: { data?: { message?: string } } }
+        toast.error(apiError.response?.data?.message || 'Failed to delete role')
         throw error
       }
     },
@@ -268,9 +271,12 @@ export function RoleManagementDashboard() {
         } else {
           toast.error(response.data.error || 'Failed to delete roles')
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('Failed to delete roles:', error)
-        toast.error(error.response?.data?.message || 'Failed to delete roles')
+        const apiError = error as { response?: { data?: { message?: string } } }
+        toast.error(
+          apiError.response?.data?.message || 'Failed to delete roles'
+        )
         throw error
       }
     },
@@ -383,13 +389,19 @@ export function RoleManagementDashboard() {
     const permissionSummary = getPermissionSummary(role.permissions)
     const isReadOnlyRole = role.roleName === 'Organization Admin'
 
-    // Use computed fields from API if available
+    // Use computed fields from API if available. These aggregate counts are
+    // returned by some endpoints but are not part of the base Role interface.
+    const roleWithCounts = role as Role & {
+      permissionCount?: number
+      moduleCount?: number
+      applicationCount?: number
+    }
     const displayCount =
-      (role as any).permissionCount || permissionSummary.total
+      roleWithCounts.permissionCount || permissionSummary.total
     const displayModules =
-      (role as any).moduleCount || permissionSummary.modules
+      roleWithCounts.moduleCount || permissionSummary.modules
     const displayApps =
-      (role as any).applicationCount || permissionSummary.mainModules
+      roleWithCounts.applicationCount || permissionSummary.mainModules
 
     return (
       <tr
@@ -868,8 +880,8 @@ export function RoleManagementDashboard() {
                 value={`${sortBy}-${sortOrder}`}
                 onValueChange={(value: string) => {
                   const [field, order] = value.split('-')
-                  setSortBy(field as any)
-                  setSortOrder(order as any)
+                  setSortBy(field as 'name' | 'created' | 'users' | 'modified')
+                  setSortOrder(order as 'asc' | 'desc')
                 }}
               >
                 <SelectTrigger

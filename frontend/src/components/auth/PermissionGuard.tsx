@@ -62,7 +62,10 @@ export function PermissionGuard({
             } else {
               // Format: permissions: [{ key: 'company:admin:access', isGranted: true }, ...]
               hasRequiredPermission = allPermissions.permissions.some(
-                (p: any) => p.key === requiredPermission && p.isGranted === true
+                (p: string | { key?: string; isGranted?: boolean }) =>
+                  typeof p !== 'string' &&
+                  p.key === requiredPermission &&
+                  p.isGranted === true
               )
             }
           }
@@ -73,10 +76,11 @@ export function PermissionGuard({
           allPermissions: allPermissions?.permissions,
           permissionFormat: typeof allPermissions?.permissions?.[0],
           hasRequiredPermission,
-          matchingPermission: allPermissions?.permissions?.find((p: any) =>
-            typeof p === 'string'
-              ? p === requiredPermission
-              : p.key === requiredPermission
+          matchingPermission: allPermissions?.permissions?.find(
+            (p: string | { key?: string }) =>
+              typeof p === 'string'
+                ? p === requiredPermission
+                : p.key === requiredPermission
           ),
         })
 

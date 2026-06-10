@@ -16,6 +16,7 @@ import {
   Workflow,
   GraduationCap,
   Server,
+  type LucideIcon,
 } from 'lucide-react'
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion'
 import { getIndustryBySlug } from '@/data/industryPages'
@@ -89,7 +90,7 @@ const IndustryWorkflowVisualizer: React.FC<IndustryWorkflowVisualizerProps> = ({
   ]
 
   const getAppIcon = (appName: string) => {
-    const iconMap: { [key: string]: any } = {
+    const iconMap: { [key: string]: LucideIcon } = {
       'Operations Management': Package,
       'Financial Accounting': DollarSign,
       'Affiliate Connect': Gift,

@@ -129,7 +129,7 @@ export const useRoleMutations = () => {
       queryClient.invalidateQueries({ queryKey: roleKeys.lists() })
       toast.success(`Role "${data.roleName}" created successfully!`)
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(error.message || 'Failed to create role')
     },
   })
@@ -143,7 +143,7 @@ export const useRoleMutations = () => {
       queryClient.setQueryData(roleKeys.detail(data.roleId), data)
       toast.success(`Role "${data.roleName}" updated successfully!`)
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(error.message || 'Failed to update role')
     },
   })
@@ -157,7 +157,7 @@ export const useRoleMutations = () => {
       queryClient.removeQueries({ queryKey: roleKeys.detail(roleId) })
       toast.success('Role deleted successfully!')
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(error.message || 'Failed to delete role')
     },
   })
@@ -173,7 +173,7 @@ export const useRoleMutations = () => {
       })
       toast.success(`${roleIds.length} roles deleted successfully!`)
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(error.message || 'Failed to delete roles')
     },
   })

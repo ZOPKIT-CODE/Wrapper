@@ -24,7 +24,41 @@ import {
   CostChanges,
   CostTemplate,
   ChangeImpact,
+  Permission,
 } from './components'
+
+// Shape of the tenant configuration payload returned by the API and consumed
+// by CreditConfigurationBuilder. Kept structurally compatible with that
+// component's local TenantConfigurations interface.
+interface TenantConfigurations {
+  configurations: {
+    operations: Array<{ operationCode: string; [key: string]: unknown }>
+    modules: Array<{ moduleCode: string; [key: string]: unknown }>
+  }
+  [key: string]: unknown
+}
+
+// Raw (pre-normalization) shapes as delivered by the applications API.
+interface RawApplicationModule {
+  moduleId: string
+  moduleCode: string
+  moduleName: string
+  description?: string
+  isCore?: boolean
+  permissions?: Permission[]
+}
+
+interface RawApplication {
+  appId: string
+  appCode: string
+  appName: string
+  description?: string
+  icon?: string
+  baseUrl?: string
+  isCore?: boolean
+  sortOrder?: number
+  modules?: RawApplicationModule[]
+}
 
 // Main component - significantly simplified
 const CreditOperationCostManager: React.FC = () => {
@@ -36,7 +70,8 @@ const CreditOperationCostManager: React.FC = () => {
 
   // UI state
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null)
-  const [tenantConfigurations, setTenantConfigurations] = useState<any>(null)
+  const [tenantConfigurations, setTenantConfigurations] =
+    useState<TenantConfigurations | null>(null)
   const [activeTab, setActiveTab] = useState('global')
   const [searchTerm, setSearchTerm] = useState('')
   const [costChanges, setCostChanges] = useState<CostChanges>({})
@@ -96,8 +131,8 @@ const CreditOperationCostManager: React.FC = () => {
       const response = await applicationAssignmentAPI.getApplications({
         includeModules: true,
       })
-      const apps = response.data.data.applications || []
-      const transformedApps = apps.map((app: any) => ({
+      const apps: RawApplication[] = response.data.data.applications || []
+      const transformedApps = apps.map((app: RawApplication) => ({
         appId: app.appId,
         appCode: app.appCode,
         appName: app.appName,
@@ -106,7 +141,7 @@ const CreditOperationCostManager: React.FC = () => {
         baseUrl: app.baseUrl || '',
         isCore: app.isCore || false,
         sortOrder: app.sortOrder || 0,
-        modules: (app.modules || []).map((module: any) => ({
+        modules: (app.modules || []).map((module: RawApplicationModule) => ({
           moduleId: module.moduleId,
           moduleCode: module.moduleCode,
           moduleName: module.moduleName,

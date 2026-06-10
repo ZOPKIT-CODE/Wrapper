@@ -1,29 +1,38 @@
-import { z } from 'zod';
+import { z } from 'zod'
 
 /**
  * Union type for all possible form field values
  */
-export type FormValue = string | number | boolean | string[] | number[] | File | File[] | null | undefined;
+export type FormValue =
+  | string
+  | number
+  | boolean
+  | string[]
+  | number[]
+  | File
+  | File[]
+  | null
+  | undefined
 
 /**
  * Record type for form values
  */
-export type FormValues = Record<string, FormValue>;
+export type FormValues = Record<string, FormValue>
 
 /**
  * Supported field types for the multi-step form
  */
-export type FieldType = 
-  | 'text' 
-  | 'textarea' 
-  | 'email' 
-  | 'password' 
-  | 'number' 
-  | 'date' 
-  | 'select' 
-  | 'radio' 
-  | 'checkbox' 
-  | 'switch' 
+export type FieldType =
+  | 'text'
+  | 'textarea'
+  | 'email'
+  | 'password'
+  | 'number'
+  | 'date'
+  | 'select'
+  | 'radio'
+  | 'checkbox'
+  | 'switch'
   | 'file'
   | 'url'
   | 'tel'
@@ -33,91 +42,97 @@ export type FieldType =
   | 'multiSelect'
   | 'dateRange'
   | 'time'
-  | 'dateTime';
+  | 'dateTime'
 
 /**
  * Base field configuration interface
  */
 export interface BaseFormField {
   /** Unique identifier for the field */
-  id: string;
+  id: string
   /** Display label for the field */
-  label: string;
+  label: string
   /** Field type */
-  type: FieldType;
+  type: FieldType
   /** Placeholder text */
-  placeholder?: string;
+  placeholder?: string
   /** Help text displayed below the field */
-  helpText?: string;
+  helpText?: string
   /** Whether the field is required */
-  required?: boolean;
+  required?: boolean
   /** Whether the field is disabled */
-  disabled?: boolean;
+  disabled?: boolean
   /** Default value for the field */
-  defaultValue?: FormValue;
+  defaultValue?: FormValue
   /** Custom validation rules */
-  validation?: z.ZodSchema<any>;
+  validation?: z.ZodSchema<unknown>
   /** Conditional rendering logic */
   conditional?: {
     /** Field to watch for conditional rendering */
-    watch: string;
+    watch: string
     /** Value(s) that trigger the field to show */
-    value: FormValue | FormValue[];
+    value: FormValue | FormValue[]
     /** Operator for comparison (equals, not_equals, in, not_in, etc.) */
-    operator?: 'equals' | 'not_equals' | 'in' | 'not_in' | 'contains' | 'not_contains';
-  };
+    operator?:
+      | 'equals'
+      | 'not_equals'
+      | 'in'
+      | 'not_in'
+      | 'contains'
+      | 'not_contains'
+  }
   /** Custom CSS classes for the field */
-  className?: string;
+  className?: string
 }
 
 /**
  * Text input field configuration
  */
 export interface TextField extends BaseFormField {
-  type: 'text' | 'email' | 'password';
+  type: 'text' | 'email' | 'password'
   /** Minimum length validation */
-  minLength?: number;
+  minLength?: number
   /** Maximum length validation */
-  maxLength?: number;
+  maxLength?: number
   /** Pattern for regex validation */
-  pattern?: string;
+  pattern?: string
 }
 
 /**
  * Textarea field configuration
  */
 export interface TextareaField extends BaseFormField {
-  type: 'textarea';
+  type: 'textarea'
   /** Number of rows */
-  rows?: number;
+  rows?: number
   /** Minimum length validation */
-  minLength?: number;
+  minLength?: number
   /** Maximum length validation */
-  maxLength?: number;
+  maxLength?: number
 }
 
 /**
  * Number field configuration
  */
 export interface NumberField extends BaseFormField {
-  type: 'number';
+  type: 'number'
   /** Minimum value */
-  min?: number;
+  min?: number
   /** Maximum value */
-  max?: number;
+  max?: number
   /** Step value for increment/decrement */
-  step?: number;
+  step?: number
 }
 
 /**
  * Date field configuration
  */
 export interface DateField extends BaseFormField {
-  type: 'date';
+  type: 'date'
   /** Minimum date */
-  min?: string;
+  min?: string
   /** Maximum date */
-  max?: string;
+  max?: string
 }
 
 /**
@@ -125,26 +140,26 @@ export interface DateField extends BaseFormField {
  */
 export interface SelectOption {
   /** Option value */
-  value: string | number;
+  value: string | number
   /** Option label */
-  label: string;
+  label: string
   /** Whether the option is disabled */
-  disabled?: boolean;
+  disabled?: boolean
 }
 
 /**
  * Select field configuration
  */
 export interface SelectField extends BaseFormField {
-  type: 'select';
+  type: 'select'
   /** Available options */
-  options: SelectOption[];
+  options: SelectOption[]
   /** Whether multiple selections are allowed */
-  multiple?: boolean;
+  multiple?: boolean
   /** Whether the select is searchable */
-  searchable?: boolean;
+  searchable?: boolean
   /** Placeholder for when no option is selected */
-  placeholder?: string;
+  placeholder?: string
 }
 
 /**
@@ -152,212 +167,212 @@ export interface SelectField extends BaseFormField {
  */
 export interface RadioOption {
   /** Option value */
-  value: string | number;
+  value: string | number
   /** Option label */
-  label: string;
+  label: string
   /** Whether the option is disabled */
-  disabled?: boolean;
+  disabled?: boolean
 }
 
 /**
  * Radio field configuration
  */
 export interface RadioField extends BaseFormField {
-  type: 'radio';
+  type: 'radio'
   /** Available options */
-  options: RadioOption[];
+  options: RadioOption[]
   /** Layout direction */
-  direction?: 'horizontal' | 'vertical';
+  direction?: 'horizontal' | 'vertical'
 }
 
 /**
  * Checkbox field configuration
  */
 export interface CheckboxField extends BaseFormField {
-  type: 'checkbox';
+  type: 'checkbox'
   /** Text to display next to the checkbox */
-  checkboxLabel?: string;
+  checkboxLabel?: string
 }
 
 /**
  * Switch field configuration
  */
 export interface SwitchField extends BaseFormField {
-  type: 'switch';
+  type: 'switch'
   /** Text to display next to the switch */
-  switchLabel?: string;
+  switchLabel?: string
 }
 
 /**
  * File field configuration
  */
 export interface FileField extends BaseFormField {
-  type: 'file';
+  type: 'file'
   /** Accepted file types */
-  accept?: string;
+  accept?: string
   /** Maximum file size in bytes */
-  maxSize?: number;
+  maxSize?: number
   /** Maximum number of files */
-  maxFiles?: number;
+  maxFiles?: number
   /** Whether multiple files are allowed */
-  multiple?: boolean;
+  multiple?: boolean
 }
 
 /**
  * Password field configuration
  */
 export interface PasswordField extends BaseFormField {
-  type: 'password';
+  type: 'password'
   /** Minimum password length */
-  minLength?: number;
+  minLength?: number
   /** Maximum password length */
-  maxLength?: number;
+  maxLength?: number
   /** Password pattern for validation */
-  pattern?: string;
+  pattern?: string
 }
 
 /**
  * Email field configuration
  */
 export interface EmailField extends BaseFormField {
-  type: 'email';
+  type: 'email'
   /** Minimum email length */
-  minLength?: number;
+  minLength?: number
   /** Maximum email length */
-  maxLength?: number;
+  maxLength?: number
   /** Email pattern for validation */
-  pattern?: string;
+  pattern?: string
 }
 
 /**
  * URL field configuration
  */
 export interface UrlField extends BaseFormField {
-  type: 'url';
+  type: 'url'
   /** Minimum URL length */
-  minLength?: number;
+  minLength?: number
   /** Maximum URL length */
-  maxLength?: number;
+  maxLength?: number
   /** URL pattern for validation */
-  pattern?: string;
+  pattern?: string
 }
 
 /**
  * Telephone field configuration
  */
 export interface TelField extends BaseFormField {
-  type: 'tel';
+  type: 'tel'
   /** Minimum phone length */
-  minLength?: number;
+  minLength?: number
   /** Maximum phone length */
-  maxLength?: number;
+  maxLength?: number
   /** Phone pattern for validation */
-  pattern?: string;
+  pattern?: string
 }
 
 /**
  * Search field configuration
  */
 export interface SearchField extends BaseFormField {
-  type: 'search';
+  type: 'search'
   /** Minimum search length */
-  minLength?: number;
+  minLength?: number
   /** Maximum search length */
-  maxLength?: number;
+  maxLength?: number
   /** Search pattern for validation */
-  pattern?: string;
+  pattern?: string
 }
 
 /**
  * Color field configuration
  */
 export interface ColorField extends BaseFormField {
-  type: 'color';
+  type: 'color'
   /** Default color value */
-  defaultValue?: string;
+  defaultValue?: string
 }
 
 /**
  * Range field configuration
  */
 export interface RangeField extends BaseFormField {
-  type: 'range';
+  type: 'range'
   /** Minimum value */
-  min?: number;
+  min?: number
   /** Maximum value */
-  max?: number;
+  max?: number
   /** Step value */
-  step?: number;
+  step?: number
   /** Whether to allow multiple values */
-  multiple?: boolean;
+  multiple?: boolean
 }
 
 /**
  * Multi-select field configuration
  */
 export interface MultiSelectField extends BaseFormField {
-  type: 'multiSelect';
+  type: 'multiSelect'
   /** Available options */
-  options: SelectOption[];
+  options: SelectOption[]
   /** Maximum number of selections */
-  maxSelections?: number;
+  maxSelections?: number
   /** Whether to allow custom values */
-  allowCustom?: boolean;
+  allowCustom?: boolean
   /** Placeholder text for search */
-  searchPlaceholder?: string;
+  searchPlaceholder?: string
 }
 
 /**
  * Date range field configuration
  */
 export interface DateRangeField extends BaseFormField {
-  type: 'dateRange';
+  type: 'dateRange'
   /** Minimum date */
-  min?: string;
+  min?: string
   /** Maximum date */
-  max?: string;
+  max?: string
   /** Whether to allow single date selection */
-  allowSingleDate?: boolean;
+  allowSingleDate?: boolean
 }
 
 /**
  * Time field configuration
  */
 export interface TimeField extends BaseFormField {
-  type: 'time';
+  type: 'time'
   /** Minimum time */
-  min?: string;
+  min?: string
   /** Maximum time */
-  max?: string;
+  max?: string
   /** Time step in minutes */
-  step?: number;
+  step?: number
 }
 
 /**
  * DateTime field configuration
  */
 export interface DateTimeField extends BaseFormField {
-  type: 'dateTime';
+  type: 'dateTime'
   /** Minimum date/time */
-  min?: string;
+  min?: string
   /** Maximum date/time */
-  max?: string;
+  max?: string
   /** Time step in minutes */
-  step?: number;
+  step?: number
 }
 
 /**
  * Union type for all field configurations
  */
-export type FormField = 
-  | TextField 
-  | TextareaField 
-  | NumberField 
-  | DateField 
-  | SelectField 
-  | RadioField 
-  | CheckboxField 
-  | SwitchField 
+export type FormField =
+  | TextField
+  | TextareaField
+  | NumberField
+  | DateField
+  | SelectField
+  | RadioField
+  | CheckboxField
+  | SwitchField
   | FileField
   | PasswordField
   | EmailField
@@ -369,26 +384,26 @@ export type FormField =
   | MultiSelectField
   | DateRangeField
   | TimeField
-  | DateTimeField;
+  | DateTimeField
 
 /**
  * Form step configuration
  */
 export interface FormStep {
   /** Unique identifier for the step */
-  id: string;
+  id: string
   /** Step title */
-  title: string;
+  title: string
   /** Step description */
-  description?: string;
+  description?: string
   /** Fields in this step */
-  fields: FormField[];
+  fields: FormField[]
   /** Custom validation for the entire step */
-  validation?: z.ZodSchema<any>;
+  validation?: z.ZodSchema<unknown>
   /** Whether to show a progress indicator for this step */
-  showProgress?: boolean;
+  showProgress?: boolean
   /** Custom CSS classes for the step */
-  className?: string;
+  className?: string
 }
 
 /**
@@ -396,59 +411,60 @@ export interface FormStep {
  */
 export interface FormConfig {
   /** Form title */
-  title?: string;
+  title?: string
   /** Form description */
-  description?: string;
+  description?: string
   /** Form steps */
-  steps: FormStep[];
+  steps: FormStep[]
   /** Global form validation schema */
-  validation?: z.ZodSchema<any>;
+  validation?: z.ZodSchema<unknown>
   /** Whether to show step numbers */
-  showStepNumbers?: boolean;
+  showStepNumbers?: boolean
   /** Whether to allow going back to previous steps */
-  allowBackNavigation?: boolean;
+  allowBackNavigation?: boolean
   /** Whether to save form state automatically */
-  autoSave?: boolean;
+  autoSave?: boolean
   /** Custom CSS classes for the form */
-  className?: string;
+  className?: string
 }
-
 
 /**
  * Multi-step form component props
  */
 export interface MultiStepFormProps {
   /** Form configuration */
-  config: FormConfig;
+  config: FormConfig
   /** Submit handler */
-  onSubmit: (values: FormValues) => void | Promise<void>;
+  onSubmit: (values: FormValues) => void | Promise<void>
   /** Custom field components */
-  fieldComponents?: Partial<Record<FieldType, React.ComponentType<FieldComponentProps>>>;
+  fieldComponents?: Partial<
+    Record<FieldType, React.ComponentType<FieldComponentProps>>
+  >
   /** Custom progress indicator component */
-  ProgressIndicator?: React.ComponentType<ProgressIndicatorProps>;
+  ProgressIndicator?: React.ComponentType<ProgressIndicatorProps>
   /** Custom step navigation component */
-  StepNavigation?: React.ComponentType<StepNavigationProps>;
+  StepNavigation?: React.ComponentType<StepNavigationProps>
   /** Initial form values */
-  initialValues?: FormValues;
+  initialValues?: FormValues
   /** Whether to show debug information */
-  debug?: boolean;
+  debug?: boolean
   /** Custom CSS classes */
-  className?: string;
+  className?: string
   /** Children components that can access form context */
-  children?: React.ReactNode;
+  children?: React.ReactNode
   /** Form persistence options */
   persistence?: {
-    type?: 'localStorage' | 'sessionStorage' | 'none';
-    key?: string;
-    debounceMs?: number;
-    persistOnChange?: boolean;
-    persistOnStepChange?: boolean;
-    clearOnSubmit?: boolean;
-  };
+    type?: 'localStorage' | 'sessionStorage' | 'none'
+    key?: string
+    debounceMs?: number
+    persistOnChange?: boolean
+    persistOnStepChange?: boolean
+    clearOnSubmit?: boolean
+  }
   /** Animation options */
-  animations?: boolean;
+  animations?: boolean
   /** Accessibility options */
-  accessibility?: boolean;
+  accessibility?: boolean
 }
 
 /**
@@ -456,17 +472,17 @@ export interface MultiStepFormProps {
  */
 export interface ProgressIndicatorProps {
   /** Current step index */
-  currentStep: number;
+  currentStep: number
   /** Total number of steps */
-  totalSteps: number;
+  totalSteps: number
   /** Step titles */
-  stepTitles: string[];
+  stepTitles: string[]
   /** Step sub-steps mapping */
-  stepSubSteps?: Record<number, string[]>;
+  stepSubSteps?: Record<number, string[]>
   /** Whether to show step numbers */
-  showStepNumbers?: boolean;
+  showStepNumbers?: boolean
   /** Custom CSS classes */
-  className?: string;
+  className?: string
 }
 
 /**
@@ -474,23 +490,23 @@ export interface ProgressIndicatorProps {
  */
 export interface StepNavigationProps {
   /** Current step index */
-  currentStep: number;
+  currentStep: number
   /** Total number of steps */
-  totalSteps: number;
+  totalSteps: number
   /** Whether the current step is valid */
-  isCurrentStepValid: boolean;
+  isCurrentStepValid: boolean
   /** Whether the form is being submitted */
-  isSubmitting: boolean;
+  isSubmitting: boolean
   /** Whether to allow going back */
-  allowBack: boolean;
+  allowBack: boolean
   /** Next step handler */
-  onNext: () => void;
+  onNext: () => void
   /** Previous step handler */
-  onPrev: () => void;
+  onPrev: () => void
   /** Submit handler */
-  onSubmit: () => void;
+  onSubmit: () => void
   /** Custom CSS classes */
-  className?: string;
+  className?: string
 }
 
 /**
@@ -498,17 +514,17 @@ export interface StepNavigationProps {
  */
 export interface FieldComponentProps {
   /** Field configuration */
-  field: FormField;
+  field: FormField
   /** Field value */
-  value: FormValue;
+  value: FormValue
   /** Field error */
-  error?: string;
+  error?: string
   /** Change handler */
-  onChange: (value: FormValue) => void;
+  onChange: (value: FormValue) => void
   /** Blur handler */
-  onBlur?: () => void;
+  onBlur?: () => void
   /** Whether the field is disabled */
-  disabled?: boolean;
+  disabled?: boolean
   /** Custom CSS classes */
-  className?: string;
+  className?: string
 }

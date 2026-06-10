@@ -14,7 +14,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { NotificationItem } from './NotificationItem'
-import { NotificationPanelProps } from './types'
+import { Notification, NotificationPanelProps } from './types'
 import { NotificationService } from '@/services/notificationService'
 import { useInvalidateQueries } from '@/hooks/useSharedQueries'
 
@@ -59,12 +59,12 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
     onMarkAllAsRead()
   }
 
-  const handleAction = (notification: any) => {
+  const handleAction = (notification: Notification) => {
     if (notification.actionUrl) {
       // Map legacy/backend URLs to valid TanStack Router paths
-      const url = notification.actionUrl as string
+      const url = notification.actionUrl
       const path = url.startsWith('/credits') ? '/dashboard/billing' : url
-      navigate({ to: path as any })
+      navigate({ to: path })
       onClose()
     }
   }

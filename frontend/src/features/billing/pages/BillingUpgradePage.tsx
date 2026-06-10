@@ -1,62 +1,92 @@
-import React, { useState } from 'react';
-import { useNavigate, useSearch } from '@tanstack/react-router';
-import { ArrowLeft, ArrowRight, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Separator } from '@/components/ui/separator';
-import { Container } from '@/components/common/Page';
+import React, { useState } from 'react'
+import { useNavigate, useSearch } from '@tanstack/react-router'
+import {
+  ArrowLeft,
+  ArrowRight,
+  CheckCircle,
+  AlertCircle,
+  Loader2,
+} from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Separator } from '@/components/ui/separator'
+import { Container } from '@/components/common/Page'
 import {
   DASHBOARD_PAGE_DESCRIPTION_CLASS,
   DASHBOARD_PAGE_TITLE_CLASS,
-} from '@/components/dashboard/DashboardPageHeader';
-import { toast } from 'sonner';
-import api from '@/lib/api';
-import { useMutation } from '@tanstack/react-query';
-import { subscriptionAPI } from '@/lib/api';
+} from '@/components/dashboard/DashboardPageHeader'
+import { toast } from 'sonner'
+import api from '@/lib/api'
+import { useMutation } from '@tanstack/react-query'
+import { subscriptionAPI } from '@/lib/api'
+import axios from 'axios'
+
+/** Safely extract an API error message from an axios/Error/unknown value. */
+const getApiErrorMessage = (error: unknown): string | undefined => {
+  if (axios.isAxiosError(error)) {
+    const data = error.response?.data as { message?: unknown } | undefined
+    if (typeof data?.message === 'string') return data.message
+    return error.message
+  }
+  if (error instanceof Error) return error.message
+  return undefined
+}
 
 interface UpgradeFormData {
   // Required fields
-  selectedPlan: string;
-  gstin: string;
+  selectedPlan: string
+  gstin: string
 
   // Company Profile
-  legalCompanyName: string;
-  companyType: string;
-  ownership: string;
-  annualRevenue: string;
-  numberOfEmployees: string;
-  tickerSymbol: string;
-  website: string;
-  description: string;
-  foundedDate: string;
+  legalCompanyName: string
+  companyType: string
+  ownership: string
+  annualRevenue: string
+  numberOfEmployees: string
+  tickerSymbol: string
+  website: string
+  description: string
+  foundedDate: string
 
   // Contact & Address
-  billingStreet: string;
-  billingCity: string;
-  billingState: string;
-  billingZip: string;
-  billingCountry: string;
-  shippingStreet: string;
-  shippingCity: string;
-  shippingState: string;
-  shippingZip: string;
-  shippingCountry: string;
-  phone: string;
-  fax: string;
+  billingStreet: string
+  billingCity: string
+  billingState: string
+  billingZip: string
+  billingCountry: string
+  shippingStreet: string
+  shippingCity: string
+  shippingState: string
+  shippingZip: string
+  shippingCountry: string
+  phone: string
+  fax: string
 
   // Localization
-  defaultLanguage: string;
-  defaultLocale: string;
-  defaultCurrency: string;
-  multiCurrencyEnabled: boolean;
-  advancedCurrencyManagement: boolean;
-  defaultTimeZone: string;
-  firstDayOfWeek: string;
+  defaultLanguage: string
+  defaultLocale: string
+  defaultCurrency: string
+  multiCurrencyEnabled: boolean
+  advancedCurrencyManagement: boolean
+  defaultTimeZone: string
+  firstDayOfWeek: string
 }
 
 const initialFormData: UpgradeFormData = {
@@ -95,195 +125,223 @@ const initialFormData: UpgradeFormData = {
   multiCurrencyEnabled: false,
   advancedCurrencyManagement: false,
   defaultTimeZone: 'Asia/Kolkata',
-  firstDayOfWeek: '1'
-};
+  firstDayOfWeek: '1',
+}
 
 export function BillingUpgradePage() {
-  const navigate = useNavigate();
-  const search = useSearch({ strict: false }) as Record<string, string>;
-  const planId = search['plan'] || '';
-  const checkoutCurrency = (search['currency'] === 'inr' ? 'inr' : 'usd') as 'usd' | 'inr';
+  const navigate = useNavigate()
+  const search = useSearch({ strict: false }) as Record<string, string>
+  const planId = search['plan'] || ''
+  const checkoutCurrency = (search['currency'] === 'inr' ? 'inr' : 'usd') as
+    | 'usd'
+    | 'inr'
 
   const [formData, setFormData] = useState<UpgradeFormData>({
     ...initialFormData,
-    selectedPlan: planId
-  });
-  const [currentStep, setCurrentStep] = useState(1);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [paymentError, setPaymentError] = useState<string | null>(null);
+    selectedPlan: planId,
+  })
+  const [currentStep, setCurrentStep] = useState(1)
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [paymentError, setPaymentError] = useState<string | null>(null)
 
   // Create checkout mutation — uses same API as Billing page (subscriptionAPI.createCheckout)
   const createCheckoutMutation = useMutation({
-    mutationFn: async ({ planId, currency }: { planId: string; currency: 'usd' | 'inr' }) => {
+    mutationFn: async ({
+      planId,
+      currency,
+    }: {
+      planId: string
+      currency: 'usd' | 'inr'
+    }) => {
       const response = await subscriptionAPI.createCheckout({
         planId,
         currency,
         successUrl: `${window.location.origin}/payment-success?type=subscription&session_id={CHECKOUT_SESSION_ID}`,
-        cancelUrl: `${window.location.origin}/payment-cancelled?type=subscription`
-      });
+        cancelUrl: `${window.location.origin}/payment-cancelled?type=subscription`,
+      })
       // Backend returns { success, data: { checkoutUrl } }
-      return response.data.data;
+      return response.data.data
     },
     onSuccess: (data) => {
       if (data?.checkoutUrl) {
-        toast.success('Redirecting to secure payment page...', { duration: 2000 });
-        window.location.href = data.checkoutUrl;
+        toast.success('Redirecting to secure payment page...', {
+          duration: 2000,
+        })
+        window.location.href = data.checkoutUrl
       } else {
-        setPaymentError('No checkout URL received from server.');
-        setIsSubmitting(false);
+        setPaymentError('No checkout URL received from server.')
+        setIsSubmitting(false)
       }
     },
-    onError: (error: any) => {
-      console.error('Payment checkout error:', error);
+    onError: (error: unknown) => {
+      console.error('Payment checkout error:', error)
       const message =
-        error?.response?.data?.message ||
-        error?.message ||
-        'Payment failed. Please try again.';
-      setPaymentError(message);
-      toast.error(message);
-      setIsSubmitting(false);
-    }
-  });
+        getApiErrorMessage(error) || 'Payment failed. Please try again.'
+      setPaymentError(message)
+      toast.error(message)
+      setIsSubmitting(false)
+    },
+  })
 
   const validateStep = (step: number): boolean => {
-    const newErrors: Record<string, string> = {};
+    const newErrors: Record<string, string> = {}
 
     switch (step) {
       case 1: // Basic Information
         if (!formData.gstin.trim()) {
-          newErrors.gstin = 'GSTIN is required';
+          newErrors.gstin = 'GSTIN is required'
         } else if (formData.gstin.length !== 15) {
-          newErrors.gstin = 'GSTIN must be exactly 15 characters';
+          newErrors.gstin = 'GSTIN must be exactly 15 characters'
         }
-        break;
+        break
 
       case 2: // Company Profile
         if (!formData.legalCompanyName.trim()) {
-          newErrors.legalCompanyName = 'Legal company name is required';
+          newErrors.legalCompanyName = 'Legal company name is required'
         }
         if (!formData.companyType) {
-          newErrors.companyType = 'Company type is required';
+          newErrors.companyType = 'Company type is required'
         }
-        break;
+        break
 
       case 3: // Contact & Address
         if (!formData.billingStreet.trim()) {
-          newErrors.billingStreet = 'Billing street address is required';
+          newErrors.billingStreet = 'Billing street address is required'
         }
         if (!formData.billingCity.trim()) {
-          newErrors.billingCity = 'Billing city is required';
+          newErrors.billingCity = 'Billing city is required'
         }
         if (!formData.billingState.trim()) {
-          newErrors.billingState = 'Billing state is required';
+          newErrors.billingState = 'Billing state is required'
         }
         if (!formData.billingZip.trim()) {
-          newErrors.billingZip = 'Billing ZIP code is required';
+          newErrors.billingZip = 'Billing ZIP code is required'
         }
         if (!formData.billingCountry) {
-          newErrors.billingCountry = 'Billing country is required';
+          newErrors.billingCountry = 'Billing country is required'
         }
         if (!formData.phone.trim()) {
-          newErrors.phone = 'Phone number is required';
+          newErrors.phone = 'Phone number is required'
         }
-        break;
+        break
     }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
 
   const handleNext = () => {
     if (validateStep(currentStep)) {
-      setCurrentStep(currentStep + 1);
+      setCurrentStep(currentStep + 1)
     }
-  };
+  }
 
   const handlePrevious = () => {
-    setCurrentStep(currentStep - 1);
-  };
+    setCurrentStep(currentStep - 1)
+  }
 
   const handleSubmit = async () => {
     if (!validateStep(currentStep)) {
-      return;
+      return
     }
 
     if (!planId) {
-      toast.error('No plan selected. Please go back and select a plan.');
-      return;
+      toast.error('No plan selected. Please go back and select a plan.')
+      return
     }
 
-    setIsSubmitting(true);
-    setPaymentError(null);
+    setIsSubmitting(true)
+    setPaymentError(null)
 
     try {
       // Step 1: Complete profile first
-      toast.loading('Completing your profile...', { duration: 2000 });
+      toast.loading('Completing your profile...', { duration: 2000 })
 
       const profileData = {
         ...formData,
-        selectedPlan: planId
-      };
+        selectedPlan: planId,
+      }
 
-      const profileResponse = await api.post('/payment-upgrade/complete-profile', profileData);
+      const profileResponse = await api.post(
+        '/payment-upgrade/complete-profile',
+        profileData
+      )
 
       if (profileResponse.data.success) {
-        toast.success('Profile completed! Proceeding to payment...', { duration: 2000 });
+        toast.success('Profile completed! Proceeding to payment...', {
+          duration: 2000,
+        })
 
         // Step 2: Now proceed to payment
         await createCheckoutMutation.mutateAsync({
           planId,
-          currency: checkoutCurrency
-        });
+          currency: checkoutCurrency,
+        })
       } else {
-        console.error('❌ Profile completion failed:', profileResponse.data.message);
-        toast.error('Failed to complete profile. Please try again.');
-        setIsSubmitting(false);
+        console.error(
+          '❌ Profile completion failed:',
+          profileResponse.data.message
+        )
+        toast.error('Failed to complete profile. Please try again.')
+        setIsSubmitting(false)
       }
-    } catch (error: any) {
-      console.error('❌ Profile completion or payment failed:', error);
-      toast.error(error?.response?.data?.message || 'Something went wrong. Please try again.');
-      setIsSubmitting(false);
+    } catch (error: unknown) {
+      console.error('❌ Profile completion or payment failed:', error)
+      toast.error(
+        getApiErrorMessage(error) || 'Something went wrong. Please try again.'
+      )
+      setIsSubmitting(false)
     }
-  };
+  }
 
-  const updateFormData = (field: keyof UpgradeFormData, value: any) => {
-    setFormData(prev => ({
+  const updateFormData = (
+    field: keyof UpgradeFormData,
+    value: UpgradeFormData[keyof UpgradeFormData]
+  ) => {
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
-    }));
+      [field]: value,
+    }))
 
     // Clear error for this field
     if (errors[field]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[field];
-        return newErrors;
-      });
+      setErrors((prev) => {
+        const newErrors = { ...prev }
+        delete newErrors[field]
+        return newErrors
+      })
     }
-  };
+  }
 
   if (!planId) {
     return (
       <Container>
-        <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+        <div className="flex min-h-[400px] flex-col items-center justify-center space-y-4">
           <AlertCircle className="h-12 w-12 text-gray-400" />
           <h2 className="text-xl font-semibold">No Plan Selected</h2>
           <p className="text-gray-600">Please select a plan to upgrade.</p>
-          <Button onClick={() => navigate({ to: '/dashboard/billing' })} variant="outline">
-            <ArrowLeft className="h-4 w-4 mr-2" />
+          <Button
+            onClick={() => navigate({ to: '/dashboard/billing' })}
+            variant="outline"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Billing
           </Button>
         </div>
       </Container>
-    );
+    )
   }
 
   const steps = [
     { id: 1, title: 'Basic Information', description: 'GSTIN details' },
     { id: 2, title: 'Company Profile', description: 'Business details' },
-    { id: 3, title: 'Contact & Address', description: 'Billing and shipping info' }
-  ];
+    {
+      id: 3,
+      title: 'Contact & Address',
+      description: 'Billing and shipping info',
+    },
+  ]
 
   return (
     <Container>
@@ -294,13 +352,15 @@ export function BillingUpgradePage() {
             variant="ghost"
             size="sm"
             onClick={() => navigate({ to: '/dashboard/billing' })}
-            className="gap-2 shrink-0"
+            className="shrink-0 gap-2"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Billing
           </Button>
           <div className="min-w-0 flex-1 space-y-1">
-            <h1 className={DASHBOARD_PAGE_TITLE_CLASS}>Complete Your Upgrade</h1>
+            <h1 className={DASHBOARD_PAGE_TITLE_CLASS}>
+              Complete Your Upgrade
+            </h1>
             <p className={DASHBOARD_PAGE_DESCRIPTION_CLASS}>
               We need some additional information to set up your {planId} plan
             </p>
@@ -314,28 +374,42 @@ export function BillingUpgradePage() {
               {steps.map((step, index) => (
                 <React.Fragment key={step.id}>
                   <div className="flex items-center">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                      step.id < currentStep
-                        ? 'bg-green-500 text-white'
-                        : step.id === currentStep
-                        ? 'bg-[#1B2E5A] text-white'
-                        : 'bg-gray-200 text-gray-600'
-                    }`}>
-                      {step.id < currentStep ? <CheckCircle className="h-4 w-4" /> : step.id}
+                    <div
+                      className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${
+                        step.id < currentStep
+                          ? 'bg-green-500 text-white'
+                          : step.id === currentStep
+                            ? 'bg-[#1B2E5A] text-white'
+                            : 'bg-gray-200 text-gray-600'
+                      }`}
+                    >
+                      {step.id < currentStep ? (
+                        <CheckCircle className="h-4 w-4" />
+                      ) : (
+                        step.id
+                      )}
                     </div>
                     <div className="ml-3">
-                      <p className={`text-sm font-medium ${
-                        step.id <= currentStep ? 'text-[#1B2E5A]' : 'text-gray-500'
-                      }`}>
+                      <p
+                        className={`text-sm font-medium ${
+                          step.id <= currentStep
+                            ? 'text-[#1B2E5A]'
+                            : 'text-gray-500'
+                        }`}
+                      >
                         {step.title}
                       </p>
-                      <p className="text-xs text-gray-500">{step.description}</p>
+                      <p className="text-xs text-gray-500">
+                        {step.description}
+                      </p>
                     </div>
                   </div>
                   {index < steps.length - 1 && (
-                    <div className={`flex-1 h-px ${
-                      step.id < currentStep ? 'bg-green-500' : 'bg-gray-200'
-                    }`} />
+                    <div
+                      className={`h-px flex-1 ${
+                        step.id < currentStep ? 'bg-green-500' : 'bg-gray-200'
+                      }`}
+                    />
                   )}
                 </React.Fragment>
               ))}
@@ -360,15 +434,19 @@ export function BillingUpgradePage() {
                     <Input
                       id="gstin"
                       value={formData.gstin}
-                      onChange={(e) => updateFormData('gstin', e.target.value.toUpperCase())}
+                      onChange={(e) =>
+                        updateFormData('gstin', e.target.value.toUpperCase())
+                      }
                       placeholder="22AAAAA0000A1Z6"
                       maxLength={15}
                       className={errors.gstin ? 'border-red-500' : ''}
                     />
                     {errors.gstin && (
-                      <p className="text-sm text-red-600 mt-1">{errors.gstin}</p>
+                      <p className="mt-1 text-sm text-red-600">
+                        {errors.gstin}
+                      </p>
                     )}
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="mt-1 text-xs text-gray-500">
                       Your 15-character GSTIN number
                     </p>
                   </div>
@@ -386,44 +464,74 @@ export function BillingUpgradePage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div>
-                    <Label htmlFor="legalCompanyName">Legal Company Name *</Label>
+                    <Label htmlFor="legalCompanyName">
+                      Legal Company Name *
+                    </Label>
                     <Input
                       id="legalCompanyName"
                       value={formData.legalCompanyName}
-                      onChange={(e) => updateFormData('legalCompanyName', e.target.value)}
+                      onChange={(e) =>
+                        updateFormData('legalCompanyName', e.target.value)
+                      }
                       placeholder="ABC Private Limited"
-                      className={errors.legalCompanyName ? 'border-red-500' : ''}
+                      className={
+                        errors.legalCompanyName ? 'border-red-500' : ''
+                      }
                     />
                     {errors.legalCompanyName && (
-                      <p className="text-sm text-red-600 mt-1">{errors.legalCompanyName}</p>
+                      <p className="mt-1 text-sm text-red-600">
+                        {errors.legalCompanyName}
+                      </p>
                     )}
                   </div>
 
                   <div>
                     <Label htmlFor="companyType">Company Type *</Label>
-                    <Select value={formData.companyType} onValueChange={(value) => updateFormData('companyType', value)}>
-                      <SelectTrigger className={errors.companyType ? 'border-red-500' : ''}>
+                    <Select
+                      value={formData.companyType}
+                      onValueChange={(value) =>
+                        updateFormData('companyType', value)
+                      }
+                    >
+                      <SelectTrigger
+                        className={errors.companyType ? 'border-red-500' : ''}
+                      >
                         <SelectValue placeholder="Select company type" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="private-limited">Private Limited</SelectItem>
-                        <SelectItem value="public-limited">Public Limited</SelectItem>
+                        <SelectItem value="private-limited">
+                          Private Limited
+                        </SelectItem>
+                        <SelectItem value="public-limited">
+                          Public Limited
+                        </SelectItem>
                         <SelectItem value="partnership">Partnership</SelectItem>
-                        <SelectItem value="sole-proprietorship">Sole Proprietorship</SelectItem>
-                        <SelectItem value="llp">Limited Liability Partnership</SelectItem>
+                        <SelectItem value="sole-proprietorship">
+                          Sole Proprietorship
+                        </SelectItem>
+                        <SelectItem value="llp">
+                          Limited Liability Partnership
+                        </SelectItem>
                         <SelectItem value="other">Other</SelectItem>
                       </SelectContent>
                     </Select>
                     {errors.companyType && (
-                      <p className="text-sm text-red-600 mt-1">{errors.companyType}</p>
+                      <p className="mt-1 text-sm text-red-600">
+                        {errors.companyType}
+                      </p>
                     )}
                   </div>
 
                   <div>
                     <Label htmlFor="ownership">Ownership</Label>
-                    <Select value={formData.ownership} onValueChange={(value) => updateFormData('ownership', value)}>
+                    <Select
+                      value={formData.ownership}
+                      onValueChange={(value) =>
+                        updateFormData('ownership', value)
+                      }
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select ownership type" />
                       </SelectTrigger>
@@ -442,18 +550,24 @@ export function BillingUpgradePage() {
                       id="annualRevenue"
                       type="number"
                       value={formData.annualRevenue}
-                      onChange={(e) => updateFormData('annualRevenue', e.target.value)}
+                      onChange={(e) =>
+                        updateFormData('annualRevenue', e.target.value)
+                      }
                       placeholder="50000000"
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="numberOfEmployees">Number of Employees</Label>
+                    <Label htmlFor="numberOfEmployees">
+                      Number of Employees
+                    </Label>
                     <Input
                       id="numberOfEmployees"
                       type="number"
                       value={formData.numberOfEmployees}
-                      onChange={(e) => updateFormData('numberOfEmployees', e.target.value)}
+                      onChange={(e) =>
+                        updateFormData('numberOfEmployees', e.target.value)
+                      }
                       placeholder="50"
                     />
                   </div>
@@ -463,7 +577,9 @@ export function BillingUpgradePage() {
                     <Input
                       id="tickerSymbol"
                       value={formData.tickerSymbol}
-                      onChange={(e) => updateFormData('tickerSymbol', e.target.value)}
+                      onChange={(e) =>
+                        updateFormData('tickerSymbol', e.target.value)
+                      }
                       placeholder="TCS.NS"
                     />
                   </div>
@@ -474,7 +590,9 @@ export function BillingUpgradePage() {
                       id="website"
                       type="url"
                       value={formData.website}
-                      onChange={(e) => updateFormData('website', e.target.value)}
+                      onChange={(e) =>
+                        updateFormData('website', e.target.value)
+                      }
                       placeholder="https://company.com"
                     />
                   </div>
@@ -485,7 +603,9 @@ export function BillingUpgradePage() {
                       id="foundedDate"
                       type="date"
                       value={formData.foundedDate}
-                      onChange={(e) => updateFormData('foundedDate', e.target.value)}
+                      onChange={(e) =>
+                        updateFormData('foundedDate', e.target.value)
+                      }
                     />
                   </div>
 
@@ -494,7 +614,9 @@ export function BillingUpgradePage() {
                     <Textarea
                       id="description"
                       value={formData.description}
-                      onChange={(e) => updateFormData('description', e.target.value)}
+                      onChange={(e) =>
+                        updateFormData('description', e.target.value)
+                      }
                       placeholder="Brief description of your company..."
                       rows={3}
                     />
@@ -515,19 +637,27 @@ export function BillingUpgradePage() {
               <CardContent className="space-y-6">
                 <div className="space-y-6">
                   <div>
-                    <h4 className="text-lg font-medium mb-4">Billing Address</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <h4 className="mb-4 text-lg font-medium">
+                      Billing Address
+                    </h4>
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                       <div className="md:col-span-2">
                         <Label htmlFor="billingStreet">Street Address *</Label>
                         <Input
                           id="billingStreet"
                           value={formData.billingStreet}
-                          onChange={(e) => updateFormData('billingStreet', e.target.value)}
+                          onChange={(e) =>
+                            updateFormData('billingStreet', e.target.value)
+                          }
                           placeholder="123 Business Street"
-                          className={errors.billingStreet ? 'border-red-500' : ''}
+                          className={
+                            errors.billingStreet ? 'border-red-500' : ''
+                          }
                         />
                         {errors.billingStreet && (
-                          <p className="text-sm text-red-600 mt-1">{errors.billingStreet}</p>
+                          <p className="mt-1 text-sm text-red-600">
+                            {errors.billingStreet}
+                          </p>
                         )}
                       </div>
 
@@ -536,12 +666,16 @@ export function BillingUpgradePage() {
                         <Input
                           id="billingCity"
                           value={formData.billingCity}
-                          onChange={(e) => updateFormData('billingCity', e.target.value)}
+                          onChange={(e) =>
+                            updateFormData('billingCity', e.target.value)
+                          }
                           placeholder="Mumbai"
                           className={errors.billingCity ? 'border-red-500' : ''}
                         />
                         {errors.billingCity && (
-                          <p className="text-sm text-red-600 mt-1">{errors.billingCity}</p>
+                          <p className="mt-1 text-sm text-red-600">
+                            {errors.billingCity}
+                          </p>
                         )}
                       </div>
 
@@ -550,12 +684,18 @@ export function BillingUpgradePage() {
                         <Input
                           id="billingState"
                           value={formData.billingState}
-                          onChange={(e) => updateFormData('billingState', e.target.value)}
+                          onChange={(e) =>
+                            updateFormData('billingState', e.target.value)
+                          }
                           placeholder="Maharashtra"
-                          className={errors.billingState ? 'border-red-500' : ''}
+                          className={
+                            errors.billingState ? 'border-red-500' : ''
+                          }
                         />
                         {errors.billingState && (
-                          <p className="text-sm text-red-600 mt-1">{errors.billingState}</p>
+                          <p className="mt-1 text-sm text-red-600">
+                            {errors.billingState}
+                          </p>
                         )}
                       </div>
 
@@ -564,30 +704,49 @@ export function BillingUpgradePage() {
                         <Input
                           id="billingZip"
                           value={formData.billingZip}
-                          onChange={(e) => updateFormData('billingZip', e.target.value)}
+                          onChange={(e) =>
+                            updateFormData('billingZip', e.target.value)
+                          }
                           placeholder="400001"
                           className={errors.billingZip ? 'border-red-500' : ''}
                         />
                         {errors.billingZip && (
-                          <p className="text-sm text-red-600 mt-1">{errors.billingZip}</p>
+                          <p className="mt-1 text-sm text-red-600">
+                            {errors.billingZip}
+                          </p>
                         )}
                       </div>
 
                       <div>
                         <Label htmlFor="billingCountry">Country *</Label>
-                        <Select value={formData.billingCountry} onValueChange={(value) => updateFormData('billingCountry', value)}>
-                          <SelectTrigger className={errors.billingCountry ? 'border-red-500' : ''}>
+                        <Select
+                          value={formData.billingCountry}
+                          onValueChange={(value) =>
+                            updateFormData('billingCountry', value)
+                          }
+                        >
+                          <SelectTrigger
+                            className={
+                              errors.billingCountry ? 'border-red-500' : ''
+                            }
+                          >
                             <SelectValue placeholder="Select country" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="India">India</SelectItem>
-                            <SelectItem value="United States">United States</SelectItem>
-                            <SelectItem value="United Kingdom">United Kingdom</SelectItem>
+                            <SelectItem value="United States">
+                              United States
+                            </SelectItem>
+                            <SelectItem value="United Kingdom">
+                              United Kingdom
+                            </SelectItem>
                             <SelectItem value="Other">Other</SelectItem>
                           </SelectContent>
                         </Select>
                         {errors.billingCountry && (
-                          <p className="text-sm text-red-600 mt-1">{errors.billingCountry}</p>
+                          <p className="mt-1 text-sm text-red-600">
+                            {errors.billingCountry}
+                          </p>
                         )}
                       </div>
                     </div>
@@ -596,14 +755,18 @@ export function BillingUpgradePage() {
                   <Separator />
 
                   <div>
-                    <h4 className="text-lg font-medium mb-4">Shipping Address</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <h4 className="mb-4 text-lg font-medium">
+                      Shipping Address
+                    </h4>
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                       <div className="md:col-span-2">
                         <Label htmlFor="shippingStreet">Street Address</Label>
                         <Input
                           id="shippingStreet"
                           value={formData.shippingStreet}
-                          onChange={(e) => updateFormData('shippingStreet', e.target.value)}
+                          onChange={(e) =>
+                            updateFormData('shippingStreet', e.target.value)
+                          }
                           placeholder="123 Business Street"
                         />
                       </div>
@@ -613,7 +776,9 @@ export function BillingUpgradePage() {
                         <Input
                           id="shippingCity"
                           value={formData.shippingCity}
-                          onChange={(e) => updateFormData('shippingCity', e.target.value)}
+                          onChange={(e) =>
+                            updateFormData('shippingCity', e.target.value)
+                          }
                           placeholder="Mumbai"
                         />
                       </div>
@@ -623,7 +788,9 @@ export function BillingUpgradePage() {
                         <Input
                           id="shippingState"
                           value={formData.shippingState}
-                          onChange={(e) => updateFormData('shippingState', e.target.value)}
+                          onChange={(e) =>
+                            updateFormData('shippingState', e.target.value)
+                          }
                           placeholder="Maharashtra"
                         />
                       </div>
@@ -633,21 +800,32 @@ export function BillingUpgradePage() {
                         <Input
                           id="shippingZip"
                           value={formData.shippingZip}
-                          onChange={(e) => updateFormData('shippingZip', e.target.value)}
+                          onChange={(e) =>
+                            updateFormData('shippingZip', e.target.value)
+                          }
                           placeholder="400001"
                         />
                       </div>
 
                       <div>
                         <Label htmlFor="shippingCountry">Country</Label>
-                        <Select value={formData.shippingCountry} onValueChange={(value) => updateFormData('shippingCountry', value)}>
+                        <Select
+                          value={formData.shippingCountry}
+                          onValueChange={(value) =>
+                            updateFormData('shippingCountry', value)
+                          }
+                        >
                           <SelectTrigger>
                             <SelectValue placeholder="Select country" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="India">India</SelectItem>
-                            <SelectItem value="United States">United States</SelectItem>
-                            <SelectItem value="United Kingdom">United Kingdom</SelectItem>
+                            <SelectItem value="United States">
+                              United States
+                            </SelectItem>
+                            <SelectItem value="United Kingdom">
+                              United Kingdom
+                            </SelectItem>
                             <SelectItem value="Other">Other</SelectItem>
                           </SelectContent>
                         </Select>
@@ -657,18 +835,22 @@ export function BillingUpgradePage() {
 
                   <Separator />
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div>
                       <Label htmlFor="phone">Business Phone *</Label>
                       <Input
                         id="phone"
                         value={formData.phone}
-                        onChange={(e) => updateFormData('phone', e.target.value)}
+                        onChange={(e) =>
+                          updateFormData('phone', e.target.value)
+                        }
                         placeholder="+91-22-1234-5678"
                         className={errors.phone ? 'border-red-500' : ''}
                       />
                       {errors.phone && (
-                        <p className="text-sm text-red-600 mt-1">{errors.phone}</p>
+                        <p className="mt-1 text-sm text-red-600">
+                          {errors.phone}
+                        </p>
                       )}
                     </div>
 
@@ -691,14 +873,15 @@ export function BillingUpgradePage() {
             <Alert className="border-red-200 bg-red-50">
               <AlertCircle className="h-4 w-4 text-red-600" />
               <AlertDescription className="text-red-800">
-                {paymentError || 'Please fix the errors above before proceeding.'}
+                {paymentError ||
+                  'Please fix the errors above before proceeding.'}
               </AlertDescription>
             </Alert>
           )}
         </div>
 
         {/* Navigation */}
-        <div className="flex items-center justify-between pt-4 border-t">
+        <div className="flex items-center justify-between border-t pt-4">
           <Button
             variant="outline"
             onClick={handlePrevious}
@@ -717,28 +900,28 @@ export function BillingUpgradePage() {
           >
             {createCheckoutMutation.isPending ? (
               <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Processing Payment...
               </>
             ) : isSubmitting ? (
               <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Submitting Profile...
               </>
             ) : currentStep === steps.length ? (
               <>
                 Complete Upgrade
-                <ArrowRight className="h-4 w-4 ml-2" />
+                <ArrowRight className="ml-2 h-4 w-4" />
               </>
             ) : (
               <>
                 Next
-                <ArrowRight className="h-4 w-4 ml-2" />
+                <ArrowRight className="ml-2 h-4 w-4" />
               </>
             )}
           </Button>
         </div>
       </div>
     </Container>
-  );
+  )
 }

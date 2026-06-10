@@ -1,16 +1,35 @@
 import { useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Building, ChevronLeft, ChevronRight, Loader2, Save } from 'lucide-react'
+import {
+  ArrowLeft,
+  Building,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  Save,
+} from 'lucide-react'
 
 import { useDashboardData } from '@/hooks/useDashboardData'
 import { useOrganizationAuth } from '@/hooks/useOrganizationAuth'
 import api from '@/lib/api'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { toast } from 'sonner'
@@ -23,6 +42,13 @@ import {
 type CreateSearch = {
   parentId?: string
   parentName?: string
+}
+
+type RawUser = {
+  userId?: string
+  id?: string
+  name?: string
+  email?: string
 }
 
 const steps = ORGANIZATION_CREATE_STEPS
@@ -70,20 +96,20 @@ export function CreateOrganizationPage() {
   const [isCreating, setIsCreating] = useState(false)
   const [error, setError] = useState('')
   const [formData, setFormData] = useState(EMPTY_FORM)
-  const [users, setUsers] = useState<any[]>([])
+  const [users, setUsers] = useState<RawUser[]>([])
   const submitIdempotencyKeyRef = useRef<string | null>(null)
 
   const parentName = search.parentName
   const parentId = search.parentId
 
   const managerUserList = useMemo(() => {
-    const fromApi = (users || []).map((u: any) => ({
+    const fromApi = (users || []).map((u: RawUser) => ({
       userId: u.userId || u.id,
       name: u.name ?? u.email ?? '',
       email: u.email ?? '',
     }))
     if (fromApi.length > 0) return fromApi
-    return (employees || []).map((e: any) => ({
+    return (employees || []).map((e: RawUser) => ({
       userId: e.userId || e.id,
       name: e.name ?? e.email ?? '',
       email: e.email ?? '',
@@ -102,13 +128,13 @@ export function CreateOrganizationPage() {
         const raw = res.data.data ?? res.data.users ?? []
         const list = Array.isArray(raw) ? raw : []
         setUsers(
-          list
-            .filter((u: any) => u && (u.userId || u.id))
-            .map((u: any) => ({
+          (list as RawUser[])
+            .filter((u: RawUser) => u && (u.userId || u.id))
+            .map((u: RawUser) => ({
               userId: u.userId || u.id,
               name: u.name ?? u.email ?? '',
               email: u.email ?? '',
-            })),
+            }))
         )
       }
     } catch {
@@ -118,7 +144,8 @@ export function CreateOrganizationPage() {
 
   const validateStep = (step: number): string | null => {
     if (step === 0) {
-      if (!formData.name.trim() || formData.name.trim().length < 2) return 'Name must be at least 2 characters'
+      if (!formData.name.trim() || formData.name.trim().length < 2)
+        return 'Name must be at least 2 characters'
       if (!formData.legalName.trim()) return 'Legal name is required'
     }
     if (step === 1) {
@@ -183,7 +210,10 @@ export function CreateOrganizationPage() {
           description: formData.description,
           parentEntityId: parentId || null,
           parentTenantId: tenantId || '',
-          responsiblePersonId: formData.responsiblePersonId === 'none' ? null : formData.responsiblePersonId || null,
+          responsiblePersonId:
+            formData.responsiblePersonId === 'none'
+              ? null
+              : formData.responsiblePersonId || null,
           entityType: 'organization',
           subType: formData.organizationType || 'subsidiary',
           status: formData.status,
@@ -200,17 +230,30 @@ export function CreateOrganizationPage() {
       })
 
       if (!response?.data?.success) {
-        throw new Error(response?.data?.message || 'Failed to create organization')
+        throw new Error(
+          response?.data?.message || 'Failed to create organization'
+        )
       }
 
-      queryClient.invalidateQueries({ queryKey: ['organizations', 'hierarchy', tenantId] })
-      queryClient.invalidateQueries({ queryKey: ['organizations', 'available'] })
+      queryClient.invalidateQueries({
+        queryKey: ['organizations', 'hierarchy', tenantId],
+      })
+      queryClient.invalidateQueries({
+        queryKey: ['organizations', 'available'],
+      })
       queryClient.invalidateQueries({ queryKey: ['entities', tenantId] })
       queryClient.invalidateQueries({ queryKey: ['entityScope'] })
       toast.success('Organization created')
       navigate({ to: '/dashboard/organization' })
-    } catch (e: any) {
-      const message = e?.response?.data?.message || e?.message || 'Failed to create organization'
+    } catch (e: unknown) {
+      const err = e as {
+        response?: { data?: { message?: string } }
+        message?: string
+      }
+      const message =
+        err?.response?.data?.message ||
+        err?.message ||
+        'Failed to create organization'
       setError(message)
       toast.error(message)
     } finally {
@@ -227,18 +270,23 @@ export function CreateOrganizationPage() {
         description={
           parentName ? (
             <>
-              Adding under: <span className="font-medium text-[#1B2E5A]">{parentName}</span>
+              Adding under:{' '}
+              <span className="font-medium text-[#1B2E5A]">{parentName}</span>
             </>
           ) : (
             'Create a new top-level organization for this tenant.'
           )
         }
-        actions={(
-          <Button variant="outline" onClick={handleCancel} className="h-10 gap-2 self-start font-medium">
+        actions={
+          <Button
+            variant="outline"
+            onClick={handleCancel}
+            className="h-10 gap-2 self-start font-medium"
+          >
             <ArrowLeft className="h-4 w-4" />
             Back
           </Button>
-        )}
+        }
       />
 
       <Card className="border-slate-200/80 shadow-sm dark:border-slate-800">
@@ -247,36 +295,48 @@ export function CreateOrganizationPage() {
             <Building className="h-5 w-5 text-[#1B2E5A] dark:text-[#1B2E5A]/60" />
             {steps[currentStep].title}
           </CardTitle>
-          <CardDescription className="text-sm">{steps[currentStep].description}</CardDescription>
+          <CardDescription className="text-sm">
+            {steps[currentStep].description}
+          </CardDescription>
           <OrganizationCreateStepper currentStep={currentStep} />
         </CardHeader>
 
         <CardContent className="space-y-6 p-6">
           {error && (
-            <Alert variant="destructive" className="border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300">
+            <Alert
+              variant="destructive"
+              className="border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300"
+            >
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
 
-          <div className="grid gap-5 min-h-[280px]">
+          <div className="grid min-h-[280px] gap-5">
             {currentStep === 0 && (
               <>
                 <div className="grid gap-2">
                   <Label className="text-sm font-medium">Name *</Label>
                   <Input
                     value={formData.name}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, name: e.target.value }))
+                    }
                     placeholder="Acme Subsidiary"
-                    className="h-11 bg-slate-50/70 border-slate-200 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-0 dark:bg-slate-900/40 dark:border-slate-700"
+                    className="h-11 border-slate-200 bg-slate-50/70 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-0 dark:border-slate-700 dark:bg-slate-900/40"
                   />
                 </div>
                 <div className="grid gap-2">
                   <Label className="text-sm font-medium">Legal Name *</Label>
                   <Input
                     value={formData.legalName}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, legalName: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        legalName: e.target.value,
+                      }))
+                    }
                     placeholder="Acme Subsidiary Inc."
-                    className="h-11 bg-slate-50/70 border-slate-200 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-0 dark:bg-slate-900/40 dark:border-slate-700"
+                    className="h-11 border-slate-200 bg-slate-50/70 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-0 dark:border-slate-700 dark:bg-slate-900/40"
                   />
                 </div>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -284,9 +344,14 @@ export function CreateOrganizationPage() {
                     <Label className="text-sm font-medium">Type</Label>
                     <Select
                       value={formData.organizationType}
-                      onValueChange={(value) => setFormData((prev) => ({ ...prev, organizationType: value }))}
+                      onValueChange={(value) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          organizationType: value,
+                        }))
+                      }
                     >
-                      <SelectTrigger className="h-11 bg-slate-50/70 border-slate-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 dark:bg-slate-900/40 dark:border-slate-700">
+                      <SelectTrigger className="h-11 border-slate-200 bg-slate-50/70 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 dark:border-slate-700 dark:bg-slate-900/40">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -301,9 +366,11 @@ export function CreateOrganizationPage() {
                     <Label className="text-sm font-medium">Status</Label>
                     <Select
                       value={formData.status}
-                      onValueChange={(value) => setFormData((prev) => ({ ...prev, status: value }))}
+                      onValueChange={(value) =>
+                        setFormData((prev) => ({ ...prev, status: value }))
+                      }
                     >
-                      <SelectTrigger className="h-11 bg-slate-50/70 border-slate-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 dark:bg-slate-900/40 dark:border-slate-700">
+                      <SelectTrigger className="h-11 border-slate-200 bg-slate-50/70 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 dark:border-slate-700 dark:bg-slate-900/40">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -314,18 +381,25 @@ export function CreateOrganizationPage() {
                   </div>
                 </div>
                 <div className="grid gap-2">
-                  <Label className="text-sm font-medium">Manager (Optional)</Label>
+                  <Label className="text-sm font-medium">
+                    Manager (Optional)
+                  </Label>
                   <Select
                     value={formData.responsiblePersonId}
-                    onValueChange={(value) => setFormData((prev) => ({ ...prev, responsiblePersonId: value }))}
+                    onValueChange={(value) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        responsiblePersonId: value,
+                      }))
+                    }
                   >
-                    <SelectTrigger className="h-11 bg-slate-50/70 border-slate-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 dark:bg-slate-900/40 dark:border-slate-700">
+                    <SelectTrigger className="h-11 border-slate-200 bg-slate-50/70 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 dark:border-slate-700 dark:bg-slate-900/40">
                       <SelectValue placeholder="Select user" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">None</SelectItem>
                       {managerUserList.map((u) => (
-                        <SelectItem key={u.userId} value={u.userId}>
+                        <SelectItem key={u.userId} value={u.userId ?? ''}>
                           {u.name || u.email}
                         </SelectItem>
                       ))}
@@ -346,11 +420,12 @@ export function CreateOrganizationPage() {
                         setFormData((prev) => ({
                           ...prev,
                           country: value,
-                          currency: COUNTRY_CURRENCY_MAP[value] || prev.currency,
+                          currency:
+                            COUNTRY_CURRENCY_MAP[value] || prev.currency,
                         }))
                       }
                     >
-                      <SelectTrigger className="h-11 bg-slate-50/70 border-slate-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 dark:bg-slate-900/40 dark:border-slate-700">
+                      <SelectTrigger className="h-11 border-slate-200 bg-slate-50/70 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 dark:border-slate-700 dark:bg-slate-900/40">
                         <SelectValue placeholder="Select country" />
                       </SelectTrigger>
                       <SelectContent>
@@ -372,13 +447,26 @@ export function CreateOrganizationPage() {
                     <Label className="text-sm font-medium">Currency *</Label>
                     <Select
                       value={formData.currency}
-                      onValueChange={(value) => setFormData((prev) => ({ ...prev, currency: value }))}
+                      onValueChange={(value) =>
+                        setFormData((prev) => ({ ...prev, currency: value }))
+                      }
                     >
-                      <SelectTrigger className="h-11 bg-slate-50/70 border-slate-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 dark:bg-slate-900/40 dark:border-slate-700">
+                      <SelectTrigger className="h-11 border-slate-200 bg-slate-50/70 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 dark:border-slate-700 dark:bg-slate-900/40">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CHF', 'CNY', 'INR', 'SGD'].map((code) => (
+                        {[
+                          'USD',
+                          'EUR',
+                          'GBP',
+                          'JPY',
+                          'CAD',
+                          'AUD',
+                          'CHF',
+                          'CNY',
+                          'INR',
+                          'SGD',
+                        ].map((code) => (
                           <SelectItem key={code} value={code}>
                             {code}
                           </SelectItem>
@@ -391,16 +479,20 @@ export function CreateOrganizationPage() {
                   <Label className="text-sm font-medium">Fiscal Year End</Label>
                   <Select
                     value={formData.fiscalYearEnd}
-                    onValueChange={(value) => setFormData((prev) => ({ ...prev, fiscalYearEnd: value }))}
+                    onValueChange={(value) =>
+                      setFormData((prev) => ({ ...prev, fiscalYearEnd: value }))
+                    }
                   >
-                    <SelectTrigger className="h-11 bg-slate-50/70 border-slate-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 dark:bg-slate-900/40 dark:border-slate-700">
+                    <SelectTrigger className="h-11 border-slate-200 bg-slate-50/70 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 dark:border-slate-700 dark:bg-slate-900/40">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="12-31">December 31 (12-31)</SelectItem>
                       <SelectItem value="03-31">March 31 (03-31)</SelectItem>
                       <SelectItem value="06-30">June 30 (06-30)</SelectItem>
-                      <SelectItem value="09-30">September 30 (09-30)</SelectItem>
+                      <SelectItem value="09-30">
+                        September 30 (09-30)
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -413,18 +505,30 @@ export function CreateOrganizationPage() {
                   <Label className="text-sm font-medium">Tax ID</Label>
                   <Input
                     value={formData.taxId}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, taxId: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        taxId: e.target.value,
+                      }))
+                    }
                     placeholder="Enter tax ID (optional)"
-                    className="h-11 bg-slate-50/70 border-slate-200 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-0 dark:bg-slate-900/40 dark:border-slate-700"
+                    className="h-11 border-slate-200 bg-slate-50/70 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-0 dark:border-slate-700 dark:bg-slate-900/40"
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label className="text-sm font-medium">Registration Number</Label>
+                  <Label className="text-sm font-medium">
+                    Registration Number
+                  </Label>
                   <Input
                     value={formData.registrationNumber}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, registrationNumber: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        registrationNumber: e.target.value,
+                      }))
+                    }
                     placeholder="Enter registration number (optional)"
-                    className="h-11 bg-slate-50/70 border-slate-200 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-0 dark:bg-slate-900/40 dark:border-slate-700"
+                    className="h-11 border-slate-200 bg-slate-50/70 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-0 dark:border-slate-700 dark:bg-slate-900/40"
                   />
                 </div>
               </>
@@ -437,19 +541,29 @@ export function CreateOrganizationPage() {
                     <Label className="text-sm font-medium">Email</Label>
                     <Input
                       value={formData.email}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          email: e.target.value,
+                        }))
+                      }
                       placeholder="contact@example.com"
                       type="email"
-                      className="h-11 bg-slate-50/70 border-slate-200 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-0 dark:bg-slate-900/40 dark:border-slate-700"
+                      className="h-11 border-slate-200 bg-slate-50/70 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-0 dark:border-slate-700 dark:bg-slate-900/40"
                     />
                   </div>
                   <div className="grid gap-2">
                     <Label className="text-sm font-medium">Phone</Label>
                     <Input
                       value={formData.phone}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, phone: e.target.value }))}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          phone: e.target.value,
+                        }))
+                      }
                       placeholder="+1 555 000 0000"
-                      className="h-11 bg-slate-50/70 border-slate-200 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-0 dark:bg-slate-900/40 dark:border-slate-700"
+                      className="h-11 border-slate-200 bg-slate-50/70 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-0 dark:border-slate-700 dark:bg-slate-900/40"
                     />
                   </div>
                 </div>
@@ -457,13 +571,20 @@ export function CreateOrganizationPage() {
                   <Label className="text-sm font-medium">Website</Label>
                   <Input
                     value={formData.website}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, website: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        website: e.target.value,
+                      }))
+                    }
                     placeholder="https://example.com"
-                    className="h-11 bg-slate-50/70 border-slate-200 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-0 dark:bg-slate-900/40 dark:border-slate-700"
+                    className="h-11 border-slate-200 bg-slate-50/70 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-0 dark:border-slate-700 dark:bg-slate-900/40"
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label className="text-sm font-medium">Description / Notes</Label>
+                  <Label className="text-sm font-medium">
+                    Description / Notes
+                  </Label>
                   <Textarea
                     value={formData.description || formData.notes}
                     onChange={(e) =>
@@ -474,7 +595,7 @@ export function CreateOrganizationPage() {
                       }))
                     }
                     rows={3}
-                    className="bg-slate-50/70 border-slate-200 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-0 dark:bg-slate-900/40 dark:border-slate-700"
+                    className="border-slate-200 bg-slate-50/70 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-0 dark:border-slate-700 dark:bg-slate-900/40"
                   />
                 </div>
               </>
@@ -483,53 +604,53 @@ export function CreateOrganizationPage() {
 
           <div className="sticky bottom-0 z-10 -mx-6 border-t border-slate-100 bg-white/95 px-6 py-4 backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">
             <div className="flex flex-wrap justify-end gap-2">
-            <Button
-              variant="outline"
-              onClick={handleCancel}
-              disabled={isCreating}
-              className="h-10 min-w-[96px] rounded-md font-medium"
-            >
-              Cancel
-            </Button>
-            {currentStep > 0 && (
               <Button
                 variant="outline"
-                onClick={handlePrevious}
+                onClick={handleCancel}
                 disabled={isCreating}
-                className="h-10 min-w-[96px] gap-1 rounded-md font-medium"
+                className="h-10 min-w-[96px] rounded-md font-medium"
               >
-                <ChevronLeft className="h-4 w-4" />
-                Back
+                Cancel
               </Button>
-            )}
-            {currentStep < steps.length - 1 ? (
-              <Button
-                onClick={handleNext}
-                disabled={isCreating}
-                className="h-10 min-w-[112px] gap-1 rounded-md bg-[#1B2E5A] font-medium text-white shadow-sm hover:bg-[#152449]"
-              >
-                Next
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            ) : (
-              <Button
-                onClick={handleSubmit}
-                disabled={isCreating}
-                className="h-10 min-w-[164px] gap-1 rounded-md bg-[#1B2E5A] font-medium text-white shadow-sm hover:bg-[#152449]"
-              >
-                {isCreating ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Creating...
-                  </>
-                ) : (
-                  <>
-                    <Save className="h-4 w-4" />
-                    Create Organization
-                  </>
-                )}
-              </Button>
-            )}
+              {currentStep > 0 && (
+                <Button
+                  variant="outline"
+                  onClick={handlePrevious}
+                  disabled={isCreating}
+                  className="h-10 min-w-[96px] gap-1 rounded-md font-medium"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Back
+                </Button>
+              )}
+              {currentStep < steps.length - 1 ? (
+                <Button
+                  onClick={handleNext}
+                  disabled={isCreating}
+                  className="h-10 min-w-[112px] gap-1 rounded-md bg-[#1B2E5A] font-medium text-white shadow-sm hover:bg-[#152449]"
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleSubmit}
+                  disabled={isCreating}
+                  className="h-10 min-w-[164px] gap-1 rounded-md bg-[#1B2E5A] font-medium text-white shadow-sm hover:bg-[#152449]"
+                >
+                  {isCreating ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4" />
+                      Create Organization
+                    </>
+                  )}
+                </Button>
+              )}
             </div>
           </div>
         </CardContent>

@@ -63,6 +63,10 @@ const clearDraftFromLocalStorage = (userId: string): void => {
 }
 
 export interface UseFormPersistenceOptions {
+  // react-hook-form's UseFormReturn is invariant in its TFieldValues generic, so a
+  // specifically-typed form (UseFormReturn<newBusinessData | existingBusinessData>) is
+  // not assignable to UseFormReturn<FieldValues>. `any` is the standard RHF escape hatch.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   form: UseFormReturn<any>
   flowType: string
   currentStep: number
@@ -82,21 +86,23 @@ export const useFormPersistence = ({
   const hasRestoredRef = useRef(false)
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  const normalizeRestoredData = useCallback((rawData: any) => {
+  const normalizeRestoredData = useCallback((rawData: unknown) => {
     if (!rawData || typeof rawData !== 'object') return rawData
 
-    const normalized = { ...rawData } as Record<string, any>
-    const existingBusinessDetails =
+    const normalized = { ...rawData } as Record<string, unknown>
+    const existingBusinessDetails = (
       normalized.businessDetails &&
       typeof normalized.businessDetails === 'object'
         ? normalized.businessDetails
         : {}
+    ) as Record<string, unknown>
 
     // Support legacy flat payload keys so select fields hydrate correctly.
     const mergedCountry = resolveCountryCode(
       existingBusinessDetails.country ??
         normalized.country ??
-        normalized.businessDetails?.country
+        (normalized.businessDetails as Record<string, unknown> | undefined)
+          ?.country
     )
     normalized.businessDetails = {
       ...existingBusinessDetails,
@@ -144,18 +150,18 @@ export const useFormPersistence = ({
       const rawFormData = form.getValues()
 
       // Deep clone to preserve all data including empty strings and null values
-      const deepClone = (obj: any): any => {
+      const deepClone = <T>(obj: T): T => {
         if (obj === null || typeof obj !== 'object') return obj
-        if (obj instanceof Date) return new Date(obj)
-        if (Array.isArray(obj)) return obj.map(deepClone)
+        if (obj instanceof Date) return new Date(obj) as T
+        if (Array.isArray(obj)) return obj.map(deepClone) as T
 
-        const cloned: any = {}
+        const cloned: Record<string, unknown> = {}
         for (const key in obj) {
           if (Object.prototype.hasOwnProperty.call(obj, key)) {
-            cloned[key] = deepClone(obj[key])
+            cloned[key] = deepClone((obj as Record<string, unknown>)[key])
           }
         }
-        return cloned
+        return cloned as T
       }
 
       // Clone form data to preserve all values including empty strings and null

@@ -39,6 +39,7 @@ import {
   Trash2,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import axios from 'axios'
 import { api } from '@/lib/api'
 import { runMutationWithFeedback } from '@/lib/mutation-feedback'
 
@@ -92,9 +93,11 @@ export const TenantManagement: React.FC = () => {
         setTenants(response.data.data.tenants)
         setPagination(response.data.data.pagination)
       }
-    } catch (error: any) {
+    } catch (error) {
       // Ignore aborted requests (user typed again before previous completed)
-      if (error?.name === 'AbortError' || error?.code === 'ERR_CANCELED') return
+      const name = error instanceof Error ? error.name : undefined
+      const code = axios.isAxiosError(error) ? error.code : undefined
+      if (name === 'AbortError' || code === 'ERR_CANCELED') return
       console.error('Failed to fetch tenants:', error)
       toast.error('Failed to load tenants')
     } finally {

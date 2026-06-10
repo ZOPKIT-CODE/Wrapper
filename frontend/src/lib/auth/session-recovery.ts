@@ -11,7 +11,11 @@ const explicitSensitiveKeys = new Set([
 const shouldRemoveAuthKey = (key: string): boolean => {
   if (explicitSensitiveKeys.has(key)) return true
   if (/^refreshToken\d+$/i.test(key)) return true
-  if (/kinde|oauth|auth/i.test(key) && /(token|refresh|state|code|session)/i.test(key)) return true
+  if (
+    /kinde|oauth|auth/i.test(key) &&
+    /(token|refresh|state|code|session)/i.test(key)
+  )
+    return true
   if (/(access.?token|refresh.?token|id.?token)/i.test(key)) return true
   return false
 }
@@ -36,7 +40,14 @@ export const clearStaleAuthStorage = (): void => {
 }
 
 export const isInvalidGrantError = (error: unknown): boolean => {
-  const e = error as any
+  const e = error as {
+    message?: string
+    error?: string
+    error_description?: string
+    response?: {
+      data?: { error?: string; error_description?: string; message?: string }
+    }
+  }
   const message = String(
     e?.message ||
       e?.error_description ||
@@ -92,7 +103,8 @@ const isSafeReturnPath = (path: string): boolean =>
 
 export const rememberPostLoginRedirect = (path: string): void => {
   try {
-    if (isSafeReturnPath(path)) sessionStorage.setItem(POST_LOGIN_REDIRECT_KEY, path)
+    if (isSafeReturnPath(path))
+      sessionStorage.setItem(POST_LOGIN_REDIRECT_KEY, path)
   } catch {
     // Ignore storage access errors
   }
@@ -107,4 +119,3 @@ export const consumePostLoginRedirect = (): string | null => {
     return null
   }
 }
-

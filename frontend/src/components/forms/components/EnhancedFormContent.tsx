@@ -1,19 +1,21 @@
 import React, { useEffect } from 'react'
+import { UseFormReturn, FieldValues } from 'react-hook-form'
 import { useFormAccessibility } from '../hooks/useFormAccessibility'
 import { useFormPerformance } from '../hooks/useFormPerformance'
 import { MotionAnimatedTransition } from './MotionAnimatedTransition'
+import { FormConfig, FormField, MultiStepFormProps } from '../types'
 
 interface EnhancedFormContentProps {
   children: React.ReactNode
   animations?: boolean
   accessibility?: boolean
-  persistence?: any
+  persistence?: MultiStepFormProps['persistence']
   debug?: boolean
   currentStep: number
   transitionDirection: 'forward' | 'backward' | 'none'
-  renderField: (field: any) => React.ReactNode
-  currentStepConfig: any
-  methods: any
+  renderField: (field: FormField) => React.ReactNode
+  currentStepConfig: FormConfig['steps'][0]
+  methods: UseFormReturn<FieldValues>
   isCurrentStepValid: boolean
 }
 
@@ -60,13 +62,11 @@ export const EnhancedFormContent: React.FC<EnhancedFormContentProps> = ({
           {animations ? (
             <MotionAnimatedTransition direction={transitionDirection}>
               <div className="space-y-6">
-                {currentStepConfig.fields.map(
-                  (field: { id: string }, _index: number) => (
-                    <div key={field.id} data-animate>
-                      {renderField(field)}
-                    </div>
-                  )
-                )}
+                {currentStepConfig.fields.map((field) => (
+                  <div key={field.id} data-animate>
+                    {renderField(field)}
+                  </div>
+                ))}
               </div>
             </MotionAnimatedTransition>
           ) : (
@@ -89,8 +89,8 @@ export const EnhancedFormContent: React.FC<EnhancedFormContentProps> = ({
                   Required Fields:{' '}
                   {JSON.stringify(
                     currentStepConfig.fields
-                      .filter((f: any) => f.required)
-                      .map((f: any) => f.id),
+                      .filter((f) => f.required)
+                      .map((f) => f.id),
                     null,
                     2
                   )}

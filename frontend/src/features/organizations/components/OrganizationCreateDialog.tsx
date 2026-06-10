@@ -152,10 +152,10 @@ export function OrganizationCreateDialog({
                 <Label>Entity Type</Label>
                 <Select
                   value={createForm.entityType}
-                  onValueChange={(v: any) =>
+                  onValueChange={(v: string) =>
                     setCreateForm({
                       ...createForm,
-                      entityType: v,
+                      entityType: v as CreateForm['entityType'],
                       subType:
                         v === 'location'
                           ? 'office'

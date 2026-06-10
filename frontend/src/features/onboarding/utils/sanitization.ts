@@ -120,7 +120,7 @@ export const sanitizeUrl = (url: string | undefined | null): string => {
 /**
  * Sanitize numeric values
  */
-export const sanitizeNumber = (value: any): number | null => {
+export const sanitizeNumber = (value: unknown): number | null => {
   if (value === null || value === undefined || value === '') return null
 
   const num = Number(value)
@@ -132,7 +132,7 @@ export const sanitizeNumber = (value: any): number | null => {
 /**
  * Sanitize boolean values
  */
-export const sanitizeBoolean = (value: any): boolean => {
+export const sanitizeBoolean = (value: unknown): boolean => {
   if (typeof value === 'boolean') return value
   if (typeof value === 'string') {
     return value.toLowerCase() === 'true' || value === '1'
@@ -143,14 +143,14 @@ export const sanitizeBoolean = (value: any): boolean => {
 /**
  * Deep sanitize object - recursively clean all properties
  */
-export const sanitizeObject = (obj: any): any => {
+export const sanitizeObject = (obj: unknown): unknown => {
   if (obj === null || obj === undefined) return obj
   if (typeof obj !== 'object') return obj
   if (Array.isArray(obj)) {
     return obj.map((item) => sanitizeObject(item))
   }
 
-  const sanitized: any = {}
+  const sanitized: Record<string, unknown> = {}
 
   for (const [key, value] of Object.entries(obj)) {
     // Skip sensitive fields that shouldn't be sanitized
@@ -183,11 +183,12 @@ export const sanitizeObject = (obj: any): any => {
       key === 'legalCompanyName'
     ) {
       if (typeof value === 'string' && value.trim()) {
-        sanitized[key] = sanitizeString(value)
+        const sanitizedValue = sanitizeString(value)
         // Ensure it's not empty after sanitization
-        if (!sanitized[key] || sanitized[key].trim() === '') {
-          sanitized[key] = value.trim() // Fallback to original if sanitization removes it
-        }
+        sanitized[key] =
+          !sanitizedValue || sanitizedValue.trim() === ''
+            ? value.trim() // Fallback to original if sanitization removes it
+            : sanitizedValue
       } else {
         sanitized[key] = value // Preserve non-string values
       }
@@ -256,18 +257,28 @@ export const sanitizeObject = (obj: any): any => {
 /**
  * Main sanitization function for form data
  */
-export const sanitizeFormData = (data: any): any => {
+// Return type stays `any`: the sole consumer (OnboardingForm) reads ~50 dynamic
+// properties off the result (companyName.trim(), nested businessDetails.*, etc.).
+// Narrowing the return to unknown/Record cascades tsc errors into that file.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const sanitizeFormData = (data: unknown): any => {
   try {
     if (!data || typeof data !== 'object') {
       return data
     }
 
     // Deep sanitize the entire object
-    const sanitized = sanitizeObject(data)
+    const sanitized = sanitizeObject(data) as Record<string, unknown>
 
     // Additional validation for required business fields
-    if (sanitized.businessDetails) {
-      const businessDetails = sanitized.businessDetails
+    if (
+      sanitized.businessDetails &&
+      typeof sanitized.businessDetails === 'object'
+    ) {
+      const businessDetails = sanitized.businessDetails as Record<
+        string,
+        unknown
+      >
 
       // Ensure country is valid
       if (

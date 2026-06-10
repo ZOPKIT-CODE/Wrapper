@@ -46,7 +46,7 @@ export interface GranularRestriction {
   icon: string
   color: string
   configurable: boolean
-  defaultValue: any
+  defaultValue: unknown
   validation: {
     min?: number
     max?: number
@@ -60,20 +60,20 @@ export interface GranularRestriction {
 export interface ValueConstraint {
   field: string
   operator: '>' | '<' | '=' | '>=' | '<=' | 'between' | 'in' | 'not_in'
-  value: any
+  value: unknown
   currency?: string
   unit?: string
 }
 
 export interface TimeConstraint {
   type: 'business_hours' | 'specific_days' | 'time_range' | 'duration_limit'
-  value: any
+  value: unknown
   timezone: string
 }
 
 export interface DataAccessRule {
   scope: 'own_records' | 'team_records' | 'department_records' | 'all_records'
-  filters: Record<string, any>
+  filters: Record<string, unknown>
   fieldRestrictions: string[]
   exportLimits: {
     daily: number
@@ -91,7 +91,7 @@ export interface PermissionContext {
     | 'time_period'
     | 'approval_status'
     | 'record_age'
-  conditions: any
+  conditions: Record<string, unknown>
   effects: {
     enableActions?: string[]
     disableActions?: string[]
@@ -111,18 +111,18 @@ export interface CustomRole extends Role {
     inheritAll: boolean
     excludePermissions: string[]
     additionalPermissions: string[]
-    overrideRestrictions: Record<string, any>
+    overrideRestrictions: Record<string, unknown>
   }
   autoAssignmentRules: {
     department?: string[]
     jobTitle?: string[]
     seniority?: string
-    conditions?: any[]
+    conditions?: Array<{ field: string; operator: string; value: unknown }>
   }
   approvalWorkflow: {
     required: boolean
     approvers: string[]
-    escalation: any[]
+    escalation: unknown[]
   }
 }
 

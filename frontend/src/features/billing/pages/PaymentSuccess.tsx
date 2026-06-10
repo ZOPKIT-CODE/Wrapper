@@ -36,6 +36,7 @@ import { subscriptionAPI, creditAPI } from '@/lib/api'
 import { formatCurrency } from '@/lib/utils'
 import { useUserContext } from '@/contexts/UserContextProvider'
 import { generateInvoicePDF } from '@/lib/invoiceGenerator'
+import type { InvoicePayment } from '@/lib/invoiceGenerator'
 // @ts-expect-error - canvas-confetti doesn't have types
 import confetti from 'canvas-confetti'
 
@@ -479,7 +480,7 @@ const PaymentSuccess: React.FC = () => {
           currency: paymentInfo.currency,
           stripePaymentIntentId: paymentInfo.stripePaymentIntentId,
           stripeInvoiceId: paymentInfo.stripeInvoiceId,
-        } as any,
+        } as InvoicePayment,
         {
           name: user?.name || user?.email || '',
           email: user?.email || '',

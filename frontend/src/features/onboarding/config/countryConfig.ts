@@ -4,22 +4,22 @@
  */
 
 export interface CountryConfig {
-  code: string;
-  name: string;
-  currency: string;
-  currencySymbol: string;
-  language: string;
-  locale: string;
-  dateFormat: string;
-  phoneFormat: string;
-  timezone: string;
-  hasStates: boolean;
+  code: string
+  name: string
+  currency: string
+  currencySymbol: string
+  language: string
+  locale: string
+  dateFormat: string
+  phoneFormat: string
+  timezone: string
+  hasStates: boolean
   taxSystem: {
-    name: string;
-    idLabel: string;
-    vatLabel: string;
-    required: boolean;
-  };
+    name: string
+    idLabel: string
+    vatLabel: string
+    required: boolean
+  }
 }
 
 export const COUNTRY_CONFIGS: Record<string, CountryConfig> = {
@@ -38,8 +38,8 @@ export const COUNTRY_CONFIGS: Record<string, CountryConfig> = {
       name: 'GST',
       idLabel: 'PAN Number',
       vatLabel: 'GSTIN',
-      required: true
-    }
+      required: true,
+    },
   },
   US: {
     code: 'US',
@@ -56,8 +56,8 @@ export const COUNTRY_CONFIGS: Record<string, CountryConfig> = {
       name: 'Federal Tax',
       idLabel: 'EIN',
       vatLabel: 'Sales Tax ID',
-      required: false
-    }
+      required: false,
+    },
   },
   UK: {
     code: 'UK',
@@ -74,8 +74,8 @@ export const COUNTRY_CONFIGS: Record<string, CountryConfig> = {
       name: 'VAT',
       idLabel: 'UTR',
       vatLabel: 'VAT Number',
-      required: false
-    }
+      required: false,
+    },
   },
   CA: {
     code: 'CA',
@@ -92,8 +92,8 @@ export const COUNTRY_CONFIGS: Record<string, CountryConfig> = {
       name: 'GST/HST',
       idLabel: 'Business Number',
       vatLabel: 'GST/HST Number',
-      required: false
-    }
+      required: false,
+    },
   },
   AU: {
     code: 'AU',
@@ -110,8 +110,8 @@ export const COUNTRY_CONFIGS: Record<string, CountryConfig> = {
       name: 'GST',
       idLabel: 'TFN',
       vatLabel: 'ABN/ACN',
-      required: false
-    }
+      required: false,
+    },
   },
   SG: {
     code: 'SG',
@@ -128,8 +128,8 @@ export const COUNTRY_CONFIGS: Record<string, CountryConfig> = {
       name: 'GST',
       idLabel: 'UEN',
       vatLabel: 'GST Number',
-      required: false
-    }
+      required: false,
+    },
   },
   AE: {
     code: 'AE',
@@ -146,34 +146,36 @@ export const COUNTRY_CONFIGS: Record<string, CountryConfig> = {
       name: 'VAT',
       idLabel: 'Trade License',
       vatLabel: 'VAT Number',
-      required: false
-    }
-  }
-};
+      required: false,
+    },
+  },
+}
 
 export interface LocalizationSettings {
-  currency: string;
-  language: string;
-  locale: string;
-  dateFormat: string;
-  phoneFormat: string;
-  timezone: string;
+  currency: string
+  language: string
+  locale: string
+  dateFormat: string
+  phoneFormat: string
+  timezone: string
   taxLabels: {
-    taxId: string;
-    vatId: string;
-  };
+    taxId: string
+    vatId: string
+  }
 }
 
 /**
  * Auto-populate localization settings based on country selection
  */
-export function autoPopulateLocalization(countryCode: string): LocalizationSettings {
+export function autoPopulateLocalization(
+  countryCode: string
+): LocalizationSettings {
   // Normalize country code to uppercase
-  const normalizedCode = countryCode?.toUpperCase() || 'IN';
-  
+  const normalizedCode = countryCode?.toUpperCase() || 'IN'
+
   // Get config for the country, fallback to India if not found
-  const config = COUNTRY_CONFIGS[normalizedCode] || COUNTRY_CONFIGS['IN'];
-  
+  const config = COUNTRY_CONFIGS[normalizedCode] || COUNTRY_CONFIGS['IN']
+
   return {
     currency: config.currency,
     language: config.language,
@@ -183,72 +185,80 @@ export function autoPopulateLocalization(countryCode: string): LocalizationSetti
     timezone: config.timezone,
     taxLabels: {
       taxId: config.taxSystem.idLabel,
-      vatId: config.taxSystem.vatLabel
-    }
-  };
+      vatId: config.taxSystem.vatLabel,
+    },
+  }
 }
 
 /** Uppercase ISO country code, or `fallback` when missing/blank (default India). */
 export function resolveCountryCode(raw: unknown, fallback = 'IN'): string {
-  const s = raw != null ? String(raw).trim() : '';
-  if (!s) return fallback;
-  return s.toUpperCase();
+  const s = raw != null ? String(raw).trim() : ''
+  if (!s) return fallback
+  return s.toUpperCase()
 }
 
 /**
  * When registration country is India, fills empty regional fields from Indian defaults
  * (currency, locale, timezone, language, billing country).
  */
-export function applyIndiaRegionalDefaultsIfMissing(values: Record<string, any>): void {
-  const country = resolveCountryCode(values.country ?? values.businessDetails?.country);
-  if (country !== 'IN') return;
-  const loc = autoPopulateLocalization('IN');
+export function applyIndiaRegionalDefaultsIfMissing(
+  values: Record<string, unknown>
+): void {
+  const businessDetails =
+    values.businessDetails && typeof values.businessDetails === 'object'
+      ? (values.businessDetails as Record<string, unknown>)
+      : undefined
+  const country = resolveCountryCode(values.country ?? businessDetails?.country)
+  if (country !== 'IN') return
+  const loc = autoPopulateLocalization('IN')
   const setIfEmpty = (key: string, value: string) => {
-    const cur = values[key];
+    const cur = values[key]
     if (cur === undefined || cur === null || String(cur).trim() === '') {
-      values[key] = value;
+      values[key] = value
     }
-  };
-  setIfEmpty('defaultCurrency', loc.currency);
-  setIfEmpty('defaultLanguage', loc.language);
-  setIfEmpty('defaultLocale', loc.locale);
-  setIfEmpty('defaultTimeZone', loc.timezone);
-  setIfEmpty('billingCountry', 'IN');
+  }
+  setIfEmpty('defaultCurrency', loc.currency)
+  setIfEmpty('defaultLanguage', loc.language)
+  setIfEmpty('defaultLocale', loc.locale)
+  setIfEmpty('defaultTimeZone', loc.timezone)
+  setIfEmpty('billingCountry', 'IN')
 }
 
 /**
  * Get state field configuration based on country
  */
 export interface StateFieldConfig {
-  visible: boolean;
-  required: boolean;
-  label: string;
+  visible: boolean
+  required: boolean
+  label: string
 }
 
 export function getStateFieldConfig(countryCode: string): StateFieldConfig {
-  const config = COUNTRY_CONFIGS[countryCode];
-  
+  const config = COUNTRY_CONFIGS[countryCode]
+
   if (!config || !config.hasStates) {
     return {
       visible: false,
       required: false,
-      label: 'State/Province'
-    };
+      label: 'State/Province',
+    }
   }
-  
+
   return {
     visible: true,
     required: true,
-    label: countryCode === 'CA' ? 'Province/Territory' : 
-           countryCode === 'AU' ? 'State/Territory' : 
-           'State'
-  };
+    label:
+      countryCode === 'CA'
+        ? 'Province/Territory'
+        : countryCode === 'AU'
+          ? 'State/Territory'
+          : 'State',
+  }
 }
 
 /**
  * Get country configuration
  */
 export function getCountryConfig(countryCode: string): CountryConfig {
-  return COUNTRY_CONFIGS[countryCode] || COUNTRY_CONFIGS['IN'];
+  return COUNTRY_CONFIGS[countryCode] || COUNTRY_CONFIGS['IN']
 }
-

@@ -3,6 +3,9 @@ import { useAuth } from '@/lib/auth/cognito-auth'
 import type { AxiosRequestConfig } from 'axios'
 import api from '@/lib/api'
 
+const getErrorMessage = (err: unknown): string =>
+  err instanceof Error ? err.message : String(err)
+
 interface Application {
   appId: string
   appCode: string
@@ -19,7 +22,7 @@ interface ActivityLog {
   action: string
   appCode: string
   appName: string
-  metadata: any
+  metadata: Record<string, unknown>
   createdAt: string
 }
 
@@ -50,8 +53,8 @@ const SuiteDashboard: React.FC = () => {
         '/suite/applications'
       )
       setApplications(data.applications)
-    } catch (err: any) {
-      setError(`Failed to load applications: ${err.message}`)
+    } catch (err: unknown) {
+      setError(`Failed to load applications: ${getErrorMessage(err)}`)
     } finally {
       setLoading(false)
     }
@@ -64,7 +67,7 @@ const SuiteDashboard: React.FC = () => {
         '/suite/activity'
       )
       setActivities(data.activities)
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to load activity:', err)
     }
   }
@@ -88,8 +91,8 @@ const SuiteDashboard: React.FC = () => {
 
       // Redirect to the application with SSO token
       window.location.href = data.redirectUrl
-    } catch (err: any) {
-      setError(`Failed to launch ${appName}: ${err.message}`)
+    } catch (err: unknown) {
+      setError(`Failed to launch ${appName}: ${getErrorMessage(err)}`)
       setLoading(false)
     }
   }

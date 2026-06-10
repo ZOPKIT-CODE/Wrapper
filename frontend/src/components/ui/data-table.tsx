@@ -29,7 +29,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-export interface DataTableColumn<T = any> {
+export interface DataTableColumn<T = unknown> {
   key: string
   label: string
   sortable?: boolean
@@ -39,7 +39,7 @@ export interface DataTableColumn<T = any> {
   className?: string
 }
 
-export interface DataTableAction<T = any> {
+export interface DataTableAction<T = unknown> {
   key: string
   label: string
   icon: React.ElementType
@@ -49,7 +49,7 @@ export interface DataTableAction<T = any> {
   separator?: boolean
 }
 
-export interface DataTableProps<T = any> {
+export interface DataTableProps<T = unknown> {
   data: T[]
   columns: DataTableColumn<T>[]
   actions?: DataTableAction<T>[]
@@ -68,7 +68,7 @@ export interface DataTableProps<T = any> {
   onRefresh?: () => void
 }
 
-export function DataTable<T = any>({
+export function DataTable<T = unknown>({
   data,
   columns,
   actions = [],
@@ -110,10 +110,10 @@ export function DataTable<T = any>({
       filtered = data.filter((item) => {
         return columns.some((column) => {
           if (!column.searchable) return false
-          const value = (item as any)[column.key]
+          const value = (item as Record<string, unknown>)[column.key]
           return (
-            value &&
-            value.toString().toLowerCase().includes(search.toLowerCase())
+            !!value &&
+            String(value).toLowerCase().includes(search.toLowerCase())
           )
         })
       })
@@ -122,8 +122,8 @@ export function DataTable<T = any>({
     // Apply sorting
     if (sortBy) {
       filtered = [...filtered].sort((a, b) => {
-        const aVal = (a as any)[sortBy]
-        const bVal = (b as any)[sortBy]
+        const aVal = (a as Record<string, string | number>)[sortBy]
+        const bVal = (b as Record<string, string | number>)[sortBy]
 
         if (sortOrder === 'asc') {
           return aVal > bVal ? 1 : -1
@@ -326,7 +326,9 @@ export function DataTable<T = any>({
                       <TableCell key={column.key} className={column.className}>
                         {column.render
                           ? column.render(item, index)
-                          : (item as any)[column.key]}
+                          : ((item as Record<string, unknown>)[
+                              column.key
+                            ] as ReactNode)}
                       </TableCell>
                     ))}
 

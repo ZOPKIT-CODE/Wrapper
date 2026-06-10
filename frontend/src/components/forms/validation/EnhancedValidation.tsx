@@ -13,10 +13,10 @@ export class EnhancedValidation {
     fields: FormField[],
     crossFieldValidations?: Array<{
       fields: string[]
-      validator: (values: FormValues) => z.ZodSchema<any>
+      validator: (values: FormValues) => z.ZodTypeAny
     }>
   ) {
-    const fieldValidations: Record<string, z.ZodSchema<any>> = {}
+    const fieldValidations: Record<string, z.ZodTypeAny> = {}
 
     // Create individual field validations
     fields.forEach((field) => {
@@ -37,7 +37,7 @@ export class EnhancedValidation {
             })
             return acc
           },
-          {} as Record<string, (values: FormValues) => z.ZodSchema<any>>
+          {} as Record<string, (values: FormValues) => z.ZodTypeAny>
         )
       )
 
@@ -50,8 +50,8 @@ export class EnhancedValidation {
   /**
    * Create field-specific validation schema
    */
-  static createFieldSchema(field: FormField): z.ZodSchema<any> {
-    let schema: z.ZodSchema<any>
+  static createFieldSchema(field: FormField): z.ZodTypeAny {
+    let schema: z.ZodTypeAny
 
     switch (field.type) {
       case 'email':
@@ -128,7 +128,7 @@ export class EnhancedValidation {
    */
   static createAsyncValidation(
     fieldId: string,
-    validationFn: (value: any) => Promise<boolean>,
+    validationFn: (value: unknown) => Promise<boolean>,
     errorMessage: string
   ) {
     return z.string().refine(
@@ -151,7 +151,7 @@ export class EnhancedValidation {
     fields: FormField[],
     crossFieldValidations?: Array<{
       fields: string[]
-      validator: (values: FormValues) => z.ZodSchema<any>
+      validator: (values: FormValues) => z.ZodTypeAny
     }>
   ): Promise<{ isValid: boolean; errors: Record<string, string> }> {
     try {
@@ -176,7 +176,7 @@ export class EnhancedValidation {
    */
   static async validateField(
     field: FormField,
-    value: any,
+    value: unknown,
     _allValues: FormValues
   ): Promise<{ isValid: boolean; error?: string }> {
     try {
@@ -195,12 +195,12 @@ export class EnhancedValidation {
    * Create debounced validation
    */
   static createDebouncedValidation(
-    validationFn: (value: any) => Promise<boolean>,
+    validationFn: (value: unknown) => Promise<boolean>,
     delay: number = 500
   ) {
     let timeoutId: NodeJS.Timeout
 
-    return (value: any): Promise<boolean> => {
+    return (value: unknown): Promise<boolean> => {
       return new Promise((resolve) => {
         clearTimeout(timeoutId)
         timeoutId = setTimeout(async () => {
@@ -259,6 +259,6 @@ export const AsyncValidationPatterns = {
   emailUnique: (email: string) => AsyncValidation.emailUnique(email),
   usernameAvailable: (username: string) =>
     AsyncValidation.usernameAvailable(username),
-  custom: (value: any, fn: (value: any) => Promise<boolean>) =>
+  custom: (value: unknown, fn: (value: unknown) => Promise<boolean>) =>
     AsyncValidation.customValidation(value, fn),
 }

@@ -6,6 +6,7 @@ import ReactFlow, {
   useReactFlow,
   ReactFlowProvider,
   type Edge,
+  type Node,
   BackgroundVariant,
   type NodeTypes,
   MarkerType,
@@ -30,6 +31,26 @@ import { CreditAllocationModal } from '@/components/common/CreditAllocationModal
 // Define nodeTypes
 const nodeTypes: NodeTypes = {
   organizationNode: OrganizationNode,
+}
+
+// Loose shape of a hierarchy entity as returned by the API. The backend mixes
+// `entityId`/`organizationId` (and the `*Name`/`*Level`) naming conventions, so
+// both forms are optional here.
+interface HierarchyNode {
+  entityId?: string
+  organizationId?: string
+  entityName?: string
+  organizationName?: string
+  entityType?: string
+  organizationType?: string
+  locationType?: string
+  isActive?: boolean
+  description?: string
+  availableCredits?: number | string | null
+  reservedCredits?: number | string | null
+  entityLevel?: number
+  organizationLevel?: number
+  children?: HierarchyNode[]
 }
 
 interface OrganizationHierarchyFlowProps {
@@ -60,9 +81,9 @@ function convertHierarchyToFlow(
   onAllocateCredits?: (entityId: string) => void,
   onTransferCredits?: (orgId: string) => void
 ) {
-  const nodes: any[] = []
+  const nodes: Node[] = []
   const edges: Edge[] = []
-  const nodeMap = new Map<string, any>()
+  const nodeMap = new Map<string, Node>()
 
   // Layout configuration - optimized spacing for better alignment
   const NODE_WIDTH = 280
@@ -90,10 +111,10 @@ function convertHierarchyToFlow(
 
   // Calculate subtree width recursively (bottom-up)
   function calculateSubtreeLayout(
-    org: any,
+    org: HierarchyNode,
     level: number
   ): { width: number; left: number; right: number } {
-    const nodeId = org.entityId || org.organizationId
+    const nodeId = org.entityId || org.organizationId || ''
     const children = org.children || []
 
     if (children.length === 0) {
@@ -114,7 +135,7 @@ function convertHierarchyToFlow(
     }
 
     // Calculate layout for all children
-    const childLayouts = children.map((child: any) =>
+    const childLayouts = children.map((child: HierarchyNode) =>
       calculateSubtreeLayout(child, level + 1)
     )
 
@@ -148,8 +169,12 @@ function convertHierarchyToFlow(
   }
 
   // Second pass: Assign actual x positions (top-down)
-  function assignPositions(org: any, parentX: number, level: number): void {
-    const nodeId = org.entityId || org.organizationId
+  function assignPositions(
+    org: HierarchyNode,
+    parentX: number,
+    level: number
+  ): void {
+    const nodeId = org.entityId || org.organizationId || ''
     const children = org.children || []
     const layout = layouts.get(nodeId)!
 
@@ -161,8 +186,10 @@ function convertHierarchyToFlow(
       let currentX = parentX - layout.subtreeWidth / 2
 
       // Position children first with compact spacing
-      children.forEach((child: any, index: number) => {
-        const childLayout = layouts.get(child.entityId || child.organizationId)!
+      children.forEach((child: HierarchyNode, index: number) => {
+        const childLayout = layouts.get(
+          child.entityId || child.organizationId || ''
+        )!
         const childSubtreeWidth = childLayout.subtreeWidth
 
         // Position child at the center of its allocated space
@@ -181,11 +208,12 @@ function convertHierarchyToFlow(
 
       // Center parent above its children
       const firstChildLayout = layouts.get(
-        children[0].entityId || children[0].organizationId
+        children[0].entityId || children[0].organizationId || ''
       )!
       const lastChildLayout = layouts.get(
         children[children.length - 1].entityId ||
-          children[children.length - 1].organizationId
+          children[children.length - 1].organizationId ||
+          ''
       )!
       const childrenCenterX = (firstChildLayout.x + lastChildLayout.x) / 2
       layout.x = childrenCenterX
@@ -194,9 +222,9 @@ function convertHierarchyToFlow(
 
   // Calculate layouts for all root nodes (starting from primary organizations)
   let rootXOffset = 0
-  hierarchy.hierarchy.forEach((org: any, index: number) => {
+  hierarchy.hierarchy.forEach((org: HierarchyNode, index: number) => {
     const layout = calculateSubtreeLayout(org, 0) // Level 0 (root level)
-    const nodeId = org.entityId || org.organizationId
+    const nodeId = org.entityId || org.organizationId || ''
     const nodeLayout = layouts.get(nodeId)!
 
     // Position root node at the center of its subtree
@@ -214,12 +242,12 @@ function convertHierarchyToFlow(
 
   // Create nodes and edges
   function createNodesAndEdges(
-    org: any,
+    org: HierarchyNode,
     parentId: string | null,
     onAllocateCredits?: (entityId: string) => void,
     onTransferCreditsCallback?: (orgId: string) => void
   ): void {
-    const nodeId = org.entityId || org.organizationId
+    const nodeId = org.entityId || org.organizationId || ''
     const nodeName = org.entityName || org.organizationName
     const entityType = org.entityType || 'organization'
     const isLocation = entityType === 'location'
@@ -291,7 +319,7 @@ function convertHierarchyToFlow(
 
     // Process children
     const children = org.children || []
-    children.forEach((child: any) => {
+    children.forEach((child: HierarchyNode) => {
       createNodesAndEdges(
         child,
         nodeId,
@@ -302,7 +330,7 @@ function convertHierarchyToFlow(
   }
 
   // Create all nodes and edges, starting from primary organizations
-  hierarchy.hierarchy.forEach((org: any) => {
+  hierarchy.hierarchy.forEach((org: HierarchyNode) => {
     createNodesAndEdges(org, null, onAllocateCredits, onTransferCredits)
   })
 
@@ -350,7 +378,7 @@ function OrganizationHierarchyFlowInner({
   const handleAllocateCredits = useCallback(
     (entityId: string) => {
       // Find the entity in the hierarchy to get its details
-      const findEntity = (entities: any[]): any => {
+      const findEntity = (entities: HierarchyNode[]): HierarchyNode | null => {
         for (const entity of entities) {
           if (
             entity.entityId === entityId ||
@@ -370,11 +398,13 @@ function OrganizationHierarchyFlowInner({
         ? findEntity(hierarchy.hierarchy)
         : null
       if (entity) {
+        const credits = entity.availableCredits
         setSelectedEntityForAllocation({
           id: entityId,
-          name: entity.entityName || entity.organizationName,
-          type: entity.entityType || 'organization',
-          availableCredits: entity.availableCredits || 0,
+          name: entity.entityName || entity.organizationName || '',
+          type: entity.entityType === 'location' ? 'location' : 'organization',
+          availableCredits:
+            (typeof credits === 'string' ? parseFloat(credits) : credits) || 0,
         })
         setShowCreditAllocationModal(true)
       }

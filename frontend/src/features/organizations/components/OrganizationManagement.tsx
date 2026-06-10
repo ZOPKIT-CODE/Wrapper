@@ -10,6 +10,7 @@ import { Container } from '@/components/common/Page'
 import { useDashboardData } from '@/hooks/useDashboardData'
 import { useOrganizationAuth } from '@/hooks/useOrganizationAuth'
 import api from '@/lib/api'
+import type { AxiosRequestConfig } from 'axios'
 import {
   DashboardPageHeader,
   DASHBOARD_TABS_LIST_CLASS,
@@ -57,10 +58,22 @@ interface Employee {
   title?: string
 }
 
+// Loosely-shaped person record accepted when building the manager dropdown —
+// sources may key the id as either `userId` or `id`.
+interface PersonSource {
+  userId?: string
+  id?: string
+  name?: string
+  email?: string
+}
+
 interface OrganizationManagementProps {
   employees: Employee[]
   applications: Application[]
   isAdmin: boolean
+  // Result is forwarded to several consumers with incompatible expected return
+  // types (HierarchyApiResponse vs raw axios .data); `any` keeps it assignable to all.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   makeRequest: (endpoint: string, options?: RequestInit) => Promise<any>
   loadDashboardData: () => void
   inviteEmployee: () => void
@@ -81,20 +94,20 @@ export function OrganizationPage({ isAdmin = false }: { isAdmin?: boolean }) {
     const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`
     const headers: Record<string, string> = { 'X-Application': 'crm' }
     if (options?.headers) {
-      const h: any = options.headers as any
+      const h: HeadersInit = options.headers
       if (typeof Headers !== 'undefined' && h instanceof Headers) {
-        h.forEach((v: any, k: string) => {
+        h.forEach((v: string, k: string) => {
           headers[k] = String(v)
         })
       } else if (Array.isArray(h)) {
-        h.forEach(([k, v]: [string, any]) => {
+        h.forEach(([k, v]: [string, string]) => {
           headers[k] = String(v)
         })
       } else {
         Object.assign(headers, h as Record<string, string>)
       }
     }
-    const axiosConfig: any = {
+    const axiosConfig: AxiosRequestConfig = {
       method: options?.method,
       headers,
       withCredentials: true,
@@ -145,9 +158,11 @@ export function OrganizationTreeManagement({
 }: {
   tenantId: string
   isAdmin: boolean
+  // Forwarded to multiple consumers with incompatible expected return types.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   makeRequest: (endpoint: string, options?: RequestInit) => Promise<any>
   applications: Application[]
-  employees?: any[]
+  employees?: Employee[]
   showEditResponsiblePerson: boolean
   setShowEditResponsiblePerson: (show: boolean) => void
   editingEntity: Entity | null
@@ -192,7 +207,7 @@ export function OrganizationTreeManagement({
   const effectiveApplications = useMemo(() => {
     const apps = (
       applications?.length ? applications : cachedApplications
-    ) as any[]
+    ) as Application[]
     return apps.filter(
       (app, idx, self) =>
         app &&
@@ -216,7 +231,7 @@ export function OrganizationTreeManagement({
   const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null)
   const [selectedEntity, setSelectedEntity] = useState<Entity | null>(null)
   const [createFormStep, setCreateFormStep] = useState(0)
-  const [managerUsers] = useState<any[]>([])
+  const [managerUsers] = useState<PersonSource[]>([])
   const [createForm, setCreateForm] = useState<CreateForm>({
     entityType: 'organization',
     subType: 'subsidiary',
@@ -261,14 +276,14 @@ export function OrganizationTreeManagement({
   })
 
   const managerUserList = useMemo(() => {
-    const fromApi = (managerUsers || []).map((u: any) => ({
-      userId: u.userId || u.id,
+    const fromApi = (managerUsers || []).map((u: PersonSource) => ({
+      userId: u.userId || u.id || '',
       name: u.name ?? u.email ?? '',
       email: u.email ?? '',
     }))
     if (fromApi.length > 0) return fromApi
-    return (employees || []).map((e: any) => ({
-      userId: e.userId || e.id,
+    return (employees || []).map((e: PersonSource) => ({
+      userId: e.userId || e.id || '',
       name: e.name ?? e.email ?? '',
       email: e.email ?? '',
     }))
@@ -293,14 +308,20 @@ export function OrganizationTreeManagement({
         .map((child) => filterRecursive(child, currentLevel + 1))
         .filter((c): c is Organization => c !== null)
       if ((matchesSearch && matchesFilter) || filteredChildren.length > 0) {
+        // Credit fields may arrive as strings from the API despite the typed shape.
+        const rawCredits = org as {
+          availableCredits?: string | number
+          reservedCredits?: string | number
+          totalCredits?: string | number
+        }
         const av =
-          typeof (org as any).availableCredits === 'number'
-            ? (org as any).availableCredits
-            : parseFloat((org as any).availableCredits) || 0
+          typeof rawCredits.availableCredits === 'number'
+            ? rawCredits.availableCredits
+            : parseFloat(String(rawCredits.availableCredits)) || 0
         const rv =
-          typeof (org as any).reservedCredits === 'number'
-            ? (org as any).reservedCredits
-            : parseFloat((org as any).reservedCredits) || 0
+          typeof rawCredits.reservedCredits === 'number'
+            ? rawCredits.reservedCredits
+            : parseFloat(String(rawCredits.reservedCredits)) || 0
         return {
           ...org,
           children: filteredChildren,
@@ -308,8 +329,8 @@ export function OrganizationTreeManagement({
           availableCredits: av,
           reservedCredits: rv,
           totalCredits:
-            typeof (org as any).totalCredits === 'number'
-              ? (org as any).totalCredits
+            typeof rawCredits.totalCredits === 'number'
+              ? rawCredits.totalCredits
               : av + rv,
         }
       }

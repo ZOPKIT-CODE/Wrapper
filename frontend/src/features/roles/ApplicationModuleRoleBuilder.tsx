@@ -81,17 +81,29 @@ interface RoleBuilderData {
   selectedModules: Record<string, string[]>
   selectedPermissions: Record<string, string[]>
   restrictions: {
-    timeRestrictions?: Record<string, any>
-    ipRestrictions?: Record<string, any>
-    dataRestrictions?: Record<string, any>
-    featureRestrictions?: Record<string, any>
+    timeRestrictions?: Record<string, unknown>
+    ipRestrictions?: Record<string, unknown>
+    dataRestrictions?: Record<string, unknown>
+    featureRestrictions?: Record<string, unknown>
   }
 }
 
+/** Permissions can arrive as flat dotted codes or a nested app→module→codes map. */
+type ExistingPermissions = string[] | Record<string, unknown>
+
+/** Shape the builder reads off an existing/template role (all optional). */
+interface InitialRole {
+  roleId?: string
+  roleName?: string
+  name?: string
+  description?: string
+  permissions?: ExistingPermissions
+}
+
 interface ApplicationModuleRoleBuilderProps {
-  onSave?: (role: any) => void
+  onSave?: (role: unknown) => void
   onCancel?: () => void
-  initialRole?: any
+  initialRole?: InitialRole
 }
 
 export function ApplicationModuleRoleBuilder({
@@ -195,9 +207,7 @@ export function ApplicationModuleRoleBuilder({
   }, [initialRole])
 
   // Parse existing role permissions into selection format
-  const parseExistingPermissions = (
-    permissions: string[] | Record<string, any>
-  ) => {
+  const parseExistingPermissions = (permissions: ExistingPermissions) => {
     const selectedApps: string[] = []
     const selectedModules: Record<string, string[]> = {}
     const selectedPermissions: Record<string, string[]> = {}

@@ -601,7 +601,9 @@ function PermissionsContent() {
             ].map(({ key, label, icon: Icon }) => (
               <button
                 key={key}
-                onClick={() => setViewMode(key as any)}
+                onClick={() =>
+                  setViewMode(key as 'workspace' | 'matrix' | 'overview')
+                }
                 className={`flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-all ${
                   viewMode === key
                     ? 'bg-white text-[#1B2E5A] shadow-sm'

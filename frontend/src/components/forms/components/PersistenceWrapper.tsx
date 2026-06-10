@@ -1,9 +1,11 @@
 import React, { useEffect } from 'react'
 import { useFormPersistence } from '../hooks/useFormPersistence'
 
+type PersistenceOptions = NonNullable<Parameters<typeof useFormPersistence>[0]>
+
 interface PersistenceWrapperProps {
   children: React.ReactNode
-  persistence?: any
+  persistence?: PersistenceOptions
 }
 
 /**

@@ -12,7 +12,11 @@ import { toast as sonnerToast } from 'sonner'
 import { useRateLimit } from '../hooks/useRateLimit'
 import { sanitizeFormData } from '../utils/sanitization'
 import { validateFormDataSecurity } from '../utils/securityValidations'
-import { existingBusinessData, newBusinessData } from '../schemas'
+import {
+  existingBusinessData,
+  newBusinessData,
+  type BusinessDetails,
+} from '../schemas'
 import { getFlowConfig } from '../config/flowConfigs'
 import { onboardingLogger } from '../utils/onboardingLogger'
 // Note: getStepNumberForField and getDisplayNameForField are available for future use
@@ -57,8 +61,8 @@ export const verifyEmailDomain = (
  */
 const determineGSTStatus = (
   urlParams?: URLSearchParams,
-  userProfile?: any,
-  formData?: any
+  userProfile?: Record<string, unknown>,
+  formData?: Record<string, unknown>
 ): boolean | null => {
   // 1. Check URL parameters
   if (urlParams) {
@@ -84,11 +88,11 @@ const determineGSTStatus = (
  */
 export const determineUserClassification = (
   email?: string,
-  userProfile?: any,
+  userProfile?: Record<string, unknown>,
   urlParams?: URLSearchParams,
   mobileVerified?: boolean,
   dinVerified?: boolean,
-  formData?: any // Optional form data for GST detection
+  formData?: Record<string, unknown> // Optional form data for GST detection
 ): UserClassification | undefined => {
   // 1. Check if mobile OTP is verified
   if (mobileVerified) {
@@ -222,9 +226,13 @@ export const OnboardingForm = () => {
     })
     // Expose logs in dev so you can run in console: copy(__ONBOARDING_LOGS_STRING__())
     if (typeof window !== 'undefined') {
-      ;(window as any).__ONBOARDING_LOGS_STRING__ = () =>
+      const debugWindow = window as Window & {
+        __ONBOARDING_LOGS_STRING__?: () => string
+        __ONBOARDING_LOGS__?: () => ReturnType<typeof onboardingLogger.getLogs>
+      }
+      debugWindow.__ONBOARDING_LOGS_STRING__ = () =>
         onboardingLogger.getLogsAsString()
-      ;(window as any).__ONBOARDING_LOGS__ = () => onboardingLogger.getLogs()
+      debugWindow.__ONBOARDING_LOGS__ = () => onboardingLogger.getLogs()
     }
     if (hasRestoredRef.current) return
     hasRestoredRef.current = true
@@ -359,7 +367,7 @@ export const OnboardingForm = () => {
         const firstError =
           formErrors[firstErrorField as keyof typeof formErrors]
         const errorMessage =
-          (firstError as any)?.message ||
+          (firstError as { message?: string } | undefined)?.message ||
           `Please fix the validation errors in ${firstErrorField}`
         onboardingLogger.warn('Submit blocked: validation failed', {
           formErrors: Object.keys(formErrors),
@@ -375,10 +383,15 @@ export const OnboardingForm = () => {
 
       setIsSubmitting(true)
       recordAttempt()
+      // The submitted form data may carry a legacy top-level `companyName` that isn't
+      // on the schema type; widen the read to tolerate it without losing typing.
+      const submittedData = data as (newBusinessData | existingBusinessData) & {
+        companyName?: string
+      }
       onboardingLogger.info('Submitting to API /onboarding/onboard-frontend', {
         companyName:
-          (data as any).businessDetails?.companyName ??
-          (data as any).companyName,
+          submittedData.businessDetails?.companyName ??
+          submittedData.companyName,
       })
 
       const loadingToastId = sonnerToast.loading(
@@ -390,11 +403,12 @@ export const OnboardingForm = () => {
 
       try {
         // FIXED: Get company name BEFORE sanitization to ensure it's not lost
-        const rawBusinessDetails = (data as any).businessDetails || {}
+        const rawBusinessDetails: BusinessDetails & { businessName?: string } =
+          submittedData.businessDetails || {}
         const rawCompanyName =
           rawBusinessDetails.companyName ||
-          (data as any).companyName ||
-          (data as any).businessName ||
+          submittedData.companyName ||
+          submittedData.businessName ||
           rawBusinessDetails.businessName ||
           ''
 
@@ -402,7 +416,7 @@ export const OnboardingForm = () => {
         if (!rawCompanyName || rawCompanyName.trim() === '') {
           onboardingLogger.warn(
             'Submit blocked: company name missing before sanitization',
-            { rawBusinessDetails: (data as any).businessDetails }
+            { rawBusinessDetails: submittedData.businessDetails }
           )
           setIsSubmitting(false)
           sonnerToast.dismiss(loadingToastId)
@@ -438,7 +452,7 @@ export const OnboardingForm = () => {
         const { default: api } = await import('@/lib/api/client')
 
         // Helper function to filter out empty/null/undefined values
-        const filterEmpty = (value: any): any => {
+        const filterEmpty = <T,>(value: T): T | undefined => {
           if (value === null || value === undefined || value === '') {
             return undefined
           }
@@ -654,23 +668,35 @@ export const OnboardingForm = () => {
           })
           throw new Error(msg)
         }
-      } catch (error: any) {
-        const apiMessage = error?.response?.data?.message
-        const validationMsg = Array.isArray(error?.response?.data?.errors)
-          ? error.response.data.errors
-              .map((e: { message?: string }) => e.message)
+      } catch (error: unknown) {
+        const err = error as {
+          message?: string
+          response?: {
+            status?: number
+            data?: {
+              message?: string
+              errors?: Array<{ message?: string }>
+            }
+          }
+        }
+        const apiMessage = err?.response?.data?.message
+        const validationMsg = Array.isArray(err?.response?.data?.errors)
+          ? err
+              .response!.data!.errors!.map(
+                (e: { message?: string }) => e.message
+              )
               .filter(Boolean)
               .join('. ')
           : null
         const displayMessage =
           apiMessage ||
           validationMsg ||
-          error?.message ||
+          err?.message ||
           'There was an error submitting your form. Please try again.'
         onboardingLogger.error('Submission error', {
-          message: error?.message,
-          response: error?.response?.data,
-          status: error?.response?.status,
+          message: err?.message,
+          response: err?.response?.data,
+          status: err?.response?.status,
         })
         console.error('🔴 Submission error:', error)
         sonnerToast.dismiss(loadingToastId)
@@ -694,20 +720,23 @@ export const OnboardingForm = () => {
     ]
   )
 
-  const handleError = useCallback((error: Error, errorInfo: any) => {
-    onboardingLogger.error('Onboarding ErrorBoundary', {
-      message: error.message,
-      stack: error.stack,
-      componentStack: errorInfo?.componentStack,
-    })
-    console.error('Onboarding Error:', error, errorInfo)
-    sonnerToast.error(
-      'An unexpected error occurred. Please refresh the page and try again.',
-      {
-        duration: 10000,
-      }
-    )
-  }, [])
+  const handleError = useCallback(
+    (error: Error, errorInfo: React.ErrorInfo) => {
+      onboardingLogger.error('Onboarding ErrorBoundary', {
+        message: error.message,
+        stack: error.stack,
+        componentStack: errorInfo?.componentStack,
+      })
+      console.error('Onboarding Error:', error, errorInfo)
+      sonnerToast.error(
+        'An unexpected error occurred. Please refresh the page and try again.',
+        {
+          duration: 10000,
+        }
+      )
+    },
+    []
+  )
 
   const handleStepChange = useCallback(
     (step: number) => {

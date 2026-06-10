@@ -48,6 +48,23 @@ interface MobileNavMenuProps {
   onClose: () => void
 }
 
+// Marker attached to the NavbarLogo component so NavBody can detect it
+type NavbarLogoMarker = { __isNavbarLogo?: boolean }
+
+interface SpotlightButtonProps extends React.ComponentPropsWithoutRef<'button'> {
+  children?: React.ReactNode
+  as?: React.ElementType
+  href?: string
+  className?: string
+}
+
+interface MagneticButtonProps extends React.ComponentPropsWithoutRef<'button'> {
+  children?: React.ReactNode
+  as?: React.ElementType
+  href?: string
+  className?: string
+}
+
 // Main Navbar Container — always pill shape, no scroll resizing
 export const Navbar = ({ children, className }: NavbarProps) => {
   const ref = useRef<HTMLDivElement>(null)
@@ -85,7 +102,7 @@ export const NavBody = ({ children, className }: NavBodyProps) => {
       {React.Children.map(children, (child) => {
         if (
           React.isValidElement(child) &&
-          (child.type as any)?.__isNavbarLogo
+          (child.type as NavbarLogoMarker)?.__isNavbarLogo
         ) {
           return React.cloneElement(
             child as React.ReactElement<{ visible?: boolean }>,
@@ -200,7 +217,7 @@ export const MobileNavMenu = ({
 }
 
 export const NavbarLogo = ({ visible: _visible }: { visible?: boolean }) => {
-  ;(NavbarLogo as any).__isNavbarLogo = true
+  ;(NavbarLogo as typeof NavbarLogo & NavbarLogoMarker).__isNavbarLogo = true
   return (
     <a href="/" className="relative z-20 flex shrink-0 items-center pl-2">
       <img
@@ -220,7 +237,7 @@ const SpotlightButton = ({
   className,
   onClick,
   ...props
-}: any) => {
+}: SpotlightButtonProps) => {
   const mouseX = useMotionValue(0)
   const mouseY = useMotionValue(0)
   function handleMouseMove({
@@ -271,7 +288,7 @@ export const MagneticButton = ({
   href,
   className,
   ...props
-}: any) => {
+}: MagneticButtonProps) => {
   return (
     <Tag
       href={href}
@@ -309,7 +326,12 @@ export const NavbarButton = ({
 )) => {
   if (variant === 'primary' || variant === 'dark' || variant === 'gradient') {
     return (
-      <SpotlightButton href={href} as={Tag} className={className} {...props}>
+      <SpotlightButton
+        href={href}
+        as={Tag}
+        className={className}
+        {...(props as React.ComponentPropsWithoutRef<'button'>)}
+      >
         {children}
       </SpotlightButton>
     )

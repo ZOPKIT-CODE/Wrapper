@@ -1,4 +1,5 @@
 import React from 'react'
+import axios from 'axios'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/lib/auth/cognito-auth'
 import { api, subscriptionAPI } from '@/lib/api'
@@ -37,9 +38,10 @@ export function useAuthStatus() {
     enabled: !!isAuthenticated && !!user,
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
-    retry: (failureCount, error: any) => {
+    retry: (failureCount, error) => {
       // Don't retry auth errors, but retry network errors
-      if (error?.response?.status === 401) return false
+      if (axios.isAxiosError(error) && error.response?.status === 401)
+        return false
       return failureCount < 2
     },
   })
@@ -71,8 +73,9 @@ export function useEntityScope() {
     enabled: !!isAuthenticated && !!user && !isOnboardingPage && isTenantAdmin,
     staleTime: 5 * 60 * 1000, // 5 minutes - entity scope doesn't change often
     gcTime: 15 * 60 * 1000, // 15 minutes cache
-    retry: (failureCount, error: any) => {
-      if (error?.response?.status === 401) return false
+    retry: (failureCount, error) => {
+      if (axios.isAxiosError(error) && error.response?.status === 401)
+        return false
       return failureCount < 2
     },
     // Return default scope if disabled
@@ -118,9 +121,11 @@ export function useTenant(tenantId?: string) {
       !!isAuthenticated && !!user && !!effectiveTenantId && !isOnboardingPage,
     staleTime: 5 * 60 * 1000, // 5 minutes - tenant data doesn't change often
     gcTime: 15 * 60 * 1000, // 15 minutes cache
-    retry: (failureCount, error: any) => {
-      if (error?.response?.status === 401 || error?.response?.status === 404)
-        return false
+    retry: (failureCount, error) => {
+      const status = axios.isAxiosError(error)
+        ? error.response?.status
+        : undefined
+      if (status === 401 || status === 404) return false
       return failureCount < 2
     },
   })
@@ -160,8 +165,9 @@ export function useTenantApplications(tenantId?: string) {
     enabled: !!isAuthenticated && !!user && !!effectiveTenantId,
     staleTime: 3 * 60 * 1000, // 3 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes cache
-    retry: (failureCount, error: any) => {
-      if (error?.response?.status === 401) return false
+    retry: (failureCount, error) => {
+      if (axios.isAxiosError(error) && error.response?.status === 401)
+        return false
       return failureCount < 2
     },
     // Return empty array as placeholder
@@ -199,8 +205,9 @@ export function useApplicationAllocations(entityId?: string) {
     enabled: !!isAuthenticated && !!user,
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 5 * 60 * 1000, // 5 minutes cache
-    retry: (failureCount, error: any) => {
-      if (error?.response?.status === 401) return false
+    retry: (failureCount, error) => {
+      if (axios.isAxiosError(error) && error.response?.status === 401)
+        return false
       return failureCount < 2
     },
     placeholderData: [],
@@ -259,8 +266,9 @@ export function useNotifications(
     gcTime: 5 * 60 * 1000,
     refetchInterval: 60_000, // poll every 60s so expiry warnings appear promptly
     refetchOnWindowFocus: true, // re-fetch when user returns to the tab
-    retry: (failureCount, error: any) => {
-      if (error?.response?.status === 401) return false
+    retry: (failureCount, error) => {
+      if (axios.isAxiosError(error) && error.response?.status === 401)
+        return false
       return failureCount < 2
     },
     placeholderData: [],
@@ -291,8 +299,9 @@ export function useCreditStatusQuery(enabled: boolean = true) {
     staleTime: 5 * 60 * 1000, // raised from 1min — credit balance doesn't change on every page visit
     gcTime: 10 * 60 * 1000,
     refetchOnWindowFocus: false,
-    retry: (failureCount, error: any) => {
-      if (error?.response?.status === 401) return false
+    retry: (failureCount, error) => {
+      if (axios.isAxiosError(error) && error.response?.status === 401)
+        return false
       return failureCount < 2
     },
   })
@@ -315,8 +324,9 @@ export function useCreditUsageSummary(params?: {
     enabled: !!isAuthenticated && !!user,
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
-    retry: (failureCount, error: any) => {
-      if (error?.response?.status === 401) return false
+    retry: (failureCount, error) => {
+      if (axios.isAxiosError(error) && error.response?.status === 401)
+        return false
       return failureCount < 2
     },
   })
@@ -335,8 +345,9 @@ export function useCreditStats() {
     enabled: !!isAuthenticated && !!user,
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
-    retry: (failureCount, error: any) => {
-      if (error?.response?.status === 401) return false
+    retry: (failureCount, error) => {
+      if (axios.isAxiosError(error) && error.response?.status === 401)
+        return false
       return failureCount < 2
     },
   })
@@ -361,8 +372,9 @@ export function useCreditTransactionHistory(params?: {
     enabled: !!isAuthenticated && !!user,
     staleTime: 1 * 60 * 1000, // 1 minute
     gcTime: 5 * 60 * 1000, // 5 minutes
-    retry: (failureCount, error: any) => {
-      if (error?.response?.status === 401) return false
+    retry: (failureCount, error) => {
+      if (axios.isAxiosError(error) && error.response?.status === 401)
+        return false
       return failureCount < 2
     },
   })
@@ -378,12 +390,12 @@ export function useSubscriptionCurrent() {
       try {
         const response = await subscriptionAPI.getCurrent()
         return response.data.data
-      } catch (error: any) {
+      } catch (error) {
         console.error(
           '❌ useSubscriptionCurrent: Error fetching subscription:',
           error
         )
-        if (error.response?.status === 404) {
+        if (axios.isAxiosError(error) && error.response?.status === 404) {
           return {
             plan: 'free',
             status: 'active',
@@ -423,12 +435,20 @@ export function useUsers(entityId?: string | null) {
     enabled: !!isAuthenticated && !!user,
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 5 * 60 * 1000, // 5 minutes cache
-    retry: (failureCount, error: any) => {
-      if (error?.response?.status === 401) return false
+    retry: (failureCount, error) => {
+      if (axios.isAxiosError(error) && error.response?.status === 401)
+        return false
       return failureCount < 2
     },
     placeholderData: [],
   })
+}
+
+// Minimal shape of a role item used for client-side filtering below.
+interface RoleListItem {
+  roleName?: string
+  description?: string
+  isSystemRole?: boolean
 }
 
 // Shared roles hook with caching
@@ -452,7 +472,7 @@ export function useRoles(filters?: {
           if (filters?.search) {
             const searchLower = filters.search.toLowerCase()
             rolesData = rolesData.filter(
-              (role: any) =>
+              (role: RoleListItem) =>
                 role.roleName?.toLowerCase().includes(searchLower) ||
                 role.description?.toLowerCase().includes(searchLower)
             )
@@ -460,20 +480,20 @@ export function useRoles(filters?: {
 
           if (filters?.type === 'system') {
             rolesData = rolesData.filter(
-              (role: any) => role.isSystemRole === true
+              (role: RoleListItem) => role.isSystemRole === true
             )
           } else if (filters?.type === 'custom') {
             rolesData = rolesData.filter(
-              (role: any) => role.isSystemRole === false
+              (role: RoleListItem) => role.isSystemRole === false
             )
           }
 
           return rolesData
         }
-      } catch (error: any) {
+      } catch (error) {
         console.warn(
           '⚠️ Failed to fetch from /admin/roles/all, trying fallback:',
-          error.message
+          error instanceof Error ? error.message : error
         )
       }
 
@@ -497,8 +517,9 @@ export function useRoles(filters?: {
     enabled: !!isAuthenticated && !!user,
     staleTime: 5 * 60 * 1000, // 5 minutes - roles don't change often
     gcTime: 15 * 60 * 1000, // 15 minutes cache
-    retry: (failureCount, error: any) => {
-      if (error?.response?.status === 401) return false
+    retry: (failureCount, error) => {
+      if (axios.isAxiosError(error) && error.response?.status === 401)
+        return false
       return failureCount < 2
     },
   })
@@ -529,8 +550,9 @@ export function useOnboardingStatus() {
     enabled: !!isAuthenticated && !!user,
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
-    retry: (failureCount, error: any) => {
-      if (error?.response?.status === 401) return false
+    retry: (failureCount, error) => {
+      if (axios.isAxiosError(error) && error.response?.status === 401)
+        return false
       return failureCount < 2
     },
   })
@@ -590,7 +612,7 @@ export function useInvalidateQueries() {
 }
 
 // Hook for debounced API calls
-export function useDebounceCallback<T extends (...args: any[]) => any>(
+export function useDebounceCallback<T extends (...args: never[]) => unknown>(
   callback: T,
   delay: number
 ): T {

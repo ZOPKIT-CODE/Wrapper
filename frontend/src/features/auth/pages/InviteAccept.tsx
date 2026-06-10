@@ -4,6 +4,7 @@ import { useAuth } from '@/lib/auth/cognito-auth'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import api from '@/lib/api'
+import axios from 'axios'
 import { logger } from '@/lib/logger'
 import { useInvalidateQueries, queryKeys } from '@/hooks/useSharedQueries'
 import {
@@ -25,7 +26,8 @@ export function InviteAccept() {
   const search = useSearch({ strict: false }) as Record<string, string>
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const { invalidateAuthStatus, invalidateOnboardingStatus } = useInvalidateQueries()
+  const { invalidateAuthStatus, invalidateOnboardingStatus } =
+    useInvalidateQueries()
   const { isAuthenticated, user, isLoading, login } = useAuth()
 
   const [invitation, setInvitation] = useState<InvitationDetails | null>(null)
@@ -47,13 +49,19 @@ export function InviteAccept() {
     const fetch = async () => {
       if (token) {
         try {
-          const res = await api.get('/invitations/details-by-token', { params: { token } })
+          const res = await api.get('/invitations/details-by-token', {
+            params: { token },
+          })
           if (res.data.success) setInvitation(res.data.invitation)
           else setError(res.data.message || 'Failed to load invitation')
-        } catch (err: any) {
-          if (err.response?.status === 404) setError('Invitation not found or has expired')
-          else if (err.response?.status === 410) setError('This invitation has expired')
-          else if (err.response?.status === 409) setError('This invitation has already been accepted')
+        } catch (err) {
+          const status = axios.isAxiosError(err)
+            ? err.response?.status
+            : undefined
+          if (status === 404) setError('Invitation not found or has expired')
+          else if (status === 410) setError('This invitation has expired')
+          else if (status === 409)
+            setError('This invitation has already been accepted')
           else setError('Unable to load invitation details')
         }
         setInviteLoading(false)
@@ -65,11 +73,16 @@ export function InviteAccept() {
         return
       }
       try {
-        const res = await api.get('/invitations/details', { params: { org: orgCode, email: email || '' } })
+        const res = await api.get('/invitations/details', {
+          params: { org: orgCode, email: email || '' },
+        })
         if (res.data.success) setInvitation(res.data.invitation)
         else setError(res.data.message || 'Failed to load invitation')
-      } catch (err: any) {
-        if (err.response?.status === 404) setError('Invitation not found or has expired')
+      } catch (err) {
+        const status = axios.isAxiosError(err)
+          ? err.response?.status
+          : undefined
+        if (status === 404) setError('Invitation not found or has expired')
         else setError('Unable to load invitation details')
       }
       setInviteLoading(false)
@@ -80,8 +93,9 @@ export function InviteAccept() {
   // ── Refetch invitation after OAuth redirect (page reloaded without invitation) ─
   useEffect(() => {
     if (isAuthenticated && user && !invitation && token) {
-      api.get('/invitations/details-by-token', { params: { token } })
-        .then(res => {
+      api
+        .get('/invitations/details-by-token', { params: { token } })
+        .then((res) => {
           if (res.data.success) setInvitation(res.data.invitation)
           else setError(res.data.message || 'Failed to load invitation')
           setInviteLoading(false)
@@ -96,13 +110,16 @@ export function InviteAccept() {
   // ── Preserve token across OAuth redirect ───────────────────────────────
   useEffect(() => {
     if (token) sessionStorage.setItem('pendingInvitationToken', token)
-    return () => { if (token) sessionStorage.removeItem('pendingInvitationToken') }
+    return () => {
+      if (token) sessionStorage.removeItem('pendingInvitationToken')
+    }
   }, [token])
 
   // ── Restore token post-OAuth if missing from URL ────────────────────────
   useEffect(() => {
     const pending = sessionStorage.getItem('pendingInvitationToken')
-    if (pending && !token) navigate({ to: `/invite/accept?token=${pending}`, replace: true })
+    if (pending && !token)
+      navigate({ to: `/invite/accept?token=${pending}`, replace: true })
   }, [token, navigate])
 
   // ── Auto-accept as soon as auth + invitation are both ready ────────────
@@ -110,7 +127,13 @@ export function InviteAccept() {
   // objects get new references across re-renders (which would otherwise re-trigger
   // this effect and spam the API after a 403 or transient error).
   useEffect(() => {
-    if (isAuthenticated && !isLoading && user && invitation && !autoAcceptFired.current) {
+    if (
+      isAuthenticated &&
+      !isLoading &&
+      user &&
+      invitation &&
+      !autoAcceptFired.current
+    ) {
       autoAcceptFired.current = true
       handleAcceptInvitation()
     }
@@ -138,7 +161,10 @@ export function InviteAccept() {
     try {
       // Cognito: `provider: 'google'` routes straight to Google federation via the
       // backend /oauth/login?provider=google handler (no Kinde connection-id needed).
-      const opts: any = { provider: 'google', popup: true }
+      const opts: NonNullable<Parameters<typeof login>[0]> = {
+        provider: 'google',
+        popup: true,
+      }
       if (invitation?.orgCode) opts.org_code = invitation.orgCode
       await login(opts)
     } catch (err) {
@@ -159,7 +185,9 @@ export function InviteAccept() {
         response = await api.post('/invitations/accept-by-token', { token })
       } else {
         response = await api.post('/invitations/accept', {
-          org: invitation.orgCode, email: invitation.email, idpSub: user.id,
+          org: invitation.orgCode,
+          email: invitation.email,
+          idpSub: user.id,
         })
       }
 
@@ -168,25 +196,39 @@ export function InviteAccept() {
         invalidateAuthStatus()
         invalidateOnboardingStatus()
         await queryClient.refetchQueries({ queryKey: queryKeys.authStatus })
-        await queryClient.refetchQueries({ queryKey: queryKeys.onboardingStatus })
+        await queryClient.refetchQueries({
+          queryKey: queryKeys.onboardingStatus,
+        })
         toast.success(`Welcome to ${invitation.organizationName}!`)
-        navigate({ to: '/dashboard/applications', search: { welcome: 'true', invited: 'true' } })
+        navigate({
+          to: '/dashboard/applications',
+          search: { welcome: 'true', invited: 'true' },
+        })
       } else {
         throw new Error(response.data.message || 'Failed to accept invitation')
       }
-    } catch (err: any) {
+    } catch (err) {
       logger.error('❌ Error accepting invitation:', err)
-      if (err.response?.status === 409) {
+      const status = axios.isAxiosError(err) ? err.response?.status : undefined
+      const serverMessage = axios.isAxiosError(err)
+        ? (err.response?.data as { message?: string } | undefined)?.message
+        : undefined
+      if (status === 409) {
         toast.error('This invitation has already been accepted')
         setTimeout(() => navigate({ to: '/dashboard/applications' }), 1500)
-      } else if (err.response?.status === 410) {
+      } else if (status === 410) {
         toast.error('This invitation has expired')
         setAccepting(false)
-      } else if (err.response?.status === 403) {
-        toast.error(err.response?.data?.message || 'This invitation was sent to a different email address. Please sign in with the invited email account.')
+      } else if (status === 403) {
+        toast.error(
+          serverMessage ||
+            'This invitation was sent to a different email address. Please sign in with the invited email account.'
+        )
         setAccepting(false)
       } else {
-        toast.error(err.response?.data?.message || 'Failed to accept invitation. Please try again.')
+        toast.error(
+          serverMessage || 'Failed to accept invitation. Please try again.'
+        )
         setAccepting(false)
       }
     }
@@ -204,7 +246,12 @@ export function InviteAccept() {
   }
 
   if (accepting) {
-    return <InviteJoiningState org={invitation?.organizationName ?? ''} joinStep={joinStep} />
+    return (
+      <InviteJoiningState
+        org={invitation?.organizationName ?? ''}
+        joinStep={joinStep}
+      />
+    )
   }
 
   // Single sign-in screen — shows inline skeleton while invitation or Kinde auth is loading

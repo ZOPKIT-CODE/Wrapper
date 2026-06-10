@@ -38,18 +38,22 @@ export function AuthCallback() {
       }
 
       if (error) {
+        const authError = error as {
+          message?: string
+          error?: string
+          error_description?: string
+          status_code?: number
+        }
         const errorMessage =
-          (error as { message?: string }).message ||
-          (error as any)?.error_description ||
-          ''
-        const errorCode = (error as any)?.error || ''
+          authError.message || authError.error_description || ''
+        const errorCode = authError.error || ''
 
         const isInvalidGrant = isInvalidGrantError(error)
 
         const isServerError =
           errorMessage.includes('server_error') ||
           errorCode === 'server_error' ||
-          (error as any)?.status_code === 500
+          authError.status_code === 500
 
         if (isAuthenticated && user) {
           // Authentication succeeded despite the error — continue with normal flow
@@ -161,18 +165,21 @@ export function AuthCallback() {
   }, [isLoading, isAuthenticated, error, navigate, user])
 
   if (error && !isAuthenticated) {
-    const errorMessage =
-      (error as { message?: string }).message ||
-      (error as any)?.error_description ||
-      ''
-    const errorCode = (error as any)?.error || ''
+    const authError = error as {
+      message?: string
+      error?: string
+      error_description?: string
+      status_code?: number
+    }
+    const errorMessage = authError.message || authError.error_description || ''
+    const errorCode = authError.error || ''
 
     const isInvalidGrant = isInvalidGrantError(error)
 
     const isServerError =
       errorMessage.includes('server_error') ||
       errorCode === 'server_error' ||
-      (error as any)?.status_code === 500
+      authError.status_code === 500
 
     if (isServerError) {
       return (

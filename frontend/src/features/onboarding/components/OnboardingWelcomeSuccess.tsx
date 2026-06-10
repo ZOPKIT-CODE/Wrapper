@@ -87,7 +87,7 @@ export const OnboardingWelcomeSuccess: React.FC<
           zIndex: 9999,
         }
 
-        function fire(particleRatio: number, opts: any) {
+        function fire(particleRatio: number, opts: Record<string, unknown>) {
           if (confetti && typeof confetti === 'function') {
             confetti(
               Object.assign({}, defaults, opts, {

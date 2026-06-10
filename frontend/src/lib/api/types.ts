@@ -23,7 +23,7 @@ export interface UnifiedUser {
   invitationId: string | null
   status: string
   userType: 'active' | 'invited'
-  originalData?: any
+  originalData?: Record<string, unknown>
 }
 
 export interface ApiResponse<T> {
@@ -39,7 +39,7 @@ export interface Tenant {
   status: 'active' | 'suspended' | 'pending'
   plan: string
   createdAt: string
-  settings: Record<string, any>
+  settings: Record<string, unknown>
 }
 
 export interface Subscription {
@@ -63,7 +63,7 @@ export interface Plan {
   name: string
   price: number
   currency: string
-  features: Record<string, any>
+  features: Record<string, unknown>
   limits: Record<string, number>
 }
 
@@ -82,7 +82,7 @@ export interface Role {
   name?: string
   description?: string
   color?: string
-  permissions: string[] | Record<string, any>
+  permissions: string[] | Record<string, unknown>
   restrictions?: {
     ipWhitelist?: string[]
     timeRestrictions?: {
@@ -130,7 +130,7 @@ export interface RoleTemplate {
   description?: string
   category?: string
   permissions: string[]
-  restrictions?: any
+  restrictions?: Record<string, unknown>
   targetTools: string[]
   isActive: boolean
   sortOrder: number
@@ -160,9 +160,9 @@ export interface AuditLogEntry {
   action: string
   resourceType: string
   resourceId?: string
-  oldValues?: any
-  newValues?: any
-  details?: any
+  oldValues?: unknown
+  newValues?: unknown
+  details?: unknown
   ipAddress?: string
   userAgent?: string
   createdAt: string

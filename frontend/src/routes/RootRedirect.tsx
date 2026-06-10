@@ -36,23 +36,23 @@ export function RootRedirect() {
 
   if (isLoading || isChecking) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="bg-background flex min-h-screen items-center justify-center">
         <div className="text-center">
           <ZopkitRoundLoader size="lg" className="mb-4" />
-          <p className="text-sm text-muted-foreground">Loading...</p>
+          <p className="text-muted-foreground text-sm">Loading...</p>
         </div>
       </div>
     )
   }
 
   if (redirectTo) {
-    return <Navigate to={redirectTo as any} replace />
+    return <Navigate to={redirectTo} replace />
   }
 
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="bg-background flex min-h-screen items-center justify-center">
           <ZopkitRoundLoader size="lg" />
         </div>
       }

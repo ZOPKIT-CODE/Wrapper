@@ -116,7 +116,7 @@ export class PerformanceMonitor {
 
 // Error tracking utilities
 export class ErrorTracker {
-  static captureException(error: Error, context?: any): void {
+  static captureException(error: Error, context?: unknown): void {
     console.error('Error captured:', error, context)
 
     // In production, send to error tracking service
@@ -142,7 +142,7 @@ export function getBundleSize(): void {
 }
 
 // Debounce utility
-export function debounce<T extends (...args: any[]) => any>(
+export function debounce<T extends (...args: never[]) => unknown>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {

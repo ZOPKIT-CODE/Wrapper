@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useAuth } from '@/lib/auth/cognito-auth'
+import { useAuth, type AuthUser } from '@/lib/auth/cognito-auth'
 import { Button } from '../ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Shield, Loader2 } from 'lucide-react'
@@ -11,7 +11,7 @@ interface SocialLoginProps {
   title?: string
   subtitle?: string
   providers?: string[]
-  onSuccess?: (user: any) => void
+  onSuccess?: (user: AuthUser) => void
   onError?: (error: string) => void
 }
 
@@ -42,7 +42,7 @@ export const SocialLogin: React.FC<SocialLoginProps> = ({
       setLoadingProvider(provider)
 
       // Cognito: pass the provider straight through to federate (skips the hosted-UI selector).
-      const loginOptions: any = { provider }
+      const loginOptions: Record<string, unknown> = { provider }
 
       // Add organization context if available
       if (finalOrgCode) {

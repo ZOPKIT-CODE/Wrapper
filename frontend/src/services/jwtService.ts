@@ -25,7 +25,23 @@ interface IdpUserProfile {
   organization?: {
     code?: string
   }
-  [key: string]: any // Allow additional properties
+  [key: string]: unknown // Allow additional properties
+}
+
+// Shape of the JWT payload minted for CRM, and decoded back by verifyToken
+interface CRMTokenPayload {
+  sub: string
+  email: string
+  name: string
+  org_code: string
+  iss: string
+  aud: string[]
+  exp: number
+  iat: number
+  permissions: string[]
+  jti: string
+  source: string
+  app: string
 }
 
 class JWTService {
@@ -45,19 +61,18 @@ class JWTService {
    */
   generateCRMToken(user: User | IdpUserProfile): string {
     try {
+      const userLike = user as Partial<User>
       // Create a secure token payload for CRM
-      const payload = {
+      const payload: CRMTokenPayload = {
         sub: user.id,
         email: user.email || 'unknown@example.com',
-        name:
-          (user as any).name || user.givenName || user.email || 'Unknown User',
-        org_code:
-          user.organization?.code || (user as any).tenantId || 'default',
+        name: userLike.name || user.givenName || user.email || 'Unknown User',
+        org_code: user.organization?.code || userLike.tenantId || 'default',
         iss: this.WRAPPER_DOMAIN,
         aud: ['crm'],
         exp: Math.floor(Date.now() / 1000) + 3600, // 1 hour expiration
         iat: Math.floor(Date.now() / 1000),
-        permissions: (user as any).permissions || [],
+        permissions: userLike.permissions || [],
         jti: this.generateRandomId(), // Unique token ID
         source: 'wrapper',
         app: 'crm',
@@ -80,7 +95,7 @@ class JWTService {
   /**
    * Generate a secure token that looks like JWT (for CRM compatibility)
    */
-  private generateSecureToken(payload: any): string {
+  private generateSecureToken(payload: CRMTokenPayload): string {
     try {
       // Create a base64-encoded header
       const header = btoa(
@@ -129,12 +144,12 @@ class JWTService {
   /**
    * Verify a JWT token (for future use if needed)
    */
-  verifyToken(token: string): any {
+  verifyToken(token: string): CRMTokenPayload | null {
     try {
       // For now, just decode the token to extract payload
       const parts = token.split('.')
       if (parts.length === 3) {
-        const payload = JSON.parse(atob(parts[1]))
+        const payload = JSON.parse(atob(parts[1])) as CRMTokenPayload
         return payload
       }
       return null

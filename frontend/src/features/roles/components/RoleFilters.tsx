@@ -93,8 +93,8 @@ export function RoleFilters({
               onValueChange={(value: string) => {
                 const [field, order] = value.split('-')
                 onFiltersChange({
-                  sortBy: field as any,
-                  sortOrder: order as any,
+                  sortBy: field as RoleFiltersType['sortBy'],
+                  sortOrder: order as RoleFiltersType['sortOrder'],
                 })
               }}
             >

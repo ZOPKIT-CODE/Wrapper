@@ -1,3 +1,4 @@
+import type { AxiosRequestConfig } from 'axios'
 import { Container } from '@/components/common/Page'
 import { OrganizationManagement } from '@/features/organizations/components/OrganizationManagement'
 import { useDashboardData } from '@/hooks/useDashboardData'
@@ -34,13 +35,13 @@ export function OrganizationPage({ isAdmin = false }: { isAdmin?: boolean }) {
           // Build axios-compatible headers object
           const headers: Record<string, string> = { 'X-Application': 'crm' }
           if (options?.headers) {
-            const h: any = options.headers as any
+            const h = options.headers
             if (typeof Headers !== 'undefined' && h instanceof Headers) {
-              h.forEach((value: any, key: string) => {
+              h.forEach((value: string, key: string) => {
                 headers[key] = String(value)
               })
             } else if (Array.isArray(h)) {
-              h.forEach(([key, value]: [string, any]) => {
+              h.forEach(([key, value]: [string, string]) => {
                 headers[key] = String(value)
               })
             } else {
@@ -48,7 +49,7 @@ export function OrganizationPage({ isAdmin = false }: { isAdmin?: boolean }) {
             }
           }
 
-          const axiosConfig: any = {
+          const axiosConfig: AxiosRequestConfig = {
             method: options?.method,
             headers,
             withCredentials: true,

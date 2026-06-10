@@ -142,14 +142,30 @@ const daysUntil = (iso: string) => {
 
 // ─── Metadata chips ───────────────────────────────────────────────────────────
 
+// Loose view over Notification.metadata (Record<string, unknown>) for the
+// fields rendered below. All optional; values are number/string-ish.
+interface NotificationMetadataView {
+  creditAmount?: number | string
+  allocatedCredits?: number | string
+  expiresAt?: string
+  totalCredits?: number | string
+  daysUntilExpiry?: number
+  currency?: string
+  amount?: number | string
+  purchaseId?: string
+  daysUntilDue?: number
+  version?: string
+  features?: unknown[]
+}
+
 function MetadataChips({ notification }: { notification: Notification }) {
-  const { type, metadata } = notification
+  const { type } = notification
+  const metadata = notification.metadata as NotificationMetadataView | undefined
   if (!metadata) return null
 
   if (type === 'seasonal_credits') {
-    const amount =
-      (metadata as any).creditAmount ?? (metadata as any).allocatedCredits
-    const expiresAt = (metadata as any).expiresAt
+    const amount = metadata.creditAmount ?? metadata.allocatedCredits
+    const expiresAt = metadata.expiresAt
     const days = expiresAt ? daysUntil(String(expiresAt)) : null
     return (
       <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -184,9 +200,8 @@ function MetadataChips({ notification }: { notification: Notification }) {
   }
 
   if (type === 'credit_expiry_warning') {
-    const total =
-      (metadata as any).totalCredits ?? (metadata as any).creditAmount
-    const days = (metadata as any).daysUntilExpiry
+    const total = metadata.totalCredits ?? metadata.creditAmount
+    const days = metadata.daysUntilExpiry
     return (
       <div className="mt-3 flex flex-wrap items-center gap-2">
         {total != null && (
@@ -206,7 +221,7 @@ function MetadataChips({ notification }: { notification: Notification }) {
   }
 
   if (type === 'purchase_success') {
-    const { currency, amount, purchaseId } = metadata as any
+    const { currency, amount, purchaseId } = metadata
     return (
       <div className="mt-3 flex flex-wrap items-center gap-2">
         {amount != null && (
@@ -224,7 +239,7 @@ function MetadataChips({ notification }: { notification: Notification }) {
   }
 
   if (type === 'billing_reminder') {
-    const { currency, amount, daysUntilDue } = metadata as any
+    const { currency, amount, daysUntilDue } = metadata
     return (
       <div className="mt-3 flex flex-wrap items-center gap-2">
         {amount != null && (
@@ -243,7 +258,7 @@ function MetadataChips({ notification }: { notification: Notification }) {
   }
 
   if (type === 'system_update') {
-    const { version, features } = metadata as any
+    const { version, features } = metadata
     return (
       <div className="mt-3 flex flex-wrap items-center gap-2">
         {version && (
@@ -251,7 +266,7 @@ function MetadataChips({ notification }: { notification: Notification }) {
             v{version}
           </span>
         )}
-        {features?.length > 0 && (
+        {features && features.length > 0 && (
           <span className="text-xs text-gray-500">
             {features.length} new feature{features.length !== 1 ? 's' : ''}
           </span>

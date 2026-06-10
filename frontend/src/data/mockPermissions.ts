@@ -40,7 +40,7 @@ export interface Role {
   type: 'system' | 'custom'
   userCount: number
   permissions: string[]
-  restrictions: Record<string, any>
+  restrictions: Record<string, unknown>
   createdAt: string
   isDefault: boolean
 }
@@ -57,7 +57,7 @@ export const mockPermissions: PermissionItem[] = [
     action: 'view',
     icon: '👁️',
     color: '#3B82F6',
-    level: 'basic'
+    level: 'basic',
   },
   {
     id: 'crm.contacts.create',
@@ -70,7 +70,7 @@ export const mockPermissions: PermissionItem[] = [
     icon: '➕',
     color: '#10B981',
     level: 'basic',
-    dependencies: ['crm.contacts.view']
+    dependencies: ['crm.contacts.view'],
   },
   {
     id: 'crm.contacts.edit',
@@ -83,7 +83,7 @@ export const mockPermissions: PermissionItem[] = [
     icon: '✏️',
     color: '#F59E0B',
     level: 'advanced',
-    dependencies: ['crm.contacts.view']
+    dependencies: ['crm.contacts.view'],
   },
   {
     id: 'crm.contacts.delete',
@@ -96,7 +96,7 @@ export const mockPermissions: PermissionItem[] = [
     icon: '🗑️',
     color: '#EF4444',
     level: 'admin',
-    dependencies: ['crm.contacts.view', 'crm.contacts.edit']
+    dependencies: ['crm.contacts.view', 'crm.contacts.edit'],
   },
   {
     id: 'crm.contacts.export',
@@ -109,7 +109,7 @@ export const mockPermissions: PermissionItem[] = [
     icon: '📤',
     color: '#8B5CF6',
     level: 'advanced',
-    dependencies: ['crm.contacts.view']
+    dependencies: ['crm.contacts.view'],
   },
   {
     id: 'crm.deals.view',
@@ -121,7 +121,7 @@ export const mockPermissions: PermissionItem[] = [
     action: 'view',
     icon: '💼',
     color: '#3B82F6',
-    level: 'basic'
+    level: 'basic',
   },
   {
     id: 'crm.deals.create',
@@ -134,7 +134,7 @@ export const mockPermissions: PermissionItem[] = [
     icon: '💰',
     color: '#10B981',
     level: 'advanced',
-    dependencies: ['crm.deals.view']
+    dependencies: ['crm.deals.view'],
   },
   {
     id: 'crm.deals.approve',
@@ -147,7 +147,7 @@ export const mockPermissions: PermissionItem[] = [
     icon: '✅',
     color: '#059669',
     level: 'admin',
-    dependencies: ['crm.deals.view', 'crm.deals.create']
+    dependencies: ['crm.deals.view', 'crm.deals.create'],
   },
 
   // HR Permissions
@@ -161,7 +161,7 @@ export const mockPermissions: PermissionItem[] = [
     action: 'view',
     icon: '👥',
     color: '#6366F1',
-    level: 'basic'
+    level: 'basic',
   },
   {
     id: 'hr.employees.create',
@@ -174,7 +174,7 @@ export const mockPermissions: PermissionItem[] = [
     icon: '👤',
     color: '#10B981',
     level: 'admin',
-    dependencies: ['hr.employees.view']
+    dependencies: ['hr.employees.view'],
   },
   {
     id: 'hr.employees.salary',
@@ -187,7 +187,7 @@ export const mockPermissions: PermissionItem[] = [
     icon: '💵',
     color: '#059669',
     level: 'admin',
-    dependencies: ['hr.employees.view']
+    dependencies: ['hr.employees.view'],
   },
   {
     id: 'hr.payroll.process',
@@ -200,7 +200,7 @@ export const mockPermissions: PermissionItem[] = [
     icon: '🧮',
     color: '#DC2626',
     level: 'admin',
-    dependencies: ['hr.employees.view', 'hr.employees.salary']
+    dependencies: ['hr.employees.view', 'hr.employees.salary'],
   },
 
   // Affiliate Permissions
@@ -214,7 +214,7 @@ export const mockPermissions: PermissionItem[] = [
     action: 'view',
     icon: '🤝',
     color: '#7C3AED',
-    level: 'basic'
+    level: 'basic',
   },
   {
     id: 'affiliate.commissions.calculate',
@@ -227,7 +227,7 @@ export const mockPermissions: PermissionItem[] = [
     icon: '📊',
     color: '#059669',
     level: 'advanced',
-    dependencies: ['affiliate.partners.view']
+    dependencies: ['affiliate.partners.view'],
   },
 
   // Accounting Permissions
@@ -241,7 +241,7 @@ export const mockPermissions: PermissionItem[] = [
     action: 'view',
     icon: '📄',
     color: '#0891B2',
-    level: 'basic'
+    level: 'basic',
   },
   {
     id: 'accounting.invoices.create',
@@ -254,7 +254,7 @@ export const mockPermissions: PermissionItem[] = [
     icon: '📝',
     color: '#10B981',
     level: 'advanced',
-    dependencies: ['accounting.invoices.view']
+    dependencies: ['accounting.invoices.view'],
   },
 
   // Inventory Permissions
@@ -268,7 +268,7 @@ export const mockPermissions: PermissionItem[] = [
     action: 'view',
     icon: '📦',
     color: '#F59E0B',
-    level: 'basic'
+    level: 'basic',
   },
   {
     id: 'inventory.stock.adjust',
@@ -281,8 +281,8 @@ export const mockPermissions: PermissionItem[] = [
     icon: '📈',
     color: '#EF4444',
     level: 'admin',
-    dependencies: ['inventory.products.view']
-  }
+    dependencies: ['inventory.products.view'],
+  },
 ]
 
 export const mockUsers: User[] = [
@@ -290,67 +290,90 @@ export const mockUsers: User[] = [
     id: 'user-1',
     name: 'Sarah Chen',
     email: 'sarah@acmecorp.com',
-    avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b5c4?w=40&h=40&fit=crop&crop=face',
+    avatar:
+      'https://images.unsplash.com/photo-1494790108755-2616b612b5c4?w=40&h=40&fit=crop&crop=face',
     role: 'Sales Manager',
     department: 'Sales',
     isActive: true,
     lastActive: '2024-01-15T10:30:00Z',
-    assignedPermissions: ['crm.contacts.view', 'crm.contacts.create', 'crm.deals.view', 'crm.deals.create', 'crm.deals.approve'],
+    assignedPermissions: [
+      'crm.contacts.view',
+      'crm.contacts.create',
+      'crm.deals.view',
+      'crm.deals.create',
+      'crm.deals.approve',
+    ],
     inheritedPermissions: ['crm.contacts.view', 'crm.contacts.create'],
     restrictedPermissions: [],
     lastActivity: '2024-01-15T10:30:00Z',
-    joinDate: '2024-01-01T00:00:00Z'
+    joinDate: '2024-01-01T00:00:00Z',
   },
   {
     id: 'user-2',
     name: 'Mike Rodriguez',
     email: 'mike@acmecorp.com',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face',
+    avatar:
+      'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face',
     role: 'Sales Rep',
     department: 'Sales',
     isActive: true,
     lastActive: '2024-01-15T09:15:00Z',
-    assignedPermissions: ['crm.contacts.view', 'crm.contacts.create', 'crm.deals.view'],
+    assignedPermissions: [
+      'crm.contacts.view',
+      'crm.contacts.create',
+      'crm.deals.view',
+    ],
     inheritedPermissions: ['crm.contacts.view'],
     restrictedPermissions: ['crm.deals.approve'],
     lastActivity: '2024-01-15T09:15:00Z',
-    joinDate: '2024-01-01T00:00:00Z'
+    joinDate: '2024-01-01T00:00:00Z',
   },
   {
     id: 'user-3',
     name: 'Emma Thompson',
     email: 'emma@acmecorp.com',
-    avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=40&h=40&fit=crop&crop=face',
+    avatar:
+      'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=40&h=40&fit=crop&crop=face',
     role: 'HR Manager',
     department: 'Human Resources',
     isActive: true,
     lastActive: '2024-01-15T08:45:00Z',
-    assignedPermissions: ['hr.employees.view', 'hr.employees.create', 'hr.employees.salary', 'hr.payroll.process'],
+    assignedPermissions: [
+      'hr.employees.view',
+      'hr.employees.create',
+      'hr.employees.salary',
+      'hr.payroll.process',
+    ],
     inheritedPermissions: ['hr.employees.view'],
     restrictedPermissions: [],
     lastActivity: '2024-01-15T08:45:00Z',
-    joinDate: '2024-01-01T00:00:00Z'
+    joinDate: '2024-01-01T00:00:00Z',
   },
   {
     id: 'user-4',
     name: 'David Park',
     email: 'david@acmecorp.com',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face',
+    avatar:
+      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face',
     role: 'Accountant',
     department: 'Finance',
     isActive: true,
     lastActive: '2024-01-15T11:20:00Z',
-    assignedPermissions: ['accounting.invoices.view', 'accounting.invoices.create'],
+    assignedPermissions: [
+      'accounting.invoices.view',
+      'accounting.invoices.create',
+    ],
     inheritedPermissions: ['accounting.invoices.view'],
     restrictedPermissions: [],
     lastActivity: '2024-01-15T11:20:00Z',
-    joinDate: '2024-01-01T00:00:00Z'
+    joinDate: '2024-01-01T00:00:00Z',
   },
   {
     id: 'user-5',
     name: 'Lisa Wang',
     email: 'lisa@acmecorp.com',
-    avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=40&h=40&fit=crop&crop=face',
+    avatar:
+      'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=40&h=40&fit=crop&crop=face',
     role: 'Marketing Manager',
     department: 'Marketing',
     isActive: false,
@@ -359,8 +382,8 @@ export const mockUsers: User[] = [
     inheritedPermissions: [],
     restrictedPermissions: ['crm.deals.approve'],
     lastActivity: '2024-01-10T16:30:00Z',
-    joinDate: '2024-01-01T00:00:00Z'
-  }
+    joinDate: '2024-01-01T00:00:00Z',
+  },
 ]
 
 export const mockRoles: Role[] = [
@@ -372,13 +395,20 @@ export const mockRoles: Role[] = [
     icon: '💼',
     type: 'custom',
     userCount: 3,
-    permissions: ['crm.contacts.view', 'crm.contacts.create', 'crm.contacts.edit', 'crm.deals.view', 'crm.deals.create', 'crm.deals.approve'],
+    permissions: [
+      'crm.contacts.view',
+      'crm.contacts.create',
+      'crm.contacts.edit',
+      'crm.deals.view',
+      'crm.deals.create',
+      'crm.deals.approve',
+    ],
     restrictions: {
       'crm.deals.value_limit': 100000,
-      'crm.contacts.own_records_only': false
+      'crm.contacts.own_records_only': false,
     },
     createdAt: '2024-01-01T00:00:00Z',
-    isDefault: false
+    isDefault: false,
   },
   {
     id: 'role-2',
@@ -388,13 +418,18 @@ export const mockRoles: Role[] = [
     icon: '📞',
     type: 'custom',
     userCount: 8,
-    permissions: ['crm.contacts.view', 'crm.contacts.create', 'crm.deals.view', 'crm.deals.create'],
+    permissions: [
+      'crm.contacts.view',
+      'crm.contacts.create',
+      'crm.deals.view',
+      'crm.deals.create',
+    ],
     restrictions: {
       'crm.deals.value_limit': 25000,
-      'crm.contacts.own_records_only': true
+      'crm.contacts.own_records_only': true,
     },
     createdAt: '2024-01-01T00:00:00Z',
-    isDefault: false
+    isDefault: false,
   },
   {
     id: 'role-3',
@@ -404,10 +439,15 @@ export const mockRoles: Role[] = [
     icon: '👥',
     type: 'custom',
     userCount: 2,
-    permissions: ['hr.employees.view', 'hr.employees.create', 'hr.employees.salary', 'hr.payroll.process'],
+    permissions: [
+      'hr.employees.view',
+      'hr.employees.create',
+      'hr.employees.salary',
+      'hr.payroll.process',
+    ],
     restrictions: {},
     createdAt: '2024-01-01T00:00:00Z',
-    isDefault: false
+    isDefault: false,
   },
   {
     id: 'role-4',
@@ -417,10 +457,14 @@ export const mockRoles: Role[] = [
     icon: '💰',
     type: 'custom',
     userCount: 3,
-    permissions: ['accounting.invoices.view', 'accounting.invoices.create', 'hr.employees.salary'],
+    permissions: [
+      'accounting.invoices.view',
+      'accounting.invoices.create',
+      'hr.employees.salary',
+    ],
     restrictions: {},
     createdAt: '2024-01-01T00:00:00Z',
-    isDefault: false
+    isDefault: false,
   },
   {
     id: 'role-5',
@@ -433,44 +477,44 @@ export const mockRoles: Role[] = [
     permissions: ['*'], // All permissions
     restrictions: {},
     createdAt: '2024-01-01T00:00:00Z',
-    isDefault: false
-  }
+    isDefault: false,
+  },
 ]
 
 export const permissionCategories = [
-  { 
-    id: 'crm', 
-    name: 'Customer Management', 
-    icon: '👥', 
+  {
+    id: 'crm',
+    name: 'Customer Management',
+    icon: '👥',
     color: '#3B82F6',
-    description: 'Manage customer relationships and sales processes'
+    description: 'Manage customer relationships and sales processes',
   },
-  { 
-    id: 'hr', 
-    name: 'Human Resources', 
-    icon: '👤', 
+  {
+    id: 'hr',
+    name: 'Human Resources',
+    icon: '👤',
     color: '#8B5CF6',
-    description: 'Employee management and HR operations'
+    description: 'Employee management and HR operations',
   },
-  { 
-    id: 'affiliate', 
-    name: 'Affiliate Management', 
-    icon: '🤝', 
+  {
+    id: 'affiliate',
+    name: 'Affiliate Management',
+    icon: '🤝',
     color: '#7C3AED',
-    description: 'Partner and affiliate program management'
+    description: 'Partner and affiliate program management',
   },
-  { 
-    id: 'accounting', 
-    name: 'Financial Management', 
-    icon: '💰', 
+  {
+    id: 'accounting',
+    name: 'Financial Management',
+    icon: '💰',
     color: '#059669',
-    description: 'Accounting and financial operations'
+    description: 'Accounting and financial operations',
   },
-  { 
-    id: 'inventory', 
-    name: 'Inventory Control', 
-    icon: '📦', 
+  {
+    id: 'inventory',
+    name: 'Inventory Control',
+    icon: '📦',
     color: '#F59E0B',
-    description: 'Product and inventory management'
-  }
-] 
+    description: 'Product and inventory management',
+  },
+]

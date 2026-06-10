@@ -73,7 +73,12 @@ export const AuthButton: React.FC<AuthButtonProps> = ({
 
   const handleLogin = () => {
     // Cognito: pass the provider straight through to federate (skips the hosted-UI selector).
-    const loginOptions: any = { provider }
+    const loginOptions: {
+      provider: typeof provider
+      isCreateOrg?: boolean
+      org_code?: string
+      app_state?: { redirectTo: string }
+    } = { provider }
 
     // Add organization creation flag if specified
     if (isCreateOrg) {

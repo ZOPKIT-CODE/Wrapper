@@ -57,14 +57,29 @@ interface TrialInfo {
   checkoutUrl?: string
 }
 
+// Minimal shape of an organization-hierarchy entity used by the sidebar transform.
+interface HierarchyEntity {
+  entityId: string
+  entityName: string
+  entityType: 'organization' | 'location' | 'department' | 'team' | string
+  children?: HierarchyEntity[]
+}
+
+interface HierarchyNavItem {
+  title: string
+  url: string
+  icon: React.ElementType
+  items?: HierarchyNavItem[]
+}
+
 // Transform organization hierarchy into sidebar navigation items
 const transformHierarchyToNavItems = (
-  hierarchy: any[],
+  hierarchy: HierarchyEntity[],
   baseUrl: string = '/dashboard/organization'
-) => {
+): HierarchyNavItem[] => {
   if (!hierarchy || hierarchy.length === 0) return []
 
-  const transformEntity = (entity: any): any => {
+  const transformEntity = (entity: HierarchyEntity): HierarchyNavItem => {
     const getEntityIcon = () => {
       switch (entity.entityType) {
         case 'organization':
@@ -80,7 +95,7 @@ const transformHierarchyToNavItems = (
       }
     }
 
-    const navItem: any = {
+    const navItem: HierarchyNavItem = {
       title: entity.entityName,
       url: `${baseUrl}?entity=${entity.entityId}`,
       icon: getEntityIcon(),
@@ -99,7 +114,7 @@ const transformHierarchyToNavItems = (
 
 const getOrganizationSidebarData = (
   orgCode: string,
-  hierarchy?: any[],
+  hierarchy?: HierarchyEntity[],
   userData?: { name: string; email: string; avatar?: string },
   tenantData?: {
     tenantId: string

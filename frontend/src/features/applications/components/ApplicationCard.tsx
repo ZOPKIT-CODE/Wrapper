@@ -125,8 +125,8 @@ export function AppIcon({
 const getApplicationUrl = (application: Application): string => {
   const apiBaseUrl =
     application.baseUrl ||
-    (application as any).base_url ||
-    (application as any).baseurl
+    (application as { base_url?: string; baseurl?: string }).base_url ||
+    (application as { base_url?: string; baseurl?: string }).baseurl
 
   if (apiBaseUrl) return apiBaseUrl
 

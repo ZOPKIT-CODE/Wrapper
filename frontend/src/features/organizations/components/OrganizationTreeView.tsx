@@ -67,7 +67,7 @@ interface Location {
   parentEntityId?: string
   locationType?: string
   availableCredits?: number
-  address?: any
+  address?: unknown
 }
 
 interface OrganizationHierarchy {
@@ -160,7 +160,7 @@ export interface OrganizationTreeViewProps {
     form: AllocationForm,
     onSuccess: () => void
   ) => void
-  setEditingEntity: (e: any) => void
+  setEditingEntity: (e: Entity | null) => void
   setShowEditResponsiblePerson: (v: boolean) => void
   findOrganizationById: (
     id: string,
@@ -301,7 +301,9 @@ export function OrganizationTreeView({
           <div className="flex gap-2">
             <Select
               value={filterType}
-              onValueChange={(v: any) => setFilterType(v)}
+              onValueChange={(v: string) =>
+                setFilterType(v as 'all' | 'active' | 'inactive')
+              }
             >
               <SelectTrigger className="h-9 w-[130px] bg-slate-50 dark:bg-slate-800">
                 <SelectValue />
@@ -461,7 +463,7 @@ export function OrganizationTreeView({
                       search: {
                         parentId: parentOrg.entityId,
                         parentName: parentOrg.entityName,
-                        entityType: 'organization' as any,
+                        entityType: 'organization',
                       },
                     })
                   }
@@ -479,7 +481,7 @@ export function OrganizationTreeView({
                       search: {
                         parentId: parentOrg.entityId,
                         parentName: parentOrg.entityName,
-                        entityType: 'location' as any,
+                        entityType: 'location',
                       },
                     })
                   }
@@ -512,7 +514,8 @@ export function OrganizationTreeView({
                           {loc.entityName}
                         </div>
                         <div className="truncate text-[10px] text-slate-500">
-                          {(loc as any).address?.city || 'No City'}
+                          {(loc.address as { city?: string } | undefined)
+                            ?.city || 'No City'}
                         </div>
                       </div>
                     </div>
@@ -632,7 +635,7 @@ export function OrganizationTreeView({
               search: {
                 parentId: org.entityId,
                 parentName: org.entityName,
-                entityType: 'organization' as any,
+                entityType: 'organization',
               },
             })
         }}
@@ -644,7 +647,7 @@ export function OrganizationTreeView({
               search: {
                 parentId: org.entityId,
                 parentName: org.entityName,
-                entityType: 'location' as any,
+                entityType: 'location',
               },
             })
         }}

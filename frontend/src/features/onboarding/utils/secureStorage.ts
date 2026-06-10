@@ -9,7 +9,7 @@ const STORAGE_SALT = 'onboarding_secure_v1'
  * Simple encryption using base64 encoding with salt
  * Note: In production, use proper encryption like AES-GCM
  */
-export const encryptData = (data: any): string => {
+export const encryptData = (data: unknown): string => {
   try {
     const jsonString = JSON.stringify(data)
     const saltedData = `${STORAGE_SALT}${jsonString}${STORAGE_SALT}`
@@ -23,7 +23,7 @@ export const encryptData = (data: any): string => {
 /**
  * Decrypt data with validation
  */
-export const decryptData = (encryptedData: string): any => {
+export const decryptData = (encryptedData: string): unknown => {
   try {
     const decoded = decodeURIComponent(atob(encryptedData))
     const expectedPrefix = STORAGE_SALT
@@ -50,7 +50,7 @@ export const decryptData = (encryptedData: string): any => {
 /**
  * Generate checksum for data integrity validation
  */
-export const generateChecksum = (data: any): string => {
+export const generateChecksum = (data: unknown): string => {
   const jsonString = JSON.stringify(data)
   let hash = 0
   for (let i = 0; i < jsonString.length; i++) {
@@ -64,7 +64,10 @@ export const generateChecksum = (data: any): string => {
 /**
  * Validate data integrity using checksum
  */
-export const validateDataIntegrity = (data: any, checksum: string): boolean => {
+export const validateDataIntegrity = (
+  data: unknown,
+  checksum: string
+): boolean => {
   try {
     const calculatedChecksum = generateChecksum(data)
     return calculatedChecksum === checksum
@@ -77,7 +80,7 @@ export const validateDataIntegrity = (data: any, checksum: string): boolean => {
 /**
  * Securely store data with encryption and integrity check
  */
-export const secureStore = (key: string, data: any): void => {
+export const secureStore = (key: string, data: unknown): void => {
   try {
     const checksum = generateChecksum(data)
     const secureData = {
@@ -96,7 +99,7 @@ export const secureStore = (key: string, data: any): void => {
 /**
  * Securely retrieve and validate data
  */
-export const secureRetrieve = (key: string): any | null => {
+export const secureRetrieve = (key: string): unknown | null => {
   try {
     const storedData = sessionStorage.getItem(key)
     if (!storedData) return null

@@ -1,6 +1,6 @@
 import React from 'react'
 import { Link } from '@tanstack/react-router'
-import { UseFormReturn, useWatch } from 'react-hook-form'
+import { UseFormReturn, useWatch, FieldPath } from 'react-hook-form'
 import { motion, Variants } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -60,7 +60,7 @@ const DetailRow = ({
 }: {
   label: string
   value: string | React.ReactNode
-  icon?: React.ComponentType<any>
+  icon?: React.ComponentType<{ className?: string }>
 }) => (
   <div className="group/row flex items-start gap-3 rounded-lg p-2 transition-colors hover:bg-blue-50/60">
     {Icon && (
@@ -81,7 +81,7 @@ const DetailRow = ({
 
 interface SectionCardProps {
   title: string
-  icon: any
+  icon: React.ComponentType<{ className?: string }>
   children: React.ReactNode
   stepNumber?: number
   index: number
@@ -375,7 +375,11 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
           <div className="mx-auto max-w-3xl rounded-3xl border border-slate-200/80 bg-white/90 p-8 shadow-xl shadow-blue-950/[0.06] backdrop-blur-xl">
             <FormField
               control={form.control}
-              name={'termsAccepted' as any}
+              name={
+                'termsAccepted' as FieldPath<
+                  newBusinessData | existingBusinessData
+                >
+              }
               render={({ field }) => (
                 <FormItem className="flex flex-row items-start space-y-0 space-x-4">
                   <FormControl>

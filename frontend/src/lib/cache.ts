@@ -6,7 +6,7 @@ interface CacheEntry<T> {
 }
 
 class EnhancedCache {
-  private storage: Map<string, CacheEntry<any>> = new Map()
+  private storage: Map<string, CacheEntry<unknown>> = new Map()
   private maxSize = 100 // Maximum number of cache entries
 
   // Set data with TTL
@@ -40,7 +40,7 @@ class EnhancedCache {
       return null
     }
 
-    return entry.data
+    return entry.data as T
   }
 
   // Get timestamp of cached entry

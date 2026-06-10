@@ -637,7 +637,7 @@ const ApplicationAssignmentManager: React.FC = () => {
                 variant="ghost"
                 size="sm"
                 onClick={() => {
-                  setAssignmentConfig((prev: any) => ({
+                  setAssignmentConfig((prev) => ({
                     ...prev,
                     selectedPermissions: { ...originalPermissions },
                     enabledModules: [...originalModules],
@@ -1110,44 +1110,40 @@ const ApplicationAssignmentManager: React.FC = () => {
                                                   module.permissions?.map(
                                                     (p: Permission) => p.code
                                                   ) || []
-                                                setAssignmentConfig(
-                                                  (prev: any) => {
-                                                    const isCurrentlyEnabled =
-                                                      prev.enabledModules.includes(
-                                                        mk
-                                                      )
-                                                    let updatedModules = [
-                                                      ...prev.enabledModules,
-                                                    ]
-                                                    const updatedPermissions = {
-                                                      ...prev.selectedPermissions,
-                                                    }
-
-                                                    if (isAllModuleSelected) {
-                                                      updatedModules =
-                                                        updatedModules.filter(
-                                                          (m: string) =>
-                                                            m !== mk
-                                                        )
-                                                      updatedPermissions[mk] =
-                                                        []
-                                                    } else {
-                                                      if (!isCurrentlyEnabled) {
-                                                        updatedModules.push(mk)
-                                                      }
-                                                      updatedPermissions[mk] =
-                                                        allCodes
-                                                    }
-
-                                                    return {
-                                                      ...prev,
-                                                      enabledModules:
-                                                        updatedModules,
-                                                      selectedPermissions:
-                                                        updatedPermissions,
-                                                    }
+                                                setAssignmentConfig((prev) => {
+                                                  const isCurrentlyEnabled =
+                                                    prev.enabledModules.includes(
+                                                      mk
+                                                    )
+                                                  let updatedModules = [
+                                                    ...prev.enabledModules,
+                                                  ]
+                                                  const updatedPermissions = {
+                                                    ...prev.selectedPermissions,
                                                   }
-                                                )
+
+                                                  if (isAllModuleSelected) {
+                                                    updatedModules =
+                                                      updatedModules.filter(
+                                                        (m: string) => m !== mk
+                                                      )
+                                                    updatedPermissions[mk] = []
+                                                  } else {
+                                                    if (!isCurrentlyEnabled) {
+                                                      updatedModules.push(mk)
+                                                    }
+                                                    updatedPermissions[mk] =
+                                                      allCodes
+                                                  }
+
+                                                  return {
+                                                    ...prev,
+                                                    enabledModules:
+                                                      updatedModules,
+                                                    selectedPermissions:
+                                                      updatedPermissions,
+                                                  }
+                                                })
                                               }}
                                               className={cn(
                                                 'w-full rounded-xl border px-3 py-2 text-center text-[8px] font-black tracking-widest uppercase shadow-sm transition-all active:scale-95 disabled:opacity-50',
@@ -1204,7 +1200,7 @@ const ApplicationAssignmentManager: React.FC = () => {
                                                     disabled={!isAppAssigned}
                                                     onClick={() => {
                                                       setAssignmentConfig(
-                                                        (prev: any) => {
+                                                        (prev) => {
                                                           const current =
                                                             prev
                                                               .selectedPermissions[

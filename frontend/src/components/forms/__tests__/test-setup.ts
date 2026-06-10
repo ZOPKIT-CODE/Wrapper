@@ -1,11 +1,22 @@
 // Test setup file to provide Jest-like globals.
 // `var` is required here: only `var` declarations in a `declare global` block
 // augment `typeof globalThis`, which the `global.*` assignments below rely on.
+interface Matchers {
+  toBe: (expected: unknown) => void
+  toEqual: (expected: unknown) => void
+  toBeDefined: () => void
+  toBeUndefined: () => void
+  toBeTruthy: () => void
+  toBeFalsy: () => void
+  toContain: (expected: unknown) => void
+  toThrow: (expectedError?: string) => void
+}
+
 /* eslint-disable no-var */
 declare global {
   var describe: (name: string, fn: () => void) => void
   var it: (name: string, fn: () => void) => void
-  var expect: (actual: any) => any
+  var expect: (actual: unknown) => Matchers
   var beforeEach: (fn: () => void) => void
   var afterEach: (fn: () => void) => void
   var beforeAll: (fn: () => void) => void
@@ -28,14 +39,14 @@ function it(name: string, fn: () => void) {
   tests.push({ name, fn, describe: currentDescribe })
 }
 
-function expect(actual: any) {
+function expect(actual: unknown): Matchers {
   return {
-    toBe: (expected: any) => {
+    toBe: (expected: unknown) => {
       if (actual !== expected) {
         throw new Error(`Expected ${actual} to be ${expected}`)
       }
     },
-    toEqual: (expected: any) => {
+    toEqual: (expected: unknown) => {
       if (JSON.stringify(actual) !== JSON.stringify(expected)) {
         throw new Error(
           `Expected ${JSON.stringify(actual)} to equal ${JSON.stringify(expected)}`
@@ -62,7 +73,7 @@ function expect(actual: any) {
         throw new Error(`Expected ${actual} to be falsy`)
       }
     },
-    toContain: (expected: any) => {
+    toContain: (expected: unknown) => {
       if (typeof actual === 'string' && typeof expected === 'string') {
         if (!actual.includes(expected)) {
           throw new Error(`Expected "${actual}" to contain "${expected}"`)

@@ -1,5 +1,6 @@
 import { useMemo, useCallback, useRef, useEffect, useState } from 'react'
 import { useFormContext } from '../contexts/FormContext'
+import type { FormValue, FormValues } from '../types'
 
 /**
  * Hook for form performance optimizations
@@ -30,7 +31,7 @@ export const useFormPerformance = () => {
   const debounceRef = useRef<Record<string, NodeJS.Timeout>>({})
 
   const debouncedSetValue = useCallback(
-    (fieldId: string, value: any, delay: number = 300) => {
+    (fieldId: string, value: FormValue, delay: number = 300) => {
       // Clear existing timeout
       if (debounceRef.current[fieldId]) {
         clearTimeout(debounceRef.current[fieldId])
@@ -64,7 +65,7 @@ export const useFormPerformance = () => {
 
   // Batch field updates
   const batchUpdateFields = useCallback(
-    (updates: Record<string, any>) => {
+    (updates: FormValues) => {
       Object.entries(updates).forEach(([fieldId, value]) => {
         methods.setValue(fieldId, value, {
           shouldValidate: false,

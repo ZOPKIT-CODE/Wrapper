@@ -13,7 +13,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { UseFormReturn } from 'react-hook-form'
+import {
+  UseFormReturn,
+  type FieldPath,
+  type FieldPathValue,
+} from 'react-hook-form'
 import {
   newBusinessData,
   existingBusinessData,
@@ -48,8 +52,11 @@ const PHONE_EXAMPLES: Record<string, string> = {
 const getPhonePlaceholder = (countryCode: string): string =>
   PHONE_EXAMPLES[countryCode] ?? '+1 (555) 123-4567'
 
+type OnboardingFormData = newBusinessData | existingBusinessData
+type OnboardingFieldPath = FieldPath<OnboardingFormData>
+
 interface AdminDetailsStepProps {
-  form: UseFormReturn<newBusinessData | existingBusinessData>
+  form: UseFormReturn<OnboardingFormData>
   userClassification?: UserClassification
 }
 
@@ -60,11 +67,16 @@ export const AdminDetailsStep = memo(
     // Watch country fields to derive locale-specific placeholders.
     const businessDetailsCountry = useWatch({
       control: form.control,
-      name: 'businessDetails.country' as any,
+      name: 'businessDetails.country' as OnboardingFieldPath,
     })
     const rootCountry = useWatch({ control: form.control, name: 'country' })
 
-    const country = businessDetailsCountry || rootCountry || 'IN'
+    // Both country fields are string-valued at runtime; the dynamic path widens the
+    // inferred type, so narrow back to a string for the placeholder lookup.
+    const country =
+      (typeof businessDetailsCountry === 'string' && businessDetailsCountry) ||
+      (typeof rootCountry === 'string' && rootCountry) ||
+      'IN'
 
     // Sync Admin Email (and name) from Kinde only once on mount so form state matches display.
     // Run only once when user is available to avoid overwriting user-typed/cleared values (fixes state issues when typing and backspacing).
@@ -72,7 +84,10 @@ export const AdminDetailsStep = memo(
     React.useLayoutEffect(() => {
       if (!user?.email || hasSyncedFromIdpRef.current) return
       hasSyncedFromIdpRef.current = true
-      const updates: Array<{ field: any; value: any }> = []
+      const updates: Array<{
+        field: OnboardingFieldPath
+        value: FieldPathValue<OnboardingFormData, OnboardingFieldPath>
+      }> = []
       const currentAdminEmail = form.getValues('adminEmail')
       if (
         !currentAdminEmail ||
@@ -99,7 +114,7 @@ export const AdminDetailsStep = memo(
         }
       }
       updates.forEach(({ field, value }) => {
-        form.setValue(field as any, value, {
+        form.setValue(field, value, {
           shouldValidate: false,
           shouldDirty: false,
         })
@@ -201,7 +216,7 @@ export const AdminDetailsStep = memo(
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <FormField
                   control={form.control}
-                  name={'firstName' as any}
+                  name="firstName"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel
@@ -239,7 +254,7 @@ export const AdminDetailsStep = memo(
 
                 <FormField
                   control={form.control}
-                  name={'lastName' as any}
+                  name="lastName"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel

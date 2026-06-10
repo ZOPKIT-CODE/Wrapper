@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useAuth } from '@/lib/auth/cognito-auth'
+import { useAuth, type AuthUser } from '@/lib/auth/cognito-auth'
 import {
   clearStaleAuthStorage,
   isInvalidGrantError,
@@ -22,7 +22,7 @@ interface SilentAuthResult extends SilentAuthState {
   handleLogout: () => Promise<void>
   getAuthState: () => Promise<{
     isAuthenticated: boolean
-    user: any
+    user: AuthUser | null
     accessToken: string | null
   }>
 }
@@ -234,7 +234,7 @@ export const useSilentAuth = (): SilentAuthResult => {
       } = {}
     ): Promise<void> => {
       try {
-        const loginOptions: any = {
+        const loginOptions: Record<string, unknown> = {
           ...options,
         }
 

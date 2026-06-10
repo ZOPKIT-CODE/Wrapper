@@ -9,6 +9,8 @@ import {
   useFormState,
   useWatch,
   type Resolver,
+  type FieldErrors,
+  type FieldPath,
 } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { newBusinessData, existingBusinessData } from '../schemas'
@@ -98,15 +100,18 @@ export const useStepNavigation = (
   })
 
   // Helper to check if field has error
-  const hasError = useCallback((fieldPath: string, errors: any): boolean => {
-    const parts = fieldPath.split('.')
-    let errorObj: any = errors
-    for (const part of parts) {
-      if (!errorObj || typeof errorObj !== 'object') return false
-      errorObj = errorObj[part]
-    }
-    return !!errorObj
-  }, [])
+  const hasError = useCallback(
+    (fieldPath: string, errors: FieldErrors): boolean => {
+      const parts = fieldPath.split('.')
+      let errorObj: unknown = errors
+      for (const part of parts) {
+        if (!errorObj || typeof errorObj !== 'object') return false
+        errorObj = (errorObj as Record<string, unknown>)[part]
+      }
+      return !!errorObj
+    },
+    []
+  )
 
   // Helper to validate email format
   const isValidEmail = useCallback((email: string | undefined): boolean => {
@@ -295,7 +300,7 @@ export const useStepNavigation = (
 
   const nextStep = useCallback(
     async (
-      onValidationError?: (errors: any, stepNumber: number) => void
+      onValidationError?: (errors: FieldErrors, stepNumber: number) => void
     ): Promise<boolean> => {
       const currentStepId = stepsConfig[currentStep - 1]?.id
       const isLastStep = currentStep >= stepsConfig.length
@@ -326,10 +331,15 @@ export const useStepNavigation = (
           // Always required fields
           stepFields.push('billingStreet', 'billingCity', 'billingZip')
 
-          const country =
-            form.getValues('businessDetails.country' as any) ||
-            form.getValues('country') ||
-            'IN'
+          const country = String(
+            form.getValues(
+              'businessDetails.country' as FieldPath<
+                newBusinessData | existingBusinessData
+              >
+            ) ||
+              form.getValues('country') ||
+              'IN'
+          )
           const needsState = ['IN', 'US', 'CA', 'AU'].includes(country)
 
           if (needsState) {
@@ -372,7 +382,11 @@ export const useStepNavigation = (
           // Conditional fields based on tax registration toggle
           if (form.getValues('taxRegistered')) {
             const country =
-              form.getValues('businessDetails.country' as any) ||
+              form.getValues(
+                'businessDetails.country' as FieldPath<
+                  newBusinessData | existingBusinessData
+                >
+              ) ||
               form.getValues('country') ||
               'IN'
             if (country === 'IN') {
@@ -401,7 +415,11 @@ export const useStepNavigation = (
       }
 
       const validationResults = await Promise.all(
-        stepFields.map((field) => form.trigger(field as any))
+        stepFields.map((field) =>
+          form.trigger(
+            field as FieldPath<newBusinessData | existingBusinessData>
+          )
+        )
       )
 
       // Check if ALL validations passed

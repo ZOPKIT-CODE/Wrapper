@@ -139,7 +139,7 @@ export const useSeasonalCreditsCongratulatory = () => {
         notification.metadata?.campaignName &&
         campaignName === 'Seasonal Credits'
       ) {
-        campaignName = notification.metadata.campaignName
+        campaignName = notification.metadata.campaignName as string
       }
     })
 
@@ -194,7 +194,9 @@ export const useSeasonalCreditsCongratulatory = () => {
     if (hasNewFormatNotifications) {
       // Mark specific campaigns as shown
       seasonalNotifications.forEach((notification: Notification) => {
-        const campaignId = notification.metadata?.campaignId
+        const campaignId = notification.metadata?.campaignId as
+          | string
+          | undefined
         if (campaignId && !shownCampaigns.includes(campaignId)) {
           addShownCampaign(campaignId)
         }

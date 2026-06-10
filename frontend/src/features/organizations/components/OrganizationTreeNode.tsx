@@ -42,12 +42,25 @@ interface Organization {
   children?: Organization[]
   organizationType?: string
   locationType?: string
-  address?: any
+  address?: {
+    street?: string
+    city?: string
+    state?: string
+    zipCode?: string
+    country?: string
+  }
   availableCredits?: number
   reservedCredits?: number
   totalCredits?: number
   freeCredits?: number
   paidCredits?: number
+}
+
+interface AllocationForm {
+  targetApplication: string
+  creditAmount: number
+  allocationPurpose: string
+  autoReplenish: boolean
 }
 
 interface Location {
@@ -94,7 +107,7 @@ export interface TreeNodeProps {
   setEditingEntity: (entity: Entity | null) => void
   setShowEditResponsiblePerson: (show: boolean) => void
   setSelectedEntity: (entity: Entity | null) => void
-  setAllocationForm: (form: any) => void
+  setAllocationForm: (form: AllocationForm) => void
   setShowAllocationDialog: (show: boolean) => void
 }
 
@@ -124,6 +137,15 @@ export function TreeNode({
   const isSelected = selectedItems.includes(org.entityId)
   const canTransferCredits = (o: Organization) =>
     o.children && o.children.length > 0
+  // Credit fields can arrive from the API as numeric strings, so coerce defensively.
+  const toCreditNumber = (value: unknown): number =>
+    typeof value === 'string'
+      ? parseFloat(value) || 0
+      : typeof value === 'number'
+        ? value
+        : 0
+  const availableCredits = toCreditNumber(org.availableCredits)
+  const reservedCredits = toCreditNumber((org as Organization).reservedCredits)
 
   return (
     <div className="relative">
@@ -205,15 +227,14 @@ export function TreeNode({
                 {(org as Location).locationType || 'Location'}
               </Badge>
             )}
-            {(org as any).entityLevel !== null &&
-              (org as any).entityLevel !== undefined && (
-                <Badge
-                  variant="outline"
-                  className="h-4 border-[#1B2E5A]/20 bg-[#1B2E5A]/5 px-1.5 py-0 text-[9px] text-[#1B2E5A] dark:border-blue-800 dark:bg-[#1B2E5A]/10 dark:text-blue-400"
-                >
-                  Level {(org as any).entityLevel}
-                </Badge>
-              )}
+            {org.entityLevel !== null && org.entityLevel !== undefined && (
+              <Badge
+                variant="outline"
+                className="h-4 border-[#1B2E5A]/20 bg-[#1B2E5A]/5 px-1.5 py-0 text-[9px] text-[#1B2E5A] dark:border-blue-800 dark:bg-[#1B2E5A]/10 dark:text-blue-400"
+              >
+                Level {org.entityLevel}
+              </Badge>
+            )}
           </div>
           <div className="mt-1 flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
             <span className="flex items-center gap-1">
@@ -224,7 +245,7 @@ export function TreeNode({
             </span>
             <span
               className="flex items-center gap-1"
-              title={`Available: ${typeof (org as any).availableCredits === 'string' ? parseFloat((org as any).availableCredits) || 0 : typeof (org as any).availableCredits === 'number' ? (org as any).availableCredits : 0}, Reserved: ${typeof (org as any).reservedCredits === 'string' ? parseFloat((org as any).reservedCredits) || 0 : typeof (org as any).reservedCredits === 'number' ? (org as any).reservedCredits : 0}`}
+              title={`Available: ${availableCredits}, Reserved: ${reservedCredits}`}
             >
               <CreditCard className="h-3 w-3" />
               <span
@@ -236,12 +257,9 @@ export function TreeNode({
                   color: 'var(--zk-ink)',
                 }}
               >
-                {(typeof (org as any).availableCredits === 'string'
-                  ? parseFloat((org as any).availableCredits) || 0
-                  : typeof (org as any).availableCredits === 'number'
-                    ? (org as any).availableCredits
-                    : 0
-                ).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                {availableCredits.toLocaleString(undefined, {
+                  maximumFractionDigits: 2,
+                })}
               </span>
               <span
                 className="dark:text-slate-400"
@@ -271,7 +289,7 @@ export function TreeNode({
                     search: {
                       parentId: (org as Organization).entityId,
                       parentName: (org as Organization).entityName,
-                      entityType: 'organization' as any,
+                      entityType: 'organization' as const,
                     },
                   })
                 }
@@ -288,7 +306,7 @@ export function TreeNode({
                     search: {
                       parentId: (org as Organization).entityId,
                       parentName: (org as Organization).entityName,
-                      entityType: 'location' as any,
+                      entityType: 'location' as const,
                     },
                   })
                 }
@@ -381,7 +399,7 @@ export function TreeNode({
       {/* Children (Recursive) */}
       {expanded && hasChildren && (
         <div className="relative mt-1 ml-6 space-y-1 border-l-2 border-slate-200 pb-2 pl-4 dark:border-slate-800">
-          {orgChildren.map((child: any) => (
+          {orgChildren.map((child) => (
             <TreeNode
               key={child.entityId}
               org={child}
