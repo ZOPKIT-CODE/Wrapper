@@ -97,7 +97,10 @@ export type MembershipRow = NonNullable<UserDetailRecord['memberships']>[number]
 export function getInitials(name?: string, email?: string): string {
   if (name && name.trim()) {
     const parts = name.trim().split(/\s+/)
-    return parts.slice(0, 2).map((p) => p[0]?.toUpperCase() ?? '').join('')
+    return parts
+      .slice(0, 2)
+      .map((p) => p[0]?.toUpperCase() ?? '')
+      .join('')
   }
   return email ? email[0].toUpperCase() : '?'
 }
@@ -118,8 +121,11 @@ export function getUserInitials(user: UserRecord): string {
   return getInitials(displayName(user), user.email)
 }
 
-export function getUserRole(user: UserRecord): { name: string; color?: string } | null {
-  if (user.role?.roleName) return { name: user.role.roleName, color: user.role.color }
+export function getUserRole(
+  user: UserRecord
+): { name: string; color?: string } | null {
+  if (user.role?.roleName)
+    return { name: user.role.roleName, color: user.role.color }
   if (user.roleName) return { name: user.roleName, color: user.roleColor }
   return null
 }
@@ -145,7 +151,8 @@ export function extractItems<T>(raw: unknown): T[] {
 }
 
 export function extractPagination(raw: unknown, fallbackTotal: number) {
-  if (!raw || Array.isArray(raw)) return { page: 1, totalPages: 1, total: fallbackTotal }
+  if (!raw || Array.isArray(raw))
+    return { page: 1, totalPages: 1, total: fallbackTotal }
   const obj = raw as Record<string, unknown>
   return {
     page: Number(obj.page ?? 1),
@@ -168,10 +175,12 @@ export function extractStats(raw: unknown) {
 export function flattenHierarchy(entities: FlatEntity[] | null): FlatEntity[] {
   if (!entities) return []
   const result: FlatEntity[] = []
+  type NestedEntity = FlatEntity & { children?: FlatEntity[] }
   function walk(items: FlatEntity[]) {
     for (const e of items) {
       result.push(e)
-      if ((e as any).children?.length) walk((e as any).children)
+      const children = (e as NestedEntity).children
+      if (children?.length) walk(children)
     }
   }
   walk(entities)

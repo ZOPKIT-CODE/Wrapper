@@ -62,5 +62,12 @@ export const CreateCampaignPage = React.lazy(() => import('@/features/admin/page
 export const EmailPreviewPage = React.lazy(() => import('@/features/admin/pages/EmailPreviewPage').then(m => ({ default: m.EmailPreviewPage })))
 export const InviteAcceptDemo = React.lazy(() => import('@/features/auth/pages/InviteAcceptDemo'))
 
+// Blog: public reader (marketing site) + the company-admin full-page editor.
+export const PublicBlogListPage = React.lazy(() => import('@/features/blog/pages/PublicBlogListPage'))
+export const PublicBlogPostPage = React.lazy(() => import('@/features/blog/pages/PublicBlogPostPage'))
+export const PublicBlogTagPage = React.lazy(() => import('@/features/blog/pages/PublicBlogTagPage'))
+export const PublicBlogSeriesPage = React.lazy(() => import('@/features/blog/pages/PublicBlogSeriesPage'))
+export const BlogEditorPage = React.lazy(() => import('@/features/blog/pages/BlogEditorPage'))
+
 // Misc
 export const NotFound = React.lazy(() => import('@/features/NotFound'))

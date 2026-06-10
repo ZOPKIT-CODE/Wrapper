@@ -73,8 +73,8 @@ credits/
 | **CreditService** | Facade that re-exports and delegates to all credit sub-services for backward compatibility |
 | **credit-core** | Core helpers: ensure credit record exists, find root organization, get module permissions, Stripe client init |
 | **credit-balance** | Balance queries: getCurrentBalance, getEntityBalance, getTransactionHistory, getUsageSummary, getCreditStats with free/paid/seasonal categorization |
-| **credit-operations** | Mutations: initializeTenantCredits, purchaseCredits, addCreditsToEntity, allocateCreditsToApplication, consumeCredits, transferCredits, getAvailablePackages. Integrates Stripe checkout and Amazon MQ events |
+| **credit-operations** | Mutations: initializeTenantCredits, purchaseCredits, addCreditsToEntity, allocateCreditsToApplication, consumeCredits, transferCredits, getAvailablePackages. Integrates Stripe checkout and SNS events |
 | **credit-config-global** | Global/admin config: get/set operation, module, and app configs with tenant-to-global-to-default resolution |
-| **credit-config-tenant** | Tenant-scoped config: get/set/reset tenant configs, bulk updates, templates. Publishes credit config events to Amazon MQ |
+| **credit-config-tenant** | Tenant-scoped config: get/set/reset tenant configs, bulk updates, templates. Publishes credit config events to SNS |
 | **credit-expiry-service** | Expiry processing: processExpiredCredits, deductExpiredCredits, getExpiringCredits, sendExpiryWarnings, getExpiryStats |
 | **seasonal-credit-service** | Deprecated seasonal credit methods (being refactored onto CreditService) |

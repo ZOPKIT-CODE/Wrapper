@@ -1,9 +1,9 @@
-import { ZopkitRoundLoader } from './ZopkitRoundLoader';
+import { ZopkitRoundLoader } from './ZopkitRoundLoader'
 
 interface LoadingSpinnerProps {
-  message?: string;
-  size?: 'sm' | 'md' | 'lg';
-  className?: string;
+  message?: string
+  size?: 'sm' | 'md' | 'lg'
+  className?: string
 }
 
 /**
@@ -12,16 +12,20 @@ interface LoadingSpinnerProps {
 export function LoadingSpinner({
   message = 'Loading...',
   size = 'md',
-  className = ''
+  className = '',
 }: LoadingSpinnerProps) {
-  const loaderSize = size === 'sm' ? 'sm' : size === 'lg' ? 'xl' : 'md';
+  const loaderSize = size === 'sm' ? 'sm' : size === 'lg' ? 'xl' : 'md'
 
   return (
-    <div className={`flex flex-col items-center justify-center p-6 ${className}`}>
+    <div
+      className={`flex flex-col items-center justify-center p-6 ${className}`}
+    >
       <ZopkitRoundLoader size={loaderSize} />
       {message && (
-        <p className="mt-3 text-sm text-gray-600">{message}</p>
+        <p className="mt-3 text-sm text-gray-600 dark:text-gray-400">
+          {message}
+        </p>
       )}
     </div>
-  );
+  )
 }

@@ -2,7 +2,16 @@ import { useEffect, useRef } from 'react'
 import { useAuth } from '@/lib/auth/cognito-auth'
 import { ZopkitRoundLoader } from '@/components/common/feedback/ZopkitRoundLoader'
 import { useNavigate } from '@tanstack/react-router'
-import { clearStaleAuthStorage, isInvalidGrantError, markSessionRecoveryReason } from '@/lib/auth/session-recovery'
+import {
+  clearStaleAuthStorage,
+  isInvalidGrantError,
+  markSessionRecoveryReason,
+  consumePostLoginRedirect,
+} from '@/lib/auth/session-recovery'
+import {
+  consumeSilentAttempt,
+  SILENT_SSO_ERROR_CODES,
+} from '@/lib/auth/silent-sso'
 
 function authErrorMessage(error: unknown): string {
   if (error instanceof Error) return error.message
@@ -22,6 +31,25 @@ export function AuthCallback() {
   const processingRef = useRef(false)
   const hasNavigatedRef = useRef(false)
   const hasRecoveredSessionRef = useRef(false)
+
+  // A prompt=none silent SSO probe that found no shared session returns
+  // error=login_required (only prompt=none yields it) — expected, not a failure.
+  // Detect via the URL error code; a SUCCESSFUL silent probe carries ?code and must
+  // fall through to the normal flow below. Return here quietly (no error UI, no loop).
+  const silentUrlError = new URLSearchParams(window.location.search).get(
+    'error'
+  )
+  const isSilentNoSession = SILENT_SSO_ERROR_CODES.includes(
+    silentUrlError || ''
+  )
+  useEffect(() => {
+    consumeSilentAttempt() // clear the one-shot flag regardless of outcome
+    if (isSilentNoSession && !isAuthenticated && !hasNavigatedRef.current) {
+      hasNavigatedRef.current = true
+      navigate({ to: '/login', replace: true })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Timeout fallback — if Kinde never resolves, redirect to login after 15s
   useEffect(() => {
@@ -44,16 +72,22 @@ export function AuthCallback() {
       }
 
       if (error) {
-        const errorMessage = authErrorMessage(error)
-        const errorCode = typeof error === 'object' && error !== null && 'error' in error
-          ? String((error as { error: unknown }).error)
-          : ''
+        const authError = error as {
+          message?: string
+          error?: string
+          error_description?: string
+          status_code?: number
+        }
+        const errorMessage =
+          authError.message || authError.error_description || ''
+        const errorCode = authError.error || ''
 
         const isInvalidGrant = isInvalidGrantError(error)
 
-        const isServerError = errorMessage.includes('server_error') ||
-                             errorCode === 'server_error' ||
-                             (error as any)?.status_code === 500
+        const isServerError =
+          errorMessage.includes('server_error') ||
+          errorCode === 'server_error' ||
+          authError.status_code === 500
 
         if (isAuthenticated && user) {
           // Authentication succeeded despite the error — continue with normal flow
@@ -63,7 +97,11 @@ export function AuthCallback() {
             clearStaleAuthStorage()
             markSessionRecoveryReason('invalid_grant')
             hasNavigatedRef.current = true
-            window.location.replace('/login?error=Session%20expired.%20Please%20sign%20in%20again.')
+            navigate({
+              to: '/login',
+              search: { error: 'Session expired. Please sign in again.' },
+              replace: true,
+            })
             return
           }
 
@@ -115,20 +153,38 @@ export function AuthCallback() {
           return
         }
 
-        const pendingInvitationToken = sessionStorage.getItem('pendingInvitationToken')
+        const pendingInvitationToken = sessionStorage.getItem(
+          'pendingInvitationToken'
+        )
         if (pendingInvitationToken) {
           hasNavigatedRef.current = true
-          navigate({ to: `/invite/accept?token=${pendingInvitationToken}`, replace: true })
+          navigate({
+            to: `/invite/accept?token=${pendingInvitationToken}`,
+            replace: true,
+          })
+          return
+        }
+
+        // If the user was bounced here by a session expiry on a protected page
+        // (e.g. /company-admin), return them exactly there instead of the default
+        // dashboard. consumePostLoginRedirect validates it's a safe internal path.
+        const returnTo = consumePostLoginRedirect()
+        if (returnTo) {
+          hasNavigatedRef.current = true
+          navigate({ to: returnTo, replace: true })
           return
         }
 
         hasNavigatedRef.current = true
         if (onboardingParam === 'complete') {
-          window.location.replace('/dashboard/applications?onboarding=complete')
+          navigate({
+            to: '/dashboard/applications',
+            search: { onboarding: 'complete' },
+            replace: true,
+          })
         } else {
           navigate({ to: '/dashboard/applications', replace: true })
         }
-
       } catch (err) {
         console.error('❌ AuthCallback error:', err)
         hasNavigatedRef.current = true
@@ -142,26 +198,34 @@ export function AuthCallback() {
     return () => clearTimeout(timer)
   }, [isLoading, isAuthenticated, error, navigate, user])
 
-  if (error && !isAuthenticated) {
-    const errorMessage = authErrorMessage(error)
-    const errorCode = typeof error === 'object' && error !== null && 'error' in error
-      ? String((error as { error: unknown }).error)
-      : ''
+  if (error && !isAuthenticated && !isSilentNoSession) {
+    const authError = error as {
+      message?: string
+      error?: string
+      error_description?: string
+      status_code?: number
+    }
+    const errorMessage = authError.message || authError.error_description || ''
+    const errorCode = authError.error || ''
 
     const isInvalidGrant = isInvalidGrantError(error)
 
-    const isServerError = errorMessage.includes('server_error') ||
-                         errorCode === 'server_error' ||
-                         (error as any)?.status_code === 500
+    const isServerError =
+      errorMessage.includes('server_error') ||
+      errorCode === 'server_error' ||
+      authError.status_code === 500
 
     if (isServerError) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-orange-50">
-          <div className="text-center max-w-md px-4">
-            <div className="text-orange-600 text-6xl mb-4">⚠️</div>
-            <h2 className="text-xl font-semibold text-orange-900 mb-2">Server Error</h2>
-            <p className="text-orange-700 mb-4">
-              The authentication server encountered an error. This is usually temporary.
+        <div className="flex min-h-screen items-center justify-center bg-orange-50">
+          <div className="max-w-md px-4 text-center">
+            <div className="mb-4 text-6xl text-orange-600">⚠️</div>
+            <h2 className="mb-2 text-xl font-semibold text-orange-900">
+              Server Error
+            </h2>
+            <p className="mb-4 text-orange-700">
+              The authentication server encountered an error. This is usually
+              temporary.
             </p>
             <div className="space-y-2">
               <button
@@ -176,13 +240,13 @@ export function AuthCallback() {
                   }
                   navigate({ to: '/login', replace: true })
                 }}
-                className="bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700 mr-2"
+                className="mr-2 rounded bg-orange-600 px-4 py-2 text-white hover:bg-orange-700"
               >
                 Try Again
               </button>
               <button
                 onClick={() => navigate({ to: '/login', replace: true })}
-                className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
+                className="rounded bg-gray-600 px-4 py-2 text-white hover:bg-gray-700"
               >
                 Go to Login
               </button>
@@ -194,26 +258,34 @@ export function AuthCallback() {
 
     if (isInvalidGrant) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-yellow-50">
-          <div className="text-center max-w-md px-4">
-            <div className="text-yellow-600 text-6xl mb-4">⚠️</div>
-            <h2 className="text-xl font-semibold text-yellow-900 mb-2">Authentication Issue</h2>
-            <p className="text-yellow-700 mb-4">
+        <div className="flex min-h-screen items-center justify-center bg-yellow-50">
+          <div className="max-w-md px-4 text-center">
+            <div className="mb-4 text-6xl text-yellow-600">⚠️</div>
+            <h2 className="mb-2 text-xl font-semibold text-yellow-900">
+              Authentication Issue
+            </h2>
+            <p className="mb-4 text-yellow-700">
               There was an issue with token exchange. This can happen if:
             </p>
-            <ul className="text-left text-yellow-700 mb-4 space-y-2">
+            <ul className="mb-4 space-y-2 text-left text-yellow-700">
               <li>• The authorization code was already used</li>
               <li>• The refresh token is expired or malformed</li>
               <li>• There's a redirect URI mismatch</li>
             </ul>
-            <p className="text-yellow-600 text-sm mb-4">Please try logging in again.</p>
+            <p className="mb-4 text-sm text-yellow-600">
+              Please try logging in again.
+            </p>
             <button
               onClick={() => {
                 clearStaleAuthStorage()
                 markSessionRecoveryReason('invalid_grant')
-                window.location.replace('/login?error=Session%20expired.%20Please%20sign%20in%20again.')
+                navigate({
+                  to: '/login',
+                  search: { error: 'Session expired. Please sign in again.' },
+                  replace: true,
+                })
               }}
-              className="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700"
+              className="rounded bg-yellow-600 px-4 py-2 text-white hover:bg-yellow-700"
             >
               Try Again
             </button>
@@ -223,14 +295,19 @@ export function AuthCallback() {
     }
 
     return (
-      <div className="min-h-screen flex items-center justify-center bg-red-50">
+      <div className="flex min-h-screen items-center justify-center bg-red-50">
         <div className="text-center">
-          <div className="text-red-600 text-6xl mb-4">⚠️</div>
-          <h2 className="text-xl font-semibold text-red-900 mb-2">Authentication Error</h2>
-          <p className="text-red-700 mb-4">{authErrorMessage(error) || 'An error occurred during authentication'}</p>
+          <div className="mb-4 text-6xl text-red-600">⚠️</div>
+          <h2 className="mb-2 text-xl font-semibold text-red-900">
+            Authentication Error
+          </h2>
+          <p className="mb-4 text-red-700">
+            {(error as { message?: string }).message ||
+              'An error occurred during authentication'}
+          </p>
           <button
             onClick={() => navigate({ to: '/login', replace: true })}
-            className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+            className="rounded bg-red-600 px-4 py-2 text-white hover:bg-red-700"
           >
             Try Again
           </button>
@@ -240,10 +317,12 @@ export function AuthCallback() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="flex min-h-screen items-center justify-center bg-gray-50">
       <div className="text-center">
         <ZopkitRoundLoader size="xl" className="mx-auto mb-4" />
-        <h2 className="text-xl font-semibold text-primary mb-2">Completing authentication...</h2>
+        <h2 className="mb-2 text-xl font-semibold text-[#1B2E5A]">
+          Completing authentication...
+        </h2>
         <p className="text-gray-600">Please wait while we log you in.</p>
       </div>
     </div>

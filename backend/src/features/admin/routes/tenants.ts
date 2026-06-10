@@ -2,7 +2,7 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 
 type RequestContextLike = Record<string, unknown> & { ip?: string; headers?: Record<string, string | undefined>; connection?: { remoteAddress?: string } };
 import { TenantService } from '../../../services/tenant-service.js';
-import { authenticateToken, requirePermission } from '../../../middleware/auth/auth.js';
+import { authenticateToken, requirePermission, invalidateRoleCache } from '../../../middleware/auth/auth.js';
 import { PERMISSIONS } from '../../../constants/permissions.js';
 import { db } from '../../../db/index.js';
 import { tenants, tenantUsers, customRoles, subscriptions, creditPurchases, entities } from '../../../db/schema/index.js';
@@ -11,6 +11,7 @@ import ErrorResponses from '../../../utils/error-responses.js';
 import ActivityLogger, { ACTIVITY_TYPES } from '../../../services/activityLogger.js';
 import { uploadTenantLogo } from '../../../utils/s3-logo-upload.js';
 import Logger from '../../../utils/logger.js';
+import { ensureTenantAdminRole } from '../services/ensure-tenant-admin-role.js';
 import {
   getActivityLabel,
   resendUserInvite,
@@ -671,6 +672,17 @@ export default async function tenantRoutes(
         .returning();
 
       if (!updatedUser) return ErrorResponses.notFound(reply, 'User', 'User not found');
+
+      // Admin power must come from an enumerated role, not the bare boolean — assign
+      // the tenant's system admin role so the permission check (no longer fast-pathed
+      // on isTenantAdmin) actually grants access.
+      await ensureTenantAdminRole({
+        tenantId: tenantId ?? '',
+        userId,
+        assignedBy: request.userContext.internalUserId ?? userId,
+      });
+      void invalidateRoleCache(userId);
+
       return { success: true, message: 'User promoted to admin successfully', data: updatedUser };
     } catch (err) {
       request.log.error(err, 'Error promoting user:');

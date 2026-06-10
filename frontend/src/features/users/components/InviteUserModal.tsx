@@ -20,7 +20,11 @@ import {
 import { Checkbox } from '@/components/ui/checkbox'
 import { Separator } from '@/components/ui/separator'
 import { Loader2, Building2 } from 'lucide-react'
-import { HierarchyEntity, RoleRecord, ENTITY_TYPE_LABELS } from './userManagementTypes'
+import {
+  HierarchyEntity,
+  RoleRecord,
+  ENTITY_TYPE_LABELS,
+} from './userManagementTypes'
 
 // ---------------------------------------------------------------------------
 // EntityHierarchyOrgCheckboxes
@@ -43,16 +47,21 @@ function EntityHierarchyOrgCheckboxes({
       {nodes.map((entity) => (
         <li key={entity.entityId}>
           <label
-            className="flex cursor-pointer items-center gap-2 rounded-md py-1.5 pr-2 hover:bg-muted/50"
+            className="hover:bg-muted/50 flex cursor-pointer items-center gap-2 rounded-md py-1.5 pr-2"
             style={{ paddingLeft: `${6 + depth * 16}px` }}
           >
             <Checkbox
               checked={selectedIds.has(entity.entityId)}
               onCheckedChange={() => onToggle(entity.entityId)}
             />
-            <Building2 className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-            <span className="min-w-0 flex-1 truncate text-sm">{entity.entityName}</span>
-            <Badge variant="outline" className="shrink-0 text-[10px] py-0 px-1.5">
+            <Building2 className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
+            <span className="min-w-0 flex-1 truncate text-sm">
+              {entity.entityName}
+            </span>
+            <Badge
+              variant="outline"
+              className="shrink-0 px-1.5 py-0 text-[10px]"
+            >
               {ENTITY_TYPE_LABELS[entity.entityType] ?? entity.entityType}
             </Badge>
           </label>
@@ -113,20 +122,43 @@ export function InviteUserModal({
 }: InviteUserModalProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="flex w-full flex-col gap-0 overflow-y-auto px-6 pb-10 pt-5 sm:max-w-xl sm:px-8">
-        <SheetHeader className="space-y-2 p-0 pb-5 pr-12 text-left sm:pr-14">
-          <SheetTitle style={{ fontFamily: 'var(--zk-display)', letterSpacing: '-0.025em', color: 'var(--zk-ink)', fontSize: 18 }}>
+      <SheetContent className="flex w-full flex-col gap-0 overflow-y-auto px-6 pt-5 pb-10 sm:max-w-xl sm:px-8">
+        <SheetHeader className="space-y-2 p-0 pr-12 pb-5 text-left sm:pr-14">
+          <SheetTitle
+            style={{
+              fontFamily: 'var(--zk-display)',
+              letterSpacing: '-0.025em',
+              color: 'var(--zk-ink)',
+              fontSize: 18,
+            }}
+          >
             Invite Team Member
           </SheetTitle>
-          <SheetDescription style={{ fontFamily: 'var(--zk-font)', color: 'var(--zk-muted)', fontSize: 13 }}>
-            Send an invitation email. You can select multiple organizations (one role applies to all selected). Only one Organization Admin is allowed per tenant.
+          <SheetDescription
+            style={{
+              fontFamily: 'var(--zk-font)',
+              color: 'var(--zk-muted)',
+              fontSize: 13,
+            }}
+          >
+            Send an invitation email. You can select multiple organizations (one
+            role applies to all selected). Only one Organization Admin is
+            allowed per tenant.
           </SheetDescription>
         </SheetHeader>
 
         <div className="space-y-5">
           {/* Email */}
           <div className="space-y-2">
-            <Label htmlFor="invite-email" style={{ fontSize: 12, fontWeight: 500, color: 'var(--zk-muted)', fontFamily: 'var(--zk-font)' }}>
+            <Label
+              htmlFor="invite-email"
+              style={{
+                fontSize: 12,
+                fontWeight: 500,
+                color: 'var(--zk-muted)',
+                fontFamily: 'var(--zk-font)',
+              }}
+            >
               Email address <span className="text-destructive">*</span>
             </Label>
             <Input
@@ -141,16 +173,35 @@ export function InviteUserModal({
 
           {/* Organizations */}
           <div className="space-y-2">
-            <Label style={{ fontSize: 12, fontWeight: 500, color: 'var(--zk-muted)', fontFamily: 'var(--zk-font)' }}>
-              Organizations <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--zk-muted-2)' }}>(optional, multi-select)</span>
+            <Label
+              style={{
+                fontSize: 12,
+                fontWeight: 500,
+                color: 'var(--zk-muted)',
+                fontFamily: 'var(--zk-font)',
+              }}
+            >
+              Organizations{' '}
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 400,
+                  color: 'var(--zk-muted-2)',
+                }}
+              >
+                (optional, multi-select)
+              </span>
             </Label>
-            <p className="text-[12px] text-muted-foreground">
-              Check all orgs/locations this invite applies to. Child items are indented under their parent.
+            <p className="text-muted-foreground text-[12px]">
+              Check all orgs/locations this invite applies to. Child items are
+              indented under their parent.
             </p>
             {flatEntitiesCount === 0 ? (
-              <p className="rounded-lg border border-dashed px-3 py-4 text-sm text-muted-foreground">No organizations found in hierarchy.</p>
+              <p className="text-muted-foreground rounded-lg border border-dashed px-3 py-4 text-sm">
+                No organizations found in hierarchy.
+              </p>
             ) : (
-              <div className="max-h-56 overflow-y-auto rounded-lg border bg-muted/20 px-2 py-2">
+              <div className="bg-muted/20 max-h-56 overflow-y-auto rounded-lg border px-2 py-2">
                 <EntityHierarchyOrgCheckboxes
                   nodes={hierarchyTree}
                   depth={0}
@@ -160,25 +211,45 @@ export function InviteUserModal({
               </div>
             )}
             {inviteEntityIds.length > 0 ? (
-              <p className="text-[12px] text-muted-foreground">
-                {inviteEntityIds.length} organization{inviteEntityIds.length === 1 ? '' : 's'} selected
+              <p className="text-muted-foreground text-[12px]">
+                {inviteEntityIds.length} organization
+                {inviteEntityIds.length === 1 ? '' : 's'} selected
               </p>
             ) : null}
           </div>
 
           {/* Role */}
           <div className="space-y-2">
-            <Label style={{ fontSize: 12, fontWeight: 500, color: 'var(--zk-muted)', fontFamily: 'var(--zk-font)' }}>
-              Role <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--zk-muted-2)' }}>(optional)</span>
+            <Label
+              style={{
+                fontSize: 12,
+                fontWeight: 500,
+                color: 'var(--zk-muted)',
+                fontFamily: 'var(--zk-font)',
+              }}
+            >
+              Role{' '}
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 400,
+                  color: 'var(--zk-muted-2)',
+                }}
+              >
+                (optional)
+              </span>
             </Label>
             {inviteEntityIds.length > 0 ? (
-              <p className="text-[12px] text-muted-foreground">
+              <p className="text-muted-foreground text-[12px]">
                 The same role is applied to every selected organization.
               </p>
             ) : null}
-            {inviteRoleId !== 'none' && roles.find((r) => r.roleId === inviteRoleId)?.roleName === 'Organization Admin' ? (
-              <p className="text-[12px] text-amber-800">
-                Only one active Organization Admin is allowed per tenant (including pending invitations).
+            {inviteRoleId !== 'none' &&
+            roles.find((r) => r.roleId === inviteRoleId)?.roleName ===
+              'Organization Admin' ? (
+              <p className="text-[12px] text-amber-800 dark:text-amber-200">
+                Only one active Organization Admin is allowed per tenant
+                (including pending invitations).
               </p>
             ) : null}
             <Select value={inviteRoleId} onValueChange={onInviteRoleIdChange}>
@@ -192,7 +263,12 @@ export function InviteUserModal({
                     <div className="flex items-center gap-2">
                       <span className="font-medium">{role.roleName}</span>
                       {role.isSystemRole && (
-                        <Badge variant="outline" className="text-[10px] py-0 px-1.5">System</Badge>
+                        <Badge
+                          variant="outline"
+                          className="px-1.5 py-0 text-[10px]"
+                        >
+                          System
+                        </Badge>
                       )}
                     </div>
                   </SelectItem>
@@ -203,14 +279,31 @@ export function InviteUserModal({
 
           {/* Personal message */}
           <div className="space-y-2">
-            <Label htmlFor="invite-message" style={{ fontSize: 12, fontWeight: 500, color: 'var(--zk-muted)', fontFamily: 'var(--zk-font)' }}>
-              Personal message <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--zk-muted-2)' }}>(optional)</span>
+            <Label
+              htmlFor="invite-message"
+              style={{
+                fontSize: 12,
+                fontWeight: 500,
+                color: 'var(--zk-muted)',
+                fontFamily: 'var(--zk-font)',
+              }}
+            >
+              Personal message{' '}
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 400,
+                  color: 'var(--zk-muted-2)',
+                }}
+              >
+                (optional)
+              </span>
             </Label>
             <Textarea
               id="invite-message"
               placeholder="Add a personal note to the invitation..."
               rows={3}
-              className="rounded-lg resize-none"
+              className="resize-none rounded-lg"
               value={inviteMessage}
               onChange={(e) => onInviteMessageChange(e.target.value)}
             />

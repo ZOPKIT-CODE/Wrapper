@@ -1,11 +1,19 @@
-import React, { useState } from 'react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
-import { FieldComponentProps, PasswordField as PasswordFieldType } from '../types';
-import { cn } from '@/lib/utils';
-import { ConditionalErrorMessage } from '../components/ConditionalErrorMessage';
-import { Eye, EyeOff } from 'lucide-react';
+import React, { useState } from 'react'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+} from '@/components/ui/form'
+import {
+  FieldComponentProps,
+  PasswordField as PasswordFieldType,
+} from '../types'
+import { cn } from '@/lib/utils'
+import { ConditionalErrorMessage } from '../components/ConditionalErrorMessage'
+import { Eye, EyeOff } from 'lucide-react'
 
 /**
  * Password input field component with show/hide toggle
@@ -16,27 +24,30 @@ export const PasswordField: React.FC<FieldComponentProps> = ({
   onChange,
   onBlur,
   disabled,
-  className
+  className,
 }) => {
-  const [showPassword, setShowPassword] = useState(false);
-  const passwordField = field as PasswordFieldType;
+  const [showPassword, setShowPassword] = useState(false)
+  const passwordField = field as PasswordFieldType
 
   const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
-  };
+    setShowPassword(!showPassword)
+  }
 
   return (
     <FormField
       name={field.id}
       render={({ field: formField }) => (
         <FormItem className={cn(className)}>
-          <FormLabel className={cn(
-            'text-sm font-medium text-gray-700 mb-2 block',
-            field.required && "after:content-['*'] after:ml-0.5 after:text-red-500"
-          )}>
+          <FormLabel
+            className={cn(
+              'mb-2 block text-sm font-medium text-gray-700',
+              field.required &&
+                "after:ml-0.5 after:text-red-500 after:content-['*']"
+            )}
+          >
             {field.label}
           </FormLabel>
-          
+
           <div className="relative">
             <FormControl>
               <Input
@@ -44,13 +55,13 @@ export const PasswordField: React.FC<FieldComponentProps> = ({
                 type={showPassword ? 'text' : 'password'}
                 value={typeof value === 'string' ? value : ''}
                 onChange={(e) => {
-                  formField.onChange(e);
-                  onChange(e.target.value);
+                  formField.onChange(e)
+                  onChange(e.target.value)
                 }}
                 onBlur={() => {
-                  formField.onBlur();
+                  formField.onBlur()
                   if (onBlur) {
-                    onBlur();
+                    onBlur()
                   }
                 }}
                 placeholder={field.placeholder}
@@ -59,15 +70,15 @@ export const PasswordField: React.FC<FieldComponentProps> = ({
                 maxLength={passwordField.maxLength}
                 pattern={passwordField.pattern}
                 required={field.required}
-                className="h-12 px-4 py-3 pr-12 text-sm border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                className="h-12 rounded-lg border-gray-300 px-4 py-3 pr-12 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
               />
             </FormControl>
-            
+
             <Button
               type="button"
               variant="ghost"
               size="sm"
-              className="absolute right-0 top-0 h-12 px-3 py-2 hover:bg-transparent"
+              className="absolute top-0 right-0 h-12 px-3 py-2 hover:bg-transparent"
               onClick={togglePasswordVisibility}
               disabled={disabled || field.disabled}
               tabIndex={-1}
@@ -79,11 +90,13 @@ export const PasswordField: React.FC<FieldComponentProps> = ({
               )}
             </Button>
           </div>
-          
+
           {field.helpText && (
-            <div className="flex items-start gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5">ℹ</div>
-              <p className="text-sm text-blue-800 leading-relaxed">
+            <div className="flex items-start gap-3 rounded-lg border border-blue-200 bg-blue-50 p-4">
+              <div className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-600">
+                ℹ
+              </div>
+              <p className="text-sm leading-relaxed text-blue-800">
                 {field.helpText}
               </p>
             </div>
@@ -93,6 +106,5 @@ export const PasswordField: React.FC<FieldComponentProps> = ({
         </FormItem>
       )}
     />
-  );
-};
-
+  )
+}

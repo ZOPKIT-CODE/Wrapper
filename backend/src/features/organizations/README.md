@@ -1,6 +1,6 @@
 # Organizations Feature
 
-Parent/sub-organization and location management using a unified entities model, invitations, entity-scope/responsible-person APIs, and organization-assignment event publishing to Amazon MQ.
+Parent/sub-organization and location management using a unified entities model, invitations, entity-scope/responsible-person APIs, and organization-assignment event publishing to SNS.
 
 ## Directory Structure
 

@@ -1,17 +1,23 @@
-import React, { useMemo, useState, useRef } from 'react';
-import { useForm, FormProvider as RHFProvider } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { cn } from '@/lib/utils';
-import { MultiStepFormProps, FormField, FormValue } from './types';
-import { FIELD_COMPONENTS } from './field-components';
-import { EnhancedValidation } from './validation/EnhancedValidation';
-import { ProgressIndicator } from './components/ProgressIndicator';
-import { StepNavigation } from './components/StepNavigation';
-import { FormContextValue } from './contexts/FormContext';
-import { FormErrorBoundary } from './components/FormErrorBoundary';
-import { EnhancedFormContent } from './components/EnhancedFormContent';
-import { FormProvider } from './contexts/FormContext';
-import { PersistenceWrapper } from './components/PersistenceWrapper';
+import React, { useMemo, useState, useRef } from 'react'
+import { useForm, FormProvider as RHFProvider } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { cn } from '@/lib/utils'
+import {
+  MultiStepFormProps,
+  FormField,
+  FormValue,
+  FieldType,
+  FieldComponentProps,
+} from './types'
+import { FIELD_COMPONENTS } from './field-components'
+import { EnhancedValidation } from './validation/EnhancedValidation'
+import { ProgressIndicator } from './components/ProgressIndicator'
+import { StepNavigation } from './components/StepNavigation'
+import { FormContextValue } from './contexts/FormContext'
+import { FormErrorBoundary } from './components/FormErrorBoundary'
+import { EnhancedFormContent } from './components/EnhancedFormContent'
+import { FormProvider } from './contexts/FormContext'
+import { PersistenceWrapper } from './components/PersistenceWrapper'
 
 /**
  * Multi-step form component with config-driven design
@@ -29,21 +35,23 @@ export const MultiStepForm: React.FC<MultiStepFormProps> = ({
   // Enhanced props
   persistence = { type: 'localStorage' },
   animations = true,
-  accessibility = true
+  accessibility = true,
 }) => {
   // Local state management - no need for Zustand
-  const [currentStep, setCurrentStep] = useState(0);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [transitionDirection, setTransitionDirection] = useState<'forward' | 'backward' | 'none'>('none');
-  const previousStepRef = useRef(0);
+  const [currentStep, setCurrentStep] = useState(0)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [transitionDirection, setTransitionDirection] = useState<
+    'forward' | 'backward' | 'none'
+  >('none')
+  const previousStepRef = useRef(0)
 
   // Get current step configuration
-  const currentStepConfig = config.steps[currentStep];
+  const currentStepConfig = config.steps[currentStep]
 
   // Create validation schema for current step using enhanced validation
   const currentStepSchema = useMemo(() => {
-    return EnhancedValidation.createStepSchema(currentStepConfig.fields);
-  }, [currentStepConfig]);
+    return EnhancedValidation.createStepSchema(currentStepConfig.fields)
+  }, [currentStepConfig])
 
   // Initialize form with react-hook-form
   const methods = useForm({
@@ -56,8 +64,8 @@ export const MultiStepForm: React.FC<MultiStepFormProps> = ({
     // Prevent validation on initial render
     shouldUnregister: false,
     // Don't validate on mount
-    shouldUseNativeValidation: false
-  });
+    shouldUseNativeValidation: false,
+  })
 
   // Form values are managed by react-hook-form internally
   // No need for useEffect to sync values
@@ -66,106 +74,123 @@ export const MultiStepForm: React.FC<MultiStepFormProps> = ({
   // Values are managed by react-hook-form internally
 
   const nextStep = () => {
-    const nextStepIndex = currentStep + 1;
-    setCurrentStep(nextStepIndex);
-  };
+    const nextStepIndex = currentStep + 1
+    setCurrentStep(nextStepIndex)
+  }
 
   const prevStep = () => {
     if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
+      setCurrentStep(currentStep - 1)
     }
-  };
+  }
 
   const goToStep = (step: number) => {
     if (step >= 0 && step < config.steps.length) {
-      setCurrentStep(step);
+      setCurrentStep(step)
     }
-  };
+  }
 
   // Handle field value changes
   const handleFieldChange = (fieldId: string, value: FormValue) => {
-    methods.setValue(fieldId, value, { shouldValidate: false, shouldDirty: true });
-  };
+    methods.setValue(fieldId, value, {
+      shouldValidate: false,
+      shouldDirty: true,
+    })
+  }
 
   // Handle field blur
   const handleFieldBlur = (fieldId: string) => {
     // Trigger validation for this field when user blurs
-    methods.trigger(fieldId);
-  };
+    methods.trigger(fieldId)
+  }
 
   // Validate current step
   const validateCurrentStep = async (): Promise<boolean> => {
     try {
-      const isValid = await methods.trigger();
-      return isValid;
+      const isValid = await methods.trigger()
+      return isValid
     } catch (error) {
-      console.error('Step validation error:', error);
-      return false;
+      console.error('Step validation error:', error)
+      return false
     }
-  };
+  }
 
   // Handle next step
   const handleNext = async () => {
-    const isValid = await validateCurrentStep();
+    const isValid = await validateCurrentStep()
     if (isValid) {
-      nextStep();
+      nextStep()
     }
-  };
+  }
 
   // Handle previous step
   const handlePrev = () => {
-    prevStep();
-  };
+    prevStep()
+  }
 
   // Handle form submission
   const handleSubmit = async () => {
-    const isValid = await validateCurrentStep();
+    const isValid = await validateCurrentStep()
     if (isValid) {
-      setIsSubmitting(true);
+      setIsSubmitting(true)
       try {
-        const formValues = methods.getValues();
-        await onSubmit(formValues);
-        setIsSubmitting(false);
+        const formValues = methods.getValues()
+        await onSubmit(formValues)
+        setIsSubmitting(false)
       } catch (error) {
-        console.error('Form submission error:', error);
-        setIsSubmitting(false);
+        console.error('Form submission error:', error)
+        setIsSubmitting(false)
       }
     }
-  };
+  }
 
   // Check if current step is valid
   const isCurrentStepValid = useMemo(() => {
     // Only validate if the form has been touched or submitted
-    const isDirty = methods.formState.isDirty;
-    const isSubmitted = methods.formState.isSubmitted;
-    const touchedFields = Object.keys(methods.formState.touchedFields).length;
+    const isDirty = methods.formState.isDirty
+    const isSubmitted = methods.formState.isSubmitted
+    const touchedFields = Object.keys(methods.formState.touchedFields).length
 
     // If form hasn't been touched and not submitted, consider it valid
     if (!isDirty && !isSubmitted && touchedFields === 0) {
-      return true;
+      return true
     }
 
     // Use react-hook-form's built-in validation state
-    const isValid = methods.formState.isValid;
+    const isValid = methods.formState.isValid
 
-    return isValid;
-  }, [methods.formState.isValid, methods.formState.isDirty, methods.formState.isSubmitted, methods.formState.touchedFields, methods.formState.errors, currentStep, debug]);
+    return isValid
+  }, [
+    methods.formState.isValid,
+    methods.formState.isDirty,
+    methods.formState.isSubmitted,
+    methods.formState.touchedFields,
+    methods.formState.errors,
+    currentStep,
+    debug,
+  ])
 
   // Render field component
   const renderField = (field: FormField) => {
-    const FieldComponent = fieldComponents[field.type] || (FIELD_COMPONENTS as any)[field.type];
+    const FieldComponent =
+      fieldComponents[field.type] ||
+      (
+        FIELD_COMPONENTS as Partial<
+          Record<FieldType, React.ComponentType<FieldComponentProps>>
+        >
+      )[field.type]
 
     if (!FieldComponent) {
-      console.warn(`No component found for field type: ${field.type}`);
-      return null;
+      console.warn(`No component found for field type: ${field.type}`)
+      return null
     }
 
     // Check conditional rendering
     if (field.conditional) {
-      const watchedValue = methods.watch(field.conditional.watch);
-      const shouldShow = evaluateCondition(watchedValue, field.conditional);
+      const watchedValue = methods.watch(field.conditional.watch)
+      const shouldShow = evaluateCondition(watchedValue, field.conditional)
       if (!shouldShow) {
-        return null;
+        return null
       }
     }
 
@@ -178,74 +203,99 @@ export const MultiStepForm: React.FC<MultiStepFormProps> = ({
         onBlur={() => handleFieldBlur(field.id)}
         disabled={isSubmitting}
       />
-    );
-  };
+    )
+  }
 
   // Evaluate conditional logic
-  const evaluateCondition = (value: FormValue, conditional: { operator?: string; value: FormValue | FormValue[] }): boolean => {
-    const { operator = 'equals', value: expectedValue } = conditional;
+  const evaluateCondition = (
+    value: FormValue,
+    conditional: { operator?: string; value: FormValue | FormValue[] }
+  ): boolean => {
+    const { operator = 'equals', value: expectedValue } = conditional
 
     switch (operator) {
       case 'equals':
-        return value === expectedValue;
+        return value === expectedValue
       case 'not_equals':
-        return value !== expectedValue;
+        return value !== expectedValue
       case 'in':
-        return Array.isArray(expectedValue) && expectedValue.some((v: FormValue) => v === value);
+        return (
+          Array.isArray(expectedValue) &&
+          expectedValue.some((v: FormValue) => v === value)
+        )
       case 'not_in':
-        return Array.isArray(expectedValue) && !expectedValue.some((v: FormValue) => v === value);
+        return (
+          Array.isArray(expectedValue) &&
+          !expectedValue.some((v: FormValue) => v === value)
+        )
       case 'contains':
-        return value !== null && expectedValue !== null && String(value).includes(String(expectedValue));
+        return (
+          value !== null &&
+          expectedValue !== null &&
+          String(value).includes(String(expectedValue))
+        )
       case 'not_contains':
-        return value === null || expectedValue === null || !String(value).includes(String(expectedValue));
+        return (
+          value === null ||
+          expectedValue === null ||
+          !String(value).includes(String(expectedValue))
+        )
       default:
-        return true;
+        return true
     }
-  };
+  }
 
   // Get step titles for progress indicator
-  const stepTitles = config.steps.map(step => step.title);
+  const stepTitles = config.steps.map((step) => step.title)
 
   // Define sub-steps for each step based on actual step content
   const stepSubSteps: Record<number, string[]> = useMemo(() => {
-    const subSteps: Record<number, string[]> = {};
+    const subSteps: Record<number, string[]> = {}
 
     config.steps.forEach((step, index) => {
       // Generate sub-steps based on field types or step content
-      if (step.fields.some(field => field.type === 'select')) {
-        subSteps[index] = ['Selection', 'Details'];
-      } else if (step.fields.some(field => field.type === 'switch' || field.type === 'checkbox')) {
-        subSteps[index] = ['Preferences', 'Settings'];
-      } else if (step.fields.some(field => field.id.includes('address') || field.id.includes('street'))) {
-        subSteps[index] = ['Address', 'Location'];
+      if (step.fields.some((field) => field.type === 'select')) {
+        subSteps[index] = ['Selection', 'Details']
+      } else if (
+        step.fields.some(
+          (field) => field.type === 'switch' || field.type === 'checkbox'
+        )
+      ) {
+        subSteps[index] = ['Preferences', 'Settings']
+      } else if (
+        step.fields.some(
+          (field) => field.id.includes('address') || field.id.includes('street')
+        )
+      ) {
+        subSteps[index] = ['Address', 'Location']
       } else {
-        subSteps[index] = ['Basic Info', 'Details'];
+        subSteps[index] = ['Basic Info', 'Details']
       }
-    });
+    })
 
-    return subSteps;
-  }, [config.steps]);
+    return subSteps
+  }, [config.steps])
 
   // Enhanced features will be used inside the FormProvider context
 
   // Enhanced navigation with animations
   const enhancedNextStep = () => {
-    setTransitionDirection('forward');
-    previousStepRef.current = currentStep;
-    nextStep();
-  };
+    setTransitionDirection('forward')
+    previousStepRef.current = currentStep
+    nextStep()
+  }
 
   const enhancedPrevStep = () => {
-    setTransitionDirection('backward');
-    previousStepRef.current = currentStep;
-    prevStep();
-  };
+    setTransitionDirection('backward')
+    previousStepRef.current = currentStep
+    prevStep()
+  }
 
   const enhancedGoToStep = (step: number) => {
-    setTransitionDirection(step > currentStep ? 'forward' : 'backward');
-    previousStepRef.current = currentStep;
-    goToStep(step);
-  };
+    setTransitionDirection(step > currentStep ? 'forward' : 'backward')
+    previousStepRef.current = currentStep
+    goToStep(step)
+  }
 
   // Create form context value
   const formContextValue: FormContextValue = {
@@ -263,14 +313,17 @@ export const MultiStepForm: React.FC<MultiStepFormProps> = ({
     handleFieldBlur,
     validateCurrentStep,
     handleSubmit: handleSubmit, // Use original handleSubmit, will be enhanced by EnhancedFormProvider
-    debug
-  };
+    debug,
+  }
 
   return (
     <FormErrorBoundary>
       <FormProvider value={formContextValue}>
         <PersistenceWrapper persistence={persistence}>
-          <div className={cn('min-h-screen flex', className)} data-form-container>
+          <div
+            className={cn('flex min-h-screen', className)}
+            data-form-container
+          >
             {/* Sidebar Progress Indicator */}
             {currentStepConfig.showProgress && (
               <div className="w-80 flex-shrink-0 border-r border-gray-200">
@@ -289,14 +342,14 @@ export const MultiStepForm: React.FC<MultiStepFormProps> = ({
             )}
 
             {/* Main Form Content */}
-            <div className="flex-1 flex flex-col relative">
+            <div className="relative flex flex-1 flex-col">
               <RHFProvider {...methods}>
                 <div className="flex-1 pb-20">
                   {/* Header */}
                   <div className="border-b border-gray-200 px-8 py-6">
-                    <div className="flex justify-between items-start">
+                    <div className="flex items-start justify-between">
                       <div>
-                        <h1 className="text-3xl font-bold mb-2">
+                        <h1 className="mb-2 text-3xl font-bold">
                           {currentStepConfig.title}
                         </h1>
                         {currentStepConfig.description && (
@@ -306,8 +359,11 @@ export const MultiStepForm: React.FC<MultiStepFormProps> = ({
                         )}
                       </div>
                       <div className="text-right">
-                        <p className="text-sm ">Having troubles?</p>
-                        <a href="#" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                        <p className="text-sm">Having troubles?</p>
+                        <a
+                          href="#"
+                          className="text-sm font-medium text-blue-600 hover:text-blue-700"
+                        >
                           Get Help
                         </a>
                       </div>
@@ -331,11 +387,11 @@ export const MultiStepForm: React.FC<MultiStepFormProps> = ({
                   </EnhancedFormContent>
                 </div>
               </RHFProvider>
-              
+
               {/* Fixed Bottom Navigation */}
-              <div className="absolute bottom-0 left-0 right-0  border-t border-gray-200 shadow-lg z-50">
+              <div className="absolute right-0 bottom-0 left-0 z-50 border-t border-gray-200 shadow-lg">
                 <div className="px-8 py-6">
-                  <div className="max-w-2xl mx-auto">
+                  <div className="mx-auto max-w-2xl">
                     {CustomStepNavigation ? (
                       <CustomStepNavigation
                         currentStep={currentStep}
@@ -367,5 +423,5 @@ export const MultiStepForm: React.FC<MultiStepFormProps> = ({
         </PersistenceWrapper>
       </FormProvider>
     </FormErrorBoundary>
-  );
-};
+  )
+}

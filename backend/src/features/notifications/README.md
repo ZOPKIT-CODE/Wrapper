@@ -1,6 +1,6 @@
 # Notifications Feature
 
-Tenant-scoped in-app notifications with listing, read/dismiss tracking, analytics, async queue processing via Amazon MQ, templates with variable substitution, caching, and AI-powered content generation/personalization.
+Tenant-scoped in-app notifications with listing, read/dismiss tracking, analytics, async queue processing via SQS, templates with variable substitution, caching, and AI-powered content generation/personalization.
 
 ## Directory Structure
 
@@ -12,7 +12,7 @@ notifications/
 └── services/
     ├── notification-service.ts                   # Core CRUD and specialized notifications
     ├── notification-analytics-service.ts         # Analytics and dashboard data
-    ├── notification-queue-service.ts             # Async processing via Amazon MQ
+    ├── notification-queue-service.ts             # Async processing via SQS
     ├── notification-template-service.ts          # Template CRUD and rendering
     ├── notification-cache-service.ts             # In-memory cache for templates/metadata
     └── ai/
@@ -43,7 +43,7 @@ notifications/
 |---------|-------------|
 | **NotificationService** | Core CRUD: create, list, unread count, mark read/dismiss/mark-all-read, cleanup expired. Builds specialized notifications (seasonal credits, purchase, expiry warning, system update, billing reminder). Bulk create and send-to-tenants |
 | **NotificationAnalyticsService** | Analytics: stats (read/dismissed counts, rates), delivery rates, read rates over time, click-through rates, performance by type. Aggregates dashboard data including AI costs and per-application usage |
-| **NotificationQueueService** | Async processing via Amazon MQ job queue: workers for immediate, bulk, and scheduled jobs. Enqueue, process, cancel, stats. WebSocket broadcast after create |
+| **NotificationQueueService** | Async processing via SQS job queue: workers for immediate, bulk, and scheduled jobs. Enqueue, process, cancel, stats. WebSocket broadcast after create |
 | **NotificationTemplateService** | Template CRUD and rendering: create/read/update/delete templates, list with filters, render with variable substitution, get categories. Uses cache layer |
 | **NotificationCacheService** | In-memory cache for templates, template lists, tenant metadata, filtered tenant lists, and stats. TTL-based with cleanup and invalidation |
 | **AIServiceFactory** | AI provider abstraction: supports OpenAI and Anthropic. Generate completions with optional fallback, cost tracking, availability checks |

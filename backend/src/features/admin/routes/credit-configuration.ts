@@ -1,7 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { CreditService } from '../../../features/credits/index.js';
 import { authenticateToken } from '../../../middleware/auth/auth.js';
-import { requirePlatformPermission } from '../../../middleware/auth/platform-permission-middleware.js';
+import { requirePlatformPermission, requirePlatformOrOwnTenant } from '../../../middleware/auth/platform-permission-middleware.js';
 import Logger from '../../../utils/logger.js';
 
 /**
@@ -22,18 +22,13 @@ export default async function creditConfigurationRoutes(fastify: FastifyInstance
       description: 'Get all credit configurations for a tenant',
       tags: ['Admin', 'Credit Configuration']
     },
-    preHandler: requirePlatformPermission('credit_config:read')
+    preHandler: requirePlatformOrOwnTenant('credit_config:read')
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const params = request.params as Record<string, string>;
     try {
       const tenantId = params.tenantId ?? '';
 
-      // Scope tenant admins to their own tenant; super admins and platform staff may access any.
-      const userContext = (request as any).userContext;
-      if (!userContext?.isSuperAdmin && !request.platformStaff && userContext?.tenantId !== tenantId) {
-        return reply.code(403).send({ error: 'Access denied to this tenant\'s configurations' });
-      }
-
+      // Tenant-scoping is enforced by requirePlatformOrOwnTenant in the preHandler.
       const configurations = await CreditService.getTenantConfigurations(tenantId) as any;
       reply.send(configurations);
     } catch (err: unknown) {
@@ -52,7 +47,7 @@ export default async function creditConfigurationRoutes(fastify: FastifyInstance
       description: 'Update operation-level credit configuration for a tenant',
       tags: ['Admin', 'Credit Configuration']
     },
-    preHandler: requirePlatformPermission('credit_config:write')
+    preHandler: requirePlatformOrOwnTenant('credit_config:write')
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
@@ -62,12 +57,7 @@ export default async function creditConfigurationRoutes(fastify: FastifyInstance
       const configData = body;
       const userId = (request as any).userContext?.internalUserId ?? '';
 
-      const userContext = (request as any).userContext;
-      if (!userContext?.isSuperAdmin && !request.platformStaff && userContext?.tenantId !== tenantId) {
-        return reply.code(403).send({ error: 'Access denied to modify this tenant\'s configurations' });
-      }
-
-      // Audit log for platform staff writes
+      // Tenant-scoping enforced in preHandler. Audit-or-block for platform staff writes.
       await request.logPlatformAction?.('credit_config.update_operation', tenantId, 'credit_configuration', operationCode, undefined, configData);
 
       const result = await CreditService.setTenantOperationConfig(operationCode, configData as any, userId, tenantId) as any;
@@ -88,7 +78,7 @@ export default async function creditConfigurationRoutes(fastify: FastifyInstance
       description: 'Update module-level credit configuration for a tenant',
       tags: ['Admin', 'Credit Configuration']
     },
-    preHandler: requirePlatformPermission('credit_config:write')
+    preHandler: requirePlatformOrOwnTenant('credit_config:write')
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
@@ -98,11 +88,7 @@ export default async function creditConfigurationRoutes(fastify: FastifyInstance
       const configData = body;
       const userId = (request as any).userContext?.internalUserId ?? '';
 
-      const userContext = (request as any).userContext;
-      if (!userContext?.isSuperAdmin && !request.platformStaff && userContext?.tenantId !== tenantId) {
-        return reply.code(403).send({ error: 'Access denied to modify this tenant\'s configurations' });
-      }
-
+      // Tenant-scoping enforced in preHandler. Audit-or-block for platform staff writes.
       await request.logPlatformAction?.('credit_config.update_module', tenantId, 'credit_configuration', moduleCode, undefined, configData);
 
       const result = await CreditService.setTenantModuleConfig(moduleCode, configData as any, userId, tenantId) as any;
@@ -123,7 +109,7 @@ export default async function creditConfigurationRoutes(fastify: FastifyInstance
       description: 'Update app-level credit configuration for a tenant',
       tags: ['Admin', 'Credit Configuration']
     },
-    preHandler: requirePlatformPermission('credit_config:write')
+    preHandler: requirePlatformOrOwnTenant('credit_config:write')
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
@@ -133,11 +119,7 @@ export default async function creditConfigurationRoutes(fastify: FastifyInstance
       const configData = body;
       const userId = (request as any).userContext?.internalUserId ?? '';
 
-      const userContext = (request as any).userContext;
-      if (!userContext?.isSuperAdmin && !request.platformStaff && userContext?.tenantId !== tenantId) {
-        return reply.code(403).send({ error: 'Access denied to modify this tenant\'s configurations' });
-      }
-
+      // Tenant-scoping enforced in preHandler.
       const result = await CreditService.setTenantAppConfig(appCode, configData as any, userId, tenantId) as any;
       reply.send(result);
     } catch (err: unknown) {
@@ -156,7 +138,7 @@ export default async function creditConfigurationRoutes(fastify: FastifyInstance
       description: 'Reset tenant configuration to global default',
       tags: ['Admin', 'Credit Configuration']
     },
-    preHandler: requirePlatformPermission('credit_config:write')
+    preHandler: requirePlatformOrOwnTenant('credit_config:write')
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const params = request.params as Record<string, string>;
     try {
@@ -165,11 +147,7 @@ export default async function creditConfigurationRoutes(fastify: FastifyInstance
       const configCode = params.configCode ?? '';
       const userId = (request as any).userContext?.internalUserId ?? '';
 
-      const userContext = (request as any).userContext;
-      if (!userContext?.isSuperAdmin && !request.platformStaff && userContext?.tenantId !== tenantId) {
-        return reply.code(403).send({ error: 'Access denied to reset this tenant\'s configurations' });
-      }
-
+      // Tenant-scoping enforced in preHandler.
       const result = await CreditService.resetTenantConfiguration(tenantId, configType, configCode, userId) as any;
       reply.send(result);
     } catch (err: unknown) {
@@ -188,7 +166,7 @@ export default async function creditConfigurationRoutes(fastify: FastifyInstance
       description: 'Bulk update multiple configurations for a tenant',
       tags: ['Admin', 'Credit Configuration']
     },
-    preHandler: requirePlatformPermission('credit_config:write')
+    preHandler: requirePlatformOrOwnTenant('credit_config:write')
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
@@ -197,11 +175,7 @@ export default async function creditConfigurationRoutes(fastify: FastifyInstance
       const updates = body.updates;
       const userId = (request as any).userContext?.internalUserId ?? '';
 
-      const userContext = (request as any).userContext;
-      if (!userContext?.isSuperAdmin && !request.platformStaff && userContext?.tenantId !== tenantId) {
-        return reply.code(403).send({ error: 'Access denied to bulk update this tenant\'s configurations' });
-      }
-
+      // Tenant-scoping enforced in preHandler.
       const result = await CreditService.bulkUpdateTenantConfigurations(tenantId, updates as any, userId) as any;
       reply.send(result);
     } catch (err: unknown) {
@@ -241,7 +215,7 @@ export default async function creditConfigurationRoutes(fastify: FastifyInstance
       description: 'Apply a configuration template to a tenant',
       tags: ['Admin', 'Credit Configuration']
     },
-    preHandler: requirePlatformPermission('credit_config:write')
+    preHandler: requirePlatformOrOwnTenant('credit_config:write')
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
@@ -250,11 +224,7 @@ export default async function creditConfigurationRoutes(fastify: FastifyInstance
       const templateId = body.templateId;
       const userId = (request as any).userContext?.internalUserId ?? '';
 
-      const userContext = (request as any).userContext;
-      if (!userContext?.isSuperAdmin && !request.platformStaff && userContext?.tenantId !== tenantId) {
-        return reply.code(403).send({ error: 'Access denied to apply templates to this tenant' });
-      }
-
+      // Tenant-scoping enforced in preHandler.
       const result = await CreditService.applyConfigurationTemplate(tenantId, templateId as string, userId) as any;
       reply.send(result);
     } catch (err: unknown) {
@@ -354,7 +324,7 @@ export default async function creditConfigurationRoutes(fastify: FastifyInstance
       description: 'Create tenant-specific operation cost',
       tags: ['Admin', 'Credit Configuration']
     },
-    preHandler: requirePlatformPermission('credit_config:write')
+    preHandler: requirePlatformOrOwnTenant('credit_config:write')
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
     const params = request.params as Record<string, string>;
@@ -363,11 +333,7 @@ export default async function creditConfigurationRoutes(fastify: FastifyInstance
       const configData = body;
       const userId = (request as any).userContext?.internalUserId ?? '';
 
-      const userContext = (request as any).userContext;
-      if (!userContext?.isSuperAdmin && !request.platformStaff && userContext?.tenantId !== tenantId) {
-        return reply.code(403).send({ error: 'Access denied to create configurations for this tenant' });
-      }
-
+      // Tenant-scoping enforced in preHandler. Audit-or-block for platform staff writes.
       await request.logPlatformAction?.('credit_config.create_operation', tenantId, 'credit_configuration', undefined, undefined, configData);
 
       Logger.log('info', 'billing', 'create-tenant-operation-cost', 'Creating tenant operation cost', { tenantId, userId });

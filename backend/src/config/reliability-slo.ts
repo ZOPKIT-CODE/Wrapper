@@ -14,9 +14,9 @@ export const ERROR_BUDGETS = {
 } as const;
 
 export const FAILURE_TAXONOMY = {
-  broker_unavailable: 'Amazon MQ connection lost or unreachable',
+  broker_unavailable: 'SNS/SQS connection lost or unreachable',
   unroutable_message: 'Published message was returned as unroutable',
-  publish_confirm_timeout: 'Broker did not confirm publish within budget',
+  publish_confirm_timeout: 'SNS did not confirm publish within budget',
   consumer_processing_failure: 'Consumer failed to process message payload',
   retry_exhausted: 'Message exceeded retry budget and moved to DLQ',
   auth_configuration_error: 'Service auth/JWT secret misconfigured',

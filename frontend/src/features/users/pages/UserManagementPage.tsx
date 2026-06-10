@@ -31,9 +31,7 @@ import { useDashboardTabParam } from '@/hooks/useDashboardTabParam'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import {
-  TooltipProvider,
-} from '@/components/ui/tooltip'
+import { TooltipProvider } from '@/components/ui/tooltip'
 import { Users, UserPlus, Mail, CheckCircle, UserX } from 'lucide-react'
 
 import {
@@ -54,7 +52,11 @@ import {
 import { UserTable } from '../components/UserTable'
 import { InvitationsTable } from '../components/InvitationsTable'
 import { InviteUserModal } from '../components/InviteUserModal'
-import { UserDetailSheet, AssignRoleSheet, RemoveUserDialog } from '../components/UserEditPanel'
+import {
+  UserDetailSheet,
+  AssignRoleSheet,
+  RemoveUserDialog,
+} from '../components/UserEditPanel'
 
 // ---------------------------------------------------------------------------
 // StatCard (local — only used in this page)
@@ -82,24 +84,48 @@ function StatCard({
         borderRadius: 8,
       }}
     >
-      <div style={{
-        width: 44, height: 44, flexShrink: 0,
-        display: 'grid', placeItems: 'center',
-        borderRadius: 8,
-        background: 'var(--zk-navy)',
-      }}>
+      <div
+        style={{
+          width: 44,
+          height: 44,
+          flexShrink: 0,
+          display: 'grid',
+          placeItems: 'center',
+          borderRadius: 11,
+          background: 'var(--zk-navy)',
+        }}
+      >
         <Icon style={{ width: 20, height: 20, color: '#ffffff' }} />
       </div>
       <div>
-        <p style={{ fontSize: 13, color: 'var(--zk-muted)', fontFamily: 'var(--zk-font)', margin: 0 }}>
+        <p
+          style={{
+            fontSize: 13,
+            color: 'var(--zk-muted)',
+            fontFamily: 'var(--zk-font)',
+            margin: 0,
+          }}
+        >
           {label}
         </p>
         {value !== undefined ? (
-          <p style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-0.04em', color: 'var(--zk-ink)', fontFamily: 'var(--zk-display)', margin: 0 }}>
+          <p
+            style={{
+              fontSize: 24,
+              fontWeight: 700,
+              letterSpacing: '-0.04em',
+              color: 'var(--zk-ink)',
+              fontFamily: 'var(--zk-display)',
+              margin: 0,
+            }}
+          >
             {value}
           </p>
         ) : (
-          <Skeleton className="mt-1 h-7 w-12" style={{ background: 'var(--zk-line)' }} />
+          <Skeleton
+            className="mt-1 h-7 w-12"
+            style={{ background: 'var(--zk-line)' }}
+          />
         )}
       </div>
     </article>
@@ -134,8 +160,11 @@ export default function UserManagementPage() {
   const [inviteSheetOpen, setInviteSheetOpen] = useState(false)
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
   const [roleSheetUserId, setRoleSheetUserId] = useState<string | null>(null)
-  const [removeDialogUserId, setRemoveDialogUserId] = useState<string | null>(null)
-  const [membershipRemoveTarget, setMembershipRemoveTarget] = useState<MembershipRow | null>(null)
+  const [removeDialogUserId, setRemoveDialogUserId] = useState<string | null>(
+    null
+  )
+  const [membershipRemoveTarget, setMembershipRemoveTarget] =
+    useState<MembershipRow | null>(null)
 
   // Invite form
   const [inviteEmail, setInviteEmail] = useState('')
@@ -153,48 +182,85 @@ export default function UserManagementPage() {
 
   // ---- Org hierarchy ----
   const { hierarchy: orgHierarchy } = useOrganizationHierarchy('current')
-  const flatEntities = useMemo(() => flattenHierarchy(orgHierarchy as unknown as FlatEntity[]), [orgHierarchy])
-  const hierarchyTree = useMemo(() => (orgHierarchy as HierarchyEntity[] | null) ?? [], [orgHierarchy])
-  const inviteEntityIdSet = useMemo(() => new Set(inviteEntityIds), [inviteEntityIds])
+  const flatEntities = useMemo(
+    () => flattenHierarchy(orgHierarchy as unknown as FlatEntity[]),
+    [orgHierarchy]
+  )
+  const hierarchyTree = useMemo(
+    () => (orgHierarchy as HierarchyEntity[] | null) ?? [],
+    [orgHierarchy]
+  )
+  const inviteEntityIdSet = useMemo(
+    () => new Set(inviteEntityIds),
+    [inviteEntityIds]
+  )
 
   // ---- Query params --------------------------------------------------------
   const userParams = useMemo(
     () => ({
       search: searchQuery || undefined,
-      status: statusFilter !== 'all' ? (statusFilter as 'active' | 'invited' | 'inactive') : undefined,
+      status:
+        statusFilter !== 'all'
+          ? (statusFilter as 'active' | 'invited' | 'inactive')
+          : undefined,
       page,
       limit: 20,
     }),
-    [searchQuery, statusFilter, page],
+    [searchQuery, statusFilter, page]
   )
 
   const invParams = useMemo(
     () => ({
       search: invSearchQuery || undefined,
-      status: invStatusFilter !== 'all'
-        ? (invStatusFilter as 'pending' | 'accepted' | 'expired' | 'cancelled')
-        : undefined,
+      status:
+        invStatusFilter !== 'all'
+          ? (invStatusFilter as
+              | 'pending'
+              | 'accepted'
+              | 'expired'
+              | 'cancelled')
+          : undefined,
       page: invPage,
       limit: 20,
     }),
-    [invSearchQuery, invStatusFilter, invPage],
+    [invSearchQuery, invStatusFilter, invPage]
   )
 
   // ---- Data hooks ----------------------------------------------------------
-  const { data: usersRaw, isLoading: usersLoading, error: usersError } = useUsers(userParams)
+  const {
+    data: usersRaw,
+    isLoading: usersLoading,
+    error: usersError,
+  } = useUsers(userParams)
   const { data: statsRaw } = useUserStats()
-  const { data: invitationsRaw, isLoading: invitationsLoading } = useInvitations(invParams)
+  const { data: invitationsRaw, isLoading: invitationsLoading } =
+    useInvitations(invParams)
   const { data: availableRoles } = useAvailableRoles()
   const { data: userDetail } = useUserDetail(selectedUserId)
   const { data: userRolesRaw } = useUserRoles(selectedUserId ?? roleSheetUserId)
 
   // ---- Normalize data -------------------------------------------------------
   const users = useMemo(() => extractItems<UserRecord>(usersRaw), [usersRaw])
-  const usersPagination = useMemo(() => extractPagination(usersRaw, users.length), [usersRaw, users.length])
-  const invitations = useMemo(() => extractItems<InvitationRecord>(invitationsRaw), [invitationsRaw])
-  const invPagination = useMemo(() => extractPagination(invitationsRaw, invitations.length), [invitationsRaw, invitations.length])
-  const roles = useMemo<RoleRecord[]>(() => extractItems<RoleRecord>(availableRoles), [availableRoles])
-  const currentUserRoles = useMemo<RoleAssignment[]>(() => extractItems<RoleAssignment>(userRolesRaw), [userRolesRaw])
+  const usersPagination = useMemo(
+    () => extractPagination(usersRaw, users.length),
+    [usersRaw, users.length]
+  )
+  const invitations = useMemo(
+    () => extractItems<InvitationRecord>(invitationsRaw),
+    [invitationsRaw]
+  )
+  const invPagination = useMemo(
+    () => extractPagination(invitationsRaw, invitations.length),
+    [invitationsRaw, invitations.length]
+  )
+  const roles = useMemo<RoleRecord[]>(
+    () => extractItems<RoleRecord>(availableRoles),
+    [availableRoles]
+  )
+  const currentUserRoles = useMemo<RoleAssignment[]>(
+    () => extractItems<RoleAssignment>(userRolesRaw),
+    [userRolesRaw]
+  )
   const stats = useMemo(() => extractStats(statsRaw), [statsRaw])
 
   useEffect(() => {
@@ -234,12 +300,17 @@ export default function UserManagementPage() {
 
   const toggleInviteEntity = useCallback((entityId: string) => {
     setInviteEntityIds((prev) =>
-      prev.includes(entityId) ? prev.filter((id) => id !== entityId) : [...prev, entityId],
+      prev.includes(entityId)
+        ? prev.filter((id) => id !== entityId)
+        : [...prev, entityId]
     )
   }, [])
 
   const handleInviteSubmit = useCallback(() => {
-    if (!inviteEmail.trim()) { toast.error('Email is required'); return }
+    if (!inviteEmail.trim()) {
+      toast.error('Email is required')
+      return
+    }
 
     const hasEntities = inviteEntityIds.length > 0
     const hasRole = inviteRoleId !== 'none'
@@ -249,7 +320,9 @@ export default function UserManagementPage() {
           return {
             entityId: id,
             entityType: e?.entityType ?? 'organization',
-            ...(hasRole && inviteRoleId !== 'none' ? { roleId: inviteRoleId } : {}),
+            ...(hasRole && inviteRoleId !== 'none'
+              ? { roleId: inviteRoleId }
+              : {}),
           }
         })
       : undefined
@@ -266,14 +339,25 @@ export default function UserManagementPage() {
           setInviteSheetOpen(false)
           resetInviteForm()
         },
-      },
+      }
     )
-  }, [inviteEmail, inviteRoleId, inviteEntityIds, inviteMessage, inviteUser, flatEntities, resetInviteForm])
+  }, [
+    inviteEmail,
+    inviteRoleId,
+    inviteEntityIds,
+    inviteMessage,
+    inviteUser,
+    flatEntities,
+    resetInviteForm,
+  ])
 
-  const handleCloseInviteSheet = useCallback((open: boolean) => {
-    if (!open) resetInviteForm()
-    setInviteSheetOpen(open)
-  }, [resetInviteForm])
+  const handleCloseInviteSheet = useCallback(
+    (open: boolean) => {
+      if (!open) resetInviteForm()
+      setInviteSheetOpen(open)
+    },
+    [resetInviteForm]
+  )
 
   const resetAssignForm = useCallback(() => {
     setRoleSheetUserId(null)
@@ -283,17 +367,28 @@ export default function UserManagementPage() {
   }, [])
 
   const handleRoleAssign = useCallback(() => {
-    if (!roleSheetUserId || !assignRoleId) { toast.error('Please select a role'); return }
+    if (!roleSheetUserId || !assignRoleId) {
+      toast.error('Please select a role')
+      return
+    }
     assignRole.mutate(
       {
         userId: roleSheetUserId,
         roleId: assignRoleId,
         isTemporary: assignIsTemporary || undefined,
-        expiresAt: assignIsTemporary && assignExpiresAt ? assignExpiresAt : undefined,
+        expiresAt:
+          assignIsTemporary && assignExpiresAt ? assignExpiresAt : undefined,
       },
-      { onSuccess: resetAssignForm },
+      { onSuccess: resetAssignForm }
     )
-  }, [roleSheetUserId, assignRoleId, assignIsTemporary, assignExpiresAt, assignRole, resetAssignForm])
+  }, [
+    roleSheetUserId,
+    assignRoleId,
+    assignIsTemporary,
+    assignExpiresAt,
+    assignRole,
+    resetAssignForm,
+  ])
 
   const handleConfirmRemove = useCallback(() => {
     if (!removeDialogUserId) return
@@ -306,8 +401,16 @@ export default function UserManagementPage() {
   }, [removeDialogUserId, removeUser, selectedUserId])
 
   const handleCopyLink = useCallback(async (link?: string) => {
-    if (!link) { toast.error('No invitation link available'); return }
-    try { await navigator.clipboard.writeText(link); toast.success('Link copied to clipboard') } catch { toast.error('Failed to copy link') }
+    if (!link) {
+      toast.error('No invitation link available')
+      return
+    }
+    try {
+      await navigator.clipboard.writeText(link)
+      toast.success('Link copied to clipboard')
+    } catch {
+      toast.error('Failed to copy link')
+    }
   }, [])
 
   // ---- Render ---------------------------------------------------------------
@@ -317,7 +420,7 @@ export default function UserManagementPage() {
         <DashboardPageHeader
           title="Team Members"
           description="Manage your team members, roles, and invitations."
-          actions={(
+          actions={
             <Button
               onClick={() => setInviteSheetOpen(true)}
               className="gap-2 rounded-lg px-5 text-sm font-semibold shadow-sm"
@@ -326,24 +429,36 @@ export default function UserManagementPage() {
               <UserPlus className="h-4 w-4" />
               Invite Member
             </Button>
-          )}
+          }
         />
 
         {/* Stats cards */}
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           <StatCard label="Total Members" value={stats?.total} icon={Users} />
           <StatCard label="Active" value={stats?.active} icon={CheckCircle} />
-          <StatCard label="Pending Invitations" value={stats?.invited} icon={Mail} />
+          <StatCard
+            label="Pending Invitations"
+            value={stats?.invited}
+            icon={Mail}
+          />
           <StatCard label="Inactive" value={stats?.inactive} icon={UserX} />
         </div>
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className={DASHBOARD_TABS_LIST_CLASS}>
-            <TabsTrigger value="members" className="gap-1.5 data-[state=active]:shadow-sm" style={{ fontFamily: 'var(--zk-font)', fontSize: 13 }}>
+            <TabsTrigger
+              value="members"
+              className="gap-1.5 data-[state=active]:shadow-sm"
+              style={{ fontFamily: 'var(--zk-font)', fontSize: 13 }}
+            >
               <Users className="h-4 w-4" /> Members
             </TabsTrigger>
-            <TabsTrigger value="invitations" className="gap-1.5 data-[state=active]:shadow-sm" style={{ fontFamily: 'var(--zk-font)', fontSize: 13 }}>
+            <TabsTrigger
+              value="invitations"
+              className="gap-1.5 data-[state=active]:shadow-sm"
+              style={{ fontFamily: 'var(--zk-font)', fontSize: 13 }}
+            >
               <Mail className="h-4 w-4" /> Invitations
             </TabsTrigger>
           </TabsList>
@@ -364,7 +479,10 @@ export default function UserManagementPage() {
               onViewUser={(userId) => setSelectedUserId(userId)}
               onAssignRole={(userId) => setRoleSheetUserId(userId)}
               onToggleStatus={(userId, currentIsActive) =>
-                updateStatus.mutate({ userId, isActive: currentIsActive === false })
+                updateStatus.mutate({
+                  userId,
+                  isActive: currentIsActive === false,
+                })
               }
               onRemoveUser={(id) => setRemoveDialogUserId(id)}
             />
@@ -422,15 +540,19 @@ export default function UserManagementPage() {
           onCloseDetail={() => setSelectedUserId(null)}
           onOpenRoleSheet={(userId) => setRoleSheetUserId(userId)}
           onRequestRemoveUser={(userId) => setRemoveDialogUserId(userId)}
-          onUpdateStatus={(userId, isActive) => updateStatus.mutate({ userId, isActive })}
-          onUpdateProfile={(userId, data) => updateProfile.mutate({ userId, data })}
+          onUpdateStatus={(userId, isActive) =>
+            updateStatus.mutate({ userId, isActive })
+          }
+          onUpdateProfile={(userId, data) =>
+            updateProfile.mutate({ userId, data })
+          }
           onRemoveRoleAssignment={(userId, assignmentId) =>
             removeRoleAssignment.mutate({ userId, assignmentId })
           }
           onRemoveOrganizationMembership={(userId, membershipId) =>
             removeOrganizationMembership.mutate(
               { userId, membershipId },
-              { onSuccess: () => setMembershipRemoveTarget(null) },
+              { onSuccess: () => setMembershipRemoveTarget(null) }
             )
           }
           onAddOrganizationMembership={(userId, data) =>
@@ -441,7 +563,9 @@ export default function UserManagementPage() {
           removeRoleAssignmentIsPending={removeRoleAssignment.isPending}
           removeMembershipIsPending={removeOrganizationMembership.isPending}
           addMembershipIsPending={addOrganizationMembership.isPending}
-          removingMembershipId={removeOrganizationMembership.variables?.membershipId ?? null}
+          removingMembershipId={
+            removeOrganizationMembership.variables?.membershipId ?? null
+          }
           detailPhoneDraft={detailPhoneDraft}
           setDetailPhoneDraft={setDetailPhoneDraft}
           detailFirstNameDraft={detailFirstNameDraft}

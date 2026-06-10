@@ -28,7 +28,7 @@ export function ThemeToggle() {
         <Button
           variant="outline"
           size="icon"
-          className="border-border/50 hover:bg-accent hover:text-accent-foreground"
+          className="border-border/50 hover:bg-accent hover:text-accent-foreground dark:border-border dark:hover:bg-accent dark:hover:text-accent-foreground dark:text-white"
         >
           {getThemeIcon()}
           <span className="sr-only">Toggle theme</span>
@@ -75,7 +75,7 @@ export function SimpleThemeToggle() {
       variant="outline"
       size="icon"
       onClick={() => setTheme(actualTheme === 'light' ? 'dark' : 'light')}
-      className="h-9 w-9 border-border/50 hover:bg-accent hover:text-accent-foreground"
+      className="border-border/50 hover:bg-accent hover:text-accent-foreground dark:border-border dark:hover:bg-accent dark:hover:text-accent-foreground h-9 w-9"
     >
       {getThemeIcon()}
       <span className="sr-only">Toggle theme</span>

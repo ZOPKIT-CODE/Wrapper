@@ -1,21 +1,21 @@
-import { useEffect, useCallback } from 'react';
-import { useFormContext } from '../contexts/FormContext';
+import { useEffect, useCallback } from 'react'
+import { useFormContext } from '../contexts/FormContext'
 
-export type PersistenceType = 'localStorage' | 'sessionStorage' | 'none';
+export type PersistenceType = 'localStorage' | 'sessionStorage' | 'none'
 
 interface UseFormPersistenceOptions {
   /** Type of persistence to use */
-  type?: PersistenceType;
+  type?: PersistenceType
   /** Custom key for storage */
-  key?: string;
+  key?: string
   /** Debounce delay for saving (ms) */
-  debounceMs?: number;
+  debounceMs?: number
   /** Whether to persist on every change */
-  persistOnChange?: boolean;
+  persistOnChange?: boolean
   /** Whether to persist on step change */
-  persistOnStepChange?: boolean;
+  persistOnStepChange?: boolean
   /** Whether to clear on submit */
-  clearOnSubmit?: boolean;
+  clearOnSubmit?: boolean
 }
 
 /**
@@ -28,134 +28,133 @@ export const useFormPersistence = (options: UseFormPersistenceOptions = {}) => {
     debounceMs = 500,
     persistOnChange = true,
     persistOnStepChange = true,
-    clearOnSubmit = true
-  } = options;
+    clearOnSubmit = true,
+  } = options
 
   const {
     currentStep,
     methods,
-    handleSubmit: originalHandleSubmit
-  } = useFormContext();
+    handleSubmit: originalHandleSubmit,
+  } = useFormContext()
 
   // Get storage instance
-  const storage = type === 'localStorage' ? localStorage : 
-                  type === 'sessionStorage' ? sessionStorage : null;
+  const storage =
+    type === 'localStorage'
+      ? localStorage
+      : type === 'sessionStorage'
+        ? sessionStorage
+        : null
 
   // Save form data
   const saveFormData = useCallback(() => {
-    if (!storage) return;
+    if (!storage) return
 
     try {
       const formData = {
         currentStep,
         values: methods.getValues(),
-        timestamp: Date.now()
-      };
-      storage.setItem(key, JSON.stringify(formData));
+        timestamp: Date.now(),
+      }
+      storage.setItem(key, JSON.stringify(formData))
     } catch (error) {
-      console.warn('Failed to save form data:', error);
+      console.warn('Failed to save form data:', error)
     }
-  }, [storage, key, currentStep, methods]);
+  }, [storage, key, currentStep, methods])
 
   // Load form data
   const loadFormData = useCallback(() => {
-    if (!storage) return null;
+    if (!storage) return null
 
     try {
-      const saved = storage.getItem(key);
+      const saved = storage.getItem(key)
       if (saved) {
-        const formData = JSON.parse(saved);
-        
+        const formData = JSON.parse(saved)
+
         // Check if data is not too old (24 hours)
-        const maxAge = 24 * 60 * 60 * 1000; // 24 hours
+        const maxAge = 24 * 60 * 60 * 1000 // 24 hours
         if (Date.now() - formData.timestamp < maxAge) {
-          return formData;
+          return formData
         } else {
           // Clear old data
-          storage.removeItem(key);
+          storage.removeItem(key)
         }
       }
     } catch (error) {
-      console.warn('Failed to load form data:', error);
+      console.warn('Failed to load form data:', error)
     }
-    
-    return null;
-  }, [storage, key]);
+
+    return null
+  }, [storage, key])
 
   // Clear form data
   const clearFormData = useCallback(() => {
-    if (!storage) return;
-    
+    if (!storage) return
+
     try {
-      storage.removeItem(key);
+      storage.removeItem(key)
     } catch (error) {
-      console.warn('Failed to clear form data:', error);
+      console.warn('Failed to clear form data:', error)
     }
-  }, [storage, key]);
+  }, [storage, key])
 
   // Restore form data
   const restoreFormData = useCallback(() => {
-    const savedData = loadFormData();
+    const savedData = loadFormData()
     if (savedData) {
       // Restore values
-      methods.reset(savedData.values);
-      
+      methods.reset(savedData.values)
+
       // Restore step (this would need to be handled by parent component)
       return {
         step: savedData.currentStep,
-        values: savedData.values
-      };
+        values: savedData.values,
+      }
     }
-    return null;
-  }, [loadFormData, methods]);
+    return null
+  }, [loadFormData, methods])
 
   // Debounced save
   useEffect(() => {
-    if (!persistOnChange) return;
+    if (!persistOnChange) return
 
-    const timeoutId = setTimeout(saveFormData, debounceMs);
-    return () => clearTimeout(timeoutId);
-  }, [methods.watch(), persistOnChange, debounceMs, saveFormData]);
+    const timeoutId = setTimeout(saveFormData, debounceMs)
+    return () => clearTimeout(timeoutId)
+  }, [methods.watch(), persistOnChange, debounceMs, saveFormData])
 
   // Save on step change
   useEffect(() => {
     if (persistOnStepChange) {
-      saveFormData();
+      saveFormData()
     }
-  }, [currentStep, persistOnStepChange, saveFormData]);
+  }, [currentStep, persistOnStepChange, saveFormData])
 
   // Enhanced submit handler
   const handleSubmit = useCallback(async () => {
-    try {
-      await originalHandleSubmit();
-      
-      // Clear data on successful submit
-      if (clearOnSubmit) {
-        clearFormData();
-      }
-    } catch (error) {
-      // Don't clear data on error
-      throw error;
+    await originalHandleSubmit()
+
+    // Clear data on successful submit (skipped if the submit above threw)
+    if (clearOnSubmit) {
+      clearFormData()
     }
-  }, [originalHandleSubmit, clearOnSubmit, clearFormData]);
+  }, [originalHandleSubmit, clearOnSubmit, clearFormData])
 
   return {
     saveFormData,
     loadFormData,
     clearFormData,
     restoreFormData,
-    handleSubmit
-  };
-};
+    handleSubmit,
+  }
+}
 
 /**
  * Hook for auto-save functionality
  */
 export const useAutoSave = (intervalMs: number = 30000) => {
-  const { saveFormData } = useFormPersistence({ persistOnChange: false });
+  const { saveFormData } = useFormPersistence({ persistOnChange: false })
 
   useEffect(() => {
-    const interval = setInterval(saveFormData, intervalMs);
-    return () => clearInterval(interval);
-  }, [saveFormData, intervalMs]);
-};
+    const interval = setInterval(saveFormData, intervalMs)
+    return () => clearInterval(interval)
+  }, [saveFormData, intervalMs])
+}

@@ -1,8 +1,8 @@
-import React from 'react';
-import { PearlButton } from '@/components/ui/pearl-button';
-import { StepNavigationProps } from '../types';
-import { cn } from '@/lib/utils';
-import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import React from 'react'
+import { PearlButton } from '@/components/ui/pearl-button'
+import { StepNavigationProps } from '../types'
+import { cn } from '@/lib/utils'
+import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
 
 /**
  * Enhanced step navigation component matching reference design
@@ -16,10 +16,10 @@ export const StepNavigation: React.FC<StepNavigationProps> = ({
   onNext,
   onPrev,
   onSubmit,
-  className
+  className,
 }) => {
-  const isLastStep = currentStep === totalSteps - 1;
-  const isFirstStep = currentStep === 0;
+  const isLastStep = currentStep === totalSteps - 1
+  const isFirstStep = currentStep === 0
 
   return (
     <div className={cn('flex items-center justify-between', className)}>
@@ -33,7 +33,7 @@ export const StepNavigation: React.FC<StepNavigationProps> = ({
             variant="outline"
             className="px-4 py-2"
           >
-            <ChevronLeft className="w-4 h-4" />
+            <ChevronLeft className="h-4 w-4" />
             <span>PREVIOUS</span>
           </PearlButton>
         )}
@@ -48,7 +48,7 @@ export const StepNavigation: React.FC<StepNavigationProps> = ({
             disabled={!isCurrentStepValid || isSubmitting}
             className="px-6 py-3"
           >
-            {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
+            {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
             <span>{isSubmitting ? 'Submitting...' : 'Submit'}</span>
           </PearlButton>
         ) : (
@@ -59,10 +59,10 @@ export const StepNavigation: React.FC<StepNavigationProps> = ({
             className="px-6 py-3"
           >
             <span>NEXT</span>
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="h-4 w-4" />
           </PearlButton>
         )}
       </div>
     </div>
-  );
-};
+  )
+}

@@ -1,4 +1,10 @@
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -39,33 +45,46 @@ export function OrganizationEditDialog({
             <Label>Name</Label>
             <Input
               value={editForm.name}
-              onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-              className="focus:ring-2 focus:ring-ring focus:border-primary transition-colors"
+              onChange={(e) =>
+                setEditForm({ ...editForm, name: e.target.value })
+              }
+              className="transition-colors focus:border-[#1B2E5A] focus:ring-2 focus:ring-[#1B2E5A]"
             />
           </div>
           <div className="grid gap-2">
             <Label>Description</Label>
             <Textarea
               value={editForm.description}
-              onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-              className="focus:ring-2 focus:ring-ring focus:border-primary transition-colors"
+              onChange={(e) =>
+                setEditForm({ ...editForm, description: e.target.value })
+              }
+              className="transition-colors focus:border-[#1B2E5A] focus:ring-2 focus:ring-[#1B2E5A]"
             />
           </div>
           <div className="flex items-center space-x-2">
             <input
               type="checkbox"
               checked={editForm.isActive}
-              onChange={(e) => setEditForm({ ...editForm, isActive: e.target.checked })}
-              className="rounded border-gray-300 focus:ring-2 focus:ring-ring focus:ring-offset-0"
+              onChange={(e) =>
+                setEditForm({ ...editForm, isActive: e.target.checked })
+              }
+              className="rounded border-gray-300 focus:ring-2 focus:ring-[#1B2E5A] focus:ring-offset-0"
             />
             <Label>Active</Label>
           </div>
         </div>
         <DialogFooter>
-          <PearlButton variant="outline" onClick={() => onOpenChange(false)} disabled={isUpdating}>
+          <PearlButton
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={isUpdating}
+          >
             Cancel
           </PearlButton>
-          <PearlButton onClick={onSave} disabled={!editForm.name.trim() || isUpdating}>
+          <PearlButton
+            onClick={onSave}
+            disabled={!editForm.name.trim() || isUpdating}
+          >
             {isUpdating ? (
               <>
                 <ZopkitRoundLoader size="xs" className="mr-2" />

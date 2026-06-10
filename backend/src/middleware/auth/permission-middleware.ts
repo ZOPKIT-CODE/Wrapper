@@ -22,16 +22,19 @@ export function requirePermissions(requiredPermissions: string[]) {
       return;
     }
 
-    if (request.userContext.isAdmin || request.userContext.isTenantAdmin) {
-      request.log.debug('Admin user detected, granting access');
+    // NO ADMIN BYPASS: tenant admins do not skip the permission check. Their power
+    // comes from an enumerated system role, which getUserPermissions resolves to
+    // modules:'*'. See [[feedback-no-admin-bypass]] and ensureTenantAdminRole.
+    if (!request.userContext.internalUserId || !request.userContext.tenantId) {
+      reply.code(403).send({ error: 'Forbidden', message: 'User context incomplete for permission check' });
       return;
     }
 
     try {
       request.log.debug('Fetching user permissions...');
       const userPermissions = await getUserPermissions(
-        request.userContext.internalUserId!,
-        request.userContext.tenantId!
+        request.userContext.internalUserId,
+        request.userContext.tenantId
       );
 
       request.log.debug({

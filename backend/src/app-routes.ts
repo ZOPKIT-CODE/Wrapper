@@ -48,14 +48,19 @@ import devCreditTestRoutes from './routes/dev-credit-test.js';
 import devTestClockRoutes from './routes/dev-test-clocks.js';
 import emailPreviewRoutes from './routes/email-preview.js';
 import tenantApplicationsReconcileRoutes from './features/admin/routes/tenant-applications-reconcile.js';
+import { blogRoutes, blogCommentRoutes, blogSeriesRoutes, blogSeoRoutes, blogPrerenderRoutes } from './features/blog/index.js';
 
 import { authMiddleware, csrfProtection, releaseRequestDbConnection } from './middleware/auth/auth.js';
+import { registerRequestDbScope } from './db/request-context.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { trialRestrictionMiddleware } from './middleware/restrictions/trial-restriction.js';
 import { restrictInvitedUsers } from './middleware/restrictions/invited-user-restriction.js';
 import { trackActivity } from './middleware/activityTracker.js';
 
 export async function registerMiddleware(fastify: FastifyInstance): Promise<void> {
+  // FIRST: open the AsyncLocalStorage request-DB scope (leak-proof run(done)
+  // context). Must precede any hook that calls enterRequestDbScope (auth).
+  registerRequestDbScope(fastify);
   fastify.addHook('onRequest', trackActivity());
   fastify.addHook('preHandler', csrfProtection);
   fastify.addHook('preHandler', authMiddleware);
@@ -187,6 +192,17 @@ export async function registerRoutes(fastify: FastifyInstance): Promise<void> {
 
   await fastify.register(invitationRoutes, { prefix: '/api/invitations' });
   await fastify.register(userRoutes, { prefix: '/api/users' });
+
+  // Blog: a FULLY PUBLIC API (read + write, no auth) whitelisted in
+  // PUBLIC_ROUTES. The frontend renders the public blog on the marketing site.
+  await fastify.register(blogRoutes, { prefix: '/api/blog' });
+  await fastify.register(blogCommentRoutes, { prefix: '/api/blog/comments' });
+  await fastify.register(blogSeriesRoutes, { prefix: '/api/blog/series' });
+  // SEO artifacts at the root: /sitemap.xml, /rss.xml, /robots.txt (no prefix).
+  await fastify.register(blogSeoRoutes);
+  // Crawler-HTML (dynamic rendering) for /blog + /blog/:slug at the root: bots
+  // get server-rendered SEO HTML, humans go to the SPA. No prefix.
+  await fastify.register(blogPrerenderRoutes);
 
   // ── Dev-only routes (not available in production) ────────────────────────
   if (process.env.NODE_ENV !== 'production') {

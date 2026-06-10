@@ -1,0 +1,88 @@
+# Full-stack Terraform apply per environment.
+#
+# WHY this exists separately from deploy.yml: the deploy pipeline runs
+# `terraform apply -target=module.services[...]`, which ONLY updates the ECS
+# service/task-def and never touches iam.tf / buckets / SNS / ALB / Cognito /
+# Valkey. So non-service infra changes (e.g. a new task-role S3 grant) silently
+# drift until someone runs a FULL apply. This workflow IS that full apply.
+#
+# Safety:
+#   • Manual dispatch only — infra changes are deliberate.
+#   • Uses a dedicated, broader IAM role (zopkit-infra-apply) assumable ONLY from
+#     the `infra-staging` / `infra-prod` GitHub environments (NOT the everyday
+#     deploy role). Add required reviewers to `infra-prod` in repo settings →
+#     Environments so prod applies pause for approval.
+#   • Defaults to `plan`; you pick `apply` explicitly.
+
+name: infra-apply
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        type: choice
+        options: [staging, prod]
+        default: staging
+      mode:
+        description: "plan (review) or apply (make changes)"
+        type: choice
+        options: [plan, apply]
+        default: plan
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: infra-${{ github.event.inputs.environment }}
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: us-east-1
+  TF_DIR: deploy/ecs/terraform
+  # Broad infra role, gated to the infra-* environments (see ci-oidc.tf).
+  ROLE_ARN: arn:aws:iam::207567767101:role/zopkit-infra-apply
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    # Binds the OIDC token's sub to repo:…:environment:infra-<env> (matches the
+    # role's trust policy) AND triggers this environment's protection rules.
+    environment: infra-${{ github.event.inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve workspace + var-file
+        id: cfg
+        run: |
+          if [ "${{ github.event.inputs.environment }}" = "prod" ]; then
+            echo "workspace=prod" >>"$GITHUB_OUTPUT"
+            echo "varfile=-var-file=terraform.prod.tfvars" >>"$GITHUB_OUTPUT"
+          else
+            echo "workspace=default" >>"$GITHUB_OUTPUT"
+            echo "varfile=" >>"$GITHUB_OUTPUT"   # staging uses the auto-loaded terraform.tfvars
+          fi
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: hashicorp/setup-terraform@v3
+        with: { terraform_wrapper: false }
+
+      - name: Terraform init + select workspace
+        working-directory: ${{ env.TF_DIR }}
+        run: |
+          terraform init -input=false
+          terraform workspace select "${{ steps.cfg.outputs.workspace }}"
+
+      - name: Terraform plan
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform plan -input=false -lock-timeout=5m ${{ steps.cfg.outputs.varfile }}
+
+      - name: Terraform apply
+        if: ${{ github.event.inputs.mode == 'apply' }}
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform apply -input=false -auto-approve -lock-timeout=5m ${{ steps.cfg.outputs.varfile }}

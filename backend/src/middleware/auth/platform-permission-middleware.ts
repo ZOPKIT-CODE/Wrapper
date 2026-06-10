@@ -10,12 +10,14 @@ import Logger from '../../utils/logger.js';
 // Protects cross-tenant admin routes (credit config, org assignments) so only
 // two types of callers can reach them:
 //
-//   1. Super admins  (isSuperAdmin === true on their userContext)
-//   2. Platform staff with the specific required permission AND valid,
-//      non-expired, active record in platform_staff table
+//   1. Platform admins (isPlatformAdmin === true — Cognito platform-admin group).
+//      NOT tenant super admins: isSuperAdmin is tenant-scoped and every tenant
+//      founder has it, so it must never grant cross-tenant access.
+//   2. Platform staff with the specific required permission AND a valid,
+//      non-expired, active record in the platform_staff table.
 //
 // Every call by a platform staff member is logged to platform_audit_logs.
-// Super admin calls are NOT logged here (they have their own audit path).
+// Platform admin calls are NOT logged here (they have their own audit path).
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Short-lived in-process cache to avoid a DB hit on every request.
@@ -84,8 +86,13 @@ async function logPlatformAction(
       userAgent:        request.headers['user-agent'] ?? null,
     });
   } catch (err) {
-    // Never let audit log failure block the actual request — but always surface it.
-    Logger.log('error', 'auth', 'log-platform-action', '❌ Failed to write platform audit log', { error: err });
+    // AUDIT-OR-BLOCK: a platform staff action that cannot be audited must not be
+    // reported as success. Route handlers `await request.logPlatformAction(...)`,
+    // so re-throwing surfaces as a 500 rather than a silent, unaudited change.
+    // (The mutation has already run; the 500 is a loud signal to investigate —
+    // true atomicity would require writing this row in the mutation's transaction.)
+    Logger.log('error', 'auth', 'log-platform-action', '❌ Failed to write platform audit log — blocking', { error: err });
+    throw new Error('Platform action could not be audited; aborting to preserve the audit trail.');
   }
 }
 
@@ -108,14 +115,14 @@ declare module 'fastify' {
 /**
  * requirePlatformPermission(permission)
  *
- * Use this as the preHandler on any cross-tenant admin route.
+ * Use this as the preHandler on any PLATFORM-ONLY (cross-tenant) admin route.
  *
  * Allows:
- *   - Super admins (isSuperAdmin === true) — pass through, no audit log
+ *   - Platform admins (isPlatformAdmin === true) — pass through, no audit log
  *   - Platform staff with the required permission and a valid, non-expired record
  *
  * Blocks:
- *   - Regular tenant admins (they can only access their own tenant)
+ *   - Tenant admins / tenant super admins (no cross-tenant plane)
  *   - Platform staff with wrong/expired/revoked permission
  *   - Unauthenticated requests
  *
@@ -124,6 +131,54 @@ declare module 'fastify' {
  *     preHandler: requirePlatformPermission('credit_config:write')
  *   }, handler)
  */
+// Outcome of attempting to authorize the caller as platform staff.
+type StaffOutcome = 'allowed' | 'denied' | 'not-staff';
+
+/**
+ * Attempt to authorize the caller as platform staff for `permission`. On success
+ * attaches `request.platformStaff` + `request.logPlatformAction` and returns
+ * 'allowed'. If the caller IS staff but expired / lacks the permission, sends a
+ * 403 and returns 'denied'. If the caller is not staff at all, returns 'not-staff'
+ * (no reply sent) so the caller can fall through to other planes.
+ */
+async function tryAuthorizePlatformStaff(
+  request: FastifyRequest,
+  reply: FastifyReply,
+  permission: PlatformPermission
+): Promise<StaffOutcome> {
+  const userContext = (request as any).userContext;
+  const idpSub = userContext.idpSub ?? userContext.userId;
+  if (!idpSub) return 'not-staff';
+
+  const staff = await getActivePlatformStaff(idpSub);
+  if (!staff) return 'not-staff';
+
+  // Check expiry explicitly (belt-and-suspenders — the DB query already filters).
+  if (new Date() > staff.expiresAt) {
+    invalidateStaffCache(idpSub);
+    reply.code(403).send({
+      error: 'Forbidden',
+      message: `Your platform access expired at ${staff.expiresAt.toISOString()}. Request a renewal.`,
+    });
+    return 'denied';
+  }
+
+  if (!(staff.grantedPermissions as string[]).includes(permission)) {
+    reply.code(403).send({
+      error: 'Forbidden',
+      message: `Your platform access does not include '${permission}'.`,
+      yourPermissions: staff.grantedPermissions,
+    });
+    return 'denied';
+  }
+
+  // Attach staff record and audit helper to the request for use in route handlers.
+  request.platformStaff = staff;
+  request.logPlatformAction = (action, targetTenantId, targetResource, targetResourceId?, changesBefore?, changesAfter?) =>
+    logPlatformAction(staff, request, action, targetTenantId, targetResource, targetResourceId, changesBefore, changesAfter);
+  return 'allowed';
+}
+
 export function requirePlatformPermission(permission: PlatformPermission) {
   return async function platformPermissionGuard(
     request: FastifyRequest,
@@ -136,70 +191,74 @@ export function requirePlatformPermission(permission: PlatformPermission) {
       return;
     }
 
-    // Super admins pass through unconditionally.
-    if (userContext.isSuperAdmin) {
+    // Platform admins pass through unconditionally.
+    if (userContext.isPlatformAdmin) {
       return;
     }
 
-    // Resolve Kinde user id for optional platform staff lookup.
-    const idpSub = userContext.idpSub ?? userContext.userId;
-    if (idpSub) {
-      const staff = await getActivePlatformStaff(idpSub);
+    const outcome = await tryAuthorizePlatformStaff(request, reply, permission);
+    if (outcome === 'allowed' || outcome === 'denied') return;
 
-      if (staff) {
-        // Check expiry explicitly (belt-and-suspenders — the DB query already filters).
-        if (new Date() > staff.expiresAt) {
-          invalidateStaffCache(idpSub);
-          reply.code(403).send({
-            error: 'Forbidden',
-            message: `Your platform access expired at ${staff.expiresAt.toISOString()}. Request a renewal.`,
-          });
-          return;
-        }
+    // Tenant admins do NOT pass a platform guard. Cross-tenant routes are the
+    // platform plane only. Routes that legitimately serve a tenant's own admin
+    // (read/write their own tenant) must use requirePlatformOrOwnTenant instead.
+    reply.code(403).send({
+      error: 'Forbidden',
+      message: 'You do not have platform staff access. Contact a platform admin to grant access.',
+    });
+    return;
+  };
+}
 
-        const hasPermission = (staff.grantedPermissions as string[]).includes(permission);
-        if (!hasPermission) {
-          reply.code(403).send({
-            error: 'Forbidden',
-            message: `Your platform access does not include '${permission}'.`,
-            yourPermissions: staff.grantedPermissions,
-          });
-          return;
-        }
+/**
+ * requirePlatformOrOwnTenant(permission, paramName='tenantId')
+ *
+ * For DUAL-PURPOSE routes (e.g. credit config, app assignments) that serve both:
+ *   - the platform plane operating cross-tenant, AND
+ *   - a tenant's own admin operating strictly on their own tenant.
+ *
+ * Encodes the tenant-scoping in ONE place so handlers no longer repeat (and risk
+ * forgetting) the inline `tenantId !== userContext.tenantId` check.
+ *
+ * Allows:
+ *   - Platform admins → any tenant
+ *   - Platform staff with `permission` → any tenant (attached + audited)
+ *   - Tenant admins / tenant super admins → ONLY when the path tenant matches
+ *     their own `userContext.tenantId`
+ *
+ * Blocks everyone else, and any tenant admin targeting a different tenant.
+ */
+export function requirePlatformOrOwnTenant(permission: PlatformPermission, paramName = 'tenantId') {
+  return async function platformOrOwnTenantGuard(
+    request: FastifyRequest,
+    reply: FastifyReply
+  ): Promise<void> {
+    const userContext = (request as any).userContext;
 
-        // Attach staff record and audit helper to the request for use in route handlers.
-        request.platformStaff = staff;
-        request.logPlatformAction = (
-          action,
-          targetTenantId,
-          targetResource,
-          targetResourceId?,
-          changesBefore?,
-          changesAfter?
-        ) =>
-          logPlatformAction(
-            staff,
-            request,
-            action,
-            targetTenantId,
-            targetResource,
-            targetResourceId,
-            changesBefore,
-            changesAfter
-          );
-        return;
-      }
+    if (!userContext?.isAuthenticated) {
+      reply.code(401).send({ error: 'Unauthorized', message: 'Authentication required' });
+      return;
     }
 
-    // Tenant admins without platform-staff grant pass through and remain
-    // scoped to their own tenant via inline tenantId checks in handlers.
-    if (userContext.isTenantAdmin) {
+    // Platform plane → any tenant.
+    if (userContext.isPlatformAdmin) return;
+
+    const outcome = await tryAuthorizePlatformStaff(request, reply, permission);
+    if (outcome === 'allowed' || outcome === 'denied') return;
+
+    // Tenant plane → own tenant only. Tenant (super) admins manage their own tenant.
+    const paramTenantId = (request.params as Record<string, string> | undefined)?.[paramName];
+    if (
+      paramTenantId &&
+      userContext.tenantId === paramTenantId &&
+      (userContext.isTenantAdmin || userContext.isSuperAdmin)
+    ) {
       return;
     }
 
     reply.code(403).send({
       error: 'Forbidden',
-      message: 'You do not have platform staff access. Contact a super admin to grant access.',
+      message: 'You can only access your own tenant here. Cross-tenant access requires platform staff.',
     });
     return;
   };

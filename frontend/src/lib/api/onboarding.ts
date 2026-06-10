@@ -14,17 +14,29 @@ export const onboardingAPI = {
   },
 
   getUserOrganization: () => api.get('/onboarding/user-organization'),
-  
-  getDataByEmail: (email: string) => 
+
+  getDataByEmail: (email: string) =>
     api.post('/onboarding/get-data', { email }),
-  
-  markComplete: (organizationId: string) => 
+
+  markComplete: (organizationId: string) =>
     api.post('/onboarding/mark-complete', { organizationId }),
-  
-  updateStep: (step: string, data?: any, email?: string, formData?: any, idpSub?: string) => 
-    api.post('/onboarding/update-step', { step, data, email, formData, idpSub }),
-  
-  reset: (targetUserId?: string) => 
+
+  updateStep: (
+    step: string,
+    data?: unknown,
+    email?: string,
+    formData?: unknown,
+    idpSub?: string
+  ) =>
+    api.post('/onboarding/update-step', {
+      step,
+      data,
+      email,
+      formData,
+      idpSub,
+    }),
+
+  reset: (targetUserId?: string) =>
     api.post('/onboarding/reset', targetUserId ? { targetUserId } : {}),
 
   verifyPAN: async (pan: string, name?: string) => {

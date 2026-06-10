@@ -1,10 +1,20 @@
-import React from 'react';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
-import { FormControl, FormDescription, FormField, FormItem, FormLabel } from '@/components/ui/form';
-import { FieldComponentProps, RadioField as RadioFieldType, RadioOption } from '../types';
-import { cn } from '@/lib/utils';
-import { ConditionalErrorMessage } from '../components/ConditionalErrorMessage';
+import React from 'react'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { Label } from '@/components/ui/label'
+import {
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+} from '@/components/ui/form'
+import {
+  FieldComponentProps,
+  RadioField as RadioFieldType,
+  RadioOption,
+} from '../types'
+import { cn } from '@/lib/utils'
+import { ConditionalErrorMessage } from '../components/ConditionalErrorMessage'
 
 /**
  * Radio field component using shadcn Form components
@@ -13,33 +23,39 @@ export const RadioField: React.FC<FieldComponentProps> = ({
   field,
   value,
   onChange,
+  onBlur: _onBlur,
   disabled,
-  className
+  className,
 }) => {
-  const radioField = field as RadioFieldType;
+  const radioField = field as RadioFieldType
 
   return (
     <FormField
       name={field.id}
       render={({ field: formField }) => (
         <FormItem className={cn(className)}>
-          <FormLabel className={cn(
-            field.required && "after:content-['*'] after:ml-0.5 after:text-destructive"
-          )}>
+          <FormLabel
+            className={cn(
+              field.required &&
+                "after:text-destructive after:ml-0.5 after:content-['*']"
+            )}
+          >
             {field.label}
           </FormLabel>
-          
+
           <FormControl>
             <RadioGroup
-              value={typeof value === 'string' || typeof value === 'number' ? String(value) : ''}
+              value={typeof value === 'string' ? value : ''}
               onValueChange={(newValue) => {
-                formField.onChange(newValue);
-                onChange(newValue);
+                formField.onChange(newValue)
+                onChange(newValue)
               }}
               disabled={disabled || field.disabled}
               required={field.required}
               className={cn(
-                radioField.direction === 'horizontal' ? 'flex flex-row space-x-4' : 'space-y-2'
+                radioField.direction === 'horizontal'
+                  ? 'flex flex-row space-x-4'
+                  : 'space-y-2'
               )}
             >
               {radioField.options?.map((option: RadioOption) => (
@@ -51,7 +67,7 @@ export const RadioField: React.FC<FieldComponentProps> = ({
                   />
                   <Label
                     htmlFor={`${field.id}-${option.value}`}
-                    className="text-sm font-normal cursor-pointer"
+                    className="cursor-pointer text-sm font-normal"
                   >
                     {option.label}
                   </Label>
@@ -59,16 +75,14 @@ export const RadioField: React.FC<FieldComponentProps> = ({
               ))}
             </RadioGroup>
           </FormControl>
-          
+
           {field.helpText && (
-            <FormDescription>
-              {field.helpText}
-            </FormDescription>
+            <FormDescription>{field.helpText}</FormDescription>
           )}
-          
+
           <ConditionalErrorMessage fieldName={field.id} />
         </FormItem>
       )}
     />
-  );
-};
+  )
+}

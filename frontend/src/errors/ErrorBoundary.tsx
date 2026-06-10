@@ -1,7 +1,13 @@
-import { Component, type ErrorInfo, type ReactNode } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { AlertTriangle, RefreshCw } from "lucide-react"
+import { Component, ErrorInfo, ReactNode } from 'react'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { AlertTriangle, RefreshCw } from 'lucide-react'
 
 interface Props {
   children: ReactNode
@@ -34,11 +40,11 @@ export class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="flex min-h-screen items-center justify-center p-4">
           <Card className="w-full max-w-md">
             <CardHeader className="text-center">
-              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
-                <AlertTriangle className="h-6 w-6 text-destructive" />
+              <div className="bg-destructive/10 mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full">
+                <AlertTriangle className="text-destructive h-6 w-6" />
               </div>
               <CardTitle>Something went wrong</CardTitle>
               <CardDescription>
@@ -47,9 +53,11 @@ export class ErrorBoundary extends Component<Props, State> {
             </CardHeader>
             <CardContent className="space-y-4">
               {this.state.error && (
-                <details className="text-sm text-muted-foreground">
-                  <summary className="cursor-pointer font-medium">Error details</summary>
-                  <pre className="mt-2 whitespace-pre-wrap rounded bg-muted p-2">
+                <details className="text-muted-foreground text-sm">
+                  <summary className="cursor-pointer font-medium">
+                    Error details
+                  </summary>
+                  <pre className="bg-muted mt-2 rounded p-2 whitespace-pre-wrap">
                     {this.state.error.message}
                   </pre>
                 </details>
@@ -64,7 +72,9 @@ export class ErrorBoundary extends Component<Props, State> {
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => this.setState({ hasError: false, error: undefined })}
+                  onClick={() =>
+                    this.setState({ hasError: false, error: undefined })
+                  }
                   className="flex-1"
                 >
                   Try Again

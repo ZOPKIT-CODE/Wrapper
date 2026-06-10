@@ -1,95 +1,148 @@
-import React, { useState, useMemo, Suspense } from "react"
-import { ModernSidebar } from "@/components/layout/ModernSidebar"
-import { ThemeToggle } from "@/components/theme/ThemeToggle"
-import { BreadcrumbLabelProvider } from "@/contexts/BreadcrumbLabelContext"
-import { ErrorBoundary } from "@/errors/ErrorBoundary"
+import React, { useState, useEffect, useMemo, Suspense } from 'react'
+import { ModernSidebar } from '@/components/layout/ModernSidebar'
+import { ThemeToggle } from '@/components/theme/ThemeToggle'
+import { BreadcrumbLabelProvider } from '@/contexts/BreadcrumbLabelContext'
+import { ErrorBoundary } from '@/errors/ErrorBoundary'
 import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
-} from "@/components/ui/sidebar"
-import { BillingStatusNavbar } from "@/components/common/billing/BillingStatusNavbar"
-import { useSeasonalCreditsCongratulatory } from "@/hooks/useSeasonalCreditsCongratulatory"
-import { useSubscriptionCurrent, useTenantApplications } from "@/hooks/useSharedQueries"
-import { Building2, Users, Crown, Shield, Activity, CreditCard, ChevronRight, Settings, AlertTriangle, LayoutGrid } from "lucide-react"
-import { useNavigate, useLocation, useParams, Outlet, Link } from "@tanstack/react-router"
-import { useOrganizationHierarchy } from "@/hooks/useOrganizationHierarchy"
-import { Button } from "@/components/ui/button"
-import { cn, formatDate } from "@/lib/utils"
-import { useTheme } from "@/components/theme/ThemeProvider"
-import { useUserContextSafe } from "@/contexts/UserContextProvider"
-import { useAuth } from "@/lib/auth/cognito-auth"
+} from '@/components/ui/sidebar'
+import { BillingStatusNavbar } from '@/components/common/billing/BillingStatusNavbar'
+import { useSeasonalCreditsCongratulatory } from '@/hooks/useSeasonalCreditsCongratulatory'
+import {
+  useSubscriptionCurrent,
+  useTenantApplications,
+} from '@/hooks/useSharedQueries'
+import {
+  Building2,
+  Users,
+  Crown,
+  Shield,
+  Activity,
+  CreditCard,
+  ChevronRight,
+  Settings,
+  AlertTriangle,
+  LayoutGrid,
+} from 'lucide-react'
+import {
+  useNavigate,
+  useLocation,
+  useSearch,
+  useParams,
+  Outlet,
+} from '@tanstack/react-router'
+import { useOrganizationHierarchy } from '@/hooks/useOrganizationHierarchy'
+import { Button } from '@/components/ui/button'
+import { formatDate } from '@/lib/utils'
+import { useUserContextSafe } from '@/contexts/UserContextProvider'
+import { useAuth } from '@/lib/auth/cognito-auth'
 
 const NotificationManager = React.lazy(() =>
-  import("@/features/notifications/NotificationManager").then(m => ({ default: m.NotificationManager }))
+  import('@/features/notifications/NotificationManager').then((m) => ({
+    default: m.NotificationManager,
+  }))
 )
 const SeasonalCreditsCongratulatoryModal = React.lazy(() =>
-  import("@/features/notifications/SeasonalCreditsCongratulatoryModal").then(m => ({ default: m.SeasonalCreditsCongratulatoryModal }))
+  import('@/features/notifications/SeasonalCreditsCongratulatoryModal').then(
+    (m) => ({ default: m.SeasonalCreditsCongratulatoryModal })
+  )
 )
 
-interface NavItem {
-  name: string
-  href: string
-  icon: any
-  children?: NavItem[]
+interface TrialInfo {
+  plan: string
+  endDate: Date
+  daysRemaining: number
+  checkoutUrl?: string
+}
+
+// Minimal shape of an organization-hierarchy entity used by the sidebar transform.
+interface HierarchyEntity {
+  entityId: string
+  entityName: string
+  entityType: 'organization' | 'location' | 'department' | 'team' | string
+  children?: HierarchyEntity[]
+}
+
+interface HierarchyNavItem {
+  title: string
+  url: string
+  icon: React.ElementType
+  items?: HierarchyNavItem[]
 }
 
 // Transform organization hierarchy into sidebar navigation items
-const transformHierarchyToNavItems = (hierarchy: any[], baseUrl: string = '/dashboard/organization') => {
-  if (!hierarchy || hierarchy.length === 0) return [];
+const transformHierarchyToNavItems = (
+  hierarchy: HierarchyEntity[],
+  baseUrl: string = '/dashboard/organization'
+): HierarchyNavItem[] => {
+  if (!hierarchy || hierarchy.length === 0) return []
 
-  const transformEntity = (entity: any): any => {
+  const transformEntity = (entity: HierarchyEntity): HierarchyNavItem => {
     const getEntityIcon = () => {
       switch (entity.entityType) {
-        case 'organization': return Building2;
-        case 'location': return Building2;
-        case 'department': return Users;
-        case 'team': return Users;
-        default: return Building2;
+        case 'organization':
+          return Building2
+        case 'location':
+          return Building2
+        case 'department':
+          return Users
+        case 'team':
+          return Users
+        default:
+          return Building2
       }
-    };
+    }
 
-    const navItem: any = {
+    const navItem: HierarchyNavItem = {
       title: entity.entityName,
       url: `${baseUrl}?entity=${entity.entityId}`,
       icon: getEntityIcon(),
-    };
+    }
 
     // Add children as nested items if they exist
     if (entity.children && entity.children.length > 0) {
-      navItem.items = entity.children.map(transformEntity);
+      navItem.items = entity.children.map(transformEntity)
     }
 
-    return navItem;
-  };
+    return navItem
+  }
 
-  return hierarchy.map(transformEntity);
-};
+  return hierarchy.map(transformEntity)
+}
 
 const getOrganizationSidebarData = (
   orgCode: string,
-  hierarchy?: any[],
+  hierarchy?: HierarchyEntity[],
   userData?: { name: string; email: string; avatar?: string },
-  tenantData?: { tenantId: string; companyName: string; subdomain?: string; industry?: string }
+  tenantData?: {
+    tenantId: string
+    companyName: string
+    subdomain?: string
+    industry?: string
+  }
 ) => {
-  const hierarchyNavItems = hierarchy ? transformHierarchyToNavItems(hierarchy, `/org/${orgCode}`) : [];
+  const hierarchyNavItems = hierarchy
+    ? transformHierarchyToNavItems(hierarchy, `/org/${orgCode}`)
+    : []
 
   // Use real user data or fallback to defaults
   const user = userData || {
-    name: "User",
-    email: "user@example.com",
-    avatar: "/avatars/user.jpg",
-  };
+    name: 'User',
+    email: 'user@example.com',
+    avatar: '/avatars/user.jpg',
+  }
 
   // Use real tenant data or fallback to defaults
-  const teamName = tenantData?.companyName || orgCode;
-  const plan = tenantData?.industry || "Organization";
+  const teamName = tenantData?.companyName || orgCode
+  const plan = tenantData?.industry || 'Organization'
 
   return {
     user: {
       name: user.name,
       email: user.email,
-      avatar: user.avatar || "/avatars/user.jpg",
+      avatar: user.avatar || '/avatars/user.jpg',
     },
     teams: [
       {
@@ -100,18 +153,18 @@ const getOrganizationSidebarData = (
     ],
     navMain: [
       {
-        title: "Organization Hierarchy",
+        title: 'Organization Hierarchy',
         url: `/org/${orgCode}`,
         icon: Building2,
         items: hierarchyNavItems.length > 0 ? hierarchyNavItems : undefined,
       },
       {
-        title: "Analytics",
+        title: 'Analytics',
         url: `/org/${orgCode}/analytics`,
         icon: Activity,
       },
       {
-        title: "Roles",
+        title: 'Roles',
         url: `/org/${orgCode}/permissions`,
         icon: Crown,
       },
@@ -119,70 +172,69 @@ const getOrganizationSidebarData = (
     projects: [],
     bottomNav: [
       {
-        name: "Billing",
+        name: 'Billing',
         url: `/org/${orgCode}/billing`,
         icon: CreditCard,
       },
       {
-        name: "Usage",
+        name: 'Usage',
         url: `/org/${orgCode}/usage`,
         icon: Activity,
       },
       {
-        name: "Settings",
+        name: 'Settings',
         url: `/org/${orgCode}/settings`,
         icon: Settings,
       },
     ],
-  };
+  }
 }
-
 
 const defaultSidebarData = {
   navMain: [
     {
-      title: "Applications",
-      url: "/dashboard/applications",
+      title: 'Applications',
+      url: '/dashboard/applications',
       icon: LayoutGrid,
     },
     {
-      title: "Organization",
-      url: "/dashboard/organization",
+      title: 'Organization',
+      url: '/dashboard/organization',
       icon: Building2,
     },
     {
-      title: "Team",
-      url: "/dashboard/users",
+      title: 'Team',
+      url: '/dashboard/users',
       icon: Users,
     },
     {
-      title: "Roles",
-      url: "/dashboard/roles",
+      title: 'Roles',
+      url: '/dashboard/roles',
       icon: Shield,
     },
     {
-      title: "Activity",
-      url: "/dashboard/activity",
+      title: 'Activity',
+      url: '/dashboard/activity',
       icon: Activity,
     },
   ],
   bottomNav: [
     {
-      title: "Billing",
-      url: "/dashboard/billing",
+      title: 'Billing',
+      url: '/dashboard/billing',
       icon: CreditCard,
     },
     {
-      title: "Settings",
-      url: "/dashboard/settings",
+      title: 'Settings',
+      url: '/dashboard/settings',
       icon: Settings,
     },
-  ]
-};
+  ],
+}
 
 export function DashboardLayout() {
-  const { actualTheme } = useTheme()
-  const [expandedItems, setExpandedItems] = useState<string[]>(['Dashboard'])
+  const [, setTrialInfo] = useState<TrialInfo | null>(null)
+  const [, setShowTrialBanner] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
   const params = useParams({ strict: false })
@@ -197,19 +249,20 @@ export function DashboardLayout() {
   const {
     shouldShowCongratulatory,
     seasonalCreditsData,
-    dismissCongratulatory
+    dismissCongratulatory,
   } = useSeasonalCreditsCongratulatory()
 
   // Subscription status for cancellation banner
   const { data: subscription } = useSubscriptionCurrent()
-  const isCancelScheduled = subscription?.status === 'active' && !!subscription?.cancelAt
+  const isCancelScheduled =
+    subscription?.status === 'active' && !!subscription?.cancelAt
   const isCanceled = subscription?.status === 'canceled'
 
   // Handle organization switching for tenant admins
   const handleOrganizationSwitch = (_organizationId: string) => {
     // TODO: Implement organization switching logic
     // This would typically involve updating the user context or redirecting to the new organization
-  };
+  }
 
   // Debug user context
 
@@ -229,13 +282,17 @@ export function DashboardLayout() {
 
   // Prepare user data for sidebar
   const userData = useMemo(() => {
-    if (!user && !idpUser) return undefined;
+    if (!user && !idpUser) return undefined
+
+    const idpGivenName = idpUser?.givenName as string | undefined
+    const idpEmail = idpUser?.email as string | undefined
+    const idpPicture = idpUser?.picture as string | undefined
 
     return {
-      name: user?.name || idpUser?.givenName || idpUser?.email || 'User',
-      email: user?.email || idpUser?.email || 'user@example.com',
-      avatar: idpUser?.picture,
-    };
+      name: user?.name || idpGivenName || idpEmail || 'User',
+      email: user?.email || idpEmail || 'user@example.com',
+      avatar: idpPicture,
+    }
   }, [user, idpUser])
 
   // Prepare tenant data for sidebar.
@@ -243,7 +300,7 @@ export function DashboardLayout() {
   // 'Organization' placeholder while auth/tenant queries are still in flight.
   // ModernSidebar falls back to 'Zopkit' when tenantData is undefined.
   const tenantData = useMemo(() => {
-    if (!tenant) return undefined;
+    if (!tenant) return undefined
 
     return {
       tenantId: tenant.tenantId,
@@ -251,79 +308,45 @@ export function DashboardLayout() {
       subdomain: tenant.subdomain,
       industry: tenant.industry,
       logoUrl: tenant.logoUrl,
-    };
+    }
   }, [tenant])
 
-  const toggleExpanded = (itemName: string) => {
-    setExpandedItems(prev =>
-      prev.includes(itemName)
-        ? prev.filter(name => name !== itemName)
-        : [...prev, itemName]
-    )
-  }
+  // Check for trial information from URL params or localStorage
+  useEffect(() => {
+    const isTrial = searchParams['trial'] === 'true'
+    const plan = searchParams['plan']
+    const trialEndDate = localStorage.getItem('trialEndDate')
+    const pendingCheckoutUrl = localStorage.getItem('pendingCheckoutUrl')
 
-  const isActive = (href: string) => {
-    // For dashboard children, check if the current path starts with the parent path
-    // and the specific child path matches
-    if (href.startsWith('/dashboard/') || href.startsWith('/org/')) {
-      return location.pathname === href
+    if (isTrial || trialEndDate) {
+      const endDate = trialEndDate
+        ? new Date(trialEndDate)
+        : new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
+      const daysRemaining = Math.max(
+        0,
+        Math.ceil((endDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+      )
+
+      setTrialInfo({
+        plan: plan || 'free', // Changed from 'professional' to 'free' for consistency
+        endDate,
+        daysRemaining,
+        checkoutUrl: pendingCheckoutUrl || undefined,
+      })
+      setShowTrialBanner(true)
     }
-    return location.pathname === href
-  }
+  }, [searchParams])
 
-  const renderNavigationItem = (item: NavItem, isChild = false) => {
-    const active = isActive(item.href)
-    const hasChildren = item.children && item.children.length > 0
-    const isExpanded = expandedItems.includes(item.name)
-
-    return (
-      <div key={item.name}>
-        <div className="flex items-center">
-          <Link
-            to={item.href}
-            className={cn(
-              'group flex items-center flex-1 text-sm font-medium rounded-md',
-              isChild ? 'pl-8 py-1.5' : 'px-2 py-2',
-              active
-                ? actualTheme === 'monochrome'
-                  ? 'bg-gray-200 text-gray-900'
-                  : 'bg-[#1B2E5A]/10 text-[#1B2E5A] border border-[#1B2E5A]/20'
-                : actualTheme === 'monochrome'
-                  ? 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
-                  : 'text-slate-600 hover:bg-[#1B2E5A]/5 hover:text-[#1B2E5A]'
-            )}
-          >
-            <item.icon className="h-4 w-4 mr-3" />
-            {item.name}
-          </Link>
-          {hasChildren && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 w-6 p-0 mr-2"
-              onClick={() => toggleExpanded(item.name)}
-            >
-              {isExpanded ? (
-                <ChevronRight className="h-3 w-3 rotate-90" />
-              ) : (
-                <ChevronRight className="h-3 w-3" />
-              )}
-            </Button>
-          )}
-        </div>
-        {hasChildren && isExpanded && (
-          <div className="mt-1 space-y-1">
-            {item.children!.map((child: NavItem) => renderNavigationItem(child, true))}
-          </div>
-        )}
-      </div>
-    )
-  }
   const sidebarNavData = useMemo(() => {
     if (isOrganizationRoute && orgCode) {
-      return getOrganizationSidebarData(orgCode, orgHierarchy || [], userData, tenantData);
+      return getOrganizationSidebarData(
+        orgCode,
+        orgHierarchy || [],
+        userData,
+        tenantData
+      )
     }
-    const appCount = Array.isArray(tenantApps) ? tenantApps.length : undefined;
+    const appCount = Array.isArray(tenantApps) ? tenantApps.length : undefined
     return {
       ...defaultSidebarData,
       navMain: defaultSidebarData.navMain.map((item) =>
@@ -331,8 +354,15 @@ export function DashboardLayout() {
           ? { ...item, badge: appCount }
           : item
       ),
-    };
-  }, [isOrganizationRoute, orgCode, orgHierarchy, userData, tenantData, tenantApps]);
+    }
+  }, [
+    isOrganizationRoute,
+    orgCode,
+    orgHierarchy,
+    userData,
+    tenantData,
+    tenantApps,
+  ])
 
   // Applications tab is always the full-page marketplace for every user — admin or
   // member. Admin console features (Organization, Team, Roles…) remain accessible
@@ -348,7 +378,10 @@ export function DashboardLayout() {
   }
 
   return (
-    <SidebarProvider className="dashboard-actionable-cursors dashboard-instant-scroll" style={{ background: 'var(--zk-bg)' }}>
+    <SidebarProvider
+      className="dashboard-actionable-cursors dashboard-instant-scroll"
+      style={{ background: 'var(--zk-bg)' }}
+    >
       <ModernSidebar
         navData={sidebarNavData}
         userData={userData}
@@ -358,7 +391,7 @@ export function DashboardLayout() {
       />
       <BreadcrumbLabelProvider>
         <SidebarInset
-          className="md:peer-data-[variant=inset]:m-0 md:peer-data-[variant=inset]:rounded-none md:peer-data-[variant=inset]:shadow-none flex flex-col h-screen overflow-hidden"
+          className="flex h-screen flex-col overflow-hidden md:peer-data-[variant=inset]:m-0 md:peer-data-[variant=inset]:rounded-none md:peer-data-[variant=inset]:shadow-none"
           style={{ background: 'var(--zk-bg)' }}
         >
           <header
@@ -384,18 +417,32 @@ export function DashboardLayout() {
                   transition: 'all 140ms ease',
                 }}
               />
-              <nav style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 7,
-                fontSize: 13,
-                color: 'var(--zk-muted)',
-              }}>
-                <span style={{ fontFamily: 'var(--zk-mono)', fontSize: 11, color: 'var(--zk-muted-2)' }}>~/</span>
+              <nav
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 7,
+                  fontSize: 13,
+                  color: 'var(--zk-muted)',
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily: 'var(--zk-mono)',
+                    fontSize: 11,
+                    color: 'var(--zk-muted-2)',
+                  }}
+                >
+                  ~/
+                </span>
                 <span>workspace</span>
-                <ChevronRight size={11} style={{ color: 'var(--zk-muted-2)' }} />
+                <ChevronRight
+                  size={11}
+                  style={{ color: 'var(--zk-muted-2)' }}
+                />
                 <span style={{ color: 'var(--zk-ink)', fontWeight: 500 }}>
-                  {location.pathname.split('/').pop()?.toLowerCase() || 'dashboard'}
+                  {location.pathname.split('/').pop()?.toLowerCase() ||
+                    'dashboard'}
                 </span>
               </nav>
             </div>
@@ -403,52 +450,66 @@ export function DashboardLayout() {
               <Suspense fallback={null}>
                 <NotificationManager />
               </Suspense>
-              {(user?.isTenantAdmin) && <BillingStatusNavbar />}
+              {user?.isTenantAdmin && <BillingStatusNavbar />}
               <ThemeToggle />
             </div>
           </header>
 
           {/* Subscription cancellation banners */}
           {isCancelScheduled && (
-            <div className="flex items-center justify-between gap-3 px-4 py-3 bg-amber-50 border-b border-amber-200">
-              <div className="flex items-center gap-2 text-sm text-amber-800">
+            <div className="flex items-center justify-between gap-3 border-b border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-800 dark:bg-amber-950/30">
+              <div className="flex items-center gap-2 text-sm text-amber-800 dark:text-amber-200">
                 <AlertTriangle className="h-4 w-4 shrink-0" />
                 <span>
                   Your subscription is scheduled to end on{' '}
-                  <strong>{formatDate(subscription.cancelAt)}</strong>.
-                  You will retain full access until then.
+                  <strong>{formatDate(subscription.cancelAt)}</strong>. You will
+                  retain full access until then.
                 </span>
               </div>
               <Button
                 variant="outline"
                 size="sm"
-                className="shrink-0 border-amber-300 text-amber-800 hover:bg-amber-100"
-                onClick={() => navigate({ to: '/dashboard/billing', search: { tab: 'plans' } })}
+                className="shrink-0 border-amber-300 text-amber-800 hover:bg-amber-100 dark:border-amber-700 dark:text-amber-200 dark:hover:bg-amber-900"
+                onClick={() =>
+                  navigate({
+                    to: '/dashboard/billing',
+                    search: { tab: 'plans' },
+                  })
+                }
               >
                 Resubscribe
               </Button>
             </div>
           )}
           {isCanceled && (
-            <div className="flex items-center justify-between gap-3 px-4 py-3 bg-red-50 border-b border-red-200">
-              <div className="flex items-center gap-2 text-sm text-red-800">
+            <div className="flex items-center justify-between gap-3 border-b border-red-200 bg-red-50 px-4 py-3 dark:border-red-800 dark:bg-red-950/30">
+              <div className="flex items-center gap-2 text-sm text-red-800 dark:text-red-200">
                 <AlertTriangle className="h-4 w-4 shrink-0" />
                 <span>
-                  Your subscription has expired. Your data is safe but write access is restricted.
+                  Your subscription has expired. Your data is safe but write
+                  access is restricted.
                 </span>
               </div>
               <Button
                 variant="outline"
                 size="sm"
-                className="shrink-0 border-red-300 text-red-800 hover:bg-red-100"
-                onClick={() => navigate({ to: '/dashboard/billing', search: { tab: 'plans' } })}
+                className="shrink-0 border-red-300 text-red-800 hover:bg-red-100 dark:border-red-700 dark:text-red-200 dark:hover:bg-red-900"
+                onClick={() =>
+                  navigate({
+                    to: '/dashboard/billing',
+                    search: { tab: 'plans' },
+                  })
+                }
               >
                 Resubscribe Now
               </Button>
             </div>
           )}
 
-          <main className="flex-1 relative overflow-y-auto min-h-0 p-7" style={{ background: 'var(--zk-bg)' }}>
+          <main
+            className="relative min-h-0 flex-1 overflow-y-auto p-7"
+            style={{ background: 'var(--zk-bg)' }}
+          >
             <ErrorBoundary>
               {/* pathname only: ?tab= and other search updates must not remount the route (e.g. Account Settings tabs). */}
               <Outlet key={location.pathname} />

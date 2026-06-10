@@ -1,64 +1,86 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Loader2, RefreshCw, Mail, Phone, Building2, User, Calendar } from 'lucide-react';
-import { toast } from 'sonner';
-import { api } from '@/lib/api';
+import React, { useState, useEffect } from 'react'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import {
+  Loader2,
+  RefreshCw,
+  Mail,
+  Phone,
+  Building2,
+  User,
+  Calendar,
+} from 'lucide-react'
+import { toast } from 'sonner'
+import { api } from '@/lib/api'
 
 interface ContactSubmission {
-  id: string;
-  name: string;
-  email: string;
-  company: string | null;
-  phone: string | null;
-  jobTitle: string | null;
-  companySize: string | null;
-  preferredTime: string | null;
-  comments: string | null;
-  source: 'contact' | 'demo';
-  createdAt: string;
+  id: string
+  name: string
+  email: string
+  company: string | null
+  phone: string | null
+  jobTitle: string | null
+  companySize: string | null
+  preferredTime: string | null
+  comments: string | null
+  source: 'contact' | 'demo'
+  createdAt: string
 }
 
 interface ContactSubmissionsTableProps {
-  source?: 'contact' | 'demo' | 'all';
+  source?: 'contact' | 'demo' | 'all'
 }
 
-export const ContactSubmissionsTable: React.FC<ContactSubmissionsTableProps> = ({ source = 'all' }) => {
-  const [submissions, setSubmissions] = useState<ContactSubmission[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedSource, setSelectedSource] = useState<'contact' | 'demo' | 'all'>(source);
+export const ContactSubmissionsTable: React.FC<
+  ContactSubmissionsTableProps
+> = ({ source = 'all' }) => {
+  const [submissions, setSubmissions] = useState<ContactSubmission[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [selectedSource, setSelectedSource] = useState<
+    'contact' | 'demo' | 'all'
+  >(source)
 
   const fetchSubmissions = async () => {
     try {
-      setLoading(true);
-      setError(null);
+      setLoading(true)
+      setError(null)
 
       const response = await api.get('/admin/dashboard/contact-submissions', {
         params: {
           source: selectedSource,
-          limit: 100
-        }
-      });
+          limit: 100,
+        },
+      })
 
       if (response.data.success) {
-        setSubmissions(response.data.data.submissions || []);
+        setSubmissions(response.data.data.submissions || [])
       } else {
-        throw new Error(response.data.message || 'Failed to fetch contact submissions');
+        throw new Error(
+          response.data.message || 'Failed to fetch contact submissions'
+        )
       }
-    } catch (err: any) {
-      console.error('Failed to fetch contact submissions:', err);
-      setError(err.response?.data?.error || 'Failed to load contact submissions');
-      toast.error('Failed to load contact submissions');
+    } catch (err: unknown) {
+      console.error('Failed to fetch contact submissions:', err)
+      const msg = (err as { response?: { data?: { error?: string } } })
+        ?.response?.data?.error
+      setError(msg || 'Failed to load contact submissions')
+      toast.error('Failed to load contact submissions')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   useEffect(() => {
-    fetchSubmissions();
-  }, [selectedSource]);
+    fetchSubmissions()
+  }, [selectedSource])
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString('en-US', {
@@ -66,9 +88,9 @@ export const ContactSubmissionsTable: React.FC<ContactSubmissionsTableProps> = (
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+      minute: '2-digit',
+    })
+  }
 
   if (loading) {
     return (
@@ -78,7 +100,7 @@ export const ContactSubmissionsTable: React.FC<ContactSubmissionsTableProps> = (
           <span className="ml-2">Loading contact submissions...</span>
         </CardContent>
       </Card>
-    );
+    )
   }
 
   if (error) {
@@ -86,15 +108,15 @@ export const ContactSubmissionsTable: React.FC<ContactSubmissionsTableProps> = (
       <Card>
         <CardContent className="py-12">
           <div className="text-center">
-            <p className="text-sm text-destructive mb-4">{error}</p>
+            <p className="text-destructive mb-4 text-sm">{error}</p>
             <Button onClick={fetchSubmissions} variant="outline" size="sm">
-              <RefreshCw className="h-4 w-4 mr-2" />
+              <RefreshCw className="mr-2 h-4 w-4" />
               Try Again
             </Button>
           </div>
         </CardContent>
       </Card>
-    );
+    )
   }
 
   return (
@@ -109,7 +131,7 @@ export const ContactSubmissionsTable: React.FC<ContactSubmissionsTableProps> = (
               </CardDescription>
             </div>
             <div className="flex gap-2">
-              <div className="flex gap-1 border rounded-md">
+              <div className="flex gap-1 rounded-md border">
                 <Button
                   variant={selectedSource === 'all' ? 'default' : 'ghost'}
                   size="sm"
@@ -136,7 +158,7 @@ export const ContactSubmissionsTable: React.FC<ContactSubmissionsTableProps> = (
                 </Button>
               </div>
               <Button onClick={fetchSubmissions} variant="outline" size="sm">
-                <RefreshCw className="h-4 w-4 mr-2" />
+                <RefreshCw className="mr-2 h-4 w-4" />
                 Refresh
               </Button>
             </div>
@@ -144,17 +166,22 @@ export const ContactSubmissionsTable: React.FC<ContactSubmissionsTableProps> = (
         </CardHeader>
         <CardContent>
           {submissions.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-sm text-muted-foreground">No contact submissions found</p>
+            <div className="py-12 text-center">
+              <p className="text-muted-foreground text-sm">
+                No contact submissions found
+              </p>
             </div>
           ) : (
             <div className="space-y-4">
               {submissions.map((submission) => (
-                <Card key={submission.id} className="border-l-4 border-l-blue-500">
+                <Card
+                  key={submission.id}
+                  className="border-l-4 border-l-blue-500"
+                >
                   <CardContent className="pt-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-start gap-4 flex-1">
-                        <div className="p-2 bg-blue-100 rounded-lg">
+                    <div className="mb-4 flex items-start justify-between">
+                      <div className="flex flex-1 items-start gap-4">
+                        <div className="rounded-lg bg-blue-100 p-2">
                           {submission.source === 'demo' ? (
                             <Calendar className="h-5 w-5 text-blue-600" />
                           ) : (
@@ -162,61 +189,84 @@ export const ContactSubmissionsTable: React.FC<ContactSubmissionsTableProps> = (
                           )}
                         </div>
                         <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <h3 className="font-semibold text-lg">{submission.name}</h3>
-                            <Badge variant={submission.source === 'demo' ? 'default' : 'secondary'}>
-                              {submission.source === 'demo' ? 'Demo Request' : 'Contact Form'}
+                          <div className="mb-2 flex items-center gap-2">
+                            <h3 className="text-lg font-semibold">
+                              {submission.name}
+                            </h3>
+                            <Badge
+                              variant={
+                                submission.source === 'demo'
+                                  ? 'default'
+                                  : 'secondary'
+                              }
+                            >
+                              {submission.source === 'demo'
+                                ? 'Demo Request'
+                                : 'Contact Form'}
                             </Badge>
                           </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                            <div className="flex items-center gap-2 text-muted-foreground">
+                          <div className="grid grid-cols-1 gap-3 text-sm md:grid-cols-2">
+                            <div className="text-muted-foreground flex items-center gap-2">
                               <Mail className="h-4 w-4" />
-                              <a href={`mailto:${submission.email}`} className="hover:text-foreground hover:underline">
+                              <a
+                                href={`mailto:${submission.email}`}
+                                className="hover:text-foreground hover:underline"
+                              >
                                 {submission.email}
                               </a>
                             </div>
                             {submission.phone && (
-                              <div className="flex items-center gap-2 text-muted-foreground">
+                              <div className="text-muted-foreground flex items-center gap-2">
                                 <Phone className="h-4 w-4" />
-                                <a href={`tel:${submission.phone}`} className="hover:text-foreground hover:underline">
+                                <a
+                                  href={`tel:${submission.phone}`}
+                                  className="hover:text-foreground hover:underline"
+                                >
                                   {submission.phone}
                                 </a>
                               </div>
                             )}
                             {submission.company && (
-                              <div className="flex items-center gap-2 text-muted-foreground">
+                              <div className="text-muted-foreground flex items-center gap-2">
                                 <Building2 className="h-4 w-4" />
                                 <span>{submission.company}</span>
                               </div>
                             )}
                             {submission.jobTitle && (
-                              <div className="flex items-center gap-2 text-muted-foreground">
+                              <div className="text-muted-foreground flex items-center gap-2">
                                 <User className="h-4 w-4" />
                                 <span>{submission.jobTitle}</span>
                               </div>
                             )}
                             {submission.companySize && (
                               <div className="text-muted-foreground">
-                                <span className="font-medium">Company Size:</span> {submission.companySize}
+                                <span className="font-medium">
+                                  Company Size:
+                                </span>{' '}
+                                {submission.companySize}
                               </div>
                             )}
                             {submission.preferredTime && (
                               <div className="text-muted-foreground">
-                                <span className="font-medium">Preferred Time:</span> {submission.preferredTime}
+                                <span className="font-medium">
+                                  Preferred Time:
+                                </span>{' '}
+                                {submission.preferredTime}
                               </div>
                             )}
                           </div>
                           {submission.comments && (
-                            <div className="mt-3 p-3 bg-muted rounded-md">
-                              <p className="text-sm text-muted-foreground">
-                                <span className="font-medium">Comments:</span> {submission.comments}
+                            <div className="bg-muted mt-3 rounded-md p-3">
+                              <p className="text-muted-foreground text-sm">
+                                <span className="font-medium">Comments:</span>{' '}
+                                {submission.comments}
                               </p>
                             </div>
                           )}
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-muted-foreground text-xs">
                           {formatDate(submission.createdAt)}
                         </p>
                       </div>
@@ -229,5 +279,5 @@ export const ContactSubmissionsTable: React.FC<ContactSubmissionsTableProps> = (
         </CardContent>
       </Card>
     </div>
-  );
-};
+  )
+}

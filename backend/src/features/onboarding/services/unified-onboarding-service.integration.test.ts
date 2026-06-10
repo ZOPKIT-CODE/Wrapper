@@ -15,7 +15,7 @@
  * External side-effects mocked:
  *   - cognito-admin-service     (Cognito user lifecycle)
  *   - VerificationService       (sandbox.co.in PAN/GSTIN API)
- *   - InterAppEventService      (Amazon MQ publish)
+ *   - InterAppEventService      (SNS publish)
  *   - OnboardingFileLogger      (filesystem writes)
  *   - OnboardingVerificationService (heavy internal verifier — returns "all OK")
  *   - onboarding-tracking-service   (event tracking — no-op)
@@ -57,7 +57,7 @@ vi.mock('./verification-service.js', () => ({
   },
 }));
 
-// 3. InterAppEventService — prevent Amazon MQ connection
+// 3. InterAppEventService — prevent SNS/SQS connection
 vi.mock('../../../features/messaging/index.js', () => ({
   InterAppEventService: {
     publishEvent: vi.fn().mockResolvedValue(undefined),

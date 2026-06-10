@@ -35,3 +35,21 @@ bypass_trial_restrictions = true
 
 # Reuse the shared dev logo/blog-media bucket (matches the shared dev DB image keys)
 logo_bucket_override = "wrapper-tenant-logos"
+
+# --- RDS (staging trial: wrapper first) ---
+# One t4g.micro hosting per-app staging databases. publicly_accessible for dev
+# convenience, SG-locked to the ECS tasks + the admin IP below. Prod will use a
+# separate instance, private (publicly_accessible=false, rds_admin_cidrs=[]).
+enable_rds              = true
+enable_mathesar         = true
+rds_publicly_accessible = true
+rds_admin_cidrs         = ["157.50.86.215/32"]
+
+# Mathesar SSO gate DISABLED — single login via Mathesar's own accounts instead
+# of the ALB Cognito gate (Mathesar's native OIDC is still WIP upstream, so a
+# clean single Cognito login isn't available). Access is gated by Mathesar's
+# login; admins create dev accounts in Mathesar (Administration → Users). Re-enable
+# the ALB Cognito gate by setting these to a pool/client/domain again.
+mathesar_cognito_user_pool_arn = ""
+mathesar_cognito_client_id     = ""
+mathesar_cognito_domain        = ""

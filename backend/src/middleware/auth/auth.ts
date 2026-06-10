@@ -10,6 +10,7 @@ import { eq, and } from 'drizzle-orm';
 import { RequestAnalyzer } from './request-analyzer.js';
 import { shouldLogVerbose } from '../../utils/verbose-log.js';
 import { getUserPermissions, checkPermissions } from './permission-middleware.js';
+import { isPlatformAdminIdentity } from './platform-plane.js';
 import { SharedCache } from '../../utils/shared-cache.js';
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import type { OnboardingStatus } from '../../types/common.js';
@@ -49,6 +50,24 @@ const PUBLIC_ROUTES: string[] = [
   '/api/demo',
   '/api/email-preview',
   '/docs',
+  // Public blog READ surface only (the marketing-site reader). Authoring +
+  // management routes under /api/blog stay authenticated (company-admin only).
+  '/api/blog/feed',
+  '/api/blog/search',
+  '/api/blog/by-slug',
+  '/api/blog/media',
+  // Comments: public submit + public approved list; the moderation queue stays gated.
+  '/api/blog/comments/submit',
+  '/api/blog/comments/by-slug',
+  // Series: public series-by-slug page + public series list; admin management stays gated.
+  '/api/blog/series/by-slug',
+  '/api/blog/series/list',
+  // Public SEO artifacts served at the root.
+  '/sitemap.xml',
+  '/rss.xml',
+  '/robots.txt',
+  // Crawler-HTML / SPA-fallback reader (dynamic rendering): /blog and /blog/:slug.
+  '/blog',
 ];
 
 interface UserRecord {
@@ -70,6 +89,8 @@ interface IdpUser {
   email?: string;
   name?: string;
   organization?: { id: string; name?: string } | null;
+  /** Cognito `cognito:groups` claim — drives the platform-admin plane signal. */
+  groups?: string[];
 }
 
 // Returns true when a bearer/cookie token is from the Cognito pool.
@@ -121,7 +142,7 @@ async function cognitoTokenToIdpUser(token: string): Promise<IdpUser | null> {
       Logger.log('warning', 'auth', 'cognito-resolve', 'email->user heal failed', { error: (e as Error).message });
     }
   }
-  return { userId, email: ci.email, name: ci.name, organization: null };
+  return { userId, email: ci.email, name: ci.name, organization: null, groups: ci.groups };
 }
 
 async function findUserInDatabase(idpSub: string, tenantId?: string): Promise<UserRecord | null> {
@@ -493,13 +514,15 @@ async function processAuthenticatedUser(request: FastifyRequest, reply: FastifyR
   }
 
   const isTenantAdmin = effectiveUserRecord?.isTenantAdmin || false;
+  const email = effectiveUserRecord?.email || idpUser.email || '';
+  const isPlatformAdmin = isPlatformAdminIdentity({ groups: idpUser.groups, email });
   request.userContext = {
     userId: idpUser.userId,
     idpSub: idpUser.userId,
     internalUserId: effectiveUserRecord?.userId || null,
     tenantId,
     idpOrgId: idpUser.organization?.id,
-    email: effectiveUserRecord?.email || idpUser.email || '',
+    email,
     name: [effectiveUserRecord?.firstName, effectiveUserRecord?.lastName].filter(Boolean).join(' ') || idpUser.name || '',
     isAuthenticated: true,
     needsOnboarding,
@@ -507,7 +530,8 @@ async function processAuthenticatedUser(request: FastifyRequest, reply: FastifyR
     isActive: effectiveUserRecord?.isActive || false,
     isAdmin: isTenantAdmin,
     isTenantAdmin,
-    isSuperAdmin
+    isSuperAdmin,
+    isPlatformAdmin
   };
 
   request.user = {
@@ -589,6 +613,8 @@ export async function authMiddleware(request: FastifyRequest, reply: FastifyRepl
                 isAdmin: u.isTenantAdmin || false,
                 isTenantAdmin: u.isTenantAdmin || false,
                 isSuperAdmin: false,
+                // Operations/service tokens are never the platform-admin plane.
+                isPlatformAdmin: false,
               };
               request.user = {
                 id: request.userContext.userId,
@@ -728,10 +754,9 @@ export function requirePermission(permission: string | string[]) {
       return;
     }
 
-    if (request.userContext.isAdmin || request.userContext.isTenantAdmin) {
-      return;
-    }
-
+    // NO ADMIN BYPASS: tenant admins go through the normal permission check. Their
+    // power comes from an enumerated system role (getUserPermissions → modules:'*'),
+    // never from the is_tenant_admin flag. See [[feedback-no-admin-bypass]].
     if (!request.userContext.internalUserId || !request.userContext.tenantId) {
       reply.code(403).send({
         error: 'Forbidden',

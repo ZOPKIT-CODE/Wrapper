@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { useNavigate } from '@tanstack/react-router';
-import { Bell, Check, Loader2, TestTube } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import React, { useState } from 'react'
+import { useNavigate } from '@tanstack/react-router'
+import { Bell, Check, Loader2, TestTube } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import {
   Sheet,
   SheetContent,
@@ -9,14 +9,14 @@ import {
   SheetFooter,
   SheetHeader,
   SheetTitle,
-} from '@/components/ui/sheet';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
-import { NotificationItem } from './NotificationItem';
-import { NotificationPanelProps } from './types';
-import { NotificationService } from '@/services/notificationService';
-import { useInvalidateQueries } from '@/hooks/useSharedQueries';
+} from '@/components/ui/sheet'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Badge } from '@/components/ui/badge'
+import { cn } from '@/lib/utils'
+import { NotificationItem } from './NotificationItem'
+import { Notification, NotificationPanelProps } from './types'
+import { NotificationService } from '@/services/notificationService'
+import { useInvalidateQueries } from '@/hooks/useSharedQueries'
 
 export const NotificationPanel: React.FC<NotificationPanelProps> = ({
   isOpen,
@@ -25,53 +25,55 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
   onMarkAsRead,
   onDismiss,
   onMarkAllAsRead,
-  loading = false
+  loading = false,
 }) => {
-  const [activeFilter, setActiveFilter] = useState<'all' | 'unread'>('all');
-  const [creatingSamples, setCreatingSamples] = useState(false);
-  const { invalidateNotifications: loadNotifications } = useInvalidateQueries();
-  const navigate = useNavigate();
+  const [activeFilter, setActiveFilter] = useState<'all' | 'unread'>('all')
+  const [creatingSamples, setCreatingSamples] = useState(false)
+  const { invalidateNotifications: loadNotifications } = useInvalidateQueries()
+  const navigate = useNavigate()
 
-  const filteredNotifications = notifications.filter(notification => {
+  const filteredNotifications = notifications.filter((notification) => {
     if (activeFilter === 'unread') {
-      return !notification.isRead && !notification.isDismissed;
+      return !notification.isRead && !notification.isDismissed
     }
-    return !notification.isDismissed;
-  });
+    return !notification.isDismissed
+  })
 
-  const unreadCount = notifications.filter(n => !n.isRead && !n.isDismissed).length;
+  const unreadCount = notifications.filter(
+    (n) => !n.isRead && !n.isDismissed
+  ).length
 
   const handleCreateSampleNotifications = async () => {
     try {
-      setCreatingSamples(true);
-      await NotificationService.createSampleNotifications();
-      await loadNotifications(); // Refresh the notifications
+      setCreatingSamples(true)
+      await NotificationService.createSampleNotifications()
+      await loadNotifications() // Refresh the notifications
     } catch (error) {
-      console.error('Failed to create sample notifications:', error);
+      console.error('Failed to create sample notifications:', error)
     } finally {
-      setCreatingSamples(false);
+      setCreatingSamples(false)
     }
-  };
+  }
 
   const handleMarkAllAsRead = () => {
-    onMarkAllAsRead();
-  };
+    onMarkAllAsRead()
+  }
 
-  const handleAction = (notification: any) => {
+  const handleAction = (notification: Notification) => {
     if (notification.actionUrl) {
       // Map legacy/backend URLs to valid TanStack Router paths
-      const url = notification.actionUrl as string;
-      let path = url.startsWith('/credits') ? '/dashboard/billing' : url;
-      navigate({ to: path as any });
-      onClose();
+      const url = notification.actionUrl
+      const path = url.startsWith('/credits') ? '/dashboard/billing' : url
+      navigate({ to: path })
+      onClose()
     }
-  };
+  }
 
   return (
     <Sheet
       open={isOpen}
       onOpenChange={(open) => {
-        if (!open) onClose();
+        if (!open) onClose()
       }}
     >
       <SheetContent
@@ -79,7 +81,7 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
         className="flex h-full min-h-0 w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-[420px] [&>button]:text-white [&>button]:hover:bg-white/15"
       >
         {/* Header */}
-        <SheetHeader className="shrink-0 border-b border-white/10 bg-primary px-6 pb-5 pt-8 text-white">
+        <SheetHeader className="shrink-0 border-b border-white/10 bg-[#1B2E5A] px-6 pt-8 pb-5 text-white">
           <div className="flex items-center justify-between">
             <SheetTitle className="flex items-center gap-2.5 text-lg font-semibold text-white">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/15">
@@ -88,7 +90,7 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
               Notifications
             </SheetTitle>
             {unreadCount > 0 && (
-              <Badge className="bg-white/20 text-white hover:bg-white/20 border-0 text-xs">
+              <Badge className="border-0 bg-white/20 text-xs text-white hover:bg-white/20">
                 {unreadCount} unread
               </Badge>
             )}
@@ -111,8 +113,8 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
                   className={cn(
                     'rounded-md px-3 py-1 text-xs font-medium transition-all',
                     activeFilter === f
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-500 hover:text-gray-700',
+                      ? 'bg-white text-gray-900 shadow-sm dark:bg-slate-700 dark:text-white'
+                      : 'text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-200'
                   )}
                 >
                   {f === 'all'
@@ -150,8 +152,10 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
                   <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/8">
                     <Bell className="h-6 w-6 text-primary/40" />
                   </div>
-                  <h3 className="mb-1 text-sm font-semibold text-gray-700">
-                    {activeFilter === 'unread' ? 'All caught up!' : 'No notifications yet'}
+                  <h3 className="mb-1 text-sm font-semibold text-gray-700 dark:text-slate-200">
+                    {activeFilter === 'unread'
+                      ? 'All caught up!'
+                      : 'No notifications yet'}
                   </h3>
                   <p className="mb-5 text-xs text-gray-400">
                     {activeFilter === 'unread'
@@ -168,9 +172,15 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
                       className="border-primary/20 text-xs text-primary hover:bg-primary/5"
                     >
                       {creatingSamples ? (
-                        <><Loader2 className="mr-1 h-3 w-3 animate-spin" />Creating…</>
+                        <>
+                          <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                          Creating…
+                        </>
                       ) : (
-                        <><TestTube className="mr-1 h-3 w-3" />Create sample notifications</>
+                        <>
+                          <TestTube className="mr-1 h-3 w-3" />
+                          Create sample notifications
+                        </>
                       )}
                     </Button>
                   )}
@@ -202,5 +212,5 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
         </SheetFooter>
       </SheetContent>
     </Sheet>
-  );
-};
+  )
+}

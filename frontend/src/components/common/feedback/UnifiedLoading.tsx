@@ -1,5 +1,5 @@
-import React from 'react';
-import { 
+import React from 'react'
+import {
   PageLoading,
   PageError,
   PageEmpty,
@@ -9,38 +9,38 @@ import {
   InlineLoading,
   InlineError,
   InlineEmpty,
-  LoadingOverlay
-} from './LoadingStates';
-import { useLoadingContext } from '@/contexts/LoadingContext';
+  LoadingOverlay,
+} from './LoadingStates'
+import { useLoadingContext } from '@/contexts/LoadingContext'
 
 interface UnifiedLoadingProps {
   // Loading state
-  isLoading: boolean;
-  error?: Error | string | null;
-  isEmpty?: boolean;
-  
+  isLoading: boolean
+  error?: Error | string | null
+  isEmpty?: boolean
+
   // Content
-  children: React.ReactNode;
-  
+  children: React.ReactNode
+
   // Loading configuration
-  loadingType?: 'page' | 'card' | 'inline' | 'overlay';
-  loadingMessage?: string;
-  
+  loadingType?: 'page' | 'card' | 'inline' | 'overlay'
+  loadingMessage?: string
+
   // Error configuration
-  errorTitle?: string;
-  errorDescription?: string;
-  onRetry?: () => void;
-  retryLabel?: string;
-  
+  errorTitle?: string
+  errorDescription?: string
+  onRetry?: () => void
+  retryLabel?: string
+
   // Empty configuration
-  emptyTitle?: string;
-  emptyDescription?: string;
-  emptyIcon?: React.ComponentType<{ className?: string }>;
-  emptyAction?: React.ReactNode;
-  
+  emptyTitle?: string
+  emptyDescription?: string
+  emptyIcon?: React.ComponentType<{ className?: string }>
+  emptyAction?: React.ReactNode
+
   // Styling
-  className?: string;
-  showBackground?: boolean;
+  className?: string
+  showBackground?: boolean
 }
 
 export function UnifiedLoading({
@@ -59,7 +59,7 @@ export function UnifiedLoading({
   emptyIcon,
   emptyAction,
   className,
-  showBackground = true
+  showBackground = true,
 }: UnifiedLoadingProps) {
   // Show error state
   if (error) {
@@ -74,9 +74,9 @@ export function UnifiedLoading({
           showBackground={showBackground}
           className={className}
         />
-      );
+      )
     }
-    
+
     if (loadingType === 'card') {
       return (
         <CardError
@@ -87,9 +87,9 @@ export function UnifiedLoading({
           retryLabel={retryLabel}
           className={className}
         />
-      );
+      )
     }
-    
+
     return (
       <InlineError
         error={error}
@@ -97,7 +97,7 @@ export function UnifiedLoading({
         retryLabel={retryLabel}
         className={className}
       />
-    );
+    )
   }
 
   // Show empty state
@@ -112,9 +112,9 @@ export function UnifiedLoading({
           showBackground={showBackground}
           className={className}
         />
-      );
+      )
     }
-    
+
     if (loadingType === 'card') {
       return (
         <CardEmpty
@@ -124,16 +124,16 @@ export function UnifiedLoading({
           action={emptyAction}
           className={className}
         />
-      );
+      )
     }
-    
+
     return (
       <InlineEmpty
         message={emptyDescription}
         icon={emptyIcon}
         className={className}
       />
-    );
+    )
   }
 
   // Show loading state
@@ -145,17 +145,13 @@ export function UnifiedLoading({
           showBackground={showBackground}
           className={className}
         />
-      );
+      )
     }
-    
+
     if (loadingType === 'card') {
-      return (
-        <CardLoading
-          className={className}
-        />
-      );
+      return <CardLoading className={className} />
     }
-    
+
     if (loadingType === 'overlay') {
       return (
         <LoadingOverlay
@@ -165,49 +161,40 @@ export function UnifiedLoading({
         >
           {children}
         </LoadingOverlay>
-      );
+      )
     }
-    
-    return (
-      <InlineLoading
-        message={loadingMessage}
-        className={className}
-      />
-    );
+
+    return <InlineLoading message={loadingMessage} className={className} />
   }
 
   // Show content
-  return <>{children}</>;
+  return <>{children}</>
 }
 
 // Global loading component that uses the loading context
-export function GlobalLoadingWrapper({ children }: { children: React.ReactNode }) {
-  const { globalLoading } = useLoadingContext();
-  
+export function GlobalLoadingWrapper({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  const { globalLoading } = useLoadingContext()
+
   if (!globalLoading.isLoading) {
-    return <>{children}</>;
+    return <>{children}</>
   }
 
-  const { loadingType, loadingMessage } = globalLoading;
+  const { loadingType, loadingMessage } = globalLoading
 
   if (loadingType === 'page') {
-    return (
-      <PageLoading
-        message={loadingMessage}
-        showBackground={true}
-      />
-    );
+    return <PageLoading message={loadingMessage} showBackground={true} />
   }
 
   if (loadingType === 'overlay') {
     return (
-      <LoadingOverlay
-        isLoading={true}
-        message={loadingMessage}
-      >
+      <LoadingOverlay isLoading={true} message={loadingMessage}>
         {children}
       </LoadingOverlay>
-    );
+    )
   }
 
   if (loadingType === 'inline') {
@@ -215,45 +202,47 @@ export function GlobalLoadingWrapper({ children }: { children: React.ReactNode }
       <div className="fixed top-4 right-4 z-50">
         <InlineLoading message={loadingMessage} />
       </div>
-    );
+    )
   }
 
   if (loadingType === 'button') {
     return (
-      <div className="fixed bottom-4 right-4 z-50">
+      <div className="fixed right-4 bottom-4 z-50">
         <InlineLoading message={loadingMessage} />
       </div>
-    );
+    )
   }
 
-  return <>{children}</>;
+  return <>{children}</>
 }
 
 // Higher-order component for easy loading state management
 export function withLoadingState<P extends object>(
   Component: React.ComponentType<P>,
   loadingConfig?: {
-    loadingType?: 'page' | 'card' | 'inline' | 'overlay';
-    loadingMessage?: string;
-    errorTitle?: string;
-    errorDescription?: string;
-    emptyTitle?: string;
-    emptyDescription?: string;
+    loadingType?: 'page' | 'card' | 'inline' | 'overlay'
+    loadingMessage?: string
+    errorTitle?: string
+    errorDescription?: string
+    emptyTitle?: string
+    emptyDescription?: string
   }
 ) {
-  return function WrappedComponent(props: P & {
-    isLoading?: boolean;
-    error?: Error | string | null;
-    isEmpty?: boolean;
-    onRetry?: () => void;
-  }) {
+  return function WrappedComponent(
+    props: P & {
+      isLoading?: boolean
+      error?: Error | string | null
+      isEmpty?: boolean
+      onRetry?: () => void
+    }
+  ) {
     const {
       isLoading = false,
       error,
       isEmpty = false,
       onRetry,
       ...componentProps
-    } = props;
+    } = props
 
     return (
       <UnifiedLoading
@@ -270,6 +259,6 @@ export function withLoadingState<P extends object>(
       >
         <Component {...(componentProps as P)} />
       </UnifiedLoading>
-    );
-  };
+    )
+  }
 }

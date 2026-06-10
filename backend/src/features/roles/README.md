@@ -1,6 +1,6 @@
 # Roles Feature
 
-Role and permission management: templates, custom roles from apps/modules, role assignments, permission matrix, permission sync, and tier-based access. Supports CRM-style permissions and publishes role events to applications via Amazon MQ.
+Role and permission management: templates, custom roles from apps/modules, role assignments, permission matrix, permission sync, and tier-based access. Supports CRM-style permissions and publishes role events to applications via SNS.
 
 ## Directory Structure
 
@@ -113,7 +113,7 @@ roles/
 
 | Service | Description |
 |---------|-------------|
-| **PermissionService** | Core role/permission CRUD: templates, tenant roles, create from template, advanced create/update/delete, clone, validate access, bulk operations, role assignments, audit log, check permissions, effective permissions, migration. Publishes role events to Amazon MQ |
+| **PermissionService** | Core role/permission CRUD: templates, tenant roles, create from template, advanced create/update/delete, clone, validate access, bulk operations, role assignments, audit log, check permissions, effective permissions, migration. Publishes role events to SNS |
 | **CustomRoleService** | Role builder: get creation options (apps/modules for tenant), create/update roles from app/module selections, user-specific permission overrides, resolve user permissions, update organization access by subscription tier |
 | **PermissionMatrixService** | Resolve user permission context from roles, flatten nested permissions, hasPermission/hasAll/hasAny checks, accessible applications, role template assignment, permission analytics, revoke all |
 | **AutoPermissionSyncService** | Automated permission sync: matrix sync, update all organization access, subscription tier change handling, cache clearing, scheduled sync. Integrates with CustomRoleService for org access and tier config |

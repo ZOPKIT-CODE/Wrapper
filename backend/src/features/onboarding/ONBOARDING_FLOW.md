@@ -479,7 +479,7 @@ Written to `event_tracking` by `trackOnboardingCompletion()`:
 ---
 
 #### B. Per-App Provisioning Events
-For each app in `organization_applications`, published to Amazon MQ **and** written to `event_tracking`:
+For each app in `organization_applications`, published to SNS **and** written to `event_tracking`:
 
 ```json
 {
@@ -719,7 +719,7 @@ All of the following run **after** the 201 response is sent (fire-and-forget):
 |------|--------------|-----------|
 | `trackOnboardingCompletion()` | `event_tracking` | No |
 | Welcome notification | `notifications` | No |
-| `publishAppProvisioningEvents()` | `event_tracking` + Amazon MQ | No |
+| `publishAppProvisioningEvents()` | `event_tracking` + SNS | No |
 
 Failures in async work are logged as warnings but never surfaced to the user.
 The tenant is already fully provisioned by this point.

@@ -224,7 +224,7 @@ The consumer must `JSON.parse(message.Body)` to get the envelope, then `JSON.par
 }
 ```
 
-**FA action**: Parse snapshot, run a DB transaction upsert across all 8 collections, mark tenant status as 'active'. See full field reference in `ONBOARDING_EMISSIONS.md`.
+**FA action**: Parse snapshot, run a DB transaction upsert across all 8 collections, mark tenant status as 'active'. See the full field-to-table reference in `ONBOARDING_FLOW.md`.
 
 > **Note on payload size.** If `snapshot` is large (>200 KB), Wrapper offloads `eventData` to S3 via the claim-check pattern (`large-payload-store.ts`) and the message contains `{ _s3Ref: { bucket, key } }` instead. FA must check for `_s3Ref` and pull the full payload from S3 before processing. See the messaging feature README for details.
 
@@ -249,7 +249,7 @@ env vars: SQS_FA_QUEUE_URL          ← FA's own queue
 
 ### Infrastructure setup (one-time, via Terraform / CDK / console)
 
-FA does **not** "assert queues on startup" the way AMQP consumers do. The SNS topic, SQS queue, subscription, filter policy, and redrive policy are provisioned once by infrastructure code.
+FA does **not** "assert queues on startup" the way some message-broker consumers do. The SNS topic, SQS queue, subscription, filter policy, and redrive policy are provisioned once by infrastructure code.
 
 ```
 SNS topic (already exists in Wrapper):
@@ -392,7 +392,7 @@ The `FOR UPDATE` lock prevents two concurrent consumer threads from processing t
 
 ## 8. Retry and DLQ Strategy
 
-SQS handles retry differently than AMQP — there's no app-managed retry queue, the broker does it automatically.
+SQS handles retry differently than a traditional message broker — there's no app-managed retry queue; SQS redrive does it automatically.
 
 ```
 Receive 1: process message

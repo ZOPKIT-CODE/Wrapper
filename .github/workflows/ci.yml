@@ -20,7 +20,7 @@ jobs:
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 20
           cache: pnpm
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -37,16 +37,55 @@ jobs:
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 20
           cache: pnpm
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+      # Backend is type-clean (0 errors), so gate it to prevent type regressions
+      # (vitest does not type-check). The frontend is NOT gated this way yet (debt).
+      - name: Type-check (backend)
+        working-directory: backend
+        run: pnpm typecheck
       - name: Unit tests (backend)
         working-directory: backend
         run: pnpm test
+        env:
+          # db/index.ts initializes the (lazy) pool at import; unit tests never
+          # query it, but the import requires a URL. The startup max_connections
+          # probe fails fast against this dummy and is caught with a warning.
+          DATABASE_URL: postgresql://ci:ci@127.0.0.1:5432/ci_unit_dummy
       # Integration tests build a fresh DB from the migrations (Testcontainers) and
       # run against the REAL schema — this is what catches app<->schema drift.
       - name: Integration tests (backend)
         working-directory: backend
         run: pnpm test:integration
         timeout-minutes: 12
+
+  frontend-checks:
+    name: Frontend typecheck + lint + build + tests (blocking)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      # Type safety: tsc is at 0 errors (strict). vite/esbuild does NOT type-check, so
+      # this is the real type gate.
+      - name: Type-check (frontend)
+        working-directory: frontend
+        run: pnpm run type-check
+      # Lint: errors block; no-explicit-any is a (non-blocking) warning — ~543 of those
+      # remain as tracked debt to burn down.
+      - name: Lint (frontend, errors only)
+        working-directory: frontend
+        run: pnpm run lint:ci
+      - name: Build (blocking)
+        working-directory: frontend
+        run: pnpm build
+      - name: Unit tests (frontend)
+        working-directory: frontend
+        run: pnpm test

@@ -65,6 +65,13 @@ export interface CognitoUserInfo {
   family_name?: string;
   name?: string;
   token_use?: string;
+  /**
+   * Cognito group memberships from the native `cognito:groups` claim (present on both
+   * ID and access tokens). This is the platform-plane signal: membership of the
+   * configured platform-admin group marks an internal operator, distinct from any
+   * tenant-scoped role in the DB. No pre-token Lambda is required to surface it.
+   */
+  groups?: string[];
 }
 
 /**
@@ -83,10 +90,14 @@ export async function verifyCognitoToken(token: string): Promise<CognitoUserInfo
     name?: string;
     token_use?: string;
     'cognito:username'?: string;
+    'cognito:groups'?: string[];
   };
   const sub = typeof p.sub === 'string' ? p.sub : '';
   if (!sub) return null;
   const email = typeof p.email === 'string' ? p.email : undefined;
+  const groups = Array.isArray(p['cognito:groups'])
+    ? p['cognito:groups'].filter((g): g is string => typeof g === 'string')
+    : undefined;
   return {
     id: sub,
     sub,
@@ -96,6 +107,7 @@ export async function verifyCognitoToken(token: string): Promise<CognitoUserInfo
     family_name: p.family_name,
     name: p.name ?? ([p.given_name, p.family_name].filter(Boolean).join(' ') || undefined),
     token_use: p.token_use,
+    groups,
   };
 }
 

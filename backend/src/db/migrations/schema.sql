@@ -356,6 +356,104 @@ CREATE TABLE public.audit_logs (
 
 
 --
+-- Name: blog_comments; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.blog_comments (
+    comment_id uuid DEFAULT gen_random_uuid() NOT NULL,
+    post_id uuid NOT NULL,
+    author_name character varying(120) NOT NULL,
+    author_email character varying(255),
+    body text NOT NULL,
+    status character varying(20) DEFAULT 'pending'::character varying NOT NULL,
+    created_ip character varying(64),
+    moderated_by uuid,
+    moderated_at timestamp without time zone,
+    created_at timestamp without time zone DEFAULT now() NOT NULL,
+    updated_at timestamp without time zone DEFAULT now() NOT NULL,
+    CONSTRAINT blog_comments_status_check CHECK (((status)::text = ANY ((ARRAY['pending'::character varying, 'approved'::character varying, 'rejected'::character varying, 'spam'::character varying])::text[])))
+);
+
+
+--
+-- Name: blog_post_links; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.blog_post_links (
+    from_post_id uuid NOT NULL,
+    to_post_id uuid NOT NULL,
+    created_at timestamp without time zone DEFAULT now() NOT NULL,
+    CONSTRAINT blog_post_links_no_self CHECK ((from_post_id <> to_post_id))
+);
+
+
+--
+-- Name: blog_post_slug_history; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.blog_post_slug_history (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    post_id uuid NOT NULL,
+    old_slug character varying(255) NOT NULL,
+    created_at timestamp without time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: blog_posts; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.blog_posts (
+    post_id uuid DEFAULT gen_random_uuid() NOT NULL,
+    author_id uuid,
+    title character varying(255) NOT NULL,
+    slug character varying(255) NOT NULL,
+    subtitle text,
+    excerpt text,
+    body jsonb NOT NULL,
+    body_html text,
+    schema_version integer DEFAULT 1 NOT NULL,
+    cover_image_key character varying(500),
+    cover_image_alt text,
+    tags jsonb DEFAULT '[]'::jsonb NOT NULL,
+    status character varying(20) DEFAULT 'draft'::character varying NOT NULL,
+    meta_title text,
+    meta_description text,
+    og_image_key character varying(500),
+    seo_noindex boolean DEFAULT false NOT NULL,
+    reading_time_minutes integer,
+    word_count integer,
+    published_at timestamp without time zone,
+    created_at timestamp without time zone DEFAULT now() NOT NULL,
+    updated_at timestamp without time zone DEFAULT now() NOT NULL,
+    deleted_at timestamp without time zone,
+    created_by uuid,
+    updated_by uuid,
+    series_id uuid,
+    series_position integer,
+    CONSTRAINT blog_posts_status_check CHECK (((status)::text = ANY ((ARRAY['draft'::character varying, 'published'::character varying, 'archived'::character varying])::text[])))
+);
+
+
+--
+-- Name: blog_series; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.blog_series (
+    series_id uuid DEFAULT gen_random_uuid() NOT NULL,
+    title character varying(255) NOT NULL,
+    slug character varying(255) NOT NULL,
+    description text,
+    cover_image_key character varying(500),
+    created_at timestamp without time zone DEFAULT now() NOT NULL,
+    updated_at timestamp without time zone DEFAULT now() NOT NULL,
+    deleted_at timestamp without time zone,
+    created_by uuid,
+    updated_by uuid
+);
+
+
+--
 -- Name: circuit_breaker_state; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1565,6 +1663,46 @@ ALTER TABLE ONLY public.audit_logs
 
 
 --
+-- Name: blog_comments blog_comments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_comments
+    ADD CONSTRAINT blog_comments_pkey PRIMARY KEY (comment_id);
+
+
+--
+-- Name: blog_post_links blog_post_links_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_post_links
+    ADD CONSTRAINT blog_post_links_pkey PRIMARY KEY (from_post_id, to_post_id);
+
+
+--
+-- Name: blog_post_slug_history blog_post_slug_history_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_post_slug_history
+    ADD CONSTRAINT blog_post_slug_history_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: blog_posts blog_posts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_posts
+    ADD CONSTRAINT blog_posts_pkey PRIMARY KEY (post_id);
+
+
+--
+-- Name: blog_series blog_series_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_series
+    ADD CONSTRAINT blog_series_pkey PRIMARY KEY (series_id);
+
+
+--
 -- Name: circuit_breaker_state circuit_breaker_state_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1969,6 +2107,62 @@ CREATE INDEX idx_audit_logs_tenant_created_at ON public.audit_logs USING btree (
 --
 
 CREATE INDEX idx_audit_logs_tenant_id ON public.audit_logs USING btree (tenant_id);
+
+
+--
+-- Name: idx_blog_comments_post_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_blog_comments_post_status ON public.blog_comments USING btree (post_id, status);
+
+
+--
+-- Name: idx_blog_comments_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_blog_comments_status ON public.blog_comments USING btree (status);
+
+
+--
+-- Name: idx_blog_post_links_to; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_blog_post_links_to ON public.blog_post_links USING btree (to_post_id);
+
+
+--
+-- Name: idx_blog_post_slug_history_old_slug; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_blog_post_slug_history_old_slug ON public.blog_post_slug_history USING btree (old_slug);
+
+
+--
+-- Name: idx_blog_post_slug_history_post; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_blog_post_slug_history_post ON public.blog_post_slug_history USING btree (post_id);
+
+
+--
+-- Name: idx_blog_posts_feed; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_blog_posts_feed ON public.blog_posts USING btree (status, published_at);
+
+
+--
+-- Name: idx_blog_posts_series; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_blog_posts_series ON public.blog_posts USING btree (series_id, series_position);
+
+
+--
+-- Name: idx_blog_posts_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_blog_posts_status ON public.blog_posts USING btree (status);
 
 
 --
@@ -2553,6 +2747,20 @@ CREATE UNIQUE INDEX unique_tenant_credit_config ON public.credit_configurations 
 
 
 --
+-- Name: uq_blog_posts_pub_slug; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX uq_blog_posts_pub_slug ON public.blog_posts USING btree (slug) WHERE (deleted_at IS NULL);
+
+
+--
+-- Name: uq_blog_series_pub_slug; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX uq_blog_series_pub_slug ON public.blog_series USING btree (slug) WHERE (deleted_at IS NULL);
+
+
+--
 -- Name: entities trigger_entity_hierarchy_delete; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -2602,6 +2810,54 @@ ALTER TABLE ONLY public.audit_logs
 
 ALTER TABLE ONLY public.audit_logs
     ADD CONSTRAINT audit_logs_tenant_id_tenants_tenant_id_fk FOREIGN KEY (tenant_id) REFERENCES public.tenants(tenant_id);
+
+
+--
+-- Name: blog_comments blog_comments_post_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_comments
+    ADD CONSTRAINT blog_comments_post_id_fkey FOREIGN KEY (post_id) REFERENCES public.blog_posts(post_id);
+
+
+--
+-- Name: blog_post_links blog_post_links_from_post_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_post_links
+    ADD CONSTRAINT blog_post_links_from_post_id_fkey FOREIGN KEY (from_post_id) REFERENCES public.blog_posts(post_id) ON DELETE CASCADE;
+
+
+--
+-- Name: blog_post_links blog_post_links_to_post_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_post_links
+    ADD CONSTRAINT blog_post_links_to_post_id_fkey FOREIGN KEY (to_post_id) REFERENCES public.blog_posts(post_id) ON DELETE CASCADE;
+
+
+--
+-- Name: blog_post_slug_history blog_post_slug_history_post_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_post_slug_history
+    ADD CONSTRAINT blog_post_slug_history_post_id_fkey FOREIGN KEY (post_id) REFERENCES public.blog_posts(post_id) ON DELETE CASCADE;
+
+
+--
+-- Name: blog_posts blog_posts_author_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_posts
+    ADD CONSTRAINT blog_posts_author_id_fkey FOREIGN KEY (author_id) REFERENCES public.tenant_users(user_id);
+
+
+--
+-- Name: blog_posts blog_posts_series_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_posts
+    ADD CONSTRAINT blog_posts_series_id_fkey FOREIGN KEY (series_id) REFERENCES public.blog_series(series_id);
 
 
 --

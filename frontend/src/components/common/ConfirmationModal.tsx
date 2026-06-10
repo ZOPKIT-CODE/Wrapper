@@ -1,17 +1,24 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { AlertTriangle, Check, X } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { AlertTriangle, Check, X } from 'lucide-react'
 
 export interface ConfirmationModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-  title: string;
-  description: string;
-  confirmText?: string;
-  cancelText?: string;
-  variant?: 'danger' | 'warning' | 'success';
-  loading?: boolean;
+  isOpen: boolean
+  onClose: () => void
+  onConfirm: () => void
+  title: string
+  description: string
+  confirmText?: string
+  cancelText?: string
+  variant?: 'danger' | 'warning' | 'success'
+  loading?: boolean
 }
 
 export function ConfirmationModal({
@@ -23,31 +30,31 @@ export function ConfirmationModal({
   confirmText = 'Confirm',
   cancelText = 'Cancel',
   variant = 'warning',
-  loading = false
+  loading = false,
 }: ConfirmationModalProps) {
   const getIcon = () => {
     switch (variant) {
       case 'danger':
-        return <X className="h-6 w-6 text-red-500" />;
+        return <X className="h-6 w-6 text-red-500" />
       case 'success':
-        return <Check className="h-6 w-6 text-green-500" />;
+        return <Check className="h-6 w-6 text-green-500" />
       case 'warning':
       default:
-        return <AlertTriangle className="h-6 w-6 text-yellow-500" />;
+        return <AlertTriangle className="h-6 w-6 text-yellow-500" />
     }
-  };
+  }
 
   const getConfirmButtonVariant = () => {
     switch (variant) {
       case 'danger':
-        return 'destructive';
+        return 'destructive'
       case 'success':
-        return 'default';
+        return 'default'
       case 'warning':
       default:
-        return 'default';
+        return 'default'
     }
-  };
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -57,17 +64,13 @@ export function ConfirmationModal({
             {getIcon()}
             <DialogTitle className="text-lg font-semibold">{title}</DialogTitle>
           </div>
-          <DialogDescription className="text-sm text-gray-600 mt-2">
+          <DialogDescription className="mt-2 text-sm text-gray-600">
             {description}
           </DialogDescription>
         </DialogHeader>
 
         <DialogFooter className="gap-2">
-          <Button
-            variant="outline"
-            onClick={onClose}
-            disabled={loading}
-          >
+          <Button variant="outline" onClick={onClose} disabled={loading}>
             {cancelText}
           </Button>
           <Button
@@ -80,7 +83,7 @@ export function ConfirmationModal({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  );
+  )
 }
 
 // Specialized confirmation modals for common use cases
@@ -92,17 +95,17 @@ export function OrganizationAssignmentConfirmationModal({
   organizationName,
   userName,
   action, // 'assign' or 'deassign'
-  loading = false
+  loading = false,
 }: {
-  isOpen: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-  organizationName: string;
-  userName: string;
-  action: 'assign' | 'deassign';
-  loading?: boolean;
+  isOpen: boolean
+  onClose: () => void
+  onConfirm: () => void
+  organizationName: string
+  userName: string
+  action: 'assign' | 'deassign'
+  loading?: boolean
 }) {
-  const isAssign = action === 'assign';
+  const isAssign = action === 'assign'
 
   return (
     <ConfirmationModal
@@ -116,7 +119,7 @@ export function OrganizationAssignmentConfirmationModal({
       variant={isAssign ? 'success' : 'danger'}
       loading={loading}
     />
-  );
+  )
 }
 
 export function RoleAssignmentConfirmationModal({
@@ -126,17 +129,17 @@ export function RoleAssignmentConfirmationModal({
   roleName,
   userName,
   action, // 'assign' or 'deassign'
-  loading = false
+  loading = false,
 }: {
-  isOpen: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-  roleName: string;
-  userName: string;
-  action: 'assign' | 'deassign';
-  loading?: boolean;
+  isOpen: boolean
+  onClose: () => void
+  onConfirm: () => void
+  roleName: string
+  userName: string
+  action: 'assign' | 'deassign'
+  loading?: boolean
 }) {
-  const isAssign = action === 'assign';
+  const isAssign = action === 'assign'
 
   return (
     <ConfirmationModal
@@ -150,5 +153,5 @@ export function RoleAssignmentConfirmationModal({
       variant={isAssign ? 'success' : 'danger'}
       loading={loading}
     />
-  );
+  )
 }

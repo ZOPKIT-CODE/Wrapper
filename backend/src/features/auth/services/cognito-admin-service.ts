@@ -17,6 +17,9 @@ import {
   AdminEnableUserCommand,
   AdminDeleteUserCommand,
   AdminGetUserCommand,
+  AdminAddUserToGroupCommand,
+  AdminRemoveUserFromGroupCommand,
+  AdminListGroupsForUserCommand,
   ListUsersCommand,
 } from '@aws-sdk/client-cognito-identity-provider';
 import Logger from '../../../utils/logger.js';
@@ -105,4 +108,31 @@ export async function adminEnableUser(email: string): Promise<void> {
 export async function adminDeleteUser(email: string): Promise<void> {
   try { await client().send(new AdminDeleteUserCommand({ UserPoolId: poolId(), Username: email })); }
   catch (err) { if ((err as { name?: string })?.name !== 'UserNotFoundException') throw err; }
+}
+
+// ─── Platform-admin group management ─────────────────────────────────────────
+// The platform-admin plane is signalled by membership of a dedicated Cognito group
+// (COGNITO_PLATFORM_ADMIN_GROUP, default `platform-admins`), surfaced in tokens via
+// the native `cognito:groups` claim. These helpers let a platform admin promote /
+// demote other staff into that group. The group itself is provisioned in Terraform.
+
+function platformAdminGroup(): string {
+  return (process.env.COGNITO_PLATFORM_ADMIN_GROUP || 'platform-admins').trim();
+}
+
+/** Add a user (by email username) to a Cognito group; defaults to the platform-admin group. */
+export async function adminAddUserToGroup(email: string, groupName: string = platformAdminGroup()): Promise<void> {
+  await client().send(new AdminAddUserToGroupCommand({ UserPoolId: poolId(), Username: email, GroupName: groupName }));
+}
+
+/** Remove a user from a Cognito group; defaults to the platform-admin group. */
+export async function adminRemoveUserFromGroup(email: string, groupName: string = platformAdminGroup()): Promise<void> {
+  try { await client().send(new AdminRemoveUserFromGroupCommand({ UserPoolId: poolId(), Username: email, GroupName: groupName })); }
+  catch (err) { if ((err as { name?: string })?.name !== 'UserNotFoundException') throw err; }
+}
+
+/** List the Cognito group names a user belongs to (by email username). */
+export async function adminListGroupsForUser(email: string): Promise<string[]> {
+  const res = await client().send(new AdminListGroupsForUserCommand({ UserPoolId: poolId(), Username: email }));
+  return (res.Groups ?? []).map((g) => g.GroupName ?? '').filter(Boolean);
 }

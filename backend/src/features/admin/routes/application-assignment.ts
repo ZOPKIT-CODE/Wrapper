@@ -9,7 +9,7 @@ import {
 import { eq, and, sql, count, inArray } from 'drizzle-orm';
 import { authenticateToken } from '../../../middleware/auth/auth.js';
 import { publishTenantApplicationSyncEvent } from '../../messaging/services/tenant-application-event-service.js';
-import { requirePlatformPermission } from '../../../middleware/auth/platform-permission-middleware.js';
+import { requirePlatformPermission, requirePlatformOrOwnTenant } from '../../../middleware/auth/platform-permission-middleware.js';
 import Logger from '../../../utils/logger.js';
 
 /**
@@ -25,7 +25,7 @@ export default async function applicationAssignmentRoutes(fastify: FastifyInstan
       description: 'Get tenant-specific applications with modules and permissions',
       tags: ['Admin', 'Application Assignment']
     },
-    preHandler: requirePlatformPermission('org_assignments:read')
+    preHandler: requirePlatformOrOwnTenant('org_assignments:read')
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const params = request.params as Record<string, string>;
     try {
@@ -426,7 +426,7 @@ export default async function applicationAssignmentRoutes(fastify: FastifyInstan
       description: 'Get application assignments for a specific tenant',
       tags: ['Admin', 'Application Assignment']
     },
-    preHandler: requirePlatformPermission('org_assignments:read')
+    preHandler: requirePlatformOrOwnTenant('org_assignments:read')
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const params = request.params as Record<string, string>;
@@ -1583,7 +1583,7 @@ export default async function applicationAssignmentRoutes(fastify: FastifyInstan
       description: 'Get all modules assigned to a specific tenant',
       tags: ['Admin', 'Application Assignment']
     },
-    preHandler: requirePlatformPermission('org_assignments:read')
+    preHandler: requirePlatformOrOwnTenant('org_assignments:read')
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const params = request.params as Record<string, string>;

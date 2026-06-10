@@ -1,4 +1,5 @@
-import type { FC } from 'react';
+import * as React from 'react'
 
-declare const Logo: FC;
-export default Logo;
+declare const Logo: React.FC
+
+export default Logo
