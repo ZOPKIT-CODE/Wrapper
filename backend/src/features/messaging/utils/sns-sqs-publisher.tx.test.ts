@@ -10,6 +10,11 @@
  */
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 
+// These exercise the real publisher (only the AWS/Sentry SDKs are mocked), whose
+// heavy module import + per-app publish loop legitimately take several seconds.
+// The default 5s per-test timeout flakes under full-suite load — give them room.
+vi.setConfig({ testTimeout: 30_000, hookTimeout: 30_000 });
+
 vi.mock('@aws-sdk/client-sns', () => ({
   SNSClient: class { send = vi.fn(async () => ({ MessageId: 'should-not-be-used' })); },
   PublishCommand: class { constructor(public input: unknown) {} },
