@@ -31,7 +31,25 @@ trap cleanup EXIT
 echo "→ Spinning a fresh postgres:${PGVER} and applying ALL migrations…"
 docker rm -f "$NAME" >/dev/null 2>&1 || true
 docker run -d --name "$NAME" -e POSTGRES_PASSWORD=test -e POSTGRES_DB=driftdb -p "${PORT}:5432" "postgres:${PGVER}-alpine" >/dev/null
-for _ in $(seq 1 30); do docker exec "$NAME" pg_isready -U postgres >/dev/null 2>&1 && break; sleep 1; done
+# Readiness: pg_isready is satisfiable by the TEMP server the official image
+# runs during initdb, which then shuts down ("the database system is shutting
+# down") right as our first real psql connects — a flaky race on slow runners.
+# Require TWO consecutive successful real queries 1s apart; the brief temp-server
+# window cannot produce that.
+ok=0
+for _ in $(seq 1 60); do
+  if docker exec "$NAME" psql -U postgres -d driftdb -qAt -c 'SELECT 1' >/dev/null 2>&1; then
+    ok=$((ok+1)); [ "$ok" -ge 2 ] && break
+  else
+    ok=0
+  fi
+  sleep 1
+done
+if [ "$ok" -lt 2 ]; then
+  echo "✗ postgres container never became ready" >&2
+  docker logs "$NAME" 2>&1 | tail -20 >&2
+  exit 2
+fi
 
 # Roles the grant migration (0001) targets — created by infra in real envs.
 docker exec "$NAME" psql -U postgres -d driftdb -q -c \
