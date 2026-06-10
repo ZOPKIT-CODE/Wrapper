@@ -8,6 +8,10 @@ import {
   markSessionRecoveryReason,
   consumePostLoginRedirect,
 } from '@/lib/auth/session-recovery'
+import {
+  consumeSilentAttempt,
+  SILENT_SSO_ERROR_CODES,
+} from '@/lib/auth/silent-sso'
 
 export function AuthCallback() {
   const { isLoading, isAuthenticated, error, user } = useAuth()
@@ -16,6 +20,25 @@ export function AuthCallback() {
   const processingRef = useRef(false)
   const hasNavigatedRef = useRef(false)
   const hasRecoveredSessionRef = useRef(false)
+
+  // A prompt=none silent SSO probe that found no shared session returns
+  // error=login_required (only prompt=none yields it) — expected, not a failure.
+  // Detect via the URL error code; a SUCCESSFUL silent probe carries ?code and must
+  // fall through to the normal flow below. Return here quietly (no error UI, no loop).
+  const silentUrlError = new URLSearchParams(window.location.search).get(
+    'error'
+  )
+  const isSilentNoSession = SILENT_SSO_ERROR_CODES.includes(
+    silentUrlError || ''
+  )
+  useEffect(() => {
+    consumeSilentAttempt() // clear the one-shot flag regardless of outcome
+    if (isSilentNoSession && !isAuthenticated && !hasNavigatedRef.current) {
+      hasNavigatedRef.current = true
+      navigate({ to: '/login', replace: true })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Timeout fallback — if Kinde never resolves, redirect to login after 15s
   useEffect(() => {
@@ -164,7 +187,7 @@ export function AuthCallback() {
     return () => clearTimeout(timer)
   }, [isLoading, isAuthenticated, error, navigate, user])
 
-  if (error && !isAuthenticated) {
+  if (error && !isAuthenticated && !isSilentNoSession) {
     const authError = error as {
       message?: string
       error?: string

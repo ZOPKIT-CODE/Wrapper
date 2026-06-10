@@ -12,101 +12,137 @@
  *   - getToken() -> null: API auth rides the httpOnly cookie (axios withCredentials),
  *     not a JS-held Bearer, so there is no client-side token to hand back.
  */
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
 
 export interface AuthUser {
-  id?: string;
-  email?: string;
-  given_name?: string;
-  family_name?: string;
-  name?: string;
-  permissions?: string[];
-  organization?: unknown;
-  [key: string]: unknown;
+  id?: string
+  email?: string
+  given_name?: string
+  family_name?: string
+  name?: string
+  permissions?: string[]
+  organization?: unknown
+  [key: string]: unknown
 }
 
 interface CognitoAuthContextValue {
-  user: AuthUser | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  error: unknown;
-  refresh: () => Promise<void>;
+  user: AuthUser | null
+  isAuthenticated: boolean
+  isLoading: boolean
+  error: unknown
+  refresh: () => Promise<void>
 }
 
-const CognitoAuthContext = createContext<CognitoAuthContextValue | null>(null);
+const CognitoAuthContext = createContext<CognitoAuthContextValue | null>(null)
 
 // Auth talks to the backend host directly. Relative '/api' only works in dev (Vite
 // proxy); in staging/prod the SPA and API are different origins, so prefix with the
 // API base (VITE_API_BASE_URL, e.g. https://api.staging.zopkit.com). Empty -> relative.
-const API_BASE = ((import.meta.env.VITE_API_BASE_URL as string | undefined) ?? '').replace(/\/$/, '');
+const API_BASE = (
+  (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? ''
+).replace(/\/$/, '')
 
 async function fetchMe(): Promise<AuthUser | null> {
   try {
-    const res = await fetch(`${API_BASE}/api/auth/me`, { credentials: 'include', headers: { Accept: 'application/json' } });
-    if (!res.ok) return null;
-    const body = await res.json().catch(() => null) as { data?: { user?: AuthUser; organization?: unknown } } | null;
-    const user = body?.data?.user ?? null;
+    const res = await fetch(`${API_BASE}/api/auth/me`, {
+      credentials: 'include',
+      headers: { Accept: 'application/json' },
+    })
+    if (!res.ok) return null
+    const body = (await res.json().catch(() => null)) as {
+      data?: { user?: AuthUser; organization?: unknown }
+    } | null
+    const user = body?.data?.user ?? null
     if (user && body?.data?.organization && user.organization === undefined) {
-      user.organization = body.data.organization;
+      user.organization = body.data.organization
     }
-    return user;
+    return user
   } catch {
-    return null;
+    return null
   }
 }
 
 /** Provider — fetches the backend session once on mount. Named `KindeProvider` below for the alias. */
-export function CognitoAuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<unknown>(null);
+export function CognitoAuthProvider({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  const [user, setUser] = useState<AuthUser | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<unknown>(null)
 
   const refresh = useCallback(async () => {
-    setIsLoading(true);
+    setIsLoading(true)
     try {
-      setUser(await fetchMe());
-      setError(null);
+      setUser(await fetchMe())
+      setError(null)
     } catch (e) {
-      setError(e);
+      setError(e)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  }, []);
+  }, [])
 
-  useEffect(() => { void refresh(); }, [refresh]);
+  useEffect(() => {
+    void refresh()
+  }, [refresh])
 
   const value = useMemo<CognitoAuthContextValue>(
     () => ({ user, isAuthenticated: !!user, isLoading, error, refresh }),
-    [user, isLoading, error, refresh],
-  );
+    [user, isLoading, error, refresh]
+  )
 
-  return <CognitoAuthContext.Provider value={value}>{children}</CognitoAuthContext.Provider>;
+  return (
+    <CognitoAuthContext.Provider value={value}>
+      {children}
+    </CognitoAuthContext.Provider>
+  )
 }
 
 // Kept-name export so existing `import { KindeProvider } from '@/lib/auth/cognito-auth'` call sites work.
-export const KindeProvider = CognitoAuthProvider;
+export const KindeProvider = CognitoAuthProvider
 
 interface LoginOptions {
-  provider?: string;
-  state?: string;
-  app_code?: string;
-  redirect_url?: string;
+  provider?: string
+  state?: string
+  app_code?: string
+  redirect_url?: string
   // Options accepted; provider/state are honored.
-  authUrlParams?: Record<string, string>;
-  [key: string]: unknown;
+  authUrlParams?: Record<string, string>
+  [key: string]: unknown
 }
 
 function startBackendLogin(opts?: LoginOptions): void {
-  const params = new URLSearchParams();
-  const provider = opts?.provider || (opts?.authUrlParams?.connection_id ? 'google' : undefined);
-  if (provider) params.set('provider', provider);
+  const params = new URLSearchParams()
+  const provider =
+    opts?.provider ||
+    (opts?.authUrlParams?.connection_id ? 'google' : undefined)
+  if (provider) params.set('provider', provider)
   if (opts?.app_code && opts?.redirect_url) {
-    params.set('state', JSON.stringify({ app_code: opts.app_code, redirect_url: opts.redirect_url }));
+    params.set(
+      'state',
+      JSON.stringify({
+        app_code: opts.app_code,
+        redirect_url: opts.redirect_url,
+      })
+    )
   } else if (opts?.state) {
-    params.set('state', opts.state);
+    params.set('state', opts.state)
   }
-  const qs = params.toString();
-  window.location.href = `${API_BASE}/api/auth/oauth/login${qs ? `?${qs}` : ''}`;
+  // Forward prompt (e.g. 'none' for a silent cross-app SSO probe) — the backend
+  // /oauth/login handler passes it through to the Cognito authorize URL.
+  if (typeof opts?.prompt === 'string' && opts.prompt)
+    params.set('prompt', opts.prompt)
+  const qs = params.toString()
+  window.location.href = `${API_BASE}/api/auth/oauth/login${qs ? `?${qs}` : ''}`
 }
 
 async function backendLogout(): Promise<void> {
@@ -116,12 +152,14 @@ async function backendLogout(): Promise<void> {
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({}),
-    });
-    const body = await res.json().catch(() => null) as { data?: { logoutUrl?: string } } | null;
-    const logoutUrl = body?.data?.logoutUrl;
-    window.location.href = logoutUrl || '/login';
+    })
+    const body = (await res.json().catch(() => null)) as {
+      data?: { logoutUrl?: string }
+    } | null
+    const logoutUrl = body?.data?.logoutUrl
+    window.location.href = logoutUrl || '/login'
   } catch {
-    window.location.href = '/login';
+    window.location.href = '/login'
   }
 }
 
@@ -130,9 +168,11 @@ async function backendLogout(): Promise<void> {
  * (isAuthenticated, isLoading, user, error, getToken, login, logout, getPermission(s)).
  */
 export function useAuth() {
-  const ctx = useContext(CognitoAuthContext);
-  const user = ctx?.user ?? null;
-  const permissions: string[] = Array.isArray(user?.permissions) ? (user!.permissions as string[]) : [];
+  const ctx = useContext(CognitoAuthContext)
+  const user = ctx?.user ?? null
+  const permissions: string[] = Array.isArray(user?.permissions)
+    ? (user!.permissions as string[])
+    : []
 
   return {
     isAuthenticated: ctx?.isAuthenticated ?? false,
@@ -147,11 +187,14 @@ export function useAuth() {
     getPermission: (key: string) => ({ isGranted: permissions.includes(key) }),
     getPermissions: () => ({ permissions }),
     getClaim: () => null,
-    getOrganization: () => ({ orgCode: (user?.organization as { orgCode?: string } | undefined)?.orgCode }),
+    getOrganization: () => ({
+      orgCode: (user?.organization as { orgCode?: string } | undefined)
+        ?.orgCode,
+    }),
     refresh: ctx?.refresh ?? (async () => {}),
-  };
+  }
 }
 
 /** @deprecated use useAuth() */
-export const useKindeAuth = useAuth;
-export default { KindeProvider, CognitoAuthProvider, useAuth, useKindeAuth };
+export const useKindeAuth = useAuth
+export default { KindeProvider, CognitoAuthProvider, useAuth, useKindeAuth }
