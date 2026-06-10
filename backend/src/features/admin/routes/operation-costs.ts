@@ -5,7 +5,7 @@ import {
 } from '../../../db/schema/index.js';
 import { eq, sql, count, avg, desc, and } from 'drizzle-orm';
 import { authenticateToken } from '../../../middleware/auth/auth.js';
-import { requirePlatformPermission } from '../../../middleware/auth/platform-permission-middleware.js';
+import { requirePlatformPermission, requirePlatformOrOwnTenant } from '../../../middleware/auth/platform-permission-middleware.js';
 import { snsSqsPublisher } from '../../messaging/utils/sns-sqs-publisher.js';
 import Logger from '../../../utils/logger.js';
 
@@ -170,7 +170,7 @@ export default async function operationCostRoutes(fastify: FastifyInstance, _opt
       description: 'Get tenant-specific operation cost configurations only',
       tags: ['Admin', 'Operation Costs']
     },
-    preHandler: requirePlatformPermission('credit_config:read')
+    preHandler: requirePlatformOrOwnTenant('credit_config:read')
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const params = request.params as Record<string, string>;
     const queryParams = request.query as Record<string, string>;
@@ -180,15 +180,7 @@ export default async function operationCostRoutes(fastify: FastifyInstance, _opt
       const category = queryParams.category;
       const isActive = queryParams.isActive;
 
-      // Verify tenant access
-      const userContext = (request as any).userContext;
-      if (!userContext?.isSuperAdmin && !request.platformStaff && userContext?.tenantId !== tenantId) {
-        return reply.code(403).send({
-          success: false,
-          error: 'Access denied to this tenant\'s operation costs'
-        });
-      }
-
+      // Tenant-scoping enforced by requirePlatformOrOwnTenant in the preHandler.
       // Build where conditions - specifically for tenant-specific configurations
       let conditions = [
         eq(creditConfigurations.isGlobal, false),

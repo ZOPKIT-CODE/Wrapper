@@ -7,6 +7,7 @@ import EmailService from '../../../utils/email.js';
 import { authenticateToken, requirePermission, invalidateRoleCache, invalidateUserCache } from '../../../middleware/auth/auth.js';
 import { PERMISSIONS } from '../../../constants/permissions.js';
 import { checkUserLimit } from '../../../middleware/restrictions/planRestrictions.js';
+import { ensureTenantAdminRole, revokeTenantAdminRole } from '../services/ensure-tenant-admin-role.js';
 import Logger from '../../../utils/logger.js';
 import ErrorResponses from '../../../utils/error-responses.js';
 import permissionService from '../../roles/services/permission-service.js';
@@ -283,9 +284,21 @@ export default async function adminUserRoutes(
         });
       }
 
+      // Admin power comes from an enumerated system role, not the bare boolean
+      // (the permission check no longer fast-paths on is_tenant_admin). Keep the
+      // role assignment in sync: promote → ensure the role; demote → deactivate it.
+      const actorId = ((request as ReqWithUser).userContext?.internalUserId ?? userId) as string;
+      if (isTenantAdmin === true) {
+        await ensureTenantAdminRole({ tenantId, userId, assignedBy: actorId });
+      } else {
+        await revokeTenantAdminRole({ tenantId, userId, deactivatedBy: actorId });
+      }
+
       if (result[0]?.idpSub) {
         void invalidateUserCache(result[0].idpSub);
       }
+      // Role assignments changed → drop cached permissions/roles for this user.
+      void invalidateRoleCache(userId);
 
       Logger.log('info', 'user', requestId, 'User admin status updated successfully');
 

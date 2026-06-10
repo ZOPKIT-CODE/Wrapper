@@ -8,13 +8,17 @@ import { invalidateStaffCache } from '../../../middleware/auth/platform-permissi
 
 const MAX_GRANT_DAYS = 30;
 
-// Only super admins can manage platform staff.
-function requireSuperAdmin(request: FastifyRequest, reply: FastifyReply): boolean {
+// Only PLATFORM admins can manage platform staff — NOT tenant super admins.
+// `isSuperAdmin` means "has a system role within a tenant" and every tenant's
+// founding admin has it; gating on it here would let any customer org owner grant
+// themselves cross-tenant access. The platform plane is the Cognito platform-admin
+// group (userContext.isPlatformAdmin), which no tenant role can confer.
+function requirePlatformAdmin(request: FastifyRequest, reply: FastifyReply): boolean {
   const ctx = (request as any).userContext;
-  if (!ctx?.isSuperAdmin) {
+  if (!ctx?.isPlatformAdmin) {
     reply.code(403).send({
       error: 'Forbidden',
-      message: 'Only super admins can manage platform staff access.',
+      message: 'Only platform admins can manage platform staff access.',
     });
     return false;
   }
@@ -29,7 +33,7 @@ export default async function platformStaffManagementRoutes(
   // ── GET /api/internal/platform-staff ─────────────────────────────────────
   // List all platform staff (active and inactive). Super admin only.
   fastify.get('/', async (request: FastifyRequest, reply: FastifyReply) => {
-    if (!requireSuperAdmin(request, reply)) return;
+    if (!requirePlatformAdmin(request, reply)) return;
 
     const staff = await db
       .select({
@@ -67,7 +71,7 @@ export default async function platformStaffManagementRoutes(
   // ── GET /api/internal/platform-staff/permissions ──────────────────────────
   // List all available platform permissions. Super admin only.
   fastify.get('/permissions', async (request: FastifyRequest, reply: FastifyReply) => {
-    if (!requireSuperAdmin(request, reply)) return;
+    if (!requirePlatformAdmin(request, reply)) return;
     return reply.send({ success: true, data: PLATFORM_PERMISSIONS });
   });
 
@@ -82,7 +86,7 @@ export default async function platformStaffManagementRoutes(
   //   expiresInDays – 1-30 (required, enforced hard cap)
   //   reason        – why this access is being granted (required for audit)
   fastify.post('/grant', async (request: FastifyRequest, reply: FastifyReply) => {
-    if (!requireSuperAdmin(request, reply)) return;
+    if (!requirePlatformAdmin(request, reply)) return;
 
     const grantorContext = (request as any).userContext;
     const body = request.body as {
@@ -197,7 +201,7 @@ export default async function platformStaffManagementRoutes(
   //   idpSub – whose access to revoke
   //   reason      – why (required)
   fastify.post('/revoke', async (request: FastifyRequest, reply: FastifyReply) => {
-    if (!requireSuperAdmin(request, reply)) return;
+    if (!requirePlatformAdmin(request, reply)) return;
 
     const revokerContext = (request as any).userContext;
     const body = request.body as { idpSub: string; reason: string };
@@ -250,7 +254,7 @@ export default async function platformStaffManagementRoutes(
   // View the immutable audit log of all platform staff actions. Super admin only.
   // Supports filtering by staffId, targetTenantId, action.
   fastify.get('/audit-log', async (request: FastifyRequest, reply: FastifyReply) => {
-    if (!requireSuperAdmin(request, reply)) return;
+    if (!requirePlatformAdmin(request, reply)) return;
 
     const query = request.query as {
       staffId?:       string;
