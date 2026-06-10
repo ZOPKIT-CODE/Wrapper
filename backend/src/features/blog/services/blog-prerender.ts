@@ -55,6 +55,11 @@ a{color:#1a8917;text-decoration:none}a:hover{text-decoration:underline}
 .prose .callout>*{margin:0}.prose .callout>*+*{margin-top:.5em}
 .prose .callout-info{background:#eff6ff;border-color:#3b82f6}.prose .callout-success{background:#ecfdf3;border-color:#16a34a}
 .prose .callout-warning{background:#fffbeb;border-color:#f59e0b}.prose .callout-danger{background:#fef2f2;border-color:#ef4444}
+.prose a.blog-card{display:flex;align-items:stretch;overflow:hidden;border:1px solid #e5e7eb;border-radius:12px;margin:1.6em 0;text-decoration:none;color:inherit;background:#fff}
+.prose .blog-card-body{display:flex;flex-direction:column;justify-content:center;gap:.35em;flex:1;min-width:0;padding:1rem 1.1rem}
+.prose .blog-card-title{font-weight:700;font-size:1.05rem;line-height:1.3;color:#1a1a1a}.prose .blog-card-desc{font-size:.92rem;color:#6b7280}
+.prose .blog-card-site{font-size:.78rem;color:#9ca3af;text-transform:uppercase;letter-spacing:.04em}
+.prose img.blog-card-image{width:38%;max-width:220px;object-fit:cover;border-radius:0;margin:0;flex-shrink:0;background:#f3f4f6}
 .feed{padding:48px 0 96px}.feed h1{font-size:2rem;margin:0 0 32px}
 .card{display:block;padding:24px 0;border-bottom:1px solid #f0f0f0}.card h2{font-size:1.4rem;margin:0 0 .25em;color:#111}
 .card .excerpt{color:#555;margin:.2em 0 .6em}.card .meta{color:#9b9b9b;font-size:.9rem}.empty{color:#888;padding:48px 0}

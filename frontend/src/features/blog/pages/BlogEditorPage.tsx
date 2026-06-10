@@ -247,13 +247,13 @@ export default function BlogEditorPage() {
           value={form.title}
           onChange={(v) => set('title', v)}
           placeholder="Title"
-          className="mb-2 text-4xl font-bold leading-tight tracking-tight text-gray-900 placeholder-gray-300"
+          className="mb-2 text-[2.6rem] font-extrabold leading-[1.15] tracking-[-0.022em] text-gray-900 placeholder-gray-300"
         />
         <GrowTextarea
           value={form.subtitle}
           onChange={(v) => set('subtitle', v)}
           placeholder="Add a subtitle"
-          className="mb-6 text-xl text-gray-500 placeholder-gray-300"
+          className="mb-6 text-2xl font-normal leading-snug tracking-[-0.01em] text-gray-500 placeholder-gray-300"
         />
 
         {/* Body editor */}

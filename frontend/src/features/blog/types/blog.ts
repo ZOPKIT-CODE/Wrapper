@@ -91,7 +91,7 @@ export interface PostView {
 }
 
 /** A post the editor can link to (the "Link to a post" picker). */
-export interface PostSearchHit { postId: string; title: string; slug: string; status: BlogStatus }
+export interface PostSearchHit { postId: string; title: string; slug: string; status: BlogStatus; excerpt: string | null; coverImageKey: string | null }
 
 /** A public series summary for the blog-index grouping. */
 export interface PublicSeriesSummary {

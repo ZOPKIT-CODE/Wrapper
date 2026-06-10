@@ -26,6 +26,7 @@ import {
   getSlugRedirectTarget,
 } from '../services/blog-service.js';
 import { uploadBlogImageBuffer, getBlogMediaObject } from '../services/blog-upload.js';
+import { fetchLinkPreview } from '../services/link-preview.js';
 import { setPostSeries, getSeriesForPost } from '../services/series-service.js';
 
 function paramId(request: FastifyRequest): string {
@@ -116,7 +117,13 @@ export default async function blogRoutes(fastify: FastifyInstance, _opts?: Recor
       ]);
       return { success: true, data: post, author, prev: adjacent.prev, next: adjacent.next, related, series, backlinks };
     } catch (err) {
-      Logger.log('error', 'general', 'GET /api/blog/by-slug', 'Failed to load post', { error: (err as Error).message });
+      const e = err as Error & { code?: string; cause?: { code?: string; message?: string } };
+      Logger.log('error', 'general', 'GET /api/blog/by-slug', 'Failed to load post', {
+        error: e.message,
+        // Surface the real DB cause (drizzle wraps it) — e.g. 53300 = too_many_connections.
+        causeCode: e.cause?.code ?? e.code,
+        causeMessage: e.cause?.message,
+      });
       return reply.code(500).send({ success: false, error: 'Failed to load post' });
     }
   });
@@ -164,6 +171,21 @@ export default async function blogRoutes(fastify: FastifyInstance, _opts?: Recor
     } catch (err) {
       Logger.log('error', 'general', 'POST /api/blog/uploads', 'Failed to upload image', { error: (err as Error).message });
       return reply.code(400).send({ success: false, error: (err as Error).message });
+    }
+  });
+
+  // Link preview (OpenGraph) for the editor's external link-card insert. Gated to
+  // authors (it fetches an author-supplied URL server-side — see SSRF guards in
+  // link-preview.ts). Declared before /:postId so it isn't captured as a param.
+  fastify.get('/link-preview', manageGuard, async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const url = (request.query as { url?: string }).url;
+      if (!url) return reply.code(400).send({ success: false, error: 'url required' });
+      const data = await fetchLinkPreview(url);
+      return { success: true, data };
+    } catch (err) {
+      Logger.log('warning', 'general', 'GET /api/blog/link-preview', 'preview failed', { error: (err as Error).message });
+      return reply.code(422).send({ success: false, error: 'Could not load preview' });
     }
   });
 

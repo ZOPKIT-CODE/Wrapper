@@ -6,6 +6,7 @@ import { Table, TableRow, TableHeader, TableCell } from '@tiptap/extension-table
 import { createLowlight, common } from 'lowlight';
 import type { Extensions } from '@tiptap/core';
 import { Callout } from './extensions/callout.js';
+import { LinkCard } from './extensions/link-card.js';
 
 const lowlight = createLowlight(common);
 
@@ -56,6 +57,9 @@ export const blogExtensions: Extensions = [
   TableCell,
   // Callout / admonition block (custom node, shared verbatim with the frontend).
   Callout,
+  // Rich link preview card (internal article ref or external OG card). Shared
+  // verbatim with the frontend; the editor adds a NodeView (schema unchanged).
+  LinkCard,
 ];
 
 /**
@@ -65,7 +69,7 @@ export const blogExtensions: Extensions = [
 export const EXPECTED_BLOG_NODES = [
   'doc', 'paragraph', 'text', 'heading', 'bulletList', 'orderedList', 'listItem',
   'blockquote', 'codeBlock', 'horizontalRule', 'hardBreak', 'image',
-  'table', 'tableRow', 'tableHeader', 'tableCell', 'callout',
+  'table', 'tableRow', 'tableHeader', 'tableCell', 'callout', 'linkCard',
 ] as const;
 
 export const EXPECTED_BLOG_MARKS = [

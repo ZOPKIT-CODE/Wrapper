@@ -353,7 +353,7 @@ export async function getBacklinks(postId: string, limit = 10): Promise<Backlink
     .limit(limit);
 }
 
-export interface PostSearchHit { postId: string; title: string; slug: string; status: string }
+export interface PostSearchHit { postId: string; title: string; slug: string; status: string; excerpt: string | null; coverImageKey: string | null }
 
 /** Admin: posts that can be linked to from the editor (excludes the current post + soft-deleted). */
 export async function searchLinkablePosts(q: string, excludePostId?: string, limit = 20): Promise<PostSearchHit[]> {
@@ -365,7 +365,11 @@ export async function searchLinkablePosts(q: string, excludePostId?: string, lim
     conds.push(or(ilike(blogPosts.title, like), ilike(blogPosts.slug, like))!);
   }
   return db
-    .select({ postId: blogPosts.postId, title: blogPosts.title, slug: blogPosts.slug, status: blogPosts.status })
+    .select({
+      postId: blogPosts.postId, title: blogPosts.title, slug: blogPosts.slug, status: blogPosts.status,
+      // excerpt + cover feed the rich internal link-preview card (snapshotted at insert).
+      excerpt: blogPosts.excerpt, coverImageKey: blogPosts.coverImageKey,
+    })
     .from(blogPosts)
     .where(and(...conds))
     .orderBy(desc(blogPosts.updatedAt))

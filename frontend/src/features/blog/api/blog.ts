@@ -121,6 +121,14 @@ export function mediaUrl(key: string): string {
   return `${API_BASE_URL.replace(/\/+$/, '')}/api/blog/media/${path}`;
 }
 
+export interface LinkPreview { url: string; title: string; description: string; image: string; siteName: string }
+
+/** Fetch OpenGraph metadata for an external URL (authoring only; SSRF-guarded server-side). */
+export async function fetchLinkPreview(url: string): Promise<LinkPreview> {
+  const res = await api.get('/blog/link-preview', { params: { url } });
+  return res.data.data as LinkPreview;
+}
+
 /**
  * Upload an image through the backend (multipart → S3), returning the stored key
  * + its public URL. Uses raw fetch with FormData so the browser sets the

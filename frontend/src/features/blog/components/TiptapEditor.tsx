@@ -77,7 +77,7 @@ export function TiptapEditor({ value, onChange, uploadImage, onStats, currentPos
 
   return (
     <div className="rounded-lg border border-gray-200 bg-white">
-      <EditorToolbar editor={editor} uploadImage={uploadImage} currentPostId={currentPostId} />
+      {editor && <EditorToolbar editor={editor} uploadImage={uploadImage} currentPostId={currentPostId} />}
       {editor && <TableControls editor={editor} />}
       {editor && (
         <>

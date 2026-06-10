@@ -22,9 +22,11 @@ const SANITIZE_OPTS: sanitizeHtml.IOptions = {
     'div',
   ],
   allowedAttributes: {
-    // data-post-id marks an internal article reference (resolved server-side)
-    a: ['href', 'title', 'target', 'rel', 'data-post-id'],
-    img: ['src', 'alt', 'title', 'width', 'height'],
+    // data-post-id marks an internal article reference (resolved server-side).
+    // class + data-link-card support the LinkCard preview (<a class="blog-card"
+    // data-link-card>…); class is presentational only (no script vector).
+    a: ['href', 'title', 'target', 'rel', 'data-post-id', 'class', 'data-link-card'],
+    img: ['src', 'alt', 'title', 'width', 'height', 'class'],
     code: ['class'],
     pre: ['class'],
     span: ['class'],
@@ -58,14 +60,23 @@ const SANITIZE_OPTS: sanitizeHtml.IOptions = {
 /** Resolves internal post-reference ids → their current slug + whether public. */
 export type RefResolver = (postIds: string[]) => Promise<Map<string, { slug: string; live: boolean }>>;
 
-/** Collect the distinct postIds carried by internal link marks in a Tiptap doc. */
+/** Collect the distinct postIds carried by internal link marks OR internal
+ *  linkCard nodes in a Tiptap doc. */
 export function collectLinkPostIds(body: unknown): string[] {
   const ids = new Set<string>();
   const walk = (node: unknown): void => {
     if (!node || typeof node !== 'object') return;
-    const n = node as { marks?: { type?: string; attrs?: { postId?: unknown } }[]; content?: unknown[] };
+    const n = node as {
+      type?: string;
+      attrs?: { variant?: unknown; postId?: unknown };
+      marks?: { type?: string; attrs?: { postId?: unknown } }[];
+      content?: unknown[];
+    };
     if (Array.isArray(n.marks)) {
       for (const m of n.marks) if (m?.type === 'link' && m.attrs?.postId) ids.add(String(m.attrs.postId));
+    }
+    if (n.type === 'linkCard' && n.attrs?.variant === 'internal' && n.attrs?.postId) {
+      ids.add(String(n.attrs.postId));
     }
     if (Array.isArray(n.content)) n.content.forEach(walk);
   };
@@ -82,7 +93,12 @@ function applyResolvedRefs(body: JSONContent, map: Map<string, { slug: string; l
   const clone = structuredClone(body) as JSONContent;
   const walk = (node: unknown): void => {
     if (!node || typeof node !== 'object') return;
-    const n = node as { marks?: { type?: string; attrs?: { postId?: unknown; href?: string } }[]; content?: unknown[] };
+    const n = node as {
+      type?: string;
+      attrs?: { variant?: unknown; postId?: unknown; href?: string };
+      marks?: { type?: string; attrs?: { postId?: unknown; href?: string } }[];
+      content?: unknown[];
+    };
     if (Array.isArray(n.marks)) {
       n.marks = n.marks.filter((m) => {
         if (m?.type === 'link' && m.attrs?.postId) {
@@ -92,6 +108,12 @@ function applyResolvedRefs(body: JSONContent, map: Map<string, { slug: string; l
         }
         return true;
       });
+    }
+    // Internal link cards: set the href to the live slug, or blank it so the node
+    // renders nothing (renderHTML returns an empty span for internal + no href).
+    if (n.type === 'linkCard' && n.attrs?.variant === 'internal' && n.attrs?.postId) {
+      const entry = map.get(String(n.attrs.postId));
+      n.attrs.href = entry && entry.live ? `/blog/${entry.slug}` : '';
     }
     if (Array.isArray(n.content)) n.content.forEach(walk);
   };

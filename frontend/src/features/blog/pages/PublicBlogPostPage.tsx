@@ -139,7 +139,9 @@ export default function PublicBlogPostPage() {
         )}
 
         {!isLoading && post && data && (
-          <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_220px] lg:gap-12">
+          // "On this page" TOC auto-shows only when the post has enough headings to
+          // be worth it (3+); otherwise the article spans full width (no empty rail).
+          <div className={toc.length >= 3 ? 'lg:grid lg:grid-cols-[minmax(0,1fr)_220px] lg:gap-12' : ''}>
             <article className="min-w-0 max-w-3xl">
               {data.series && (() => {
                 const n = data.series.items.findIndex((i) => i.current) + 1;
@@ -231,8 +233,8 @@ export default function PublicBlogPostPage() {
               <BlogComments slug={slug} postId={post.postId} />
             </article>
 
-            {/* On this page (TOC + scroll-spy) */}
-            {toc.length > 1 && (
+            {/* On this page (TOC + scroll-spy) — auto: only when useful (3+ headings). */}
+            {toc.length >= 3 && (
               <aside className="hidden lg:block">
                 <div className="sticky top-24">
                   <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">On this page</p>
