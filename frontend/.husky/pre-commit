@@ -1,5 +1,7 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-pnpm run lint-staged
+# Monorepo: the lint-staged config + script live in frontend/. Run it there so it
+# lints only staged frontend files (the script is `lint:staged`, not `lint-staged`).
+cd frontend && pnpm run lint:staged
 
