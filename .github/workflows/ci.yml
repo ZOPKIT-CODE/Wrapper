@@ -56,8 +56,8 @@ jobs:
         run: pnpm test:integration
         timeout-minutes: 12
 
-  frontend-build:
-    name: Frontend build + unit tests (blocking)
+  frontend-checks:
+    name: Frontend typecheck + lint + build + tests (blocking)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -68,9 +68,16 @@ jobs:
           cache: pnpm
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      # Catches syntax/import/asset breakage. NOTE: vite/esbuild does NOT type-check,
-      # and the frontend currently carries ~377 tsc errors + ~843 eslint errors of
-      # debt, so strict `tsc --noEmit` / `eslint` gates are deferred until burned down.
+      # Type safety: tsc is at 0 errors (strict). vite/esbuild does NOT type-check, so
+      # this is the real type gate.
+      - name: Type-check (frontend)
+        working-directory: frontend
+        run: pnpm run type-check
+      # Lint: errors block; no-explicit-any is a (non-blocking) warning — ~543 of those
+      # remain as tracked debt to burn down.
+      - name: Lint (frontend, errors only)
+        working-directory: frontend
+        run: pnpm run lint:ci
       - name: Build (blocking)
         working-directory: frontend
         run: pnpm build

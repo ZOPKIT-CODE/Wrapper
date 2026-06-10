@@ -27,5 +27,9 @@ module.exports = {
     '@typescript-eslint/no-explicit-any': 'warn',
     'no-console': ['warn', { allow: ['error'] }],
     'prefer-const': 'error',
+    // Prettier owns formatting (it's the pre-commit gate); turn off the one
+    // eslint:recommended formatting rule that conflicts with it (prettier emits
+    // ASI-safety leading semicolons that this rule flags as "unnecessary").
+    'no-extra-semi': 'off',
   },
 }
