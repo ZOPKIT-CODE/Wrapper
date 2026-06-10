@@ -12,7 +12,10 @@ export interface UserContext {
   isActive: boolean;
   isAdmin: boolean;
   isTenantAdmin: boolean;
+  /** Tenant-scoped super admin: holds a role with isSystemRole=true within `tenantId`. NEVER a cross-tenant signal. */
   isSuperAdmin: boolean;
+  /** Internal platform operator (Cognito platform-admin group / bootstrap allowlist). Cross-tenant plane. */
+  isPlatformAdmin: boolean;
   permissions?: UserPermissions;
 }
 

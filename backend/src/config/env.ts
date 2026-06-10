@@ -24,6 +24,15 @@ const OPTIONAL_VARS = [
   'AWS_REGION',
   'AWS_ACCESS_KEY_ID',
   'AWS_SECRET_ACCESS_KEY',
+  'S3_LOGO_BUCKET',
+  // Absolute origin used to build public media URLs for the blog (the BACKEND
+  // origin, e.g. https://api.example.com). Falls back to the request host.
+  // In local dev set this to http://localhost:3000 so editor image previews load.
+  'BLOG_PUBLIC_BASE_URL',
+  // Absolute origin of the public marketing SITE where /blog/:slug lives (the
+  // FRONTEND origin, e.g. https://app.example.com). Used for sitemap/RSS/canonical
+  // URLs. In local dev set this to http://localhost:3001.
+  'BLOG_SITE_URL',
   'SNS_TOPIC_ARN',
   'SQS_QUEUE_URL',
   'ELASTICSEARCH_URL',
