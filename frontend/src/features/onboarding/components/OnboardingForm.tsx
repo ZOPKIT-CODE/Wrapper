@@ -284,22 +284,18 @@ export const OnboardingForm = () => {
     }
   }, [])
 
-  // Sync Kinde profile into admin fields once the SDK resolves (it loads async).
+  // Sync the IdP profile into admin fields once the SDK resolves (it loads async).
   // Only backfill — don't overwrite values the user has already typed.
   useEffect(() => {
     if (!idpUser) return
     const { getValues, setValue } = form
-    // `idpUser` carries an index signature, so these dynamic profile fields surface as
-    // `unknown`; narrow to a string before writing them into the form.
-    const profile = idpUser as Record<string, unknown>
-    const givenName =
-      typeof profile.givenName === 'string' ? profile.givenName : undefined
-    const familyName =
-      typeof profile.familyName === 'string' ? profile.familyName : undefined
-    if (!getValues('firstName') && givenName)
-      setValue('firstName', givenName, { shouldValidate: false })
-    if (!getValues('lastName') && familyName)
-      setValue('lastName', familyName, { shouldValidate: false })
+    // AuthUser exposes the standard OIDC claims as given_name / family_name
+    // (snake_case). A previous version read givenName/familyName (camelCase),
+    // which never exist on AuthUser, so the backfill silently never fired.
+    if (!getValues('firstName') && idpUser.given_name)
+      setValue('firstName', idpUser.given_name, { shouldValidate: false })
+    if (!getValues('lastName') && idpUser.family_name)
+      setValue('lastName', idpUser.family_name, { shouldValidate: false })
     if (!getValues('adminEmail') && idpUser.email)
       setValue('adminEmail', idpUser.email, { shouldValidate: false })
   }, [idpUser, form])
