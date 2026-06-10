@@ -36,6 +36,7 @@ if (DISABLE_ALL_LOGGING && process.env.SUPPRESS_CONSOLE === 'true') {
 
 import './startup/run-before-dbmanager.js';
 import { dbManager } from './db/connection-manager.js';
+import { logStartupHealth } from './startup-health.js';
 
 // Validate required environment variables before any services are initialised.
 // This runs after dotenv/config so .env values are already loaded.
@@ -546,6 +547,8 @@ async function start() {
     console.log(`✅ Server listening on http://${host}:${port}`);
     console.log(`📚 API Documentation: http://${host}:${port}/docs`);
     console.log(`🏥 Health Check: http://${host}:${port}/health`);
+
+    await logStartupHealth();
 
     // Initialize SNS/SQS messaging
     try {
