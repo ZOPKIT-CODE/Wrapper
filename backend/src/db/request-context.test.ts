@@ -16,6 +16,7 @@ import Fastify from 'fastify';
 import {
   enterRequestDbScope,
   getRequestDb,
+  registerRequestDbScope,
   type RequestScopedDb,
 } from './request-context.js';
 
@@ -32,6 +33,7 @@ describe('request-context: AsyncLocalStorage ↔ Fastify', () => {
 
   it('propagates the entered store from onRequest → handler → onResponse', async () => {
     const app = Fastify();
+    registerRequestDbScope(app); // production wiring: leak-proof run(done) scope
     const fake = makeFakeDb('req-1');
 
     let seenInPreHandler: RequestScopedDb | undefined;
@@ -67,6 +69,7 @@ describe('request-context: AsyncLocalStorage ↔ Fastify', () => {
 
   it('isolates stores between concurrent requests', async () => {
     const app = Fastify();
+    registerRequestDbScope(app); // production wiring: leak-proof run(done) scope
     const observed: Array<{ id: string; saw: string | undefined }> = [];
 
     app.addHook('onRequest', async (req) => {
@@ -106,6 +109,7 @@ describe('request-context: AsyncLocalStorage ↔ Fastify', () => {
 
   it('leaves the store undefined after the response (no leak to the next caller)', async () => {
     const app = Fastify();
+    registerRequestDbScope(app); // production wiring: leak-proof run(done) scope
 
     app.addHook('onRequest', async () => {
       enterRequestDbScope(makeFakeDb('leak-probe'));

@@ -20,7 +20,7 @@ jobs:
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 20
           cache: pnpm
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -37,7 +37,7 @@ jobs:
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 20
           cache: pnpm
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -49,6 +49,11 @@ jobs:
       - name: Unit tests (backend)
         working-directory: backend
         run: pnpm test
+        env:
+          # db/index.ts initializes the (lazy) pool at import; unit tests never
+          # query it, but the import requires a URL. The startup max_connections
+          # probe fails fast against this dummy and is caught with a warning.
+          DATABASE_URL: postgresql://ci:ci@127.0.0.1:5432/ci_unit_dummy
       # Integration tests build a fresh DB from the migrations (Testcontainers) and
       # run against the REAL schema — this is what catches app<->schema drift.
       - name: Integration tests (backend)
@@ -64,7 +69,7 @@ jobs:
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 20
           cache: pnpm
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
