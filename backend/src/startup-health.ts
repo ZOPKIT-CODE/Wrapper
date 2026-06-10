@@ -40,6 +40,15 @@ async function checkValkey(): Promise<Check> {
   const client = getValkey();
   if (!client) return { ok: false, warn: true, detail: 'not configured (in-process fallback)' };
   try {
+    // ioredis connects asynchronously; with enableOfflineQueue:false a ping before
+    // the socket is 'ready' throws "Stream isn't writeable". Wait briefly for ready.
+    const c = client as unknown as { status?: string; once(ev: string, cb: () => void): void };
+    if (c.status && c.status !== 'ready') {
+      await new Promise<void>((resolve) => {
+        const t = setTimeout(resolve, 3000);
+        c.once('ready', () => { clearTimeout(t); resolve(); });
+      });
+    }
     const pong = await client.ping();
     return pong === 'PONG'
       ? { ok: true, detail: 'connected' }
