@@ -50,3 +50,25 @@ jobs:
         working-directory: backend
         run: pnpm test:integration
         timeout-minutes: 12
+
+  frontend-build:
+    name: Frontend build + unit tests (blocking)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      # Catches syntax/import/asset breakage. NOTE: vite/esbuild does NOT type-check,
+      # and the frontend currently carries ~377 tsc errors + ~843 eslint errors of
+      # debt, so strict `tsc --noEmit` / `eslint` gates are deferred until burned down.
+      - name: Build (blocking)
+        working-directory: frontend
+        run: pnpm build
+      - name: Unit tests (frontend)
+        working-directory: frontend
+        run: pnpm test
