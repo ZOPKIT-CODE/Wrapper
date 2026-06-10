@@ -75,3 +75,36 @@ export const consumeSessionRecoveryReason = (): string | null => {
   }
 }
 
+// ── Post-login return path ────────────────────────────────────────────────────
+// When a session expires on a protected page we send the user to /login and
+// remember where they were, so the auth callback can bring them right back
+// (e.g. /company-admin) instead of dumping everyone on the default dashboard.
+const POST_LOGIN_REDIRECT_KEY = 'post_login_redirect'
+
+/** Only allow returning to a same-origin internal path — never to /login,
+ *  the auth callback, or an absolute/protocol-relative URL (open-redirect guard). */
+const isSafeReturnPath = (path: string): boolean =>
+  typeof path === 'string' &&
+  path.startsWith('/') &&
+  !path.startsWith('//') &&
+  !path.startsWith('/login') &&
+  !path.startsWith('/auth/callback')
+
+export const rememberPostLoginRedirect = (path: string): void => {
+  try {
+    if (isSafeReturnPath(path)) sessionStorage.setItem(POST_LOGIN_REDIRECT_KEY, path)
+  } catch {
+    // Ignore storage access errors
+  }
+}
+
+export const consumePostLoginRedirect = (): string | null => {
+  try {
+    const path = sessionStorage.getItem(POST_LOGIN_REDIRECT_KEY)
+    if (path) sessionStorage.removeItem(POST_LOGIN_REDIRECT_KEY)
+    return path && isSafeReturnPath(path) ? path : null
+  } catch {
+    return null
+  }
+}
+

@@ -7,7 +7,7 @@ import { toast } from 'sonner'
 import api, { createCancelableRequest } from '@/lib/api'
 import { jwtService } from '@/services/jwtService'
 import { config, CRM_DOMAIN, CRM_CALLBACK_PATH } from '@/lib/config'
-import { consumeSessionRecoveryReason } from '@/lib/auth/session-recovery'
+import { consumeSessionRecoveryReason, consumePostLoginRedirect } from '@/lib/auth/session-recovery'
 
 const crmCallbackPath = CRM_CALLBACK_PATH || '/callback'
 
@@ -289,7 +289,12 @@ export function Login() {
       try {
         const response = await api.get('/onboarding/status', { signal })
         const status = response.data
-        if (status.user && status.isOnboarded && !status.needsOnboarding) {
+        // If a session expiry parked a return path (e.g. /company-admin), honor it
+        // for an onboarded user instead of the default dashboard.
+        const parkedReturn = consumePostLoginRedirect()
+        if (parkedReturn && status.user && status.isOnboarded && !status.needsOnboarding) {
+          navigate({ to: parkedReturn, replace: true })
+        } else if (status.user && status.isOnboarded && !status.needsOnboarding) {
           navigate({ to: '/dashboard/applications', replace: true })
         } else if (
           status.authStatus?.onboardingCompleted === true ||

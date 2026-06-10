@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react'
 import { useAuth } from '@/lib/auth/cognito-auth'
 import { ZopkitRoundLoader } from '@/components/common/feedback/ZopkitRoundLoader'
 import { useNavigate } from '@tanstack/react-router'
-import { clearStaleAuthStorage, isInvalidGrantError, markSessionRecoveryReason } from '@/lib/auth/session-recovery'
+import { clearStaleAuthStorage, isInvalidGrantError, markSessionRecoveryReason, consumePostLoginRedirect } from '@/lib/auth/session-recovery'
 
 export function AuthCallback() {
   const { isLoading, isAuthenticated, error, user } = useAuth()
@@ -109,6 +109,16 @@ export function AuthCallback() {
         if (pendingInvitationToken) {
           hasNavigatedRef.current = true
           navigate({ to: `/invite/accept?token=${pendingInvitationToken}`, replace: true })
+          return
+        }
+
+        // If the user was bounced here by a session expiry on a protected page
+        // (e.g. /company-admin), return them exactly there instead of the default
+        // dashboard. consumePostLoginRedirect validates it's a safe internal path.
+        const returnTo = consumePostLoginRedirect()
+        if (returnTo) {
+          hasNavigatedRef.current = true
+          navigate({ to: returnTo, replace: true })
           return
         }
 

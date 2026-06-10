@@ -2,7 +2,7 @@ import axios, { AxiosError } from 'axios'
 import { toast } from 'sonner'
 import { logger } from '@/lib/logger'
 import { config } from '@/lib/config'
-import { markSessionRecoveryReason } from '@/lib/auth/session-recovery'
+import { markSessionRecoveryReason, rememberPostLoginRedirect } from '@/lib/auth/session-recovery'
 
 // ─── Toast deduplication helpers ─────────────────────────────────────────────
 // Prevent flooding the user with repeated toasts for the same root cause.
@@ -21,11 +21,22 @@ function notifySessionExpired() {
   setTimeout(() => { _sessionExpiredLock = false }, 30_000)
 
   markSessionRecoveryReason('session_expired')
-  toast.error('Your session has expired. Please sign in again.', {
+  // Remember where they were so the auth callback returns them here after sign-in
+  // (e.g. /company-admin), instead of stranding them on a "Failed to load" page or
+  // dumping them on the default dashboard.
+  rememberPostLoginRedirect(window.location.pathname + window.location.search)
+  toast.error('Your session has expired. Redirecting to sign in…', {
     id: 'session-expired',
-    duration: 8000,
+    duration: 4000,
     position: 'top-center',
   })
+  // Send them to /login so they can re-authenticate rather than sitting on a
+  // broken protected page. Short delay lets the toast render first.
+  setTimeout(() => {
+    if (!window.location.pathname.startsWith('/login')) {
+      window.location.href = '/login'
+    }
+  }, 600)
 }
 
 let _networkErrorLock = false
