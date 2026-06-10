@@ -15,20 +15,38 @@ what to run before pushing. The DB-safety commands below ship with the
 git clone <repo> && cd wrapper
 pnpm install                          # workspace install: backend + frontend + video
 
-cp backend/.env.example  backend/.env     # then fill in real values (ask the team / secrets vault)
+cp backend/.env.example  backend/.env     # template with current keys (Cognito, RDS notes)
 cp frontend/.env.example frontend/.env
 ```
 The backend validates required env on boot and tells you exactly what's missing.
 Minimum to start: `DATABASE_URL` (+ `DB_MIGRATION_URL` for migrations), `JWT_SECRET`,
 `SESSION_SECRET`, and the `COGNITO_*` keys.
 
-> Never commit `.env`. Get secrets from the team vault, not from a teammate's machine.
+> Never commit `.env` (it's gitignored). Secrets live in **AWS Secrets Manager**, not
+> in a teammate's `.env`.
 
-### Database
-The migrations reproduce production exactly, so a fresh DB comes up correct. Pick one:
+### 2.1 Where your `.env` values come from
+`.env.example` is the up-to-date **template** (already Cognito + RDS — no Kinde, no
+Supabase). The non-public values come from **AWS Secrets Manager** (you need AWS SSO —
+`aws sso login`):
 
-- **Shared dev DB:** point `DATABASE_URL` / `DB_MIGRATION_URL` at the team's dev Supabase URL.
-- **Local Postgres:**
+- **Cognito / JWT / app keys** — the whole runtime set lives in one JSON secret per
+  app, `zopkit/staging/wrapper`. Pull and eyeball it:
+  ```bash
+  aws secretsmanager get-secret-value --region us-east-1 \
+    --secret-id zopkit/staging/wrapper --query SecretString --output text | jq
+  ```
+  The `COGNITO_*` / `VITE_COGNITO_*` defaults already in `.env.example` point at the
+  shared `zopkit-platform` pool and work as-is for local login.
+- **Local-only secrets** (`JWT_SECRET`, `SESSION_SECRET`) — generate your own:
+  `openssl rand -hex 32` (they only need to match between your backend and frontend).
+- **Stripe/Brevo/OpenAI etc.** — optional locally; features degrade gracefully when unset.
+
+### 2.2 Database — local Postgres or the shared staging RDS
+Migrations reproduce production exactly, so a fresh DB comes up correct. **Supabase is
+retired — the DB is AWS RDS now.** Pick one:
+
+- **Local Postgres** (fully offline, recommended for most work):
   ```bash
   docker run -d --name wrapper-db -e POSTGRES_PASSWORD=dev -e POSTGRES_DB=wrapper -p 5432:5432 postgres:15
   # in backend/.env set BOTH:
@@ -36,6 +54,28 @@ The migrations reproduce production exactly, so a fresh DB comes up correct. Pic
   #   DB_MIGRATION_URL=postgres://postgres:dev@localhost:5432/wrapper
   cd backend && pnpm db:migrate         # applies 0000_baseline + the rest
   ```
+- **Shared staging RDS** (real staging data; RDS is private, so go through the SSM
+  tunnel — your home IP isn't allow-listed and CGNAT drifts it):
+  ```bash
+  ./deploy/ecs/db-tunnel.sh             # terminal 1: forwards localhost:5432 -> staging RDS (leave running)
+  aws secretsmanager get-secret-value --region us-east-1 \
+    --secret-id zopkit/staging/rds-wrapper-roles --query SecretString --output text | jq   # app = DML, migrator = DDL
+  ```
+  Then point `backend/.env` at the tunnel (host `localhost`, db `wrapper_staging`):
+  ```env
+  DATABASE_URL=postgresql://app_user:<pw>@localhost:5432/wrapper_staging?sslmode=require
+  DB_MIGRATION_URL=postgresql://wrapper_migrator:<pw>@localhost:5432/wrapper_staging?sslmode=require
+  ```
+  Don't run destructive migrations against shared staging — use a local Postgres for that.
+
+### 2.3 Browse / query the DB → Mathesar & the MCP
+- **Mathesar (spreadsheet-style UI, zero setup):** open **https://db.staging.zopkit.com**
+  and log in. It runs in-VPC and reaches the private RDS for you. Ask an admin for an
+  account + the read-only `wrapper_viewer` role.
+- **Query with Claude Code (Postgres MCP, auto-tunnel):** `./deploy/ecs/setup-db-mcp.sh wrapper`
+  then restart Claude Code — no manual tunnel.
+
+Full DB-access reference: **[`deploy/ecs/DB_ACCESS.md`](../deploy/ecs/DB_ACCESS.md)**.
 
 ## 3. Run it
 ```bash
@@ -111,4 +151,4 @@ There are **two separate admin planes** — don't conflate them.
 | `frontend/` | React 19 + Vite 7 + Tailwind 4 (TanStack Router/Query) |
 | `backend/src/db/migrations/` | Migrations + `schema.sql` + the migration README |
 | `backend/scripts/db/` | `make-baseline`, `check-schema-drift`, `new-migration`, `check-journal` |
-| `.github/workflows/` | `ci.yml` (PR gate), `db-schema-drift.yml`, `prod-schema-drift.yml`, `deploy-ec2.yml` |
+| `.github/workflows/` | `ci.yml` (PR gate), `db-schema-drift.yml`, `prod-schema-drift.yml`, `deploy.yml` (ECS), `infra-apply.yml` |

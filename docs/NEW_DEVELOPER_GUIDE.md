@@ -68,10 +68,11 @@ migrations (NOT drizzle snapshot lineage). Full rules in
   app still reads.**
 - **Commit `schema.sql` with the migration.** The drift gate rebuilds a DB purely
   from migrations and asserts it reproduces `schema.sql`. Forgot the dump → CI fails.
-- ✅ **Staging runs on its own AWS RDS now** (`zopkit-staging-db`) — a `main`-push
-  staging migration no longer touches prod. **Prod is still on Supabase** (separate)
-  and deployed deliberately. A *prod* migration is still irreversible — treat schema
-  changes to prod with production care.
+- ✅ **The DB is AWS RDS — Supabase is retired.** Staging (`zopkit-staging-db`) and
+  prod (`zopkit-prod-db`) are **separate** RDS instances, so a `main`-push staging
+  migration never touches prod. Prod is deployed deliberately. A *prod* migration is
+  still irreversible — treat schema changes to prod with production care. (How to reach
+  either DB — Mathesar / tunnel / MCP — is in `deploy/ecs/DB_ACCESS.md`.)
 
 ### 2.2 Don't commit the parallel WIP
 The active branch carries a large set of in-progress files (parallel feature work).

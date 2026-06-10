@@ -10,7 +10,7 @@ src/
 ├── features/             # Feature-scoped pages, components, hooks
 ├── routes/               # TanStack Router config + lazy-loaded pages
 ├── contexts/             # React context (user, entity scope, breadcrumbs)
-├── lib/                  # API client, auth, utilities, PWA helpers
+├── lib/                  # API client, auth, utilities
 ├── hooks/                # Global custom hooks
 ├── types/                # Shared TypeScript types
 ├── errors/               # Top-level error boundary
@@ -35,7 +35,7 @@ flowchart TB
     query["QueryClientProvider"]
     nuqs["NuqsAdapter<br/>URL state"]
     theme["ThemeProvider"]
-    kinde["KindeProvider"]
+    cognito["CognitoAuthProvider"]
     routerProv["TanStack RouterProvider"]
   end
 
@@ -60,7 +60,7 @@ flowchart TB
   backend[("Backend API")]
 
   browser --> instrument --> main --> appRoot
-  appRoot --> errorBoundary --> query --> nuqs --> theme --> kinde --> routerProv
+  appRoot --> errorBoundary --> query --> nuqs --> theme --> cognito --> routerProv
   routerProv --> routerDef --> guards --> layout
   layout --> lazy --> featPages
   featPages --> components & contexts & hooksDir & libApi
@@ -98,39 +98,43 @@ flowchart LR
 
 ## Layer inventory (quick reference)
 
-| Layer | Location | Role |
-|---|---|---|
-| Bootstrap | `main.tsx`, `AppRoot.tsx`, `instrument.ts` | PWA, chunk recovery, provider tree |
-| Routing | `routes/router.tsx`, `routes/lazyPages.ts` | TanStack Router, lazy pages, guards |
-| Features | `src/features/*` | Domain UI (users, orgs, billing, admin, …) |
-| Shared UI | `src/components/*` | ShadCN, layout, forms, auth shells |
-| Context | `src/contexts/*` | User session, entity scope, breadcrumbs |
-| API | `src/lib/api/*`, `src/lib/auth/*` | HTTP client, Cognito/Kinde auth |
-| Errors | `src/errors/*` | Top-level error boundary |
+| Layer     | Location                                   | Role                                       |
+| --------- | ------------------------------------------ | ------------------------------------------ |
+| Bootstrap | `main.tsx`, `AppRoot.tsx`, `instrument.ts` | chunk recovery, provider tree, Sentry init |
+| Routing   | `routes/router.tsx`, `routes/lazyPages.ts` | TanStack Router, lazy pages, guards        |
+| Features  | `src/features/*`                           | Domain UI (users, orgs, billing, admin, …) |
+| Shared UI | `src/components/*`                         | ShadCN, layout, forms, auth shells         |
+| Context   | `src/contexts/*`                           | User session, entity scope, breadcrumbs    |
+| API       | `src/lib/api/*`, `src/lib/auth/*`          | HTTP client, Cognito auth                  |
+| Errors    | `src/errors/*`                             | Top-level error boundary                   |
 
-> **Infrastructure** (EKS, ALB, CloudFront, Cognito, SNS/SQS, Supabase): see
-> [`deploy/system-architecture.md`](../../deploy/system-architecture.md).
+> **Infrastructure** (ECS Fargate, ALB, CloudFront, Cognito, SNS/SQS, RDS): see
+> [`deploy/ARCHITECTURE.md`](../../deploy/ARCHITECTURE.md).
 
 ## Key Architectural Patterns
 
 ### 1. Feature-Based Organization
+
 - Each feature contains its own components, hooks, and services
 - Promotes code locality and maintainability
 - Enables independent development and testing
 
 ### 2. State Management
+
 - **Server State**: TanStack Query for API data and caching
 - **Client State**: React context for session-scoped data (user, entity scope); ThemeProvider for theme
 - **Form State**: React Hook Form with Zod validation
 - **URL State**: TanStack Router + nuqs for navigation and query parameters
 
 ### 3. Component Architecture
+
 - **UI Components**: Reusable, design system components
 - **Layout Components**: Application shell and navigation
 - **Feature Components**: Business logic components
 - **Page Components**: Route-level components (lazy-loaded from `routes/lazyPages.ts`)
 
 ### 4. Error Handling
+
 - **Error Boundaries**: Catch and handle React errors
 - **API Error Handling**: Centralized error handling with user feedback
 - **Validation**: Runtime validation with Zod schemas

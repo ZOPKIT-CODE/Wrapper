@@ -19,7 +19,7 @@ the **migration baseline**. Read this once; bookmark the four docs in §0.
 | Migrations: baseline, guardrails, archive | `backend/src/db/migrations/README.md` |
 | Deploying + the outage-prevention rules | `deploy/PLAYBOOK.md` |
 | CI/CD + the full-infra `infra-apply` workflow | `deploy/ci/README.md` |
-| Infra architecture (VPC→Fargate→ALB→CDN) | `deploy/INFRA_OVERVIEW.md` |
+| Infra architecture (VPC→Fargate→ALB→CDN) | `deploy/ARCHITECTURE.md` |
 
 ---
 
@@ -105,11 +105,16 @@ the non-negotiables:
   before shipping more schema changes (`pnpm db:check:prod-drift` locally with the
   prod URL).
 
-> **Staging now runs on its own AWS RDS** (`zopkit-staging-db`, isolated from
-> prod) — so a `main`-push staging migration no longer touches production. **Prod
-> still runs on Supabase** (a separate DB), and is deployed deliberately, not from
-> `main`. Still: a *prod* migration is irreversible — keep treating schema changes
-> with production care.
+> **The DB is AWS RDS — Supabase is retired.** Staging (`zopkit-staging-db`) and prod
+> (`zopkit-prod-db`) are **separate** RDS instances, so a `main`-push staging migration
+> never touches production. Prod is deployed deliberately, not from `main`. A *prod*
+> migration is irreversible — keep treating schema changes with production care.
+
+**Accessing the DB (browse / psql / MCP):** the RDS is private — reach it via
+**Mathesar** (`https://db.staging.zopkit.com`, zero setup), the **SSM tunnel**
+(`./deploy/ecs/db-tunnel.sh`), or the **Postgres MCP** (`./deploy/ecs/setup-db-mcp.sh wrapper`).
+How to get your `.env` values + point local dev at a DB: **`docs/DEVELOPER_SETUP.md` §2**.
+Full DB-access reference: **`deploy/ecs/DB_ACCESS.md`**.
 
 ---
 

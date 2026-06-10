@@ -10,23 +10,24 @@ Multi-tenant SaaS platform — centralized auth, billing, RBAC, credit managemen
 
 | Layer | Technology |
 |---|---|
-| Backend | Fastify 4 · TypeScript · Drizzle ORM · PostgreSQL 15 · Zod |
+| Backend | Fastify 5 · TypeScript (ESM) · Drizzle ORM · PostgreSQL 15 (AWS RDS) · Zod |
 | Frontend | React 19 · Vite 7 · TanStack Router/Query · Zustand · shadcn/ui · Tailwind 4 |
-| Auth | Kinde (OAuth2/OIDC) · JWT (Jose) |
+| Auth | AWS Cognito (OAuth2/OIDC, backend-mediated) · JWT (Jose) |
 | Billing | Stripe (subscriptions, webhooks, credits) |
-| Messaging | AWS SNS + SQS |
+| Messaging | AWS SNS + SQS (in-process consumers) |
 | Email | Brevo (Sendinblue) |
 | DNS | AWS Route 53 (tenant subdomains) |
-| Logging | Winston · Elasticsearch · Sentry |
+| Hosting | AWS ECS Fargate · S3 + CloudFront (SPA) |
+| Logging | Pino · Sentry · OpenTelemetry |
 | Package manager | pnpm 9 workspaces |
 
-Optional (disabled by default): Redis · Temporal · OpenAI
+Optional (disabled by default): Redis/Valkey · Temporal · OpenAI
 
 ---
 
 ## Quick Start
 
-**Prerequisites:** Node ≥ 18, pnpm ≥ 9, PostgreSQL 15
+**Prerequisites:** Node ≥ 20, pnpm ≥ 9, Docker (for a local Postgres / integration tests)
 
 ```bash
 git clone https://github.com/Cdineshreddy12/Wrapper.git && cd Wrapper
@@ -55,27 +56,29 @@ DATABASE_URL=postgresql://user:pass@localhost:5432/wrapper
 JWT_SECRET=<openssl rand -hex 32>
 SESSION_SECRET=<openssl rand -hex 32>
 
-# Kinde (https://kinde.com)
-KINDE_DOMAIN=https://your-app.kinde.com
-KINDE_CLIENT_ID=
-KINDE_CLIENT_SECRET=
-KINDE_M2M_CLIENT_ID=
-KINDE_M2M_CLIENT_SECRET=
+# AWS Cognito (shared zopkit-platform pool — defaults in .env.example work for local login)
+COGNITO_REGION=us-east-1
+COGNITO_USER_POOL_ID=
+COGNITO_CLIENT_ID=
+COGNITO_DOMAIN=
 
 FRONTEND_URL=http://localhost:3001
 ```
 
-Everything else (Stripe, Amazon MQ, Brevo, AWS, Sentry) is optional for local dev — features degrade gracefully when not configured.
+Everything else (Stripe, Brevo, AWS, Sentry) is optional for local dev — features
+degrade gracefully when not configured. **Where these values come from (Secrets
+Manager), and how to point the DB at a local Postgres or the staging RDS:**
+see [`docs/DEVELOPER_SETUP.md`](docs/DEVELOPER_SETUP.md) §2.
 
 ### `frontend/.env`
 
 ```env
 VITE_API_URL=http://localhost:3000/api
-VITE_KINDE_DOMAIN=https://your-app.kinde.com
-VITE_KINDE_CLIENT_ID=
-VITE_KINDE_REDIRECT_URI=http://localhost:3001/auth/callback
-VITE_KINDE_LOGOUT_URI=http://localhost:3001
-VITE_JWT_SECRET=<same as backend JWT_SECRET>
+VITE_COGNITO_REGION=us-east-1
+VITE_COGNITO_USER_POOL_ID=
+VITE_COGNITO_CLIENT_ID=
+VITE_COGNITO_REDIRECT_URI=http://localhost:3001/auth/callback
+VITE_COGNITO_LOGOUT_URI=http://localhost:3001
 ```
 
 ---
@@ -100,9 +103,9 @@ test                  # vitest run
 test:integration      # vitest + Testcontainers (real PostgreSQL)
 test:coverage         # coverage report
 typecheck             # tsc --noEmit
-db:migrate            # run pending migrations
-db:generate           # generate migration from schema changes
-db:studio             # Drizzle Studio (database GUI)
+db:migrate            # run pending migrations (0000_baseline + forward files)
+db:new <name>         # scaffold the next forward migration (db:generate is DISABLED — pg_dump baseline, no drizzle snapshots)
+db:drift              # assert migrations reproduce schema.sql (CI gate)
 ```
 
 ### Frontend (`pnpm --filter wrapper-frontend <script>`)
@@ -122,14 +125,14 @@ lint                  # eslint
 ```
 Frontend (React 19, :3001)
     ↓ Axios (Bearer token + httpOnly cookies)
-Backend (Fastify 4, :3000)
+Backend (Fastify 5, :3000)
     → Auth middleware (JWT → userContext)
     → CSRF protection
     → Route handler → Service → Drizzle ORM
     ↓
-PostgreSQL 15 (RLS enforced per tenant)
+PostgreSQL 15 / AWS RDS (RLS enforced per tenant)
 
-External: Kinde (OAuth2) · Stripe (billing) · Amazon MQ (events)
+External: AWS Cognito (OAuth2) · Stripe (billing) · SNS+SQS (inter-app events)
           Brevo (email) · Route 53 (DNS) · Sentry (errors)
 ```
 
@@ -141,14 +144,14 @@ External: Kinde (OAuth2) · Stripe (billing) · Amazon MQ (events)
 
 | Module | What it does |
 |---|---|
-| `auth` | Kinde OAuth2 login, JWT issuance, token refresh |
-| `users` | User CRUD, tenant verification, Kinde sync |
+| `auth` | Cognito OAuth2 login (backend-mediated), JWT issuance, token refresh |
+| `users` | User CRUD, tenant verification, Cognito sync |
 | `organizations` | Org hierarchy (org → location → dept → team), invitations |
 | `roles` | Custom roles, permission matrix, RBAC |
 | `subscriptions` | Stripe plans, checkout, trials, upgrades, webhooks |
 | `credits` | Balance, purchase, consumption, expiry, ledger |
 | `notifications` | In-app + email notifications (Brevo templates) |
-| `messaging` | Amazon MQ publisher — inter-app events with circuit breaker |
+| `messaging` | SNS publisher + in-process SQS consumers — inter-app events |
 | `onboarding` | Company setup, PAN/GSTIN verification, DNS provisioning |
 | `admin` | Platform admin — tenant management, credit config, trials |
 | `app-sync` | Read APIs for downstream apps (CRM, HR, Accounting) |
@@ -172,11 +175,15 @@ Reference modules for patterns: `credits/`, `roles/`, `auth/`.
 
 ## Deployment
 
-CI/CD via `.github/workflows/deploy-ec2.yml`:
+Production runs on **AWS ECS Fargate** (SPA on S3 + CloudFront). CI/CD via
+`.github/workflows/deploy.yml` (push to `main` → staging):
 
-1. Type-check + unit tests (blocking gate)
-2. Frontend `vite build` + backend `tsc`
-3. Rsync to EC2 → `pnpm install --frozen-lockfile` → `db:migrate` → `pm2 reload`
-4. Health check with auto-rollback on failure
+1. Build + push the backend image (immutable git-SHA tag) to ECR
+2. `terraform apply -target=module.services` to roll the ECS service
+3. One-off Fargate task runs DB migrations (`node dist/db/run-migrations.js`)
+4. Health check on `/health`; rollback = redeploy the previous image SHA
+
+Production is a separate, deliberate promotion (the `prod` Terraform workspace).
+Full detail: [`deploy/PLAYBOOK.md`](deploy/PLAYBOOK.md) · [`docs/ONBOARDING.md`](docs/ONBOARDING.md).
 
 Stripe webhooks locally: `stripe listen --forward-to localhost:3000/api/webhooks/stripe`
