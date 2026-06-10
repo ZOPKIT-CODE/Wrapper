@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useAuth, type AuthUser } from '@/lib/auth/cognito-auth'
+import { useSilentSsoOnFocus } from '@/lib/auth/silent-sso'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { motion } from 'framer-motion'
 import type { MotionProps } from 'framer-motion'
@@ -290,6 +291,9 @@ export function Login() {
   const navigate = useNavigate()
   const search = useSearch({ strict: false }) as Record<string, string>
   const { isAuthenticated, user, isLoading, getToken, login } = useAuth()
+  // Cross-app silent SSO: if you signed into crm/fa in another tab, picking up this
+  // tab silently logs you in (prompt=none) — no password. No-op if no shared session.
+  useSilentSsoOnFocus()
 
   const [isRedirecting, setIsRedirecting] = useState(false)
   const [isLoggingIn, setIsLoggingIn] = useState(false)

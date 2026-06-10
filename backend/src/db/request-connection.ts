@@ -61,6 +61,20 @@ export async function reserveTenantConnection(
   userId: string | null,
 ): Promise<RequestConnection> {
   const reserved = await pool.reserve();
+
+  // postgres.js attaches `.options` only to the top-level pool handle, not to
+  // the handle returned by `reserve()`. Drizzle's postgres-js driver reads
+  // `client.options.parsers`/`.serializers` at construction time, so wrapping a
+  // bare reserved handle throws "Cannot read properties of undefined (reading
+  // 'parsers')". The reserved connection already shares the pool's single
+  // options object (and uses its parsers for result decoding), so alias it
+  // through — this is the exact object drizzle mutated when the pool itself was
+  // wrapped, making the re-application of transparent parsers idempotent.
+  const reservedWithOptions = reserved as ReservedSql & { options?: unknown };
+  if (reservedWithOptions.options === undefined) {
+    reservedWithOptions.options = (pool as Sql & { options?: unknown }).options;
+  }
+
   try {
     // Single round-trip: set both GUCs on the just-reserved connection.
     // Because `reserved` is pinned, this set_config is guaranteed to land

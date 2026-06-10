@@ -51,12 +51,16 @@ import tenantApplicationsReconcileRoutes from './features/admin/routes/tenant-ap
 import { blogRoutes, blogCommentRoutes, blogSeriesRoutes, blogSeoRoutes, blogPrerenderRoutes } from './features/blog/index.js';
 
 import { authMiddleware, csrfProtection, releaseRequestDbConnection } from './middleware/auth/auth.js';
+import { registerRequestDbScope } from './db/request-context.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { trialRestrictionMiddleware } from './middleware/restrictions/trial-restriction.js';
 import { restrictInvitedUsers } from './middleware/restrictions/invited-user-restriction.js';
 import { trackActivity } from './middleware/activityTracker.js';
 
 export async function registerMiddleware(fastify: FastifyInstance): Promise<void> {
+  // FIRST: open the AsyncLocalStorage request-DB scope (leak-proof run(done)
+  // context). Must precede any hook that calls enterRequestDbScope (auth).
+  registerRequestDbScope(fastify);
   fastify.addHook('onRequest', trackActivity());
   fastify.addHook('preHandler', csrfProtection);
   fastify.addHook('preHandler', authMiddleware);

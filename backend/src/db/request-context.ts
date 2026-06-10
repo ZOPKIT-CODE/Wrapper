@@ -24,13 +24,14 @@
  */
 
 import { AsyncLocalStorage } from 'node:async_hooks';
+import type { FastifyInstance } from 'fastify';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import type * as schema from './schema/index.js';
 
 export type RequestScopedDb = PostgresJsDatabase<typeof schema>;
 
 interface RequestDbStore {
-  db: RequestScopedDb;
+  db: RequestScopedDb | undefined;
 }
 
 export const requestDbStorage = new AsyncLocalStorage<RequestDbStore>();
@@ -44,11 +45,41 @@ export function getRequestDb(): RequestScopedDb | undefined {
 }
 
 /**
- * Binds `db` to the current async context for the remainder of the request.
- * Uses `enterWith` so the binding persists across Fastify's hook chain
- * (subsequent preHandler/handler/onResponse hooks share the same async
- * context, so they all observe this store).
+ * Opens an empty request-scoped store around EVERY request via
+ * `AsyncLocalStorage.run(store, done)` in a callback-style onRequest hook.
+ * Fastify continues the request lifecycle from `done()`, so the rest of the
+ * hook chain (preHandler, handler, onResponse) runs INSIDE the context, and
+ * the store dies with the request — it cannot leak into the caller's or the
+ * socket's async context.
+ *
+ * The auth middleware fills the store later via `enterRequestDbScope` once it
+ * has reserved + GUC-bound a connection (run() can't be used there directly:
+ * the reservation is created asynchronously mid-hook).
+ *
+ * Register this before any hook that calls `enterRequestDbScope`.
+ */
+export function registerRequestDbScope(fastify: FastifyInstance): void {
+  fastify.addHook('onRequest', (_request, _reply, done) => {
+    requestDbStorage.run({ db: undefined }, done);
+  });
+}
+
+/**
+ * Publishes `db` into the current request's store (opened by
+ * `registerRequestDbScope`) so the default `db` Proxy routes queries onto the
+ * reserved connection for the remainder of the request.
+ *
+ * Fallback: if no store exists (scope hook not registered — e.g. a bare test
+ * app), fall back to `enterWith`. NOTE: `enterWith` binds to the CURRENT async
+ * context and on Node ≤22 can leak past the request boundary into sibling
+ * contexts — which is exactly why production wiring must go through
+ * `registerRequestDbScope` + store mutation instead.
  */
 export function enterRequestDbScope(db: RequestScopedDb): void {
-  requestDbStorage.enterWith({ db });
+  const store = requestDbStorage.getStore();
+  if (store) {
+    store.db = db;
+  } else {
+    requestDbStorage.enterWith({ db });
+  }
 }
