@@ -41,6 +41,11 @@ jobs:
           cache: pnpm
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+      # Backend is type-clean (0 errors), so gate it to prevent type regressions
+      # (vitest does not type-check). The frontend is NOT gated this way yet (debt).
+      - name: Type-check (backend)
+        working-directory: backend
+        run: pnpm typecheck
       - name: Unit tests (backend)
         working-directory: backend
         run: pnpm test
