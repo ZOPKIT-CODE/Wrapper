@@ -42,10 +42,40 @@ class DatabaseConnectionManager {
       //     non-blocking; above it, requests queue.
       //   - Postgres itself handles hundreds of connections; 50 is still
       //     conservative and well within Supabase/RDS defaults.
-      const appPoolMax    = Number(process.env.DB_POOL_MAX         ?? 50);
-      const systemPoolMax = Number(process.env.DB_SYSTEM_POOL_MAX  ?? 15);
+      let appPoolMax      = Number(process.env.DB_POOL_MAX         ?? 50);
+      let systemPoolMax   = Number(process.env.DB_SYSTEM_POOL_MAX  ?? 15);
       const dbStatementTimeoutMs = Number(process.env.DB_STATEMENT_TIMEOUT_MS ?? 30_000);
       const dbIdleTransactionTimeoutMs = Number(process.env.DB_IDLE_IN_TX_TIMEOUT_MS ?? 30_000);
+
+      // Clamp the pools to the server's real connection ceiling. The app + system
+      // pools share one Postgres `max_connections`; if their sum exceeds it (e.g.
+      // 50+15=65 against a Supabase dev cap of 60), bursts of concurrent requests
+      // hit "remaining connection slots are reserved"/"too many clients", which
+      // postgres.js surfaces as an opaque drizzle "Failed query: <in-flight SQL>".
+      // A short probe reads max_connections and scales the pools to fit, leaving
+      // headroom for superuser/replication/migrations/other clients.
+      try {
+        const probe = postgres(databaseUrl, { max: 1, connect_timeout: 5, idle_timeout: 5 });
+        const rows = await probe`select current_setting('max_connections')::int as max_connections`;
+        await probe.end({ timeout: 5 });
+        const maxConns = Number(rows[0]?.max_connections) || 0;
+        if (maxConns > 0) {
+          const usable = Math.max(10, Math.floor(maxConns * 0.7)); // ~30% headroom
+          if (appPoolMax + systemPoolMax > usable) {
+            const ratio = appPoolMax / (appPoolMax + systemPoolMax);
+            const clampedApp = Math.max(5, Math.floor(usable * ratio));
+            const clampedSystem = Math.max(3, usable - clampedApp);
+            console.warn(
+              `⚠️  DB pool (app ${appPoolMax} + system ${systemPoolMax} = ${appPoolMax + systemPoolMax}) exceeds the server max_connections=${maxConns}. ` +
+              `Clamping to app=${clampedApp}, system=${clampedSystem}. Set DB_POOL_MAX / DB_SYSTEM_POOL_MAX to size explicitly for your database.`,
+            );
+            appPoolMax = clampedApp;
+            systemPoolMax = clampedSystem;
+          }
+        }
+      } catch (probeErr) {
+        console.warn('⚠️  Could not probe max_connections; using configured pool sizes.', (probeErr as Error).message);
+      }
 
       this.appConnection = postgres(databaseUrl, {
         max: appPoolMax,
