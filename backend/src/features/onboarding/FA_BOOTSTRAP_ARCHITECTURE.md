@@ -249,7 +249,7 @@ env vars: SQS_FA_QUEUE_URL          ← FA's own queue
 
 ### Infrastructure setup (one-time, via Terraform / CDK / console)
 
-FA does **not** "assert queues on startup" the way AMQP consumers do. The SNS topic, SQS queue, subscription, filter policy, and redrive policy are provisioned once by infrastructure code.
+FA does **not** "assert queues on startup" the way some message-broker consumers do. The SNS topic, SQS queue, subscription, filter policy, and redrive policy are provisioned once by infrastructure code.
 
 ```
 SNS topic (already exists in Wrapper):
@@ -392,7 +392,7 @@ The `FOR UPDATE` lock prevents two concurrent consumer threads from processing t
 
 ## 8. Retry and DLQ Strategy
 
-SQS handles retry differently than AMQP — there's no app-managed retry queue, the broker does it automatically.
+SQS handles retry differently than a traditional message broker — there's no app-managed retry queue; SQS redrive does it automatically.
 
 ```
 Receive 1: process message
