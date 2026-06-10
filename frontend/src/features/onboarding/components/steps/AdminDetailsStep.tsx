@@ -1,20 +1,15 @@
 import { Input } from '@/components/ui/input';
-import { FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { UseFormReturn } from 'react-hook-form';
-import { newBusinessData, existingBusinessData, CONTACT_METHODS, CONTACT_SALUTATIONS, CONTACT_AUTHORITY_LEVELS, COUNTRIES } from '../../schemas';
+import { newBusinessData, existingBusinessData, CONTACT_METHODS, CONTACT_SALUTATIONS, CONTACT_AUTHORITY_LEVELS } from '../../schemas';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
 import { UserClassification } from '../FlowSelector';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Info, CheckCircle2, XCircle, Loader2, ShieldCheck } from 'lucide-react';
-import React, { memo, useEffect, useState } from 'react';
+import { Info } from 'lucide-react';
 import { useAuth } from '@/lib/auth/cognito-auth';
+import { memo, useLayoutEffect, useRef } from 'react';
 import { useWatch } from 'react-hook-form';
-import { getCountryConfig } from '../../config/countryConfig';
-import { onboardingAPI } from '@/lib/api';
-import { useToast } from '../Toast';
 
 const PHONE_EXAMPLES: Record<string, string> = {
   IN: '+91 98765 43210',
@@ -37,62 +32,16 @@ interface AdminDetailsStepProps {
 
 export const AdminDetailsStep = memo(({ form, userClassification }: AdminDetailsStepProps) => {
   const { user } = useAuth();
-  const { addToast } = useToast();
-  
-  // Watch tax registration and PAN fields
-  const taxRegistered = useWatch({ control: form.control, name: 'taxRegistered' });
-  const panNumber = useWatch({ control: form.control, name: 'panNumber' });
+
   const businessDetailsCountry = useWatch({ control: form.control, name: 'businessDetails.country' as any });
   const rootCountry = useWatch({ control: form.control, name: 'country' });
-  const companyName = useWatch({ control: form.control, name: 'businessDetails.companyName' as any });
-  
+
   const country = businessDetailsCountry || rootCountry || 'IN';
-  const countryConfig = getCountryConfig(country);
-  const labels = {
-    taxId: countryConfig.taxSystem.idLabel,
-  };
-  
-  // PAN Verification states
-  const [panVerificationStatus, setPanVerificationStatus] = useState<'idle' | 'verifying' | 'verified' | 'error'>('idle');
-  const [panVerificationMessage, setPanVerificationMessage] = useState<string>('');
-  
-  // PAN Verification Handler
-  const handleVerifyPAN = async () => {
-    if (!panNumber || panNumber.length !== 10) {
-      addToast('Please enter a valid PAN number (10 characters)', { type: 'error', duration: 3000 });
-      return;
-    }
 
-    setPanVerificationStatus('verifying');
-    setPanVerificationMessage('');
-
-    try {
-      const response = await onboardingAPI.verifyPAN(panNumber.toUpperCase(), companyName || undefined);
-      
-      if (response.data.verified) {
-        setPanVerificationStatus('verified');
-        setPanVerificationMessage('PAN verified successfully');
-        addToast('PAN verified successfully', { type: 'success', duration: 3000 });
-        form.setValue('panVerified' as any, true, { shouldValidate: false });
-      } else {
-        setPanVerificationStatus('error');
-        setPanVerificationMessage(response.data.message || 'PAN verification failed');
-        addToast(response.data.message || 'PAN verification failed', { type: 'error', duration: 5000 });
-        form.setValue('panVerified' as any, false, { shouldValidate: false });
-      }
-    } catch (error: any) {
-      setPanVerificationStatus('error');
-      const errorMessage = error.response?.data?.message || 'Failed to verify PAN. Please try again.';
-      setPanVerificationMessage(errorMessage);
-      addToast(errorMessage, { type: 'error', duration: 5000 });
-      form.setValue('panVerified' as any, false, { shouldValidate: false });
-    }
-  };
-  
   // Sync Admin Email (and name) from Kinde only once on mount so form state matches display.
   // Run only once when user is available to avoid overwriting user-typed/cleared values (fixes state issues when typing and backspacing).
-  const hasSyncedFromIdpRef = React.useRef(false);
-  React.useLayoutEffect(() => {
+  const hasSyncedFromIdpRef = useRef(false);
+  useLayoutEffect(() => {
     if (!user?.email || hasSyncedFromIdpRef.current) return;
     hasSyncedFromIdpRef.current = true;
     const updates: Array<{ field: any; value: any }> = [];

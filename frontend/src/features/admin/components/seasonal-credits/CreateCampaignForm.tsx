@@ -195,9 +195,9 @@ export function CreateCampaignForm({ onSuccess, onCancel }: CreateCampaignFormPr
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {IS_DEV && (
-        <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm dark:border-amber-800 dark:bg-amber-950">
+        <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm">
           <FlaskConical className="w-4 h-4 text-amber-600 shrink-0" />
-          <span className="text-amber-700 dark:text-amber-300 flex-1">Dev mode — short expiry</span>
+          <span className="text-amber-700 flex-1">Dev mode — short expiry</span>
           <Switch checked={devMode} onCheckedChange={setDevMode} />
         </div>
       )}
@@ -286,16 +286,16 @@ export function CreateCampaignForm({ onSuccess, onCancel }: CreateCampaignFormPr
         </div>
 
         {form.notifyTenants && (
-          <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden bg-white dark:bg-slate-900">
-            <div className="bg-slate-50 dark:bg-slate-800/50 px-4 py-3 border-b border-slate-200 dark:border-slate-700">
-              <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">Tenant notification</p>
+          <div className="rounded-xl border border-slate-200 overflow-hidden bg-white">
+            <div className="bg-slate-50 px-4 py-3 border-b border-slate-200">
+              <p className="text-sm font-semibold text-slate-800">Tenant notification</p>
               <p className="text-xs text-muted-foreground mt-0.5">
                 Customize the message on the left; the live preview updates on the right.
               </p>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(280px,380px)] lg:items-start">
-              <div className="min-w-0 divide-y divide-slate-100 dark:divide-slate-800 max-h-[min(75vh,880px)] overflow-y-auto border-b lg:border-b-0 lg:border-r border-slate-200 dark:border-slate-700">
+              <div className="min-w-0 divide-y divide-slate-100 max-h-[min(75vh,880px)] overflow-y-auto border-b lg:border-b-0 lg:border-r border-slate-200">
                 <div className="px-4 sm:px-5 py-4">
                   <Section title="Theme">
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -306,7 +306,7 @@ export function CreateCampaignForm({ onSuccess, onCancel }: CreateCampaignFormPr
                           onClick={() => setMC('theme', th.value)}
                           className={`group relative overflow-hidden rounded-lg border-2 transition-all ${
                             modalConfig.theme === th.value
-                              ? 'border-[#1B2E5A] ring-2 ring-[#1B2E5A]/20'
+                              ? 'border-primary ring-2 ring-primary/20'
                               : 'border-transparent hover:border-slate-300'
                           }`}
                         >
@@ -316,7 +316,7 @@ export function CreateCampaignForm({ onSuccess, onCancel }: CreateCampaignFormPr
                           </div>
                           {modalConfig.theme === th.value && (
                             <div className="absolute top-1.5 right-1.5 h-3.5 w-3.5 rounded-full bg-white flex items-center justify-center shadow">
-                              <div className="h-2 w-2 rounded-full bg-[#1B2E5A]" />
+                              <div className="h-2 w-2 rounded-full bg-primary" />
                             </div>
                           )}
                         </button>
@@ -392,7 +392,7 @@ export function CreateCampaignForm({ onSuccess, onCancel }: CreateCampaignFormPr
                           </div>
                         ))}
                         {modalConfig.highlights.length < 4 && (
-                          <button type="button" onClick={addHighlight} className="flex items-center gap-1.5 text-xs text-[#1B2E5A] hover:text-[#243A6C] font-medium">
+                          <button type="button" onClick={addHighlight} className="flex items-center gap-1.5 text-xs text-primary hover:text-primary-hover font-medium">
                             <PlusCircle className="h-3.5 w-3.5" />
                             Add card
                           </button>
@@ -437,7 +437,7 @@ export function CreateCampaignForm({ onSuccess, onCancel }: CreateCampaignFormPr
                           </div>
                         ))}
                         {modalConfig.actions.length < 6 && (
-                          <button type="button" onClick={addAction} className="flex items-center gap-1.5 text-xs text-[#1B2E5A] hover:text-[#243A6C] font-medium">
+                          <button type="button" onClick={addAction} className="flex items-center gap-1.5 text-xs text-primary hover:text-primary-hover font-medium">
                             <PlusCircle className="h-3.5 w-3.5" />
                             Add action
                           </button>
@@ -472,7 +472,7 @@ export function CreateCampaignForm({ onSuccess, onCancel }: CreateCampaignFormPr
                 </div>
               </div>
 
-              <aside className="min-w-0 p-4 sm:p-5 bg-slate-50/90 dark:bg-slate-800/30 lg:max-h-[min(75vh,880px)] lg:overflow-y-auto lg:sticky lg:top-0">
+              <aside className="min-w-0 p-4 sm:p-5 bg-slate-50/90 lg:max-h-[min(75vh,880px)] lg:overflow-y-auto lg:sticky lg:top-0">
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-3">Live preview</p>
                 <SeasonalCreditsCongratulatoryPreview display={congratulatoryDisplay} className="mx-auto w-full max-w-[380px]" cardClassName="shadow-lg" />
                 <p className="text-[11px] text-muted-foreground text-center mt-3 max-w-[380px] mx-auto">

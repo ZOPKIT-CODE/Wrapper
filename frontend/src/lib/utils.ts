@@ -123,7 +123,7 @@ export class ErrorTracker {
     }
   }
 
-  static captureMessage(message: string, level: 'info' | 'warning' | 'error' = 'info'): void {
+  static captureMessage(_message: string, _level: 'info' | 'warning' | 'error' = 'info'): void {
     
     // In production, send to monitoring service
     if (import.meta.env.PROD) {

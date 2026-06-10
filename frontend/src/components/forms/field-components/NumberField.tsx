@@ -1,7 +1,7 @@
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { FormControl, FormDescription, FormField, FormItem, FormLabel } from '@/components/ui/form';
-import { FieldComponentProps } from '../types';
+import { FieldComponentProps, NumberField as NumberFieldType } from '../types';
 import { cn } from '@/lib/utils';
 import { ConditionalErrorMessage } from '../components/ConditionalErrorMessage';
 
@@ -16,6 +16,10 @@ export const NumberField: React.FC<FieldComponentProps> = ({
   disabled,
   className
 }) => {
+  const numberField = field as NumberFieldType;
+  const inputValue =
+    typeof value === 'string' || typeof value === 'number' ? value : '';
+
   return (
     <FormField
       name={field.id}
@@ -31,21 +35,21 @@ export const NumberField: React.FC<FieldComponentProps> = ({
             <Input
               {...formField}
               type="number"
-              value={value || ''}
+              value={inputValue}
               onChange={(e) => {
                 const numValue = e.target.value === '' ? '' : Number(e.target.value);
                 formField.onChange(e);
                 onChange(numValue);
               }}
-              onBlur={(e) => {
-                formField.onBlur(e);
+              onBlur={() => {
+                formField.onBlur();
                 onBlur?.();
               }}
               placeholder={field.placeholder}
               disabled={disabled || field.disabled}
-              min={field.min}
-              max={field.max}
-              step={field.step}
+              min={numberField.min}
+              max={numberField.max}
+              step={numberField.step}
               required={field.required}
             />
           </FormControl>

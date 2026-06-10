@@ -23,7 +23,6 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { 
   MoreVertical, 
   Search, 
-  Filter,
   ChevronDown,
   ChevronUp,
   ArrowUpDown

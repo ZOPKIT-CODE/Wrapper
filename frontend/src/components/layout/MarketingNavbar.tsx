@@ -15,6 +15,7 @@ import {
 import { DynamicIcon } from '@/features/landing/components/Icons';
 import { getAllIndustries } from '@/data/industryPages';
 import api, { createCancelableRequest } from '@/lib/api';
+import { cn } from '@/lib/utils';
 
 /** Same slugs + labels as landing `/landing` — matches `productPages` routes */
 const MARKETING_NAV_PRODUCTS = [
@@ -37,6 +38,8 @@ export const DEFAULT_MARKETING_NAV_ITEMS = [
 ] as const;
 
 export type MarketingNavbarProps = {
+  /** Flat Vercel-minimal nav styling (used on landing v2 and marketing shell pages). */
+  minimal?: boolean;
   /** Override the right-side desktop CTA. Omit to use the built-in auth-aware button. */
   desktopRight?: React.ReactNode;
   /** Override the mobile sheet footer CTA. Omit to use the built-in auth-aware button. */
@@ -108,7 +111,7 @@ function useMarketingCta(): CtaConfig {
       icon: <LayoutDashboard className="w-4 h-4 mr-2 inline" />,
       action: () => navigate({ to: '/dashboard/applications' }),
       disabled: false,
-      variant: 'gradient',
+      variant: 'primary',
     };
   }
   return {
@@ -116,7 +119,7 @@ function useMarketingCta(): CtaConfig {
     icon: <Rocket className="w-4 h-4 mr-2 inline" />,
     action: () => navigate({ to: '/onboarding' }),
     disabled: false,
-    variant: 'gradient',
+    variant: 'primary',
   };
 }
 
@@ -125,7 +128,7 @@ function useMarketingCta(): CtaConfig {
  * Renders a built-in auth-aware CTA by default; pass desktopRight/mobileFooter
  * only if a page needs a one-off override.
  */
-export function MarketingNavbar({ desktopRight, mobileFooter }: MarketingNavbarProps) {
+export function MarketingNavbar({ minimal = false, desktopRight, mobileFooter }: MarketingNavbarProps) {
   const navigate = useNavigate();
   const cta = useMarketingCta();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -183,13 +186,17 @@ export function MarketingNavbar({ desktopRight, mobileFooter }: MarketingNavbarP
 
   const navItems = DEFAULT_MARKETING_NAV_ITEMS;
 
+  const linkClass = minimal
+    ? 'marketing-nav-link px-3 py-2 font-medium transition-colors duration-150 cursor-pointer'
+    : 'px-3 py-2 text-primary hover:text-primary-hover font-medium transition-colors duration-150 cursor-pointer';
+
   const defaultDesktopCta = (
     <NavbarButton
       variant={cta.variant}
       onClick={cta.action}
       disabled={cta.disabled}
       as="button"
-      className="text-[13px]"
+      className={cn(minimal && 'marketing-nav-cta', 'text-[13px]')}
     >
       {cta.icon}
       {cta.label}
@@ -202,7 +209,7 @@ export function MarketingNavbar({ desktopRight, mobileFooter }: MarketingNavbarP
       onClick={cta.action}
       disabled={cta.disabled}
       as="button"
-      className="w-full justify-center"
+      className={cn(minimal && 'marketing-nav-cta', 'w-full justify-center')}
     >
       {cta.icon}
       {cta.label}
@@ -211,7 +218,7 @@ export function MarketingNavbar({ desktopRight, mobileFooter }: MarketingNavbarP
 
   return (
     <Navbar>
-      <NavBody>
+      <NavBody className={cn(minimal && 'marketing-nav-bar')}>
         <NavbarLogo />
         <div className="flex-1 flex flex-row items-center justify-center gap-0.5 text-[13px] font-medium px-6 min-w-0">
           <div
@@ -221,7 +228,7 @@ export function MarketingNavbar({ desktopRight, mobileFooter }: MarketingNavbarP
           >
             <button
               type="button"
-              className="px-3 py-2 text-[#1B2E5A] hover:text-[#162447] font-medium flex items-center gap-1 whitespace-nowrap transition-colors duration-150 cursor-pointer"
+              className={cn(linkClass, 'flex items-center gap-1 whitespace-nowrap')}
             >
               Products
               <ChevronRight
@@ -238,9 +245,17 @@ export function MarketingNavbar({ desktopRight, mobileFooter }: MarketingNavbarP
                   transition={{ duration: 0.15, ease: 'easeOut' }}
                   className="absolute top-full left-0 mt-2 w-[280px] z-50"
                 >
-                  <div className="bg-white rounded-xl border border-slate-200 shadow-[0_12px_40px_-8px_rgba(0,0,0,0.12)] overflow-hidden">
+                  <div className={cn(
+                    'overflow-hidden',
+                    minimal
+                      ? 'bg-background rounded-lg border border-border shadow-sm'
+                      : 'bg-white rounded-xl border border-slate-200 shadow-[0_12px_40px_-8px_rgba(0,0,0,0.12)]'
+                  )}>
                     <div className="px-3 pt-3 pb-1.5">
-                      <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Products</p>
+                      <p className={cn(
+                        'text-[11px] font-semibold uppercase tracking-wider',
+                        minimal ? 'text-muted-foreground' : 'text-slate-400'
+                      )}>Products</p>
                     </div>
                     <div className="px-1.5 pb-1.5 max-h-[400px] overflow-y-auto">
                       {MARKETING_NAV_PRODUCTS.map((product) => (
@@ -248,10 +263,18 @@ export function MarketingNavbar({ desktopRight, mobileFooter }: MarketingNavbarP
                           type="button"
                           key={product.id}
                           onClick={() => navigate({ to: `/products/${product.id}` })}
-                          className="w-full text-left px-3 py-2 text-[13px] text-[#1B2E5A] hover:text-[#162447] hover:bg-slate-50 transition-colors duration-100 flex items-center gap-2.5 rounded-lg cursor-pointer"
+                          className={cn(
+                            'w-full text-left px-3 py-2 text-[13px] transition-colors duration-100 flex items-center gap-2.5 cursor-pointer',
+                            minimal
+                              ? 'text-foreground hover:bg-muted/50 rounded-md'
+                              : 'text-primary hover:text-primary-hover hover:bg-slate-50 rounded-lg'
+                          )}
                         >
-                          <span className="w-7 h-7 rounded-md bg-slate-100 flex items-center justify-center shrink-0">
-                            <DynamicIcon name={product.icon} className="w-3.5 h-3.5 text-slate-500" />
+                          <span className={cn(
+                            'w-7 h-7 rounded-md flex items-center justify-center shrink-0',
+                            minimal ? 'border border-border' : 'bg-slate-100'
+                          )}>
+                            <DynamicIcon name={product.icon} className={cn('w-3.5 h-3.5', minimal ? 'text-muted-foreground' : 'text-slate-500')} />
                           </span>
                           <span className="font-medium">{product.name}</span>
                         </button>
@@ -270,7 +293,7 @@ export function MarketingNavbar({ desktopRight, mobileFooter }: MarketingNavbarP
           >
             <button
               type="button"
-              className="px-3 py-2 text-[#1B2E5A] hover:text-[#162447] font-medium flex items-center gap-1 whitespace-nowrap transition-colors duration-150 cursor-pointer"
+              className={cn(linkClass, 'flex items-center gap-1 whitespace-nowrap')}
             >
               Industries
               <ChevronRight
@@ -287,9 +310,17 @@ export function MarketingNavbar({ desktopRight, mobileFooter }: MarketingNavbarP
                   transition={{ duration: 0.15, ease: 'easeOut' }}
                   className="absolute top-full left-0 mt-2 w-[240px] z-50"
                 >
-                  <div className="bg-white rounded-xl border border-slate-200 shadow-[0_12px_40px_-8px_rgba(0,0,0,0.12)] overflow-hidden">
+                  <div className={cn(
+                    'overflow-hidden',
+                    minimal
+                      ? 'bg-background rounded-lg border border-border shadow-sm'
+                      : 'bg-white rounded-xl border border-slate-200 shadow-[0_12px_40px_-8px_rgba(0,0,0,0.12)]'
+                  )}>
                     <div className="px-3 pt-3 pb-1.5">
-                      <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Industries</p>
+                      <p className={cn(
+                        'text-[11px] font-semibold uppercase tracking-wider',
+                        minimal ? 'text-muted-foreground' : 'text-slate-400'
+                      )}>Industries</p>
                     </div>
                     <div className="px-1.5 pb-1.5">
                       {allIndustries.map((industry) => (
@@ -297,7 +328,12 @@ export function MarketingNavbar({ desktopRight, mobileFooter }: MarketingNavbarP
                           type="button"
                           key={industry.slug}
                           onClick={() => navigate({ to: `/industries/${industry.slug}` })}
-                          className="w-full text-left px-3 py-2 text-[13px] text-[#1B2E5A] hover:text-[#162447] hover:bg-slate-50 font-medium transition-colors duration-100 rounded-lg cursor-pointer"
+                          className={cn(
+                            'w-full text-left px-3 py-2 text-[13px] font-medium transition-colors duration-100 cursor-pointer',
+                            minimal
+                              ? 'text-foreground hover:bg-muted/50 rounded-md'
+                              : 'text-primary hover:text-primary-hover hover:bg-slate-50 rounded-lg'
+                          )}
                         >
                           {industry.name}
                         </button>
@@ -314,7 +350,7 @@ export function MarketingNavbar({ desktopRight, mobileFooter }: MarketingNavbarP
               key={item.name}
               href={item.link}
               onClick={(e) => handleAnchorClick(e, item.link)}
-              className="px-3 py-2 text-[#1B2E5A] hover:text-[#162447] font-medium transition-colors duration-150 cursor-pointer whitespace-nowrap shrink-0"
+              className={cn(linkClass, 'whitespace-nowrap shrink-0')}
             >
               {item.name}
             </a>
@@ -326,35 +362,55 @@ export function MarketingNavbar({ desktopRight, mobileFooter }: MarketingNavbarP
         </div>
       </NavBody>
 
-      <MobileNav>
+      <MobileNav className={cn(minimal && 'marketing-nav-bar')}>
         <MobileNavHeader>
           <NavbarLogo />
           <button
             type="button"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="w-9 h-9 rounded-xl bg-[#13204A] flex items-center justify-center transition-all duration-150 cursor-pointer hover:bg-[#1B2E5A] active:scale-95"
+            className={cn(
+              'w-9 h-9 flex items-center justify-center transition-all duration-150 cursor-pointer',
+              minimal
+                ? 'rounded-lg border border-border bg-background hover:bg-muted text-foreground'
+                : 'rounded-xl bg-primary-hover hover:bg-primary active:scale-95'
+            )}
             aria-label="Toggle menu"
           >
             {isMobileMenuOpen
-              ? <X className="w-4 h-4 text-white" />
-              : <Menu className="w-4 h-4 text-white" />}
+              ? <X className={cn('w-4 h-4', !minimal && 'text-white')} />
+              : <Menu className={cn('w-4 h-4', !minimal && 'text-white')} />}
           </button>
         </MobileNavHeader>
 
         <MobileNavMenu isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)}>
-          {/* Products */}
           <div className="mb-2">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2 mb-1">Products</p>
-            <div className="max-h-[220px] overflow-y-auto rounded-xl bg-white/60 border border-black/[0.06] divide-y divide-black/[0.04]">
+            <p className={cn(
+              'text-[10px] font-bold uppercase tracking-widest px-2 mb-1',
+              minimal ? 'text-muted-foreground' : 'text-slate-400'
+            )}>Products</p>
+            <div className={cn(
+              'max-h-[220px] overflow-y-auto divide-y',
+              minimal
+                ? 'rounded-lg border border-border divide-border'
+                : 'rounded-xl bg-white/60 border border-black/[0.06] divide-black/[0.04]'
+            )}>
               {MARKETING_NAV_PRODUCTS.map((product) => (
                 <a
                   key={product.id}
                   href={`/products/${product.id}`}
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center gap-2.5 px-3 py-2.5 text-[13px] text-[#1B2E5A] font-medium hover:bg-white/80 active:bg-white transition-colors duration-100 cursor-pointer first:rounded-t-xl last:rounded-b-xl"
+                  className={cn(
+                    'flex items-center gap-2.5 px-3 py-2.5 text-[13px] font-medium transition-colors duration-100 cursor-pointer',
+                    minimal
+                      ? 'text-foreground hover:bg-muted/50'
+                      : 'text-primary hover:bg-white/80 active:bg-white first:rounded-t-xl last:rounded-b-xl'
+                  )}
                 >
-                  <span className="w-6 h-6 rounded-md bg-slate-100 flex items-center justify-center shrink-0">
-                    <DynamicIcon name={product.icon} className="w-3 h-3 text-slate-500" />
+                  <span className={cn(
+                    'w-6 h-6 rounded-md flex items-center justify-center shrink-0',
+                    minimal ? 'border border-border' : 'bg-slate-100'
+                  )}>
+                    <DynamicIcon name={product.icon} className={cn('w-3 h-3', minimal ? 'text-muted-foreground' : 'text-slate-500')} />
                   </span>
                   {product.name}
                 </a>
@@ -362,26 +418,42 @@ export function MarketingNavbar({ desktopRight, mobileFooter }: MarketingNavbarP
             </div>
           </div>
 
-          {/* Industries */}
           <div className="mb-2">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2 mb-1">Industries</p>
-            <div className="rounded-xl bg-white/60 border border-black/[0.06] divide-y divide-black/[0.04]">
+            <p className={cn(
+              'text-[10px] font-bold uppercase tracking-widest px-2 mb-1',
+              minimal ? 'text-muted-foreground' : 'text-slate-400'
+            )}>Industries</p>
+            <div className={cn(
+              'divide-y',
+              minimal
+                ? 'rounded-lg border border-border divide-border'
+                : 'rounded-xl bg-white/60 border border-black/[0.06] divide-black/[0.04]'
+            )}>
               {allIndustries.map((industry) => (
                 <a
                   key={industry.slug}
                   href={`/industries/${industry.slug}`}
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center gap-2 px-3 py-2.5 text-[13px] text-[#1B2E5A] font-medium hover:bg-white/80 active:bg-white transition-colors duration-100 cursor-pointer first:rounded-t-xl last:rounded-b-xl"
+                  className={cn(
+                    'flex items-center gap-2 px-3 py-2.5 text-[13px] font-medium transition-colors duration-100 cursor-pointer',
+                    minimal
+                      ? 'text-foreground hover:bg-muted/50'
+                      : 'text-primary hover:bg-white/80 active:bg-white first:rounded-t-xl last:rounded-b-xl'
+                  )}
                 >
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#3D8FE8] shrink-0" />
+                  {!minimal && <span className="w-1.5 h-1.5 rounded-full bg-[#3D8FE8] shrink-0" />}
                   {industry.name}
                 </a>
               ))}
             </div>
           </div>
 
-          {/* Standalone links */}
-          <div className="rounded-xl bg-white/60 border border-black/[0.06] divide-y divide-black/[0.04] mb-3">
+          <div className={cn(
+            'divide-y mb-3',
+            minimal
+              ? 'rounded-lg border border-border divide-border'
+              : 'rounded-xl bg-white/60 border border-black/[0.06] divide-black/[0.04]'
+          )}>
             {navItems.map((item, idx) => (
               <a
                 key={`mobile-link-${idx}`}
@@ -390,9 +462,14 @@ export function MarketingNavbar({ desktopRight, mobileFooter }: MarketingNavbarP
                   setIsMobileMenuOpen(false);
                   handleAnchorClick(e, item.link);
                 }}
-                className="flex items-center gap-2 px-3 py-2.5 text-[13px] text-[#1B2E5A] font-medium hover:bg-white/80 active:bg-white transition-colors duration-100 cursor-pointer first:rounded-t-xl last:rounded-b-xl"
+                className={cn(
+                  'flex items-center gap-2 px-3 py-2.5 text-[13px] font-medium transition-colors duration-100 cursor-pointer',
+                  minimal
+                    ? 'text-foreground hover:bg-muted/50'
+                    : 'text-primary hover:bg-white/80 active:bg-white first:rounded-t-xl last:rounded-b-xl'
+                )}
               >
-                <span className="w-1.5 h-1.5 rounded-full bg-[#6B5BD6] shrink-0" />
+                {!minimal && <span className="w-1.5 h-1.5 rounded-full bg-[#6B5BD6] shrink-0" />}
                 {item.name}
               </a>
             ))}

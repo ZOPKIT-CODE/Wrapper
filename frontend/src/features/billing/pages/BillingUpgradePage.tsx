@@ -318,14 +318,14 @@ export function BillingUpgradePage() {
                       step.id < currentStep
                         ? 'bg-green-500 text-white'
                         : step.id === currentStep
-                        ? 'bg-[#1B2E5A] text-white'
+                        ? 'bg-primary text-white'
                         : 'bg-gray-200 text-gray-600'
                     }`}>
                       {step.id < currentStep ? <CheckCircle className="h-4 w-4" /> : step.id}
                     </div>
                     <div className="ml-3">
                       <p className={`text-sm font-medium ${
-                        step.id <= currentStep ? 'text-[#1B2E5A]' : 'text-gray-500'
+                        step.id <= currentStep ? 'text-primary' : 'text-gray-500'
                       }`}>
                         {step.title}
                       </p>

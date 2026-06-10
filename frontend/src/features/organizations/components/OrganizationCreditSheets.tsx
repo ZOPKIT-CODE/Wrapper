@@ -16,6 +16,7 @@ import { PearlButton } from '@/components/ui/pearl-button'
 import { ZopkitRoundLoader } from '@/components/common/feedback/ZopkitRoundLoader'
 import { ArrowRightLeft, CreditCard } from 'lucide-react'
 import { Application } from '@/hooks/useDashboardData'
+import type { OrganizationEntity } from '../types'
 const OrganizationHierarchyFlow = React.lazy(() =>
   import('@/features/organizations/components/OrganizationHierarchyFlow').then((m) => ({
     default: m.OrganizationHierarchyFlow,
@@ -50,19 +51,6 @@ interface Location {
   hierarchyPath: string
   parentEntityId?: string
   locationType?: string
-  availableCredits?: number
-}
-
-interface Entity {
-  entityId: string
-  entityName: string
-  entityType: 'organization' | 'location' | 'department' | 'team'
-  entityLevel: number
-  hierarchyPath: string
-  fullHierarchyPath: string
-  parentEntityId?: string
-  isActive: boolean
-  children: Entity[]
   availableCredits?: number
 }
 
@@ -142,7 +130,7 @@ export function CreditTransferSheet({
         side="right"
         className="flex h-full min-h-0 w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-lg [&>button]:text-white [&>button]:hover:bg-white/15"
       >
-        <SheetHeader className="shrink-0 space-y-2 border-b border-white/10 bg-[#1B2E5A] px-6 pb-5 pt-8 text-white">
+        <SheetHeader className="shrink-0 space-y-2 border-b border-white/10 bg-primary px-6 pb-5 pt-8 text-white">
           <SheetTitle
             className="flex items-center gap-2 text-white"
             style={{ fontFamily: 'var(--zk-display)', fontSize: 18, fontWeight: 600, letterSpacing: '-0.025em' }}
@@ -159,9 +147,9 @@ export function CreditTransferSheet({
           {/* Source display */}
           <div>
             <Label>From (Source)</Label>
-            <div className="p-3 border rounded-lg bg-[#1B2E5A]/5 border-[#1B2E5A]/20 mt-1">
+            <div className="p-3 border rounded-lg bg-primary/5 border-primary/20 mt-1">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-[#1B2E5A] flex items-center justify-center text-white font-semibold text-sm">
+                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-semibold text-sm">
                   {selectedOrg?.entityName?.charAt(0)?.toUpperCase() || 'O'}
                 </div>
                 <div>
@@ -181,7 +169,7 @@ export function CreditTransferSheet({
                 setCreditTransferForm({ ...creditTransferForm, destinationEntityType: value, destinationEntityId: '' })
               }
             >
-              <SelectTrigger className="mt-1 focus:ring-2 focus:ring-[#1B2E5A] focus:border-[#1B2E5A] transition-colors">
+              <SelectTrigger className="mt-1 focus:ring-2 focus:ring-ring focus:border-primary transition-colors">
                 <SelectValue placeholder="Select destination type" />
               </SelectTrigger>
               <SelectContent>
@@ -200,7 +188,7 @@ export function CreditTransferSheet({
                 setCreditTransferForm({ ...creditTransferForm, destinationEntityId: value })
               }
             >
-              <SelectTrigger className="mt-1 focus:ring-2 focus:ring-[#1B2E5A] focus:border-[#1B2E5A] transition-colors">
+              <SelectTrigger className="mt-1 focus:ring-2 focus:ring-ring focus:border-primary transition-colors">
                 <SelectValue placeholder="Select destination" />
               </SelectTrigger>
               <SelectContent>
@@ -254,7 +242,7 @@ export function CreditTransferSheet({
               placeholder="Enter credit amount"
               min="1"
               step="1"
-              className="mt-1 focus:ring-2 focus:ring-[#1B2E5A] focus:border-[#1B2E5A] transition-colors"
+              className="mt-1 focus:ring-2 focus:ring-ring focus:border-primary transition-colors"
             />
           </div>
 
@@ -265,13 +253,13 @@ export function CreditTransferSheet({
               value={creditTransferForm.description}
               onChange={(e) => setCreditTransferForm({ ...creditTransferForm, description: e.target.value })}
               placeholder="Reason for transfer..."
-              className="mt-1 resize-none focus:ring-2 focus:ring-[#1B2E5A] focus:border-[#1B2E5A] transition-colors"
+              className="mt-1 resize-none focus:ring-2 focus:ring-ring focus:border-primary transition-colors"
               rows={2}
             />
           </div>
         </div>
 
-        <SheetFooter className="mt-0 shrink-0 flex-row justify-end gap-2 border-t border-[#1B2E5A]/10 bg-[#F0F4FA] px-6 py-4 dark:border-slate-700 dark:bg-slate-900/80">
+        <SheetFooter className="mt-0 shrink-0 flex-row justify-end gap-2 border-t border-primary/10 bg-muted px-6 py-4">
           <PearlButton variant="outline" onClick={() => onOpenChange(false)} disabled={isTransferringCredits}>
             Cancel
           </PearlButton>
@@ -284,7 +272,7 @@ export function CreditTransferSheet({
               creditTransferForm.destinationEntityId === 'no-orgs' ||
               creditTransferForm.destinationEntityId === 'no-locations'
             }
-            className="bg-[#1B2E5A] text-white hover:opacity-90"
+            className="bg-primary text-primary-foreground hover:opacity-90"
             style={{ backgroundColor: 'var(--zk-navy)' } as React.CSSProperties}
           >
             {isTransferringCredits ? (
@@ -310,7 +298,7 @@ export function CreditTransferSheet({
 export interface AllocateCreditSheetProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  selectedEntity: Entity | null
+  selectedEntity: OrganizationEntity | null
   effectiveApplications: Application[]
   allocationForm: AllocationForm
   setAllocationForm: (form: AllocationForm) => void
@@ -334,7 +322,7 @@ export function AllocateCreditSheet({
         side="right"
         className="flex h-full min-h-0 w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-lg [&>button]:text-white [&>button]:hover:bg-white/15"
       >
-        <SheetHeader className="shrink-0 space-y-2 border-b border-white/10 bg-[#1B2E5A] px-6 pb-5 pt-8 text-white">
+        <SheetHeader className="shrink-0 space-y-2 border-b border-white/10 bg-primary px-6 pb-5 pt-8 text-white">
           <SheetTitle
             className="text-white"
             style={{ fontFamily: 'var(--zk-display)', fontSize: 18, fontWeight: 600, letterSpacing: '-0.025em' }}
@@ -358,7 +346,7 @@ export function AllocateCreditSheet({
               value={allocationForm.targetApplication}
               onValueChange={(v) => setAllocationForm({ ...allocationForm, targetApplication: v })}
             >
-              <SelectTrigger className="min-w-0 overflow-hidden [&>span]:min-w-0 [&>span]:block [&>span]:overflow-hidden [&>span]:text-ellipsis [&>span]:whitespace-nowrap focus:ring-2 focus:ring-[#1B2E5A] focus:border-[#1B2E5A] transition-colors">
+              <SelectTrigger className="min-w-0 overflow-hidden [&>span]:min-w-0 [&>span]:block [&>span]:overflow-hidden [&>span]:text-ellipsis [&>span]:whitespace-nowrap focus:ring-2 focus:ring-ring focus:border-primary transition-colors">
                 <SelectValue placeholder="Select App" />
               </SelectTrigger>
               <SelectContent>
@@ -382,7 +370,7 @@ export function AllocateCreditSheet({
               value={allocationForm.creditAmount || ''}
               onChange={(e) => setAllocationForm({ ...allocationForm, creditAmount: parseFloat(e.target.value) || 0 })}
               placeholder="Enter credit amount"
-              className="focus:ring-2 focus:ring-[#1B2E5A] focus:border-[#1B2E5A] transition-colors"
+              className="focus:ring-2 focus:ring-ring focus:border-primary transition-colors"
             />
             {selectedEntity && (
               <p className="text-xs text-slate-500">
@@ -398,7 +386,7 @@ export function AllocateCreditSheet({
               onChange={(e) => setAllocationForm({ ...allocationForm, allocationPurpose: e.target.value })}
               placeholder="Describe the purpose of this allocation"
               rows={3}
-              className="focus:ring-2 focus:ring-[#1B2E5A] focus:border-[#1B2E5A] transition-colors"
+              className="focus:ring-2 focus:ring-ring focus:border-primary transition-colors"
             />
           </div>
 
@@ -408,7 +396,7 @@ export function AllocateCreditSheet({
               id="autoReplenish"
               checked={allocationForm.autoReplenish}
               onChange={(e) => setAllocationForm({ ...allocationForm, autoReplenish: e.target.checked })}
-              className="w-4 h-4 rounded border-slate-300 focus:ring-2 focus:ring-[#1B2E5A] focus:ring-offset-0"
+              className="w-4 h-4 rounded border-slate-300 focus:ring-2 focus:ring-ring focus:ring-offset-0"
             />
             <Label htmlFor="autoReplenish" className="text-sm font-normal cursor-pointer">
               Auto-replenish when credits run low
@@ -416,14 +404,14 @@ export function AllocateCreditSheet({
           </div>
         </div>
 
-        <SheetFooter className="mt-0 shrink-0 flex-row justify-end gap-2 border-t border-[#1B2E5A]/10 bg-[#F0F4FA] px-6 py-4 dark:border-slate-700 dark:bg-slate-900/80">
+        <SheetFooter className="mt-0 shrink-0 flex-row justify-end gap-2 border-t border-primary/10 bg-muted px-6 py-4">
           <PearlButton variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </PearlButton>
           <PearlButton
             onClick={onAllocate}
             disabled={allocating || !allocationForm.targetApplication || !allocationForm.creditAmount || allocationForm.creditAmount <= 0}
-            className="bg-[#1B2E5A] text-white hover:opacity-90"
+            className="bg-primary text-primary-foreground hover:opacity-90"
             style={{ backgroundColor: 'var(--zk-navy)' } as React.CSSProperties}
           >
             {allocating ? (
@@ -480,8 +468,8 @@ export function HierarchyChartModal({
   if (!show) return null
 
   return (
-    <div className="fixed inset-0 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm flex flex-col">
-      <div className="p-4 border-b flex justify-between items-center bg-white dark:bg-slate-900 shrink-0">
+    <div className="fixed inset-0 z-50 bg-white/95 backdrop-blur-sm flex flex-col">
+      <div className="p-4 border-b flex justify-between items-center bg-white shrink-0">
         <h2 style={{ fontFamily: 'var(--zk-display)', fontSize: 20, fontWeight: 600, letterSpacing: '-0.025em', color: 'var(--zk-ink)' }}>
           Visual Hierarchy
         </h2>

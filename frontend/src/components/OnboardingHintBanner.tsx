@@ -46,7 +46,6 @@ export function OnboardingHintBanner() {
         'z-[99]',
         'flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3',
         'rounded-xl border border-border',
-        'dark:border-white/20',
         'bg-background/95 backdrop-blur-sm',
         'supports-[backdrop-filter]:bg-background/80',
         'px-4 py-3',

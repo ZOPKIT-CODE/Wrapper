@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { DashboardPageHeader } from '@/components/dashboard/DashboardPageHeader'
-import { ChevronDown, ChevronRight, Users, Shield, Search, Plus, Settings, Filter, Grid, List, UserCheck, Crown, Key, Eye, EyeOff, ToggleLeft, ToggleRight } from 'lucide-react'
+import { ChevronDown, ChevronRight, Users, Shield, Search, Plus, Settings, Grid, List, Crown, Key, Eye, EyeOff } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -13,11 +13,7 @@ import {
   User
 } from '@/data/mockPermissions'
 import {
-  idpPermissions,
-  granularRestrictions,
   customRoleTemplates,
-  IdpPermission,
-  GranularRestriction,
   CustomRole
 } from '@/data/kindeIntegratedData'
 
@@ -42,14 +38,12 @@ export function Permissions() {
 
 function PermissionsContent() {
   const [users, setUsers] = useState<EnhancedUser[]>(enhancedUsers)
-  const [roles, setRoles] = useState<CustomRole[]>(customRoleTemplates)
-  const [permissions, setPermissions] = useState<PermissionItem[]>(mockPermissions)
-  const [featureFlags, setFeatureFlags] = useState<IdpPermission[]>(idpPermissions)
+  const [roles] = useState<CustomRole[]>(customRoleTemplates)
+  const [permissions] = useState<PermissionItem[]>(mockPermissions)
 
   // UI State
   const [viewMode, setViewMode] = useState<'workspace' | 'matrix' | 'overview'>('overview')
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedTab, setSelectedTab] = useState<'overview' | 'users' | 'roles' | 'permissions'>('overview')
   const [showInactive, setShowInactive] = useState(false)
   const [expandedPanels, setExpandedPanels] = useState<Set<string>>(new Set(['permissions', 'users', 'roles']))
 
@@ -134,7 +128,7 @@ function PermissionsContent() {
   const getSubscriptionColor = (subscription: string) => {
     switch (subscription) {
       case 'enterprise': return 'bg-purple-100 text-purple-800 border-purple-200'
-      case 'professional': return 'bg-[#1B2E5A]/10 text-[#1B2E5A] border-[#1B2E5A]/20'
+      case 'professional': return 'bg-primary/10 text-primary border-primary/20'
       default: return 'bg-gray-100 text-gray-800 border-gray-200'
     }
   }
@@ -199,17 +193,17 @@ function PermissionsContent() {
   // Droppable User Card
   const DroppableUserCard = ({ user }: { user: EnhancedUser }) => (
     <Card
-      className="h-28 hover:shadow-lg transition-all cursor-pointer border-2 hover:border-[#1B2E5A]/40 hover:bg-[#1B2E5A]/5 mb-3"
+      className="h-28 hover:shadow-lg transition-all cursor-pointer border-2 hover:border-primary/40 hover:bg-primary/5 mb-3"
       onDragOver={(e) => {
         e.preventDefault()
-        e.currentTarget.classList.add('border-[#1B2E5A]', 'bg-[#1B2E5A]/10', 'scale-105')
+        e.currentTarget.classList.add('border-primary', 'bg-primary/10', 'scale-105')
       }}
       onDragLeave={(e) => {
-        e.currentTarget.classList.remove('border-[#1B2E5A]', 'bg-[#1B2E5A]/10', 'scale-105')
+        e.currentTarget.classList.remove('border-primary', 'bg-primary/10', 'scale-105')
       }}
       onDrop={(e) => {
         e.preventDefault()
-        e.currentTarget.classList.remove('border-[#1B2E5A]', 'bg-[#1B2E5A]/10', 'scale-105')
+        e.currentTarget.classList.remove('border-primary', 'bg-primary/10', 'scale-105')
         e.currentTarget.classList.add('border-green-500', 'bg-green-100')
 
         setTimeout(() => {
@@ -286,7 +280,7 @@ function PermissionsContent() {
     return (
       <Card className="h-[600px] overflow-hidden professional-dropdown shadow-lg border-0">
         <CardHeader className="pb-3 professional-dropdown-header">
-          <CardTitle className="text-xl flex items-center gap-3 font-bold text-[#1B2E5A]">
+          <CardTitle className="text-xl flex items-center gap-3 font-bold text-primary">
             <div className="w-8 h-8 rounded-lg bg-gray-700 flex items-center justify-center">
               <Grid className="w-4 h-4 text-white" />
             </div>
@@ -301,11 +295,11 @@ function PermissionsContent() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 sticky top-0 z-10">
                 <tr>
-                  <th className="text-left p-3 font-medium text-[#1B2E5A] min-w-[180px] sticky left-0 bg-gray-50 border-r">
+                  <th className="text-left p-3 font-medium text-primary min-w-[180px] sticky left-0 bg-gray-50 border-r">
                     User
                   </th>
                   {filteredPermissions.slice(0, 8).map(permission => (
-                    <th key={permission.id} className="text-center p-3 font-medium text-[#1B2E5A] min-w-[100px]">
+                    <th key={permission.id} className="text-center p-3 font-medium text-primary min-w-[100px]">
                       <div className="flex flex-col items-center gap-1">
                         <span className="text-xs">{permission.tool.toUpperCase()}</span>
                         <span className="text-xs font-normal truncate">{permission.name}</span>
@@ -371,10 +365,10 @@ function PermissionsContent() {
   // Stats Overview Component
   const StatsOverview = () => (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-      <Card className="border-l-4 border-l-[#1B2E5A]">
+      <Card className="border-l-4 border-l-primary">
         <CardContent className="p-4">
           <div className="flex items-center gap-3">
-            <Users className="w-8 h-8 text-[#1B2E5A]" />
+            <Users className="w-8 h-8 text-primary" />
             <div>
               <p className="text-2xl font-bold">{filteredUsers.length}</p>
               <p className="text-sm text-gray-600">Active Users</p>
@@ -488,8 +482,8 @@ function PermissionsContent() {
                 key={key}
                 onClick={() => setViewMode(key as any)}
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${viewMode === key
-                    ? 'bg-white text-[#1B2E5A] shadow-sm'
-                    : 'text-gray-600 hover:text-[#1B2E5A]'
+                    ? 'bg-white text-primary shadow-sm'
+                    : 'text-gray-600 hover:text-primary'
                   }`}
               >
                 <Icon className="w-4 h-4" />
@@ -516,7 +510,7 @@ function PermissionsContent() {
             variant="outline"
             size="sm"
             onClick={() => setShowInactive(!showInactive)}
-            className={showInactive ? 'bg-[#1B2E5A]/5 border-[#1B2E5A]/20' : ''}
+            className={showInactive ? 'bg-primary/5 border-primary/20' : ''}
           >
             {showInactive ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
           </Button>
@@ -533,12 +527,12 @@ function PermissionsContent() {
             {/* Recent Users */}
             <Card className="professional-dropdown border-0 shadow-lg">
               <CardHeader className="pb-3 professional-dropdown-header rounded-t-lg">
-                <CardTitle className="text-lg flex items-center gap-3 font-semibold text-[#1B2E5A]">
-                  <div className="w-8 h-8 rounded-lg bg-[#1B2E5A] flex items-center justify-center">
+                <CardTitle className="text-lg flex items-center gap-3 font-semibold text-primary">
+                  <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
                     <Users className="w-4 h-4 text-white" />
                   </div>
                   Recent Users
-                  <Badge className="bg-[#1B2E5A]/10 text-[#1B2E5A] ml-auto">{filteredUsers.length}</Badge>
+                  <Badge className="bg-primary/10 text-primary ml-auto">{filteredUsers.length}</Badge>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2 max-h-96 overflow-y-auto hidden-scrollbar professional-dropdown-content p-6">
@@ -551,7 +545,7 @@ function PermissionsContent() {
             {/* Active Roles */}
             <Card className="professional-dropdown border-0 shadow-lg">
               <CardHeader className="pb-3 professional-dropdown-header rounded-t-lg">
-                <CardTitle className="text-lg flex items-center gap-3 font-semibold text-[#1B2E5A]">
+                <CardTitle className="text-lg flex items-center gap-3 font-semibold text-primary">
                   <div className="w-8 h-8 rounded-lg bg-purple-500 flex items-center justify-center">
                     <Crown className="w-4 h-4 text-white" />
                   </div>
@@ -569,7 +563,7 @@ function PermissionsContent() {
             {/* Key Permissions */}
             <Card className="professional-dropdown border-0 shadow-lg">
               <CardHeader className="pb-3 professional-dropdown-header rounded-t-lg">
-                <CardTitle className="text-lg flex items-center gap-3 font-semibold text-[#1B2E5A]">
+                <CardTitle className="text-lg flex items-center gap-3 font-semibold text-primary">
                   <div className="w-8 h-8 rounded-lg bg-green-500 flex items-center justify-center">
                     <Key className="w-4 h-4 text-white" />
                   </div>
@@ -601,7 +595,7 @@ function PermissionsContent() {
                     <Key className="w-6 h-6 text-white" />
                   </div>
                   <div className="text-left">
-                    <h2 className="text-xl font-bold text-[#1B2E5A]">Available Permissions</h2>
+                    <h2 className="text-xl font-bold text-primary">Available Permissions</h2>
                     <p className="text-sm text-gray-600 mt-1">{filteredPermissions.length} permissions ready to assign</p>
                   </div>
                 </div>
@@ -646,7 +640,7 @@ function PermissionsContent() {
                     <Users className="w-6 h-6 text-white" />
                   </div>
                   <div className="text-left">
-                    <h2 className="text-xl font-bold text-[#1B2E5A]">Team Members</h2>
+                    <h2 className="text-xl font-bold text-primary">Team Members</h2>
                     <p className="text-sm text-gray-600 mt-1">{filteredUsers.length} active team members</p>
                   </div>
                 </div>
@@ -691,7 +685,7 @@ function PermissionsContent() {
                     <Crown className="w-6 h-6 text-white" />
                   </div>
                   <div className="text-left">
-                    <h2 className="text-xl font-bold text-[#1B2E5A]">Roles</h2>
+                    <h2 className="text-xl font-bold text-primary">Roles</h2>
                     <p className="text-sm text-gray-600 mt-1">{filteredRoles.length} role templates</p>
                   </div>
                 </div>

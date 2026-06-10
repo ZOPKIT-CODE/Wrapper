@@ -2,6 +2,7 @@ import React from 'react'
 
 // Public / Landing — each page gets its own chunk (no barrel imports)
 export const Landing = React.lazy(() => import('@/features/landing/pages/Landing'))
+export const LandingV2 = React.lazy(() => import('@/features/landing/pages/LandingV2'))
 export const ProductPage = React.lazy(() => import('@/features/landing/pages/ProductPage'))
 export const IndustryPage = React.lazy(() => import('@/features/landing/pages/IndustryPage'))
 export const PrivacyPolicy = React.lazy(() => import('@/features/landing/pages/PrivacyPolicy'))

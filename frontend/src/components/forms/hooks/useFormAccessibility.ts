@@ -10,6 +10,7 @@ export const useFormAccessibility = () => {
     totalSteps,
     isCurrentStepValid,
     methods,
+    handleSubmit,
     nextStep,
     prevStep,
     goToStep
@@ -47,7 +48,7 @@ export const useFormAccessibility = () => {
         if (isCurrentStepValid) {
           if (currentStep === totalSteps - 1) {
             // Submit form
-            methods.handleSubmit();
+            void handleSubmit();
           } else {
             nextStep();
           }
@@ -118,7 +119,7 @@ export const useFormAccessibility = () => {
 /**
  * Hook for field-level accessibility
  */
-export const useFieldAccessibility = (fieldId: string, fieldLabel: string) => {
+export const useFieldAccessibility = (fieldId: string, _fieldLabel: string) => {
   const { methods } = useFormContext();
   const formErrors = methods.formState.errors;
   const hasError = !!formErrors[fieldId];

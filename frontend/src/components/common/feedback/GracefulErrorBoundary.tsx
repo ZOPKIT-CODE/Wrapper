@@ -69,6 +69,10 @@ export function GracefulErrorBoundary({
     )
   }
 
+  if (!isExpired) {
+    return <>{children}</>
+  }
+
   // For non-trial errors, show standard error message
   return (
     <Card className="border-red-200 bg-red-50">

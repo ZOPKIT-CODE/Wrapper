@@ -118,7 +118,7 @@ function ModuleList({ moduleCodes }: { moduleCodes: string[] }) {
       {sorted.map((m) => (
         <li
           key={m}
-          className="border-l-2 border-zopkit/20 pl-2.5 text-[13px] leading-snug text-zopkit/80"
+          className="border-l-2 border-border pl-2.5 text-[13px] leading-snug text-foreground/80"
         >
           {moduleDisplayName(m)}
         </li>
@@ -134,7 +134,7 @@ function moduleCellContent(
   if (!planRow?.applications?.includes(appId)) {
     return (
       <div className="flex min-h-[2.5rem] items-center justify-center py-1">
-        <span className="text-sm tabular-nums text-zopkit/25" aria-label="Not included">
+        <span className="text-sm tabular-nums text-foreground/25" aria-label="Not included">
           —
         </span>
       </div>
@@ -148,8 +148,8 @@ function moduleCellContent(
     }
     return (
       <div className="flex items-center gap-2 py-1">
-        <Check className="h-4 w-4 shrink-0 text-zopkit" strokeWidth={2} aria-hidden />
-        <span className="text-[13px] font-medium text-zopkit/90">All modules</span>
+        <Check className="h-4 w-4 shrink-0 text-foreground" strokeWidth={2} aria-hidden />
+        <span className="text-[13px] font-medium text-foreground/90">All modules</span>
       </div>
     );
   }
@@ -158,8 +158,8 @@ function moduleCellContent(
   }
   return (
     <div className="flex items-center gap-2 py-1">
-      <Check className="h-4 w-4 shrink-0 text-zopkit" strokeWidth={2} aria-hidden />
-      <span className="text-[13px] font-medium text-zopkit/90">Included</span>
+      <Check className="h-4 w-4 shrink-0 text-foreground" strokeWidth={2} aria-hidden />
+      <span className="text-[13px] font-medium text-foreground/90">Included</span>
     </div>
   );
 }
@@ -177,28 +177,28 @@ function ApplicationsModulesMatrixTable({
 
   if (unionApps.length === 0) {
     return (
-      <p className="text-center text-sm text-zopkit/55 py-8 border border-dashed border-zopkit/20 rounded-xl bg-zopkit-surface/80">
+      <p className="text-center text-sm text-foreground/55 py-8 border border-dashed border-border rounded-xl bg-background/80">
         Application coverage will appear here when subscription data is available.
       </p>
     );
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-zopkit/15 bg-white shadow-sm">
-      <div className="border-b border-zopkit/10 bg-zopkit-surface px-4 py-2.5 sm:px-5">
-        <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-zopkit/50">Module coverage</p>
+    <div className="overflow-hidden rounded-xl border border-border bg-white shadow-sm">
+      <div className="border-b border-border bg-background px-4 py-2.5 sm:px-5">
+        <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-foreground/50">Module coverage</p>
       </div>
       <div className="overflow-x-auto">
         <Table className="w-full min-w-[760px] border-collapse text-sm">
           <TableHeader>
-            <TableRow className="border-0 hover:bg-transparent [&>th]:border-b [&>th]:border-zopkit/15">
-              <TableHead className="sticky left-0 z-[2] min-w-[176px] border-r border-zopkit/15 bg-zopkit-surface px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-zopkit/55">
+            <TableRow className="border-0 hover:bg-transparent [&>th]:border-b [&>th]:border-border">
+              <TableHead className="sticky left-0 z-[2] min-w-[176px] border-r border-border bg-background px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-foreground/55">
                 Application
               </TableHead>
               {plans.map((p) => (
                 <TableHead
                   key={p.id}
-                  className="min-w-[220px] bg-zopkit-surface px-4 py-3.5 text-center align-bottom text-sm font-semibold tracking-tight text-zopkit"
+                  className="min-w-[220px] bg-background px-4 py-3.5 text-center align-bottom text-sm font-semibold tracking-tight text-foreground"
                 >
                   {p.name}
                 </TableHead>
@@ -209,15 +209,15 @@ function ApplicationsModulesMatrixTable({
             {unionApps.map((appId) => (
               <TableRow
                 key={appId}
-                className="group border-0 border-b border-zopkit/10 transition-colors last:border-b-0 hover:bg-zopkit/5"
+                className="group border-0 border-b border-border transition-colors last:border-b-0 hover:bg-muted/30"
               >
-                <TableCell className="sticky left-0 z-[1] border-r border-zopkit/15 bg-white px-4 py-4 align-top text-sm font-semibold tracking-tight text-zopkit transition-colors group-hover:bg-zopkit/5">
+                <TableCell className="sticky left-0 z-[1] border-r border-border bg-white px-4 py-4 align-top text-sm font-semibold tracking-tight text-foreground transition-colors group-hover:bg-muted/30">
                   {appDisplayName(appId)}
                 </TableCell>
                 {plans.map((p) => (
                   <TableCell
                     key={`${appId}-${p.id}`}
-                    className="border-l border-zopkit/10 bg-white px-4 py-4 align-top transition-colors group-hover:bg-zopkit/5"
+                    className="border-l border-border bg-white px-4 py-4 align-top transition-colors group-hover:bg-muted/30"
                   >
                     {moduleCellContent(matrixRowsById.get(p.id), appId)}
                   </TableCell>
@@ -227,8 +227,8 @@ function ApplicationsModulesMatrixTable({
           </TableBody>
         </Table>
       </div>
-      <div className="border-t border-zopkit/10 bg-zopkit-surface px-4 py-3 sm:px-5">
-        <p className="text-[11px] leading-relaxed text-zopkit/55">
+      <div className="border-t border-border bg-background px-4 py-3 sm:px-5">
+        <p className="text-[11px] leading-relaxed text-foreground/55">
           Coverage reflects the platform access matrix. Your contract and billing profile determine final entitlements.
         </p>
       </div>
@@ -238,9 +238,9 @@ function ApplicationsModulesMatrixTable({
 
 function FeatureBullet({ children }: { children: React.ReactNode }) {
   return (
-    <li className="flex gap-3 text-sm text-zopkit/80 leading-relaxed">
+    <li className="flex gap-3 text-sm text-foreground/80 leading-relaxed">
       <span
-        className="mt-2 h-1 w-1 shrink-0 rounded-full bg-zopkit"
+        className="mt-2 h-1 w-1 shrink-0 rounded-full bg-foreground"
         aria-hidden
       />
       <span>{children}</span>
@@ -295,15 +295,15 @@ export function PublicPricingSection({ variant = 'page' }: PublicPricingSectionP
     });
   }
 
-  const headingClass = 'text-zopkit font-semibold tracking-tight';
-  const bodyClass = 'text-zopkit/75 leading-relaxed';
-  const metaClass = 'text-zopkit/55 text-sm leading-relaxed';
+  const headingClass = 'text-foreground font-semibold tracking-tight';
+  const bodyClass = 'text-muted-foreground leading-relaxed';
+  const metaClass = 'text-muted-foreground text-sm leading-relaxed';
 
   return (
-    <div className="font-sans text-zopkit/90 antialiased">
+    <div className="marketing-pricing font-sans text-foreground antialiased">
       {/* Hero */}
       <section className={`text-center ${isLanding ? 'pt-2 pb-8 md:pb-10' : 'pt-4 pb-10 md:pb-12'}`}>
-        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-zopkit/45 mb-4">
+        <p className="landing-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground mb-4">
           Pricing
         </p>
         {isLanding ? (
@@ -317,13 +317,13 @@ export function PublicPricingSection({ variant = 'page' }: PublicPricingSectionP
         )}
         <p className={`text-base ${bodyClass} max-w-xl mx-auto mb-6`}>
           Pick a tier for the apps and modules you need.{' '}
-          <span className="font-medium text-zopkit">Billed annually</span> in USD or INR. Credits included each year;
+          <span className="font-medium text-foreground">Billed annually</span> in USD or INR. Credits included each year;
           add top-ups anytime.
         </p>
         <p className="mt-6">
           <a
             href="#pricing-faq"
-            className="cursor-pointer text-sm font-medium text-zopkit hover:text-zopkit-hover underline underline-offset-4 decoration-zopkit/30 hover:decoration-zopkit"
+            className="cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground underline underline-offset-4"
           >
             Frequently asked questions
           </a>
@@ -346,7 +346,7 @@ export function PublicPricingSection({ variant = 'page' }: PublicPricingSectionP
       {/* Currency */}
       <div className="flex justify-center mb-10">
         <div
-          className="inline-flex rounded-md border border-zopkit/15 p-0.5 bg-white shadow-sm"
+          className="inline-flex rounded-full border border-border p-0.5 bg-background"
           role="group"
           aria-label="Billing currency"
         >
@@ -356,8 +356,8 @@ export function PublicPricingSection({ variant = 'page' }: PublicPricingSectionP
             className={cn(
               'cursor-pointer px-5 py-2 rounded-[5px] text-sm font-medium transition-colors min-w-[3.5rem]',
               checkoutCurrency === 'usd'
-                ? 'bg-zopkit text-white'
-                : 'text-zopkit/65 hover:bg-zopkit-surface'
+                ? 'bg-foreground text-background'
+                : 'text-muted-foreground hover:text-foreground'
             )}
           >
             USD
@@ -368,8 +368,8 @@ export function PublicPricingSection({ variant = 'page' }: PublicPricingSectionP
             className={cn(
               'cursor-pointer px-5 py-2 rounded-[5px] text-sm font-medium transition-colors min-w-[3.5rem]',
               checkoutCurrency === 'inr'
-                ? 'bg-zopkit text-white'
-                : 'text-zopkit/65 hover:bg-zopkit-surface'
+                ? 'bg-foreground text-background'
+                : 'text-muted-foreground hover:text-foreground'
             )}
           >
             INR
@@ -378,9 +378,9 @@ export function PublicPricingSection({ variant = 'page' }: PublicPricingSectionP
       </div>
 
       {isLoading && (
-        <div className="flex justify-center py-14 gap-3 items-center text-zopkit/55">
-          <Loader2 className="w-5 h-5 animate-spin text-zopkit/70" aria-hidden />
-          <span className="text-sm font-medium text-zopkit/70">Loading plans</span>
+        <div className="flex justify-center py-14 gap-3 items-center text-foreground/55">
+          <Loader2 className="w-5 h-5 animate-spin text-foreground/70" aria-hidden />
+          <span className="text-sm font-medium text-foreground/70">Loading plans</span>
         </div>
       )}
 
@@ -404,28 +404,28 @@ export function PublicPricingSection({ variant = 'page' }: PublicPricingSectionP
                 className={cn(
                   'relative flex flex-col rounded-xl border bg-white p-7 md:p-8 transition-shadow',
                   featured
-                    ? 'border-zopkit shadow-md shadow-zopkit/10 z-[1]'
-                    : 'border-zopkit/15 hover:border-zopkit/30 hover:shadow-sm'
+                    ? 'border-foreground shadow-sm z-[1]'
+                    : 'border-border hover:border-foreground/30 hover:shadow-sm'
                 )}
               >
                 {featured && (
                   <div className="absolute -top-px left-1/2 -translate-x-1/2">
-                    <span className="inline-block text-[10px] font-semibold uppercase tracking-[0.14em] px-3 py-1.5 rounded-b-md bg-zopkit text-white">
+                    <span className="inline-block text-[10px] font-semibold uppercase tracking-[0.14em] px-3 py-1.5 rounded-b-md bg-foreground text-background">
                       Most popular
                     </span>
                   </div>
                 )}
                 <div className={cn('mb-6', featured && 'pt-2')}>
-                  <h3 className="text-lg font-semibold text-zopkit tracking-tight">{pkg.name}</h3>
+                  <h3 className="text-lg font-semibold text-foreground tracking-tight">{pkg.name}</h3>
                   <p className={`mt-2 text-sm ${bodyClass}`}>{pkg.description}</p>
                 </div>
                 <div className="mb-1">
-                  <span className="text-4xl font-semibold tabular-nums tracking-tight text-zopkit">
+                  <span className="text-4xl font-semibold tabular-nums tracking-tight text-foreground">
                     {monthlyDisplay}
                   </span>
                 </div>
-                <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-zopkit/50 mb-5">{perMonthLabel}</p>
-                <p className="text-sm font-medium text-zopkit border-t border-zopkit/10 pt-5 mb-6">
+                <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-foreground/50 mb-5">{perMonthLabel}</p>
+                <p className="text-sm font-medium text-foreground border-t border-border pt-5 mb-6">
                   {pkg.freeCredits.toLocaleString()} credits included per year
                 </p>
                 <ul className="space-y-3 mb-10 flex-1">
@@ -438,8 +438,8 @@ export function PublicPricingSection({ variant = 'page' }: PublicPricingSectionP
                   className={cn(
                     'mt-auto inline-flex items-center justify-center text-center rounded-lg py-3 px-4 text-sm font-semibold transition-colors cursor-pointer',
                     featured
-                      ? 'bg-zopkit text-white hover:bg-zopkit-hover'
-                      : 'bg-white text-zopkit border border-zopkit/15 hover:border-zopkit/40 hover:bg-zopkit-surface'
+                      ? 'bg-foreground text-background hover:bg-foreground-hover'
+                      : 'bg-white text-foreground border border-border hover:border-foreground/40 hover:bg-background'
                   )}
                 >
                   Contact sales
@@ -451,8 +451,8 @@ export function PublicPricingSection({ variant = 'page' }: PublicPricingSectionP
       </section>
 
       <section className="mb-14">
-        <div className="rounded-xl border border-zopkit/15 bg-zopkit-surface px-6 py-5">
-          <h2 className="text-base font-semibold text-zopkit tracking-tight">Credits included yearly</h2>
+        <div className="rounded-xl border border-border bg-background px-6 py-5">
+          <h2 className="text-base font-semibold text-foreground tracking-tight">Credits included yearly</h2>
           <p className={`mt-2 text-sm ${bodyClass}`}>
             Each application plan includes an annual credit pool for platform usage. Need more? Use credit top-ups below.
           </p>
@@ -473,26 +473,26 @@ export function PublicPricingSection({ variant = 'page' }: PublicPricingSectionP
                 className={cn(
                   'relative flex flex-col rounded-xl border bg-white p-7 md:p-8',
                   featured
-                    ? 'border-zopkit shadow-md shadow-zopkit/10'
-                    : 'border-zopkit/15 hover:shadow-sm'
+                    ? 'border-foreground shadow-sm'
+                    : 'border-border hover:shadow-sm'
                 )}
               >
                 {featured && (
                   <div className="absolute -top-px left-1/2 -translate-x-1/2">
-                    <span className="inline-block text-[10px] font-semibold uppercase tracking-[0.14em] px-3 py-1.5 rounded-b-md bg-zopkit text-white">
+                    <span className="inline-block text-[10px] font-semibold uppercase tracking-[0.14em] px-3 py-1.5 rounded-b-md bg-foreground text-background">
                       Best value
                     </span>
                   </div>
                 )}
                 <div className={cn('mb-6', featured && 'pt-2')}>
-                  <h3 className="text-lg font-semibold text-zopkit tracking-tight">{topup.name}</h3>
+                  <h3 className="text-lg font-semibold text-foreground tracking-tight">{topup.name}</h3>
                   <p className={`mt-2 text-sm ${bodyClass}`}>{topup.description}</p>
                 </div>
                 <div className="mb-1">
-                  <span className="text-4xl font-semibold tabular-nums text-zopkit">${topup.price}</span>
+                  <span className="text-4xl font-semibold tabular-nums text-foreground">${topup.price}</span>
                   <span className={`ml-1.5 text-sm ${metaClass}`}>one-time</span>
                 </div>
-                <p className="text-sm font-medium text-zopkit border-t border-zopkit/10 pt-5 mb-6">
+                <p className="text-sm font-medium text-foreground border-t border-border pt-5 mb-6">
                   {topup.credits.toLocaleString()} credits
                 </p>
                 <ul className="space-y-3 mb-10 flex-1">
@@ -505,8 +505,8 @@ export function PublicPricingSection({ variant = 'page' }: PublicPricingSectionP
                   className={cn(
                     'mt-auto inline-flex items-center justify-center text-center rounded-lg py-3 px-4 text-sm font-semibold transition-colors cursor-pointer',
                     featured
-                      ? 'bg-zopkit text-white hover:bg-zopkit-hover'
-                      : 'bg-white text-zopkit border border-zopkit/15 hover:border-zopkit/40 hover:bg-zopkit-surface'
+                      ? 'bg-foreground text-background hover:bg-foreground-hover'
+                      : 'bg-white text-foreground border border-border hover:border-foreground/40 hover:bg-background'
                   )}
                 >
                   Contact sales
@@ -524,11 +524,11 @@ export function PublicPricingSection({ variant = 'page' }: PublicPricingSectionP
         <Accordion
           type="single"
           collapsible
-          className="rounded-xl border border-zopkit/15 bg-white shadow-sm"
+          className="rounded-xl border border-border bg-white shadow-sm"
         >
           {FAQ_ITEMS.map((faq, i) => (
-            <AccordionItem key={i} value={`faq-${variant}-${i}`} className="border-zopkit/10 px-4 sm:px-5 last:border-b-0">
-              <AccordionTrigger className="cursor-pointer text-left text-[15px] font-semibold text-zopkit hover:no-underline py-5 hover:bg-zopkit/5 rounded-md px-1 -mx-1 data-[state=open]:bg-zopkit/10">
+            <AccordionItem key={i} value={`faq-${variant}-${i}`} className="border-border px-4 sm:px-5 last:border-b-0">
+              <AccordionTrigger className="cursor-pointer text-left text-[15px] font-semibold text-foreground hover:no-underline py-5 hover:bg-muted/30 rounded-md px-1 -mx-1 data-[state=open]:bg-foreground/10">
                 {faq.q}
               </AccordionTrigger>
               <AccordionContent className={`${bodyClass} text-sm pl-1 pr-4 pb-5`}>{faq.a}</AccordionContent>
@@ -537,13 +537,13 @@ export function PublicPricingSection({ variant = 'page' }: PublicPricingSectionP
         </Accordion>
       </section>
 
-      <section className="mb-16 py-12 px-5 sm:px-8 rounded-xl border border-zopkit/15 bg-zopkit-surface">
+      <section className="mb-16 py-12 px-5 sm:px-8 rounded-xl border border-border bg-background">
         <h2 className={`text-xl sm:text-2xl text-center ${headingClass} mb-10`}>How it works</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-6">
           {HOW_IT_WORKS.map((item) => (
-            <div key={item.step} className="border-l-2 border-zopkit/25 pl-5">
-              <p className="text-xs font-semibold tabular-nums text-zopkit/45 mb-2">0{item.step}</p>
-              <h3 className="text-sm font-semibold text-zopkit tracking-tight mb-2">{item.title}</h3>
+            <div key={item.step} className="border-l-2 border-border pl-5">
+              <p className="text-xs font-semibold tabular-nums text-foreground/45 mb-2">0{item.step}</p>
+              <h3 className="text-sm font-semibold text-foreground tracking-tight mb-2">{item.title}</h3>
               <p className={`text-sm ${bodyClass}`}>{item.desc}</p>
             </div>
           ))}
@@ -558,26 +558,26 @@ export function PublicPricingSection({ variant = 'page' }: PublicPricingSectionP
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {USAGE_EXAMPLES.map((ex) => (
-            <div key={ex.type} className="rounded-lg border border-zopkit/15 bg-white p-4">
-              <h3 className="text-sm font-semibold text-zopkit tracking-tight mb-2">{ex.type}</h3>
+            <div key={ex.type} className="rounded-lg border border-border bg-white p-4">
+              <h3 className="text-sm font-semibold text-foreground tracking-tight mb-2">{ex.type}</h3>
               <p className={`text-sm ${bodyClass}`}>{ex.desc}</p>
             </div>
           ))}
         </div>
       </section>
 
-      <section className="mb-16 p-8 sm:p-10 rounded-xl bg-zopkit text-white border border-zopkit-hover">
+      <section className="mb-16 p-8 sm:p-10 border border-border">
         <h2 className="text-lg sm:text-xl font-semibold tracking-tight mb-3">Need a custom package?</h2>
-        <p className="text-sm text-white/80 leading-relaxed mb-8 max-w-xl">
+        <p className={`text-sm ${bodyClass} mb-8 max-w-xl`}>
           Volume discounts, dedicated support, or custom integrations—we’ll tailor a plan for you. Contact{' '}
-          <a href="mailto:sales@zopkit.com" className="cursor-pointer font-medium text-white underline underline-offset-4 decoration-white/30 hover:decoration-white">
+          <a href="mailto:sales@zopkit.com" className="cursor-pointer font-medium text-foreground underline underline-offset-4">
             sales@zopkit.com
           </a>
           .
         </p>
         <a
           href={hrefContact}
-          className="inline-flex cursor-pointer items-center justify-center rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-zopkit hover:bg-zopkit-surface transition-colors"
+          className="landing-btn-primary inline-flex cursor-pointer items-center justify-center rounded-full px-5 py-2.5 text-sm font-medium transition-opacity hover:opacity-90"
         >
           Contact sales
         </a>
@@ -587,7 +587,7 @@ export function PublicPricingSection({ variant = 'page' }: PublicPricingSectionP
         <p className={`text-center text-sm ${metaClass} pb-2`}>
           <Link
             to="/pricing"
-            className="cursor-pointer font-medium text-zopkit hover:text-zopkit-hover underline underline-offset-4 decoration-zopkit/25"
+            className="cursor-pointer font-medium text-muted-foreground hover:text-foreground underline underline-offset-4"
           >
             View pricing as a full page
           </Link>

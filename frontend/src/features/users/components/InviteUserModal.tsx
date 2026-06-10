@@ -1,4 +1,3 @@
-import React from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -178,7 +177,7 @@ export function InviteUserModal({
               </p>
             ) : null}
             {inviteRoleId !== 'none' && roles.find((r) => r.roleId === inviteRoleId)?.roleName === 'Organization Admin' ? (
-              <p className="text-[12px] text-amber-800 dark:text-amber-200">
+              <p className="text-[12px] text-amber-800">
                 Only one active Organization Admin is allowed per tenant (including pending invitations).
               </p>
             ) : null}

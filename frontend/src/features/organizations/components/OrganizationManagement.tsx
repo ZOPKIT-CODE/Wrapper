@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useLocation, useSearch } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
@@ -18,30 +18,9 @@ import type { CreateForm } from './OrganizationCreateDialog'
 import type { CreditTransferForm, AllocationForm } from './OrganizationCreditSheets'
 import { useOrganizationHierarchyData } from '../hooks/useOrganizationHierarchyData'
 import { useOrganizationCrudActions } from '../hooks/useOrganizationCrudActions'
+import type { OrganizationEntity } from '../types'
 
 // --- Types ---
-
-interface Entity {
-  entityId: string
-  entityName: string
-  entityType: 'organization' | 'location' | 'department' | 'team'
-  organizationType?: string
-  locationType?: string
-  entityLevel: number
-  hierarchyPath: string
-  fullHierarchyPath: string
-  parentEntityId?: string
-  responsiblePersonId?: string
-  isActive: boolean
-  description?: string
-  availableCredits?: number
-  freeCredits?: number
-  paidCredits?: number
-  address?: any
-  children: Entity[]
-  createdAt?: string
-  updatedAt?: string
-}
 
 interface Organization {
   entityId: string
@@ -131,9 +110,9 @@ export function OrganizationPage({ isAdmin = false }: { isAdmin?: boolean }) {
 
 export function OrganizationTreeManagement({
   tenantId, isAdmin, makeRequest, applications, employees = [],
-  showEditResponsiblePerson, setShowEditResponsiblePerson,
-  editingEntity, setEditingEntity,
-  getResponsiblePersonName, loadResponsiblePersonNames,
+  setShowEditResponsiblePerson,
+  setEditingEntity,
+  getResponsiblePersonName,
 }: {
   tenantId: string
   isAdmin: boolean
@@ -142,10 +121,10 @@ export function OrganizationTreeManagement({
   employees?: any[]
   showEditResponsiblePerson: boolean
   setShowEditResponsiblePerson: (show: boolean) => void
-  editingEntity: Entity | null
-  setEditingEntity: (entity: Entity | null) => void
+  editingEntity: OrganizationEntity | null
+  setEditingEntity: (entity: OrganizationEntity | null) => void
   getResponsiblePersonName: (userId: string) => string
-  loadResponsiblePersonNames: (entities: (Entity | Organization)[]) => Promise<void>
+  loadResponsiblePersonNames: (entities: (OrganizationEntity | Organization)[]) => Promise<void>
 }) {
   const navigate = useNavigate()
   const location = useLocation()
@@ -180,7 +159,7 @@ export function OrganizationTreeManagement({
   const [showCreditTransfer, setShowCreditTransfer] = useState(false)
   const [showAllocationDialog, setShowAllocationDialog] = useState(false)
   const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null)
-  const [selectedEntity, setSelectedEntity] = useState<Entity | null>(null)
+  const [selectedEntity, setSelectedEntity] = useState<OrganizationEntity | null>(null)
   const [createFormStep, setCreateFormStep] = useState(0)
   const [managerUsers] = useState<any[]>([])
   const [createForm, setCreateForm] = useState<CreateForm>({
@@ -281,18 +260,18 @@ export function OrganizationTreeManagement({
 // --- Main Container ---
 
 export function OrganizationManagement({
-  employees, applications, isAdmin, makeRequest, loadDashboardData, inviteEmployee, tenantId,
+  employees, applications, isAdmin, makeRequest, loadDashboardData, tenantId,
 }: OrganizationManagementProps) {
   const queryClient = useQueryClient()
   const [showEditResponsiblePerson, setShowEditResponsiblePerson] = useState(false)
-  const [editingEntity, setEditingEntity] = useState<Entity | null>(null)
+  const [editingEntity, setEditingEntity] = useState<OrganizationEntity | null>(null)
   const [responsiblePersonNames, setResponsiblePersonNames] = useState<Map<string, string>>(new Map())
 
   if (!tenantId) return <div className="p-8 text-center text-red-500">Error: Missing Tenant ID</div>
 
   const getResponsiblePersonName = (userId: string) => responsiblePersonNames.get(userId) || 'Loading...'
 
-  const loadResponsiblePersonNames = async (entities: (Entity | Organization)[]) => {
+  const loadResponsiblePersonNames = async (entities: (OrganizationEntity | Organization)[]) => {
     const userIds = new Set<string>()
     entities.forEach((e) => e.responsiblePersonId && userIds.add(e.responsiblePersonId))
     if (userIds.size === 0) return
@@ -318,7 +297,7 @@ export function OrganizationManagement({
       />
       <Tabs defaultValue="hierarchy" className="w-full">
         <TabsList className={DASHBOARD_TABS_LIST_CLASS}>
-          <TabsTrigger value="hierarchy" className="gap-1.5 data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-slate-700">
+          <TabsTrigger value="hierarchy" className="gap-1.5 data-[state=active]:bg-white data-[state=active]:shadow-sm">
             Hierarchy & Locations
           </TabsTrigger>
         </TabsList>

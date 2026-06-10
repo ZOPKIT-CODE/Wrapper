@@ -386,11 +386,11 @@ export function CreditExpiryCard({ creditAllocations, creditBalance, isLoading }
       <CardHeader className="pb-4 border-b border-slate-50 bg-slate-50/30">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-[#1B2E5A]/10 rounded-xl">
-              <Calendar className="w-5 h-5 text-[#1B2E5A]" />
+            <div className="p-2.5 bg-primary/10 rounded-xl">
+              <Calendar className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <CardTitle className="text-base font-bold text-[#1B2E5A]">Credit Expiry Schedule</CardTitle>
+              <CardTitle className="text-base font-bold text-primary">Credit Expiry Schedule</CardTitle>
               <p className="text-xs text-slate-500 mt-0.5">
                 {rows.length} credit {rows.length === 1 ? 'pool' : 'pools'} · {totalAvailable.toLocaleString()} credits total
               </p>

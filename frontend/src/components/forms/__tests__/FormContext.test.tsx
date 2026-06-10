@@ -1,7 +1,5 @@
-import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { FormProvider, useFormContext } from '../contexts/FormContext';
-import { useForm } from 'react-hook-form';
 
 // Mock react-hook-form
 jest.mock('react-hook-form', () => ({

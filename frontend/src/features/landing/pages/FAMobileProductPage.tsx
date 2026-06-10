@@ -1,20 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 
-// ─── Design tokens ────────────────────────────────────────────
-const F = {
-    bg: '#FFFFFF',
-    bgSoft: '#F8F9FB',
-    white: '#FFFFFF',
-    ink: '#13204A',
-    inkSoft: '#3A4674',
-    muted: '#7C84A0',
-    line: 'rgba(19,32,74,0.10)',
-    green: '#2E9B6A',
-    greenLite: '#4DC18A',
-    blue: '#3D7AE8',
-    red: '#D9534F',
-};
+import { faMobileTokens as F } from '@/lib/marketing-tokens';
 
 const mono = "'JetBrains Mono', ui-monospace, monospace";
 const serif = "'Cormorant Garamond', Georgia, serif";
@@ -27,9 +14,9 @@ function MiniLogo() {
             <svg width="30" height="30" viewBox="0 0 40 40">
                 <defs>
                     <linearGradient id="flg-mob" x1="0" y1="0" x2="1" y2="1">
-                        <stop offset="0%" stopColor="#6B5BD6" />
-                        <stop offset="50%" stopColor="#3D8FE8" />
-                        <stop offset="100%" stopColor="#3FC9A4" />
+                        <stop offset="0%" stopColor="var(--illustration-brand-gradient-start)" />
+                        <stop offset="50%" stopColor="var(--illustration-info)" />
+                        <stop offset="100%" stopColor="var(--illustration-brand-gradient-end)" />
                     </linearGradient>
                 </defs>
                 <g transform="translate(20 20)">
@@ -47,8 +34,8 @@ function MiniLogo() {
                             />
                         );
                     })}
-                    <circle r="3" fill="#13204A" />
-                    <circle r="1.3" fill="#fff" />
+                    <circle r="3" fill="var(--illustration-ink)" />
+                    <circle r="1.3" fill="var(--background)" />
                 </g>
             </svg>
             <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1 }}>
@@ -91,7 +78,7 @@ function TopNav({ onMenu }: { onMenu: () => void }) {
                     }}
                 >
                     <svg width="16" height="11" viewBox="0 0 16 11" fill="none">
-                        <path d="M1 1h14M1 5.5h14M1 10h14" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" />
+                        <path d="M1 1h14M1 5.5h14M1 10h14" stroke="var(--background)" strokeWidth="1.6" strokeLinecap="round" />
                     </svg>
                 </button>
             </div>
@@ -113,7 +100,7 @@ function Menu({ open, onClose, onNavigate }: { open: boolean; onClose: () => voi
                     onClick={onClose}
                     style={{
                         width: 36, height: 36, borderRadius: 99, background: F.ink, border: 'none',
-                        color: '#fff', cursor: 'pointer', fontFamily: sans, fontSize: 18,
+                        color: 'var(--background)', cursor: 'pointer', fontFamily: sans, fontSize: 18,
                     }}
                 >×</button>
             </div>
@@ -145,7 +132,7 @@ function Menu({ open, onClose, onNavigate }: { open: boolean; onClose: () => voi
             <button
                 onClick={() => { onClose(); onNavigate('/onboarding'); }}
                 style={{
-                    padding: '16px', background: F.ink, color: '#fff', borderRadius: 999, border: 'none',
+                    padding: '16px', background: F.ink, color: 'var(--background)', borderRadius: 999, border: 'none',
                     fontFamily: sans, fontSize: 15, fontWeight: 600, cursor: 'pointer',
                 }}
             >
@@ -185,15 +172,15 @@ function HeroSection() {
             {/* Monitor bezel — thin rim, maximum video */}
             <div style={{
                 position: 'relative',
-                background: 'linear-gradient(175deg, #1c2035 0%, #0e1120 50%, #090c18 100%)',
+                background: 'linear-gradient(175deg, var(--illustration-device-rim) 0%, var(--illustration-device-body) 50%, var(--illustration-device-deep) 100%)',
                 borderRadius: 18, padding: 3,
                 boxShadow: '0 30px 80px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.05), inset 0 1px 0 rgba(255,255,255,0.07)',
             }}>
                 {/* Minimal top chrome strip */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', height: 22 }}>
-                    <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#FF6058' }} />
-                    <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#FFBD2E' }} />
-                    <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#28C940' }} />
+                    <div style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--window-dot-close)' }} />
+                    <div style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--window-dot-minimize)' }} />
+                    <div style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--window-dot-maximize)' }} />
                 </div>
 
                 {/* Video screen — fills almost all space */}
@@ -231,7 +218,7 @@ function HeroSection() {
                     {/* Cylinder side */}
                     <div style={{
                         position: 'absolute', top: '20%', left: 0, right: 0, bottom: 0,
-                        background: 'linear-gradient(to bottom, #212128 0%, #161620 28%, #0d0d14 65%, #070710 100%)',
+                        background: 'linear-gradient(to bottom, var(--illustration-device-rim) 0%, var(--illustration-device-body) 28%, var(--illustration-device-deep) 65%, var(--illustration-device-deep) 100%)',
                         borderRadius: '0 0 50% 50% / 0 0 22% 22%',
                         boxShadow: 'inset 7px 0 22px rgba(255,255,255,0.045),inset -7px 0 22px rgba(0,0,0,0.45),inset 0 -12px 28px rgba(0,0,0,0.75)',
                         overflow: 'hidden',
@@ -243,23 +230,23 @@ function HeroSection() {
                     {/* Top face */}
                     <div style={{
                         position: 'absolute', top: 0, left: 0, right: 0, height: '40%',
-                        background: 'radial-gradient(ellipse at 48% 38%, #2c2c38 0%, #1a1a26 50%, #0e0e18 82%, #08080f 100%)',
+                        background: 'radial-gradient(ellipse at 48% 38%, var(--illustration-device-rim) 0%, var(--illustration-device-body) 50%, var(--illustration-device-deep) 82%, var(--illustration-device-deep) 100%)',
                         borderRadius: '50%', zIndex: 2,
                         boxShadow: 'inset 0 9px 22px rgba(255,255,255,0.055),inset 0 -5px 14px rgba(0,0,0,0.65),0 7px 22px rgba(0,0,0,0.65)',
                     }}>
                         {/* Outer groove */}
                         <div style={{ position: 'absolute', top: '7%', left: '7%', right: '7%', bottom: '7%', borderRadius: '50%', boxShadow: 'inset 0 0 0 1.5px rgba(255,255,255,0.055),inset 0 0 10px rgba(0,0,0,0.6)' }} />
                         {/* Middle recess */}
-                        <div style={{ position: 'absolute', top: '20%', left: '20%', right: '20%', bottom: '20%', borderRadius: '50%', background: 'radial-gradient(ellipse at 50% 42%, #1e1e2a 0%, #0c0c14 100%)', boxShadow: 'inset 0 5px 14px rgba(0,0,0,0.95)' }} />
+                        <div style={{ position: 'absolute', top: '20%', left: '20%', right: '20%', bottom: '20%', borderRadius: '50%', background: 'radial-gradient(ellipse at 50% 42%, var(--illustration-device-body) 0%, var(--illustration-device-deep) 100%)', boxShadow: 'inset 0 5px 14px rgba(0,0,0,0.95)' }} />
                         {/* Glow ring */}
                         <div className="mob-pp-lens" style={{ position: 'absolute', top: '24%', left: '24%', right: '24%', bottom: '24%', borderRadius: '50%', background: 'transparent' }} />
                         {/* Pulse rings */}
                         <div className="mob-pp-ring1" style={{ position: 'absolute', top: '24%', left: '24%', right: '24%', bottom: '24%', borderRadius: '50%', boxShadow: '0 0 0 1.5px rgba(60,105,200,0.5)' }} />
                         <div className="mob-pp-ring2" style={{ position: 'absolute', top: '24%', left: '24%', right: '24%', bottom: '24%', borderRadius: '50%', boxShadow: '0 0 0 1.5px rgba(60,105,200,0.3)' }} />
                         {/* Lens bowl */}
-                        <div style={{ position: 'absolute', top: '32%', left: '32%', right: '32%', bottom: '32%', borderRadius: '50%', background: 'radial-gradient(circle at 44% 38%, #d0e4ff 0%, #88aef0 14%, #243B6E 36%, #1B2E5A 64%, #0F1B3D 100%)', boxShadow: 'inset 0 0 12px rgba(0,0,0,0.75)' }} />
+                        <div style={{ position: 'absolute', top: '32%', left: '32%', right: '32%', bottom: '32%', borderRadius: '50%', background: 'radial-gradient(circle at 44% 38%, var(--illustration-lens-glow) 0%, var(--illustration-info-light) 14%, var(--primary-hover) 36%, var(--primary) 64%, var(--illustration-lens-dark) 100%)', boxShadow: 'inset 0 0 12px rgba(0,0,0,0.75)' }} />
                         {/* Hot-spot */}
-                        <div className="mob-pp-hotspot" style={{ position: 'absolute', top: '42%', left: '42%', right: '42%', bottom: '42%', borderRadius: '50%', background: 'radial-gradient(circle, #fff 0%, #d2e8ff 55%, transparent 100%)' }} />
+                        <div className="mob-pp-hotspot" style={{ position: 'absolute', top: '42%', left: '42%', right: '42%', bottom: '42%', borderRadius: '50%', background: 'radial-gradient(circle, var(--background) 0%, var(--illustration-lens-glow) 55%, transparent 100%)' }} />
                     </div>
 
                     {/* Ground shadow */}
@@ -303,7 +290,7 @@ function ShiftSection() {
             </div>
 
             {/* Manual card */}
-            <div style={{ margin: '28px 14px 0', borderRadius: 16, overflow: 'hidden', background: 'linear-gradient(180deg, #FFF6F4 0%, #FFFFFF 100%)', border: '1px solid rgba(217,83,79,0.18)', position: 'relative' }}>
+            <div style={{ margin: '28px 14px 0', borderRadius: 16, overflow: 'hidden', background: 'linear-gradient(180deg, var(--illustration-destructive-tint) 0%, var(--background) 100%)', border: '1px solid rgba(217,83,79,0.18)', position: 'relative' }}>
                 <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,224,217,0.4)', borderBottom: '1px solid rgba(217,83,79,0.10)' }}>
                     <div style={{ fontFamily: mono, fontSize: 11, color: F.red, letterSpacing: '0.18em', fontWeight: 700 }}>MANUAL WORKFLOW</div>
                     <div style={{ width: 22, height: 22, borderRadius: 99, background: 'rgba(217,83,79,0.10)', color: F.red, display: 'grid', placeItems: 'center', fontSize: 14 }}>×</div>
@@ -315,7 +302,7 @@ function ShiftSection() {
                     <div style={{ height: 3, width: 40, marginTop: 10, background: F.red, borderRadius: 2 }} />
                     <ul style={{ listStyle: 'none', padding: 0, margin: '18px 0 0', display: 'flex', flexDirection: 'column', gap: 8 }}>
                         {pains.map((p, i) => (
-                            <li key={i} style={{ background: '#fff', border: '1px solid rgba(217,83,79,0.10)', borderRadius: 10, padding: '12px 12px', display: 'flex', alignItems: 'center', gap: 11 }}>
+                            <li key={i} style={{ background: 'var(--background)', border: '1px solid rgba(217,83,79,0.10)', borderRadius: 10, padding: '12px 12px', display: 'flex', alignItems: 'center', gap: 11 }}>
                                 <span style={{ width: 22, height: 22, borderRadius: 99, background: 'rgba(217,83,79,0.10)', color: F.red, fontSize: 12, display: 'grid', placeItems: 'center', flex: '0 0 22px' }}>×</span>
                                 <span style={{ fontFamily: sans, fontSize: 13, color: F.ink, lineHeight: 1.4 }}>{p}</span>
                             </li>
@@ -325,18 +312,18 @@ function ShiftSection() {
             </div>
 
             {/* Automated card */}
-            <div style={{ margin: '14px 14px 0', borderRadius: 16, overflow: 'hidden', background: 'linear-gradient(180deg, #0B1430 0%, #060A1B 100%)', border: '1px solid rgba(77,193,138,0.30)', position: 'relative' }}>
+            <div style={{ margin: '14px 14px 0', borderRadius: 16, overflow: 'hidden', background: 'linear-gradient(180deg, var(--illustration-nav) 0%, var(--illustration-success-deep) 100%)', border: '1px solid rgba(77,193,138,0.30)', position: 'relative' }}>
                 <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(77,193,138,0.06)', borderBottom: '1px solid rgba(77,193,138,0.15)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ width: 7, height: 7, borderRadius: 99, background: '#4DC18A' }} />
-                        <span style={{ width: 7, height: 7, borderRadius: 99, background: '#FFBD2E' }} />
-                        <span style={{ width: 7, height: 7, borderRadius: 99, background: '#3D7AE8' }} />
+                        <span style={{ width: 7, height: 7, borderRadius: 99, background: 'var(--illustration-success-light)' }} />
+                        <span style={{ width: 7, height: 7, borderRadius: 99, background: 'var(--window-dot-minimize)' }} />
+                        <span style={{ width: 7, height: 7, borderRadius: 99, background: 'var(--illustration-info)' }} />
                         <div style={{ fontFamily: mono, fontSize: 11, color: 'rgba(255,255,255,0.7)', letterSpacing: '0.18em', fontWeight: 700, marginLeft: 6 }}>AUTOMATED SYSTEM</div>
                     </div>
-                    <div style={{ width: 22, height: 22, borderRadius: 99, background: 'rgba(77,193,138,0.18)', color: '#4DC18A', display: 'grid', placeItems: 'center', fontSize: 13 }}>✓</div>
+                    <div style={{ width: 22, height: 22, borderRadius: 99, background: 'rgba(77,193,138,0.18)', color: 'var(--illustration-success-light)', display: 'grid', placeItems: 'center', fontSize: 13 }}>✓</div>
                 </div>
                 <div style={{ padding: '20px 16px 22px' }}>
-                    <h3 style={{ fontFamily: sans, fontWeight: 800, fontSize: 22, color: '#fff', margin: 0, letterSpacing: '-0.02em', lineHeight: 1.15 }}>
+                    <h3 style={{ fontFamily: sans, fontWeight: 800, fontSize: 22, color: 'var(--background)', margin: 0, letterSpacing: '-0.02em', lineHeight: 1.15 }}>
                         One Ledger. Every Module. Always Audit-Ready.
                     </h3>
                     <div style={{ height: 3, width: 40, marginTop: 10, background: F.blue, borderRadius: 2 }} />
@@ -345,7 +332,7 @@ function ShiftSection() {
                         {[{ l: 'EFFICIENCY', v: '+300%' }, { l: 'ERRORS', v: '0%' }].map((item) => (
                             <div key={item.l} style={{ padding: '14px 12px', borderRadius: 10, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', textAlign: 'center' }}>
                                 <div style={{ fontFamily: mono, fontSize: 9, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.14em' }}>{item.l}</div>
-                                <div style={{ fontFamily: sans, fontSize: 24, fontWeight: 800, color: '#4DC18A', marginTop: 4 }}>{item.v}</div>
+                                <div style={{ fontFamily: sans, fontSize: 24, fontWeight: 800, color: 'var(--illustration-success-light)', marginTop: 4 }}>{item.v}</div>
                             </div>
                         ))}
                     </div>
@@ -353,9 +340,9 @@ function ShiftSection() {
                     <ul style={{ listStyle: 'none', padding: 0, margin: '14px 0 0', display: 'flex', flexDirection: 'column', gap: 8 }}>
                         {gains.map((g, i) => (
                             <li key={i} style={{ background: 'rgba(61,122,232,0.10)', border: '1px solid rgba(61,122,232,0.20)', borderRadius: 10, padding: '11px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
-                                <span style={{ width: 22, height: 22, borderRadius: 5, background: 'rgba(61,122,232,0.20)', color: '#9CC0F7', display: 'grid', placeItems: 'center', fontSize: 12, flex: '0 0 22px', fontFamily: mono }}>▦</span>
+                                <span style={{ width: 22, height: 22, borderRadius: 5, background: 'rgba(61,122,232,0.20)', color: 'var(--illustration-info-light)', display: 'grid', placeItems: 'center', fontSize: 12, flex: '0 0 22px', fontFamily: mono }}>▦</span>
                                 <span style={{ fontFamily: sans, fontSize: 12.5, color: 'rgba(255,255,255,0.85)', lineHeight: 1.4, flex: 1 }}>{g}</span>
-                                <span style={{ color: '#4DC18A', fontSize: 13, flex: '0 0 14px' }}>✓</span>
+                                <span style={{ color: 'var(--illustration-success-light)', fontSize: 13, flex: '0 0 14px' }}>✓</span>
                             </li>
                         ))}
                     </ul>
@@ -369,21 +356,21 @@ function ShiftSection() {
 function WinMock({ children, url = 'app.zopkit.com/dashboard', full }: { children: React.ReactNode; url?: string; full?: boolean }) {
     const dotSz = full ? 14 : 8;
     return (
-        <div style={{ background: '#fff', borderRadius: full ? 14 : 10, overflow: 'hidden', boxShadow: '0 20px 40px -12px rgba(19,32,74,0.20), 0 0 0 1px rgba(19,32,74,0.04)' }}>
+        <div style={{ background: 'var(--background)', borderRadius: full ? 14 : 10, overflow: 'hidden', boxShadow: '0 20px 40px -12px rgba(19,32,74,0.20), 0 0 0 1px rgba(19,32,74,0.04)' }}>
             {/* Chrome bar */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: full ? 7 : 5, padding: full ? '12px 16px' : '8px 9px', background: '#F4F1EB', borderBottom: `1px solid ${F.line}` }}>
-                <span style={{ width: dotSz, height: dotSz, borderRadius: 99, background: '#FF6058', flexShrink: 0 }} />
-                <span style={{ width: dotSz, height: dotSz, borderRadius: 99, background: '#FFBD2E', flexShrink: 0 }} />
-                <span style={{ width: dotSz, height: dotSz, borderRadius: 99, background: '#28C940', flexShrink: 0 }} />
-                <div style={{ flex: 1, marginLeft: full ? 10 : 6, height: full ? 24 : 16, borderRadius: full ? 5 : 3, background: '#E6E1D6', display: 'grid', placeItems: 'center', fontFamily: mono, fontSize: full ? 11 : 8, color: F.muted }}>{url}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: full ? 7 : 5, padding: full ? '12px 16px' : '8px 9px', background: 'var(--muted)', borderBottom: `1px solid ${F.line}` }}>
+                <span style={{ width: dotSz, height: dotSz, borderRadius: 99, background: 'var(--window-dot-close)', flexShrink: 0 }} />
+                <span style={{ width: dotSz, height: dotSz, borderRadius: 99, background: 'var(--window-dot-minimize)', flexShrink: 0 }} />
+                <span style={{ width: dotSz, height: dotSz, borderRadius: 99, background: 'var(--window-dot-maximize)', flexShrink: 0 }} />
+                <div style={{ flex: 1, marginLeft: full ? 10 : 6, height: full ? 24 : 16, borderRadius: full ? 5 : 3, background: 'var(--border)', display: 'grid', placeItems: 'center', fontFamily: mono, fontSize: full ? 11 : 8, color: F.muted }}>{url}</div>
             </div>
             {/* Body */}
             <div style={{ display: 'flex' }}>
                 {full ? (
                     /* Full-size sidebar — matches desktop design */
-                    <div style={{ width: 48, background: '#0B1430', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '12px 0 12px', flexShrink: 0 }}>
+                    <div style={{ width: 48, background: 'var(--illustration-nav)', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '12px 0 12px', flexShrink: 0 }}>
                         {/* Active nav item — blue square with grid icon */}
-                        <div style={{ width: 30, height: 30, borderRadius: 7, background: '#3D7AE8', display: 'grid', placeItems: 'center', marginBottom: 14 }}>
+                        <div style={{ width: 30, height: 30, borderRadius: 7, background: 'var(--illustration-info)', display: 'grid', placeItems: 'center', marginBottom: 14 }}>
                             <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                                 <rect x="2" y="2" width="6" height="6" rx="1.5" fill="white" />
                                 <rect x="10" y="2" width="6" height="6" rx="1.5" fill="rgba(255,255,255,0.45)" />
@@ -401,9 +388,9 @@ function WinMock({ children, url = 'app.zopkit.com/dashboard', full }: { childre
                     </div>
                 ) : (
                     /* Compact preview sidebar */
-                    <div style={{ width: 14, padding: '10px 3px', background: '#0B1430', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <div style={{ width: 14, padding: '10px 3px', background: 'var(--illustration-nav)', display: 'flex', flexDirection: 'column', gap: 4 }}>
                         {Array.from({ length: 6 }).map((_, i) => (
-                            <div key={i} style={{ width: 5, height: 5, borderRadius: 1, background: i === 0 ? '#3D7AE8' : 'rgba(255,255,255,0.18)' }} />
+                            <div key={i} style={{ width: 5, height: 5, borderRadius: 1, background: i === 0 ? 'var(--illustration-info)' : 'rgba(255,255,255,0.18)' }} />
                         ))}
                     </div>
                 )}
@@ -420,7 +407,7 @@ function MockHeader({ title, sub, cta, full }: { title: string; sub?: string; ct
                 <div style={{ fontFamily: sans, fontWeight: 700, fontSize: full ? 22 : 12, color: F.ink, lineHeight: 1.2 }}>{title}</div>
                 {sub && <div style={{ fontFamily: sans, fontSize: full ? 12 : 9.5, color: F.muted, marginTop: full ? 3 : 1, lineHeight: 1.3 }}>{sub}</div>}
             </div>
-            {cta && <div style={{ background: F.ink, color: '#fff', padding: full ? '10px 18px' : '5px 8px', borderRadius: full ? 7 : 4, fontFamily: sans, fontSize: full ? 13 : 9, fontWeight: 600, whiteSpace: 'nowrap', flex: '0 0 auto' }}>{cta}</div>}
+            {cta && <div style={{ background: F.ink, color: 'var(--background)', padding: full ? '10px 18px' : '5px 8px', borderRadius: full ? 7 : 4, fontFamily: sans, fontSize: full ? 13 : 9, fontWeight: 600, whiteSpace: 'nowrap', flex: '0 0 auto' }}>{cta}</div>}
         </div>
     );
 }
@@ -549,7 +536,7 @@ function EntityMock({ full }: { full?: boolean }) {
 
                         {/* Org tree */}
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                            <div style={{ background: F.ink, color: '#fff', padding: '10px 28px', borderRadius: 7, fontFamily: sans, fontSize: 14, fontWeight: 700 }}>Group HoldCo</div>
+                            <div style={{ background: F.ink, color: 'var(--background)', padding: '10px 28px', borderRadius: 7, fontFamily: sans, fontSize: 14, fontWeight: 700 }}>Group HoldCo</div>
 
                             {/* SVG connector lines */}
                             <svg width="100%" height="42" style={{ display: 'block', overflow: 'visible' }} preserveAspectRatio="none">
@@ -585,7 +572,7 @@ function EntityMock({ full }: { full?: boolean }) {
 
                     {/* ── Entity Registry panel ── */}
                     <div style={{ borderRadius: 10, border: `1px solid ${F.line}`, overflow: 'hidden' }}>
-                        <div style={{ padding: '13px 16px', fontFamily: sans, fontWeight: 700, fontSize: 15, color: F.ink, borderBottom: `1px solid ${F.line}`, background: '#fff' }}>
+                        <div style={{ padding: '13px 16px', fontFamily: sans, fontWeight: 700, fontSize: 15, color: F.ink, borderBottom: `1px solid ${F.line}`, background: 'var(--background)' }}>
                             Entity Registry
                         </div>
                         <TableMock full
@@ -618,7 +605,7 @@ function EntityMock({ full }: { full?: boolean }) {
             <div style={{ marginTop: 9, padding: 8, borderRadius: 5, background: F.bgSoft, border: `1px solid ${F.line}` }}>
                 <div style={{ fontFamily: sans, fontWeight: 700, fontSize: 10, color: F.ink }}>Group Structure</div>
                 <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                    <div style={{ background: F.ink, color: '#fff', padding: '4px 12px', borderRadius: 4, fontFamily: sans, fontSize: 9, fontWeight: 600 }}>Group HoldCo</div>
+                    <div style={{ background: F.ink, color: 'var(--background)', padding: '4px 12px', borderRadius: 4, fontFamily: sans, fontSize: 9, fontWeight: 600 }}>Group HoldCo</div>
                     <div style={{ width: 1, height: 8, background: F.line }} />
                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'center' }}>
                         {['IN', 'US', 'SG'].map((c) => (
@@ -692,13 +679,13 @@ function APMock({ full }: { full?: boolean }) {
             <KPIRow full={full} items={[
                 { l: 'OPEN BILLS', v: '23', s: 'Awaiting action' },
                 { l: 'OPEN AMT', v: '₹63,30,315', s: 'Across 23 bills' },
-                { l: 'DUE WK', v: '7', s: 'Urgent', sc: '#C7572B' },
-                { l: 'APPROVAL', v: '4', s: 'Pending', sc: '#C7572B' },
+                { l: 'DUE WK', v: '7', s: 'Urgent', sc: 'var(--illustration-accent-orange)' },
+                { l: 'APPROVAL', v: '4', s: 'Pending', sc: 'var(--illustration-accent-orange)' },
             ]} />
             <div style={{ marginTop: full ? 14 : 9, display: 'flex', gap: full ? 8 : 4, fontFamily: sans, fontSize: full ? 13 : 7.5, alignItems: 'center', flexWrap: 'wrap' }}>
                 {['PR', 'PO', 'GRN', 'Bill', 'Pay'].map((s, i) => (
                     <React.Fragment key={s}>
-                        <div style={{ padding: full ? '7px 14px' : '4px 7px', borderRadius: full ? 5 : 3, background: i === 2 ? 'rgba(77,193,138,0.18)' : (i === 3 ? F.ink : F.bgSoft), color: i === 3 ? '#fff' : (i === 2 ? F.green : F.ink), fontWeight: i === 3 || i === 2 ? 700 : 500, border: i === 3 || i === 2 ? 'none' : `1px solid ${F.line}` }}>
+                        <div style={{ padding: full ? '7px 14px' : '4px 7px', borderRadius: full ? 5 : 3, background: i === 2 ? 'rgba(77,193,138,0.18)' : (i === 3 ? F.ink : F.bgSoft), color: i === 3 ? 'var(--background)' : (i === 2 ? F.green : F.ink), fontWeight: i === 3 || i === 2 ? 700 : 500, border: i === 3 || i === 2 ? 'none' : `1px solid ${F.line}` }}>
                             {s}{i === 2 ? ' ✓' : ''}
                         </div>
                         {i < 4 && <span style={{ color: F.muted }}>›</span>}
@@ -709,7 +696,7 @@ function APMock({ full }: { full?: boolean }) {
                 cols={[{ h: 'VENDOR', w: '1.1fr' }, { h: 'BILL #', w: '0.9fr' }, { h: 'DUE', w: '0.7fr' }, { h: 'AMT', w: '1fr', a: 'right' }, { h: 'STATUS', w: '0.8fr', a: 'right' }]}
                 rows={[
                     ['Infosys Ltd', { mono: true, b: true, t: 'BL-7823' }, 'May 20', { mono: true, t: '₹18,40,000' }, { c: F.green, b: true, t: 'Approved' }],
-                    ['TCS Pvt Ltd', { mono: true, b: true, t: 'BL-7820' }, 'Apr 28', { mono: true, t: '₹3,40,000' }, { c: '#C7572B', b: true, t: 'Pending' }],
+                    ['TCS Pvt Ltd', { mono: true, b: true, t: 'BL-7820' }, 'Apr 28', { mono: true, t: '₹3,40,000' }, { c: 'var(--illustration-accent-orange)', b: true, t: 'Pending' }],
                     ['Wipro Ltd', { mono: true, b: true, t: 'BL-7818' }, 'Apr 25', { mono: true, t: '₹12,80,000' }, { c: F.blue, b: true, t: 'Paid' }],
                     ['HCL Tech', { mono: true, b: true, t: 'BL-7812' }, 'May 10', { mono: true, t: '₹28,70,315' }, { c: F.muted, b: true, t: 'Draft' }],
                 ]}
@@ -732,7 +719,7 @@ function ARMock({ full }: { full?: boolean }) {
                 cols={[{ h: 'INVOICE', w: '1fr' }, { h: 'CUSTOMER', w: '1fr' }, { h: 'DUE', w: '0.7fr' }, { h: 'AMT', w: '1fr', a: 'right' }, { h: 'STATUS', w: '1fr', a: 'right' }]}
                 rows={[
                     [{ mono: true, b: true, t: 'INV-000022' }, 'Zoho Corp', 'May 9', { mono: true, t: '₹5,90,000' }, { c: F.muted, b: true, t: 'Draft' }],
-                    [{ mono: true, b: true, t: 'INV-000019' }, 'CleverTap', 'Apr 1', { mono: true, t: '₹2,47,800' }, { c: '#C7572B', b: true, t: 'Partial' }],
+                    [{ mono: true, b: true, t: 'INV-000019' }, 'CleverTap', 'Apr 1', { mono: true, t: '₹2,47,800' }, { c: 'var(--illustration-accent-orange)', b: true, t: 'Partial' }],
                     [{ mono: true, b: true, t: 'INV-000018' }, 'Chargebee', 'Mar 11', { mono: true, t: '₹88,500' }, { c: F.green, b: true, t: 'Paid' }],
                     [{ mono: true, b: true, t: 'INV-000016' }, 'PhonePe', 'Feb 16', { mono: true, t: '₹1,12,100' }, { c: F.green, b: true, t: 'Paid' }],
                 ]}
@@ -744,7 +731,7 @@ function ARMock({ full }: { full?: boolean }) {
 function BankMock({ full }: { full?: boolean }) {
     const banks = [
         { n: 'HDFC', a: '··2841', v: '₹38,40,000', s: 'Reconciled ✓', sc: F.green },
-        { n: 'ICICI', a: '··9012', v: '₹11,50,000', s: '3 unreconciled', sc: '#C7572B' },
+        { n: 'ICICI', a: '··9012', v: '₹11,50,000', s: '3 unreconciled', sc: 'var(--illustration-accent-orange)' },
         { n: 'Axis', a: '··5503', v: '₹20,000', s: 'Reconciled ✓', sc: F.green },
     ];
     return (
@@ -766,7 +753,7 @@ function BankMock({ full }: { full?: boolean }) {
                     ['Apr 26', 'Customer NEFT — Zoho', 'Auto: Receipts', { mono: true, c: F.green, b: true, t: '+₹5,90,000' }, { c: F.green, b: true, t: 'Matched ✓' }],
                     ['Apr 25', 'RTGS — AWS India', 'Recurring', { mono: true, c: F.red, b: true, t: '−₹1,42,800' }, { c: F.green, b: true, t: 'Matched ✓' }],
                     ['Apr 25', 'Payroll batch', 'Auto: Payroll', { mono: true, c: F.red, b: true, t: '−₹18,40,000' }, { c: F.green, b: true, t: 'Matched ✓' }],
-                    ['Apr 24', 'NEFT — Chargebee', 'Reviewing…', { mono: true, c: F.green, b: true, t: '+₹88,500' }, { c: '#C7572B', b: true, t: 'Unmatched' }],
+                    ['Apr 24', 'NEFT — Chargebee', 'Reviewing…', { mono: true, c: F.green, b: true, t: '+₹88,500' }, { c: 'var(--illustration-accent-orange)', b: true, t: 'Unmatched' }],
                 ]}
             />
         </WinMock>
@@ -780,7 +767,7 @@ function FAAssetsMock({ full }: { full?: boolean }) {
             <KPIRow full={full} items={[
                 { l: 'ASSET COUNT', v: '142', s: 'Active' },
                 { l: 'NET BOOK VAL', v: '₹2,10,40,000', s: 'As at Apr 2026' },
-                { l: 'DEPN YTD', v: '₹18,60,000', s: 'FY 2025–26', sc: '#C7572B' },
+                { l: 'DEPN YTD', v: '₹18,60,000', s: 'FY 2025–26', sc: 'var(--illustration-accent-orange)' },
             ]} />
             <TableMock full={full}
                 cols={[{ h: 'ASSET #', w: '0.9fr' }, { h: 'NAME', w: '1.4fr' }, { h: 'CAT', w: '1fr' }, { h: 'METH', w: '0.7fr' }, { h: 'NBV (₹)', w: '1fr', a: 'right' }]}
@@ -791,7 +778,7 @@ function FAAssetsMock({ full }: { full?: boolean }) {
                     [{ mono: true, b: true, t: 'FA-0001' }, 'HP LaserJet M404', 'IT Hardware', 'SLM', { mono: true, t: '₹12,000' }],
                 ]}
             />
-            <div style={{ marginTop: full ? 14 : 8, padding: full ? '10px 14px' : '6px 8px', borderRadius: full ? 6 : 4, background: 'rgba(199,87,43,0.08)', border: '1px solid rgba(199,87,43,0.20)', fontFamily: sans, fontSize: full ? 12 : 8.5, color: '#C7572B', fontWeight: 600 }}>
+            <div style={{ marginTop: full ? 14 : 8, padding: full ? '10px 14px' : '6px 8px', borderRadius: full ? 6 : 4, background: 'rgba(199,87,43,0.08)', border: '1px solid rgba(199,87,43,0.20)', fontFamily: sans, fontSize: full ? 12 : 8.5, color: 'var(--illustration-accent-orange)', fontWeight: 600 }}>
                 Depreciation method: SLM avg 10% · ₹18,60,000 YTD
             </div>
         </WinMock>
@@ -824,11 +811,11 @@ function MockExpandModal({ title, children, onClose }: { title: string; children
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <button
                         onClick={onClose}
-                        style={{ width: 14, height: 14, borderRadius: 99, background: '#FF6058', border: 'none', cursor: 'pointer', padding: 0 }}
+                        style={{ width: 14, height: 14, borderRadius: 99, background: 'var(--window-dot-close)', border: 'none', cursor: 'pointer', padding: 0 }}
                         aria-label="Close"
                     />
-                    <div style={{ width: 14, height: 14, borderRadius: 99, background: '#FFBD2E' }} />
-                    <div style={{ width: 14, height: 14, borderRadius: 99, background: '#28C940' }} />
+                    <div style={{ width: 14, height: 14, borderRadius: 99, background: 'var(--window-dot-minimize)' }} />
+                    <div style={{ width: 14, height: 14, borderRadius: 99, background: 'var(--window-dot-maximize)' }} />
                 </div>
                 {/* Title */}
                 <div style={{ fontFamily: mono, fontSize: 11, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.08em', textAlign: 'center', flex: 1, padding: '0 12px' }}>
@@ -873,7 +860,7 @@ function MockExpandModal({ title, children, onClose }: { title: string; children
                     {/* Cylinder side */}
                     <div style={{
                         position: 'absolute', top: '20%', left: 0, right: 0, bottom: 0,
-                        background: 'linear-gradient(to bottom, #212128 0%, #161620 28%, #0d0d14 65%, #070710 100%)',
+                        background: 'linear-gradient(to bottom, var(--illustration-device-rim) 0%, var(--illustration-device-body) 28%, var(--illustration-device-deep) 65%, var(--illustration-device-deep) 100%)',
                         borderRadius: '0 0 50% 50% / 0 0 22% 22%',
                         boxShadow: 'inset 5px 0 14px rgba(255,255,255,0.045),inset -5px 0 14px rgba(0,0,0,0.45),inset 0 -8px 18px rgba(0,0,0,0.75)',
                         overflow: 'hidden',
@@ -884,17 +871,17 @@ function MockExpandModal({ title, children, onClose }: { title: string; children
                     {/* Top face */}
                     <div style={{
                         position: 'absolute', top: 0, left: 0, right: 0, height: '40%',
-                        background: 'radial-gradient(ellipse at 48% 38%, #2c2c38 0%, #1a1a26 50%, #0e0e18 82%, #08080f 100%)',
+                        background: 'radial-gradient(ellipse at 48% 38%, var(--illustration-device-rim) 0%, var(--illustration-device-body) 50%, var(--illustration-device-deep) 82%, var(--illustration-device-deep) 100%)',
                         borderRadius: '50%', zIndex: 2,
                         boxShadow: 'inset 0 6px 14px rgba(255,255,255,0.055),inset 0 -4px 10px rgba(0,0,0,0.65),0 5px 14px rgba(0,0,0,0.65)',
                     }}>
                         <div style={{ position: 'absolute', top: '7%', left: '7%', right: '7%', bottom: '7%', borderRadius: '50%', boxShadow: 'inset 0 0 0 1.5px rgba(255,255,255,0.055),inset 0 0 6px rgba(0,0,0,0.6)' }} />
-                        <div style={{ position: 'absolute', top: '20%', left: '20%', right: '20%', bottom: '20%', borderRadius: '50%', background: 'radial-gradient(ellipse at 50% 42%, #1e1e2a 0%, #0c0c14 100%)', boxShadow: 'inset 0 4px 10px rgba(0,0,0,0.95)' }} />
+                        <div style={{ position: 'absolute', top: '20%', left: '20%', right: '20%', bottom: '20%', borderRadius: '50%', background: 'radial-gradient(ellipse at 50% 42%, var(--illustration-device-body) 0%, var(--illustration-device-deep) 100%)', boxShadow: 'inset 0 4px 10px rgba(0,0,0,0.95)' }} />
                         <div className="mob-pp-lens" style={{ position: 'absolute', top: '24%', left: '24%', right: '24%', bottom: '24%', borderRadius: '50%', background: 'transparent' }} />
                         <div className="mob-pp-ring1" style={{ position: 'absolute', top: '24%', left: '24%', right: '24%', bottom: '24%', borderRadius: '50%', boxShadow: '0 0 0 1.5px rgba(60,105,200,0.5)' }} />
                         <div className="mob-pp-ring2" style={{ position: 'absolute', top: '24%', left: '24%', right: '24%', bottom: '24%', borderRadius: '50%', boxShadow: '0 0 0 1.5px rgba(60,105,200,0.3)' }} />
-                        <div style={{ position: 'absolute', top: '32%', left: '32%', right: '32%', bottom: '32%', borderRadius: '50%', background: 'radial-gradient(circle at 44% 38%, #d0e4ff 0%, #88aef0 14%, #243B6E 36%, #1B2E5A 64%, #0F1B3D 100%)', boxShadow: 'inset 0 0 8px rgba(0,0,0,0.75)' }} />
-                        <div className="mob-pp-hotspot" style={{ position: 'absolute', top: '42%', left: '42%', right: '42%', bottom: '42%', borderRadius: '50%', background: 'radial-gradient(circle, #fff 0%, #d2e8ff 55%, transparent 100%)' }} />
+                        <div style={{ position: 'absolute', top: '32%', left: '32%', right: '32%', bottom: '32%', borderRadius: '50%', background: 'radial-gradient(circle at 44% 38%, var(--illustration-lens-glow) 0%, var(--illustration-info-light) 14%, var(--primary-hover) 36%, var(--primary) 64%, var(--illustration-lens-dark) 100%)', boxShadow: 'inset 0 0 8px rgba(0,0,0,0.75)' }} />
+                        <div className="mob-pp-hotspot" style={{ position: 'absolute', top: '42%', left: '42%', right: '42%', bottom: '42%', borderRadius: '50%', background: 'radial-gradient(circle, var(--background) 0%, var(--illustration-lens-glow) 55%, transparent 100%)' }} />
                     </div>
                     {/* Ground shadow */}
                     <div style={{ position: 'absolute', bottom: '-14%', left: '18%', right: '18%', height: '18%', borderRadius: '50%', background: 'rgba(0,0,0,0.5)', filter: 'blur(8px)' }} />
@@ -1002,7 +989,7 @@ function FeaturePanel({ num, bg, accent, icon, title, desc, bullets, chip, child
 
             {/* ── Chip ── */}
             {chip && (
-                <div style={{ display: 'inline-flex', marginTop: 16, background: '#fff', borderRadius: 999, padding: '8px 14px', boxShadow: '0 4px 14px rgba(19,32,74,0.10)', fontFamily: "'Inter', system-ui, sans-serif", fontSize: 12, color: F.ink, fontWeight: 600, alignItems: 'center', gap: 7 }}>
+                <div style={{ display: 'inline-flex', marginTop: 16, background: 'var(--background)', borderRadius: 999, padding: '8px 14px', boxShadow: '0 4px 14px rgba(19,32,74,0.10)', fontFamily: "'Inter', system-ui, sans-serif", fontSize: 12, color: F.ink, fontWeight: 600, alignItems: 'center', gap: 7 }}>
                     <span style={{ width: 7, height: 7, borderRadius: 99, background: accent }} />
                     {chip.label} <strong style={{ fontWeight: 800, color: accent }}>{chip.value}</strong>
                 </div>
@@ -1016,7 +1003,7 @@ function CapabilitiesSection({ onExpand }: { onExpand: (title: string, node: Rea
     const features: FeaturePanelProps[] = [
         {
             num: '01', title: 'General Ledger',
-            bg: 'linear-gradient(180deg, #E8EEFE 0%, #F4F6FE 100%)',
+            bg: 'linear-gradient(180deg, var(--illustration-primary-tint) 0%, var(--illustration-info-bg) 100%)',
             accent: F.blue,
             icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="4" y="3" width="16" height="18" rx="2" stroke="currentColor" strokeWidth="1.6" /><path d="M8 7h8M8 11h8M8 15h5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>,
             desc: 'The double-entry core — chart of accounts, journal workflows, period-locked close, and a real-time trial balance that never goes stale.',
@@ -1026,7 +1013,7 @@ function CapabilitiesSection({ onExpand }: { onExpand: (title: string, node: Rea
         },
         {
             num: '02', title: 'Multi-Entity Management',
-            bg: 'linear-gradient(180deg, #E6F6EC 0%, #F1FAF3 100%)',
+            bg: 'linear-gradient(180deg, var(--illustration-success-tint) 0%, var(--illustration-success-tint) 100%)',
             accent: F.green,
             icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 21V7l5-3v17M14 21V11l5-2v12M4 21h16" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>,
             desc: 'Maintain fully independent books per entity while consolidating at the group level — server-side, with inter-company eliminations.',
@@ -1036,8 +1023,8 @@ function CapabilitiesSection({ onExpand }: { onExpand: (title: string, node: Rea
         },
         {
             num: '03', title: 'Multi-Currency',
-            bg: 'linear-gradient(180deg, #FDEFE0 0%, #FCE9D8 100%)',
-            accent: '#C7572B',
+            bg: 'linear-gradient(180deg, color-mix(in oklch, var(--illustration-warning) 12%, var(--background)) 0%, color-mix(in oklch, var(--illustration-warning) 8%, var(--background)) 100%)',
+            accent: 'var(--illustration-accent-orange)',
             icon: <span style={{ fontFamily: sans, fontWeight: 600, fontSize: 18 }}>$</span>,
             desc: 'Record transactions in any currency, apply entity-level exchange rates, and run revaluation entries at period end.',
             bullets: ['Transaction-level currency assignment', 'Manual or CSV-imported exchange rates per period', 'Realized and unrealized FX gain/loss calculation', 'Multi-currency bank account register', 'Currency revaluation journal at period close'],
@@ -1046,8 +1033,8 @@ function CapabilitiesSection({ onExpand }: { onExpand: (title: string, node: Rea
         },
         {
             num: '04', title: 'Accounts Payable',
-            bg: 'linear-gradient(180deg, #F1E9FE 0%, #F9F2FE 100%)',
-            accent: '#6B5BD6',
+            bg: 'linear-gradient(180deg, color-mix(in oklch, var(--chart-4) 10%, var(--background)) 0%, color-mix(in oklch, var(--chart-4) 6%, var(--background)) 100%)',
+            accent: 'var(--illustration-brand-gradient-start)',
             icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M7 7l10 10M17 17V9M17 17H9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>,
             desc: 'Vendor bills flow from entry through approval, three-way matching, and TDS deduction — before a single payment goes out.',
             bullets: ['Vendor master with payment terms and TDS applicability', 'Bill entry with line-level GL coding and cost centre tagging', 'Configurable multi-level approval workflows', 'Three-way PO–receipt–invoice matching', 'TDS deduction at source with challan tracking'],
@@ -1056,7 +1043,7 @@ function CapabilitiesSection({ onExpand }: { onExpand: (title: string, node: Rea
         },
         {
             num: '05', title: 'Accounts Receivable',
-            bg: 'linear-gradient(180deg, #E8EEFE 0%, #EDEAFE 100%)',
+            bg: 'linear-gradient(180deg, var(--illustration-primary-tint) 0%, color-mix(in oklch, var(--chart-4) 8%, var(--background)) 100%)',
             accent: F.blue,
             icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M7 17l10-10M7 7h10v10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>,
             desc: 'GST-compliant customer invoices, aging buckets, automated reminders, and advance receipt application — all in one place.',
@@ -1066,7 +1053,7 @@ function CapabilitiesSection({ onExpand }: { onExpand: (title: string, node: Rea
         },
         {
             num: '06', title: 'Banking & Cash',
-            bg: 'linear-gradient(180deg, #E6F6EC 0%, #EEF7F0 100%)',
+            bg: 'linear-gradient(180deg, var(--illustration-success-tint) 0%, var(--illustration-success-tint) 100%)',
             accent: F.green,
             icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 10l9-6 9 6M5 10v8M19 10v8M9 10v8M15 10v8M3 20h18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>,
             desc: 'Import bank statements, match transactions with rule-based logic, and see a consolidated cash position across every account.',
@@ -1076,8 +1063,8 @@ function CapabilitiesSection({ onExpand }: { onExpand: (title: string, node: Rea
         },
         {
             num: '07', title: 'Fixed Assets',
-            bg: 'linear-gradient(180deg, #FDEFE0 0%, #FCE9D8 100%)',
-            accent: '#C7572B',
+            bg: 'linear-gradient(180deg, color-mix(in oklch, var(--illustration-warning) 12%, var(--background)) 0%, color-mix(in oklch, var(--illustration-warning) 8%, var(--background)) 100%)',
+            accent: 'var(--illustration-accent-orange)',
             icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><ellipse cx="12" cy="6" rx="7" ry="2.5" stroke="currentColor" strokeWidth="1.6" /><path d="M5 6v12c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5V6M5 12c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5" stroke="currentColor" strokeWidth="1.6" /></svg>,
             desc: 'Track every asset through its full lifecycle — from capitalisation and depreciation to disposal — with schedule forecasting built in.',
             bullets: ['Asset register with category, location, and cost centre', 'Straight-line and declining-balance depreciation methods', 'Asset addition, disposal, and inter-entity transfer', 'Depreciation schedule with future-period forecast', 'Asset revaluation journal entries'],
@@ -1123,8 +1110,8 @@ function IndustrySection() {
     ];
 
     return (
-        <div style={{ background: '#0A1024', padding: '56px 16px 64px', marginTop: 32 }}>
-            <h2 style={{ fontFamily: sans, fontWeight: 800, fontSize: 32, color: '#fff', margin: 0, textAlign: 'center', letterSpacing: '-0.025em', lineHeight: 1.1 }}>
+        <div style={{ background: 'var(--illustration-nav)', padding: '56px 16px 64px', marginTop: 32 }}>
+            <h2 style={{ fontFamily: sans, fontWeight: 800, fontSize: 32, color: 'var(--background)', margin: 0, textAlign: 'center', letterSpacing: '-0.025em', lineHeight: 1.1 }}>
                 Built for Your Industry
             </h2>
             <p style={{ fontFamily: sans, fontSize: 14, color: 'rgba(255,255,255,0.55)', margin: '10px 0 0', textAlign: 'center' }}>
@@ -1138,14 +1125,14 @@ function IndustrySection() {
                         border: s.featured ? '1px solid rgba(61,122,232,0.35)' : '1px solid rgba(255,255,255,0.06)',
                     }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <h3 style={{ fontFamily: sans, fontWeight: 800, fontSize: 22, color: s.featured ? '#9CC0F7' : '#fff', margin: 0, letterSpacing: '-0.02em' }}>{s.t}</h3>
-                            {s.featured && <span style={{ color: '#9CC0F7', fontSize: 16 }}>›</span>}
+                            <h3 style={{ fontFamily: sans, fontWeight: 800, fontSize: 22, color: s.featured ? 'var(--illustration-info-light)' : 'var(--background)', margin: 0, letterSpacing: '-0.02em' }}>{s.t}</h3>
+                            {s.featured && <span style={{ color: 'var(--illustration-info-light)', fontSize: 16 }}>›</span>}
                         </div>
                         <p style={{ fontFamily: sans, fontSize: 13, color: 'rgba(255,255,255,0.6)', margin: '8px 0 14px', lineHeight: 1.5 }}>{s.d}</p>
                         <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
                             {s.b.map((x) => (
                                 <li key={x} style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-                                    <span style={{ width: 5, height: 5, borderRadius: 99, background: s.featured ? '#9CC0F7' : '#3D7AE8', flex: '0 0 5px' }} />
+                                    <span style={{ width: 5, height: 5, borderRadius: 99, background: s.featured ? 'var(--illustration-info-light)' : 'var(--illustration-info)', flex: '0 0 5px' }} />
                                     <span style={{ fontFamily: sans, fontSize: 12.5, color: 'rgba(255,255,255,0.7)' }}>{x}</span>
                                 </li>
                             ))}
@@ -1240,7 +1227,7 @@ function ComparePlans() {
             </div>
 
             <div style={{ marginTop: 28, padding: '0 12px' }}>
-                <div style={{ background: '#fff', border: `1px solid ${F.line}`, borderRadius: 16, overflow: 'hidden', boxShadow: '0 8px 24px -8px rgba(19,32,74,0.08)' }}>
+                <div style={{ background: 'var(--background)', border: `1px solid ${F.line}`, borderRadius: 16, overflow: 'hidden', boxShadow: '0 8px 24px -8px rgba(19,32,74,0.08)' }}>
                     <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 0.9fr 0.9fr 0.9fr', background: F.bgSoft, borderBottom: `1px solid ${F.line}` }}>
                         <div style={{ padding: '14px 12px', fontFamily: mono, fontSize: 9, color: F.muted, letterSpacing: '0.16em', fontWeight: 600 }}>MODULES</div>
                         {['Starter', 'Professional', 'Enterprise'].map((p) => (
@@ -1251,7 +1238,7 @@ function ComparePlans() {
                         ))}
                     </div>
                     {modules.map((row, i) => (
-                        <div key={i} style={{ display: 'grid', gridTemplateColumns: '1.4fr 0.9fr 0.9fr 0.9fr', borderBottom: i < modules.length - 1 ? `1px solid ${F.line}` : 'none', background: i % 2 ? '#fff' : 'rgba(19,32,74,0.015)', alignItems: 'center' }}>
+                        <div key={i} style={{ display: 'grid', gridTemplateColumns: '1.4fr 0.9fr 0.9fr 0.9fr', borderBottom: i < modules.length - 1 ? `1px solid ${F.line}` : 'none', background: i % 2 ? 'var(--background)' : 'rgba(19,32,74,0.015)', alignItems: 'center' }}>
                             <div style={{ padding: '12px', fontFamily: sans, fontSize: 12.5, color: F.ink, fontWeight: 500 }}>{row[0]}</div>
                             {[1, 2, 3].map((j) => (
                                 <div key={j} style={{ padding: '12px 4px', textAlign: 'center', borderLeft: `1px solid ${F.line}` }}>
@@ -1276,7 +1263,7 @@ function Footer({ onNavigate }: { onNavigate: (to: string) => void }) {
     ];
 
     return (
-        <div style={{ background: '#0A1024', padding: '40px 18px 100px', color: '#fff' }}>
+        <div style={{ background: 'var(--illustration-nav)', padding: '40px 18px 100px', color: 'var(--background)' }}>
             <MiniLogo />
             <p style={{ fontFamily: sans, fontSize: 13, color: 'rgba(255,255,255,0.55)', margin: '14px 0 0', lineHeight: 1.55 }}>
                 Run your finance stack on one ledger — from chart of accounts to consolidated reporting.
@@ -1320,7 +1307,7 @@ function StickyCTA({ visible, onTrial }: { visible: boolean; onTrial: () => void
             <button
                 onClick={onTrial}
                 style={{
-                    width: '100%', padding: '15px 16px', background: F.ink, color: '#fff',
+                    width: '100%', padding: '15px 16px', background: F.ink, color: 'var(--background)',
                     border: 'none', borderRadius: 999, fontFamily: sans, fontSize: 15,
                     fontWeight: 600, cursor: 'pointer', boxShadow: '0 8px 22px rgba(19,32,74,0.25)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,

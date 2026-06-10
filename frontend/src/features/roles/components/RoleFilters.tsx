@@ -1,4 +1,3 @@
-import React from 'react';
 import { Search, X } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';

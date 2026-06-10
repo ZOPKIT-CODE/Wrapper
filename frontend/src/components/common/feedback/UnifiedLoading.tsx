@@ -188,7 +188,7 @@ export function GlobalLoadingWrapper({ children }: { children: React.ReactNode }
     return <>{children}</>;
   }
 
-  const { loadingType, loadingMessage, loadingProgress } = globalLoading;
+  const { loadingType, loadingMessage } = globalLoading;
 
   if (loadingType === 'page') {
     return (

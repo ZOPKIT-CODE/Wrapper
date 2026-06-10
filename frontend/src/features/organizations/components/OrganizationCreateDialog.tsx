@@ -1,6 +1,4 @@
-import React from 'react'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -90,7 +88,7 @@ export function OrganizationCreateDialog({
           <DialogDescription>
             {selectedOrg ? (
               <>
-                Adding under: <span className="font-semibold text-[#1B2E5A]">{selectedOrg.entityName}</span>
+                Adding under: <span className="font-semibold text-primary">{selectedOrg.entityName}</span>
               </>
             ) : (
               'Create a top-level entity'
@@ -98,9 +96,9 @@ export function OrganizationCreateDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-3 border-b border-slate-100 pb-5 dark:border-slate-800">
-          <div className="flex items-center gap-2 dark:text-slate-100" style={{ fontFamily: 'var(--zk-display)', fontSize: 18, fontWeight: 600, letterSpacing: '-0.025em', color: 'var(--zk-ink)' }}>
-            <Building className="h-5 w-5 shrink-0 dark:text-blue-400" style={{ color: 'var(--zk-navy)' }} aria-hidden />
+        <div className="space-y-3 border-b border-slate-100 pb-5">
+          <div className="flex items-center gap-2" style={{ fontFamily: 'var(--zk-display)', fontSize: 18, fontWeight: 600, letterSpacing: '-0.025em', color: 'var(--zk-ink)' }}>
+            <Building className="h-5 w-5 shrink-0" style={{ color: 'var(--zk-navy)' }} aria-hidden />
             {ORGANIZATION_CREATE_STEPS[createFormStep].title}
           </div>
           <p className="text-sm text-muted-foreground">

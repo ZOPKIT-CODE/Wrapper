@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useUserContext } from '@/contexts/UserContextProvider';
 import { useNotifications } from '@/hooks/useNotifications';
 import type { ModalConfig } from '@/features/notifications/SeasonalCreditsCongratulatoryModal';
+import type { Notification } from '@/features/notifications/types';
 
 // Store shown campaigns instead of a single flag
 const getShownCampaigns = () => {
@@ -46,7 +47,8 @@ interface SeasonalCreditsData {
 
 export const useSeasonalCreditsCongratulatory = () => {
   const { user, loading: userLoading } = useUserContext();
-  const { notifications, loading: notificationsLoading, loadNotifications } = useNotifications();
+  const { notifications: rawNotifications, loading: notificationsLoading, loadNotifications } = useNotifications();
+  const notifications = rawNotifications as Notification[];
   const [shouldShowCongratulatory, setShouldShowCongratulatory] = useState(false);
   const [seasonalCreditsData, setSeasonalCreditsData] = useState<SeasonalCreditsData>({
     totalCredits: 0,
@@ -80,7 +82,7 @@ export const useSeasonalCreditsCongratulatory = () => {
     const notificationsWithCampaignId = seasonalNotifications.filter(n => n.metadata?.campaignId);
     const notificationsWithoutCampaignId = seasonalNotifications.filter(n => !n.metadata?.campaignId);
 
-    let unseenCampaigns = [];
+    let unseenCampaigns: Notification[] = [];
 
     // Handle new format notifications (with campaignId)
     if (notificationsWithCampaignId.length > 0) {

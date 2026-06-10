@@ -21,13 +21,23 @@ import {
   ChangeImpact
 } from './components';
 
+type ApiError = {
+  message?: string;
+  response?: { status?: number; statusText?: string; data?: unknown };
+  config?: { url?: string; method?: string };
+};
+
+function asApiError(error: unknown): ApiError {
+  return typeof error === 'object' && error !== null ? (error as ApiError) : {};
+}
+
 // Main component - significantly simplified
 const CreditOperationCostManager: React.FC = () => {
   // Core state
   const [operationCosts, setOperationCosts] = useState<OperationCost[]>([]);
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
-  const [templates, setTemplates] = useState<CostTemplate[]>([]);
+  const [templates] = useState<CostTemplate[]>([]);
 
   // UI state
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
@@ -41,17 +51,17 @@ const CreditOperationCostManager: React.FC = () => {
   const [showComparisonModal, setShowComparisonModal] = useState(false);
   const [showBulkUpdateDialog, setShowBulkUpdateDialog] = useState(false);
   const [showTemplateDialog, setShowTemplateDialog] = useState(false);
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [, setShowCreateDialog] = useState(false);
 
   // Modal data
   const [changeImpact, setChangeImpact] = useState<ChangeImpact | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<CostTemplate | null>(null);
 
   // Loading states
-  const [loadingOperations, setLoadingOperations] = useState(false);
+  const [, setLoadingOperations] = useState(false);
   const [loadingTenants, setLoadingTenants] = useState(false);
-  const [loadingTenantConfigs, setLoadingTenantConfigs] = useState(false);
-  const [loadingApplications, setLoadingApplications] = useState(false);
+  const [, setLoadingTenantConfigs] = useState(false);
+  const [, setLoadingApplications] = useState(false);
 
   // Data loading functions
   const loadOperationCosts = useCallback(async () => {
@@ -142,7 +152,7 @@ const CreditOperationCostManager: React.FC = () => {
     }
   }, [loadTenantConfigurations]);
 
-  const handleCostChange = useCallback((appCode: string, moduleCode: string, operationCode: string, cost: number) => {
+  const handleCostChange = useCallback((appCode: string, _moduleCode: string, operationCode: string, cost: number) => {
     setCostChanges(prev => ({
       ...prev,
       [appCode]: {
@@ -379,20 +389,21 @@ const CreditOperationCostManager: React.FC = () => {
       } else if (selectedTenant) {
         loadTenantConfigurations(selectedTenant.tenantId);
       }
-    } catch (error) {
+    } catch (error: unknown) {
+      const err = asApiError(error);
       console.error('💥 Error saving changes:', error);
-      console.error('💥 Error details:', error.response?.data || error.message);
+      console.error('💥 Error details:', err.response?.data || err.message);
 
       // More specific error messages
       let errorMessage = 'Failed to save changes';
-      if (error.response?.status === 401) {
+      if (err.response?.status === 401) {
         errorMessage = 'Authentication required. Please log in again.';
-      } else if (error.response?.status === 403) {
+      } else if (err.response?.status === 403) {
         errorMessage = 'Permission denied. You may not have the required permissions.';
-      } else if (error.response?.status === 500) {
+      } else if (err.response?.status === 500) {
         errorMessage = 'Server error. Please try again later.';
-      } else if (error.message) {
-        errorMessage = `Failed to save changes: ${error.message}`;
+      } else if (err.message) {
+        errorMessage = `Failed to save changes: ${err.message}`;
       }
 
       toast.error(errorMessage);
@@ -412,12 +423,12 @@ const CreditOperationCostManager: React.FC = () => {
         return;
       }
 
-      const testModule = testApp.modules[0];
-      const testPermission = testModule.permissions[0];
+      const testModule = testApp.modules![0];
+      const testPermission = testModule.permissions![0];
       const testOperationCode = `${testApp.appCode}.${testModule.moduleCode}.${testPermission.code}`;
 
       // Test global operation creation
-      const testResult = await operationCostAPI.createOperationCost({
+      await operationCostAPI.createOperationCost({
         operationCode: testOperationCode,
         operationName: testPermission.name,
         creditCost: 2,
@@ -430,7 +441,7 @@ const CreditOperationCostManager: React.FC = () => {
 
       // Test tenant operation update (if tenant selected)
       if (selectedTenant) {
-        const tenantTestResult = await creditConfigurationAPI.updateTenantOperationConfig(
+        await creditConfigurationAPI.updateTenantOperationConfig(
           selectedTenant.tenantId,
           testOperationCode,
           {
@@ -444,17 +455,18 @@ const CreditOperationCostManager: React.FC = () => {
       }
 
       toast.success('API tests completed successfully!');
-    } catch (error) {
+    } catch (error: unknown) {
+      const err = asApiError(error);
       console.error('❌ API test failed:', error);
       console.error('❌ Error details:', {
-        message: error.message,
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-        url: error.config?.url,
-        method: error.config?.method
+        message: err.message,
+        status: err.response?.status,
+        statusText: err.response?.statusText,
+        data: err.response?.data,
+        url: err.config?.url,
+        method: err.config?.method
       });
-      toast.error(`API test failed: ${error.message}`);
+      toast.error(`API test failed: ${err.message ?? 'Unknown error'}`);
     }
   }, [selectedTenant, activeTab, costChanges, operationCosts, applications]);
 

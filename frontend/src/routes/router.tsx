@@ -6,7 +6,6 @@ import { useUserContextSafe } from '@/contexts/UserContextProvider'
 import { ZopkitRoundLoader } from '@/components/common/feedback/ZopkitRoundLoader'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import ProtectedRoute from '@/components/auth/ProtectedRoute'
-import { PermissionGuard } from '@/components/auth/PermissionGuard'
 import { OnboardingGuard, OnboardingPageGuard } from '@/features/onboarding'
 import { ErrorBoundary } from '@/errors/ErrorBoundary'
 import SilentAuthGuard from '@/components/auth/SilentAuthGuard'
@@ -16,7 +15,7 @@ import { EntityScopeProvider } from '@/contexts/EntityScopeContext'
 import { RootRedirect } from './RootRedirect'
 import { OnboardingHintBanner } from '@/components/OnboardingHintBanner'
 import {
-  Landing, ProductPage, IndustryPage, PrivacyPolicy, TermsOfService,
+  Landing, LandingV2, ProductPage, IndustryPage, PrivacyPolicy, TermsOfService,
   CookiePolicy, RefundPolicy, Security, Pricing, Login, AuthCallback, InviteAccept,
   OnboardingPage, PaymentSuccess, PaymentCancelled, PaymentDetailsPage,
   BillingUpgradePage, Billing, SuiteDashboard, ActivityPage,
@@ -28,10 +27,10 @@ import {
 
 function LoadingScreen() {
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="flex items-center justify-center min-h-screen bg-gray-50">
       <div className="text-center flex flex-col items-center">
         <ZopkitRoundLoader size="page" className="mb-6" />
-        <p className="text-gray-600 dark:text-gray-300 text-base font-medium">
+        <p className="text-gray-600 text-base font-medium">
           Your data is loading...
         </p>
       </div>
@@ -130,6 +129,7 @@ const rootRoute = createRootRoute({
 
 // Public
 const landingRoute = createRoute({ getParentRoute: () => rootRoute, path: '/landing', component: AuthRedirectLanding })
+const landingV2Route = createRoute({ getParentRoute: () => rootRoute, path: '/landing/v2', component: LandingV2 })
 const productRoute = createRoute({ getParentRoute: () => rootRoute, path: '/products/$productId', component: ProductPage })
 const industryRoute = createRoute({ getParentRoute: () => rootRoute, path: '/industries/$industrySlug', component: IndustryPage })
 const privacyRoute = createRoute({ getParentRoute: () => rootRoute, path: '/privacy', component: PrivacyPolicy })
@@ -278,6 +278,7 @@ const devInvitePreviewRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   indexRoute,
   landingRoute,
+  landingV2Route,
   productRoute,
   industryRoute,
   privacyRoute,

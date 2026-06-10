@@ -10,7 +10,7 @@ interface OnboardingPageGuardProps {
 
 export const OnboardingPageGuard = ({ children }: OnboardingPageGuardProps) => {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
-  const { data: authData, isLoading: authStatusLoading } = useAuthStatus()
+  const { data: authData } = useAuthStatus()
   const { data: onboardingResponse, isLoading: onboardingLoading } = useOnboardingStatus()
 
   const onboardingData = onboardingResponse?.data
@@ -19,10 +19,10 @@ export const OnboardingPageGuard = ({ children }: OnboardingPageGuardProps) => {
   // Show loading while checking authentication and onboarding status
   if (authLoading || (isAuthenticated && (authLoading || onboardingLoading))) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="text-center">
           <AnimatedLoader size="lg" className="mb-6" />
-          <p className="text-gray-600 dark:text-gray-300 text-lg font-medium">Checking onboarding status...</p>
+          <p className="text-gray-600 text-lg font-medium">Checking onboarding status...</p>
         </div>
       </div>
     )

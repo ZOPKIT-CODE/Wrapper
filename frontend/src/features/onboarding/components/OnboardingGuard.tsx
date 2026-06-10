@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { useAuth } from '@/lib/auth/cognito-auth'
 import { Navigate, useLocation } from '@tanstack/react-router'
-import { Loader2 } from 'lucide-react'
 import { useAuthStatus, useOnboardingStatus } from '@/hooks/useSharedQueries'
 import AnimatedLoader from '@/components/common/feedback/AnimatedLoader'
 import { logger } from '@/lib/logger'
@@ -118,10 +117,10 @@ export const OnboardingGuard = React.memo(({ children, redirectTo = '/login' }: 
   // Show loading while checking authentication and onboarding status
   if (authLoading || (isAuthenticated && (authLoading || onboardingLoading))) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="text-center">
           <AnimatedLoader size="lg" className="mb-6" />
-          <p className="text-gray-600 dark:text-gray-300 text-lg font-medium">Checking access...</p>
+          <p className="text-muted-foreground text-lg font-medium">Checking access...</p>
         </div>
       </div>
     )
@@ -148,10 +147,10 @@ export const OnboardingGuard = React.memo(({ children, redirectTo = '/login' }: 
 
   // Fallback: show loading if we don't have clear status yet
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="flex items-center justify-center min-h-screen bg-background">
       <div className="text-center">
         <AnimatedLoader size="lg" className="mb-6" />
-        <p className="text-gray-600 dark:text-gray-300 text-lg font-medium">Loading workspace...</p>
+        <p className="text-muted-foreground text-lg font-medium">Loading workspace...</p>
       </div>
     </div>
   )

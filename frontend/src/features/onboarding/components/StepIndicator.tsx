@@ -16,7 +16,6 @@ interface StepIndicatorProps {
 
 export const StepIndicator: React.FC<StepIndicatorProps> = ({
   stepsConfig,
-  currentStep,
   getStepStatus,
   onStepClick,
   className = '',

@@ -16,6 +16,7 @@ import { OrganizationCreateDialog } from './OrganizationCreateDialog'
 import type { CreateForm } from './OrganizationCreateDialog'
 import { CreditTransferSheet, AllocateCreditSheet, HierarchyChartModal } from './OrganizationCreditSheets'
 import type { CreditTransferForm, AllocationForm } from './OrganizationCreditSheets'
+import type { OrganizationEntity } from '../types'
 
 interface Organization {
   entityId: string
@@ -33,14 +34,6 @@ interface Organization {
   availableCredits?: number
   reservedCredits?: number
   totalCredits?: number
-}
-
-interface Entity {
-  entityId: string
-  entityName: string
-  entityType: string
-  availableCredits?: number
-  [key: string]: any
 }
 
 interface Location {
@@ -92,8 +85,8 @@ export interface OrganizationTreeViewProps {
   // Selected entities
   selectedOrg: Organization | null
   setSelectedOrg: (o: Organization | null) => void
-  selectedEntity: Entity | null
-  setSelectedEntity: (e: Entity | null) => void
+  selectedEntity: OrganizationEntity | null
+  setSelectedEntity: React.Dispatch<React.SetStateAction<OrganizationEntity | null>>
   // Forms
   createForm: CreateForm
   setCreateForm: (f: CreateForm) => void
@@ -120,7 +113,7 @@ export interface OrganizationTreeViewProps {
   createEntity: (form: CreateForm, step: number, setStep: (s: number) => void, parentOrg: Organization | null, onSuccess: () => void) => void
   handleCreateNext: (step: number, setStep: (s: number | ((p: number) => number)) => void, form: CreateForm) => void
   handleTransferCredits: (org: Organization, form: CreditTransferForm, onSuccess: () => void) => void
-  handleAllocateCredits: (entity: Entity, form: AllocationForm, onSuccess: () => void) => void
+  handleAllocateCredits: (entity: OrganizationEntity, form: AllocationForm, onSuccess: () => void) => void
   setEditingEntity: (e: any) => void
   setShowEditResponsiblePerson: (v: boolean) => void
   findOrganizationById: (id: string, orgs: Organization[]) => Organization | null
@@ -152,7 +145,7 @@ export function OrganizationTreeView({
   return (
     <div className="space-y-6">
       {/* Toolbar */}
-      <div className="flex flex-col xl:flex-row gap-4 justify-between items-start xl:items-center dark:bg-slate-900 dark:border-slate-800 p-4 rounded-xl shadow-sm" style={{ backgroundColor: 'var(--zk-paper)', border: '1px solid var(--zk-line)' }}>
+      <div className="flex flex-col xl:flex-row gap-4 justify-between items-start xl:items-center rounded-lg border p-4" style={{ backgroundColor: 'var(--zk-paper)', borderColor: 'var(--zk-line)' }}>
         <div className="flex items-center gap-3 w-full xl:w-auto">
           <div className="p-2 rounded-lg" style={{ backgroundColor: 'color-mix(in srgb, var(--zk-navy) 10%, transparent)', color: 'var(--zk-navy)' }}>
             <Network className="w-6 h-6" />
@@ -169,11 +162,11 @@ export function OrganizationTreeView({
         <div className="flex flex-col sm:flex-row gap-3 w-full xl:w-auto">
           <div className="relative flex-1 sm:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <Input placeholder="Search entities..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-9 h-9 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700" />
+            <Input placeholder="Search entities..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-9 h-9 bg-slate-50 border-slate-200" />
           </div>
           <div className="flex gap-2">
             <Select value={filterType} onValueChange={(v: any) => setFilterType(v)}>
-              <SelectTrigger className="h-9 w-[130px] bg-slate-50 dark:bg-slate-800"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-9 w-[130px] bg-slate-50"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="active">Active Only</SelectItem>
@@ -204,7 +197,7 @@ export function OrganizationTreeView({
               <ZopkitRoundLoader size="xl" className="mb-4" /><p>Loading structure...</p>
             </div>
           ) : processedHierarchy.length > 0 ? (
-            <div className="bg-white/50 dark:bg-slate-900/50 p-4 rounded-2xl space-y-2">
+            <div className="space-y-2 rounded-lg border border-slate-200 bg-white p-4">
               {processedHierarchy.map((org, index) => (
                 <div key={org.entityId} className={index > 0 ? 'mt-2' : ''}>
                   <TreeNode
@@ -225,7 +218,7 @@ export function OrganizationTreeView({
               ))}
             </div>
           ) : (
-            <div className="text-center py-12 bg-slate-50 dark:bg-slate-900 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">
+            <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 py-12 text-center">
               <TreePine className="w-12 h-12 text-slate-300 mx-auto mb-3" />
               <h3 style={{ fontFamily: 'var(--zk-display)', fontWeight: 600, letterSpacing: '-0.025em', color: 'var(--zk-ink)' }}>No results found</h3>
               <p className="text-sm mt-1" style={{ fontFamily: 'var(--zk-font)', color: 'var(--zk-muted)' }}>Try adjusting your filters or search terms.</p>
@@ -235,7 +228,7 @@ export function OrganizationTreeView({
 
         <div className="space-y-6">
           {parentOrg && (
-            <Card className="dark:border-blue-900/20 shadow-sm" style={{ borderColor: 'var(--zk-line)', backgroundColor: 'var(--zk-paper)' }}>
+            <Card className="shadow-sm" style={{ borderColor: 'var(--zk-line)', backgroundColor: 'var(--zk-paper)' }}>
               <CardHeader className="pb-2">
                 <CardTitle className="text-base" style={{ fontFamily: 'var(--zk-display)', fontWeight: 600, letterSpacing: '-0.025em', color: 'var(--zk-ink)' }}>Actions</CardTitle>
               </CardHeader>
@@ -250,17 +243,17 @@ export function OrganizationTreeView({
             </Card>
           )}
           {unassignedLocations.length > 0 && (
-            <Card className="border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900">
+            <Card className="border-amber-200 bg-amber-50">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold text-amber-800 dark:text-amber-200 flex items-center gap-2">
+                <CardTitle className="text-sm font-semibold text-amber-800 flex items-center gap-2">
                   <AlertTriangle className="w-4 h-4" />Unassigned Locations ({unassignedLocations.length})
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1 custom-scrollbar">
                   {unassignedLocations.map((loc) => (
-                    <div key={loc.entityId} className="flex items-start gap-3 p-2 bg-white dark:bg-slate-900 rounded border border-amber-100 dark:border-amber-900/50">
-                      <div className="w-8 h-8 rounded bg-amber-100 dark:bg-amber-900 text-amber-600 flex items-center justify-center shrink-0 text-xs font-bold">LOC</div>
+                    <div key={loc.entityId} className="flex items-start gap-3 p-2 bg-white rounded border border-amber-100">
+                      <div className="w-8 h-8 rounded bg-amber-100 text-amber-600 flex items-center justify-center shrink-0 text-xs font-bold">LOC</div>
                       <div className="min-w-0">
                         <div className="font-medium text-xs truncate">{loc.entityName}</div>
                         <div className="text-[10px] text-slate-500 truncate">{(loc as any).address?.city || 'No City'}</div>

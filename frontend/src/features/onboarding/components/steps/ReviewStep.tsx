@@ -99,7 +99,7 @@ const SectionCard = ({ title, icon: Icon, children, stepNumber, index, onEditSte
 // Floating particle component removed since unused
 // const FloatingParticle = ...
 
-export const ReviewStep: React.FC<ReviewStepProps> = ({ form, onEditStep, userClassification }) => {
+export const ReviewStep: React.FC<ReviewStepProps> = ({ form, onEditStep }) => {
   // FIXED: Use useWatch to reactively get form values so data updates when restored
   const values = useWatch({ control: form.control }) || form.getValues();
 
@@ -169,7 +169,7 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({ form, onEditStep, userCl
                 <div className="sm:col-span-2 pt-4 border-t border-slate-100">
                   <div className="flex items-center gap-2 mb-3">
                     <MapPin className="h-4 w-4 text-blue-950" />
-                    <span className="text-sm font-semibold text-[#1B2E5A]">Billing Address</span>
+                    <span className="text-sm font-semibold text-primary">Billing Address</span>
                   </div>
                   <p className="text-sm text-slate-600 pl-6 leading-relaxed">
                     {values.billingStreet || values.billingAddress || 'N/A'}
@@ -197,7 +197,7 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({ form, onEditStep, userCl
                     {(values.firstName?.[0] || 'A')}{(values.lastName?.[0] || '')}
                   </div>
                   <div>
-                    <p className="text-lg font-bold text-[#1B2E5A]">{values.firstName} {values.lastName}</p>
+                    <p className="text-lg font-bold text-primary">{values.firstName} {values.lastName}</p>
                     <div className="flex items-center gap-2 text-sm text-slate-500">
                        <Briefcase className="w-3.5 h-3.5" />
                        {values.contactJobTitle || 'Administrator'}
@@ -260,7 +260,7 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({ form, onEditStep, userCl
                     />
                   </FormControl>
                   <div className="space-y-2 leading-none flex-1">
-                    <FormLabel className="cursor-pointer text-base font-bold text-[#1B2E5A] transition-colors hover:text-blue-950">
+                    <FormLabel className="cursor-pointer text-base font-bold text-primary transition-colors hover:text-blue-950">
                       I accept the Terms and Conditions
                     </FormLabel>
                     <p className="text-sm text-slate-500 leading-relaxed">

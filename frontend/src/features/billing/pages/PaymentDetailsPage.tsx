@@ -121,7 +121,7 @@ function CopyRow({
       </div>
       <button
         onClick={() => onCopy(value, id)}
-        className="shrink-0 p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-[#1B2E5A] transition-colors"
+        className="shrink-0 p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-primary transition-colors"
       >
         {copiedId === id ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
       </button>
@@ -135,7 +135,7 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
   return (
     <div className="flex items-start justify-between gap-3 py-3 border-b border-slate-50 last:border-0">
       <span className="text-sm text-slate-500 shrink-0">{label}</span>
-      <span className="text-sm font-semibold text-[#1B2E5A] text-right">{value}</span>
+      <span className="text-sm font-semibold text-primary text-right">{value}</span>
     </div>
   )
 }
@@ -154,14 +154,14 @@ function TimelineStep({
   return (
     <div className="flex gap-4">
       <div className="flex flex-col items-center">
-        <div className="h-7 w-7 rounded-full bg-[#1B2E5A]/10 flex items-center justify-center shrink-0">
-          <div className="h-2 w-2 rounded-full bg-[#1B2E5A]" />
+        <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+          <div className="h-2 w-2 rounded-full bg-primary" />
         </div>
         {!isLast && <div className="w-px flex-1 bg-slate-100 mt-1" />}
       </div>
       <div className="pb-5 min-w-0">
         <p className="text-xs font-medium text-slate-500">{label}</p>
-        <p className="text-sm font-semibold text-[#1B2E5A] mt-0.5">{value}</p>
+        <p className="text-sm font-semibold text-primary mt-0.5">{value}</p>
       </div>
     </div>
   )
@@ -251,7 +251,7 @@ export function PaymentDetailsPage() {
           <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
             <AlertTriangle className="h-7 w-7 text-slate-400" />
           </div>
-          <h2 className="text-xl font-semibold text-[#1B2E5A]">Payment Not Found</h2>
+          <h2 className="text-xl font-semibold text-primary">Payment Not Found</h2>
           <p className="text-slate-500 text-sm">The payment you're looking for doesn't exist or has been removed.</p>
           <Button onClick={() => navigate({ to: '/dashboard/billing' })} variant="outline" size="sm">
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -290,7 +290,7 @@ export function PaymentDetailsPage() {
             variant="ghost"
             size="sm"
             onClick={() => navigate({ to: '/dashboard/billing' })}
-            className="gap-2 text-slate-500 hover:text-[#1B2E5A]"
+            className="gap-2 text-slate-500 hover:text-primary"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Billing
@@ -298,9 +298,9 @@ export function PaymentDetailsPage() {
         </div>
 
         {/* ── Invoice Header ── */}
-        <Card className="rounded-3xl border border-[#1B2E5A]/10 bg-white shadow-sm overflow-hidden">
+        <Card className="rounded-3xl border border-primary/10 bg-white shadow-sm overflow-hidden">
           {/* Navy header band */}
-          <div className="bg-gradient-to-r from-[#1B2E5A] to-[#243d73] px-8 py-7 text-white">
+          <div className="bg-gradient-to-r from-primary to-primary-hover px-8 py-7 text-white">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2 mb-1">
@@ -325,21 +325,21 @@ export function PaymentDetailsPage() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div className="rounded-2xl bg-slate-50 border border-slate-100 p-3">
                 <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Amount</p>
-                <p className="text-xl font-bold text-[#1B2E5A]">{formatCurrency(payment.amount || 0)}</p>
+                <p className="text-xl font-bold text-primary">{formatCurrency(payment.amount || 0)}</p>
               </div>
               <div className="rounded-2xl bg-slate-50 border border-slate-100 p-3">
                 <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Currency</p>
-                <p className="text-xl font-bold text-[#1B2E5A]">{(payment.currency || 'USD').toUpperCase()}</p>
+                <p className="text-xl font-bold text-primary">{(payment.currency || 'USD').toUpperCase()}</p>
               </div>
               <div className="rounded-2xl bg-slate-50 border border-slate-100 p-3">
                 <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Type</p>
-                <p className="text-sm font-bold text-[#1B2E5A] capitalize leading-tight mt-0.5">
+                <p className="text-sm font-bold text-primary capitalize leading-tight mt-0.5">
                   {getPaymentType(payment.type)}
                 </p>
               </div>
               <div className="rounded-2xl bg-slate-50 border border-slate-100 p-3">
                 <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Method</p>
-                <p className="text-sm font-bold text-[#1B2E5A] capitalize leading-tight mt-0.5">
+                <p className="text-sm font-bold text-primary capitalize leading-tight mt-0.5">
                   {payment.paymentMethodDetails?.card
                     ? `${payment.paymentMethodDetails.card.brand?.toUpperCase()} ···· ${payment.paymentMethodDetails.card.last4}`
                     : payment.paymentMethod || 'Card'}
@@ -361,10 +361,10 @@ export function PaymentDetailsPage() {
           <Card className="rounded-3xl border border-slate-100 bg-white shadow-sm">
             <CardHeader className="pb-3 border-b border-slate-50">
               <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#1B2E5A]/10">
-                  <FileText className="h-4 w-4 text-[#1B2E5A]" />
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
+                  <FileText className="h-4 w-4 text-primary" />
                 </div>
-                <CardTitle className="text-sm font-bold text-[#1B2E5A]">Financial Breakdown</CardTitle>
+                <CardTitle className="text-sm font-bold text-primary">Financial Breakdown</CardTitle>
               </div>
             </CardHeader>
             <CardContent className="p-5">
@@ -372,25 +372,25 @@ export function PaymentDetailsPage() {
                 <div className="divide-y divide-slate-50">
                   <div className="flex justify-between items-center px-4 py-3">
                     <span className="text-sm text-slate-500">Subtotal</span>
-                    <span className="text-sm font-semibold text-[#1B2E5A]">
+                    <span className="text-sm font-semibold text-primary">
                       {formatCurrency(payment.netAmount || payment.amount || 0)}
                     </span>
                   </div>
                   {(payment.taxAmount ?? 0) > 0 && (
                     <div className="flex justify-between items-center px-4 py-3">
                       <span className="text-sm text-slate-500">Tax</span>
-                      <span className="text-sm font-semibold text-[#1B2E5A]">{formatCurrency(payment.taxAmount ?? 0)}</span>
+                      <span className="text-sm font-semibold text-primary">{formatCurrency(payment.taxAmount ?? 0)}</span>
                     </div>
                   )}
                   {(payment.processingFees ?? 0) > 0 && (
                     <div className="flex justify-between items-center px-4 py-3">
                       <span className="text-sm text-slate-500">Processing Fees</span>
-                      <span className="text-sm font-semibold text-[#1B2E5A]">{formatCurrency(payment.processingFees ?? 0)}</span>
+                      <span className="text-sm font-semibold text-primary">{formatCurrency(payment.processingFees ?? 0)}</span>
                     </div>
                   )}
-                  <div className="flex justify-between items-center px-4 py-3 bg-[#1B2E5A]/5">
-                    <span className="text-sm font-bold text-[#1B2E5A]">Total</span>
-                    <span className="text-base font-bold text-[#1B2E5A]">{formatCurrency(payment.amount || 0)}</span>
+                  <div className="flex justify-between items-center px-4 py-3 bg-primary/5">
+                    <span className="text-sm font-bold text-primary">Total</span>
+                    <span className="text-base font-bold text-primary">{formatCurrency(payment.amount || 0)}</span>
                   </div>
                 </div>
               </div>
@@ -406,7 +406,7 @@ export function PaymentDetailsPage() {
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100">
                   <Coins className="h-4 w-4 text-emerald-600" />
                 </div>
-                <CardTitle className="text-sm font-bold text-[#1B2E5A]">Credit Details</CardTitle>
+                <CardTitle className="text-sm font-bold text-primary">Credit Details</CardTitle>
               </div>
             </CardHeader>
             <CardContent className="p-5">
@@ -420,7 +420,7 @@ export function PaymentDetailsPage() {
                 {payment.unitPrice != null && (
                   <div className="rounded-2xl bg-slate-50 border border-slate-100 p-4 text-center">
                     <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Unit Price</p>
-                    <p className="text-2xl font-bold text-[#1B2E5A]">{formatCurrency(payment.unitPrice)}</p>
+                    <p className="text-2xl font-bold text-primary">{formatCurrency(payment.unitPrice)}</p>
                     <p className="text-xs text-slate-400 mt-0.5">per credit</p>
                   </div>
                 )}
@@ -443,7 +443,7 @@ export function PaymentDetailsPage() {
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-100">
                   <RefreshCw className="h-4 w-4 text-orange-600" />
                 </div>
-                <CardTitle className="text-sm font-bold text-[#1B2E5A]">Refund Information</CardTitle>
+                <CardTitle className="text-sm font-bold text-primary">Refund Information</CardTitle>
               </div>
             </CardHeader>
             <CardContent className="p-5">
@@ -466,7 +466,7 @@ export function PaymentDetailsPage() {
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-100">
                   <AlertTriangle className="h-4 w-4 text-violet-600" />
                 </div>
-                <CardTitle className="text-sm font-bold text-[#1B2E5A]">Dispute Information</CardTitle>
+                <CardTitle className="text-sm font-bold text-primary">Dispute Information</CardTitle>
               </div>
             </CardHeader>
             <CardContent className="p-5">
@@ -486,10 +486,10 @@ export function PaymentDetailsPage() {
           <Card className="rounded-3xl border border-slate-100 bg-white shadow-sm">
             <CardHeader className="pb-3 border-b border-slate-50">
               <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#1B2E5A]/10">
-                  <Calendar className="h-4 w-4 text-[#1B2E5A]" />
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
+                  <Calendar className="h-4 w-4 text-primary" />
                 </div>
-                <CardTitle className="text-sm font-bold text-[#1B2E5A]">Timeline</CardTitle>
+                <CardTitle className="text-sm font-bold text-primary">Timeline</CardTitle>
               </div>
             </CardHeader>
             <CardContent className="p-5">
@@ -512,11 +512,11 @@ export function PaymentDetailsPage() {
           <Card className="rounded-3xl border border-slate-100 bg-white shadow-sm">
             <CardHeader className="pb-3 border-b border-slate-50">
               <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#1B2E5A]/10">
-                  <CreditCard className="h-4 w-4 text-[#1B2E5A]" />
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
+                  <CreditCard className="h-4 w-4 text-primary" />
                 </div>
                 <div>
-                  <CardTitle className="text-sm font-bold text-[#1B2E5A]">Support Reference</CardTitle>
+                  <CardTitle className="text-sm font-bold text-primary">Support Reference</CardTitle>
                   <p className="text-xs text-slate-400 mt-0.5">Share these IDs with support when troubleshooting</p>
                 </div>
               </div>
@@ -549,7 +549,7 @@ export function PaymentDetailsPage() {
             variant="outline"
             size="sm"
             onClick={() => navigate({ to: '/dashboard/billing' })}
-            className="gap-2 text-slate-500 hover:text-[#1B2E5A]"
+            className="gap-2 text-slate-500 hover:text-primary"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Billing
@@ -570,7 +570,7 @@ export function PaymentDetailsPage() {
             <Button
               variant="default"
               size="sm"
-              className="bg-[#1B2E5A] hover:bg-[#152449] text-white shadow-sm gap-2 min-w-[150px]"
+              className="bg-primary hover:bg-primary-hover text-white shadow-sm gap-2 min-w-[150px]"
               onClick={handleDownloadInvoice}
               disabled={isDownloading}
             >

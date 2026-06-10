@@ -3,10 +3,9 @@
 
 import { LucideIcon } from 'lucide-react';
 import {
-    ShoppingCart, Warehouse, Truck, Package, DollarSign, TrendingUp,
-    Users, Briefcase, Kanban, PieChart, UserCog, Award, Workflow,
-    Building2, Receipt, Clock, AlertTriangle, CheckCircle, Zap,
-    BarChart3, Target, FileText, CreditCard, Globe, Link
+    Package, DollarSign, TrendingUp,
+    Users, Award, Clock, AlertTriangle, CheckCircle, Zap,
+    BarChart3, FileText, Globe, Link
 } from 'lucide-react';
 
 export interface IndustryProduct {

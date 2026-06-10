@@ -1,4 +1,3 @@
-import React from 'react';
 import { ZopkitRoundLoader } from './ZopkitRoundLoader';
 
 interface LoadingSpinnerProps {
@@ -21,7 +20,7 @@ export function LoadingSpinner({
     <div className={`flex flex-col items-center justify-center p-6 ${className}`}>
       <ZopkitRoundLoader size={loaderSize} />
       {message && (
-        <p className="mt-3 text-sm text-gray-600 dark:text-gray-400">{message}</p>
+        <p className="mt-3 text-sm text-gray-600">{message}</p>
       )}
     </div>
   );

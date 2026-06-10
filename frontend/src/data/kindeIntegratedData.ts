@@ -1,4 +1,4 @@
-import { PermissionItem, User, Role } from './mockPermissions'
+import { PermissionItem, Role } from './mockPermissions'
 
 // Kinde Layer - Basic Tool Access
 export interface IdpPermission {
@@ -14,7 +14,7 @@ export interface IdpPermission {
 // Enhanced Permission with Granular Controls
 export interface GranularPermission extends PermissionItem {
   idpPermissionId?: string
-  restrictions: GranularRestriction[]
+  restrictions: (GranularRestriction | string)[]
   contexts: PermissionContext[]
   valueConstraints: ValueConstraint[]
   timeConstraints: TimeConstraint[]
@@ -244,7 +244,7 @@ export const granularPermissions: GranularPermission[] = [
     icon: '👁️',
     color: '#3B82F6',
     level: 'basic',
-    kindePermissionId: 'kinde_crm_access',
+    idpPermissionId: 'kinde_crm_access',
     restrictions: ['data_own_records', 'location_office_only'],
     contexts: [
       {
@@ -293,7 +293,7 @@ export const granularPermissions: GranularPermission[] = [
     icon: '✅',
     color: '#059669',
     level: 'admin',
-    kindePermissionId: 'kinde_crm_access',
+    idpPermissionId: 'kinde_crm_access',
     restrictions: ['financial_deal_limit', 'approval_high_value', 'time_business_hours'],
     contexts: [
       {

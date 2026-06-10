@@ -66,7 +66,6 @@ export const useSilentAuth = (): SilentAuthResult => {
       }
 
             // Check for domain cookies that might indicate authentication
-      const allCookies = document.cookie.split(';').map(c => c.trim().split('=')[0]);
       const hasIdpCookie = document.cookie
         .split(';')
         .some(cookie => {
@@ -80,11 +79,6 @@ export const useSilentAuth = (): SilentAuthResult => {
             name.includes('enduser_session')
           );
         });
-
-      // Check for .zopkit.com domain cookies specifically
-      const hasZopkitDomainCookie = allCookies.some(name => 
-        name && (name.includes('idp') || name.includes('kinde') || name.includes('kbte') || name.includes('enduser'))
-      );
 
       // Don't attempt silent auth without cookies - it will cause redirect loops
       if (!hasIdpCookie) {
@@ -190,15 +184,10 @@ export const useSilentAuth = (): SilentAuthResult => {
       try {
         // Attempt silent login with Kinde
         // This will check for domain cookies and authenticate silently
-        login({ prompt: 'none' as any }).then(() => {
-          clearTimeout(timeout);
-          cleanup();
-          resolve();
-        }).catch((error) => {
-          clearTimeout(timeout);
-          cleanup();
-          reject(error);
-        });
+        login({ prompt: 'none' as any });
+        clearTimeout(timeout);
+        cleanup();
+        resolve();
       } catch (error) {
         clearTimeout(timeout);
         cleanup();

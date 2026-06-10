@@ -13,7 +13,6 @@ export const RadioField: React.FC<FieldComponentProps> = ({
   field,
   value,
   onChange,
-  onBlur,
   disabled,
   className
 }) => {
@@ -32,7 +31,7 @@ export const RadioField: React.FC<FieldComponentProps> = ({
           
           <FormControl>
             <RadioGroup
-              value={value || ''}
+              value={typeof value === 'string' || typeof value === 'number' ? String(value) : ''}
               onValueChange={(newValue) => {
                 formField.onChange(newValue);
                 onChange(newValue);

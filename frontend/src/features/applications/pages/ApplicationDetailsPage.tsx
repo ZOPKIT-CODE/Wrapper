@@ -106,11 +106,11 @@ export function ApplicationDetailsPage() {
   const applicationUrl = getApplicationUrl();
 
   const getMetricCardClasses = () => {
-    return "bg-white dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm";
+    return "bg-white p-6 rounded-lg border border-slate-200 shadow-sm";
   };
 
   const getIconContainerClasses = () => {
-    return "p-3 bg-slate-100 dark:bg-slate-700 rounded-lg";
+    return "p-3 bg-slate-100 rounded-lg";
   };
 
   return (
@@ -132,15 +132,15 @@ export function ApplicationDetailsPage() {
         {/* Header Section */}
         <div className={cn(
           "relative overflow-hidden rounded-2xl",
-          "bg-slate-50 dark:bg-slate-800 px-8 py-6 border border-slate-200 dark:border-slate-700"
+          "bg-slate-50 px-8 py-6 border border-slate-200"
         )}>
           <div className="relative flex items-center gap-4">
             <div className="relative">
               <div className={cn(
                 "p-4 rounded-xl",
-                "bg-slate-100 dark:bg-slate-700"
+                "bg-slate-100"
               )}>
-                <div className={cn("text-2xl", "text-slate-600 dark:text-slate-400")}>
+                <div className={cn("text-2xl", "text-slate-600")}>
                   {getApplicationIcon(appCode)}
                 </div>
               </div>
@@ -155,8 +155,8 @@ export function ApplicationDetailsPage() {
                   "relative px-3 py-1 rounded-full text-xs font-semibold",
                   `border ${
                       isEnabled
-                        ? 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-700'
-                        : 'bg-red-100 text-red-800 border-red-300 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700'
+                        ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                        : 'bg-red-100 text-red-800 border-red-300'
                     }`
                 )}>
                   <span className="relative">{isEnabled ? "Active" : "Inactive"}</span>
@@ -172,18 +172,18 @@ export function ApplicationDetailsPage() {
         {/* Application settings */}
         <div className={cn(
           "relative rounded-2xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-6",
-          "bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700"
+          "bg-slate-50 border border-slate-200"
         )}>
           <div className="flex items-center gap-3">
             <div className={cn(
               "p-2.5 rounded-xl",
-              "bg-slate-200/80 dark:bg-slate-700"
+              "bg-slate-200/80"
             )}>
-              <Settings className="h-6 w-6 text-slate-700 dark:text-slate-300" />
+              <Settings className="h-6 w-6 text-slate-700" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-[#1B2E5A] dark:text-white">Application settings</h2>
-              <p className="text-sm text-slate-600 dark:text-slate-400">
+              <h2 className="text-lg font-semibold text-primary">Application settings</h2>
+              <p className="text-sm text-slate-600">
                 Launch the app or open in a new tab
               </p>
             </div>
@@ -218,12 +218,12 @@ export function ApplicationDetailsPage() {
             <div className={getMetricCardClasses()}>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide">Application Code</p>
-                  <p className="text-2xl font-bold text-[#1B2E5A] dark:text-white mt-2">{appCode}</p>
+                  <p className="text-sm font-medium text-slate-600 uppercase tracking-wide">Application Code</p>
+                  <p className="text-2xl font-bold text-primary mt-2">{appCode}</p>
                 </div>
                 <div className="relative">
                   <div className={getIconContainerClasses()}>
-                    <span className="text-slate-800 dark:text-slate-200 font-mono text-sm">{appCode.substring(0, 3)}</span>
+                    <span className="text-slate-800 font-mono text-sm">{appCode.substring(0, 3)}</span>
                   </div>
                 </div>
               </div>
@@ -233,14 +233,14 @@ export function ApplicationDetailsPage() {
             <div className={getMetricCardClasses()}>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide">Subscription Plan</p>
-                  <p className="text-xl font-semibold text-[#1B2E5A] dark:text-white mt-2">
+                  <p className="text-sm font-medium text-slate-600 uppercase tracking-wide">Subscription Plan</p>
+                  <p className="text-xl font-semibold text-primary mt-2">
                     {typeof subscriptionTier === "object" ? "Enterprise" : subscriptionTier || "Basic"}
                   </p>
                 </div>
                 <div className="relative">
                   <div className={getIconContainerClasses()}>
-                    <Crown className="text-purple-700 dark:text-purple-300 w-6 h-6" />
+                    <Crown className="text-purple-700 w-6 h-6" />
                   </div>
                 </div>
               </div>
@@ -251,12 +251,12 @@ export function ApplicationDetailsPage() {
               <div className={getMetricCardClasses()}>
                 <div className="flex items-center justify-between">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide">Access URL</p>
+                    <p className="text-sm font-medium text-slate-600 uppercase tracking-wide">Access URL</p>
                     <a
                       href={baseUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-lg font-medium text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300 truncate block mt-2 transition-colors"
+                      className="text-lg font-medium text-cyan-600 hover:text-cyan-700 truncate block mt-2 transition-colors"
                       title={baseUrl}
                     >
                       {new URL(baseUrl).hostname}
@@ -264,7 +264,7 @@ export function ApplicationDetailsPage() {
                   </div>
                   <div className="relative ml-4">
                     <div className={getIconContainerClasses()}>
-                      <ExternalLink className="text-cyan-700 dark:text-cyan-300 w-6 h-6" />
+                      <ExternalLink className="text-cyan-700 w-6 h-6" />
                     </div>
                   </div>
                 </div>
@@ -280,8 +280,8 @@ export function ApplicationDetailsPage() {
                 <div className="pt-8">
                   <div className="flex items-center justify-between mb-8">
                     <div>
-                      <h2 className="text-2xl font-bold text-[#1B2E5A] dark:text-white">Application Modules</h2>
-                      <p className="text-slate-600 dark:text-slate-400 mt-2">
+                      <h2 className="text-2xl font-bold text-primary">Application Modules</h2>
+                      <p className="text-slate-600 mt-2">
                         Feature capabilities and system integrations
                       </p>
                     </div>
@@ -290,13 +290,13 @@ export function ApplicationDetailsPage() {
                         <div className="relative">
                           <CheckCircle className="w-5 h-5 text-emerald-500" />
                         </div>
-                        <span className="text-slate-700 dark:text-slate-300 font-medium">Enabled</span>
+                        <span className="text-slate-700 font-medium">Enabled</span>
                       </div>
                       <div className="flex items-center gap-3">
                         <div className="relative">
                           <XCircle className="w-5 h-5 text-slate-400" />
                         </div>
-                        <span className="text-slate-700 dark:text-slate-300 font-medium">Disabled</span>
+                        <span className="text-slate-700 font-medium">Disabled</span>
                       </div>
                     </div>
                   </div>
@@ -351,7 +351,7 @@ function ModuleCard({ module, isEnabled, modulePermissions, customPermissions }:
   const customCodes = Array.isArray(customPermissions) ? customPermissions : [];
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+    <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
       <div className="p-6">
         <div className="flex items-start justify-between gap-4 mb-4">
           <div className="flex-1">
@@ -359,7 +359,7 @@ function ModuleCard({ module, isEnabled, modulePermissions, customPermissions }:
               <div className="relative">
                 <div className={`w-4 h-4 rounded-full shadow-lg ${isEnabled ? 'bg-emerald-400' : 'bg-slate-400'}`} />
               </div>
-              <h4 className="font-semibold text-[#1B2E5A] dark:text-white text-lg">
+              <h4 className="font-semibold text-primary text-lg">
                 {moduleName || "Unknown Module"}
               </h4>
             </div>
@@ -370,14 +370,14 @@ function ModuleCard({ module, isEnabled, modulePermissions, customPermissions }:
                 className={cn(
                   "text-xs backdrop-blur-sm",
                   isCore
-                    ? "bg-slate-900/20 text-slate-800 dark:bg-slate-700/50 dark:text-slate-300 border-slate-400/50"
-                    : "border-slate-400/50 text-slate-700 dark:text-slate-400 bg-white/20 dark:bg-slate-800/20"
+                    ? "bg-slate-900/20 text-slate-800 border-slate-400/50"
+                    : "border-slate-400/50 text-slate-700 bg-white/20"
                 )}
               >
                 {isCore ? "Core Module" : "Optional Module"}
               </Badge>
               {isEnabled && (
-                <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-500/20 backdrop-blur-sm px-3 py-1 rounded-full border border-emerald-400/30">
+                <span className="text-xs font-medium text-emerald-600 bg-emerald-500/20 backdrop-blur-sm px-3 py-1 rounded-full border border-emerald-400/30">
                   Active
                 </span>
               )}
@@ -385,7 +385,7 @@ function ModuleCard({ module, isEnabled, modulePermissions, customPermissions }:
           </div>
         </div>
 
-        <p className="text-slate-700 dark:text-slate-300 text-sm leading-relaxed mb-6">
+        <p className="text-slate-700 text-sm leading-relaxed mb-6">
           {description || "No description available for this module."}
         </p>
 
@@ -393,10 +393,10 @@ function ModuleCard({ module, isEnabled, modulePermissions, customPermissions }:
         {permissions && permissions.length > 0 && (
           <div className="relative pt-4">
             <div className="flex items-center justify-between mb-4">
-              <h5 className="font-medium text-[#1B2E5A] dark:text-white text-sm">
+              <h5 className="font-medium text-primary text-sm">
                 Permissions
               </h5>
-              <div className="text-xs text-slate-700 dark:text-slate-300 bg-white/60 dark:bg-white/20 backdrop-blur-md px-3 py-1 rounded-full border border-white/40 dark:border-white/30 shadow-sm">
+              <div className="text-xs text-slate-700 bg-white/60 backdrop-blur-md px-3 py-1 rounded-full border border-white/40 shadow-sm">
                 {permissions.length} total
               </div>
             </div>
@@ -420,17 +420,17 @@ function ModuleCard({ module, isEnabled, modulePermissions, customPermissions }:
                             "relative flex flex-col gap-2 p-3 rounded-2xl border transition-all text-left select-none cursor-default",
                             isActive
                               ? risk === "high"
-                                ? "bg-rose-50 border-rose-200 dark:bg-rose-900/20 dark:border-rose-800 shadow-rose-500/5 shadow-inner"
+                                ? "bg-rose-50 border-rose-200 shadow-rose-500/5 shadow-inner"
                                 : risk === "medium"
-                                  ? "bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800 shadow-amber-500/5 shadow-inner"
-                                  : "bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800 shadow-blue-500/5 shadow-inner"
-                              : "bg-white dark:bg-slate-900/40 border-slate-100 dark:border-slate-800"
+                                  ? "bg-amber-50 border-amber-200 shadow-amber-500/5 shadow-inner"
+                                  : "bg-blue-50 border-blue-200 shadow-blue-500/5 shadow-inner"
+                              : "bg-white border-slate-100"
                           )}
                         >
                           <div className="flex items-start justify-between">
                             <div className={cn(
                               "p-1 rounded-lg",
-                              isActive ? "bg-white/50 dark:bg-slate-950/50" : "opacity-40"
+                              isActive ? "bg-white/50" : "opacity-40"
                             )}>
                               {icon}
                             </div>
@@ -438,7 +438,7 @@ function ModuleCard({ module, isEnabled, modulePermissions, customPermissions }:
                               variant="outline"
                               className={cn(
                                 "text-[7px] h-3.5 px-1 font-black leading-none uppercase border-none",
-                                isActive ? "text-blue-600 dark:text-blue-400" : "text-slate-300 dark:text-slate-600"
+                                isActive ? "text-blue-600" : "text-slate-300"
                               )}
                             >
                               {isActive ? "ACTIVE" : "READY"}
@@ -447,7 +447,7 @@ function ModuleCard({ module, isEnabled, modulePermissions, customPermissions }:
                           <div className="flex-1 min-w-0">
                             <div className={cn(
                               "text-[10px] font-black uppercase leading-tight line-clamp-2 tracking-tight mb-0.5 break-words",
-                              isActive ? "text-slate-900 dark:text-white" : "text-slate-500 dark:text-slate-400"
+                              isActive ? "text-slate-900" : "text-slate-500"
                             )}>
                               {name}
                             </div>

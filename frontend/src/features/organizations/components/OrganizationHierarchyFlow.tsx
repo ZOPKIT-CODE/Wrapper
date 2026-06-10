@@ -11,13 +11,11 @@ import ReactFlow, {
   Controls,
   MiniMap,
   Panel,
+  MarkerType,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { Building, MapPin, Loader2, RefreshCw, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
+import { Building, Loader2, RefreshCw, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
 import { OrganizationNode } from './OrganizationNode';
 import type { OrganizationHierarchy } from '@/types/organization';
 import { CreditAllocationModal } from '@/components/common/CreditAllocationModal';
@@ -45,8 +43,8 @@ interface OrganizationHierarchyFlowProps {
 // Convert hierarchy tree to React Flow nodes and edges with proper hierarchical layout
 function convertHierarchyToFlow(
   hierarchy: OrganizationHierarchy | null,
-  tenantId?: string,
-  tenantName?: string,
+  _tenantId?: string,
+  _tenantName?: string,
   onNodeClick?: (nodeId: string) => void,
   onEditOrganization?: (orgId: string) => void,
   onDeleteOrganization?: (orgId: string) => void,
@@ -66,7 +64,6 @@ function convertHierarchyToFlow(
   const VERTICAL_SPACING = 220; // Vertical spacing between levels
   const ROOT_Y = 100;
   const MIN_SIBLING_DISTANCE = 80; // Compact spacing between sibling nodes (padding between nodes)
-  const MIN_SUBTREE_SPACING = 50; // Minimum spacing between subtrees
 
   // If no hierarchy, return empty
   if (!hierarchy || !hierarchy.hierarchy || hierarchy.hierarchy.length === 0) {
@@ -111,7 +108,7 @@ function convertHierarchyToFlow(
 
     // Calculate total width needed for children
     let totalChildrenWidth = 0;
-    childLayouts.forEach((layout) => {
+    childLayouts.forEach((layout: { width: number; left: number; right: number }) => {
       totalChildrenWidth += layout.width;
     });
 
@@ -251,12 +248,12 @@ function convertHierarchyToFlow(
         type: 'smoothstep',
         animated: false,
         style: {
-          stroke: isLocation ? '#f59e0b' : '#1B2E5A',
+          stroke: isLocation ? '#f59e0b' : 'var(--primary)',
           strokeWidth: 2,
         },
         markerEnd: {
-          type: 'arrowclosed',
-          color: isLocation ? '#f59e0b' : '#1B2E5A',
+          type: MarkerType.ArrowClosed,
+          color: isLocation ? '#f59e0b' : 'var(--primary)',
         },
       });
     }
@@ -293,7 +290,7 @@ function OrganizationHierarchyFlowInner({
   hierarchy,
   loading,
   onRefresh,
-  isAdmin = false,
+  isAdmin: _isAdmin = false,
   tenantId,
   tenantName,
   onNodeClick,
@@ -374,7 +371,7 @@ function OrganizationHierarchyFlowInner({
     return (
       <div className="w-full h-full flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin text-[#1B2E5A] mx-auto mb-4" />
+          <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
           <p className="text-gray-600">Loading organization hierarchy...</p>
         </div>
       </div>
@@ -386,7 +383,7 @@ function OrganizationHierarchyFlowInner({
       <div className="w-full h-full flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <Building className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-[#1B2E5A] mb-2">No Organizations Found</h3>
+          <h3 className="text-xl font-semibold text-primary mb-2">No Organizations Found</h3>
           <p className="text-gray-600 mb-4">
             Create your first organization to get started.
           </p>
@@ -421,15 +418,15 @@ function OrganizationHierarchyFlowInner({
           nodeColor={(node) => {
             const entityType = node.data?.entityType;
             if (entityType === 'location') return '#f59e0b';
-            return node.data?.isActive ? '#1B2E5A' : '#9ca3af';
+            return node.data?.isActive ? 'var(--primary)' : 'var(--muted-foreground)';
           }}
           maskColor="rgba(0, 0, 0, 0.1)"
         />
-        <Panel position="top-left" className="rounded-2xl border border-[#1B2E5A]/20 bg-gradient-to-r from-[#1B2E5A]/5 to-white shadow-sm p-3">
+        <Panel position="top-left" className="rounded-lg border border-slate-200 bg-white p-3">
           <div className="flex items-center gap-2">
-            <Building className="w-5 h-5 text-[#1B2E5A]" />
+            <Building className="w-5 h-5 text-primary" />
             <div>
-              <h3 className="font-black text-sm text-[#1B2E5A]">Organization Hierarchy</h3>
+              <h3 className="text-sm font-semibold text-primary">Organization Hierarchy</h3>
               <p className="text-xs text-muted-foreground">
                 {hierarchy.totalOrganizations} {hierarchy.totalOrganizations === 1 ? 'organization' : 'organizations'}
               </p>
@@ -442,36 +439,36 @@ function OrganizationHierarchyFlowInner({
               variant="outline"
               size="sm"
               onClick={onRefresh}
-              className="bg-white border border-[#1B2E5A]/20 shadow-sm hover:bg-[#1B2E5A]/5"
+              className="bg-white border border-primary/20 shadow-sm hover:bg-primary/5"
             >
-              <RefreshCw className="w-4 h-4 mr-2 text-[#1B2E5A]" />
-              <span className="text-[#1B2E5A] font-medium">Refresh</span>
+              <RefreshCw className="w-4 h-4 mr-2 text-primary" />
+              <span className="text-primary font-medium">Refresh</span>
             </Button>
           )}
           <Button
             variant="outline"
             size="sm"
             onClick={handleFitView}
-            className="bg-white border border-[#1B2E5A]/20 shadow-sm hover:bg-[#1B2E5A]/5"
+            className="bg-white border border-primary/20 shadow-sm hover:bg-primary/5"
           >
-            <Maximize2 className="w-4 h-4 mr-2 text-[#1B2E5A]" />
-            <span className="text-[#1B2E5A] font-medium">Fit View</span>
+            <Maximize2 className="w-4 h-4 mr-2 text-primary" />
+            <span className="text-primary font-medium">Fit View</span>
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={() => zoomIn({ duration: 300 })}
-            className="bg-white border border-[#1B2E5A]/20 shadow-sm hover:bg-[#1B2E5A]/5"
+            className="bg-white border border-primary/20 shadow-sm hover:bg-primary/5"
           >
-            <ZoomIn className="w-4 h-4 text-[#1B2E5A]" />
+            <ZoomIn className="w-4 h-4 text-primary" />
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={() => zoomOut({ duration: 300 })}
-            className="bg-white border border-[#1B2E5A]/20 shadow-sm hover:bg-[#1B2E5A]/5"
+            className="bg-white border border-primary/20 shadow-sm hover:bg-primary/5"
           >
-            <ZoomOut className="w-4 h-4 text-[#1B2E5A]" />
+            <ZoomOut className="w-4 h-4 text-primary" />
           </Button>
         </Panel>
       </ReactFlow>

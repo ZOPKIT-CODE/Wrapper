@@ -1,4 +1,3 @@
-import React from 'react';
 
 // Custom SVG icons for the modern billing section
 

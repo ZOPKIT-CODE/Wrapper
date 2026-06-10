@@ -268,7 +268,12 @@ export function Login() {
         currentUrl.searchParams.delete('crmRedirect')
         currentUrl.searchParams.delete('error')
         window.history.replaceState({}, '', currentUrl.toString())
-        const callbackUrl = generateCrmCallbackUrl(user, returnTo)
+        const crmUser: CrmUser = {
+          ...user,
+          id: user.id ?? user.email ?? '',
+          organization: user.organization as CrmUser['organization'],
+        }
+        const callbackUrl = generateCrmCallbackUrl(crmUser, returnTo)
         sessionStorage.removeItem('crm_intended_path')
         sessionStorage.removeItem('crm_redirect_count')
         window.location.href = callbackUrl

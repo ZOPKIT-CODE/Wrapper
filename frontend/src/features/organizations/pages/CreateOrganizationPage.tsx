@@ -227,7 +227,7 @@ export function CreateOrganizationPage() {
         description={
           parentName ? (
             <>
-              Adding under: <span className="font-medium text-[#1B2E5A]">{parentName}</span>
+              Adding under: <span className="font-medium text-primary">{parentName}</span>
             </>
           ) : (
             'Create a new top-level organization for this tenant.'
@@ -241,10 +241,10 @@ export function CreateOrganizationPage() {
         )}
       />
 
-      <Card className="border-slate-200/80 shadow-sm dark:border-slate-800">
-        <CardHeader className="space-y-4 border-b border-slate-100 pb-5 dark:border-slate-800">
-          <CardTitle className="flex items-center gap-2 text-lg font-semibold text-[#1B2E5A] dark:text-slate-100">
-            <Building className="h-5 w-5 text-[#1B2E5A] dark:text-[#1B2E5A]/60" />
+      <Card className="border-slate-200/80 shadow-sm">
+        <CardHeader className="space-y-4 border-b border-slate-100 pb-5">
+          <CardTitle className="flex items-center gap-2 text-lg font-semibold text-primary">
+            <Building className="h-5 w-5 text-primary" />
             {steps[currentStep].title}
           </CardTitle>
           <CardDescription className="text-sm">{steps[currentStep].description}</CardDescription>
@@ -253,7 +253,7 @@ export function CreateOrganizationPage() {
 
         <CardContent className="space-y-6 p-6">
           {error && (
-            <Alert variant="destructive" className="border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300">
+            <Alert variant="destructive" className="border-red-200 bg-red-50 text-red-700">
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
@@ -267,7 +267,7 @@ export function CreateOrganizationPage() {
                     value={formData.name}
                     onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
                     placeholder="Acme Subsidiary"
-                    className="h-11 bg-slate-50/70 border-slate-200 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-0 dark:bg-slate-900/40 dark:border-slate-700"
+                    className="h-11 bg-slate-50/70 border-slate-200 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-0"
                   />
                 </div>
                 <div className="grid gap-2">
@@ -276,7 +276,7 @@ export function CreateOrganizationPage() {
                     value={formData.legalName}
                     onChange={(e) => setFormData((prev) => ({ ...prev, legalName: e.target.value }))}
                     placeholder="Acme Subsidiary Inc."
-                    className="h-11 bg-slate-50/70 border-slate-200 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-0 dark:bg-slate-900/40 dark:border-slate-700"
+                    className="h-11 bg-slate-50/70 border-slate-200 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-0"
                   />
                 </div>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -286,7 +286,7 @@ export function CreateOrganizationPage() {
                       value={formData.organizationType}
                       onValueChange={(value) => setFormData((prev) => ({ ...prev, organizationType: value }))}
                     >
-                      <SelectTrigger className="h-11 bg-slate-50/70 border-slate-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 dark:bg-slate-900/40 dark:border-slate-700">
+                      <SelectTrigger className="h-11 bg-slate-50/70 border-slate-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -303,7 +303,7 @@ export function CreateOrganizationPage() {
                       value={formData.status}
                       onValueChange={(value) => setFormData((prev) => ({ ...prev, status: value }))}
                     >
-                      <SelectTrigger className="h-11 bg-slate-50/70 border-slate-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 dark:bg-slate-900/40 dark:border-slate-700">
+                      <SelectTrigger className="h-11 bg-slate-50/70 border-slate-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -319,7 +319,7 @@ export function CreateOrganizationPage() {
                     value={formData.responsiblePersonId}
                     onValueChange={(value) => setFormData((prev) => ({ ...prev, responsiblePersonId: value }))}
                   >
-                    <SelectTrigger className="h-11 bg-slate-50/70 border-slate-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 dark:bg-slate-900/40 dark:border-slate-700">
+                    <SelectTrigger className="h-11 bg-slate-50/70 border-slate-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0">
                       <SelectValue placeholder="Select user" />
                     </SelectTrigger>
                     <SelectContent>
@@ -350,7 +350,7 @@ export function CreateOrganizationPage() {
                         }))
                       }
                     >
-                      <SelectTrigger className="h-11 bg-slate-50/70 border-slate-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 dark:bg-slate-900/40 dark:border-slate-700">
+                      <SelectTrigger className="h-11 bg-slate-50/70 border-slate-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0">
                         <SelectValue placeholder="Select country" />
                       </SelectTrigger>
                       <SelectContent>
@@ -374,7 +374,7 @@ export function CreateOrganizationPage() {
                       value={formData.currency}
                       onValueChange={(value) => setFormData((prev) => ({ ...prev, currency: value }))}
                     >
-                      <SelectTrigger className="h-11 bg-slate-50/70 border-slate-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 dark:bg-slate-900/40 dark:border-slate-700">
+                      <SelectTrigger className="h-11 bg-slate-50/70 border-slate-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -393,7 +393,7 @@ export function CreateOrganizationPage() {
                     value={formData.fiscalYearEnd}
                     onValueChange={(value) => setFormData((prev) => ({ ...prev, fiscalYearEnd: value }))}
                   >
-                    <SelectTrigger className="h-11 bg-slate-50/70 border-slate-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 dark:bg-slate-900/40 dark:border-slate-700">
+                    <SelectTrigger className="h-11 bg-slate-50/70 border-slate-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -415,7 +415,7 @@ export function CreateOrganizationPage() {
                     value={formData.taxId}
                     onChange={(e) => setFormData((prev) => ({ ...prev, taxId: e.target.value }))}
                     placeholder="Enter tax ID (optional)"
-                    className="h-11 bg-slate-50/70 border-slate-200 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-0 dark:bg-slate-900/40 dark:border-slate-700"
+                    className="h-11 bg-slate-50/70 border-slate-200 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-0"
                   />
                 </div>
                 <div className="grid gap-2">
@@ -424,7 +424,7 @@ export function CreateOrganizationPage() {
                     value={formData.registrationNumber}
                     onChange={(e) => setFormData((prev) => ({ ...prev, registrationNumber: e.target.value }))}
                     placeholder="Enter registration number (optional)"
-                    className="h-11 bg-slate-50/70 border-slate-200 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-0 dark:bg-slate-900/40 dark:border-slate-700"
+                    className="h-11 bg-slate-50/70 border-slate-200 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-0"
                   />
                 </div>
               </>
@@ -440,7 +440,7 @@ export function CreateOrganizationPage() {
                       onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
                       placeholder="contact@example.com"
                       type="email"
-                      className="h-11 bg-slate-50/70 border-slate-200 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-0 dark:bg-slate-900/40 dark:border-slate-700"
+                      className="h-11 bg-slate-50/70 border-slate-200 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-0"
                     />
                   </div>
                   <div className="grid gap-2">
@@ -449,7 +449,7 @@ export function CreateOrganizationPage() {
                       value={formData.phone}
                       onChange={(e) => setFormData((prev) => ({ ...prev, phone: e.target.value }))}
                       placeholder="+1 555 000 0000"
-                      className="h-11 bg-slate-50/70 border-slate-200 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-0 dark:bg-slate-900/40 dark:border-slate-700"
+                      className="h-11 bg-slate-50/70 border-slate-200 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-0"
                     />
                   </div>
                 </div>
@@ -459,7 +459,7 @@ export function CreateOrganizationPage() {
                     value={formData.website}
                     onChange={(e) => setFormData((prev) => ({ ...prev, website: e.target.value }))}
                     placeholder="https://example.com"
-                    className="h-11 bg-slate-50/70 border-slate-200 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-0 dark:bg-slate-900/40 dark:border-slate-700"
+                    className="h-11 bg-slate-50/70 border-slate-200 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-0"
                   />
                 </div>
                 <div className="grid gap-2">
@@ -474,14 +474,14 @@ export function CreateOrganizationPage() {
                       }))
                     }
                     rows={3}
-                    className="bg-slate-50/70 border-slate-200 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-0 dark:bg-slate-900/40 dark:border-slate-700"
+                    className="bg-slate-50/70 border-slate-200 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-0"
                   />
                 </div>
               </>
             )}
           </div>
 
-          <div className="sticky bottom-0 z-10 -mx-6 border-t border-slate-100 bg-white/95 px-6 py-4 backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">
+          <div className="sticky bottom-0 z-10 -mx-6 border-t border-slate-100 bg-white/95 px-6 py-4 backdrop-blur">
             <div className="flex flex-wrap justify-end gap-2">
             <Button
               variant="outline"
@@ -506,7 +506,7 @@ export function CreateOrganizationPage() {
               <Button
                 onClick={handleNext}
                 disabled={isCreating}
-                className="h-10 min-w-[112px] gap-1 rounded-md bg-[#1B2E5A] font-medium text-white shadow-sm hover:bg-[#152449]"
+                className="h-10 min-w-[112px] gap-1 rounded-md bg-primary font-medium text-white shadow-sm hover:bg-primary-hover"
               >
                 Next
                 <ChevronRight className="h-4 w-4" />
@@ -515,7 +515,7 @@ export function CreateOrganizationPage() {
               <Button
                 onClick={handleSubmit}
                 disabled={isCreating}
-                className="h-10 min-w-[164px] gap-1 rounded-md bg-[#1B2E5A] font-medium text-white shadow-sm hover:bg-[#152449]"
+                className="h-10 min-w-[164px] gap-1 rounded-md bg-primary font-medium text-white shadow-sm hover:bg-primary-hover"
               >
                 {isCreating ? (
                   <>

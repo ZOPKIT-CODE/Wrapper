@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { FormControl, FormDescription, FormField, FormItem, FormLabel } from '@/components/ui/form';
+import { FormDescription, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { FieldComponentProps, FileField as FileFieldType } from '../types';
 import { cn } from '@/lib/utils';
 import { ConditionalErrorMessage } from '../components/ConditionalErrorMessage';
@@ -52,7 +52,10 @@ export const FileField: React.FC<FieldComponentProps> = ({
     if (Array.isArray(value)) {
       return `${value.length} file(s) selected`;
     }
-    return value?.name || '';
+    if (value instanceof File) {
+      return value.name;
+    }
+    return '';
   };
 
   return (
@@ -74,8 +77,8 @@ export const FileField: React.FC<FieldComponentProps> = ({
                 formField.onChange(e);
                 handleFileChange(e);
               }}
-              onBlur={(e) => {
-                formField.onBlur(e);
+              onBlur={() => {
+                formField.onBlur();
                 onBlur?.();
               }}
               disabled={disabled || field.disabled}
@@ -113,7 +116,7 @@ export const FileField: React.FC<FieldComponentProps> = ({
             {value && (
               <div className="text-sm text-muted-foreground">
                 {getFileDisplayName()}
-                {!Array.isArray(value) && value?.size && (
+                {value instanceof File && (
                   <span className="ml-2">({formatFileSize(value.size)})</span>
                 )}
               </div>

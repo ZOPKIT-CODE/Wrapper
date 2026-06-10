@@ -34,7 +34,7 @@ export function ZopkitRoundLoader({
   return (
     <div
       className={cn(
-        'rounded-full border-2 border-slate-200 border-t-blue-600 dark:border-slate-700 dark:border-t-blue-500 animate-spin flex-shrink-0',
+        'rounded-full border-2 border-slate-200 border-t-blue-600 animate-spin flex-shrink-0',
         sizeClass,
         className
       )}

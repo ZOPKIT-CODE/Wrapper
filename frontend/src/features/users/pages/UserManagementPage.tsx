@@ -34,7 +34,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   TooltipProvider,
 } from '@/components/ui/tooltip'
-import { Users, UserPlus, Mail, Shield, CheckCircle, UserX } from 'lucide-react'
+import { Users, UserPlus, Mail, CheckCircle, UserX } from 'lucide-react'
 
 import {
   extractItems,
@@ -79,14 +79,13 @@ function StatCard({
         padding: '18px 20px',
         background: 'var(--zk-paper)',
         border: '1px solid var(--zk-line)',
-        borderRadius: 12,
-        boxShadow: '0 1px 4px rgba(15,32,80,0.05)',
+        borderRadius: 8,
       }}
     >
       <div style={{
         width: 44, height: 44, flexShrink: 0,
         display: 'grid', placeItems: 'center',
-        borderRadius: 11,
+        borderRadius: 8,
         background: 'var(--zk-navy)',
       }}>
         <Icon style={{ width: 20, height: 20, color: '#ffffff' }} />

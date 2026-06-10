@@ -27,9 +27,16 @@ export const ConditionalErrorMessage: React.FC<ConditionalErrorMessageProps> = (
     return null;
   }
 
+  const message =
+    typeof error === 'string'
+      ? error
+      : error && typeof error === 'object' && 'message' in error
+        ? String(error.message)
+        : '';
+
   return (
     <p className={className}>
-      {typeof error === 'string' ? error : error.message}
+      {message}
     </p>
   );
 };

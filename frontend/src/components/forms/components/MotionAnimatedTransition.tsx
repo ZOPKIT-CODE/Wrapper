@@ -22,7 +22,7 @@ export const MotionAnimatedTransition: React.FC<MotionAnimatedTransitionProps> =
     if (!containerRef.current) return;
 
     const container = containerRef.current;
-    const elements = container.querySelectorAll('[data-animate]');
+    const elements = Array.from(container.querySelectorAll('[data-animate]'));
 
     // Reset any existing animations
     elements.forEach(el => {
@@ -41,7 +41,7 @@ export const MotionAnimatedTransition: React.FC<MotionAnimatedTransitionProps> =
           },
           {
             duration: 0.3,
-            easing: 'ease-out',
+            ease: 'easeOut',
             delay: stagger(0.05)
           }
         );
@@ -55,7 +55,7 @@ export const MotionAnimatedTransition: React.FC<MotionAnimatedTransitionProps> =
           },
           {
             duration: 0.3,
-            easing: 'ease-out',
+            ease: 'easeOut',
             delay: stagger(0.05)
           }
         );
@@ -69,7 +69,7 @@ export const MotionAnimatedTransition: React.FC<MotionAnimatedTransitionProps> =
           },
           {
             duration: 0.2,
-            easing: 'ease-out',
+            ease: 'easeOut',
             delay: stagger(0.03)
           }
         );
@@ -95,7 +95,7 @@ export const MotionFormFieldSkeleton: React.FC<{
   useEffect(() => {
     if (!skeletonRef.current) return;
 
-    const elements = skeletonRef.current.querySelectorAll('.skeleton-item');
+    const elements = Array.from(skeletonRef.current.querySelectorAll('.skeleton-item'));
     
     animate(
       elements,
@@ -142,7 +142,7 @@ export const MotionProgressBar: React.FC<{
       },
       {
         duration: 0.5,
-        easing: 'ease-out'
+        ease: 'easeOut'
       }
     );
   }, [progress]);
@@ -187,7 +187,7 @@ export const MotionStepIndicator: React.FC<{
         },
         {
           duration: 0.3,
-          easing: 'ease-out',
+          ease: 'easeOut',
           delay: index * 0.1
         }
       );
@@ -229,7 +229,7 @@ export const MotionErrorMessage: React.FC<{
       },
       {
         duration: 0.2,
-        easing: 'ease-out'
+        ease: 'easeOut'
       }
     );
   }, [message]);
@@ -267,7 +267,7 @@ export const MotionSuccessMessage: React.FC<{
       },
       {
         duration: 0.2,
-        easing: 'ease-out'
+        ease: 'easeOut'
       }
     );
   }, [message]);
@@ -305,7 +305,7 @@ export const MotionLoadingSpinner: React.FC<{
       {
         duration: 1,
         repeat: Infinity,
-        easing: 'linear'
+        ease: 'linear'
       }
     );
   }, []);

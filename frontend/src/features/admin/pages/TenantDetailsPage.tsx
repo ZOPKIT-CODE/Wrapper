@@ -316,7 +316,7 @@ export function TenantDetailsPage() {
     <Container className="dashboard-actionable-cursors">
       <div className="space-y-6 pb-8">
         {/* ── Section 1: Header ── */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 rounded-2xl bg-gradient-to-br from-[#11254d] via-[#1B2E5A] to-[#0f1f40] p-5 text-white shadow-xl">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 rounded-2xl bg-gradient-to-br from-primary-hover via-primary to-[#0f1f40] p-5 text-white shadow-xl">
           <Button
             variant="ghost"
             size="sm"

@@ -132,11 +132,11 @@ const SuiteDashboard: React.FC = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center dashboard-actionable-cursors">
         <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8 text-center">
           <div className="mb-6">
-            <div className="mx-auto h-12 w-12 bg-[#1B2E5A]/10 rounded-full flex items-center justify-center">
+            <div className="mx-auto h-12 w-12 bg-primary/10 rounded-full flex items-center justify-center">
               <span className="text-2xl">🚀</span>
             </div>
           </div>
-          <h2 className="text-2xl font-bold text-[#1B2E5A] mb-4">Business Suite</h2>
+          <h2 className="text-2xl font-bold text-primary mb-4">Business Suite</h2>
           <p className="text-gray-600 mb-6">Please log in to access your applications</p>
         </div>
       </div>
@@ -151,7 +151,7 @@ const SuiteDashboard: React.FC = () => {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <span className="text-2xl font-bold text-[#1B2E5A]">🚀 Business Suite</span>
+                <span className="text-2xl font-bold text-primary">🚀 Business Suite</span>
               </div>
             </div>
             <div className="flex items-center space-x-4">
@@ -183,7 +183,7 @@ const SuiteDashboard: React.FC = () => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1B2E5A]"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -191,14 +191,14 @@ const SuiteDashboard: React.FC = () => {
             {/* Applications Grid */}
             <div className="lg:col-span-2">
               <div className="mb-6">
-                <h2 className="text-2xl font-bold text-[#1B2E5A]">Your Applications</h2>
+                <h2 className="text-2xl font-bold text-primary">Your Applications</h2>
                 <p className="text-gray-600">Access your business tools and services</p>
               </div>
 
               {applications.length === 0 ? (
                 <div className="text-center py-12 bg-white rounded-lg border-2 border-dashed border-gray-300">
                   <span className="text-4xl mb-4 block">📱</span>
-                  <h3 className="text-lg font-medium text-[#1B2E5A] mb-2">No Applications Available</h3>
+                  <h3 className="text-lg font-medium text-primary mb-2">No Applications Available</h3>
                   <p className="text-gray-600">Contact your administrator to enable applications for your organization.</p>
                 </div>
               ) : (
@@ -215,7 +215,7 @@ const SuiteDashboard: React.FC = () => {
                             {getAppIcon(app.appCode, app.icon)}
                           </div>
                           <div>
-                            <h3 className="text-lg font-semibold text-[#1B2E5A] group-hover:text-[#1B2E5A]">
+                            <h3 className="text-lg font-semibold text-primary group-hover:text-primary">
                               {app.appName}
                             </h3>
                             <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${getTierColor(app.subscriptionTier)}`}>
@@ -223,7 +223,7 @@ const SuiteDashboard: React.FC = () => {
                             </span>
                           </div>
                         </div>
-                        <div className="text-gray-400 group-hover:text-[#1B2E5A]">
+                        <div className="text-gray-400 group-hover:text-primary">
                           <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
                           </svg>
@@ -262,7 +262,7 @@ const SuiteDashboard: React.FC = () => {
               
               {/* Quick Stats */}
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-[#1B2E5A] mb-4">Quick Stats</h3>
+                <h3 className="text-lg font-semibold text-primary mb-4">Quick Stats</h3>
                 <div className="space-y-3">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Available Apps</span>
@@ -281,7 +281,7 @@ const SuiteDashboard: React.FC = () => {
 
               {/* Recent Activity */}
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-[#1B2E5A] mb-4">Recent Activity</h3>
+                <h3 className="text-lg font-semibold text-primary mb-4">Recent Activity</h3>
                 {activities.length === 0 ? (
                   <p className="text-gray-600 text-sm">No recent activity</p>
                 ) : (
@@ -308,12 +308,12 @@ const SuiteDashboard: React.FC = () => {
               </div>
 
               {/* Support */}
-              <div className="bg-[#1B2E5A]/5 rounded-lg border border-[#1B2E5A]/20 p-6">
-                <h3 className="text-lg font-semibold text-[#1B2E5A] mb-2">Need Help?</h3>
-                <p className="text-[#1B2E5A]/80 text-sm mb-4">
+              <div className="bg-primary/5 rounded-lg border border-primary/20 p-6">
+                <h3 className="text-lg font-semibold text-primary mb-2">Need Help?</h3>
+                <p className="text-primary/80 text-sm mb-4">
                   Get support or request new applications for your organization.
                 </p>
-                <button className="w-full bg-[#1B2E5A] text-white px-4 py-2 rounded-md hover:bg-[#152449] transition-colors text-sm font-medium">
+                <button className="w-full bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-hover transition-colors text-sm font-medium">
                   Contact Support
                 </button>
               </div>

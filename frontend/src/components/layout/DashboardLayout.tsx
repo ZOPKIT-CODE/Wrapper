@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, Suspense } from "react"
+import React, { useState, useMemo, Suspense } from "react"
 import { ModernSidebar } from "@/components/layout/ModernSidebar"
 import { ThemeToggle } from "@/components/theme/ThemeToggle"
 import { BreadcrumbLabelProvider } from "@/contexts/BreadcrumbLabelContext"
@@ -11,8 +11,8 @@ import {
 import { BillingStatusNavbar } from "@/components/common/billing/BillingStatusNavbar"
 import { useSeasonalCreditsCongratulatory } from "@/hooks/useSeasonalCreditsCongratulatory"
 import { useSubscriptionCurrent, useTenantApplications } from "@/hooks/useSharedQueries"
-import { Home, Building2, Users, Crown, Shield, Activity, CreditCard, ChevronRight, Settings, AlertTriangle, LayoutGrid } from "lucide-react"
-import { useNavigate, useLocation, useSearch, useParams, Outlet, Link } from "@tanstack/react-router"
+import { Building2, Users, Crown, Shield, Activity, CreditCard, ChevronRight, Settings, AlertTriangle, LayoutGrid } from "lucide-react"
+import { useNavigate, useLocation, useParams, Outlet, Link } from "@tanstack/react-router"
 import { useOrganizationHierarchy } from "@/hooks/useOrganizationHierarchy"
 import { Button } from "@/components/ui/button"
 import { cn, formatDate } from "@/lib/utils"
@@ -27,50 +27,12 @@ const SeasonalCreditsCongratulatoryModal = React.lazy(() =>
   import("@/features/notifications/SeasonalCreditsCongratulatoryModal").then(m => ({ default: m.SeasonalCreditsCongratulatoryModal }))
 )
 
-interface TrialInfo {
-  plan: string
-  endDate: Date
-  daysRemaining: number
-  checkoutUrl?: string
-}
-
 interface NavItem {
   name: string
   href: string
   icon: any
   children?: NavItem[]
 }
-
-const getDashboardNavigation = (): NavItem[] => [
-  {
-    name: 'Dashboard',
-    href: '/dashboard/applications',
-    icon: Home,
-    children: [
-      { name: 'Applications', href: '/dashboard/applications', icon: Building2 },
-      { name: 'Roles', href: '/dashboard/roles', icon: Crown },
-      { name: 'Analytics', href: '/dashboard/analytics', icon: Activity },
-    ]
-  },
-  { name: 'Billing', href: '/dashboard/billing', icon: CreditCard },
-  { name: 'Usage', href: '/dashboard/usage', icon: Activity },
-  { name: 'Settings', href: '/dashboard/settings', icon: Settings },
-]
-
-const getOrganizationNavigation = (orgCode: string): NavItem[] => [
-  {
-    name: 'Dashboard',
-    href: `/org/${orgCode}`,
-    icon: Home,
-    children: [
-      { name: 'Analytics', href: `/org/${orgCode}/analytics`, icon: Activity },
-      { name: 'Roles', href: `/org/${orgCode}/permissions`, icon: Crown },
-    ]
-  },
-  { name: 'Billing', href: `/org/${orgCode}/billing`, icon: CreditCard },
-  { name: 'Usage', href: `/org/${orgCode}/usage`, icon: Activity },
-  { name: 'Settings', href: `/org/${orgCode}/settings`, icon: Settings },
-]
 
 // Transform organization hierarchy into sidebar navigation items
 const transformHierarchyToNavItems = (hierarchy: any[], baseUrl: string = '/dashboard/organization') => {
@@ -221,11 +183,8 @@ const defaultSidebarData = {
 export function DashboardLayout() {
   const { actualTheme } = useTheme()
   const [expandedItems, setExpandedItems] = useState<string[]>(['Dashboard'])
-  const [trialInfo, setTrialInfo] = useState<TrialInfo | null>(null)
-  const [showTrialBanner, setShowTrialBanner] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
-  const searchParams = useSearch({ strict: false }) as Record<string, string>
   const params = useParams({ strict: false })
 
   // Fetch user and tenant data from context (safe: returns null during HMR/init)
@@ -247,7 +206,7 @@ export function DashboardLayout() {
   const isCanceled = subscription?.status === 'canceled'
 
   // Handle organization switching for tenant admins
-  const handleOrganizationSwitch = (organizationId: string) => {
+  const handleOrganizationSwitch = (_organizationId: string) => {
     // TODO: Implement organization switching logic
     // This would typically involve updating the user context or redirecting to the new organization
   };
@@ -256,7 +215,7 @@ export function DashboardLayout() {
 
   // Determine which navigation to use based on current route
   const isOrganizationRoute = location.pathname.startsWith('/org/')
-  const orgCode = params.orgCode
+  const orgCode = (params as { orgCode?: string }).orgCode
 
   // Get tenant ID from context or use default
   const tenantId = user?.tenantId || tenant?.tenantId
@@ -294,40 +253,6 @@ export function DashboardLayout() {
       logoUrl: tenant.logoUrl,
     };
   }, [tenant])
-
-  // Check for trial information from URL params or localStorage
-  useEffect(() => {
-    const isTrial = searchParams['trial'] === 'true'
-    const plan = searchParams['plan']
-    const trialEndDate = localStorage.getItem('trialEndDate')
-    const pendingCheckoutUrl = localStorage.getItem('pendingCheckoutUrl')
-
-    if (isTrial || trialEndDate) {
-      const endDate = trialEndDate ? new Date(trialEndDate) : new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
-      const daysRemaining = Math.max(0, Math.ceil((endDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
-
-      setTrialInfo({
-        plan: plan || 'free', // Changed from 'professional' to 'free' for consistency
-        endDate,
-        daysRemaining,
-        checkoutUrl: pendingCheckoutUrl || undefined
-      })
-      setShowTrialBanner(true)
-    }
-  }, [searchParams])
-
-  const handleUpgradeNow = () => {
-    const checkoutUrl = localStorage.getItem('pendingCheckoutUrl')
-    if (checkoutUrl) {
-      window.location.href = checkoutUrl
-    } else {
-      navigate({ to: '/dashboard/billing' })
-    }
-  }
-
-  const dismissTrialBanner = () => {
-    setShowTrialBanner(false)
-  }
 
   const toggleExpanded = (itemName: string) => {
     setExpandedItems(prev =>
@@ -485,8 +410,8 @@ export function DashboardLayout() {
 
           {/* Subscription cancellation banners */}
           {isCancelScheduled && (
-            <div className="flex items-center justify-between gap-3 px-4 py-3 bg-amber-50 border-b border-amber-200 dark:bg-amber-950/30 dark:border-amber-800">
-              <div className="flex items-center gap-2 text-sm text-amber-800 dark:text-amber-200">
+            <div className="flex items-center justify-between gap-3 px-4 py-3 bg-amber-50 border-b border-amber-200">
+              <div className="flex items-center gap-2 text-sm text-amber-800">
                 <AlertTriangle className="h-4 w-4 shrink-0" />
                 <span>
                   Your subscription is scheduled to end on{' '}
@@ -497,7 +422,7 @@ export function DashboardLayout() {
               <Button
                 variant="outline"
                 size="sm"
-                className="shrink-0 border-amber-300 text-amber-800 hover:bg-amber-100 dark:border-amber-700 dark:text-amber-200 dark:hover:bg-amber-900"
+                className="shrink-0 border-amber-300 text-amber-800 hover:bg-amber-100"
                 onClick={() => navigate({ to: '/dashboard/billing', search: { tab: 'plans' } })}
               >
                 Resubscribe
@@ -505,8 +430,8 @@ export function DashboardLayout() {
             </div>
           )}
           {isCanceled && (
-            <div className="flex items-center justify-between gap-3 px-4 py-3 bg-red-50 border-b border-red-200 dark:bg-red-950/30 dark:border-red-800">
-              <div className="flex items-center gap-2 text-sm text-red-800 dark:text-red-200">
+            <div className="flex items-center justify-between gap-3 px-4 py-3 bg-red-50 border-b border-red-200">
+              <div className="flex items-center gap-2 text-sm text-red-800">
                 <AlertTriangle className="h-4 w-4 shrink-0" />
                 <span>
                   Your subscription has expired. Your data is safe but write access is restricted.
@@ -515,7 +440,7 @@ export function DashboardLayout() {
               <Button
                 variant="outline"
                 size="sm"
-                className="shrink-0 border-red-300 text-red-800 hover:bg-red-100 dark:border-red-700 dark:text-red-200 dark:hover:bg-red-900"
+                className="shrink-0 border-red-300 text-red-800 hover:bg-red-100"
                 onClick={() => navigate({ to: '/dashboard/billing', search: { tab: 'plans' } })}
               >
                 Resubscribe Now

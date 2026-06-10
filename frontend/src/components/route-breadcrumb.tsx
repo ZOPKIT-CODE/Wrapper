@@ -63,10 +63,13 @@ const getOrgRouteLabel = (pathname: string): string | null => {
 }
 
 // Special handling for dashboard with query parameters
-const getDashboardTabLabel = (pathname: string, search: string): string | null => {
+const getDashboardTabLabel = (pathname: string, search: string | Record<string, unknown>): string | null => {
   if (pathname === '/dashboard' || pathname === '/dashboard/applications') {
-    const urlParams = new URLSearchParams(search)
-    const tab = urlParams.get('tab')
+    const tab = typeof search === 'string'
+      ? new URLSearchParams(search).get('tab')
+      : typeof search.tab === 'string'
+        ? search.tab
+        : null
     if (tab) {
       const tabLabels: Record<string, string> = {
         overview: 'Overview',
@@ -207,7 +210,7 @@ export function RouteBreadcrumb({
   return (
     <Breadcrumb className={cn("mb-4", className)}>
       <BreadcrumbList>
-        {displayBreadcrumbs.map((breadcrumb, index) => (
+        {displayBreadcrumbs.map((breadcrumb, _index) => (
           <React.Fragment key={breadcrumb.href}>
             <BreadcrumbItem>
               {breadcrumb.isLast ? (

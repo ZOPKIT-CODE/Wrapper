@@ -128,11 +128,6 @@ export function useOptimizedQuery<T>(options: UseOptimizedQueryOptions<T>) {
     }
   }, [queryClient, staleTime]);
 
-  // Enhanced error handling
-  const enhancedOnError = useCallback((error: any) => {
-    handleTrialAwareError(error, onError)
-  }, [onError])
-
   return {
     ...queryResult,
     invalidate,

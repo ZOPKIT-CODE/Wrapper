@@ -4,7 +4,6 @@
  */
 
 const STORAGE_SALT = 'onboarding_secure_v1';
-const ENCRYPTION_KEY = 'onboarding_form_data_key';
 
 /**
  * Simple encryption using base64 encoding with salt

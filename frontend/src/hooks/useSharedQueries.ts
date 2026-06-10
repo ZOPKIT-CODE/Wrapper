@@ -13,11 +13,14 @@ export const queryKeys = {
   entityScope: ['entityScope'] as const,
   tenant: ['tenant'] as const,
   tenantApps: (tenantId: string) => ['tenantApps', tenantId] as const,
-  applicationAllocations: (entityId?: string) => ['applicationAllocations', entityId].filter(Boolean) as const,
+  applicationAllocations: (entityId?: string) =>
+    entityId ? (['applicationAllocations', entityId] as const) : (['applicationAllocations'] as const),
   notifications: ['notifications'] as const,
   unreadCount: ['unreadCount'] as const,
-  users: (entityId?: string | null) => ['users', entityId].filter(Boolean) as const,
-  entities: (tenantId?: string) => ['entities', tenantId].filter(Boolean) as const,
+  users: (entityId?: string | null) =>
+    entityId ? (['users', entityId] as const) : (['users'] as const),
+  entities: (tenantId?: string) =>
+    tenantId ? (['entities', tenantId] as const) : (['entities'] as const),
   roles: (filters?: { search?: string; type?: string }) => ['roles', filters] as const,
   subscriptionCurrent: ['subscription', 'current'] as const,
 } as const
@@ -251,9 +254,9 @@ export function useNotifications(options: {
 // Derive unread count from the notifications cache — no separate API call.
 // Eliminates the /api/notifications/unread-count endpoint entirely.
 export function useUnreadCount() {
-  const { data: notifications = [] } = useNotifications()
+  const { data: notifications = [], refetch } = useNotifications()
   const count = (notifications as Array<{ isRead?: boolean }>).filter(n => !n.isRead).length
-  return { data: count }
+  return { data: count, refetch }
 }
 
 // Shared credit status hook

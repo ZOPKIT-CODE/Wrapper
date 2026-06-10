@@ -64,9 +64,9 @@ interface UrgencyTheme {
 
 function urgencyStyle(expiresAt: Date | null): UrgencyTheme {
   if (!expiresAt) return {
-    badge: 'bg-[#1B2E5A]/5 text-[#1B2E5A]', bar: 'bg-[#1B2E5A]/30',
-    text: 'text-[#1B2E5A]/70', ring: 'ring-[#1B2E5A]/10', bg: 'bg-[#1B2E5A]/[0.03]',
-    border: 'border-[#1B2E5A]/10', pillBg: 'bg-[#1B2E5A]/5',
+    badge: 'bg-primary/5 text-primary', bar: 'bg-primary/30',
+    text: 'text-primary/70', ring: 'ring-primary/10', bg: 'bg-primary/[0.03]',
+    border: 'border-primary/10', pillBg: 'bg-primary/5',
     icon: <Infinity className="h-3 w-3" />,
   }
   const ms = msUntil(expiresAt)
@@ -208,7 +208,7 @@ function CreditExpiryBatchRow({ batch }: { batch: NormalizedBatch }) {
         'flex items-center gap-4 px-5 py-4 transition-colors',
         isApp
           ? 'bg-blue-50/20 hover:bg-blue-50/40'
-          : 'hover:bg-[#1B2E5A]/[0.015]',
+          : 'hover:bg-primary/[0.015]',
       )}
     >
       <div
@@ -231,8 +231,8 @@ function CreditExpiryBatchRow({ batch }: { batch: NormalizedBatch }) {
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1 flex-wrap">
-          <span className="flex items-center gap-1.5 text-[#1B2E5A]/60">{batch.icon}</span>
-          <span className="text-sm font-semibold tracking-tight text-[#1B2E5A]">
+          <span className="flex items-center gap-1.5 text-primary/60">{batch.icon}</span>
+          <span className="text-sm font-semibold tracking-tight text-primary">
             {batch.campaignName ?? 'Seasonal Credits'}
           </span>
           <Badge
@@ -247,14 +247,14 @@ function CreditExpiryBatchRow({ batch }: { batch: NormalizedBatch }) {
           {batch.targetApplication && (
             <Badge
               variant="outline"
-              className="text-[10px] px-2 py-0.5 border-[#1B2E5A]/15 text-[#1B2E5A] font-semibold shrink-0 rounded-md"
+              className="text-[10px] px-2 py-0.5 border-primary/15 text-primary font-semibold shrink-0 rounded-md"
             >
               <AppWindow className="h-2.5 w-2.5 mr-1 opacity-60" />
               {batch.targetApplication.charAt(0).toUpperCase() + batch.targetApplication.slice(1)}
             </Badge>
           )}
           {batch.isTransferred && !batch.targetApplication && (
-            <span className="flex items-center gap-1 text-[10px] text-[#1B2E5A]/40 font-semibold tracking-wide">
+            <span className="flex items-center gap-1 text-[10px] text-primary/40 font-semibold tracking-wide">
               <ArrowRightLeft className="h-3 w-3" />
               Transferred
             </span>
@@ -276,7 +276,7 @@ function CreditExpiryBatchRow({ batch }: { batch: NormalizedBatch }) {
         </div>
 
         <p className="text-[11px] text-slate-400 tracking-wide">
-          <span className="font-semibold text-[#1B2E5A]/70">{batch.available.toLocaleString()}</span> remaining
+          <span className="font-semibold text-primary/70">{batch.available.toLocaleString()}</span> remaining
           {usedPct > 0 && <span className="ml-2 text-slate-300">{usedPct}% used</span>}
           {batch.allocated !== batch.available && (
             <span className="ml-2 text-slate-300">/ {batch.allocated.toLocaleString()} allocated</span>
@@ -289,7 +289,7 @@ function CreditExpiryBatchRow({ batch }: { batch: NormalizedBatch }) {
           style={{ fontFamily: 'var(--zk-mono)', fontWeight: 600, letterSpacing: '-0.04em' }}
           className={cn(
             'text-xl tabular-nums',
-            isApp ? 'text-blue-600' : 'text-[#1B2E5A]',
+            isApp ? 'text-blue-600' : 'text-primary',
           )}
         >
           {batch.available.toLocaleString()}
@@ -530,7 +530,7 @@ export function ExpiryBreakdownTab({ creditAllocations, creditBalance, entityBal
   if (isLoading) {
     return (
       <div className="space-y-5">
-        <div className="rounded-3xl border border-[#1B2E5A]/10 bg-white p-5 animate-pulse">
+        <div className="rounded-3xl border border-primary/10 bg-white p-5 animate-pulse">
           <div className="flex gap-4 mb-5">
             {[1, 2, 3, 4].map(i => (
               <div key={i} className="h-20 flex-1 rounded-2xl" style={{ background: 'var(--zk-bg-2)' }} />
@@ -563,8 +563,8 @@ export function ExpiryBreakdownTab({ creditAllocations, creditBalance, entityBal
   if (entityGroups.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
-        <div className="h-16 w-16 rounded-full bg-[#1B2E5A]/5 flex items-center justify-center mb-5">
-          <Shield className="h-8 w-8 text-[#1B2E5A]/40" />
+        <div className="h-16 w-16 rounded-full bg-primary/5 flex items-center justify-center mb-5">
+          <Shield className="h-8 w-8 text-primary/40" />
         </div>
         <p style={{ fontFamily: 'var(--zk-display)', fontWeight: 600, letterSpacing: '-0.025em', color: 'var(--zk-ink)', fontSize: 16 }}>No Active Credit Pools</p>
         <p style={{ fontFamily: 'var(--zk-font)', fontSize: 13, color: 'var(--zk-muted)' }} className="mt-1.5 max-w-sm">
@@ -578,14 +578,14 @@ export function ExpiryBreakdownTab({ creditAllocations, creditBalance, entityBal
     <div className="space-y-5 font-sans">
 
       {/* ── Summary header card ── */}
-      <Card className="rounded-3xl border border-[#1B2E5A]/10 bg-gradient-to-br from-white to-slate-50/50 shadow-sm overflow-hidden">
+      <Card className="rounded-3xl border border-primary/10 bg-gradient-to-br from-white to-slate-50/50 shadow-sm overflow-hidden">
         <CardContent className="p-0">
-          <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-[#1B2E5A]/5">
+          <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-primary/5">
             {/* Entities */}
             <div className="p-4 sm:p-5">
               <div className="flex items-center gap-2 mb-2">
-                <div className="h-7 w-7 rounded-lg bg-[#1B2E5A]/[0.06] flex items-center justify-center">
-                  <Building2 className="h-3.5 w-3.5 text-[#1B2E5A]" />
+                <div className="h-7 w-7 rounded-lg bg-primary/[0.06] flex items-center justify-center">
+                  <Building2 className="h-3.5 w-3.5 text-primary" />
                 </div>
                 <span style={{ fontFamily: 'var(--zk-mono)', fontSize: 11, fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: 'var(--zk-muted-2)' }}>Entities</span>
               </div>
@@ -594,8 +594,8 @@ export function ExpiryBreakdownTab({ creditAllocations, creditBalance, entityBal
             {/* Credit Pools */}
             <div className="p-4 sm:p-5">
               <div className="flex items-center gap-2 mb-2">
-                <div className="h-7 w-7 rounded-lg bg-[#1B2E5A]/[0.06] flex items-center justify-center">
-                  <Gift className="h-3.5 w-3.5 text-[#1B2E5A]" />
+                <div className="h-7 w-7 rounded-lg bg-primary/[0.06] flex items-center justify-center">
+                  <Gift className="h-3.5 w-3.5 text-primary" />
                 </div>
                 <span style={{ fontFamily: 'var(--zk-mono)', fontSize: 11, fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: 'var(--zk-muted-2)' }}>Credit Pools</span>
               </div>
@@ -604,8 +604,8 @@ export function ExpiryBreakdownTab({ creditAllocations, creditBalance, entityBal
             {/* Total Credits */}
             <div className="p-4 sm:p-5">
               <div className="flex items-center gap-2 mb-2">
-                <div className="h-7 w-7 rounded-lg bg-[#1B2E5A]/[0.06] flex items-center justify-center">
-                  <TrendingUp className="h-3.5 w-3.5 text-[#1B2E5A]" />
+                <div className="h-7 w-7 rounded-lg bg-primary/[0.06] flex items-center justify-center">
+                  <TrendingUp className="h-3.5 w-3.5 text-primary" />
                 </div>
                 <span style={{ fontFamily: 'var(--zk-mono)', fontSize: 11, fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: 'var(--zk-muted-2)' }}>Total Credits</span>
               </div>
@@ -648,14 +648,14 @@ export function ExpiryBreakdownTab({ creditAllocations, creditBalance, entityBal
             'rounded-3xl border shadow-sm overflow-hidden transition-all duration-200',
             isUrgent
               ? 'border-rose-200/70 hover:border-rose-300/80 hover:shadow-rose-100/50'
-              : 'border-[#1B2E5A]/8 hover:border-[#1B2E5A]/15 hover:shadow-[#1B2E5A]/[0.04]'
+              : 'border-primary/8 hover:border-primary/15 hover:shadow-primary/[0.04]'
           )}>
             {/* ── Entity header ── */}
             <CardHeader className={cn(
               'pb-4 border-b',
               isUrgent
                 ? 'bg-gradient-to-r from-rose-50/80 to-white border-rose-100/60'
-                : 'bg-gradient-to-r from-[#1B2E5A]/[0.03] to-white border-[#1B2E5A]/5'
+                : 'bg-gradient-to-r from-primary/[0.03] to-white border-primary/5'
             )}>
               <div className="flex items-center justify-between flex-wrap gap-3">
                 <div className="flex items-center gap-3.5">
@@ -663,7 +663,7 @@ export function ExpiryBreakdownTab({ creditAllocations, creditBalance, entityBal
                     'flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl',
                     isUrgent
                       ? 'bg-rose-100/80 text-rose-600'
-                      : 'bg-[#1B2E5A]/[0.08] text-[#1B2E5A]'
+                      : 'bg-primary/[0.08] text-primary'
                   )}>
                     {entityIcon(group.entityType)}
                   </div>
@@ -674,7 +674,7 @@ export function ExpiryBreakdownTab({ creditAllocations, creditBalance, entityBal
                     <div className="flex items-center gap-2 mt-0.5">
                       <span className="text-xs text-slate-400 capitalize">{group.entityType}</span>
                       <span className="text-slate-200">|</span>
-                      <span className="text-xs font-semibold text-[#1B2E5A]">
+                      <span className="text-xs font-semibold text-primary">
                         {group.totalAvailable.toLocaleString()} credits
                       </span>
                       {appBatchCount > 0 && (
@@ -709,7 +709,7 @@ export function ExpiryBreakdownTab({ creditAllocations, creditBalance, entityBal
                   <div className="flex flex-wrap items-center justify-between gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-50/70 to-transparent border-b border-blue-100/50">
                     <div className="flex items-center gap-2 min-w-0">
                       <AppWindow className="h-4 w-4 text-blue-600 shrink-0" />
-                      <span className="text-sm font-semibold text-[#1B2E5A] truncate">{ledger.applicationLabel}</span>
+                      <span className="text-sm font-semibold text-primary truncate">{ledger.applicationLabel}</span>
                       <Badge
                         variant="outline"
                         className="text-[9px] px-1.5 py-0 border-blue-200 text-blue-700 font-semibold uppercase tracking-wide shrink-0"
@@ -753,12 +753,12 @@ export function ExpiryBreakdownTab({ creditAllocations, creditBalance, entityBal
               )}
 
               {/* ── Entity footer ── */}
-              <div className="flex items-center justify-between px-5 py-3 bg-[#1B2E5A]/[0.02] border-t border-[#1B2E5A]/5">
+              <div className="flex items-center justify-between px-5 py-3 bg-primary/[0.02] border-t border-primary/5">
                 <span className="text-[11px] font-medium text-slate-400 tracking-wide">
                   {orgBatchCount} {orgBatchCount === 1 ? 'pool' : 'pools'}
                   {appBatchCount > 0 && ` + ${appBatchCount} app`}
                 </span>
-                <span className="text-[11px] font-bold text-[#1B2E5A] tracking-wide">
+                <span className="text-[11px] font-bold text-primary tracking-wide">
                   {group.totalAvailable.toLocaleString()} credits available
                 </span>
               </div>

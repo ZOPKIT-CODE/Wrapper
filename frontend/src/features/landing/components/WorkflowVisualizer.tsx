@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
     Briefcase, CheckCircle2, Box, Truck, FileCheck, DollarSign,
     UserPlus, Users, Monitor, GraduationCap, CreditCard, ShoppingCart,
-    Activity, Zap, Server, Database,
-    ChevronRight, BarChart3, Clock
+    Activity, Server, Database,
+    ChevronRight, Clock
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { config } from '@/lib/config';
@@ -15,11 +15,11 @@ const workflows = [
         title: 'Lead to Cash',
         description: 'Automate your revenue cycle from prospect to payment.',
         color: 'blue',
-        accent: 'from-[#1B2E5A] to-cyan-500',
-        border: 'border-blue-200',
-        text: 'text-[#1B2E5A]',
-        bg: 'bg-[#1B2E5A]',
-        lightBg: 'bg-blue-50',
+        accent: 'from-primary to-[var(--primary-hover)]',
+        border: 'border-border',
+        text: 'text-primary',
+        bg: 'bg-primary',
+        lightBg: 'bg-muted/30',
         steps: [
             { id: 'lead', title: 'Lead Captured', app: 'B2B CRM', icon: Briefcase, action: 'Syncing prospect data', status: 'Success' },
             { id: 'opp', title: 'Deal Closed', app: 'B2B CRM', icon: CheckCircle2, action: 'Updating pipeline status', status: 'Approved' },
@@ -34,11 +34,11 @@ const workflows = [
         title: 'Hire to Retire',
         description: 'Streamline the entire employee lifecycle.',
         color: 'blue',
-        accent: 'from-[#1B2E5A] to-blue-400',
-        border: 'border-blue-200',
-        text: 'text-[#1B2E5A]',
-        bg: 'bg-[#1B2E5A]',
-        lightBg: 'bg-blue-50',
+        accent: 'from-primary to-[var(--primary-hover)]',
+        border: 'border-border',
+        text: 'text-primary',
+        bg: 'bg-primary',
+        lightBg: 'bg-muted/30',
         steps: [
             { id: 'offer', title: 'Offer Signed', app: 'HRMS', icon: UserPlus, action: 'Verifying digital signature', status: 'Signed' },
             { id: 'onboard', title: 'Profile Created', app: 'HRMS', icon: Users, action: 'Creating employee record', status: 'Created' },
@@ -53,11 +53,11 @@ const workflows = [
         title: 'Procure to Pay',
         description: 'Optimize supply chain and vendor payments.',
         color: 'blue',
-        accent: 'from-[#1B2E5A] to-blue-400',
-        border: 'border-blue-200',
-        text: 'text-[#1B2E5A]',
-        bg: 'bg-[#1B2E5A]',
-        lightBg: 'bg-blue-50',
+        accent: 'from-primary to-[var(--primary-hover)]',
+        border: 'border-border',
+        text: 'text-primary',
+        bg: 'bg-primary',
+        lightBg: 'bg-muted/30',
         steps: [
             { id: 'req', title: 'Requisition', app: 'Operations', icon: FileCheck, action: 'Submitting purchase req', status: 'Pending' },
             { id: 'po', title: 'PO Issued', app: 'Operations', icon: ShoppingCart, action: 'Generating PO document', status: 'Issued' },
@@ -71,10 +71,10 @@ const workflows = [
 
 // ── Design-system tokens (matches design file) ──────────────────────────────
 const M = {
-    bg: '#FFFFFF', bgSoft: '#F5F7FA', white: '#FFFFFF',
-    ink: '#13204A', inkSoft: '#3A4674', muted: '#7C84A0',
+    bg: 'var(--background)', bgSoft: 'var(--illustration-panel)', white: 'var(--background)',
+    ink: 'var(--illustration-ink)', inkSoft: 'var(--illustration-ink-soft)', muted: 'var(--muted-foreground)',
     line: 'rgba(19,32,74,0.10)',
-    green: '#4DC18A', blue: '#3D7AE8',
+    green: 'var(--illustration-success-light)', blue: 'var(--illustration-info)',
 };
 
 // ── Mobile workflow section (vertical timeline design) ───────────────────────
@@ -99,14 +99,14 @@ function MobileWorkflowSection({
                 fontFamily: 'JetBrains Mono, monospace', fontSize: 10,
                 color: M.muted, letterSpacing: '0.22em', textAlign: 'center',
                 textTransform: 'uppercase', marginBottom: 10,
-            }}>— Workflow Engine —</div>
+            }}>Workflow engine</div>
 
             <h2 style={{
-                fontFamily: '-apple-system, BlinkMacSystemFont, "Inter", sans-serif',
-                fontWeight: 800, fontSize: 28, lineHeight: 1.1,
-                color: M.ink, margin: 0, textAlign: 'center', letterSpacing: '-0.025em',
+                fontFamily: 'Inter, sans-serif',
+                fontWeight: 500, fontSize: 28, lineHeight: 1.1,
+                color: M.ink, margin: 0, textAlign: 'center', letterSpacing: '-0.02em',
             }}>
-                Intelligent Workflow<br />Orchestration
+                Connected workflows<br />across your stack
             </h2>
 
             <p style={{
@@ -145,7 +145,7 @@ function MobileWorkflowSection({
                                     display: 'inline-flex', alignItems: 'center', gap: 5,
                                     padding: '2px 8px', borderRadius: 999,
                                     background: 'rgba(77,193,138,0.14)',
-                                    fontFamily: 'Inter, sans-serif', fontSize: 10.5, fontWeight: 600, color: '#2E9B6A',
+                                    fontFamily: 'Inter, sans-serif', fontSize: 10.5, fontWeight: 600, color: 'var(--illustration-success)',
                                 }}>
                                     <span style={{ width: 5, height: 5, borderRadius: 99, background: M.green, display: 'inline-block' }}/>
                                     System Active
@@ -220,11 +220,11 @@ function MobileWorkflowSection({
                                         boxShadow: isActiveStep ? `0 0 0 6px rgba(61,122,232,0.10)` : 'none',
                                         flex: '0 0 auto',
                                     }}>
-                                        <Icon size={18} color={isCompleted ? '#fff' : isActiveStep ? M.ink : M.muted}/>
+                                        <Icon size={18} color={isCompleted ? 'var(--background)' : isActiveStep ? M.ink : M.muted}/>
                                         {isCompleted && (
                                             <span style={{
                                                 position: 'absolute', bottom: -2, right: -2,
-                                                width: 14, height: 14, borderRadius: 99, background: '#fff',
+                                                width: 14, height: 14, borderRadius: 99, background: 'var(--background)',
                                                 border: `1.5px solid ${M.green}`, display: 'grid', placeItems: 'center',
                                             }}>
                                                 <svg width="8" height="8" viewBox="0 0 8 8">
@@ -424,23 +424,23 @@ export const WorkflowVisualizer = () => {
     return (
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12 sm:mb-16">
-                <p className="text-sm font-semibold text-slate-400 tracking-wide mb-3">Workflow Engine</p>
-                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#1B2E5A] tracking-[-0.025em] leading-tight">
-                    Intelligent Workflow<br className="hidden sm:block" /> Orchestration
+                <p className="text-sm font-medium text-muted-foreground mb-3">Workflow engine</p>
+                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-medium text-foreground tracking-[-0.02em] leading-tight">
+                    Connected workflows<br className="hidden sm:block" /> across your stack
                 </h2>
-                <p className="text-slate-500 text-base sm:text-lg max-w-xl mx-auto mt-4 leading-relaxed">
-                    Automate complex business processes across your entire Zopkit ecosystem. Connect apps, data, and teams seamlessly.
+                <p className="text-muted-foreground text-base sm:text-lg max-w-xl mx-auto mt-4 leading-relaxed">
+                    Automate handoffs between CRM, finance, operations, and HR without rebuilding your processes.
                 </p>
             </div>
 
-            <div className="bg-white rounded-xl sm:rounded-2xl overflow-hidden border border-slate-200 shadow-lg sm:shadow-2xl flex flex-col lg:flex-row h-auto lg:h-[600px] xl:h-[700px]">
+            <div className="bg-white rounded-lg overflow-hidden border border-border shadow-sm flex flex-col lg:flex-row h-auto lg:h-[600px] xl:h-[700px]">
 
                 {/* Sidebar / Control Panel */}
-                <div className="w-full lg:w-72 bg-slate-50 border-b lg:border-b-0 lg:border-r border-slate-200 flex flex-col shrink-0">
-                    <div className="p-4 sm:p-6 border-b border-slate-200 bg-white">
-                        <div className="flex items-center gap-3 text-slate-900 mb-1">
-                            <img src={config.LOGO_URL} alt="Zopkit" className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl overflow-hidden shadow-lg" />
-                            <h3 className="font-bold text-sm sm:text-base tracking-tight">Automation Hub</h3>
+                <div className="w-full lg:w-72 bg-muted/20 border-b lg:border-b-0 lg:border-r border-border flex flex-col shrink-0">
+                    <div className="p-4 sm:p-6 border-b border-border bg-white">
+                        <div className="flex items-center gap-3 text-foreground mb-1">
+                            <img src={config.LOGO_URL} alt="Zopkit" className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg overflow-hidden border border-border" />
+                            <h3 className="font-medium text-sm sm:text-base tracking-tight">Automation Hub</h3>
                         </div>
                         <div className="flex items-center gap-2 mt-4">
                             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-100 border border-emerald-200">
@@ -465,8 +465,8 @@ export const WorkflowVisualizer = () => {
                                     className={cn(
                                         "w-full text-left p-3 sm:p-4 rounded-lg sm:rounded-xl transition-all duration-300 border relative overflow-hidden group",
                                         isActive
-                                            ? "bg-white border-blue-200 shadow-lg shadow-blue-900/5"
-                                            : "bg-transparent border-transparent hover:bg-slate-100 hover:border-slate-200"
+                                            ? "bg-white border-primary/25 shadow-sm"
+                                            : "bg-transparent border-transparent hover:bg-muted/40 hover:border-border"
                                     )}
                                 >
                                     {isActive && (
@@ -491,12 +491,12 @@ export const WorkflowVisualizer = () => {
                 {/* Main Visualizer Stage */}
                 <div className="flex-1 bg-white relative flex flex-col overflow-hidden">
                     {/* Subtle Grid Background */}
-                    <div className="absolute inset-0 bg-[linear-gradient(to_right,#f1f5f9_1px,transparent_1px),linear-gradient(to_bottom,#f1f5f9_1px,transparent_1px)] bg-[size:40px_40px]"></div>
+                    <div className="absolute inset-0 bg-[linear-gradient(to_right,var(--illustration-panel-alt)_1px,transparent_1px),linear-gradient(to_bottom,var(--illustration-panel-alt)_1px,transparent_1px)] bg-[size:40px_40px]"></div>
 
                     {/* Header */}
                     <div className="relative z-10 h-12 sm:h-16 border-b border-slate-100 bg-white/80 flex items-center justify-between px-3 sm:px-8 shrink-0">
                         <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-                            <h2 className="text-sm sm:text-xl font-bold text-[#1B2E5A] truncate">
+                            <h2 className="text-sm sm:text-xl font-bold text-primary truncate">
                                 {activeWorkflow.title}
                             </h2>
                             <div className="hidden sm:block px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-500 text-xs font-semibold border border-slate-200 shrink-0">
@@ -517,15 +517,14 @@ export const WorkflowVisualizer = () => {
                             {/* 1. Track Background */}
                             <div className="absolute top-[18px] sm:top-6 md:top-8 lg:top-10 left-[8%] right-[8%] h-0.5 sm:h-1 md:h-1.5 lg:h-2 bg-slate-100 rounded-full z-0 overflow-hidden">
                                 {/* Dashed pattern overlay */}
-                                <div className="w-full h-full opacity-30" style={{ backgroundImage: 'linear-gradient(90deg, transparent 50%, #cbd5e1 50%)', backgroundSize: '10px 100%' }}></div>
+                                <div className="w-full h-full opacity-30" style={{ backgroundImage: 'linear-gradient(90deg, transparent 50%, var(--border) 50%)', backgroundSize: '10px 100%' }}></div>
                             </div>
 
                             {/* 2. Active Progress Line */}
                             <div
-                                className="absolute top-[18px] sm:top-6 md:top-8 lg:top-10 left-[8%] h-0.5 sm:h-1 md:h-1.5 lg:h-2 rounded-full z-0 transition-all duration-1000 ease-in-out shadow-sm lg:shadow-lg shadow-blue-200"
+                                className="absolute top-[18px] sm:top-6 md:top-8 lg:top-10 left-[8%] h-0.5 sm:h-1 md:h-1.5 lg:h-2 rounded-full z-0 transition-all duration-1000 ease-in-out bg-primary"
                                 style={{
                                     width: `calc(${(activeStepIndex / (activeWorkflow.steps.length - 1)) * 100}% - ${isMobile ? '2rem' : '4rem'})`,
-                                    background: 'linear-gradient(to right, #1B2E5A, #3b82f6)'
                                 }}
                             ></div>
 
@@ -543,7 +542,7 @@ export const WorkflowVisualizer = () => {
                                             <div className={cn(
                                                 "w-9 h-9 sm:w-12 sm:h-12 md:w-16 md:h-16 lg:w-20 lg:h-20 rounded-full flex items-center justify-center border-2 lg:border-[3px] transition-all duration-500 relative bg-white z-10",
                                                 isActive
-                                                    ? "border-white shadow-md sm:shadow-lg scale-105 sm:scale-110 ring-1 sm:ring-2 lg:ring-4 ring-offset-1 lg:ring-offset-2 ring-[#1B2E5A]/40"
+                                                    ? "border-white shadow-md sm:shadow-lg scale-105 sm:scale-110 ring-1 sm:ring-2 lg:ring-4 ring-offset-1 lg:ring-offset-2 ring-primary/40"
                                                     : isCompleted
                                                         ? cn("border-white shadow-sm sm:shadow-md text-white scale-100", activeWorkflow.bg)
                                                         : "border-slate-100 text-slate-300 shadow-sm"
@@ -590,7 +589,7 @@ export const WorkflowVisualizer = () => {
                         <div className="flex-1 p-0 flex flex-col font-mono text-[10px] sm:text-xs overflow-hidden">
                             <div className="bg-white px-3 sm:px-6 py-2 sm:py-3 border-b border-slate-100 flex justify-between items-center">
                                 <span className="text-slate-700 font-bold flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs">
-                                    <Activity className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-500" /> Activity
+                                    <Activity className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" /> Activity
                                 </span>
                                 <div className="hidden sm:flex gap-2 text-[10px] text-slate-400">
                                     <span>Real-time</span>
@@ -610,7 +609,7 @@ export const WorkflowVisualizer = () => {
                                             {/* Simple log styling */}
                                             {log.includes('STARTED') && (
                                                 <span className="flex items-center gap-2">
-                                                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-primary"></span>
                                                     {log}
                                                 </span>
                                             )}

@@ -16,35 +16,6 @@ interface SocialLoginProps {
   onError?: (error: string) => void;
 }
 
-const providerConfig = {
-  google: {
-    icon: '🔍',
-    name: 'Google',
-    className: 'bg-white hover:bg-gray-50 text-gray-900 border border-gray-300',
-    primary: true
-  },
-  github: {
-    icon: '🐙',
-    name: 'GitHub',
-    className: 'bg-gray-900 hover:bg-gray-800 text-white'
-  },
-  microsoft: {
-    icon: '🪟',
-    name: 'Microsoft',
-    className: 'bg-[#1B2E5A] hover:bg-[#152449] text-white'
-  },
-  apple: {
-    icon: '🍎',
-    name: 'Apple',
-    className: 'bg-black hover:bg-gray-900 text-white'
-  },
-  linkedin: {
-    icon: '💼',
-    name: 'LinkedIn',
-    className: 'bg-[#1B2E5A] hover:bg-[#152449] text-white'
-  }
-};
-
 export const SocialLogin: React.FC<SocialLoginProps> = ({
   orgCode,
   redirectUri,
@@ -144,7 +115,6 @@ export const SocialLogin: React.FC<SocialLoginProps> = ({
     return null;
   }
 
-  const config = providerConfig.google;
   const isProviderLoading = loadingProvider === 'google' || (isLoading && loadingProvider === 'google');
 
   return (

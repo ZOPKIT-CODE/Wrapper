@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { RefreshCw, AlertCircle, X, Check } from 'lucide-react';
+import { RefreshCw, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useUserContext } from '@/contexts/UserContextProvider';
 import { toast } from 'sonner';
 import ActionableAlert from '@/components/common/data-display/ActionableAlert';

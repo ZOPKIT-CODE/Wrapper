@@ -16,6 +16,7 @@ import {
   Coins,
   Activity,
   Hash,
+  Check,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -193,10 +194,8 @@ const analyzePermissionType = (permCode: string) => {
   ) {
     return {
       risk: 'high' as const,
-      color:
-        'border-rose-100 bg-white text-rose-700/70 dark:border-rose-900/30 dark:bg-slate-900 dark:text-rose-400/70',
-      selectedColor:
-        'border-rose-200 bg-gradient-to-br from-rose-50 via-rose-100 to-red-100 text-rose-900 shadow-sm dark:from-rose-900/40 dark:to-rose-800/20 dark:border-rose-700 dark:text-rose-100',
+      color: 'border-rose-100 bg-white text-rose-700',
+      selectedColor: 'border-rose-200 bg-rose-50 text-rose-800',
       icon: <Lock className="h-3.5 w-3.5" aria-hidden />,
     };
   }
@@ -209,68 +208,74 @@ const analyzePermissionType = (permCode: string) => {
   ) {
     return {
       risk: 'medium' as const,
-      color:
-        'border-amber-100 bg-white text-amber-700/70 dark:border-amber-900/30 dark:bg-slate-900 dark:text-amber-400/70',
-      selectedColor:
-        'border-amber-200 bg-gradient-to-br from-amber-50 via-orange-100 to-amber-100 text-amber-900 shadow-sm dark:from-amber-900/40 dark:to-amber-800/20 dark:border-amber-700 dark:text-amber-100',
+      color: 'border-amber-100 bg-white text-amber-700',
+      selectedColor: 'border-amber-200 bg-amber-50 text-amber-800',
       icon: <Edit className="h-3.5 w-3.5" aria-hidden />,
     };
   }
   return {
     risk: 'low' as const,
-    color:
-      'border-slate-100 bg-white text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400',
-    selectedColor:
-      'border-blue-200 bg-gradient-to-br from-blue-50 via-slate-50 to-blue-100 text-[#1B2E5A] shadow-md shadow-blue-500/15 dark:from-blue-950/50 dark:to-slate-900 dark:border-blue-700 dark:text-slate-100',
+    color: 'border-slate-200 bg-white text-slate-600',
+    selectedColor: 'border-emerald-200 bg-emerald-50 text-emerald-800',
     icon: <Eye className="h-3.5 w-3.5" aria-hidden />,
   };
 };
 
 const getAppIcon = (appCode: string) => {
   const key = appCode.toLowerCase();
-  const props = { className: "w-5 h-5" };
-  if (key.includes('crm') || key.includes('sales')) return <Users {...props} className="text-blue-500" />;
-  if (key.includes('inventory') || key.includes('product')) return <Package {...props} className="text-[#1B2E5A]" />;
-  if (key.includes('admin') || key.includes('auth')) return <Shield {...props} className="text-rose-500" />;
-  if (key.includes('hr') || key.includes('people')) return <Building2 {...props} className="text-emerald-500" />;
-  if (key.includes('billing') || key.includes('finance')) return <Coins {...props} className="text-amber-500" />;
-  if (key.includes('analytics') || key.includes('reporting')) return <Activity {...props} className="text-violet-500" />;
-  return <Grid {...props} className="text-slate-400" />;
+  const props = { className: "h-5 w-5 text-primary" };
+  if (key.includes('crm') || key.includes('sales')) return <Users {...props} />;
+  if (key.includes('inventory') || key.includes('product')) return <Package {...props} />;
+  if (key.includes('admin') || key.includes('auth')) return <Shield {...props} />;
+  if (key.includes('hr') || key.includes('people')) return <Building2 {...props} />;
+  if (key.includes('billing') || key.includes('finance')) return <Coins {...props} />;
+  if (key.includes('analytics') || key.includes('reporting')) return <Activity {...props} />;
+  return <Grid {...props} className="h-5 w-5 text-slate-500" />;
 };
-
-/** Same metric tiles as Team Members (`UserManagementPage` StatCard). */
-const ROLE_BLUE = { 900: '#1B2E5A', 700: '#2D4780' } as const;
 
 function RoleStatCard({
   label,
   value,
   icon: Icon,
-  color,
 }: {
   label: string;
   value: number;
   icon: ElementType;
-  color: string;
 }) {
   return (
-    <Card
-      className={cn(
-        'flex items-center gap-4 p-5 shadow-sm',
-        'border border-[#1B2E5A]/12 bg-[#F4F7FC] dark:border-[#1B2E5A]/25 dark:bg-[#121a2e]',
-      )}
+    <article
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 16,
+        padding: '18px 20px',
+        background: 'var(--zk-paper)',
+        border: '1px solid var(--zk-line)',
+        borderRadius: 8,
+      }}
     >
-      <div className={cn('flex h-11 w-11 shrink-0 items-center justify-center rounded-xl shadow-inner', color)}>
-        <Icon className="h-5 w-5 text-white" />
+      <div
+        style={{
+          width: 44,
+          height: 44,
+          flexShrink: 0,
+          display: 'grid',
+          placeItems: 'center',
+          borderRadius: 8,
+          background: 'var(--zk-navy)',
+        }}
+      >
+        <Icon style={{ width: 20, height: 20, color: '#ffffff' }} />
       </div>
       <div>
-        <p className="text-[13px] font-medium" style={{ color: `${ROLE_BLUE[700]}CC` }}>
+        <p style={{ fontSize: 13, color: 'var(--zk-muted)', fontFamily: 'var(--zk-font)', margin: 0 }}>
           {label}
         </p>
-        <p className="text-2xl font-bold tracking-tight" style={{ color: ROLE_BLUE[900] }}>
+        <p style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-0.04em', color: 'var(--zk-ink)', fontFamily: 'var(--zk-display)', margin: 0 }}>
           {value}
         </p>
       </div>
-    </Card>
+    </article>
   );
 }
 
@@ -479,7 +484,7 @@ export function RoleDetailsPage() {
           variant="ghost"
           size="sm"
           onClick={() => navigate({ to: '/dashboard/roles' })}
-          className="gap-2 -ml-2 text-muted-foreground hover:text-[#1B2E5A]"
+          className="gap-2 -ml-2 text-muted-foreground hover:text-primary"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Roles
@@ -490,7 +495,7 @@ export function RoleDetailsPage() {
         title={
           <span className="flex flex-wrap items-center gap-3">
             <div
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[#1B2E5A]/10 text-sm font-semibold shadow-sm dark:border-slate-700"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-sm font-semibold"
               style={{ backgroundColor: `${role.color}20`, color: role.color }}
             >
               {role.metadata?.icon || '👤'}
@@ -503,10 +508,10 @@ export function RoleDetailsPage() {
 
       {/* Stats — same grid + cards as Team Members */}
       <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <RoleStatCard label="Total permissions" value={permissionSummary.total} icon={Shield} color="bg-[#1B2E5A]" />
-        <RoleStatCard label="Applications" value={permissionSummary.applicationCount} icon={LayoutGrid} color="bg-[#243A6C]" />
-        <RoleStatCard label="Modules" value={permissionSummary.moduleCount} icon={Layers} color="bg-[#2D4780]" />
-        <RoleStatCard label="Users" value={usersWithRole.length} icon={Users} color="bg-[#3B5998]" />
+        <RoleStatCard label="Total permissions" value={permissionSummary.total} icon={Shield} />
+        <RoleStatCard label="Applications" value={permissionSummary.applicationCount} icon={LayoutGrid} />
+        <RoleStatCard label="Modules" value={permissionSummary.moduleCount} icon={Layers} />
+        <RoleStatCard label="Users" value={usersWithRole.length} icon={Users} />
       </div>
 
       {/* Search — same pattern as Team Members tab filters */}
@@ -523,7 +528,7 @@ export function RoleDetailsPage() {
       </div>
 
       {/* Main content — rounded card shell like Team table / dashboard modules */}
-      <div className="mt-6 rounded-xl border border-gray-100 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-slate-950 sm:p-6">
+      <div className="mt-6 rounded-lg border bg-white p-4 sm:p-6" style={{ borderColor: 'var(--zk-line)' }}>
         <div className="custom-scrollbar">
           {filteredApplications.length > 0 ? (
             <Accordion
@@ -541,43 +546,31 @@ export function RoleDetailsPage() {
                   <AccordionItem
                     key={app.appCode}
                     value={app.appCode}
-                    className={cn(
-                      'overflow-hidden rounded-xl border border-b-0 border-[#1B2E5A]/12 bg-white shadow-sm transition-all dark:border-[#1B2E5A]/25 dark:bg-slate-900/50',
-                    )}
+                    className="overflow-hidden rounded-lg border border-slate-200 bg-white"
                   >
-                    <AccordionTrigger className="px-5 py-4 hover:no-underline hover:bg-slate-50/80 dark:hover:bg-slate-800/40 [&[data-state=open]]:bg-[#1B2E5A]/[0.04]">
+                    <AccordionTrigger className="px-5 py-4 hover:no-underline hover:bg-slate-50/80 [&[data-state=open]]:bg-primary/[0.04]">
                       <div className="flex w-full items-center justify-between pr-4 text-left">
                         <div className="flex items-center gap-4">
-                          <div
-                            className={cn(
-                              'relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#1B2E5A]/15 bg-[#1B2E5A] text-white shadow-sm [&_svg]:!text-white',
-                            )}
-                          >
+                          <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-primary bg-primary text-white [&_svg]:!text-white">
                             {getAppIcon(app.appCode)}
                           </div>
                           <div>
                             <div className="flex flex-wrap items-center gap-2 leading-tight sm:gap-3">
-                              <span className="text-sm font-bold uppercase tracking-wide text-[#1B2E5A] dark:text-slate-100">
+                              <span className="text-sm font-semibold text-primary">
                                 {app.appName}
                               </span>
                               <Badge
                                 variant="outline"
-                                className="h-4.5 border-slate-200 px-2 text-[9px] font-black uppercase tracking-widest dark:border-slate-700"
+                                className="h-5 border-slate-200 px-2 text-[10px] font-medium"
                               >
                                 {app.appCode}
                               </Badge>
-                              <Badge
-                                variant="secondary"
-                                className="border-blue-200/60 bg-blue-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-[#1B2E5A] dark:border-blue-900 dark:bg-blue-950/50 dark:text-blue-200"
-                              >
-                                Active
-                              </Badge>
                             </div>
                             <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                              <span className="font-medium uppercase tracking-wide">
+                              <span className="font-medium">
                                 {app.modules?.length || 0} modules
                               </span>
-                              <span aria-hidden className="text-slate-300 dark:text-slate-600">
+                              <span aria-hidden className="text-slate-300">
                                 ·
                               </span>
                               <span className="font-medium tabular-nums">
@@ -588,8 +581,8 @@ export function RoleDetailsPage() {
                         </div>
                       </div>
                     </AccordionTrigger>
-                    <AccordionContent className="border-t border-gray-100 bg-white p-0 dark:border-gray-800 dark:bg-slate-950/30">
-                      <div className="divide-y divide-slate-100 dark:divide-slate-800/50">
+                    <AccordionContent className="border-t border-gray-100 bg-white p-0">
+                      <div className="divide-y divide-slate-100">
                         {app.modules?.map((module: any) => {
                           const rolePerms = module.rolePermissions || [];
                           const isModuleActive = rolePerms.length > 0;
@@ -598,35 +591,30 @@ export function RoleDetailsPage() {
                           return (
                             <div key={module.moduleCode} className={cn(
                               "grid grid-cols-12 items-start gap-6 p-6 transition-all",
-                              isModuleActive ? "bg-blue-50/20 dark:bg-blue-900/5" : "opacity-70 grayscale-[0.2] hover:bg-slate-50/50 dark:hover:bg-slate-800/30"
+                              isModuleActive ? "bg-slate-50/80" : "opacity-70 hover:bg-slate-50/50"
                             )}>
                               {/* Module header — left rail like Role builder / reference */}
-                              <div className="col-span-12 space-y-4 border-b border-slate-200 pb-5 pr-0 dark:border-slate-800 sm:col-span-2 sm:border-b-0 sm:border-r sm:pb-0 sm:pr-5">
+                              <div className="col-span-12 space-y-4 border-b border-slate-200 pb-5 pr-0 sm:col-span-2 sm:border-b-0 sm:border-r sm:pb-0 sm:pr-5">
                                 <div className="space-y-2">
-                                  <h4
-                                    className={cn(
-                                      'text-[11px] font-black uppercase leading-tight tracking-wide text-[#1B2E5A] dark:text-slate-100',
-                                      !isModuleActive && 'opacity-80',
-                                    )}
-                                  >
+                                  <h4 className={cn('text-sm font-medium text-primary', !isModuleActive && 'opacity-80')}>
                                     {module.moduleName}
                                   </h4>
-                                  <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+                                  <p className="text-[10px] text-slate-400">
                                     {module.moduleCode}
                                   </p>
                                 </div>
 
                                 <div
                                   className={cn(
-                                    'w-full rounded-lg border px-3 py-2 text-center text-[8px] font-black uppercase tracking-widest transition-colors',
+                                    'w-full rounded-lg border px-3 py-2 text-center text-[10px] font-medium transition-colors',
                                     isAllModuleSelected
-                                      ? 'border-blue-500 bg-[#1B2E5A] text-white'
+                                      ? 'border-primary bg-primary text-white'
                                       : isModuleActive
-                                        ? 'border-blue-200 bg-blue-50 text-[#1B2E5A] dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-200'
-                                        : 'border-slate-200 bg-slate-50 text-slate-400 dark:border-slate-700 dark:bg-slate-900',
+                                        ? 'border-slate-300 bg-slate-100 text-primary'
+                                        : 'border-slate-200 bg-slate-50 text-slate-400',
                                   )}
                                 >
-                                  {isAllModuleSelected ? 'FULL ACCESS' : isModuleActive ? 'PARTIAL' : 'NOT ACTIVE'}
+                                  {isAllModuleSelected ? 'All' : isModuleActive ? 'Partial' : 'None'}
                                 </div>
                               </div>
 
@@ -644,7 +632,7 @@ export function RoleDetailsPage() {
                                       <div
                                         key={permCode}
                                         className={cn(
-                                          'group/chip relative flex min-h-[118px] select-none flex-col gap-2 rounded-2xl border p-3 text-left transition-all',
+                                          'group/chip relative flex min-h-[118px] select-none flex-col gap-2 rounded-lg border p-3 text-left',
                                           isSelected ? permUI.selectedColor : permUI.color,
                                         )}
                                       >
@@ -652,40 +640,30 @@ export function RoleDetailsPage() {
                                           <div
                                             className={cn(
                                               'rounded-lg p-1',
-                                              isSelected
-                                                ? 'bg-white/60 shadow-sm dark:bg-slate-950/50'
-                                                : 'opacity-40',
+                                              isSelected ? 'bg-white/60' : 'opacity-40',
                                             )}
                                           >
                                             {permUI.icon}
                                           </div>
-                                          <Badge
-                                            variant="outline"
-                                            className={cn(
-                                              'h-3.5 border-0 px-1 text-[7px] font-black uppercase leading-none',
-                                              isSelected
-                                                ? 'text-[#1B2E5A] dark:text-blue-300'
-                                                : 'text-slate-300 dark:text-slate-600',
-                                            )}
-                                          >
-                                            {isSelected ? 'ACTIVE' : 'READY'}
-                                          </Badge>
+                                          {isSelected && (
+                                            <Check className="h-3.5 w-3.5 text-primary" aria-hidden />
+                                          )}
                                         </div>
 
                                         <div className="flex flex-1 flex-col items-center justify-center px-0.5 text-center">
                                           <p
                                             className={cn(
-                                              'line-clamp-3 break-words text-[10px] font-black uppercase leading-tight tracking-tight',
+                                              'line-clamp-3 break-words text-[10px] font-medium leading-tight',
                                               isSelected
-                                                ? 'text-[#1B2E5A] dark:text-white'
-                                                : 'text-slate-500 dark:text-slate-400',
+                                                ? 'text-primary'
+                                                : 'text-slate-500',
                                             )}
                                           >
                                             {title}
                                           </p>
                                         </div>
 
-                                        <div className="flex items-center justify-center gap-1 text-[8px] font-bold uppercase tracking-tighter text-slate-400">
+                                        <div className="flex items-center justify-center gap-1 text-[9px] text-slate-400">
                                           <Hash className="h-2 w-2 shrink-0" aria-hidden />
                                           <span className="truncate">{permCode}</span>
                                         </div>
@@ -705,9 +683,9 @@ export function RoleDetailsPage() {
               })}
             </Accordion>
           ) : (
-            <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 bg-slate-50/50 py-12 dark:border-gray-800 dark:bg-slate-900/20">
-              <Search className="w-10 h-10 text-slate-300 mb-3" />
-              <h3 className="text-base font-black text-[#1B2E5A] dark:text-white uppercase tracking-tight">
+            <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50 py-12">
+              <Search className="mb-3 h-10 w-10 text-slate-300" />
+              <h3 className="text-base font-medium text-primary">
                 {searchQuery ? 'No matching applications found' : 'No permissions assigned'}
               </h3>
             </div>
@@ -718,10 +696,10 @@ export function RoleDetailsPage() {
         {/* Users with this Role */}
         {usersWithRole.length > 0 && (
           <div className="mt-6">
-            <Card className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm dark:border-gray-800 dark:bg-slate-950">
+            <Card className="overflow-hidden rounded-lg border bg-white" style={{ borderColor: 'var(--zk-line)' }}>
               <CardHeader className="p-5 pb-3">
-                <CardTitle className="flex items-center gap-2 text-[13px] font-semibold" style={{ color: ROLE_BLUE[900] }}>
-                  <Users className="h-4 w-4 text-emerald-600" />
+                <CardTitle className="flex items-center gap-2 text-[13px] font-semibold" style={{ color: 'var(--zk-ink)' }}>
+                  <Users className="h-4 w-4 text-primary" />
                   Users with this role ({usersWithRole.length})
                 </CardTitle>
               </CardHeader>
@@ -736,30 +714,30 @@ export function RoleDetailsPage() {
                     return (
                       <div
                         key={user.userId || user.id}
-                        className="p-3 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 hover:bg-slate-100/50 dark:hover:bg-slate-800/50 transition-all"
+                        className="rounded-lg border border-slate-200 bg-slate-50 p-3 transition-colors hover:bg-slate-100/80"
                       >
                         <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 font-black text-xs shrink-0">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-xs font-semibold text-white">
                             {userInitial}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="text-sm font-black text-[#1B2E5A] dark:text-white truncate">
+                            <div className="truncate text-sm font-medium text-primary">
                               {userName}
                             </div>
                             <div className="flex items-center gap-1 mt-0.5">
                               <Mail className="w-3 h-3 text-slate-400 shrink-0" />
-                              <span className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                              <span className="text-xs text-slate-500 truncate">
                                 {user.email || 'No email'}
                               </span>
                             </div>
                           </div>
                           {user.isActive !== false && user.invitationStatus !== 'pending' && (
-                            <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[8px] font-black tracking-widest uppercase px-1.5 py-0.5 shrink-0">
+                            <Badge variant="outline" className="shrink-0 border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700">
                               Active
                             </Badge>
                           )}
                           {user.invitationStatus === 'pending' && (
-                            <Badge className="bg-amber-500/10 text-amber-600 border-amber-500/20 text-[8px] font-black tracking-widest uppercase px-1.5 py-0.5 shrink-0">
+                            <Badge variant="outline" className="shrink-0 border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
                               Pending
                             </Badge>
                           )}
@@ -775,8 +753,8 @@ export function RoleDetailsPage() {
         
         {/* No Users Message */}
         {usersWithRole.length === 0 && !usersLoading && (
-          <div className="mt-6 rounded-xl border-2 border-dashed border-gray-200 bg-slate-50/50 p-4 dark:border-gray-800 dark:bg-slate-900/20">
-            <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+          <div className="mt-6 rounded-lg border border-dashed border-slate-200 bg-slate-50 p-4">
+            <div className="flex items-center gap-2 text-slate-500">
               <UserIcon className="w-4 h-4" />
               <span className="text-sm font-medium">No users assigned to this role</span>
             </div>
@@ -785,11 +763,11 @@ export function RoleDetailsPage() {
 
         {/* System Role Notice */}
         {role.isSystemRole && (
-          <div className="mt-6 rounded-xl border border-blue-200 bg-blue-50/80 p-4 dark:border-blue-900/40 dark:bg-blue-950/40">
+          <div className="mt-6 rounded-lg border border-slate-200 bg-slate-50 p-4">
             <div className="flex items-center gap-2">
-              <div className="h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500" />
-              <span className="text-xs font-semibold uppercase tracking-wide text-blue-900 dark:text-blue-100">
-                This is a system role with predefined permissions
+              <div className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+              <span className="text-sm text-slate-700">
+                This is a system role with predefined permissions.
               </span>
             </div>
           </div>
@@ -800,7 +778,6 @@ export function RoleDetailsPage() {
           .custom-scrollbar::-webkit-scrollbar { width: 6px; }
           .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
           .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
-          .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.05); }
         `}} />
     </Container>
   );

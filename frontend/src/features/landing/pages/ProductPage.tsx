@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from '@tanstack/react-router';
 import { useAuth } from '@/lib/auth/cognito-auth';
 import { ProductData } from '@/types/products';
-import { Check, X, Zap, XCircle, CheckCircle, Minus, AlertCircle, Sparkles, LayoutGrid, ChevronRight, Maximize2, ArrowRight, Play, Calendar } from 'lucide-react';
-import { MiniSparkline } from '@/components/common/MiniSparkline';
+import { Check, X, XCircle, CheckCircle, Minus, AlertCircle, Sparkles, LayoutGrid, ChevronRight, Maximize2, ArrowRight, Play, Calendar } from 'lucide-react';
 import { productPagesData, productInfo } from '@/data/productPages';
 import {
     getPricingAppIdForProductSlug,
@@ -12,8 +11,10 @@ import {
 import { NavbarButton } from "@/components/ui/resizable-navbar";
 import { LandingFooter } from '@/components/layout/LandingFooter';
 import { MarketingNavbar } from '@/components/layout/MarketingNavbar';
+import { MarketingPageShell } from '@/components/layout/MarketingPageShell';
 import { FAMobileProductPage } from './FAMobileProductPage';
 import { getCRMFeatureSvg } from './getCRMFeatureSvg';
+import { svgMock } from '@/lib/marketing-tokens';
 
 interface FeatureCardProps {
     feature: {
@@ -27,136 +28,14 @@ interface FeatureCardProps {
     productId?: string;
 }
 
-const cardThemes = [
-    {
-        bg: "linear-gradient(150deg, #f8faff 0%, #f1f5ff 60%, #eef2ff 100%)",
-        orb1: "rgba(59,130,246,0.1)",
-        orb2: "rgba(99,102,241,0.07)",
-        orb1Pos: "8% 12%",
-        orb2Pos: "88% 88%",
-        accent: "#3b5bdb",
-        accentDim: "rgba(59,91,219,0.08)",
-        accentBorder: "rgba(59,91,219,0.18)",
-        gradientFrom: "#3b5bdb",
-        gradientTo: "#6741d9",
-        checkRing: "rgba(59,91,219,0.1)",
-        checkColor: "#3b5bdb",
-        frameBg: "rgba(255,255,255,0.85)",
-        frameBorder: "rgba(0,0,0,0.07)",
-        frameGlowColor: "rgba(59,91,219,0.1)",
-        fadeColor: "#f1f5ff",
-        titleColor: "#0f172a",
-        descColor: "rgba(15,23,42,0.58)",
-        benefitColor: "rgba(15,23,42,0.52)",
-        cardShadow: "0 2px 8px rgba(0,0,0,0.05), 0 12px 40px rgba(59,91,219,0.08)",
-        floatChipBg: "rgba(255,255,255,0.95)",
-        floatChipBorder: "rgba(0,0,0,0.08)",
-        floatChipText: "rgba(15,23,42,0.45)",
-        floatChip1: { label: "Entries saved", value: "−60%", color: "#16a34a" },
-        floatChip2: { label: "Accuracy", value: "99.9%", color: "#3b5bdb" },
-    },
-    {
-        bg: "linear-gradient(150deg, #f6fdf9 0%, #ecfdf5 60%, #f0fdf4 100%)",
-        orb1: "rgba(16,185,129,0.1)",
-        orb2: "rgba(6,182,212,0.06)",
-        orb1Pos: "12% 15%",
-        orb2Pos: "90% 78%",
-        accent: "#047857",
-        accentDim: "rgba(4,120,87,0.08)",
-        accentBorder: "rgba(4,120,87,0.16)",
-        gradientFrom: "#047857",
-        gradientTo: "#0369a1",
-        checkRing: "rgba(4,120,87,0.1)",
-        checkColor: "#047857",
-        frameBg: "rgba(255,255,255,0.85)",
-        frameBorder: "rgba(0,0,0,0.07)",
-        frameGlowColor: "rgba(4,120,87,0.09)",
-        fadeColor: "#ecfdf5",
-        titleColor: "#0f172a",
-        descColor: "rgba(15,23,42,0.58)",
-        benefitColor: "rgba(15,23,42,0.52)",
-        cardShadow: "0 2px 8px rgba(0,0,0,0.05), 0 12px 40px rgba(4,120,87,0.07)",
-        floatChipBg: "rgba(255,255,255,0.95)",
-        floatChipBorder: "rgba(0,0,0,0.08)",
-        floatChipText: "rgba(15,23,42,0.45)",
-        floatChip1: { label: "Tasks automated", value: "+3×", color: "#047857" },
-        floatChip2: { label: "Time saved", value: "40h/mo", color: "#0369a1" },
-    },
-    {
-        bg: "linear-gradient(150deg, #fffbf5 0%, #fff7ed 60%, #fff4e6 100%)",
-        orb1: "rgba(194,65,12,0.09)",
-        orb2: "rgba(180,120,0,0.07)",
-        orb1Pos: "10% 16%",
-        orb2Pos: "85% 82%",
-        accent: "#c2410c",
-        accentDim: "rgba(194,65,12,0.08)",
-        accentBorder: "rgba(194,65,12,0.16)",
-        gradientFrom: "#c2410c",
-        gradientTo: "#b45309",
-        checkRing: "rgba(194,65,12,0.1)",
-        checkColor: "#c2410c",
-        frameBg: "rgba(255,255,255,0.85)",
-        frameBorder: "rgba(0,0,0,0.07)",
-        frameGlowColor: "rgba(194,65,12,0.08)",
-        fadeColor: "#fff7ed",
-        titleColor: "#0f172a",
-        descColor: "rgba(15,23,42,0.58)",
-        benefitColor: "rgba(15,23,42,0.52)",
-        cardShadow: "0 2px 8px rgba(0,0,0,0.05), 0 12px 40px rgba(194,65,12,0.07)",
-        floatChipBg: "rgba(255,255,255,0.95)",
-        floatChipBorder: "rgba(0,0,0,0.08)",
-        floatChipText: "rgba(15,23,42,0.45)",
-        floatChip1: { label: "Faster reports", value: "5×", color: "#c2410c" },
-        floatChip2: { label: "Data sources", value: "50+", color: "#b45309" },
-    },
-    {
-        bg: "linear-gradient(150deg, #fdf9ff 0%, #faf5ff 60%, #fdf2f8 100%)",
-        orb1: "rgba(126,34,206,0.09)",
-        orb2: "rgba(190,18,60,0.06)",
-        orb1Pos: "7% 18%",
-        orb2Pos: "92% 80%",
-        accent: "#7e22ce",
-        accentDim: "rgba(126,34,206,0.08)",
-        accentBorder: "rgba(126,34,206,0.16)",
-        gradientFrom: "#7e22ce",
-        gradientTo: "#be185d",
-        checkRing: "rgba(126,34,206,0.1)",
-        checkColor: "#7e22ce",
-        frameBg: "rgba(255,255,255,0.85)",
-        frameBorder: "rgba(0,0,0,0.07)",
-        frameGlowColor: "rgba(126,34,206,0.09)",
-        fadeColor: "#faf5ff",
-        titleColor: "#0f172a",
-        descColor: "rgba(15,23,42,0.58)",
-        benefitColor: "rgba(15,23,42,0.52)",
-        cardShadow: "0 2px 8px rgba(0,0,0,0.05), 0 12px 40px rgba(126,34,206,0.07)",
-        floatChipBg: "rgba(255,255,255,0.95)",
-        floatChipBorder: "rgba(0,0,0,0.08)",
-        floatChipText: "rgba(15,23,42,0.45)",
-        floatChip1: { label: "Compliance", value: "100%", color: "#7e22ce" },
-        floatChip2: { label: "Audit trail", value: "Live", color: "#be185d" },
-    },
-];
-
-
 function getFAFeatureSvg(i: number): React.ReactNode {
-    // Design tokens — per FA screen brief 2026-04-26
-    const NAV = "#0d1f3a";  // collapsed sidebar rail
-    const W = "#FFFFFF";    // content background
-    const BD = "#E2E8F0";
-    const H = "#0F172A";
-    const M = "#64748B";
-    const PRM = "#1B2E5A";
-    const POS = "#10B981";
-    const WARN = "#F59E0B";
-    const NEG = "#EF4444";
-    const ff = "system-ui,-apple-system,sans-serif";
+    const { NAV, W, BD, H, M, PRM, POS, WARN, NEG, INFO, ff } = svgMock;
 
     // 28px collapsed sidebar (per brief)
     const Sb = () => (
         <g>
             <rect width="28" height="480" fill={NAV}/>
-            <rect x="7" y="8" width="14" height="14" rx="3" fill="#3B82F6"/>
+            <rect x="7" y="8" width="14" height="14" rx="3" fill={INFO}/>
             {[0,1,2,3,4].map(j => (
                 <g key={j}>
                     <rect x="8" y={34+j*36} width="12" height="2.5" rx="1.25" fill="rgba(255,255,255,0.25)"/>
@@ -210,11 +89,11 @@ function getFAFeatureSvg(i: number): React.ReactNode {
     );
 
     const ThRow = (y: number, x = 36, w = 752) => (
-        <rect x={x} y={y} width={w} height="22" rx="4" fill="#F8FAFC" stroke={BD} strokeWidth="0.5"/>
+        <rect x={x} y={y} width={w} height="22" rx="4" fill="var(--illustration-panel)" stroke={BD} strokeWidth="0.5"/>
     );
 
     const Tr = (y: number, even: boolean, x = 36, w = 752) => (
-        <rect x={x} y={y} width={w} height="32" rx="3" fill={even ? W : "#F8FAFC"} stroke={BD} strokeWidth="0.5"/>
+        <rect x={x} y={y} width={w} height="32" rx="3" fill={even ? W : "var(--illustration-panel)"} stroke={BD} strokeWidth="0.5"/>
     );
 
     const T = (x: number, y: number, txt: string, sz = 9.5, bold = false, color = H, anchor: "start"|"middle"|"end" = "start") => (
@@ -250,8 +129,8 @@ function getFAFeatureSvg(i: number): React.ReactNode {
                     {T(700,168+idx*34,r.bal,9.5,true)}
                 </g>
             ))}
-            <rect x="36" y="322" width="752" height="26" rx="5" fill="#ECFDF5" stroke="#A7F3D0" strokeWidth="0.5"/>
-            {T(48,339,"Trial Balance Reconciled ✓",9,true,"#047857")}
+            <rect x="36" y="322" width="752" height="26" rx="5" fill="var(--illustration-success-tint)" stroke="var(--illustration-success-tint-border)" strokeWidth="0.5"/>
+            {T(48,339,"Trial Balance Reconciled ✓",9,true,"var(--illustration-success)")}
             {T(788,339,"Debits = Credits · Apr 2026",9,false,M,"end")}
         </svg>
     );
@@ -281,17 +160,17 @@ function getFAFeatureSvg(i: number): React.ReactNode {
                 {x:216,label:"SG-Subsidiary",sub:"Acme Pte"},
             ]).map((c,idx) => (
                 <g key={idx}>
-                    <rect x={c.x} y="234" width="80" height="40" rx="5" fill="#F8FAFC" stroke={BD} strokeWidth="1"/>
+                    <rect x={c.x} y="234" width="80" height="40" rx="5" fill="var(--illustration-panel)" stroke={BD} strokeWidth="1"/>
                     {T(c.x+40,251,c.label,7.5,true,H,"middle")}
                     {T(c.x+40,264,c.sub,7,false,M,"middle")}
                 </g>
             ))}
-            <rect x="44" y="290" width="280" height="20" rx="4" fill="#EFF6FF"/>
-            {T(52,304,"Equity method · Full consolidation",8,false,"#1D4ED8")}
-            <rect x="44" y="316" width="280" height="20" rx="4" fill="#F8FAFC"/>
+            <rect x="44" y="290" width="280" height="20" rx="4" fill="var(--illustration-info-bg)"/>
+            {T(52,304,"Equity method · Full consolidation",8,false,"var(--illustration-info)")}
+            <rect x="44" y="316" width="280" height="20" rx="4" fill="var(--illustration-panel)"/>
             {T(52,330,"Intercompany eliminations: 3 active",8,false,M)}
-            <rect x="44" y="342" width="280" height="20" rx="4" fill="#ECFDF5"/>
-            {T(52,356,"Dec 2025 consolidation: complete ✓",8,true,"#047857")}
+            <rect x="44" y="342" width="280" height="20" rx="4" fill="var(--illustration-success-tint)"/>
+            {T(52,356,"Dec 2025 consolidation: complete ✓",8,true,"var(--illustration-success)")}
             {/* Entity table */}
             <rect x="344" y="130" width="444" height="334" rx="6" fill={W} stroke={BD} strokeWidth="1"/>
             {T(360,150,"Entity Registry",11,true,H)}
@@ -300,14 +179,14 @@ function getFAFeatureSvg(i: number): React.ReactNode {
                 T([364,440,540,596,644,696][hidx],170,h,7.5,true,M)
             )}
             {([
-                {code:"GRP-HQ",name:"Group HoldCo Ltd",type:"Parent",curr:"INR",ctry:"India",st:"Active",bg:"#ECFDF5",tc:"#047857",pw:44},
-                {code:"TCS-IN",name:"TCS India Ltd",type:"Subsidiary",curr:"INR",ctry:"India",st:"Active",bg:"#ECFDF5",tc:"#047857",pw:44},
-                {code:"AcmeUS-LLC",name:"Acme US LLC",type:"Subsidiary",curr:"USD",ctry:"US",st:"Active",bg:"#ECFDF5",tc:"#047857",pw:44},
-                {code:"AcmeSG-Pte",name:"Acme SG Pte",type:"Subsidiary",curr:"SGD",ctry:"SG",st:"Active",bg:"#ECFDF5",tc:"#047857",pw:44},
-                {code:"AcmeUK-Ltd",name:"Acme UK Ltd",type:"Associate",curr:"GBP",ctry:"UK",st:"Inactive",bg:"#F1F5F9",tc:"#475569",pw:48},
+                {code:"GRP-HQ",name:"Group HoldCo Ltd",type:"Parent",curr:"INR",ctry:"India",st:"Active",bg:"var(--illustration-success-tint)",tc:"var(--illustration-success)",pw:44},
+                {code:"TCS-IN",name:"TCS India Ltd",type:"Subsidiary",curr:"INR",ctry:"India",st:"Active",bg:"var(--illustration-success-tint)",tc:"var(--illustration-success)",pw:44},
+                {code:"AcmeUS-LLC",name:"Acme US LLC",type:"Subsidiary",curr:"USD",ctry:"US",st:"Active",bg:"var(--illustration-success-tint)",tc:"var(--illustration-success)",pw:44},
+                {code:"AcmeSG-Pte",name:"Acme SG Pte",type:"Subsidiary",curr:"SGD",ctry:"SG",st:"Active",bg:"var(--illustration-success-tint)",tc:"var(--illustration-success)",pw:44},
+                {code:"AcmeUK-Ltd",name:"Acme UK Ltd",type:"Associate",curr:"GBP",ctry:"UK",st:"Inactive",bg:"var(--illustration-panel-alt)",tc:"var(--muted-foreground)",pw:48},
             ]).map((r,idx) => (
                 <g key={idx}>
-                    <rect x="352" y={182+idx*32} width="428" height="28" rx="3" fill={idx%2===0?W:"#F8FAFC"} stroke={BD} strokeWidth="0.5"/>
+                    <rect x="352" y={182+idx*32} width="428" height="28" rx="3" fill={idx%2===0?W:"var(--illustration-panel)"} stroke={BD} strokeWidth="0.5"/>
                     {T(364,199+idx*32,r.code,8.5,true,PRM)}{T(440,199+idx*32,r.name,8.5)}
                     {T(540,199+idx*32,r.type,8.5,false,M)}{T(596,199+idx*32,r.curr,8.5,false,M)}
                     {T(644,199+idx*32,r.ctry,8.5,false,M)}
@@ -322,10 +201,10 @@ function getFAFeatureSvg(i: number): React.ReactNode {
         <svg viewBox="0 0 800 480" width="100%" height="100%" preserveAspectRatio="xMidYMid meet">
             <rect width="800" height="480" fill={W}/>
             <Sb/>{Hdr("Multi-Currency","Currency settings and FX rate management")}
-            <rect x="36" y="52" width="200" height="36" rx="6" fill="#EFF6FF" stroke="#BFDBFE" strokeWidth="1"/>
-            {T(48,64,"FUNCTIONAL CURRENCY",7.5,true,"#1D4ED8")}
+            <rect x="36" y="52" width="200" height="36" rx="6" fill="var(--illustration-info-bg)" stroke="var(--illustration-primary-tint-border)" strokeWidth="1"/>
+            {T(48,64,"FUNCTIONAL CURRENCY",7.5,true,"var(--illustration-info)")}
             {T(48,77,"₹ INR — Indian Rupee",10,true,H)}
-            <rect x="248" y="52" width="540" height="36" rx="6" fill="#F8FAFC" stroke={BD} strokeWidth="1"/>
+            <rect x="248" y="52" width="540" height="36" rx="6" fill="var(--illustration-panel)" stroke={BD} strokeWidth="1"/>
             {T(260,64,"RATE SOURCE",7.5,true,M)}{T(260,77,"RBI Reference Rate · Updated every 2 hours",9,false,H)}
             {/* 3 currency rate cards */}
             {([
@@ -369,8 +248,8 @@ function getFAFeatureSvg(i: number): React.ReactNode {
                     {T(468,256+idx*36,r.amt,9.5,true,H)}{T(596,256+idx*36,r.gl,9.5,true,r.pos?POS:NEG)}
                 </g>
             ))}
-            <rect x="44" y="420" width="200" height="20" rx="5" fill="#ECFDF5" stroke="#A7F3D0" strokeWidth="0.5"/>
-            {T(56,434,"Realized FX Gain ₹2,140 ✓",9,true,"#047857")}
+            <rect x="44" y="420" width="200" height="20" rx="5" fill="var(--illustration-success-tint)" stroke="var(--illustration-success-tint-border)" strokeWidth="0.5"/>
+            {T(56,434,"Realized FX Gain ₹2,140 ✓",9,true,"var(--illustration-success)")}
         </svg>
     );
 
@@ -384,7 +263,7 @@ function getFAFeatureSvg(i: number): React.ReactNode {
             {K4(416,52,"DUE THIS WEEK","7","Urgent payment",WARN)}
             {K4(606,52,"AWAITING APPROVAL","4","Pending sign-off",WARN)}
             {/* Workflow strip */}
-            <rect x="36" y="130" width="752" height="54" rx="6" fill="#F8FAFC" stroke={BD} strokeWidth="1"/>
+            <rect x="36" y="130" width="752" height="54" rx="6" fill="var(--illustration-panel)" stroke={BD} strokeWidth="1"/>
             {T(48,149,"Procurement Workflow",8,true,M)}
             {([
                 {label:"PR",sub:"Requisition",hi:false},
@@ -401,18 +280,18 @@ function getFAFeatureSvg(i: number): React.ReactNode {
                     {idx < 4 && <polygon points={`${193+idx*142},160 ${199+idx*142},164 ${193+idx*142},168`} fill={BD}/>}
                 </g>
             ))}
-            <rect x="336" y="145" width="108" height="16" rx="8" fill="#ECFDF5" stroke="#A7F3D0" strokeWidth="0.5"/>
-            {T(390,156,"3-way matched ✓",7.5,true,"#047857","middle")}
+            <rect x="336" y="145" width="108" height="16" rx="8" fill="var(--illustration-success-tint)" stroke="var(--illustration-success-tint-border)" strokeWidth="0.5"/>
+            {T(390,156,"3-way matched ✓",7.5,true,"var(--illustration-success)","middle")}
             {/* Bills table */}
             {ThRow(196)}
             {["VENDOR","BILL #","ISSUE DATE","DUE DATE","AMOUNT (₹)","STATUS",""].map((h,hidx) =>
                 T([48,196,312,394,482,574,696][hidx],209,h,7.5,true,M)
             )}
             {([
-                {vnd:"Infosys Ltd",bill:"BL-7823",iss:"Apr 20",due:"May 20",amt:"₹18,40,000",st:"Approved",bg:"#ECFDF5",tc:"#047857",pw:56},
-                {vnd:"TCS Pvt Ltd",bill:"BL-7820",iss:"Apr 18",due:"Apr 28",amt:"₹3,40,000",st:"Pending",bg:"#FFFBEB",tc:"#B45309",pw:52},
-                {vnd:"Wipro Ltd",bill:"BL-7818",iss:"Apr 15",due:"Apr 25",amt:"₹12,80,000",st:"Paid",bg:"#ECFDF5",tc:"#047857",pw:36},
-                {vnd:"HCL Technologies",bill:"BL-7812",iss:"Apr 10",due:"May 10",amt:"₹28,70,315",st:"Draft",bg:"#F1F5F9",tc:"#475569",pw:40},
+                {vnd:"Infosys Ltd",bill:"BL-7823",iss:"Apr 20",due:"May 20",amt:"₹18,40,000",st:"Approved",bg:"var(--illustration-success-tint)",tc:"var(--illustration-success)",pw:56},
+                {vnd:"TCS Pvt Ltd",bill:"BL-7820",iss:"Apr 18",due:"Apr 28",amt:"₹3,40,000",st:"Pending",bg:"color-mix(in oklch, var(--illustration-warning) 10%, var(--background))",tc:"var(--illustration-warning)",pw:52},
+                {vnd:"Wipro Ltd",bill:"BL-7818",iss:"Apr 15",due:"Apr 25",amt:"₹12,80,000",st:"Paid",bg:"var(--illustration-success-tint)",tc:"var(--illustration-success)",pw:36},
+                {vnd:"HCL Technologies",bill:"BL-7812",iss:"Apr 10",due:"May 10",amt:"₹28,70,315",st:"Draft",bg:"var(--illustration-panel-alt)",tc:"var(--muted-foreground)",pw:40},
             ]).map((r,idx) => (
                 <g key={idx}>
                     {Tr(218+idx*38,idx%2===0)}
@@ -420,7 +299,7 @@ function getFAFeatureSvg(i: number): React.ReactNode {
                     {T(312,238+idx*38,r.iss,9,false,M)}{T(394,238+idx*38,r.due,9,false,M)}
                     {T(482,238+idx*38,r.amt,9.5,true,H)}
                     {Pill(574,238+idx*38,r.st,r.bg,r.tc,r.pw)}
-                    <rect x="698" y={228+idx*38} width="56" height="16" rx="4" fill="#F1F5F9" stroke={BD} strokeWidth="0.5"/>
+                    <rect x="698" y={228+idx*38} width="56" height="16" rx="4" fill="var(--illustration-panel-alt)" stroke={BD} strokeWidth="0.5"/>
                     {T(726,239+idx*38,"Pay Now",8,true,M,"middle")}
                 </g>
             ))}
@@ -441,11 +320,11 @@ function getFAFeatureSvg(i: number): React.ReactNode {
                 T([48,156,288,368,452,548,644][hidx],139,h,7.5,true,M)
             )}
             {([
-                {no:"INV-000022",cust:"Zoho Corp",iss:"Apr 9",due:"May 9",amt:"₹5,90,000",rem:"₹5,90,000",st:"Draft",bg:"#F1F5F9",tc:"#475569",pw:40},
-                {no:"INV-000019",cust:"CleverTap",iss:"Mar 2",due:"Apr 1",amt:"₹2,47,800",rem:"₹1,23,900",st:"partially_paid",bg:"#FFFBEB",tc:"#B45309",pw:76},
-                {no:"INV-000018",cust:"Chargebee",iss:"Feb 9",due:"Mar 11",amt:"₹88,500",rem:"₹0",st:"Paid",bg:"#ECFDF5",tc:"#047857",pw:36},
-                {no:"INV-000016",cust:"PhonePe",iss:"Jan 17",due:"Feb 16",amt:"₹1,12,100",rem:"₹0",st:"Paid",bg:"#ECFDF5",tc:"#047857",pw:36},
-                {no:"INV-000015",cust:"Zoho Corp",iss:"Jan 25",due:"Feb 24",amt:"₹2,83,200",rem:"₹0",st:"Paid",bg:"#ECFDF5",tc:"#047857",pw:36},
+                {no:"INV-000022",cust:"Zoho Corp",iss:"Apr 9",due:"May 9",amt:"₹5,90,000",rem:"₹5,90,000",st:"Draft",bg:"var(--illustration-panel-alt)",tc:"var(--muted-foreground)",pw:40},
+                {no:"INV-000019",cust:"CleverTap",iss:"Mar 2",due:"Apr 1",amt:"₹2,47,800",rem:"₹1,23,900",st:"partially_paid",bg:"color-mix(in oklch, var(--illustration-warning) 10%, var(--background))",tc:"var(--illustration-warning)",pw:76},
+                {no:"INV-000018",cust:"Chargebee",iss:"Feb 9",due:"Mar 11",amt:"₹88,500",rem:"₹0",st:"Paid",bg:"var(--illustration-success-tint)",tc:"var(--illustration-success)",pw:36},
+                {no:"INV-000016",cust:"PhonePe",iss:"Jan 17",due:"Feb 16",amt:"₹1,12,100",rem:"₹0",st:"Paid",bg:"var(--illustration-success-tint)",tc:"var(--illustration-success)",pw:36},
+                {no:"INV-000015",cust:"Zoho Corp",iss:"Jan 25",due:"Feb 24",amt:"₹2,83,200",rem:"₹0",st:"Paid",bg:"var(--illustration-success-tint)",tc:"var(--illustration-success)",pw:36},
             ] as const).map((r,idx) => (
                 <g key={idx}>
                     {Tr(148+idx*42,idx%2===0)}
@@ -466,9 +345,9 @@ function getFAFeatureSvg(i: number): React.ReactNode {
             <Sb/>{Hdr("Banking Dashboard","Monitor bank accounts, transactions, and reconciliations")}
             {/* 3 bank account cards */}
             {([
-                {bank:"HDFC Bank",acct:"··2841",bal:"₹38,40,000",st:"Reconciled ✓",stbg:"#ECFDF5",sttc:"#047857",pw:72},
-                {bank:"ICICI Bank",acct:"··9012",bal:"₹11,50,000",st:"3 unreconciled",stbg:"#FFFBEB",sttc:"#B45309",pw:80},
-                {bank:"Axis Bank",acct:"··5503",bal:"₹20,000",st:"Reconciled ✓",stbg:"#ECFDF5",sttc:"#047857",pw:72},
+                {bank:"HDFC Bank",acct:"··2841",bal:"₹38,40,000",st:"Reconciled ✓",stbg:"var(--illustration-success-tint)",sttc:"var(--illustration-success)",pw:72},
+                {bank:"ICICI Bank",acct:"··9012",bal:"₹11,50,000",st:"3 unreconciled",stbg:"color-mix(in oklch, var(--illustration-warning) 10%, var(--background))",sttc:"var(--illustration-warning)",pw:80},
+                {bank:"Axis Bank",acct:"··5503",bal:"₹20,000",st:"Reconciled ✓",stbg:"var(--illustration-success-tint)",sttc:"var(--illustration-success)",pw:72},
             ]).map((b,idx) => (
                 <g key={idx}>
                     <rect x={36+idx*256} y="52" width="240" height="72" rx="8" fill={W} stroke={BD} strokeWidth="1"/>
@@ -486,10 +365,10 @@ function getFAFeatureSvg(i: number): React.ReactNode {
                 T([56,148,344,508,620][hidx],174,h,7.5,true,M)
             )}
             {([
-                {dt:"Apr 26",desc:"Customer NEFT — Zoho Corp",rule:"Auto: Customer Receipts",amt:"+₹5,90,000",ms:"Matched ✓",mbg:"#ECFDF5",mtc:"#047857",pos:true,pw:60},
-                {dt:"Apr 25",desc:"RTGS — AWS India Pvt Ltd",rule:"Recurring · AWS India",amt:"−₹1,42,800",ms:"Matched ✓",mbg:"#ECFDF5",mtc:"#047857",pos:false,pw:60},
-                {dt:"Apr 25",desc:"Payroll batch — April",rule:"Auto: Payroll",amt:"−₹18,40,000",ms:"Matched ✓",mbg:"#ECFDF5",mtc:"#047857",pos:false,pw:60},
-                {dt:"Apr 24",desc:"NEFT credit — Chargebee",rule:"Reviewing…",amt:"+₹88,500",ms:"Unmatched",mbg:"#FFFBEB",mtc:"#B45309",pos:true,pw:60},
+                {dt:"Apr 26",desc:"Customer NEFT — Zoho Corp",rule:"Auto: Customer Receipts",amt:"+₹5,90,000",ms:"Matched ✓",mbg:"var(--illustration-success-tint)",mtc:"var(--illustration-success)",pos:true,pw:60},
+                {dt:"Apr 25",desc:"RTGS — AWS India Pvt Ltd",rule:"Recurring · AWS India",amt:"−₹1,42,800",ms:"Matched ✓",mbg:"var(--illustration-success-tint)",mtc:"var(--illustration-success)",pos:false,pw:60},
+                {dt:"Apr 25",desc:"Payroll batch — April",rule:"Auto: Payroll",amt:"−₹18,40,000",ms:"Matched ✓",mbg:"var(--illustration-success-tint)",mtc:"var(--illustration-success)",pos:false,pw:60},
+                {dt:"Apr 24",desc:"NEFT credit — Chargebee",rule:"Reviewing…",amt:"+₹88,500",ms:"Unmatched",mbg:"color-mix(in oklch, var(--illustration-warning) 10%, var(--background))",mtc:"var(--illustration-warning)",pos:true,pw:60},
             ] as const).map((r,idx) => (
                 <g key={idx}>
                     {Tr(184+idx*42,idx%2===0,44,736)}
@@ -500,8 +379,8 @@ function getFAFeatureSvg(i: number): React.ReactNode {
                 </g>
             ))}
             {/* Cash position */}
-            <rect x="36" y="384" width="752" height="80" rx="6" fill="#EFF6FF" stroke="#BFDBFE" strokeWidth="1"/>
-            {T(52,402,"TOTAL CASH ACROSS ACCOUNTS",7.5,true,"#1D4ED8")}
+            <rect x="36" y="384" width="752" height="80" rx="6" fill="var(--illustration-info-bg)" stroke="var(--illustration-primary-tint-border)" strokeWidth="1"/>
+            {T(52,402,"TOTAL CASH ACROSS ACCOUNTS",7.5,true,"var(--illustration-info)")}
             {T(52,428,"₹50,10,000",22,true,PRM)}
             {T(788,406,"3 accounts · Last sync 5 min ago",9,false,M,"end")}
             {T(788,424,"HDFC + ICICI + Axis",9,false,M,"end")}
@@ -524,14 +403,14 @@ function getFAFeatureSvg(i: number): React.ReactNode {
                 T([56,128,268,348,430][hidx],170,h,7.5,true,M)
             )}
             {([
-                {id:"FA-0042",name:"Dell PowerEdge R750",cat:"IT Hardware",meth:"SLM",nbv:"₹3,40,000",st:"Active",bg:"#ECFDF5",tc:"#047857"},
-                {id:"FA-0089",name:"Office Lease HSR",cat:"Buildings",meth:"SLM",nbv:"₹78,00,000",st:"Active",bg:"#ECFDF5",tc:"#047857"},
-                {id:"FA-0114",name:"Toyota Innova 2023",cat:"Vehicles",meth:"DBM",nbv:"₹6,20,000",st:"Active",bg:"#ECFDF5",tc:"#047857"},
-                {id:"FA-0001",name:"HP LaserJet M404",cat:"IT Hardware",meth:"SLM",nbv:"₹12,000",st:"Fully Dep.",bg:"#F1F5F9",tc:"#475569"},
-                {id:"FA-0072",name:"Boardroom Furniture",cat:"Furniture",meth:"SLM",nbv:"₹1,80,000",st:"Active",bg:"#ECFDF5",tc:"#047857"},
+                {id:"FA-0042",name:"Dell PowerEdge R750",cat:"IT Hardware",meth:"SLM",nbv:"₹3,40,000",st:"Active",bg:"var(--illustration-success-tint)",tc:"var(--illustration-success)"},
+                {id:"FA-0089",name:"Office Lease HSR",cat:"Buildings",meth:"SLM",nbv:"₹78,00,000",st:"Active",bg:"var(--illustration-success-tint)",tc:"var(--illustration-success)"},
+                {id:"FA-0114",name:"Toyota Innova 2023",cat:"Vehicles",meth:"DBM",nbv:"₹6,20,000",st:"Active",bg:"var(--illustration-success-tint)",tc:"var(--illustration-success)"},
+                {id:"FA-0001",name:"HP LaserJet M404",cat:"IT Hardware",meth:"SLM",nbv:"₹12,000",st:"Fully Dep.",bg:"var(--illustration-panel-alt)",tc:"var(--muted-foreground)"},
+                {id:"FA-0072",name:"Boardroom Furniture",cat:"Furniture",meth:"SLM",nbv:"₹1,80,000",st:"Active",bg:"var(--illustration-success-tint)",tc:"var(--illustration-success)"},
             ]).map((r,idx) => (
                 <g key={idx}>
-                    <rect x="44" y={182+idx*38} width="428" height="33" rx="3" fill={idx%2===0?W:"#F8FAFC"} stroke={BD} strokeWidth="0.5"/>
+                    <rect x="44" y={182+idx*38} width="428" height="33" rx="3" fill={idx%2===0?W:"var(--illustration-panel)"} stroke={BD} strokeWidth="0.5"/>
                     {T(56,200+idx*38,r.id,8.5,true,PRM)}{T(128,200+idx*38,r.name,8.5)}
                     {T(268,200+idx*38,r.cat,8.5,false,M)}{T(348,200+idx*38,r.meth,8.5,false,M)}
                     {T(460,200+idx*38,r.nbv,9,true,H,"end")}
@@ -558,7 +437,7 @@ function getFAFeatureSvg(i: number): React.ReactNode {
                     <text x="762" y="248" fontFamily={ff} fontSize="8" fontWeight="700" fill={PRM} textAnchor="end">₹1,91,80,000</text>
                 </>;
             })()}
-            <rect x="500" y="400" width="280" height="52" rx="5" fill="#F8FAFC" stroke={BD} strokeWidth="0.5"/>
+            <rect x="500" y="400" width="280" height="52" rx="5" fill="var(--illustration-panel)" stroke={BD} strokeWidth="0.5"/>
             {T(512,416,"Depreciation method: SLM avg 10%",8.5,true,H)}
             {T(512,432,"₹18,60,000 charged YTD of ₹2,10,40,000 NBV",8.5,false,M)}
         </svg>
@@ -577,19 +456,19 @@ function getFAFeatureSvg(i: number): React.ReactNode {
             {T(52,150,"Department-wise Cost (YTD)",11,true,H)}
             {([
                 {dept:"Engineering",amt:"₹65L",pct:0.76,color:PRM},
-                {dept:"Sales",amt:"₹42L",pct:0.49,color:"#6366F1"},
-                {dept:"Operations",amt:"₹35L",pct:0.41,color:"#8B5CF6"},
-                {dept:"Admin",amt:"₹18L",pct:0.21,color:"#94A3B8"},
+                {dept:"Sales",amt:"₹42L",pct:0.49,color:"var(--chart-2)"},
+                {dept:"Operations",amt:"₹35L",pct:0.41,color:"var(--chart-4)"},
+                {dept:"Admin",amt:"₹18L",pct:0.21,color:"var(--chart-3)"},
             ]).map((d,idx) => (
                 <g key={idx}>
                     {T(52,174+idx*46,d.dept,9,false,M)}
-                    <rect x="52" y={179+idx*46} width="350" height="12" rx="6" fill="#F1F5F9"/>
+                    <rect x="52" y={179+idx*46} width="350" height="12" rx="6" fill="var(--illustration-panel-alt)"/>
                     <rect x="52" y={179+idx*46} width={350*d.pct} height="12" rx="6" fill={d.color} opacity="0.85"/>
                     {T(408,187+idx*46,d.amt,9,true,H,"end")}
                 </g>
             ))}
-            <rect x="44" y="350" width="420" height="22" rx="5" fill="#ECFDF5" stroke="#A7F3D0" strokeWidth="0.5"/>
-            {T(56,365,"Approval gate: All cost postings require sign-off ✓",9,true,"#047857")}
+            <rect x="44" y="350" width="420" height="22" rx="5" fill="var(--illustration-success-tint)" stroke="var(--illustration-success-tint-border)" strokeWidth="0.5"/>
+            {T(56,365,"Approval gate: All cost postings require sign-off ✓",9,true,"var(--illustration-success)")}
             {/* Allocation table */}
             <rect x="484" y="130" width="304" height="334" rx="6" fill={W} stroke={BD} strokeWidth="1"/>
             {T(500,150,"Cost Allocations",11,true,H)}
@@ -607,7 +486,7 @@ function getFAFeatureSvg(i: number): React.ReactNode {
                 {cc:"CC-FIN",dept:"Finance",meth:"Direct",alloc:"₹6,00,000"},
             ]).map((r,idx) => (
                 <g key={idx}>
-                    <rect x="492" y={182+idx*34} width="288" height="29" rx="3" fill={idx%2===0?W:"#F8FAFC"} stroke={BD} strokeWidth="0.5"/>
+                    <rect x="492" y={182+idx*34} width="288" height="29" rx="3" fill={idx%2===0?W:"var(--illustration-panel)"} stroke={BD} strokeWidth="0.5"/>
                     {T(504,198+idx*34,r.cc,8.5,true,PRM)}{T(564,198+idx*34,r.dept,8.5)}
                     {T(648,198+idx*34,r.meth,8.5,false,M)}{T(772,198+idx*34,r.alloc,9,true,H,"end")}
                 </g>
@@ -621,7 +500,7 @@ function getFAFeatureSvg(i: number): React.ReactNode {
             <rect width="800" height="480" fill={W}/>
             <Sb/>{Hdr("Reports","Financial statements, analysis, and custom report builder")}
             {/* Toolbar */}
-            <rect x="36" y="52" width="752" height="32" rx="6" fill="#F8FAFC" stroke={BD} strokeWidth="1"/>
+            <rect x="36" y="52" width="752" height="32" rx="6" fill="var(--illustration-panel)" stroke={BD} strokeWidth="1"/>
             {T(48,72,"Date Range: YTD",9,false,M)}
             {T(168,72,"·",9,false,M)}{T(180,72,"Compare prior period",9,false,M)}
             {T(338,72,"·",9,false,M)}{T(350,72,"Export",9,false,M)}
@@ -631,9 +510,9 @@ function getFAFeatureSvg(i: number): React.ReactNode {
             {T(742,71,"XLSX",8.5,true,M,"middle")}
             {/* 3×3 report grid */}
             {([
-                [{n:"Profit & Loss",s:"Income vs Expenses",c:"#EFF6FF"},{n:"Balance Sheet",s:"Assets & Liabilities",c:"#F0FDF4"},{n:"Cash Flow",s:"Cash in & outflows",c:"#FFFBEB"}],
-                [{n:"Trial Balance",s:"Debit / Credit listing",c:"#F8FAFC"},{n:"Aged Receivables",s:"Outstanding by age",c:"#F8FAFC"},{n:"Aged Payables",s:"Bills by due date",c:"#F8FAFC"}],
-                [{n:"Budget vs Actual",s:"Variance analysis",c:"#F8FAFC"},{n:"Financial Ratios",s:"Liquidity & leverage",c:"#F8FAFC"},{n:"Custom Builder",s:"Build your report",c:"#EFF6FF"}],
+                [{n:"Profit & Loss",s:"Income vs Expenses",c:"var(--illustration-info-bg)"},{n:"Balance Sheet",s:"Assets & Liabilities",c:"var(--illustration-success-tint)"},{n:"Cash Flow",s:"Cash in & outflows",c:"color-mix(in oklch, var(--illustration-warning) 10%, var(--background))"}],
+                [{n:"Trial Balance",s:"Debit / Credit listing",c:"var(--illustration-panel)"},{n:"Aged Receivables",s:"Outstanding by age",c:"var(--illustration-panel)"},{n:"Aged Payables",s:"Bills by due date",c:"var(--illustration-panel)"}],
+                [{n:"Budget vs Actual",s:"Variance analysis",c:"var(--illustration-panel)"},{n:"Financial Ratios",s:"Liquidity & leverage",c:"var(--illustration-panel)"},{n:"Custom Builder",s:"Build your report",c:"var(--illustration-info-bg)"}],
             ]).map((row,ri) =>
                 row.map((card,ci) => (
                     <g key={`${ri}-${ci}`}>
@@ -644,7 +523,7 @@ function getFAFeatureSvg(i: number): React.ReactNode {
                         {T(98+ci*256,134+ri*120,card.s,8.5,false,M)}
                         <rect x={52+ci*256} y={172+ri*120} width="68" height="18" rx="9" fill={PRM}/>
                         {T(86+ci*256,184+ri*120,"View Report",8,true,W,"middle")}
-                        <rect x={224+ci*256} y={104+ri*120} width="36" height="13" rx="6" fill="#F8FAFC" stroke={BD} strokeWidth="0.5"/>
+                        <rect x={224+ci*256} y={104+ri*120} width="36" height="13" rx="6" fill="var(--illustration-panel)" stroke={BD} strokeWidth="0.5"/>
                         {T(242+ci*256,114+ri*120,"YTD",7,false,M,"middle")}
                     </g>
                 ))
@@ -671,7 +550,7 @@ function getFAFeatureSvg(i: number): React.ReactNode {
             ]).map((g,idx) => (
                 <g key={idx}>
                     {T(52,172+idx*44,g.type,9,true,M)}
-                    <rect x="52" y={178+idx*44} width="284" height="10" rx="5" fill="#F1F5F9"/>
+                    <rect x="52" y={178+idx*44} width="284" height="10" rx="5" fill="var(--illustration-panel-alt)"/>
                     {g.pct>0 && <rect x="52" y={178+idx*44} width={284*g.pct} height="10" rx="5" fill={POS} opacity="0.7"/>}
                     {T(396,187+idx*44,g.amt,9.5,true,H,"end")}
                 </g>
@@ -686,7 +565,7 @@ function getFAFeatureSvg(i: number): React.ReactNode {
                 {sec:"Sec 194I — Rent",rate:"10%",amt:"₹24,200"},
             ]).map((t,idx) => (
                 <g key={idx}>
-                    <rect x="424" y={244+idx*24} width="356" height="20" rx="3" fill={idx%2===0?"#F8FAFC":W} stroke={BD} strokeWidth="0.5"/>
+                    <rect x="424" y={244+idx*24} width="356" height="20" rx="3" fill={idx%2===0?"var(--illustration-panel)":W} stroke={BD} strokeWidth="0.5"/>
                     {T(432,257+idx*24,t.sec,8.5)}{T(600,257+idx*24,t.rate,8.5,false,M)}
                     {T(772,257+idx*24,t.amt,9,true,H,"end")}
                 </g>
@@ -699,9 +578,9 @@ function getFAFeatureSvg(i: number): React.ReactNode {
                 T([56,196,316,440,556][hidx],356,h,7.5,true,M)
             )}
             {([
-                {ret:"GSTR-3B",per:"2024-06",amt:"₹50,000",due:"20 Jul 2024",st:"Due",bg:"#FFFBEB",tc:"#B45309",pw:36},
-                {ret:"Form 26Q",per:"2024-Q2",amt:"₹25,000",due:"31 Jul 2024",st:"Filed ✓",bg:"#ECFDF5",tc:"#047857",pw:48},
-                {ret:"GSTR-1",per:"2024-06",amt:"₹3,12,000",due:"11 Jul 2024",st:"Pending",bg:"#FFFBEB",tc:"#B45309",pw:52},
+                {ret:"GSTR-3B",per:"2024-06",amt:"₹50,000",due:"20 Jul 2024",st:"Due",bg:"color-mix(in oklch, var(--illustration-warning) 10%, var(--background))",tc:"var(--illustration-warning)",pw:36},
+                {ret:"Form 26Q",per:"2024-Q2",amt:"₹25,000",due:"31 Jul 2024",st:"Filed ✓",bg:"var(--illustration-success-tint)",tc:"var(--illustration-success)",pw:48},
+                {ret:"GSTR-1",per:"2024-06",amt:"₹3,12,000",due:"11 Jul 2024",st:"Pending",bg:"color-mix(in oklch, var(--illustration-warning) 10%, var(--background))",tc:"var(--illustration-warning)",pw:52},
             ] as const).map((r,idx) => (
                 <g key={idx}>
                     {Tr(364+idx*38,idx%2===0,44,736)}
@@ -719,11 +598,11 @@ function getFAFeatureSvg(i: number): React.ReactNode {
             <rect width="800" height="480" fill={W}/>
             <Sb/>{Hdr("Audit Trail","1,284 events this period · Field-level change tracking")}
             {/* Filter tabs */}
-            <rect x="36" y="52" width="752" height="32" rx="6" fill="#F8FAFC" stroke={BD} strokeWidth="1"/>
+            <rect x="36" y="52" width="752" height="32" rx="6" fill="var(--illustration-panel)" stroke={BD} strokeWidth="1"/>
             {T(48,72,"1,284 events this period",10,true,H)}
             {([{l:"All",n:"1284",a:true},{l:"Critical",n:"0"},{l:"High",n:"2"},{l:"Medium",n:"8"},{l:"Info",n:"24"}]).map((tab,ti) => (
                 <g key={ti}>
-                    <rect x={180+ti*116} y="58" width="88" height="20" rx="4" fill={tab.a?PRM:"#F1F5F9"} stroke={tab.a?PRM:BD} strokeWidth="0.5"/>
+                    <rect x={180+ti*116} y="58" width="88" height="20" rx="4" fill={tab.a?PRM:"var(--illustration-panel-alt)"} stroke={tab.a?PRM:BD} strokeWidth="0.5"/>
                     {T(224+ti*116,71,tab.a?`All (${tab.n})`:tab.l+(tab.n?` (${tab.n})`:""),8,true,tab.a?W:M,"middle")}
                 </g>
             ))}
@@ -731,20 +610,20 @@ function getFAFeatureSvg(i: number): React.ReactNode {
             <rect x="36" y="94" width="600" height="380" rx="6" fill={W} stroke={BD} strokeWidth="1"/>
             {T(52,114,"Activity Timeline",11,true,H)}
             {([
-                {ts:"Apr 26 14:32",ini:"LE",col:"#3B82F6",action:"Posted JE-0142",diff:"debit 1100 · ₹1,20,000",sev:"Info",sbg:"#EFF6FF",stc:"#1D4ED8",pw:28},
-                {ts:"Apr 26 11:08",ini:"NK",col:"#8B5CF6",action:"Period locked · 2026-Q1",diff:"status: open → locked",sev:"High",sbg:"#FEF2F2",stc:"#B91C1C",pw:28},
-                {ts:"Apr 25 17:45",ini:"LE",col:"#3B82F6",action:"Updated Vendor V-0042",diff:"payment_terms: Net 30 → Net 45",sev:"Medium",sbg:"#FFFBEB",stc:"#B45309",pw:44},
-                {ts:"Apr 25 09:12",ini:"NK",col:"#8B5CF6",action:"Approved Bill BL-7820",diff:"₹3,40,000 → POSTED",sev:"Info",sbg:"#EFF6FF",stc:"#1D4ED8",pw:28},
-                {ts:"Apr 24 16:01",ini:"SY",col:"#10B981",action:"Banking rule R-08 auto-matched",diff:"12 transactions matched",sev:"Info",sbg:"#EFF6FF",stc:"#1D4ED8",pw:28},
+                {ts:"Apr 26 14:32",ini:"LE",col:"var(--illustration-info)",action:"Posted JE-0142",diff:"debit 1100 · ₹1,20,000",sev:"Info",sbg:"var(--illustration-info-bg)",stc:"var(--illustration-info)",pw:28},
+                {ts:"Apr 26 11:08",ini:"NK",col:"var(--chart-4)",action:"Period locked · 2026-Q1",diff:"status: open → locked",sev:"High",sbg:"color-mix(in oklch, var(--destructive) 8%, var(--background))",stc:"var(--destructive)",pw:28},
+                {ts:"Apr 25 17:45",ini:"LE",col:"var(--illustration-info)",action:"Updated Vendor V-0042",diff:"payment_terms: Net 30 → Net 45",sev:"Medium",sbg:"color-mix(in oklch, var(--illustration-warning) 10%, var(--background))",stc:"var(--illustration-warning)",pw:44},
+                {ts:"Apr 25 09:12",ini:"NK",col:"var(--chart-4)",action:"Approved Bill BL-7820",diff:"₹3,40,000 → POSTED",sev:"Info",sbg:"var(--illustration-info-bg)",stc:"var(--illustration-info)",pw:28},
+                {ts:"Apr 24 16:01",ini:"SY",col:"var(--illustration-success)",action:"Banking rule R-08 auto-matched",diff:"12 transactions matched",sev:"Info",sbg:"var(--illustration-info-bg)",stc:"var(--illustration-info)",pw:28},
             ] as const).map((ev,idx) => (
                 <g key={idx}>
                     {idx < 4 && <line x1="72" y1={143+idx*62} x2="72" y2={160+idx*62} stroke={BD} strokeWidth="1.5"/>}
                     <circle cx="72" cy={133+idx*62} r="13" fill={ev.col} opacity="0.15"/>
                     {T(72,137+idx*62,ev.ini,8.5,true,ev.col,"middle")}
-                    <rect x="94" y={120+idx*62} width="490" height="46" rx="4" fill={idx%2===0?"#F8FAFC":W} stroke={BD} strokeWidth="0.5"/>
+                    <rect x="94" y={120+idx*62} width="490" height="46" rx="4" fill={idx%2===0?"var(--illustration-panel)":W} stroke={BD} strokeWidth="0.5"/>
                     {T(106,136+idx*62,ev.ts,8.5,false,M)}{T(106,150+idx*62,ev.action,9.5,true,H)}
-                    <rect x="268" y={126+idx*62} width={ev.diff.length*5+8} height="14" rx="3" fill="#F1F5F9"/>
-                    {T(272,137+idx*62,ev.diff,7.5,false,"#475569")}
+                    <rect x="268" y={126+idx*62} width={ev.diff.length*5+8} height="14" rx="3" fill="var(--illustration-panel-alt)"/>
+                    {T(272,137+idx*62,ev.diff,7.5,false,"var(--muted-foreground)")}
                     {Pill(546,141+idx*62,ev.sev,ev.sbg,ev.stc,ev.pw+16)}
                 </g>
             ))}
@@ -752,13 +631,13 @@ function getFAFeatureSvg(i: number): React.ReactNode {
             <rect x="648" y="94" width="140" height="380" rx="6" fill={W} stroke={BD} strokeWidth="1"/>
             {T(664,114,"Severity",10,true,H)}
             {([
-                {label:"Critical",count:"0",bg:"#FEF2F2",tc:"#B91C1C"},
-                {label:"High",count:"2",bg:"#FEF2F2",tc:"#B91C1C"},
-                {label:"Medium",count:"8",bg:"#FFFBEB",tc:"#B45309"},
-                {label:"Info",count:"24",bg:"#EFF6FF",tc:"#1D4ED8"},
+                {label:"Critical",count:"0",bg:"color-mix(in oklch, var(--destructive) 8%, var(--background))",tc:"var(--destructive)"},
+                {label:"High",count:"2",bg:"color-mix(in oklch, var(--destructive) 8%, var(--background))",tc:"var(--destructive)"},
+                {label:"Medium",count:"8",bg:"color-mix(in oklch, var(--illustration-warning) 10%, var(--background))",tc:"var(--illustration-warning)"},
+                {label:"Info",count:"24",bg:"var(--illustration-info-bg)",tc:"var(--illustration-info)"},
             ]).map((s,idx) => (
                 <g key={idx}>
-                    <rect x="656" y={128+idx*62} width="124" height="52" rx="4" fill="#F8FAFC" stroke={BD} strokeWidth="0.5"/>
+                    <rect x="656" y={128+idx*62} width="124" height="52" rx="4" fill="var(--illustration-panel)" stroke={BD} strokeWidth="0.5"/>
                     <rect x="664" y={136+idx*62} width={s.label.length*5.5+8} height="14" rx="7" fill={s.bg}/>
                     {T(664+(s.label.length*5.5+8)/2,147+idx*62,s.label,7.5,true,s.tc,"middle")}
                     {T(664,168+idx*62,s.count,20,true,H)}
@@ -774,299 +653,149 @@ function getFAFeatureSvg(i: number): React.ReactNode {
 
 const FeatureCard: React.FC<FeatureCardProps> = ({ feature, i, productId }) => {
     const stickyTop = 80 + (i * 10);
-    const t = cardThemes[i % cardThemes.length];
     const [fullscreen, setFullscreen] = useState(false);
 
     return (
         <>
-        {/* Fullscreen modal */}
         {fullscreen && (
             <div
-                className="fixed inset-0 z-[9999] flex flex-col items-center justify-center overflow-hidden"
-                style={{ background: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(10px)' }}
+                className="fixed inset-0 z-[9999] flex flex-col items-center justify-center overflow-hidden bg-black/85"
                 onClick={() => setFullscreen(false)}
             >
-                {/* ── Monitor assembly ──
-                    max-width: min(1100px, (100vh − chrome) / 0.6)
-                    ensures SVG (800×480 = 5:3 ratio) always fits in the viewport.
-                    On 900 vh → max 1040px wide; on 1080 vh → max 1100px wide. ── */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', maxWidth: 'min(1100px, calc((100vh - 280px) / 0.6))', padding: '0 16px' }} onClick={e => e.stopPropagation()}>
-
-                        {/* Monitor bezel */}
-                        <div style={{
-                            width: '100%',
-                            background: 'linear-gradient(160deg, #23232f 0%, #18181f 60%, #111118 100%)',
-                            borderRadius: '18px',
-                            padding: '8px 8px 10px',
-                            boxShadow: '0 0 0 1px rgba(255,255,255,0.07), 0 40px 80px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,255,255,0.10)',
-                        }}>
-                            {/* Screen — no height cap, SVG renders at its natural size */}
-                            <div style={{ borderRadius: '10px', overflow: 'hidden', background: '#fff' }}>
-                                {/* macOS title bar */}
-                                <div className="flex items-center px-5 py-3 border-b border-slate-100 bg-white">
-                                    <div className="flex gap-[7px] mr-5">
-                                        <button
-                                            onClick={() => setFullscreen(false)}
-                                            className="w-[13px] h-[13px] rounded-full bg-[#FF5F57] hover:brightness-90 transition-all flex items-center justify-center"
-                                        >
-                                            <X size={7} className="text-red-800 opacity-0 hover:opacity-100" />
-                                        </button>
-                                        <div className="w-[13px] h-[13px] rounded-full bg-[#FFBD2E]" />
-                                        <div className="w-[13px] h-[13px] rounded-full bg-[#28C840]" />
-                                    </div>
-                                    <div className="flex-1 flex justify-center">
-                                        <div className="rounded-[7px] px-4 py-[5px] text-[12px] font-mono text-slate-400 bg-slate-100">
-                                            {feature.title} — {productId?.replace(/-/g, ' ')}
-                                        </div>
-                                    </div>
-                                    <button
-                                        onClick={() => setFullscreen(false)}
-                                        className="ml-5 p-1.5 rounded-lg hover:bg-slate-100 transition-colors text-slate-400 hover:text-slate-600"
-                                    >
-                                        <X size={16} />
-                                    </button>
-                                </div>
-                                {/* Full content — no maxHeight, shows everything */}
-                                {productId === 'financial-accounting' ? (
-                                    <div style={{ lineHeight: 0 }}>{getFAFeatureSvg(i)}</div>
-                                ) : productId === 'b2b-crm' ? (
-                                    <div style={{ lineHeight: 0 }}>{getCRMFeatureSvg(i)}</div>
-                                ) : (
-                                    <div className="p-8 flex flex-col gap-4 bg-slate-50 min-h-[400px] items-center justify-center">
-                                        <span className="text-slate-400 text-sm">No full preview available</span>
-                                    </div>
-                                )}
+                <div
+                    className="flex flex-col items-center w-full max-w-[min(1100px,calc((100vh-280px)/0.6))] px-4"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    <div className="w-full rounded-md border border-border bg-background overflow-hidden shadow-2xl">
+                        <div className="flex items-center px-5 py-3 border-b border-border bg-background">
+                            <div className="flex gap-[7px] mr-5">
+                                <button
+                                    type="button"
+                                    onClick={() => setFullscreen(false)}
+                                    className="w-[13px] h-[13px] rounded-full bg-window-dot-close hover:brightness-90 transition-all flex items-center justify-center"
+                                >
+                                    <X size={7} className="text-red-800 opacity-0 hover:opacity-100" />
+                                </button>
+                                <div className="w-[13px] h-[13px] rounded-full bg-window-dot-minimize" />
+                                <div className="w-[13px] h-[13px] rounded-full bg-window-dot-maximize" />
                             </div>
-                            {/* LED chin strip */}
-                            <div style={{
-                                marginTop: '8px',
-                                height: '3px',
-                                borderRadius: '3px',
-                                background: 'linear-gradient(to right, transparent 10%, rgba(46,79,140,0.5) 40%, rgba(60,105,200,0.75) 50%, rgba(46,79,140,0.5) 60%, transparent 90%)',
-                                filter: 'blur(1px)',
-                            }} />
-                        </div>
-
-                        {/* Monitor neck */}
-                        <div style={{
-                            width: '56px',
-                            height: '22px',
-                            background: 'linear-gradient(to bottom, #1e1e28 0%, #141420 100%)',
-                            clipPath: 'polygon(22% 0%, 78% 0%, 100% 100%, 0% 100%)',
-                        }} />
-
-                        {/* Puck base */}
-                        <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                            <div style={{
-                                position: 'absolute', bottom: '46px', left: '50%', transform: 'translateX(-50%)',
-                                width: '160px', height: '44px',
-                                background: 'linear-gradient(to top, rgba(46,79,140,0.55) 0%, rgba(60,100,200,0.14) 70%, transparent 100%)',
-                                filter: 'blur(12px)', pointerEvents: 'none', borderRadius: '50% 50% 0 0',
-                            }} />
-                            <div className="pp-puck-float" style={{ position: 'relative', width: '200px', height: '70px', flexShrink: 0, filter: 'drop-shadow(0 14px 26px rgba(0,0,0,0.85)) drop-shadow(0 0 40px rgba(27,46,90,0.65))' }}>
-                                <div style={{ position: 'absolute', top: '20%', left: 0, right: 0, bottom: 0, background: 'linear-gradient(to bottom, #212128 0%, #161620 28%, #0d0d14 65%, #070710 100%)', borderRadius: '0 0 50% 50% / 0 0 22% 22%', boxShadow: 'inset 7px 0 22px rgba(255,255,255,0.045),inset -7px 0 22px rgba(0,0,0,0.45),inset 0 -12px 28px rgba(0,0,0,0.75)', overflow: 'hidden' }}>
-                                    <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: '9%', background: 'linear-gradient(to right, rgba(255,255,255,0.07), transparent)' }} />
-                                    <div style={{ position: 'absolute', top: 0, bottom: 0, right: 0, width: '9%', background: 'linear-gradient(to left, rgba(0,0,0,0.35), transparent)' }} />
+                            <div className="flex-1 flex justify-center">
+                                <div className="rounded px-4 py-[5px] text-[12px] font-mono text-muted-foreground border border-border">
+                                    {feature.title} — {productId?.replace(/-/g, ' ')}
                                 </div>
-                                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '40%', background: 'radial-gradient(ellipse at 48% 38%, #2c2c38 0%, #1a1a26 50%, #0e0e18 82%, #08080f 100%)', borderRadius: '50%', zIndex: 2, boxShadow: 'inset 0 9px 22px rgba(255,255,255,0.055),inset 0 -5px 14px rgba(0,0,0,0.65),0 7px 22px rgba(0,0,0,0.65)' }}>
-                                    <div style={{ position: 'absolute', top: '7%', left: '7%', right: '7%', bottom: '7%', borderRadius: '50%', boxShadow: 'inset 0 0 0 1.5px rgba(255,255,255,0.055),inset 0 0 10px rgba(0,0,0,0.6)' }} />
-                                    <div style={{ position: 'absolute', top: '20%', left: '20%', right: '20%', bottom: '20%', borderRadius: '50%', background: 'radial-gradient(ellipse at 50% 42%, #1e1e2a 0%, #0c0c14 100%)', boxShadow: 'inset 0 5px 14px rgba(0,0,0,0.95)' }} />
-                                    <div className="pp-lens-glow" style={{ position: 'absolute', top: '24%', left: '24%', right: '24%', bottom: '24%', borderRadius: '50%', background: 'transparent' }} />
-                                    <div className="pp-ring-out"   style={{ position: 'absolute', top: '24%', left: '24%', right: '24%', bottom: '24%', borderRadius: '50%', boxShadow: '0 0 0 1.5px rgba(60,105,200,0.5)' }} />
-                                    <div className="pp-ring-out-2" style={{ position: 'absolute', top: '24%', left: '24%', right: '24%', bottom: '24%', borderRadius: '50%', boxShadow: '0 0 0 1.5px rgba(60,105,200,0.3)' }} />
-                                    <div style={{ position: 'absolute', top: '32%', left: '32%', right: '32%', bottom: '32%', borderRadius: '50%', background: 'radial-gradient(circle at 44% 38%, #d0e4ff 0%, #88aef0 14%, #243B6E 36%, #1B2E5A 64%, #0F1B3D 100%)', boxShadow: 'inset 0 0 12px rgba(0,0,0,0.75)' }} />
-                                    <div className="pp-hotspot" style={{ position: 'absolute', top: '42%', left: '42%', right: '42%', bottom: '42%', borderRadius: '50%', background: 'radial-gradient(circle, #fff 0%, #d2e8ff 55%, transparent 100%)' }} />
-                                </div>
-                                <div style={{ position: 'absolute', bottom: '-14%', left: '18%', right: '18%', height: '18%', borderRadius: '50%', background: 'rgba(0,0,0,0.7)', filter: 'blur(14px)' }} />
                             </div>
+                            <button
+                                type="button"
+                                onClick={() => setFullscreen(false)}
+                                className="ml-5 p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                            >
+                                <X size={16} />
+                            </button>
                         </div>
+                        {productId === 'financial-accounting' ? (
+                            <div className="leading-none">{getFAFeatureSvg(i)}</div>
+                        ) : productId === 'b2b-crm' ? (
+                            <div className="leading-none">{getCRMFeatureSvg(i)}</div>
+                        ) : (
+                            <div className="p-8 flex flex-col gap-4 bg-background min-h-[400px] items-center justify-center">
+                                <span className="text-muted-foreground text-sm">No full preview available</span>
+                            </div>
+                        )}
                     </div>
+                </div>
             </div>
         )}
 
         <div className="sticky mb-3 last:mb-0" style={{ top: `${stickyTop}px`, zIndex: i + 1 }}>
-            <div
-                className="relative overflow-hidden rounded-3xl border"
-                style={{
-                    background: t.bg,
-                    borderColor: 'rgba(0,0,0,0.07)',
-                }}
-            >
-                {/* Soft orb tints */}
-                <div className="absolute inset-0 pointer-events-none" aria-hidden>
-                    <div className="absolute inset-0" style={{
-                        background: `radial-gradient(ellipse 60% 60% at ${t.orb1Pos}, ${t.orb1} 0%, transparent 100%)`
-                    }} />
-                    <div className="absolute inset-0" style={{
-                        background: `radial-gradient(ellipse 55% 55% at ${t.orb2Pos}, ${t.orb2} 0%, transparent 100%)`
-                    }} />
-                </div>
-
+            <div className="product-feature-card relative overflow-hidden rounded-lg border border-border bg-background">
                 <div className="relative z-10 grid lg:grid-cols-[1fr_1.1fr] min-h-[620px]">
-                    {/* LEFT — content */}
-                    <div className="flex flex-col justify-center px-10 py-14 lg:px-16 order-2 lg:order-1">
-                        {/* Overline label */}
+                    <div className="flex flex-col justify-center px-10 py-14 lg:px-16 order-2 lg:order-1 border-b lg:border-b-0 lg:border-r border-border">
                         <div className="flex items-center gap-2.5 mb-7">
-                            <div className="w-5 h-px" style={{ background: t.accent }} />
-                            <span
-                                className="text-[10px] font-semibold tracking-[0.18em] uppercase"
-                                style={{ color: t.accent }}
-                            >
+                            <div className="w-5 h-px bg-border" />
+                            <span className="text-[10px] font-semibold tracking-[0.18em] uppercase text-muted-foreground">
                                 Feature {String(i + 1).padStart(2, '0')}
                             </span>
                         </div>
 
-                        {/* Icon */}
-                        <div
-                            className="w-11 h-11 rounded-2xl flex items-center justify-center mb-8"
-                            style={{ background: t.accentDim, color: t.accent }}
-                        >
+                        <div className="w-11 h-11 rounded-lg border border-border flex items-center justify-center mb-8 text-muted-foreground">
                             <feature.icon size={20} strokeWidth={1.75} />
                         </div>
 
-                        {/* Title */}
-                        <h3
-                            className="text-[1.85rem] lg:text-[2.1rem] font-bold leading-[1.18] tracking-[-0.025em] mb-4"
-                            style={{ color: t.titleColor }}
-                        >
+                        <h3 className="text-[1.85rem] lg:text-[2.1rem] font-semibold leading-[1.18] tracking-[-0.025em] mb-4 text-foreground">
                             {feature.title}
                         </h3>
 
-                        <p
-                            className="text-[15px] font-normal leading-[1.8] mb-9"
-                            style={{ color: t.descColor }}
-                        >
+                        <p className="text-[15px] font-normal leading-[1.8] mb-9 text-muted-foreground">
                             {feature.description}
                         </p>
 
                         <ul className="space-y-3.5">
                             {(feature.subFeatures || feature.benefits || []).map((benefit: string, idx: number) => (
                                 <li key={idx} className="flex items-start gap-3">
-                                    <div
-                                        className="w-[18px] h-[18px] rounded-full flex items-center justify-center shrink-0 mt-[2px]"
-                                        style={{ background: t.checkRing }}
-                                    >
-                                        <Check size={9} strokeWidth={2.5} style={{ color: t.checkColor }} />
+                                    <div className="w-[18px] h-[18px] rounded-full border border-border flex items-center justify-center shrink-0 mt-[2px]">
+                                        <Check size={9} strokeWidth={2.5} className="text-foreground" />
                                     </div>
-                                    <span className="text-[13.5px] leading-[1.6]" style={{ color: t.benefitColor }}>{benefit}</span>
+                                    <span className="text-[13.5px] leading-[1.6] text-foreground">{benefit}</span>
                                 </li>
                             ))}
                         </ul>
                     </div>
 
-                        {/* RIGHT — tilted browser window */}
-                        <div className="order-1 lg:order-2 flex items-center justify-center px-2 py-6 lg:px-4 lg:py-8 overflow-hidden">
-                            <div
-                                className="relative w-full"
-                                style={{ perspective: '1200px' }}
-                            >
-                                {/* Glow behind frame */}
-                                <div
-                                    className="absolute inset-4 rounded-2xl"
-                                    style={{ background: t.frameGlowColor }}
-                                />
-
-                                {/* Browser frame */}
-                                <div
-                                    className="relative rounded-2xl overflow-hidden border"
-                                    style={{
-                                        background: t.frameBg,
-                                        borderColor: t.frameBorder,
-                                        transform: 'rotateY(-4deg) rotateX(2deg)',
-                                        transformStyle: 'preserve-3d',
-                                    }}
-                                >
-                                    {/* macOS-style title bar */}
-                                    <div
-                                        className="flex items-center gap-0 px-4 py-[10px] border-b"
-                                        style={{ background: 'rgba(255,255,255,0.6)', borderColor: 'rgba(0,0,0,0.07)' }}
+                    <div className="order-1 lg:order-2 flex items-center justify-center px-2 py-6 lg:px-4 lg:py-8 overflow-hidden">
+                        <div className="relative w-full">
+                            <div className="landing-browser-frame relative rounded-md overflow-hidden border border-border bg-background">
+                                <div className="landing-browser-chrome flex items-center gap-0 px-4 py-[10px] border-b border-border bg-background">
+                                    <div className="flex gap-[6px] mr-4">
+                                        <div className="w-[11px] h-[11px] rounded-full bg-window-dot-close" />
+                                        <div className="w-[11px] h-[11px] rounded-full bg-window-dot-minimize" />
+                                        <div className="w-[11px] h-[11px] rounded-full bg-window-dot-maximize" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <div className="landing-browser-url rounded px-3 py-[5px] text-[11px] font-mono truncate text-center mx-auto text-muted-foreground max-w-[220px]">
+                                            app.zopkit.com/dashboard
+                                        </div>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setFullscreen(true)}
+                                        className="ml-2 p-1 rounded-md hover:bg-muted transition-colors text-muted-foreground"
+                                        title="Expand"
                                     >
-                                        <div className="flex gap-[6px] mr-4">
-                                            <div className="w-[11px] h-[11px] rounded-full bg-[#FF5F57]" />
-                                            <div className="w-[11px] h-[11px] rounded-full bg-[#FFBD2E]" />
-                                            <div className="w-[11px] h-[11px] rounded-full bg-[#28C840]" />
-                                        </div>
-                                        <div className="flex-1">
-                                            <div
-                                                className="rounded-[6px] px-3 py-[5px] text-[11px] font-mono truncate text-center mx-auto"
-                                                style={{ background: 'rgba(0,0,0,0.05)', color: 'rgba(0,0,0,0.35)', maxWidth: '220px' }}
-                                            >
-                                                app.zopkit.com/dashboard
-                                            </div>
-                                        </div>
-                                        <button
-                                            onClick={() => setFullscreen(true)}
-                                            className="ml-2 p-1 rounded-md hover:bg-black/5 transition-colors"
-                                            title="Expand"
-                                        >
-                                            <Maximize2 size={11} style={{ color: 'rgba(0,0,0,0.35)' }} />
-                                        </button>
-                                    </div>
-
-                                    {/* Screenshot */}
-                                    <div className="relative overflow-hidden" style={{ maxHeight: '480px' }}>
-                                        {productId === 'financial-accounting' ? (
-                                            <div style={{ lineHeight: 0, display: 'block' }}>
-                                                {getFAFeatureSvg(i)}
-                                            </div>
-                                        ) : productId === 'b2b-crm' ? (
-                                            <div style={{ lineHeight: 0, display: 'block' }}>
-                                                {getCRMFeatureSvg(i)}
-                                            </div>
-                                        ) : (
-                                            <div className="p-5 flex flex-col gap-3" style={{ background: 'rgba(255,255,255,0.5)', minHeight: '280px' }}>
-                                                <div className="grid grid-cols-4 gap-2">
-                                                    {[{ v: '2.4k', l: 'Users' }, { v: '98%', l: 'Uptime' }, { v: '1.2s', l: 'Response' }, { v: '99.9', l: 'Score' }].map((m, k) => (
-                                                        <div key={k} className="rounded-xl p-3 flex flex-col items-center gap-1" style={{ background: 'rgba(255,255,255,0.8)', border: '1px solid rgba(0,0,0,0.07)' }}>
-                                                            <span className="text-base font-bold" style={{ color: t.titleColor }}>{m.v}</span>
-                                                            <span className="text-[10px]" style={{ color: t.descColor }}>{m.l}</span>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                                <div className="flex-1 rounded-xl p-4 flex flex-col gap-2" style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(0,0,0,0.06)' }}>
-                                                    <div className="h-2.5 w-28 rounded-full mb-2" style={{ background: 'rgba(0,0,0,0.08)' }} />
-                                                    {[1, 0.8, 0.65, 0.9, 0.55].map((w, k) => (
-                                                        <div key={k} className="flex items-center gap-2">
-                                                            <div className="h-2 rounded-full" style={{ width: `${w * 100}%`, background: `linear-gradient(90deg, ${t.gradientFrom}80, ${t.gradientTo}50)` }} />
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                                <div className="flex gap-2">
-                                                    <div className="flex-1 rounded-xl px-3 py-2.5 flex items-center gap-2" style={{ background: 'rgba(255,255,255,0.8)', border: '1px solid rgba(0,0,0,0.07)' }}>
-                                                        <Zap size={12} className="text-yellow-500" />
-                                                        <span className="text-xs" style={{ color: t.descColor }}>Automated</span>
-                                                    </div>
-                                                    <div className="flex-1 rounded-xl px-3 py-2.5 flex items-center gap-2" style={{ background: 'rgba(255,255,255,0.8)', border: '1px solid rgba(0,0,0,0.07)' }}>
-                                                        <Check size={12} className="text-green-600" />
-                                                        <span className="text-xs" style={{ color: t.descColor }}>All clear</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
+                                        <Maximize2 size={11} />
+                                    </button>
                                 </div>
 
-                                {/* Floating stat chips */}
-                                <div
-                                    className="absolute -bottom-3 -left-2 flex items-center gap-2 px-3.5 py-1.5 rounded-full border backdrop-blur-md"
-                                    style={{ background: t.floatChipBg, borderColor: t.floatChipBorder, transform: 'translateZ(20px)' }}
-                                >
-                                    <div className="w-2 h-2 rounded-full" style={{ background: t.floatChip1.color }} />
-                                    <span className="text-[11px]" style={{ color: t.floatChipText }}>{t.floatChip1.label}</span>
-                                    <span className="text-[11px] font-bold" style={{ color: t.floatChip1.color }}>{t.floatChip1.value}</span>
-                                </div>
-                                <div
-                                    className="absolute -top-3 -right-2 flex items-center gap-2 px-3.5 py-1.5 rounded-full border backdrop-blur-md"
-                                    style={{ background: t.floatChipBg, borderColor: t.floatChipBorder, transform: 'translateZ(20px)' }}
-                                >
-                                    <div className="w-2 h-2 rounded-full" style={{ background: t.floatChip2.color }} />
-                                    <span className="text-[11px]" style={{ color: t.floatChipText }}>{t.floatChip2.label}</span>
-                                    <span className="text-[11px] font-bold" style={{ color: t.floatChip2.color }}>{t.floatChip2.value}</span>
+                                <div className="relative overflow-hidden max-h-[480px]">
+                                    {productId === 'financial-accounting' ? (
+                                        <div className="leading-none">{getFAFeatureSvg(i)}</div>
+                                    ) : productId === 'b2b-crm' ? (
+                                        <div className="leading-none">{getCRMFeatureSvg(i)}</div>
+                                    ) : (
+                                        <div className="p-5 flex flex-col gap-3 bg-background min-h-[280px]">
+                                            <div className="grid grid-cols-4 gap-2">
+                                                {[{ v: '2.4k', l: 'Users' }, { v: '98%', l: 'Uptime' }, { v: '1.2s', l: 'Response' }, { v: '99.9', l: 'Score' }].map((m, k) => (
+                                                    <div key={k} className="rounded-md p-3 flex flex-col items-center gap-1 border border-border bg-background">
+                                                        <span className="text-base font-semibold text-foreground">{m.v}</span>
+                                                        <span className="text-[10px] text-muted-foreground">{m.l}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <div className="flex-1 rounded-md p-4 flex flex-col gap-2 border border-border bg-background">
+                                                <div className="h-2.5 w-28 rounded-full mb-2 bg-muted" />
+                                                {[1, 0.8, 0.65, 0.9, 0.55].map((w, k) => (
+                                                    <div key={k} className="flex items-center gap-2">
+                                                        <div className="h-2 rounded-full bg-muted-foreground/20" style={{ width: `${w * 100}%` }} />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
+            </div>
         </div>
         </>
     );
@@ -1138,109 +867,47 @@ const ProductPage: React.FC = () => {
               ]
             : [];
 
-    // Dummy data for dashboards
-    const lineData = [
-        { name: 'Mon', value: 400 },
-        { name: 'Tue', value: 300 },
-        { name: 'Wed', value: 600 },
-        { name: 'Thu', value: 800 },
-        { name: 'Fri', value: 500 },
-        { name: 'Sat', value: 900 },
-        { name: 'Sun', value: 700 },
-    ];
-
-    const pieData = [
-        { name: 'Group A', value: 400 },
-        { name: 'Group B', value: 300 },
-        { name: 'Group C', value: 300 },
-        { name: 'Group D', value: 200 },
-    ];
-    const COLORS = ['#3b82f6', '#8b5cf6', '#06b6d4', '#10b981'];
-    const pieTotal = pieData.reduce((s, d) => s + d.value, 0);
-
     const productName = productInfo.find((p) => p.id === productId)?.name ?? 'Zopkit';
 
     // If product not found or incomplete, show 404
     // This MUST come after all hooks
     if (!data || !data.hero || !data.problem || !data.solution || !data.features) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-white">
-                <div className="text-center">
-                    <h1 className="text-4xl font-bold text-[#1B2E5A] mb-4">Product Not Found</h1>
-                    <p className="text-slate-600 mb-8">The product you're looking for doesn't exist or is not yet available.</p>
-                    <button
-                        onClick={() => navigate({ to: '/' })}
-                        className="px-6 py-3 bg-[#1B2E5A] text-white rounded-lg hover:bg-[#162447] transition"
-                    >
-                        Go to Homepage
-                    </button>
+            <MarketingPageShell>
+                <div className="min-h-screen flex items-center justify-center">
+                    <div className="text-center">
+                        <h1 className="text-4xl font-semibold text-foreground mb-4">Product Not Found</h1>
+                        <p className="text-muted-foreground mb-8">The product you're looking for doesn't exist or is not yet available.</p>
+                        <button
+                            type="button"
+                            onClick={() => navigate({ to: '/' })}
+                            className="landing-btn-primary px-6 py-3 rounded-full font-medium transition-opacity hover:opacity-90"
+                        >
+                            Go to Homepage
+                        </button>
+                    </div>
                 </div>
-            </div>
+            </MarketingPageShell>
         );
     }
 
     return (
         <>
-        {/* FA Mobile — shown only on mobile for financial-accounting */}
         {productId === 'financial-accounting' && (
             <div className="md:hidden">
                 <FAMobileProductPage />
             </div>
         )}
-        <div className={`w-full bg-white text-slate-900 font-sans selection:bg-blue-100 selection:text-blue-900 ${productId === 'financial-accounting' ? 'hidden md:block' : ''}`}>
+        <MarketingPageShell className={productId === 'financial-accounting' ? 'hidden md:block' : undefined}>
             <style>{`
-                @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;600&display=swap');
                 .custom-scrollbar::-webkit-scrollbar { width: 6px; }
                 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
                 .custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(156,163,175,0.3); border-radius: 20px; }
                 .custom-scrollbar::-webkit-scrollbar-thumb:hover { background-color: rgba(156,163,175,0.5); }
-
-                /* Only opacity + translateY — both GPU-composited, zero jank */
-                @keyframes monitorBorn {
-                    0%   { opacity: 0; transform: translateY(120px); }
-                    100% { opacity: 1; transform: translateY(0);     }
-                }
-                @keyframes beamUp {
-                    0%   { opacity: 0; transform: scaleY(0); }
-                    20%  { opacity: 1; }
-                    100% { opacity: 0; transform: scaleY(1); }
-                }
-                @keyframes orbFlare {
-                    0%   { opacity: 1; transform: scale(2.2); }
-                    100% { opacity: 1; transform: scale(1);   }
-                }
-                .hero-monitor-born {
-                    will-change: transform, opacity;
-                    animation: monitorBorn 1.1s cubic-bezier(0.16, 1, 0.3, 1) both;
-                }
-                .hero-beam {
-                    will-change: transform, opacity;
-                    animation: beamUp 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-                    transform-origin: bottom center;
-                }
-                .hero-orb-flare {
-                    will-change: transform, opacity;
-                    animation: orbFlare 1.1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-                }
-
-                /* 3-D projector puck */
-                @keyframes ppFloat    { 0%,100%{ transform:translateY(0px) } 50%{ transform:translateY(-6px) } }
-                @keyframes ppLensGlow {
-                    0%,100%{ box-shadow:0 0 0 3px rgba(36,59,110,0.95),0 0 18px 5px rgba(46,79,140,0.9),0 0 44px 10px rgba(36,59,110,0.6),0 0 90px 20px rgba(27,46,90,0.35) }
-                    50%{     box-shadow:0 0 0 3px rgba(60,105,190,1),0 0 28px 9px rgba(60,105,190,0.95),0 0 68px 16px rgba(46,79,140,0.75),0 0 140px 28px rgba(36,59,110,0.5) }
-                }
-                @keyframes ppHotspot  { 0%,100%{ opacity:0.9;filter:blur(1.5px);transform:scale(1) } 50%{ opacity:1;filter:blur(0.5px);transform:scale(1.22) } }
-                @keyframes ppRingOut  { 0%{ transform:scale(0.5);opacity:0.75 } 100%{ transform:scale(3.8);opacity:0 } }
-                .pp-puck-float  { animation: ppFloat    5.5s ease-in-out infinite; }
-                .pp-lens-glow   { animation: ppLensGlow 2.8s ease-in-out infinite; }
-                .pp-hotspot     { animation: ppHotspot  2.8s ease-in-out infinite; }
-                .pp-ring-out    { animation: ppRingOut  2.8s ease-out   infinite; }
-                .pp-ring-out-2  { animation: ppRingOut  2.8s ease-out 1.4s infinite; }
-                @keyframes zkConeIn { from { opacity: 0 } to { opacity: 1 } }
-                .fa-light-cone  { animation: zkConeIn 0.55s ease-in 0.9s forwards; opacity: 0; }
             `}</style>
 
             <MarketingNavbar
+                minimal
                 desktopRight={
                     <NavbarButton
                         variant="outline"
@@ -1266,125 +933,57 @@ const ProductPage: React.FC = () => {
             />
 
             {/* 1. HERO SECTION */}
-            <section className="relative pt-28 pb-32 bg-white" style={{ overflow: 'visible' }}>
-                {/* Soft background radial gradient */}
-                <div className="absolute inset-0 z-0 pointer-events-none">
-                    <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 90% 70% at 50% 20%, #dde4f5 0%, #edf0f8 45%, #ffffff 80%)' }} />
+            <section className="relative pt-28 pb-16 bg-white">
+                <div className="container mx-auto px-4 lg:px-8 relative z-10 max-w-3xl text-center mb-12">
+                    <h1 className="text-3xl sm:text-4xl lg:text-5xl font-medium tracking-[-0.02em] text-foreground mb-5 leading-tight">
+                        {data.hero.headline}
+                    </h1>
+                    <p className="text-lg text-muted-foreground leading-relaxed mb-8 max-w-2xl mx-auto">
+                        {data.hero.subheadline}
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                        <button
+                            onClick={() => navigate({ to: '/onboarding' })}
+                            className="landing-btn-primary inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full font-medium text-base transition-opacity hover:opacity-90"
+                        >
+                            {data.hero.primaryCTA}
+                            <ArrowRight size={16} />
+                        </button>
+                        <button
+                            type="button"
+                            className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white text-foreground border border-border rounded-lg font-medium text-base hover:bg-muted/50 transition-colors"
+                        >
+                            <Play size={16} className="text-muted-foreground" />
+                            {data.hero.secondaryCTA}
+                        </button>
+                    </div>
                 </div>
 
-                <div className="container mx-auto px-4 lg:px-8 relative z-10">
-
-                    {/* Hero — Monitor born from the orb */}
-                    <div className="relative flex flex-col items-center" style={{ marginLeft: '-2rem', marginRight: '-2rem' }}>
-
-                        {/* Light cone — sits behind monitor (zIndex 0 < monitor zIndex 1) */}
-                        <div
-                            className="fa-light-cone"
-                            style={{
-                                position: 'absolute',
-                                bottom: '35px',
-                                left: '50%',
-                                transform: 'translateX(-50%)',
-                                width: '720px',
-                                height: '520px',
-                                pointerEvents: 'none',
-                                zIndex: 0,
-                            }}
-                        >
-                            <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={{ display: 'block' }}>
-                                <defs>
-                                    <linearGradient id="fa-cone-core" x1="50" y1="100" x2="50" y2="68" gradientUnits="userSpaceOnUse">
-                                        <stop offset="0%"  stopColor="rgba(46,79,140,0.80)" />
-                                        <stop offset="30%" stopColor="rgba(36,59,110,0.42)" />
-                                        <stop offset="100%" stopColor="rgba(27,46,90,0.08)" />
-                                    </linearGradient>
-                                    <linearGradient id="fa-cone-wide" x1="50" y1="100" x2="50" y2="65" gradientUnits="userSpaceOnUse">
-                                        <stop offset="0%"  stopColor="rgba(36,59,110,0.55)" />
-                                        <stop offset="50%" stopColor="rgba(27,46,90,0.22)" />
-                                        <stop offset="100%" stopColor="rgba(15,27,61,0.04)" />
-                                    </linearGradient>
-                                    <linearGradient id="fa-ray-l" x1="50" y1="100" x2="12" y2="68" gradientUnits="userSpaceOnUse">
-                                        <stop offset="0%"  stopColor="rgba(120,160,220,1)" />
-                                        <stop offset="45%" stopColor="rgba(46,79,140,0.75)" />
-                                        <stop offset="100%" stopColor="rgba(27,46,90,0.20)" />
-                                    </linearGradient>
-                                    <linearGradient id="fa-ray-r" x1="50" y1="100" x2="88" y2="68" gradientUnits="userSpaceOnUse">
-                                        <stop offset="0%"  stopColor="rgba(120,160,220,1)" />
-                                        <stop offset="45%" stopColor="rgba(46,79,140,0.75)" />
-                                        <stop offset="100%" stopColor="rgba(27,46,90,0.20)" />
-                                    </linearGradient>
-                                    <radialGradient id="fa-src-halo" cx="50" cy="100" r="12" gradientUnits="userSpaceOnUse">
-                                        <stop offset="0%"  stopColor="rgba(140,180,240,0.90)" />
-                                        <stop offset="40%" stopColor="rgba(46,79,140,0.55)" />
-                                        <stop offset="100%" stopColor="rgba(15,27,61,0.00)" />
-                                    </radialGradient>
-                                    <linearGradient id="fa-screen-glow" x1="17" y1="68" x2="83" y2="68" gradientUnits="userSpaceOnUse">
-                                        <stop offset="0%"   stopColor="rgba(27,46,90,0.00)" />
-                                        <stop offset="20%"  stopColor="rgba(36,59,110,0.45)" />
-                                        <stop offset="50%"  stopColor="rgba(46,79,140,0.65)" />
-                                        <stop offset="80%"  stopColor="rgba(36,59,110,0.45)" />
-                                        <stop offset="100%" stopColor="rgba(27,46,90,0.00)" />
-                                    </linearGradient>
-                                    <filter id="fa-f-soft"  x="-30%" y="-15%" width="160%" height="145%"><feGaussianBlur stdDeviation="2 1.2" /></filter>
-                                    <filter id="fa-f-wide"  x="-50%" y="-15%" width="200%" height="145%"><feGaussianBlur stdDeviation="6 3.5" /></filter>
-                                    <filter id="fa-f-ray"   x="-200%" y="-30%" width="500%" height="160%"><feGaussianBlur stdDeviation="0.6 0.3" /></filter>
-                                    <filter id="fa-f-glow"  x="-200%" y="-30%" width="500%" height="160%"><feGaussianBlur stdDeviation="1.5 0.8" /></filter>
-                                    <filter id="fa-f-edge"  x="-20%" y="-200%" width="140%" height="500%"><feGaussianBlur stdDeviation="0.8 2.5" /></filter>
-                                    <filter id="fa-f-halo"  x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="3 2" /></filter>
-                                </defs>
-                                <polygon points="50,100 10,68 90,68"  fill="url(#fa-cone-wide)" filter="url(#fa-f-wide)" opacity="0.85" />
-                                <polygon points="50,100 20,68 80,68" fill="url(#fa-cone-core)" filter="url(#fa-f-soft)" opacity="0.9" />
-                                <polygon points="50,100 33,68 67,68" fill="url(#fa-cone-core)" filter="url(#fa-f-soft)" opacity="0.75" />
-                                <polygon points="50,100 43,68 57,68" fill="url(#fa-cone-core)" filter="url(#fa-f-soft)" opacity="0.9" />
-                                <line x1="50" y1="100" x2="20" y2="68" stroke="url(#fa-ray-l)" strokeWidth="0.7" filter="url(#fa-f-ray)" />
-                                <line x1="50" y1="100" x2="20" y2="68" stroke="url(#fa-ray-l)" strokeWidth="4"   filter="url(#fa-f-glow)" opacity="0.75" />
-                                <line x1="50" y1="100" x2="80" y2="68" stroke="url(#fa-ray-r)" strokeWidth="0.7" filter="url(#fa-f-ray)" />
-                                <line x1="50" y1="100" x2="80" y2="68" stroke="url(#fa-ray-r)" strokeWidth="4"   filter="url(#fa-f-glow)" opacity="0.75" />
-                                <ellipse cx="50" cy="100" rx="7" ry="2.5" fill="url(#fa-src-halo)" filter="url(#fa-f-halo)" />
-                                <line x1="20" y1="68" x2="80" y2="68" stroke="url(#fa-screen-glow)" strokeWidth="1.5" filter="url(#fa-f-edge)" />
-                                <circle cx="20" cy="68" r="1.5" fill="rgba(36,59,110,0.7)" filter="url(#fa-f-soft)" />
-                                <circle cx="80" cy="68" r="1.5" fill="rgba(36,59,110,0.7)" filter="url(#fa-f-soft)" />
-                            </svg>
-                        </div>
-
-                        {/* Monitor — starts at orb level and rises up */}
-                        <div
-                            className="relative w-full hero-monitor-born"
-                            style={{
-                                maxWidth: '900px',
-                                borderRadius: '24px',
-                                background: 'linear-gradient(175deg, #1c2035 0%, #0e1120 50%, #090c18 100%)',
-                                padding: '8px',
-                                boxShadow: '0 30px 80px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.05), inset 0 1px 0 rgba(255,255,255,0.07)',
-                                zIndex: 1,
-                            }}
-                        >
-                            {/* Top bar — single row with logo dot + right dot (matches reference) */}
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 14px', height: '36px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#3b5bdb', boxShadow: '0 0 6px rgba(59,91,219,0.8)' }} />
-                                    <div style={{ height: '5px', width: '90px', borderRadius: '3px', background: 'rgba(255,255,255,0.12)' }} />
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <div style={{ height: '5px', width: '70px', borderRadius: '3px', background: 'rgba(255,255,255,0.08)' }} />
-                                    <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'rgba(255,255,255,0.18)' }} />
-                                </div>
+                <div className="container mx-auto px-4 lg:px-8 relative z-10 max-w-[920px]">
+                    <div className="rounded-lg border border-border overflow-hidden bg-white shadow-sm">
+                        <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-background">
+                            <div className="flex gap-1.5">
+                                <div className="w-3 h-3 rounded-full bg-window-dot-close" />
+                                <div className="w-3 h-3 rounded-full bg-window-dot-minimize" />
+                                <div className="w-3 h-3 rounded-full bg-window-dot-maximize" />
                             </div>
-
-                            {/* Screen content */}
-                            <div style={{ borderRadius: '16px', overflow: 'hidden' }}>
+                            <div className="flex-1 text-center">
+                                <span className="text-[11px] font-mono text-muted-foreground">app.zopkit.com/{productId}</span>
+                            </div>
+                        </div>
+                        <div className="overflow-hidden">
                                 {productId === 'financial-accounting' ? (
                                     /* White FA dashboard mock */
-                                    <div style={{ display: 'flex', height: '480px', background: '#FFFFFF', overflow: 'hidden' }}>
+                                    <div style={{ display: 'flex', height: '480px', background: 'var(--background)', overflow: 'hidden' }}>
                                         {/* Sidebar */}
-                                        <div style={{ width: '170px', flexShrink: 0, background: '#F5F7FA', borderRight: '1px solid rgba(19,32,74,0.08)', padding: '10px 7px', display: 'flex', flexDirection: 'column' }}>
+                                        <div style={{ width: '170px', flexShrink: 0, background: 'var(--illustration-panel)', borderRight: '1px solid rgba(19,32,74,0.08)', padding: '10px 7px', display: 'flex', flexDirection: 'column' }}>
                                             <div style={{ padding: '4px 5px', marginBottom: 10, display: 'flex', justifyContent: 'center' }}>
                                                 <img src="https://res.cloudinary.com/dr9vzaa7u/image/upload/v1771698937/Zopkit-full_n7lm0f.png" alt="Zopkit" style={{ height: 26, width: 'auto', display: 'block' }} />
                                             </div>
                                             {['General Ledger','Accounts Payable','Accounts Receivable','Banking & Cash','GST & Tax','Fixed Assets','Financial Reports','Audit Trail','Cost Centers','Budgeting','Compliance'].map((item, i) => (
-                                                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 7px', background: i === 0 ? 'rgba(27,46,90,0.08)' : 'transparent', borderRadius: 4, borderLeft: `2px solid ${i === 0 ? '#1b2e5a' : 'transparent'}`, marginBottom: 2 }}>
-                                                    <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#1b2e5a', flexShrink: 0, opacity: i === 0 ? 1 : 0.3 }} />
-                                                    <span style={{ fontSize: 7, color: i === 0 ? '#1b2e5a' : 'rgba(19,32,74,0.45)', fontWeight: i === 0 ? 600 : 400, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item}</span>
+                                                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 7px', background: i === 0 ? 'rgba(27,46,90,0.08)' : 'transparent', borderRadius: 4, borderLeft: `2px solid ${i === 0 ? 'var(--primary)' : 'transparent'}`, marginBottom: 2 }}>
+                                                    <div style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--primary)', flexShrink: 0, opacity: i === 0 ? 1 : 0.3 }} />
+                                                    <span style={{ fontSize: 7, color: i === 0 ? 'var(--primary)' : 'rgba(19,32,74,0.45)', fontWeight: i === 0 ? 600 : 400, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item}</span>
                                                 </div>
                                             ))}
                                         </div>
@@ -1393,9 +992,9 @@ const ProductPage: React.FC = () => {
                                             {/* Header */}
                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                    <span style={{ fontSize: 10, fontWeight: 700, color: '#1b2e5a' }}>General Ledger</span>
+                                                    <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--primary)' }}>General Ledger</span>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(27,46,90,0.06)', border: '1px solid rgba(27,46,90,0.15)', borderRadius: 100, padding: '2px 8px' }}>
-                                                        <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#1b2e5a' }} />
+                                                        <div style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--primary)' }} />
                                                         <span style={{ fontSize: 7, color: 'rgba(27,46,90,0.9)', fontWeight: 600 }}>FY 2025-26</span>
                                                     </div>
                                                 </div>
@@ -1404,12 +1003,12 @@ const ProductPage: React.FC = () => {
                                             {/* Stat cards */}
                                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 7 }}>
                                                 {[
-                                                    { label: 'Total Revenue', value: '₹84.2L', sub: '+18% YoY', color: '#1b2e5a' },
-                                                    { label: 'GST Filed', value: '100%', sub: 'Aug 2025 ✓', color: '#047857' },
-                                                    { label: 'Payables', value: '₹12.4L', sub: '23 pending', color: '#c2410c' },
-                                                    { label: 'Cash Balance', value: '₹34.6L', sub: 'Updated today', color: '#0369a1' },
+                                                    { label: 'Total Revenue', value: '₹84.2L', sub: '+18% YoY', color: 'var(--primary)' },
+                                                    { label: 'GST Filed', value: '100%', sub: 'Aug 2025 ✓', color: 'var(--illustration-success)' },
+                                                    { label: 'Payables', value: '₹12.4L', sub: '23 pending', color: 'var(--illustration-warning)' },
+                                                    { label: 'Cash Balance', value: '₹34.6L', sub: 'Updated today', color: 'var(--illustration-info)' },
                                                 ].map((stat, i) => (
-                                                    <div key={i} style={{ background: '#FFFFFF', border: '1px solid rgba(19,32,74,0.08)', borderTop: `2px solid ${stat.color}`, borderRadius: '0 0 8px 8px', padding: '8px 10px' }}>
+                                                    <div key={i} style={{ background: 'var(--background)', border: '1px solid rgba(19,32,74,0.08)', borderTop: `2px solid ${stat.color}`, borderRadius: '0 0 8px 8px', padding: '8px 10px' }}>
                                                         <div style={{ fontSize: 6.5, color: 'rgba(19,32,74,0.45)', fontWeight: 500, marginBottom: 4 }}>{stat.label}</div>
                                                         <div style={{ fontSize: 13, fontWeight: 700, color: stat.color }}>{stat.value}</div>
                                                         <div style={{ fontSize: 6, color: 'rgba(19,32,74,0.35)', marginTop: 3 }}>{stat.sub}</div>
@@ -1433,37 +1032,37 @@ const ProductPage: React.FC = () => {
                                                 ].map((row, i) => (
                                                     <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 0.7fr 0.7fr 0.6fr 0.6fr', gap: 6, padding: '5px 10px', borderBottom: '1px solid rgba(19,32,74,0.04)', alignItems: 'center', background: i % 2 === 0 ? 'transparent' : 'rgba(19,32,74,0.015)' }}>
                                                         <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                                                            <div style={{ width: 5, height: 5, borderRadius: '50%', background: row.status === 'posted' ? '#1b2e5a' : row.status === 'reconciled' ? '#047857' : '#d97706', flexShrink: 0 }} />
-                                                            <span style={{ fontSize: 6.5, color: '#1b2e5a', fontWeight: 600 }}>{row.entry}</span>
+                                                            <div style={{ width: 5, height: 5, borderRadius: '50%', background: row.status === 'posted' ? 'var(--primary)' : row.status === 'reconciled' ? 'var(--illustration-success)' : 'var(--illustration-warning)', flexShrink: 0 }} />
+                                                            <span style={{ fontSize: 6.5, color: 'var(--primary)', fontWeight: 600 }}>{row.entry}</span>
                                                         </div>
                                                         <span style={{ fontSize: 6.5, color: 'rgba(19,32,74,0.5)' }}>{row.date}</span>
                                                         <span style={{ fontSize: 6.5, color: 'rgba(19,32,74,0.7)', fontWeight: 500 }}>{row.account}</span>
-                                                        <span style={{ fontSize: 6.5, color: row.debit !== '—' ? '#047857' : 'rgba(19,32,74,0.3)', fontWeight: row.debit !== '—' ? 600 : 400 }}>{row.debit}</span>
-                                                        <span style={{ fontSize: 6.5, color: row.credit !== '—' ? '#c2410c' : 'rgba(19,32,74,0.3)', fontWeight: row.credit !== '—' ? 600 : 400 }}>{row.credit}</span>
+                                                        <span style={{ fontSize: 6.5, color: row.debit !== '—' ? 'var(--illustration-success)' : 'rgba(19,32,74,0.3)', fontWeight: row.debit !== '—' ? 600 : 400 }}>{row.debit}</span>
+                                                        <span style={{ fontSize: 6.5, color: row.credit !== '—' ? 'var(--illustration-warning)' : 'rgba(19,32,74,0.3)', fontWeight: row.credit !== '—' ? 600 : 400 }}>{row.credit}</span>
                                                     </div>
                                                 ))}
                                             </div>
                                             {/* Bottom panels */}
                                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                                                <div style={{ background: '#FFFFFF', border: '1px solid rgba(19,32,74,0.08)', borderRadius: 8, padding: '8px 10px' }}>
-                                                    <div style={{ fontSize: 7.5, fontWeight: 700, color: '#1b2e5a', marginBottom: 6 }}>GST Compliance</div>
-                                                    {[{ name: 'GSTR-1', status: 'Filed', color: '#047857' }, { name: 'GSTR-3B', status: 'Filed', color: '#047857' }, { name: 'E-Invoice', status: 'Active', color: '#1b2e5a' }, { name: 'TDS Return', status: 'Pending', color: '#d97706' }].map((item, i) => (
+                                                <div style={{ background: 'var(--background)', border: '1px solid rgba(19,32,74,0.08)', borderRadius: 8, padding: '8px 10px' }}>
+                                                    <div style={{ fontSize: 7.5, fontWeight: 700, color: 'var(--primary)', marginBottom: 6 }}>GST Compliance</div>
+                                                    {[{ name: 'GSTR-1', status: 'Filed', color: 'var(--illustration-success)' }, { name: 'GSTR-3B', status: 'Filed', color: 'var(--illustration-success)' }, { name: 'E-Invoice', status: 'Active', color: 'var(--primary)' }, { name: 'TDS Return', status: 'Pending', color: 'var(--illustration-warning)' }].map((item, i) => (
                                                         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
                                                             <span style={{ fontSize: 6.5, color: 'rgba(19,32,74,0.6)' }}>{item.name}</span>
                                                             <span style={{ fontSize: 6, fontWeight: 600, color: item.color, background: `${item.color}18`, padding: '1px 5px', borderRadius: 3 }}>{item.status}</span>
                                                         </div>
                                                     ))}
                                                 </div>
-                                                <div style={{ background: '#FFFFFF', border: '1px solid rgba(19,32,74,0.08)', borderRadius: 8, padding: '8px 10px' }}>
-                                                    <div style={{ fontSize: 7.5, fontWeight: 700, color: '#1b2e5a', marginBottom: 6 }}>Module Health</div>
+                                                <div style={{ background: 'var(--background)', border: '1px solid rgba(19,32,74,0.08)', borderRadius: 8, padding: '8px 10px' }}>
+                                                    <div style={{ fontSize: 7.5, fontWeight: 700, color: 'var(--primary)', marginBottom: 6 }}>Module Health</div>
                                                     {[{ name: 'General Ledger', pct: 98 }, { name: 'Accounts Payable', pct: 94 }, { name: 'Accounts Receivable', pct: 87 }, { name: 'Banking & Cash', pct: 100 }].map((mod, i) => (
                                                         <div key={i} style={{ marginBottom: 5 }}>
                                                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
                                                                 <span style={{ fontSize: 6, color: 'rgba(19,32,74,0.55)' }}>{mod.name}</span>
-                                                                <span style={{ fontSize: 6, fontWeight: 600, color: '#1b2e5a' }}>{mod.pct}%</span>
+                                                                <span style={{ fontSize: 6, fontWeight: 600, color: 'var(--primary)' }}>{mod.pct}%</span>
                                                             </div>
                                                             <div style={{ height: 3, background: 'rgba(19,32,74,0.08)', borderRadius: 2, overflow: 'hidden' }}>
-                                                                <div style={{ height: '100%', width: `${mod.pct}%`, background: 'linear-gradient(90deg, rgba(27,46,90,0.5), #1b2e5a)', borderRadius: 2 }} />
+                                                                <div style={{ height: '100%', width: `${mod.pct}%`, background: 'linear-gradient(90deg, color-mix(in oklch, var(--primary) 50%, transparent), var(--primary))', borderRadius: 2 }} />
                                                             </div>
                                                         </div>
                                                     ))}
@@ -1472,298 +1071,138 @@ const ProductPage: React.FC = () => {
                                         </div>
                                     </div>
                                 ) : (
-                                    /* Dark dashboard mock — sidebar + content matches reference layout */
-                                    <div style={{ display: 'flex', height: '480px', background: '#0b0e1a', overflow: 'hidden' }}>
-                                        {/* Sidebar */}
-                                        <div style={{ width: '190px', flexShrink: 0, background: '#0d1020', borderRight: '1px solid rgba(255,255,255,0.04)', padding: '14px 0', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                            {/* Logo row */}
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '0 14px 14px' }}>
-                                                <div style={{ width: '22px', height: '22px', borderRadius: '6px', background: 'linear-gradient(135deg, #3b5bdb, #6366f1)', flexShrink: 0 }} />
-                                                <div style={{ height: '6px', width: '70px', borderRadius: '3px', background: 'rgba(255,255,255,0.2)' }} />
-                                            </div>
-                                            {/* Nav items */}
-                                            {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((_, i) => (
-                                                <div key={i} style={{ height: '32px', margin: '0 8px', borderRadius: '7px', background: i === 2 ? 'rgba(59,91,219,0.25)' : 'transparent', display: 'flex', alignItems: 'center', padding: '0 10px', gap: '8px' }}>
-                                                    <div style={{ width: '7px', height: '7px', borderRadius: '2px', background: i === 2 ? '#5b7fff' : 'rgba(255,255,255,0.15)', flexShrink: 0 }} />
-                                                    <div style={{ height: '5px', borderRadius: '3px', background: i === 2 ? 'rgba(91,127,255,0.5)' : 'rgba(255,255,255,0.1)', width: `${42 + (i * 17) % 38}px` }} />
+                                    <div className="flex min-h-[360px] bg-white">
+                                        <div className="hidden sm:flex w-44 shrink-0 flex-col gap-1 border-r border-border bg-muted/20 p-3">
+                                            {[0, 1, 2, 3, 4, 5].map((i) => (
+                                                <div
+                                                    key={i}
+                                                    className={`h-8 rounded-md px-2 flex items-center ${i === 0 ? 'bg-primary/10 border-l-2 border-primary' : ''}`}
+                                                >
+                                                    <div className={`h-1.5 rounded-full ${i === 0 ? 'w-20 bg-primary/40' : 'w-16 bg-muted-foreground/20'}`} />
                                                 </div>
                                             ))}
                                         </div>
-                                        {/* Main content */}
-                                        <div style={{ flex: 1, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '10px', overflow: 'hidden' }}>
-                                            {/* Stat cards row */}
-                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+                                        <div className="flex-1 p-4 sm:p-6 flex flex-col gap-4">
+                                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                                                 {data.hero.stats.map((stat, i) => (
-                                                    <div key={i} style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.06)', padding: '10px 12px' }}>
-                                                        <div style={{ height: '5px', width: '55px', borderRadius: '3px', background: 'rgba(255,255,255,0.12)', marginBottom: '7px' }} />
-                                                        <div style={{ fontSize: '13px', fontWeight: 700, color: 'rgba(255,255,255,0.85)', letterSpacing: '-0.2px' }}>{stat.value}</div>
-                                                        <div style={{ height: '2px', width: '30px', borderRadius: '2px', background: 'rgba(59,91,219,0.6)', marginTop: '6px' }} />
+                                                    <div key={i} className="rounded-lg border border-border bg-muted/20 p-3">
+                                                        <div className="text-[10px] text-muted-foreground mb-1">{stat.label}</div>
+                                                        <div className="text-lg font-semibold text-foreground">{stat.value}</div>
                                                     </div>
                                                 ))}
                                             </div>
-                                            {/* Tab strip */}
-                                            <div style={{ display: 'flex', gap: '2px' }}>
-                                                {['Overview', 'Analytics', 'Reports', 'Settings', 'Audit', 'Team'].map((tab, i) => (
-                                                    <div key={tab} style={{ height: '26px', borderRadius: '6px', padding: '0 14px', display: 'flex', alignItems: 'center', background: i === 0 ? 'rgba(59,91,219,0.35)' : 'transparent', borderBottom: i === 0 ? '2px solid #5b7fff' : '2px solid transparent' }}>
-                                                        <span style={{ fontSize: '10px', color: i === 0 ? '#a0b4ff' : 'rgba(255,255,255,0.3)', fontWeight: i === 0 ? 600 : 400 }}>{tab}</span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                            {/* Table */}
-                                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', borderRadius: '10px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.05)' }}>
-                                                {/* Header row */}
-                                                <div style={{ display: 'grid', gridTemplateColumns: '2.2fr 1.4fr 1fr 1fr 1fr', gap: '6px', padding: '8px 14px', background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid rgba(59,91,219,0.5)' }}>
+                                            <div className="flex-1 rounded-lg border border-border overflow-hidden">
+                                                <div className="grid grid-cols-5 gap-2 px-4 py-2 bg-muted/30 border-b border-border">
                                                     {[80, 60, 45, 45, 55].map((w, j) => (
-                                                        <div key={j} style={{ height: '5px', borderRadius: '3px', background: 'rgba(255,255,255,0.18)', width: `${w}%` }} />
+                                                        <div key={j} className="h-1.5 rounded-full bg-muted-foreground/20" style={{ width: `${w}%` }} />
                                                     ))}
                                                 </div>
-                                                {/* Data rows */}
-                                                {[...Array(7)].map((_, row) => (
-                                                    <div key={row} style={{ display: 'grid', gridTemplateColumns: '2.2fr 1.4fr 1fr 1fr 1fr', gap: '6px', padding: '8px 14px', borderBottom: '1px solid rgba(255,255,255,0.03)', alignItems: 'center' }}>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'rgba(255,255,255,0.15)', flexShrink: 0 }} />
-                                                            <div style={{ height: '5px', borderRadius: '3px', background: 'rgba(255,255,255,0.14)', width: `${48 + (row * 23) % 38}px` }} />
+                                                {[...Array(5)].map((_, row) => (
+                                                    <div key={row} className="grid grid-cols-5 gap-2 px-4 py-2.5 border-b border-border/60 items-center">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="w-1.5 h-1.5 rounded-full bg-primary/40 shrink-0" />
+                                                            <div className="h-1.5 rounded-full bg-muted-foreground/15" style={{ width: `${48 + (row * 23) % 38}px` }} />
                                                         </div>
                                                         {[55, 42, 38, 50].map((w, c) => (
-                                                            <div key={c} style={{ height: '5px', borderRadius: '3px', background: 'rgba(255,255,255,0.09)', width: `${w}%` }} />
+                                                            <div key={c} className="h-1.5 rounded-full bg-muted-foreground/10" style={{ width: `${w}%` }} />
                                                         ))}
-                                                    </div>
-                                                ))}
-                                            </div>
-                                            {/* Bottom two panels */}
-                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                                                {[0, 1].map(panel => (
-                                                    <div key={panel} style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.05)', padding: '12px' }}>
-                                                        <div style={{ height: '5px', width: '70px', borderRadius: '3px', background: 'rgba(255,255,255,0.14)', marginBottom: '10px' }} />
-                                                        <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
-                                                            {[...Array(6)].map((_, j) => (
-                                                                <div key={j} style={{ height: '22px', borderRadius: '5px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.06)', width: `${36 + (j * 13) % 28}px` }} />
-                                                            ))}
-                                                        </div>
                                                     </div>
                                                 ))}
                                             </div>
                                         </div>
                                     </div>
                                 )}
-                            </div>
-                        </div>
-
-                        {/* Projector puck + beam */}
-                        <div style={{ position: 'relative', marginTop: '28px', display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 2 }}>
-                            {/* Flash beam on entry — fades out as puck activates */}
-                            <div
-                                className="hero-beam"
-                                style={{
-                                    position: 'absolute',
-                                    bottom: '52px',
-                                    left: '50%',
-                                    transform: 'translateX(-50%) scaleY(0)',
-                                    width: '200px',
-                                    height: '240px',
-                                    background: 'linear-gradient(to top, rgba(46,79,140,0.60) 0%, rgba(60,100,200,0.28) 35%, transparent 100%)',
-                                    filter: 'blur(16px)',
-                                    pointerEvents: 'none',
-                                    borderRadius: '50% 50% 0 0',
-                                }}
-                            />
-
-                            {/* ── 3-D Cylindrical Puck (reduced size) ── */}
-                            <div
-                                className="pp-puck-float"
-                                style={{
-                                    position: 'relative',
-                                    width: '200px',
-                                    height: '70px',
-                                    flexShrink: 0,
-                                    filter: 'drop-shadow(0 16px 26px rgba(0,0,0,0.55)) drop-shadow(0 0 44px rgba(27,46,90,0.45))',
-                                }}
-                            >
-                                {/* Cylinder side */}
-                                <div style={{
-                                    position: 'absolute', top: '20%', left: 0, right: 0, bottom: 0,
-                                    background: 'linear-gradient(to bottom, #212128 0%, #161620 28%, #0d0d14 65%, #070710 100%)',
-                                    borderRadius: '0 0 50% 50% / 0 0 22% 22%',
-                                    boxShadow: 'inset 5px 0 15px rgba(255,255,255,0.045),inset -5px 0 15px rgba(0,0,0,0.45),inset 0 -8px 20px rgba(0,0,0,0.75)',
-                                    overflow: 'hidden',
-                                }}>
-                                    <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: '9%', background: 'linear-gradient(to right, rgba(255,255,255,0.07), transparent)' }} />
-                                    <div style={{ position: 'absolute', top: 0, bottom: 0, right: 0, width: '9%', background: 'linear-gradient(to left, rgba(0,0,0,0.35), transparent)' }} />
-                                </div>
-
-                                {/* Top face */}
-                                <div style={{
-                                    position: 'absolute', top: 0, left: 0, right: 0, height: '40%',
-                                    background: 'radial-gradient(ellipse at 48% 38%, #2c2c38 0%, #1a1a26 50%, #0e0e18 82%, #08080f 100%)',
-                                    borderRadius: '50%', zIndex: 2,
-                                    boxShadow: 'inset 0 6px 15px rgba(255,255,255,0.055),inset 0 -4px 10px rgba(0,0,0,0.65),0 5px 15px rgba(0,0,0,0.65)',
-                                }}>
-                                    <div style={{ position: 'absolute', top: '7%', left: '7%', right: '7%', bottom: '7%', borderRadius: '50%', boxShadow: 'inset 0 0 0 1.5px rgba(255,255,255,0.055),inset 0 0 8px rgba(0,0,0,0.6)' }} />
-                                    <div style={{ position: 'absolute', top: '20%', left: '20%', right: '20%', bottom: '20%', borderRadius: '50%', background: 'radial-gradient(ellipse at 50% 42%, #1e1e2a 0%, #0c0c14 100%)', boxShadow: 'inset 0 4px 10px rgba(0,0,0,0.95)' }} />
-                                    <div className="pp-lens-glow" style={{ position: 'absolute', top: '24%', left: '24%', right: '24%', bottom: '24%', borderRadius: '50%', background: 'transparent' }} />
-                                    <div className="pp-ring-out"   style={{ position: 'absolute', top: '24%', left: '24%', right: '24%', bottom: '24%', borderRadius: '50%', boxShadow: '0 0 0 1.5px rgba(60,105,200,0.5)' }} />
-                                    <div className="pp-ring-out-2" style={{ position: 'absolute', top: '24%', left: '24%', right: '24%', bottom: '24%', borderRadius: '50%', boxShadow: '0 0 0 1.5px rgba(60,105,200,0.3)' }} />
-                                    <div style={{ position: 'absolute', top: '32%', left: '32%', right: '32%', bottom: '32%', borderRadius: '50%', background: 'radial-gradient(circle at 44% 38%, #d0e4ff 0%, #88aef0 14%, #243B6E 36%, #1B2E5A 64%, #0F1B3D 100%)', boxShadow: 'inset 0 0 8px rgba(0,0,0,0.75)' }} />
-                                    <div className="pp-hotspot" style={{ position: 'absolute', top: '42%', left: '42%', right: '42%', bottom: '42%', borderRadius: '50%', background: 'radial-gradient(circle, #fff 0%, #d2e8ff 55%, transparent 100%)' }} />
-                                </div>
-
-                                {/* Ground shadow */}
-                                <div style={{ position: 'absolute', bottom: '-14%', left: '18%', right: '18%', height: '18%', borderRadius: '50%', background: 'rgba(0,0,0,0.5)', filter: 'blur(10px)' }} />
-                            </div>
                         </div>
                     </div>
                 </div>
             </section>
 
-            {/* 3. PROBLEM / SOLUTION - COMPACT WINDOW LAYOUT */}
-            <section className="py-24 bg-slate-50 relative overflow-hidden" id="perspective">
-                {/* Background Decor */}
-                <div className="absolute inset-0 opacity-40" style={{ backgroundImage: 'radial-gradient(#cbd5e1 1px, transparent 1px)', backgroundSize: '32px 32px' }}></div>
+            {/* 3. PROBLEM / SOLUTION */}
+            <section className="py-24 border-y border-border" id="perspective">
 
                 <div className="container mx-auto px-4 relative z-10">
                     <div className="text-center max-w-3xl mx-auto mb-16">
-                        <span className="text-blue-600 font-bold tracking-wider uppercase text-sm mb-4 block">The Evolution</span>
-                        <h2 className="text-3xl lg:text-4xl font-bold mb-6 text-[#1B2E5A] leading-tight">
-                            The Shift in Perspective
+                        <p className="text-sm font-medium text-muted-foreground mb-3">Before & after</p>
+                        <h2 className="text-3xl lg:text-4xl font-medium mb-4 text-foreground tracking-[-0.02em] leading-tight">
+                            From scattered tools to one system
                         </h2>
-                        <p className="text-lg text-slate-600">
-                            See how {productName} changes the game by bringing order to chaos.
+                        <p className="text-lg text-muted-foreground">
+                            See how {productName} brings structure to day-to-day work.
                         </p>
                     </div>
 
                     <div className="flex flex-col lg:flex-row gap-8 justify-center items-stretch max-w-6xl mx-auto h-[650px] lg:h-[550px]">
 
-                        {/* THE PROBLEM CARD (COMPACT & SCROLLABLE) */}
-                        <div className="flex-1 bg-white rounded-2xl border border-red-100 shadow-xl overflow-hidden flex flex-col relative group hover:shadow-2xl hover:shadow-red-900/10 transition-all duration-500">
-                            {/* Card Header */}
-                            <div className="bg-red-50/80 backdrop-blur-sm p-4 border-b border-red-100 flex items-center justify-between z-20">
+                        <div className="flex-1 bg-white rounded-lg border border-border overflow-hidden flex flex-col relative">
+                            <div className="bg-background p-4 border-b border-border flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <div className="flex gap-1.5">
-                                        <div className="w-3 h-3 rounded-full bg-red-400"></div>
-                                        <div className="w-3 h-3 rounded-full bg-red-300"></div>
-                                        <div className="w-3 h-3 rounded-full bg-red-200"></div>
+                                        <div className="w-3 h-3 rounded-full bg-window-dot-close" />
+                                        <div className="w-3 h-3 rounded-full bg-window-dot-minimize" />
+                                        <div className="w-3 h-3 rounded-full bg-window-dot-maximize" />
                                     </div>
-                                    <span className="text-xs font-bold text-red-700 uppercase ml-2 tracking-wide">Manual Workflow</span>
+                                    <span className="text-xs font-medium text-muted-foreground ml-2">Before</span>
                                 </div>
-                                <XCircle size={18} className="text-red-400" />
+                                <XCircle size={18} className="text-muted-foreground" />
                             </div>
 
-                            {/* Visualization Background (Chaotic) */}
-                            <div className="absolute inset-0 z-0 opacity-20 pointer-events-none">
-                                {[...Array(6)].map((_, i) => (
-                                    <div key={i} className="absolute animate-pulse"
-                                        style={{
-                                            top: `${Math.random() * 80 + 10}%`,
-                                            left: `${Math.random() * 80 + 10}%`,
-                                            animationDuration: `${Math.random() * 3 + 2}s`
-                                        }}>
-                                        <AlertCircle size={24} className="text-red-500" />
-                                    </div>
-                                ))}
-                            </div>
-
-                            {/* Scrollable Content */}
-                            <div className="flex-1 overflow-y-auto custom-scrollbar p-6 lg:p-8 relative z-10">
+                            <div className="flex-1 overflow-y-auto custom-scrollbar p-6 lg:p-8">
                                 <div className="mb-6">
-                                    <h4 className="text-2xl font-bold text-slate-800 mb-2 leading-tight">
+                                    <h4 className="text-2xl font-semibold text-foreground mb-2 leading-tight">
                                         {data.problem.headline}
                                     </h4>
-                                    <div className="h-1 w-12 bg-red-400 rounded-full"></div>
+                                    <div className="h-px w-12 bg-border" />
                                 </div>
 
                                 <div className="space-y-4">
                                     {data.problem.painPoints.map((point, i) => (
-                                        <div key={i} className="group bg-white border border-slate-200/80 p-4 rounded-xl shadow-sm hover:border-rose-200 hover:shadow-md transition-all duration-200">
+                                        <div key={i} className="border border-border p-4 rounded-lg bg-background">
                                             <div className="flex gap-3 items-start">
-                                                <div className="mt-0.5 w-7 h-7 rounded-lg bg-rose-50 text-rose-500 shrink-0 flex items-center justify-center group-hover:bg-rose-100 transition-colors">
+                                                <div className="mt-0.5 w-7 h-7 rounded-lg border border-border text-muted-foreground shrink-0 flex items-center justify-center">
                                                     <X size={14} strokeWidth={2.5} />
                                                 </div>
-                                                <p className="text-slate-700 font-medium text-sm leading-relaxed pt-0.5">{point.text}</p>
+                                                <p className="text-foreground font-medium text-sm leading-relaxed pt-0.5">{point.text}</p>
                                             </div>
                                         </div>
                                     ))}
-
-                                    {/* Dummy Extra Content to force scroll if needed */}
-                                    <div className="opacity-50 space-y-3 pt-4 grayscale">
-                                        <div className="h-4 bg-slate-100 rounded w-3/4"></div>
-                                        <div className="h-4 bg-slate-100 rounded w-1/2"></div>
-                                        <div className="h-4 bg-slate-100 rounded w-2/3"></div>
-                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* THE SOLUTION CARD (COMPACT & SCROLLABLE) */}
-                        <div className="flex-1 bg-slate-900 rounded-2xl border border-slate-700 shadow-2xl shadow-blue-900/20 overflow-hidden flex flex-col relative group transform lg:scale-105 z-20 transition-all duration-500">
-                            {/* Card Header */}
-                            <div className="bg-slate-800/80 backdrop-blur-sm p-4 border-b border-slate-700 flex items-center justify-between z-20">
+                        {/* THE SOLUTION CARD */}
+                        <div className="flex-1 bg-white rounded-lg border border-border overflow-hidden flex flex-col relative">
+                            <div className="bg-background p-4 border-b border-border flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <div className="flex gap-1.5">
-                                        <div className="w-3 h-3 rounded-full bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.6)] animate-pulse"></div>
-                                        <div className="w-3 h-3 rounded-full bg-blue-400"></div>
-                                        <div className="w-3 h-3 rounded-full bg-slate-600"></div>
+                                        <div className="w-3 h-3 rounded-full bg-window-dot-close" />
+                                        <div className="w-3 h-3 rounded-full bg-window-dot-minimize" />
+                                        <div className="w-3 h-3 rounded-full bg-window-dot-maximize" />
                                     </div>
-                                    <span className="text-xs font-bold text-blue-300 uppercase ml-2 tracking-wide">Automated System</span>
+                                    <span className="text-xs font-medium text-muted-foreground ml-2">With {productName}</span>
                                 </div>
-                                <CheckCircle size={18} className="text-green-400" />
+                                <CheckCircle size={18} className="text-foreground" />
                             </div>
 
-                            {/* Visualization Background (Organized) */}
-                            <div className="absolute inset-0 z-0 opacity-10 pointer-events-none">
-                                <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-                                    <defs>
-                                        <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                                            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" strokeWidth="0.5" />
-                                        </pattern>
-                                    </defs>
-                                    <rect width="100%" height="100%" fill="url(#grid)" />
-                                </svg>
-                            </div>
-
-                            {/* Scrollable Content */}
-                            <div className="flex-1 overflow-y-auto custom-scrollbar p-6 lg:p-8 relative z-10">
+                            <div className="flex-1 overflow-y-auto custom-scrollbar p-6 lg:p-8">
                                 <div className="mb-6">
-                                    <h4 className="text-2xl font-bold text-white mb-2 leading-tight">
+                                    <h4 className="text-2xl font-medium text-foreground mb-2 leading-tight">
                                         {data.solution.headline}
                                     </h4>
-                                    <div className="h-1 w-12 bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.8)]"></div>
+                                    <div className="h-px w-12 bg-border" />
                                 </div>
 
                                 <div className="space-y-4">
-                                    {/* Hero Stat in Solution */}
-                                    <div className="flex gap-4 mb-6">
-                                        <div className="flex-1 bg-white/5 border border-white/10 rounded-lg p-3 text-center">
-                                            <div className="text-xs text-slate-400 uppercase">Efficiency</div>
-                                            <div className="text-xl font-bold text-green-400">+300%</div>
-                                        </div>
-                                        <div className="flex-1 bg-white/5 border border-white/10 rounded-lg p-3 text-center">
-                                            <div className="text-xs text-slate-400 uppercase">Errors</div>
-                                            <div className="text-xl font-bold text-blue-400">0%</div>
-                                        </div>
-                                    </div>
-
                                     {data.solution.differentiators.map((diff, i) => (
-                                        <div key={i} className="bg-gradient-to-r from-blue-900/40 to-slate-800/40 border border-blue-500/30 p-4 rounded-xl shadow-lg backdrop-blur-sm hover:border-blue-400/50 transition-colors">
+                                        <div key={i} className="border border-border p-4 rounded-lg bg-background">
                                             <div className="flex gap-3 items-center">
-                                                <div className="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0">
+                                                <div className="w-8 h-8 rounded-lg border border-border text-muted-foreground flex items-center justify-center shrink-0">
                                                     <diff.icon size={16} />
                                                 </div>
-                                                <div className="flex-1">
-                                                    <p className="text-slate-100 font-medium text-sm">{diff.text}</p>
-                                                </div>
-                                                <Check size={14} className="text-green-500" />
+                                                <p className="text-foreground font-medium text-sm flex-1">{diff.text}</p>
+                                                <Check size={14} className="text-foreground shrink-0" />
                                             </div>
                                         </div>
                                     ))}
-
-                                    {/* Interactive-looking elements */}
-                                    <div className="mt-6 p-4 rounded-xl bg-green-500/10 border border-green-500/20 flex items-center justify-between">
-                                        <span className="text-xs text-green-300 font-mono flex items-center gap-2">
-                                            <span className="w-2 h-2 bg-green-400 rounded-full animate-ping"></span>
-                                            System Optimized
-                                        </span>
-                                        <button className="text-xs bg-green-500/20 hover:bg-green-500/30 text-green-300 px-3 py-1 rounded transition-colors">View Logs</button>
-                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1776,13 +1215,13 @@ const ProductPage: React.FC = () => {
             <section className="py-24 bg-white relative">
                 <div className="container mx-auto px-4 max-w-7xl">
                     <div className="text-center max-w-2xl mx-auto mb-20">
-                        <p className="text-[11px] font-semibold tracking-[0.2em] uppercase text-slate-400 mb-4">
+                        <p className="text-[11px] font-medium text-muted-foreground mb-4">
                             Capabilities
                         </p>
-                        <h2 className="text-[2.25rem] lg:text-[2.75rem] font-bold tracking-[-0.03em] leading-[1.15] text-slate-900 mb-4">
+                        <h2 className="text-[2.25rem] lg:text-[2.75rem] font-semibold tracking-[-0.03em] leading-[1.15] text-foreground mb-4">
                             Everything you need
                         </h2>
-                        <p className="text-[17px] text-slate-500 leading-[1.7] font-normal">
+                        <p className="text-[17px] text-muted-foreground leading-[1.7] font-normal">
                             Explore the powerful capabilities built into the core of {productName}.
                         </p>
                     </div>
@@ -1802,36 +1241,29 @@ const ProductPage: React.FC = () => {
                 </div>
             </section>
 
-            {/* 5. USE CASES TABS */}
-            <section className="py-24 bg-slate-900 text-white relative overflow-hidden">
-                {/* Background decoration */}
-                <div className="absolute top-0 right-0 -mr-20 -mt-20 w-[600px] h-[600px] bg-blue-600/20 rounded-full blur-[100px] opacity-30"></div>
-                <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-[500px] h-[500px] bg-indigo-600/20 rounded-full blur-[100px] opacity-30"></div>
-
+            {/* 5. USE CASES */}
+            <section className="py-24 border-y border-border">
                 <div className="container mx-auto px-4 relative z-10">
                     <div className="text-center mb-16">
-                        <h2 className="text-3xl lg:text-4xl font-bold mb-4">Built for Your Industry</h2>
-                        <p className="text-slate-400">Tailored solutions for specific business needs.</p>
+                        <h2 className="text-3xl lg:text-4xl font-medium mb-4 text-foreground tracking-[-0.02em]">Built for your industry</h2>
+                        <p className="text-muted-foreground">Tailored workflows for specific business needs.</p>
                     </div>
 
-                    <div className="grid lg:grid-cols-3 gap-8">
+                    <div className="grid lg:grid-cols-3 gap-6">
                         {data.useCases.map((useCase, idx) => (
-                            <div key={idx} className="relative p-8 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all duration-300 group">
-                                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 rounded-2xl transition-opacity"></div>
-                                <div className="relative z-10">
-                                    <h3 className="text-2xl font-bold mb-4 text-white group-hover:text-blue-300 transition-colors flex items-center gap-2">
-                                        {useCase.title} <ChevronRight size={20} className="opacity-0 group-hover:opacity-100 -ml-4 group-hover:ml-0 transition-all" />
-                                    </h3>
-                                    <p className="text-slate-300 mb-6 min-h-[3rem]">{useCase.description}</p>
-
-                                    <div className="space-y-3">
-                                        {useCase.benefits.map((b, i) => (
-                                            <div key={i} className="flex items-center gap-2 text-sm text-slate-400">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
-                                                {b}
-                                            </div>
-                                        ))}
-                                    </div>
+                            <div key={idx} className="p-6 rounded-lg bg-white border border-border hover:border-foreground/20 transition-colors">
+                                <h3 className="text-xl font-medium mb-3 text-foreground flex items-center gap-2">
+                                    {useCase.title}
+                                    <ChevronRight size={18} className="text-muted-foreground" />
+                                </h3>
+                                <p className="text-muted-foreground mb-5 min-h-[3rem] text-sm leading-relaxed">{useCase.description}</p>
+                                <div className="space-y-2">
+                                    {useCase.benefits.map((b, i) => (
+                                        <div key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-foreground/30 shrink-0" />
+                                            {b}
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
                         ))}
@@ -1843,44 +1275,44 @@ const ProductPage: React.FC = () => {
             <section className="py-24 bg-white" id="comparison">
                 <div className="container mx-auto px-4">
                     <div className="text-center max-w-3xl mx-auto mb-16">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold uppercase tracking-wider mb-4 border border-blue-100">
-                            <LayoutGrid size={12} /> Compare Plans
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-muted/50 text-foreground text-xs font-medium mb-4 border border-border">
+                            <LayoutGrid size={12} /> Compare plans
                         </div>
-                        <h2 className="text-3xl lg:text-4xl font-bold mb-6 text-[#1B2E5A]">
+                        <h2 className="text-3xl lg:text-4xl font-semibold mb-6 text-foreground">
                             {usePricingModules ? 'Modules by plan' : 'Find the Perfect Fit'}
                         </h2>
                         {!usePricingModules && (
-                            <p className="text-lg text-slate-600">
+                            <p className="text-lg text-muted-foreground">
                                 Detailed breakdown of features across all plans.
                             </p>
                         )}
                     </div>
 
                     <div className="max-w-6xl mx-auto">
-                        <div className="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden mb-20">
+                        <div className="bg-white rounded-lg border border-border overflow-hidden mb-20">
                             <div className="overflow-x-auto">
                                 <table className="w-full min-w-[800px] border-collapse">
                                     <thead>
                                         <tr>
-                                            <th className="p-6 text-left w-1/3 bg-slate-50/50 border-b border-r border-slate-100 sticky left-0 backdrop-blur-sm z-10">
-                                                <span className="text-slate-400 text-sm font-semibold uppercase tracking-wider">
+                                            <th className="p-6 text-left w-1/3 bg-background border-b border-r border-border sticky left-0 z-10">
+                                                <span className="text-muted-foreground text-sm font-semibold uppercase tracking-wider">
                                                     {usePricingModules ? 'Modules' : 'Features'}
                                                 </span>
                                             </th>
                                             {usePricingModules
-                                                ? (['Starter', 'Professional', 'Enterprise'] as const).map((name, idx) => (
+                                                ? (['Starter', 'Professional', 'Enterprise'] as const).map((name) => (
                                                       <th
                                                           key={name}
-                                                          className={`p-6 text-center w-1/5 border-b border-slate-100 ${idx === 1 ? 'bg-blue-50/30' : 'bg-white'}`}
+                                                          className="p-6 text-center w-1/5 border-b border-border bg-background"
                                                       >
-                                                          <div className="font-bold text-xl text-[#1B2E5A] mb-1">{name}</div>
-                                                          <div className="text-slate-500 font-medium text-xs">Annual plans</div>
+                                                          <div className="font-semibold text-xl text-foreground mb-1">{name}</div>
+                                                          <div className="text-muted-foreground font-medium text-xs">Annual plans</div>
                                                       </th>
                                                   ))
                                                 : data.pricing.tiers.map((tier, idx) => (
-                                                      <th key={idx} className={`p-6 text-center w-1/5 border-b border-slate-100 ${tier.popular ? 'bg-blue-50/30' : 'bg-white'}`}>
-                                                          <div className="font-bold text-xl text-[#1B2E5A] mb-1">{tier.name}</div>
-                                                          <div className="text-blue-600 font-semibold text-sm">Contact Us</div>
+                                                      <th key={idx} className="p-6 text-center w-1/5 border-b border-border bg-background">
+                                                          <div className="font-semibold text-xl text-foreground mb-1">{tier.name}</div>
+                                                          <div className="text-muted-foreground font-medium text-sm">Contact Us</div>
                                                       </th>
                                                   ))}
                                         </tr>
@@ -1888,24 +1320,24 @@ const ProductPage: React.FC = () => {
                                     <tbody>
                                         {usePricingModules
                                             ? moduleMatrixRows.map((row) => (
-                                                  <tr key={row.code} className="hover:bg-slate-50 transition-colors group">
-                                                      <td className="p-5 border-b border-r border-slate-100 text-slate-700 font-medium sticky left-0 bg-white group-hover:bg-slate-50 z-10">
+                                                  <tr key={row.code} className="hover:bg-muted/30 transition-colors group">
+                                                      <td className="p-5 border-b border-r border-border text-foreground font-medium sticky left-0 bg-background group-hover:bg-muted/30 z-10">
                                                           {row.label}
                                                       </td>
                                                       {[row.starter, row.professional, row.enterprise].map((included, colIdx) => (
                                                           <td
                                                               key={colIdx}
-                                                              className={`p-5 border-b border-slate-100 ${colIdx === 1 ? 'bg-blue-50/10' : ''}`}
+                                                              className="p-5 border-b border-border"
                                                           >
                                                               {included ? (
                                                                   <div className="flex justify-center">
-                                                                      <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
+                                                                      <div className="w-8 h-8 rounded-full border border-border text-foreground flex items-center justify-center">
                                                                           <Check size={16} strokeWidth={3} />
                                                                       </div>
                                                                   </div>
                                                               ) : (
                                                                   <div className="flex justify-center">
-                                                                      <Minus size={16} className="text-slate-300" />
+                                                                      <Minus size={16} className="text-muted-foreground/40" />
                                                                   </div>
                                                               )}
                                                           </td>
@@ -1913,10 +1345,10 @@ const ProductPage: React.FC = () => {
                                                   </tr>
                                               ))
                                             : legacyComparisonRows.map((row, rowIdx) => (
-                                                  <tr key={rowIdx} className="hover:bg-slate-50 transition-colors group">
-                                                      <td className="p-5 border-b border-r border-slate-100 text-slate-700 font-medium sticky left-0 bg-white group-hover:bg-slate-50 z-10 flex items-center gap-2">
+                                                  <tr key={rowIdx} className="hover:bg-muted/30 transition-colors group">
+                                                      <td className="p-5 border-b border-r border-border text-foreground font-medium sticky left-0 bg-background group-hover:bg-muted/30 z-10 flex items-center gap-2">
                                                           {row.name}
-                                                          <div className="text-slate-300 hover:text-blue-500 cursor-help transition-colors">
+                                                          <div className="text-muted-foreground/40 hover:text-muted-foreground cursor-help transition-colors">
                                                               <AlertCircle size={14} />
                                                           </div>
                                                       </td>
@@ -1927,13 +1359,13 @@ const ProductPage: React.FC = () => {
                                                               const hasFeature = tier.features.includes(row.name);
                                                               cellContent = hasFeature ? (
                                                                   <div className="flex justify-center">
-                                                                      <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
+                                                                      <div className="w-8 h-8 rounded-full border border-border text-foreground flex items-center justify-center">
                                                                           <Check size={16} strokeWidth={3} />
                                                                       </div>
                                                                   </div>
                                                               ) : (
                                                                   <div className="flex justify-center">
-                                                                      <Minus size={16} className="text-slate-300" />
+                                                                      <Minus size={16} className="text-muted-foreground/40" />
                                                                   </div>
                                                               );
                                                           } else {
@@ -1941,22 +1373,22 @@ const ProductPage: React.FC = () => {
                                                               if (typeof val === 'boolean') {
                                                                   cellContent = val ? (
                                                                       <div className="flex justify-center">
-                                                                          <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
+                                                                          <div className="w-8 h-8 rounded-full border border-border text-foreground flex items-center justify-center">
                                                                               <Check size={16} strokeWidth={3} />
                                                                           </div>
                                                                       </div>
                                                                   ) : (
                                                                       <div className="flex justify-center">
-                                                                          <Minus size={16} className="text-slate-300" />
+                                                                          <Minus size={16} className="text-muted-foreground/40" />
                                                                       </div>
                                                                   );
                                                               } else {
-                                                                  cellContent = <div className="text-center font-semibold text-slate-700">{val}</div>;
+                                                                  cellContent = <div className="text-center font-medium text-foreground">{val}</div>;
                                                               }
                                                           }
 
                                                           return (
-                                                              <td key={colIdx} className={`p-5 border-b border-slate-100 ${tier.popular ? 'bg-blue-50/10' : ''}`}>
+                                                              <td key={colIdx} className="p-5 border-b border-border">
                                                                   {cellContent}
                                                               </td>
                                                           );
@@ -1964,17 +1396,17 @@ const ProductPage: React.FC = () => {
                                                   </tr>
                                               ))}
                                         <tr>
-                                            <td className="p-6 border-r border-slate-100 sticky left-0 bg-white z-10"></td>
+                                            <td className="p-6 border-r border-border sticky left-0 bg-background z-10" />
                                             {usePricingModules
                                                 ? (['Starter', 'Professional', 'Enterprise'] as const).map((_, idx) => (
-                                                      <td key={idx} className={`p-6 text-center ${idx === 1 ? 'bg-blue-50/10' : ''}`}>
+                                                      <td key={idx} className="p-6 text-center">
                                                           <button
                                                               type="button"
                                                               onClick={() => navigate({ to: '/onboarding' })}
-                                                              className={`w-full py-3 rounded-lg font-bold text-sm transition-all ${
+                                                              className={`w-full py-3 rounded-full font-medium text-sm transition-opacity ${
                                                                   idx === 1
-                                                                      ? 'bg-[#1B2E5A] text-white hover:bg-[#162447] shadow-lg shadow-blue-600/20'
-                                                                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                                                                      ? 'landing-btn-primary hover:opacity-90'
+                                                                      : 'border border-border text-foreground hover:bg-muted/50'
                                                               }`}
                                                           >
                                                               Start free trial
@@ -1982,14 +1414,14 @@ const ProductPage: React.FC = () => {
                                                       </td>
                                                   ))
                                                 : data.pricing.tiers.map((tier, idx) => (
-                                                      <td key={idx} className={`p-6 text-center ${tier.popular ? 'bg-blue-50/10' : ''}`}>
+                                                      <td key={idx} className="p-6 text-center">
                                                           <button
                                                               type="button"
                                                               onClick={() => navigate({ to: '/onboarding' })}
-                                                              className={`w-full py-3 rounded-lg font-bold text-sm transition-all ${
+                                                              className={`w-full py-3 rounded-full font-medium text-sm transition-opacity ${
                                                                   tier.popular
-                                                                      ? 'bg-[#1B2E5A] text-white hover:bg-[#162447] shadow-lg shadow-blue-600/20'
-                                                                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                                                                      ? 'landing-btn-primary hover:opacity-90'
+                                                                      : 'border border-border text-foreground hover:bg-muted/50'
                                                               }`}
                                                           >
                                                               {tier.cta}
@@ -2003,9 +1435,9 @@ const ProductPage: React.FC = () => {
                         </div>
 
                         {!usePricingModules && (
-                            <div className="bg-slate-50 rounded-3xl p-8 lg:p-12 border border-slate-200">
-                                <h3 className="text-2xl font-bold mb-8 text-center text-slate-800 flex items-center justify-center gap-3">
-                                    <Sparkles className="text-amber-400 fill-amber-400" />
+                            <div className="rounded-lg p-8 lg:p-12 border border-border bg-background">
+                                <h3 className="text-2xl font-semibold mb-8 text-center text-foreground flex items-center justify-center gap-3">
+                                    <Sparkles className="text-muted-foreground" />
                                     Included in All Plans
                                 </h3>
                                 <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-y-6 gap-x-8">
@@ -2023,8 +1455,8 @@ const ProductPage: React.FC = () => {
                                         'Data Export',
                                         'Audit Logs',
                                     ].map((feature, i) => (
-                                        <div key={i} className="flex items-center gap-3 text-slate-700">
-                                            <div className="w-5 h-5 rounded-full bg-green-100 text-green-600 flex items-center justify-center shrink-0">
+                                        <div key={i} className="flex items-center gap-3 text-foreground">
+                                            <div className="w-5 h-5 rounded-full border border-border text-foreground flex items-center justify-center shrink-0">
                                                 <Check size={12} strokeWidth={3} />
                                             </div>
                                             <span className="font-medium text-sm">{feature}</span>
@@ -2037,55 +1469,53 @@ const ProductPage: React.FC = () => {
                 </div>
             </section>
 
-            {/* 7. TESTIMONIAL & FINAL CTA */}
-            <section className="py-24 bg-gradient-to-b from-blue-50 to-white">
+            {/* 7. FINAL CTA */}
+            <section className="py-24 bg-white border-t border-border">
                 <div className="container mx-auto px-4">
-                    <div className="relative bg-slate-900 rounded-[2.5rem] p-12 lg:p-24 text-center overflow-hidden shadow-2xl">
-                        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
-                        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 bg-blue-500/30 rounded-full blur-[80px]"></div>
-                        <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-96 h-96 bg-purple-500/30 rounded-full blur-[80px]"></div>
-
-                        <div className="relative z-10 max-w-3xl mx-auto">
-                            <h2 className="text-4xl lg:text-6xl font-bold mb-8 text-white tracking-tight">
-                                {data.finalCTA.headline}
-                            </h2>
-                            <p className="text-xl text-slate-300 mb-12">
-                                {data.finalCTA.description}
-                            </p>
-                            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                                <button
-                                    onClick={() => navigate({ to: '/onboarding' })}
-                                    className="group inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-slate-900 rounded-full font-semibold text-base shadow-2xl shadow-blue-500/10 hover:shadow-blue-500/25 hover:-translate-y-0.5 transition-all duration-200 ring-1 ring-inset ring-white/40"
-                                >
-                                    {data.finalCTA.primaryCTA}
-                                    <ArrowRight size={16} strokeWidth={2.5} className="transition-transform group-hover:translate-x-0.5" />
-                                </button>
-                                <button className="group inline-flex items-center justify-center gap-2 px-8 py-4 bg-white/5 border border-white/15 text-white rounded-full font-semibold text-base hover:bg-white/10 hover:border-white/25 transition-all duration-200 backdrop-blur-sm">
-                                    <Calendar size={15} strokeWidth={2.25} className="text-blue-300" />
-                                    Schedule a Demo
-                                </button>
-                            </div>
-                            <div className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5 text-xs text-slate-400">
-                                <span className="inline-flex items-center gap-1.5">
-                                    <CheckCircle size={12} className="text-emerald-400" />
-                                    14-day free trial
-                                </span>
-                                <span className="inline-flex items-center gap-1.5">
-                                    <CheckCircle size={12} className="text-emerald-400" />
-                                    No credit card required
-                                </span>
-                                <span className="inline-flex items-center gap-1.5">
-                                    <CheckCircle size={12} className="text-emerald-400" />
-                                    Cancel anytime
-                                </span>
-                            </div>
+                    <div className="max-w-3xl mx-auto text-center rounded-lg border border-border bg-background px-8 py-14 sm:px-12 sm:py-16">
+                        <h2 className="text-3xl lg:text-4xl font-medium mb-4 text-foreground tracking-[-0.02em]">
+                            {data.finalCTA.headline}
+                        </h2>
+                        <p className="text-lg text-muted-foreground mb-8">
+                            {data.finalCTA.description}
+                        </p>
+                        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                            <button
+                                type="button"
+                                onClick={() => navigate({ to: '/onboarding' })}
+                                className="landing-btn-primary group inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full font-medium text-base transition-opacity hover:opacity-90"
+                            >
+                                {data.finalCTA.primaryCTA}
+                                <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />
+                            </button>
+                            <button
+                                type="button"
+                                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white text-foreground border border-border rounded-lg font-medium text-base hover:bg-muted/50 transition-colors"
+                            >
+                                <Calendar size={15} />
+                                Schedule a Demo
+                            </button>
+                        </div>
+                        <div className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5 text-xs text-muted-foreground">
+                            <span className="inline-flex items-center gap-1.5">
+                                <CheckCircle size={12} className="text-muted-foreground" />
+                                14-day free trial
+                            </span>
+                            <span className="inline-flex items-center gap-1.5">
+                                <CheckCircle size={12} className="text-muted-foreground" />
+                                No credit card required
+                            </span>
+                            <span className="inline-flex items-center gap-1.5">
+                                <CheckCircle size={12} className="text-muted-foreground" />
+                                Cancel anytime
+                            </span>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <LandingFooter />
-        </div>
+            <LandingFooter marketing />
+        </MarketingPageShell>
         </>
     );
 };

@@ -7,7 +7,7 @@ import { useEffect, useCallback, useRef } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { onboardingAPIOptimized } from '@/lib/api/client';
 import { useAuth } from '@/lib/auth/cognito-auth';
-import { secureStore, secureRetrieve, secureClear } from '../utils/secureStorage';
+import { secureClear } from '../utils/secureStorage';
 import { onboardingLogger } from '../utils/onboardingLogger';
 import { applyIndiaRegionalDefaultsIfMissing, resolveCountryCode } from '../config/countryConfig';
 

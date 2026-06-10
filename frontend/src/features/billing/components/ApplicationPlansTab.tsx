@@ -46,7 +46,7 @@ export function ApplicationPlansTab({
           </div>
           <div className="flex justify-center sm:justify-end sm:pt-1 shrink-0">
             <div
-              className="inline-flex rounded-full border border-slate-200 dark:border-slate-600 p-1 bg-slate-50 dark:bg-slate-800/80"
+              className="inline-flex rounded-full border border-slate-200 p-1 bg-slate-50"
               role="group"
               aria-label="Billing currency"
             >
@@ -56,8 +56,8 @@ export function ApplicationPlansTab({
                 className={cn(
                   'px-4 py-1.5 rounded-full text-sm font-semibold transition-colors min-w-[3.25rem]',
                   checkoutCurrency === 'usd'
-                    ? 'bg-[#1B2E5A] text-white shadow'
-                    : 'text-slate-600 dark:text-slate-300 hover:bg-white/80 dark:hover:bg-slate-700'
+                    ? 'bg-primary text-white shadow'
+                    : 'text-slate-600 hover:bg-white/80'
                 )}
               >
                 USD
@@ -68,8 +68,8 @@ export function ApplicationPlansTab({
                 className={cn(
                   'px-4 py-1.5 rounded-full text-sm font-semibold transition-colors min-w-[3.25rem]',
                   checkoutCurrency === 'inr'
-                    ? 'bg-[#1B2E5A] text-white shadow'
-                    : 'text-slate-600 dark:text-slate-300 hover:bg-white/80 dark:hover:bg-slate-700'
+                    ? 'bg-primary text-white shadow'
+                    : 'text-slate-600 hover:bg-white/80'
                 )}
               >
                 INR

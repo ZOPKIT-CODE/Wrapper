@@ -227,7 +227,7 @@ export const CreditConfigurationBuilder: React.FC<CreditConfigurationBuilderProp
                   />
 
                   <div className="flex-1">
-                          <h4 className="text-xl font-bold text-[#1B2E5A] flex items-center gap-3 mb-2">
+                          <h4 className="text-xl font-bold text-primary flex items-center gap-3 mb-2">
                             <Package className="w-6 h-6 text-purple-600" />
                             {app.appName}
                             {mode === 'tenant' && (() => {
@@ -341,7 +341,7 @@ export const CreditConfigurationBuilder: React.FC<CreditConfigurationBuilderProp
               {isExpanded && isAppSelected && (
                 <div className="border-t border-purple-200 bg-white/70 p-6">
                   <div className="mb-6">
-                    <h5 className="text-lg font-semibold text-[#1B2E5A] mb-2">
+                    <h5 className="text-lg font-semibold text-primary mb-2">
                       {mode === 'global' ? 'Available Modules' : 'Enabled Modules'}
                     </h5>
                     <p className="text-sm text-gray-600">

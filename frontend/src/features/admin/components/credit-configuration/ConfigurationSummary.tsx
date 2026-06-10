@@ -1,8 +1,7 @@
 import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Calculator, DollarSign, TrendingUp, Plus, Copy, BarChart, Activity, Building2, Grid3X3 } from 'lucide-react';
+import { Calculator, Plus, Copy } from 'lucide-react';
 
 interface ConfigurationSummaryProps {
   totalOperations: number;

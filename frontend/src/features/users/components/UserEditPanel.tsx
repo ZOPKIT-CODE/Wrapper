@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -269,8 +269,8 @@ function AssignedOrganizationsBlock({
 
 function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
-    active: 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-400',
-    inactive: 'border-gray-200 bg-gray-50 text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400',
+    active: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+    inactive: 'border-gray-200 bg-gray-50 text-gray-600',
   }
   return (
     <Badge
@@ -401,7 +401,7 @@ export function UserDetailSheet({
                     <p className="text-sm text-muted-foreground">{ud.email}</p>
                     <div className="mt-1.5 flex gap-2">
                       <StatusBadge status={ud.isActive !== false ? 'active' : 'inactive'} />
-                      {ud.isTenantAdmin && <Badge variant="outline" className="border-purple-200 bg-purple-50 text-purple-700 font-medium text-[11px]">Admin</Badge>}
+                      {ud.isTenantAdmin && <Badge variant="outline" className="border-border bg-muted font-medium text-[11px] text-primary">Admin</Badge>}
                     </div>
                   </div>
                 </div>

@@ -1,4 +1,4 @@
-import React, { memo, useMemo, useState } from 'react';
+import { memo, useState } from 'react';
 import { Application } from '@/types/application';
 import { config } from '@/lib/config';
 import { Settings, ChevronRight, Users2, Banknote, Users, Share2 } from 'lucide-react';
@@ -109,7 +109,7 @@ export const ApplicationCard = memo(function ApplicationCard({ application, onVi
     onView(application);
   };
 
-  const isOperational = application.isActive !== false;
+  const isOperational = application.isEnabled !== false;
 
   return (
     <article
@@ -255,7 +255,7 @@ export const ApplicationCard = memo(function ApplicationCard({ application, onVi
           gap: 5,
           fontSize: 10.5,
           fontFamily: 'var(--zk-mono)',
-          color: isOperational ? '#16a34a' : '#d97706',
+          color: isOperational ? 'var(--illustration-success)' : 'var(--illustration-warning)',
           letterSpacing: '0.06em',
         }}>
           <span style={{

@@ -80,21 +80,18 @@ export function SubscriptionTab({
   const isFree = displaySubscription.plan === 'free'
 
   return (
-    <div className="space-y-5 font-sans text-[#1B2E5A]">
+    <div className="space-y-5 font-sans text-primary">
 
       {/* ── Current Plan Card ── */}
-      <Card className="group relative overflow-hidden rounded-3xl border border-[#1B2E5A]/8 bg-white shadow-sm transition-all duration-300 hover:shadow-md hover:shadow-[#1B2E5A]/[0.06] hover:border-[#1B2E5A]/15">
-        {/* Decorative gradient orb */}
-        <div className="absolute top-0 right-0 -mt-20 -mr-20 h-56 w-56 rounded-full bg-gradient-to-br from-[#1B2E5A]/[0.04] to-blue-100/30 blur-3xl transition-transform duration-500 group-hover:scale-110" />
-
-        <CardHeader className="relative pb-4">
+      <Card className="rounded-md border border-border bg-card transition-colors duration-200 hover:border-primary/20">
+        <CardHeader className="pb-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <div className={cn(
-                'flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl shadow-inner',
+                'flex h-14 w-14 shrink-0 items-center justify-center rounded-md',
                 isFree
-                  ? 'bg-[#1B2E5A]/[0.06] text-[#1B2E5A]/60'
-                  : 'bg-gradient-to-br from-[#1B2E5A] to-[#152449] text-white shadow-[#1B2E5A]/20'
+                  ? 'bg-secondary text-muted-foreground'
+                  : 'bg-primary text-primary-foreground'
               )}>
                 <Crown className="h-7 w-7" />
               </div>
@@ -148,7 +145,7 @@ export function SubscriptionTab({
                 onClick={() => setActiveTab('plans')}
                 size="sm"
                 style={{ background: 'var(--zk-navy)' }}
-                className="hover:bg-[#152449] text-white shadow-lg shadow-[#1B2E5A]/15 rounded-full px-6 font-semibold transition-all hover:scale-[1.02] active:scale-95"
+                className="hover:bg-primary-hover text-white shadow-lg shadow-primary/15 rounded-full px-6 font-semibold transition-all hover:scale-[1.02] active:scale-95"
               >
                 Upgrade Now <ArrowRight className="w-4 h-4 ml-1" />
               </Button>
@@ -162,11 +159,11 @@ export function SubscriptionTab({
 
         {/* Left: Subscription Details */}
         <div className="lg:col-span-2">
-          <Card className="h-full rounded-3xl border border-[#1B2E5A]/8 bg-white shadow-sm overflow-hidden">
-            <CardHeader className="pb-3 border-b border-[#1B2E5A]/5 bg-[#1B2E5A]/[0.015]">
+          <Card className="h-full rounded-3xl border border-primary/8 bg-white shadow-sm overflow-hidden">
+            <CardHeader className="pb-3 border-b border-primary/5 bg-primary/[0.015]">
               <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-[#1B2E5A]/[0.06] rounded-xl">
-                  <Layers className="w-5 h-5 text-[#1B2E5A]" />
+                <div className="rounded-lg bg-primary/[0.06] p-2.5">
+                  <Layers className="w-5 h-5 text-primary" />
                 </div>
                 <div>
                   <CardTitle style={{ fontFamily: 'var(--zk-display)', letterSpacing: '-0.025em', color: 'var(--zk-ink)', fontWeight: 600 }} className="text-base tracking-tight">Subscription Details</CardTitle>
@@ -177,18 +174,18 @@ export function SubscriptionTab({
             <CardContent className="p-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {/* Tier */}
-                <div className="group rounded-2xl border border-[#1B2E5A]/5 bg-white p-4 transition-all hover:border-[#1B2E5A]/10 hover:shadow-md hover:shadow-[#1B2E5A]/[0.04]">
+                <div className="rounded-lg border border-slate-200 bg-white p-4">
                   <div className="flex items-center gap-2 mb-1.5">
-                    <Crown className="w-4 h-4 text-[#1B2E5A]/50" />
-                    <span style={{ fontFamily: 'var(--zk-mono)', fontSize: 10, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: 'var(--zk-muted-2)', fontWeight: 500 }}>Tier</span>
+                    <Crown className="w-4 h-4 text-primary/50" />
+                    <span style={{ fontFamily: 'var(--zk-mono)', fontSize: 10, letterSpacing: '0.02em', color: 'var(--zk-muted-2)', fontWeight: 500 }}>Tier</span>
                   </div>
                   <div style={{ fontFamily: 'var(--zk-display)', fontWeight: 600, color: 'var(--zk-ink)', letterSpacing: '-0.025em' }} className="text-lg tracking-tight">{getPlanDisplayName(planId)}</div>
                 </div>
                 {/* Billing */}
-                <div className="group rounded-2xl border border-[#1B2E5A]/5 bg-white p-4 transition-all hover:border-[#1B2E5A]/10 hover:shadow-md hover:shadow-[#1B2E5A]/[0.04]">
+                <div className="rounded-lg border border-slate-200 bg-white p-4">
                   <div className="flex items-center gap-2 mb-1.5">
-                    <CreditCardLucide className="w-4 h-4 text-[#1B2E5A]/50" />
-                    <span style={{ fontFamily: 'var(--zk-mono)', fontSize: 10, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: 'var(--zk-muted-2)', fontWeight: 500 }}>Billing</span>
+                    <CreditCardLucide className="w-4 h-4 text-primary/50" />
+                    <span style={{ fontFamily: 'var(--zk-mono)', fontSize: 10, letterSpacing: '0.02em', color: 'var(--zk-muted-2)', fontWeight: 500 }}>Billing</span>
                   </div>
                   <div style={{ fontFamily: 'var(--zk-mono)', fontWeight: 600, color: 'var(--zk-ink)' }} className="text-lg tracking-tight">
                     {!isFree && displaySubscription.plan !== 'credit_based' ? (
@@ -204,10 +201,10 @@ export function SubscriptionTab({
                 </div>
                 {/* Renewal / Expiration */}
                 {displaySubscription.currentPeriodEnd && (
-                  <div className="group rounded-2xl border border-[#1B2E5A]/5 bg-white p-4 transition-all hover:border-[#1B2E5A]/10 hover:shadow-md hover:shadow-[#1B2E5A]/[0.04]">
+                  <div className="rounded-lg border border-slate-200 bg-white p-4">
                     <div className="flex items-center gap-2 mb-1.5">
-                      <Calendar className="w-4 h-4 text-[#1B2E5A]/50" />
-                      <span style={{ fontFamily: 'var(--zk-mono)', fontSize: 10, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: 'var(--zk-muted-2)', fontWeight: 500 }}>
+                      <Calendar className="w-4 h-4 text-primary/50" />
+                      <span style={{ fontFamily: 'var(--zk-mono)', fontSize: 10, letterSpacing: '0.02em', color: 'var(--zk-muted-2)', fontWeight: 500 }}>
                         {isFree ? 'Expiration' : 'Renewal'}
                       </span>
                     </div>
@@ -218,10 +215,10 @@ export function SubscriptionTab({
                 )}
                 {/* Plan Credits */}
                 {!isFree && (currentPlan?.freeCredits ?? 0) > 0 && (
-                  <div className="rounded-2xl border border-[#1B2E5A]/10 bg-gradient-to-br from-[#1B2E5A]/[0.03] to-white p-4">
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
                     <div className="flex items-center gap-2 mb-1.5">
-                      <Zap className="w-4 h-4 text-[#1B2E5A]/60" />
-                      <span style={{ fontFamily: 'var(--zk-mono)', fontSize: 10, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: 'var(--zk-muted-2)', fontWeight: 500 }}>Plan Credits</span>
+                      <Zap className="w-4 h-4 text-primary/60" />
+                      <span style={{ fontFamily: 'var(--zk-mono)', fontSize: 10, letterSpacing: '0.02em', color: 'var(--zk-muted-2)', fontWeight: 500 }}>Plan credits</span>
                     </div>
                     <div style={{ fontFamily: 'var(--zk-mono)', fontWeight: 600, color: 'var(--zk-ink)' }} className="text-lg tracking-tight">
                       {(currentPlan?.freeCredits ?? 0).toLocaleString()}
@@ -236,7 +233,7 @@ export function SubscriptionTab({
 
         {/* Right: Credit Balance Hero */}
         <div className="lg:col-span-1">
-          <Card className="h-full rounded-3xl border-0 bg-gradient-to-br from-[#1B2E5A] to-[#0F1D3A] text-white shadow-xl shadow-[#1B2E5A]/20 overflow-hidden relative flex flex-col justify-between">
+          <Card className="h-full rounded-3xl border-0 bg-gradient-to-br from-primary to-primary-hover text-white shadow-xl shadow-primary/20 overflow-hidden relative flex flex-col justify-between">
             {/* Ambient glow */}
             <div className="absolute top-0 right-0 w-72 h-72 bg-blue-400 rounded-full mix-blend-overlay filter blur-[80px] opacity-[0.07] -translate-y-1/2 translate-x-1/2" />
             <div className="absolute bottom-0 left-0 w-52 h-52 bg-blue-300 rounded-full mix-blend-overlay filter blur-[60px] opacity-[0.05] translate-y-1/2 -translate-x-1/2" />

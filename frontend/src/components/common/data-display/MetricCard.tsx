@@ -18,8 +18,8 @@ export function MetricCard({
     isLoading: boolean
   }) {
     const colorClasses = {
-      blue: 'text-[#1B2E5A] bg-[#1B2E5A]/10',
-      sky: 'text-[#1B2E5A] bg-[#1B2E5A]/10',
+      blue: 'text-primary bg-primary/10',
+      sky: 'text-primary bg-primary/10',
       green: 'text-green-600 bg-green-100',
       purple: 'text-purple-600 bg-purple-100',
       yellow: 'text-yellow-600 bg-yellow-100'
@@ -48,7 +48,7 @@ export function MetricCard({
           <Flex align="center" justify="between" className="h-full">
             <div className="space-y-3 flex-1">
               <Typography variant='lead' className="text-sm font-medium text-gray-600">{title}</Typography>
-              <Typography variant='h3' className="text-2xl font-bold text-[#1B2E5A]">{value}</Typography>
+              <Typography variant='h3' className="text-2xl font-bold text-primary">{value}</Typography>
               <Typography variant='muted' className="text-xs text-gray-500">{trend} from last month</Typography>
             </div>
             <div className={`p-3 rounded-full ${colorClasses[color as keyof typeof colorClasses]} flex-shrink-0`}>

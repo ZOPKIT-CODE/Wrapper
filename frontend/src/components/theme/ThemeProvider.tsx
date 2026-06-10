@@ -5,11 +5,13 @@ type Theme = 'light' | 'dark' | 'monochrome' | 'system'
 interface ThemeContextType {
   theme: Theme
   setTheme: (theme: Theme) => void
+  /** Resolved theme after system preference — for ThemeToggle / Sonner only; use Tailwind dark: in UI. */
   actualTheme: 'light' | 'dark' | 'monochrome'
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
+/** Prefer Tailwind `dark:` / `monochrome:` + CSS variables. Only use in ThemeToggle and Sonner. */
 export function useTheme() {
   const context = useContext(ThemeContext)
   if (context === undefined) {
@@ -33,7 +35,6 @@ export function ThemeProvider({
   const [actualTheme, setActualTheme] = useState<'light' | 'dark' | 'monochrome'>('light')
 
   useEffect(() => {
-    // Load theme from localStorage
     const storedTheme = localStorage.getItem(storageKey) as Theme
     if (storedTheme && ['light', 'dark', 'monochrome', 'system'].includes(storedTheme)) {
       setTheme(storedTheme)
@@ -44,15 +45,28 @@ export function ThemeProvider({
     const root = window.document.documentElement
 
     const updateTheme = () => {
-      // Dark mode removed — the app is always light. Ignore stored/system theme
-      // and never apply the `dark`/`monochrome` root classes.
-      setActualTheme('light')
+      let resolvedTheme: 'light' | 'dark' | 'monochrome'
+
+      if (theme === 'system') {
+        resolvedTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+      } else if (theme === 'monochrome') {
+        resolvedTheme = 'monochrome'
+      } else {
+        resolvedTheme = theme
+      }
+
+      setActualTheme(resolvedTheme)
       root.classList.remove('dark', 'monochrome')
+
+      if (resolvedTheme === 'dark') {
+        root.classList.add('dark')
+      } else if (resolvedTheme === 'monochrome') {
+        root.classList.add('monochrome')
+      }
     }
 
     updateTheme()
 
-    // Listen for system theme changes
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
     const handleChange = () => {
       if (theme === 'system') {

@@ -1,4 +1,3 @@
-import React from "react"
 import { ZopkitRoundLoader } from "@/components/common/feedback/ZopkitRoundLoader"
 
 export function SuspenseFallback() {

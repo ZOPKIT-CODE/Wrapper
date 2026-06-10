@@ -21,7 +21,7 @@ const RefundPolicy: React.FC = () => (
     lastUpdated="January 2026"
     docIntro={
       <div className="space-y-3">
-        <p className="font-semibold text-[#1B2E5A]">Summary</p>
+        <p className="font-semibold text-primary">Summary</p>
         <ul className="list-disc pl-5 space-y-1.5 text-slate-700">
           <li>
             <strong>No refunds</strong> of subscription fees once payment has been successfully processed for a billing period.

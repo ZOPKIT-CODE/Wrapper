@@ -30,7 +30,6 @@ import {
   Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useTheme } from '@/components/theme/ThemeProvider';
 import { toast } from 'sonner';
 import { applicationAssignmentAPI } from '@/lib/api';
 import { api } from '@/lib/api';
@@ -130,32 +129,29 @@ const ApplicationAssignmentManager: React.FC = () => {
   const [originalPermissions, setOriginalPermissions] = useState<Record<string, string[]>>({});
   const [originalModules, setOriginalModules] = useState<string[]>([]);
 
-  const { actualTheme } = useTheme();
-  const isDark = actualTheme === 'dark';
-
   const analyzePermissionType = (permCode: string) => {
     const code = permCode.toLowerCase();
     if (code.includes('admin') || code.includes('manage') || code.includes('delete')) {
       return {
         risk: 'high',
-        color: 'border-rose-100 bg-white hover:bg-rose-50/50 hover:border-rose-200 text-rose-700/70 dark:bg-slate-900 dark:border-rose-900/30 dark:text-rose-400/70',
-        selectedColor: 'bg-rose-100 border-rose-400 text-rose-900 shadow-sm ring-1 ring-rose-300 dark:bg-rose-900/60 dark:border-rose-500 dark:text-rose-100 dark:ring-rose-700',
-        icon: <Lock className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+        color: 'border-rose-100 bg-white hover:bg-rose-50/50 hover:border-rose-200 text-rose-700/70',
+        selectedColor: 'bg-rose-100 border-rose-400 text-rose-900 shadow-sm ring-1 ring-rose-300',
+        icon: <Lock className="w-3.5 h-3.5 text-rose-600" />
       };
     }
     if (code.includes('write') || code.includes('edit') || code.includes('create') || code.includes('update')) {
       return {
         risk: 'medium',
-        color: 'border-amber-100 bg-white hover:bg-amber-50/50 hover:border-amber-200 text-amber-700/70 dark:bg-slate-900 dark:border-amber-900/30 dark:text-amber-400/70',
-        selectedColor: 'bg-amber-100 border-amber-400 text-amber-900 shadow-sm ring-1 ring-amber-300 dark:bg-amber-900/60 dark:border-amber-500 dark:text-amber-100 dark:ring-amber-700',
-        icon: <Edit className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+        color: 'border-amber-100 bg-white hover:bg-amber-50/50 hover:border-amber-200 text-amber-700/70',
+        selectedColor: 'bg-amber-100 border-amber-400 text-amber-900 shadow-sm ring-1 ring-amber-300',
+        icon: <Edit className="w-3.5 h-3.5 text-amber-600" />
       };
     }
     return {
       risk: 'low',
-      color: 'border-slate-100 bg-white hover:bg-slate-50 hover:border-slate-200 text-slate-600 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-400',
-      selectedColor: 'bg-emerald-100 border-emerald-400 text-emerald-900 shadow-sm ring-1 ring-emerald-300 dark:bg-emerald-900/60 dark:border-emerald-500 dark:text-emerald-100 dark:ring-emerald-700',
-      icon: <Eye className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+      color: 'border-slate-100 bg-white hover:bg-slate-50 hover:border-slate-200 text-slate-600',
+      selectedColor: 'bg-emerald-100 border-emerald-400 text-emerald-900 shadow-sm ring-1 ring-emerald-300',
+      icon: <Eye className="w-3.5 h-3.5 text-emerald-600" />
     };
   };
 
@@ -470,30 +466,30 @@ const ApplicationAssignmentManager: React.FC = () => {
   return (
     <div className={cn(
       "flex flex-col h-screen overflow-hidden relative",
-      isDark ? "bg-slate-950 text-slate-200" : "bg-slate-50 text-slate-900",
+      "bg-slate-50 text-slate-900",
       
     )}>
       {/* Unified Executive Header - Ultra Slim & Integrated */}
       <header className={cn(
         "flex-none h-14 px-6 flex items-center justify-between border-b z-50 transition-all",
-        isDark ? "bg-slate-900/80 border-slate-800" : "bg-white/90 border-slate-200"
+        "bg-white/90 border-slate-200"
       )}>
         <div className="flex items-center gap-4">
-          <div className="w-8 h-8 rounded-lg bg-[#1B2E5A] flex items-center justify-center shadow-lg shadow-blue-500/20">
+          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow-lg shadow-blue-500/20">
             <Shield className="w-4 h-4 text-white" />
           </div>
           <div>
-            <h1 className="text-sm font-black uppercase tracking-tight leading-none bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-400">
+            <h1 className="text-sm font-black uppercase tracking-tight leading-none bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-600">
               Security Matrix
             </h1>
           </div>
 
           {selectedTenant && (
-            <div className="flex items-center gap-3 ml-4 pl-4 border-l border-slate-200 dark:border-slate-800">
-              <div className="w-6 h-6 rounded bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-black text-[10px] text-blue-600">
+            <div className="flex items-center gap-3 ml-4 pl-4 border-l border-slate-200">
+              <div className="w-6 h-6 rounded bg-slate-100 flex items-center justify-center font-black text-[10px] text-blue-600">
                 {selectedTenant.companyName.charAt(0)}
               </div>
-              <span className="text-[11px] font-black uppercase tracking-widest text-slate-900 dark:text-white truncate max-w-[150px]">
+              <span className="text-[11px] font-black uppercase tracking-widest text-slate-900 truncate max-w-[150px]">
                 {selectedTenant.companyName}
               </span>
             </div>
@@ -501,7 +497,7 @@ const ApplicationAssignmentManager: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-6">
-          <TabsList className="bg-slate-100 dark:bg-slate-900 h-9 p-1 rounded-lg">
+          <TabsList className="bg-slate-100 h-9 p-1 rounded-lg">
             <TabsTrigger onClick={() => setActiveTab('tenants')} value="tenants" className="h-7 px-4 rounded-md text-[10px] font-black uppercase tracking-widest transition-all">
               <Users className="w-3.5 h-3.5 mr-2" /> Overview
             </TabsTrigger>
@@ -510,7 +506,7 @@ const ApplicationAssignmentManager: React.FC = () => {
             </TabsTrigger>
           </TabsList>
 
-          <div className="h-6 w-px bg-slate-200 dark:bg-slate-800" />
+          <div className="h-6 w-px bg-slate-200" />
 
           {hasChanges ? (
             <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-4 duration-500">
@@ -530,7 +526,7 @@ const ApplicationAssignmentManager: React.FC = () => {
                 size="sm"
                 disabled={loading}
                 onClick={handleCommitChanges}
-                className="h-8 px-4 rounded-lg bg-[#1B2E5A] hover:bg-[#152449] text-white font-black text-[9px] uppercase tracking-widest shadow-lg shadow-blue-500/20 flex items-center gap-2 group/btn"
+                className="h-8 px-4 rounded-lg bg-primary hover:bg-primary-hover text-white font-black text-[9px] uppercase tracking-widest shadow-lg shadow-blue-500/20 flex items-center gap-2 group/btn"
               >
                 {loading ? (
                   <Loader2 className="w-3 h-3 animate-spin" />
@@ -553,7 +549,7 @@ const ApplicationAssignmentManager: React.FC = () => {
         </div>
 
         {loading && (
-          <div className="absolute inset-x-0 bottom-0 top-14 bg-white/10 dark:bg-slate-950/20 backdrop-blur-[2px] z-[100] flex items-center justify-center animate-in fade-in duration-300">
+          <div className="absolute inset-x-0 bottom-0 top-14 bg-white/10 backdrop-blur-[2px] z-[100] flex items-center justify-center animate-in fade-in duration-300">
             <div className="flex flex-col items-center gap-4">
               <div className="relative">
                 <div className="w-12 h-12 rounded-full border-2 border-blue-500/20 animate-ping absolute" />
@@ -582,10 +578,10 @@ const ApplicationAssignmentManager: React.FC = () => {
                     <p className="text-[10px] font-bold text-blue-100 uppercase tracking-widest">Active Deployments</p>
                   </CardContent>
                 </Card>
-                <Card className="rounded-[32px] overflow-hidden border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+                <Card className="rounded-[32px] overflow-hidden border-slate-100 bg-white shadow-sm">
                   <CardContent className="p-6">
                     <div className="flex justify-between items-start mb-4">
-                      <div className="p-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-2xl">
+                      <div className="p-3 bg-emerald-50 rounded-2xl">
                         <Building2 className="w-6 h-6 text-emerald-500" />
                       </div>
                       <Badge variant="outline" className="text-emerald-500 border-emerald-100 uppercase font-black">CLIENTS</Badge>
@@ -594,10 +590,10 @@ const ApplicationAssignmentManager: React.FC = () => {
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Onboarded Tenants</p>
                   </CardContent>
                 </Card>
-                <Card className="rounded-[32px] overflow-hidden border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+                <Card className="rounded-[32px] overflow-hidden border-slate-100 bg-white shadow-sm">
                   <CardContent className="p-6">
                     <div className="flex justify-between items-start mb-4">
-                      <div className="p-3 bg-indigo-50 dark:bg-indigo-950/30 rounded-2xl">
+                      <div className="p-3 bg-indigo-50 rounded-2xl">
                         <LayoutGrid className="w-6 h-6 text-indigo-500" />
                       </div>
                       <Badge variant="outline" className="text-indigo-500 border-indigo-100 uppercase font-black">SOLUTIONS</Badge>
@@ -606,7 +602,7 @@ const ApplicationAssignmentManager: React.FC = () => {
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Available Domains</p>
                   </CardContent>
                 </Card>
-                <Card className="rounded-[32px] overflow-hidden border-none bg-slate-900 dark:bg-slate-800 text-white shadow-xl">
+                <Card className="rounded-[32px] overflow-hidden border-none bg-slate-900 text-white shadow-xl">
                   <CardContent className="p-6">
                     <div className="flex justify-between items-start mb-4">
                       <div className="p-3 bg-white/10 rounded-2xl">
@@ -635,7 +631,7 @@ const ApplicationAssignmentManager: React.FC = () => {
                 placeholder="Lookup Tenant ID or Name..."
                 value={searchTerm}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
-                className="pl-12 h-12 rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm text-sm font-bold placeholder:text-slate-400"
+                className="pl-12 h-12 rounded-2xl border-slate-200 bg-white shadow-sm text-sm font-bold placeholder:text-slate-400"
               />
             </div>
           </div>
@@ -646,18 +642,18 @@ const ApplicationAssignmentManager: React.FC = () => {
                 key={tenant.tenantId}
                 onClick={() => { setSelectedTenant(tenant); setActiveTab('manage'); }}
                 className={cn(
-                  "group cursor-pointer rounded-[32px] border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 transition-all hover:shadow-2xl hover:shadow-blue-500/10 hover:-translate-y-1 overflow-hidden",
+                  "group cursor-pointer rounded-[32px] border-slate-100 bg-white transition-all hover:shadow-2xl hover:shadow-blue-500/10 hover:-translate-y-1 overflow-hidden",
                   selectedTenant?.tenantId === tenant.tenantId && "ring-2 ring-blue-600 border-transparent shadow-2xl shadow-blue-500/10"
                 )}
               >
                 <CardContent className="p-0">
-                  <div className="h-24 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800/50 dark:to-slate-900 p-6 flex items-center justify-between">
+                  <div className="h-24 bg-gradient-to-br from-slate-50 to-slate-100 p-6 flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-800 shadow-sm flex items-center justify-center font-black text-blue-600 border border-slate-100 dark:border-slate-700">
+                      <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center font-black text-blue-600 border border-slate-100">
                         {tenant.companyName.charAt(0)}
                       </div>
                       <div>
-                        <h3 className="font-black uppercase tracking-tight text-[#1B2E5A] dark:text-white leading-none mb-1">{tenant.companyName}</h3>
+                        <h3 className="font-black uppercase tracking-tight text-primary leading-none mb-1">{tenant.companyName}</h3>
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{tenant.subdomain}.network</p>
                       </div>
                     </div>
@@ -671,23 +667,23 @@ const ApplicationAssignmentManager: React.FC = () => {
                   <div className="p-6 space-y-4">
                     <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-slate-400">
                       <span>Security Deployments</span>
-                      <span className="text-slate-900 dark:text-white">{tenant.assignmentCount} Domains</span>
+                      <span className="text-slate-900">{tenant.assignmentCount} Domains</span>
                     </div>
-                    <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                    <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
                       <div
-                        className="bg-[#1B2E5A] h-full rounded-full transition-all duration-1000"
+                        className="bg-primary h-full rounded-full transition-all duration-1000"
                         style={{ width: `${(tenant.enabledCount / (tenant.assignmentCount || 1)) * 100}%` }}
                       />
                     </div>
                     <div className="flex items-center justify-between pt-2">
                       <div className="flex -space-x-2">
                         {tenant.applications?.slice(0, 4).map((app: TenantApplication) => (
-                          <div key={app.id} title={app.appName} className="w-7 h-7 rounded-lg bg-white dark:bg-slate-800 border-2 border-slate-50 dark:border-slate-900 flex items-center justify-center">
+                          <div key={app.id} title={app.appName} className="w-7 h-7 rounded-lg bg-white border-2 border-slate-50 flex items-center justify-center">
                             {getAppIcon(app.appCode)}
                           </div>
                         ))}
                       </div>
-                      <Button variant="ghost" size="sm" className="h-8 rounded-lg text-xs font-black uppercase tracking-widest group-hover:bg-[#1B2E5A] group-hover:text-white transition-all">
+                      <Button variant="ghost" size="sm" className="h-8 rounded-lg text-xs font-black uppercase tracking-widest group-hover:bg-primary group-hover:text-white transition-all">
                         Configure <ArrowRight className="w-3 h-3 ml-2" />
                       </Button>
                     </div>
@@ -699,28 +695,28 @@ const ApplicationAssignmentManager: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="manage" className="flex-1 overflow-hidden flex flex-col outline-none m-0 data-[state=active]:flex min-h-0">
-          <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-slate-950 relative min-h-0">
+          <div className="flex-1 flex flex-col min-w-0 bg-white relative min-h-0">
             {selectedTenant && (
               <div className="flex-1 flex flex-col min-h-0">
                 {/* Executive KPI Bar */}
                 <div className={cn(
                   "flex-none px-8 py-2 border-b flex items-center justify-between transition-all",
-                  isDark ? "bg-slate-900/40 border-slate-800" : "bg-slate-50/30 border-slate-100"
+                  "bg-slate-50/30 border-slate-100"
                 )}>
                   <div className="flex items-center gap-8">
                     <div className="flex flex-col">
                       <span className="text-[7px] font-black uppercase text-slate-400 tracking-widest leading-none mb-1">Active Domains</span>
                       <div className="flex items-center gap-2">
                         <Grid className="w-3 h-3 text-slate-400" />
-                        <span className="text-[10px] font-black text-slate-900 dark:text-white tabular-nums">{selectedTenant.assignmentCount || 0}</span>
+                        <span className="text-[10px] font-black text-slate-900 tabular-nums">{selectedTenant.assignmentCount || 0}</span>
                       </div>
                     </div>
-                    <div className="w-px h-6 bg-slate-200 dark:bg-slate-800" />
+                    <div className="w-px h-6 bg-slate-200" />
                     <div className="flex flex-col">
                       <span className="text-[7px] font-black uppercase text-slate-400 tracking-widest leading-none mb-1">Claims Serialized</span>
                       <div className="flex items-center gap-2">
                         <Shield className="w-3 h-3 text-blue-500" />
-                        <span className="text-[10px] font-black text-blue-600 dark:text-blue-400 tabular-nums">{Object.values(assignmentConfig.selectedPermissions).flat().length}</span>
+                        <span className="text-[10px] font-black text-blue-600 tabular-nums">{Object.values(assignmentConfig.selectedPermissions).flat().length}</span>
                       </div>
                     </div>
                   </div>
@@ -731,12 +727,12 @@ const ApplicationAssignmentManager: React.FC = () => {
                       placeholder="Search matrix capabilities..."
                       value={matrixSearchQuery}
                       onChange={(e) => setMatrixSearchQuery(e.target.value)}
-                      className="pl-8 h-8 text-[9px] rounded-lg border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-bold placeholder:text-slate-400"
+                      className="pl-8 h-8 text-[9px] rounded-lg border-slate-200 bg-white font-bold placeholder:text-slate-400"
                     />
                   </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-6 md:p-10 custom-scrollbar relative bg-slate-50/20 dark:bg-slate-950/40">
+                <div className="flex-1 overflow-y-auto p-6 md:p-10 custom-scrollbar relative bg-slate-50/20">
                   {filteredMatrixApps.length > 0 ? (
                     <Accordion type="single" collapsible className="space-y-6 pb-40">
                       {filteredMatrixApps.map((app: Application) => {
@@ -752,29 +748,29 @@ const ApplicationAssignmentManager: React.FC = () => {
                             className={cn(
                               "border rounded-[32px] overflow-hidden transition-all shadow-sm",
                               isAppAssigned
-                                ? "border-blue-200/50 bg-blue-50/5 dark:border-blue-900/20 dark:bg-blue-900/5"
-                                : "bg-white dark:bg-slate-900/30 border-slate-100 dark:border-slate-800"
+                                ? "border-blue-200/50 bg-blue-50/5"
+                                : "bg-white border-slate-100"
                             )}
                           >
                             <div className="flex items-center">
-                              <AccordionTrigger className="flex-1 px-8 py-6 hover:no-underline hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all [&[data-state=open]]:bg-[#1B2E5A]/5 group/trigger text-left">
+                              <AccordionTrigger className="flex-1 px-8 py-6 hover:no-underline hover:bg-slate-50 transition-all [&[data-state=open]]:bg-primary/5 group/trigger text-left">
                                 <div className="flex items-center gap-6">
                                   <div className={cn(
                                     "w-12 h-12 rounded-2xl flex items-center justify-center transition-all border relative shadow-sm",
-                                    isAppAssigned ? "bg-white dark:bg-slate-800 border-blue-500 text-white shadow-blue-500/10" : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-300"
+                                    isAppAssigned ? "bg-white border-blue-500 text-white shadow-blue-500/10" : "bg-white border-slate-200 text-slate-300"
                                   )}>
                                     {getAppIcon(app.appCode)}
-                                    {isAppAssigned && <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full border-2 border-white dark:border-slate-900 animate-pulse" />}
+                                    {isAppAssigned && <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full border-2 border-white animate-pulse" />}
                                   </div>
                                   <div>
-                                    <div className="text-[14px] font-black text-[#1B2E5A] dark:text-white uppercase flex items-center gap-3 leading-none tracking-tight">
+                                    <div className="text-[14px] font-black text-primary uppercase flex items-center gap-3 leading-none tracking-tight">
                                       {app.appName}
                                       {isAppAssigned && <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/20 text-[8px] font-black tracking-widest uppercase">Deployed</Badge>}
                                     </div>
                                     <div className="flex items-center gap-3 mt-1.5 opacity-60">
                                       <span className="text-[10px] text-slate-500 font-black uppercase tracking-widest">{app.modules?.length || 0} Modules</span>
                                       <div className="w-1 h-1 rounded-full bg-slate-300" />
-                                      <span className="text-[10px] text-blue-600 dark:text-blue-400 font-black uppercase tracking-widest">{selectedAppPerms}/{totalAppPerms} Capabilities</span>
+                                      <span className="text-[10px] text-blue-600 font-black uppercase tracking-widest">{selectedAppPerms}/{totalAppPerms} Capabilities</span>
                                     </div>
                                   </div>
                                 </div>
@@ -786,7 +782,7 @@ const ApplicationAssignmentManager: React.FC = () => {
                                     variant="outline"
                                     disabled={loading}
                                     onClick={() => handleAssignApplicationDirectly(app)}
-                                    className="rounded-xl px-4 h-9 text-[9px] font-black uppercase tracking-widest border-blue-200 text-blue-600 hover:bg-[#1B2E5A] hover:text-white transition-all"
+                                    className="rounded-xl px-4 h-9 text-[9px] font-black uppercase tracking-widest border-blue-200 text-blue-600 hover:bg-primary hover:text-white transition-all"
                                   >
                                     <Plus className="w-3.5 h-3.5 mr-2" /> Deploy Domain
                                   </Button>
@@ -803,8 +799,8 @@ const ApplicationAssignmentManager: React.FC = () => {
                                 )}
                               </div>
                             </div>
-                            <AccordionContent className="p-0 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950/20">
-                              <div className="divide-y divide-slate-100 dark:divide-slate-800/50">
+                            <AccordionContent className="p-0 border-t border-slate-100 bg-white">
+                              <div className="divide-y divide-slate-100">
                                 {app.modules?.map((module: ApplicationModule) => {
                                   const mk = `${app.appId}::${module.moduleCode}`;
                                   const isModuleEnabled = assignmentConfig.enabledModules.includes(mk);
@@ -815,14 +811,14 @@ const ApplicationAssignmentManager: React.FC = () => {
                                   return (
                                     <div key={module.moduleCode} className={cn(
                                       "p-8 grid grid-cols-12 gap-10 items-start transition-all",
-                                      isModuleEnabled ? "bg-blue-50/[0.03] dark:bg-blue-900/[0.02]" : "opacity-60 grayscale-[0.5] hover:bg-slate-50/50"
+                                      isModuleEnabled ? "bg-blue-50/[0.03]" : "opacity-60 grayscale-[0.5] hover:bg-slate-50/50"
                                     )}>
                                       {/* Module Identity Column */}
-                                      <div className="col-span-2 border-r border-slate-100 dark:border-slate-800 pr-8 pt-1 space-y-4">
+                                      <div className="col-span-2 border-r border-slate-100 pr-8 pt-1 space-y-4">
                                         <div>
                                           <h4 className={cn(
                                             "text-[13px] font-black uppercase tracking-tight leading-tight mb-1",
-                                            isModuleEnabled ? "text-[#1B2E5A] dark:text-white" : "text-slate-400"
+                                            isModuleEnabled ? "text-primary" : "text-slate-400"
                                           )}>
                                             {module.moduleName}
                                           </h4>
@@ -859,7 +855,7 @@ const ApplicationAssignmentManager: React.FC = () => {
                                             className={cn(
                                               "w-full py-2 px-3 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all border text-center shadow-sm active:scale-95 disabled:opacity-50",
                                               isAllModuleSelected
-                                                ? "bg-[#1B2E5A] border-blue-500 text-white"
+                                                ? "bg-primary border-blue-500 text-white"
                                                 : isModuleEnabled
                                                   ? "bg-blue-50 border-blue-200 text-blue-600 hover:bg-blue-100"
                                                   : "bg-slate-50 border-slate-200 text-slate-400"
@@ -870,7 +866,7 @@ const ApplicationAssignmentManager: React.FC = () => {
 
                                           <div className="flex justify-between items-center px-1 opacity-60">
                                             <span className="text-[8px] font-black uppercase text-slate-400">Claims</span>
-                                            <span className="text-[9px] font-black text-slate-700 dark:text-slate-300">{(module.permissions?.length || 0) * 2} Units/T</span>
+                                            <span className="text-[9px] font-black text-slate-700">{(module.permissions?.length || 0) * 2} Units/T</span>
                                           </div>
                                         </div>
                                       </div>
@@ -918,23 +914,23 @@ const ApplicationAssignmentManager: React.FC = () => {
                                                 className={cn(
                                                   "group/chip relative flex flex-col gap-3 p-4 rounded-2xl border transition-all text-left h-full select-none active:scale-95 disabled:cursor-not-allowed",
                                                   isSelected
-                                                    ? permUI.risk === 'high' ? "bg-rose-50 border-rose-200 dark:bg-rose-900/20 dark:border-rose-900/40 shadow-inner ring-1 ring-rose-200/50"
-                                                      : permUI.risk === 'medium' ? "bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-900/40 shadow-inner ring-1 ring-amber-200/50"
-                                                        : "bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-900/40 shadow-inner ring-1 ring-blue-200/50"
-                                                    : "bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 hover:border-blue-200 dark:hover:border-blue-800/50",
-                                                  isDraft && "ring-2 ring-orange-400 dark:ring-orange-500 shadow-lg shadow-orange-500/10"
+                                                    ? permUI.risk === 'high' ? "bg-rose-50 border-rose-200 shadow-inner ring-1 ring-rose-200/50"
+                                                      : permUI.risk === 'medium' ? "bg-amber-50 border-amber-200 shadow-inner ring-1 ring-amber-200/50"
+                                                        : "bg-blue-50 border-blue-200 shadow-inner ring-1 ring-blue-200/50"
+                                                    : "bg-white border-slate-100 hover:border-blue-200",
+                                                  isDraft && "ring-2 ring-orange-400 shadow-lg shadow-orange-500/10"
                                                 )}
                                               >
                                                 <div className="flex items-start justify-between">
                                                   <div className={cn(
                                                     "p-1.5 rounded-lg transition-colors",
-                                                    isSelected ? "bg-white dark:bg-slate-950 shadow-sm" : "opacity-30 group-hover/chip:opacity-60"
+                                                    isSelected ? "bg-white shadow-sm" : "opacity-30 group-hover/chip:opacity-60"
                                                   )}>
                                                     {permUI.icon}
                                                   </div>
                                                   <Badge variant="outline" className={cn(
                                                     "text-[7px] h-4 px-1.5 font-black leading-none uppercase border-none transition-all",
-                                                    isSelected ? "text-blue-600 dark:text-blue-400" : "text-slate-300"
+                                                    isSelected ? "text-blue-600" : "text-slate-300"
                                                   )}>
                                                     {isSelected ? 'ACTIVE' : 'READY'}
                                                   </Badge>
@@ -943,7 +939,7 @@ const ApplicationAssignmentManager: React.FC = () => {
                                                 <div className="flex-1">
                                                   <div className={cn(
                                                     "text-[10px] font-black uppercase leading-tight tracking-tight mb-0.5",
-                                                    isSelected ? "text-slate-900 dark:text-white" : "text-slate-400"
+                                                    isSelected ? "text-slate-900" : "text-slate-400"
                                                   )}>
                                                     {perm.name}
                                                   </div>
@@ -970,9 +966,9 @@ const ApplicationAssignmentManager: React.FC = () => {
                       })}
                     </Accordion>
                   ) : (
-                    <div className="flex flex-col items-center justify-center py-32 bg-slate-50/50 dark:bg-slate-900/10 rounded-[48px] border-2 border-dashed border-slate-200 dark:border-slate-800">
+                    <div className="flex flex-col items-center justify-center py-32 bg-slate-50/50 rounded-[48px] border-2 border-dashed border-slate-200">
                       <Search className="w-16 h-16 text-slate-300 mb-6" />
-                      <h3 className="text-xl font-black text-[#1B2E5A] dark:text-white uppercase tracking-tight">Deployment Not Found</h3>
+                      <h3 className="text-xl font-black text-primary uppercase tracking-tight">Deployment Not Found</h3>
                     </div>
                   )}
                 </div>

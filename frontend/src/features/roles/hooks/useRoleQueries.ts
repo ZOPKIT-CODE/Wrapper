@@ -133,7 +133,7 @@ export const useRoleMutations = () => {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: deleteRole,
+    mutationFn: (roleId: string) => deleteRole(roleId),
     onSuccess: (_, roleId) => {
       // Invalidate and refetch roles list
       queryClient.invalidateQueries({ queryKey: roleKeys.lists() });

@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/lib/auth/cognito-auth'
 import { useLocation } from '@tanstack/react-router'
-import { api, subscriptionAPI, creditAPI } from '@/lib/api'
 import { useCreditStatusQuery } from '@/hooks/useSharedQueries'
 import { toast } from 'sonner'
 
@@ -56,7 +55,7 @@ export function useCreditStatus() {
   const isOnboardingPage = location.pathname === '/onboarding' || location.pathname.startsWith('/onboarding/')
   const enableCreditQueries = !!isAuthenticated && !!user && !isOnboardingPage
 
-  const { data: creditResponse, isLoading: creditLoading, error: creditError, refetch: refetchCredit } = useCreditStatusQuery(enableCreditQueries)
+  const { data: creditResponse } = useCreditStatusQuery(enableCreditQueries)
 
   // Initialize with localStorage check to prevent flash
   const [creditStatus, setCreditStatus] = useState<CreditStatus | null>(null)
@@ -74,9 +73,6 @@ export function useCreditStatus() {
   })
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [retryCount, setRetryCount] = useState(0)
-  const maxRetries = 3
-
   const creditData = creditResponse?.data
 
   // Immediate localStorage check for expiry state
@@ -187,7 +183,6 @@ export function useCreditStatus() {
         })
 
         // Reset retry count on successful credit check
-        setRetryCount(0)
 
         // Handle critical balance scenarios
         if (isCriticalBalance) {
@@ -297,7 +292,6 @@ export function useCreditStatus() {
       if (!lastToastTime || (now - parseInt(lastToastTime)) > 30000) { // 30 second cooldown
         localStorage.setItem('lastCreditAlertToast', now.toString())
 
-        const severity = expiredData.isCriticalBalance ? 'error' : 'warning'
         const icon = expiredData.isCriticalBalance ? '⚠️' : '💰'
 
         toast.error(

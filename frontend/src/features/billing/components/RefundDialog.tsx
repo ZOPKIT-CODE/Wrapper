@@ -2,7 +2,6 @@
  * Request refund dialog for a payment.
  */
 
-import React from 'react'
 import { Button } from '@/components/ui/button'
 import { ZopkitRoundLoader } from '@/components/common/feedback/ZopkitRoundLoader'
 
@@ -27,19 +26,19 @@ export function RefundDialog({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
-        <h3 className="text-lg font-semibold mb-4 dark:text-white">Request Refund</h3>
-        <p className="text-gray-600 dark:text-gray-300 mb-4">
+      <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+        <h3 className="text-lg font-semibold mb-4">Request Refund</h3>
+        <p className="text-gray-600 mb-4">
           Request a refund for this payment. Refunds are typically processed within 5-10 business
           days.
         </p>
 
         <div className="mb-4">
-          <label className="block text-sm font-medium mb-2 dark:text-gray-200">
+          <label className="block text-sm font-medium mb-2">
             Reason (optional)
           </label>
           <textarea
-            className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            className="w-full p-2 border rounded-md"
             rows={3}
             placeholder="Please let us know why you're requesting a refund..."
             value={refundReason}

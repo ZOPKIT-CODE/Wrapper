@@ -100,10 +100,10 @@ export function PermissionGuard({
     // Show loading while checking authentication or permissions
     if (isLoading || !permissionChecked) {
         return (
-            <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
+            <div className="flex items-center justify-center min-h-screen bg-gray-50">
                 <div className="text-center">
                     <AnimatedLoader size="md" className="mb-6" />
-                    <p className="text-gray-600 dark:text-gray-300 text-base font-medium">
+                    <p className="text-gray-600 text-base font-medium">
                         Checking permissions...
                     </p>
                 </div>
@@ -143,10 +143,10 @@ export function MultiPermissionGuard({
 
     if (isLoading) {
         return (
-            <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
+            <div className="flex items-center justify-center min-h-screen bg-gray-50">
                 <div className="text-center">
                     <AnimatedLoader size="md" className="mb-6" />
-                    <p className="text-gray-600 dark:text-gray-300 text-base font-medium">
+                    <p className="text-gray-600 text-base font-medium">
                         Checking permissions...
                     </p>
                 </div>
@@ -159,10 +159,8 @@ export function MultiPermissionGuard({
     }
 
     // Check all required permissions
-    const permissions = getPermissions();
-    const hasAllPermissions = requiredPermissions.every(
-        perm => permissions?.permissions?.some(p => p.key === perm && p.isGranted)
-    );
+    const { permissions: granted } = getPermissions();
+    const hasAllPermissions = requiredPermissions.every((perm) => granted?.includes(perm));
 
     if (!hasAllPermissions) {
         logger.warn(`Access denied: Missing one or more permissions`, requiredPermissions);
@@ -190,10 +188,10 @@ export function AnyPermissionGuard({
 
     if (isLoading) {
         return (
-            <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
+            <div className="flex items-center justify-center min-h-screen bg-gray-50">
                 <div className="text-center">
                     <AnimatedLoader size="md" className="mb-6" />
-                    <p className="text-gray-600 dark:text-gray-300 text-base font-medium">
+                    <p className="text-gray-600 text-base font-medium">
                         Checking permissions...
                     </p>
                 </div>
@@ -206,10 +204,8 @@ export function AnyPermissionGuard({
     }
 
     // Check if user has at least one of the required permissions
-    const permissions = getPermissions();
-    const hasAnyPermission = requiredPermissions.some(
-        perm => permissions?.permissions?.some(p => p.key === perm && p.isGranted)
-    );
+    const { permissions: granted } = getPermissions();
+    const hasAnyPermission = requiredPermissions.some((perm) => granted?.includes(perm));
 
     if (!hasAnyPermission) {
         logger.warn(`Access denied: Missing all permissions`, requiredPermissions);

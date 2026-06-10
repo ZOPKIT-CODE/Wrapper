@@ -1,4 +1,3 @@
-import React from 'react'
 import { Card, CardContent } from '@/components/ui'
 import { Shield } from 'lucide-react'
 import { Typography } from '@/components/common/Typography'

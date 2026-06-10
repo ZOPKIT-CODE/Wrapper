@@ -5,13 +5,13 @@ import { ProductsMap } from '../types/products';
 import {
     Network, Target, Warehouse, Kanban, Receipt, UserCog, PieChart, GitBranch, BookOpen, Server,
     TrendingDown, Clock, AlertTriangle, DollarSign, Unlink, UserX, FileStack,
-    Check, Zap, Database, Key, BarChart3, Wallet, RefreshCw, Files,
+    Zap, Database, Key, BarChart3, RefreshCw,
     Users, Award, Shield, GraduationCap, Settings, TrendingUp, Workflow,
-    Building2, CreditCard, Calculator, FileText, Calendar, Mail, Bell,
-    Search, Link, Share2, Activity, Box, Truck, ShoppingCart,
+    Building2, Calculator, FileText, Calendar, Mail,
+    Link, Activity, Truck, ShoppingCart,
     Layout, Monitor, Smartphone, Globe, Briefcase, Gift, UserPlus,
-    UserCheck, Menu, CheckCircle, Home, ClipboardList, MessageCircle, Landmark,
-    Sparkles, GitMerge, Shuffle, LayoutTemplate, Bot, Trophy, Book, Map,
+    UserCheck, CheckCircle, Home, ClipboardList, MessageCircle, Landmark,
+    Sparkles, LayoutTemplate, Bot, Trophy, Book, Map,
     Package, Package2, ScanBarcode, Timer, Presentation, FileCheck, ArrowDownLeft, ArrowUpRight
 } from 'lucide-react';
 
@@ -19,7 +19,7 @@ export const productPagesData: ProductsMap = {
     'affiliate-connect': {
         hero: {
             headline: 'Unified Affiliate & Influencer Marketing',
-            subheadline: 'Manage both affiliates and influencers in one place. AI-powered pricing advisor. Advanced fraud detection. Mobile app included.',
+            subheadline: 'Manage affiliates and influencers in one place. Pricing guidance, fraud detection, and a mobile app for partners.',
             valueProposition: 'Stop managing affiliates and influencers in separate tools. Affiliate Connect brings both channels together in one unified platform.',
             primaryCTA: 'Start Free Trial',
             secondaryCTA: 'Watch Demo',
@@ -46,7 +46,7 @@ export const productPagesData: ProductsMap = {
             description: 'Affiliate Connect unifies affiliate marketing and influencer management. Manage both channels from one dashboard, track performance across both, and automate commission payments—all in one place.',
             differentiators: [
                 { icon: Network, text: 'Unified Platform: Manage both affiliates & influencers' },
-                { icon: Zap, text: 'AI Pricing Advisor: "Rate My Rate" for fair deals' },
+                { icon: Zap, text: 'Pricing Advisor: "Rate My Rate" for fair deals' },
                 { icon: AlertTriangle, text: 'Advanced Fraud Detection: Stop fake traffic' },
                 { icon: DollarSign, text: 'Flexible Commissions: Rules engine & tiers' },
                 { icon: BarChart3, text: 'Real-Time Analytics: Unified dashboard' },
@@ -66,10 +66,10 @@ export const productPagesData: ProductsMap = {
             },
             { 
                 icon: Zap, 
-                title: 'AI Pricing Advisor', 
-                description: 'Get market-based pricing recommendations with "Rate My Rate" to negotiate fair influencer deals. AI analyzes market rates, engagement metrics, and campaign performance to suggest optimal pricing.',
+                title: 'Pricing Advisor',
+                description: 'Get market-based pricing recommendations with "Rate My Rate" to negotiate fair influencer deals. Compare market rates, engagement metrics, and campaign performance to suggest optimal pricing.',
                 benefits: [
-                    'Negotiate fair deals with AI-powered pricing insights',
+                    'Negotiate fair deals with data-backed pricing insights',
                     'Save 30% on influencer costs with optimal pricing',
                     'Make data-driven pricing decisions'
                 ]
@@ -140,7 +140,7 @@ export const productPagesData: ProductsMap = {
                 description: 'Self-service portal for affiliates and influencers to manage their accounts, track earnings, request payouts, access marketing materials, and view performance metrics.',
                 benefits: [
                     'Reduce support requests by 50% with self-service',
-                    'Empower partners with real-time performance data',
+                    'Give partners access to real-time performance data',
                     'Enable partners to request payouts independently'
                 ]
             },
@@ -226,7 +226,7 @@ export const productPagesData: ProductsMap = {
         },
         socialProof: {
             testimonial: {
-                quote: 'We increased our affiliate revenue by 45% in the first quarter. The unified platform and AI pricing advisor have been game-changers. The fraud detection saved us thousands, and the mobile app keeps our partners engaged.',
+                quote: 'We increased affiliate revenue by 45% in the first quarter. The unified platform and pricing advisor made negotiations straightforward. Fraud detection saved us thousands, and the mobile app keeps partners engaged.',
                 author: 'Sarah Johnson',
                 title: 'Marketing Director',
                 company: 'TechStart Inc.',
@@ -248,9 +248,9 @@ export const productPagesData: ProductsMap = {
 
     'b2b-crm': {
         hero: {
-            headline: 'Run Sales, Support, and Marketing on One Platform — and Cut CRM Spend by 60%',
-            subheadline: 'Stop paying three vendors to track one customer. Your reps, support agents, and marketers work from a single record — from first webform to closed invoice to open ticket — without copy-pasting between tools.',
-            valueProposition: 'Stop stitching together a sales tool, a help desk, and a marketing platform. Our CRM runs your entire customer lifecycle — from the first Webform submission to a closed Invoice and every support Ticket after — in one system.',
+            headline: 'CRM for sales, support, and marketing in one workspace',
+            subheadline: 'One customer record from first lead to closed invoice. Sales, support, and marketing work from the same data.',
+            valueProposition: 'Replace separate sales, help desk, and marketing tools with one system that tracks the full customer lifecycle.',
             primaryCTA: 'Start Free Trial',
             secondaryCTA: 'Watch Demo',
             stats: [
@@ -621,7 +621,7 @@ export const productPagesData: ProductsMap = {
         },
         socialProof: {
             testimonial: {
-                quote: 'We cut our CRM costs by 60% while getting better functionality. The integrated invoicing saves us hours every week, and the email tracking helps us follow up at the right time. The mobile app is a game-changer for our field sales team.',
+                quote: 'We cut CRM costs by 60% while getting better functionality. Integrated invoicing saves hours every week, and email tracking helps us follow up at the right time. The mobile app works well for our field sales team.',
                 author: 'Michael Chen',
                 title: 'VP Sales',
                 company: 'GrowthCo',
@@ -645,7 +645,7 @@ export const productPagesData: ProductsMap = {
         hero: {
             headline: 'End-to-End Supply Chain Platform',
             subheadline: 'Inventory, warehouse, procurement, logistics—all in one. Multi-vendor marketplace. Quality management. Advanced analytics.',
-            valueProposition: 'Operations Management brings your entire supply chain together in one unified platform with real-time visibility, automation, and intelligent analytics.',
+            valueProposition: 'Operations Management connects inventory, procurement, and warehouse workflows in one workspace with clear status at each step.',
             primaryCTA: 'Start Free Trial',
             secondaryCTA: 'Watch Demo',
             stats: [
@@ -668,11 +668,11 @@ export const productPagesData: ProductsMap = {
         },
         solution: {
             headline: 'One Platform. Complete Supply Chain Control.',
-            description: 'Unify inventory, warehouse, procurement, and logistics in one platform. Get real-time visibility, automate workflows, reduce costs, and optimize your entire supply chain with AI-powered analytics.',
+            description: 'Unify inventory, warehouse, procurement, and logistics in one platform. Get real-time visibility, automate workflows, reduce costs, and optimize your supply chain with clear analytics.',
             differentiators: [
                 { icon: Warehouse, text: 'Unified Platform: Inventory & logistics in one' },
                 { icon: RefreshCw, text: 'Real-Time Sync: Instant updates across locations' },
-                { icon: Database, text: 'Multi-Vendor: Manage suppliers seamlessly' },
+                { icon: Database, text: 'Multi-Vendor: Manage suppliers in one place' },
                 { icon: BarChart3, text: 'Advanced Analytics: Forecasting & dashboards' },
                 { icon: Smartphone, text: 'Mobile App: Warehouse ops on-the-go' },
                 { icon: CheckCircle, text: 'Quality Management: Track quality end-to-end' },
@@ -712,7 +712,7 @@ export const productPagesData: ProductsMap = {
             { 
                 icon: Home, 
                 title: 'Warehouse Management', 
-                description: 'Complete WMS with picking strategies (FIFO, LIFO, FEFO), wave planning, put-away optimization, cycle counting, and barcode scanning integration. Optimize warehouse operations with intelligent workflows.',
+                description: 'Complete WMS with picking strategies (FIFO, LIFO, FEFO), wave planning, put-away optimization, cycle counting, and barcode scanning integration. Optimize warehouse operations with structured workflows.',
                 benefits: [
                     'Increase picking efficiency by 50% with optimized strategies',
                     'Reduce warehouse errors by 70% with barcode scanning',
@@ -786,16 +786,16 @@ export const productPagesData: ProductsMap = {
                 benefits: [
                     'Eliminate manual data entry errors with barcode scanning',
                     'Track inventory 10x faster with RFID technology',
-                    'Integrate seamlessly with existing scanner hardware'
+                    'Connect to existing scanner hardware'
                 ]
             },
             { 
                 icon: Zap, 
                 title: 'Workflow Automation', 
-                description: 'Automate workflows, reorder points, and supply chain processes. Integration with Flowtilla for complex cross-system automation and intelligent decision-making.',
+                description: 'Automate workflows, reorder points, and supply chain processes. Integration with Flowtilla for cross-system automation and rule-based decision-making.',
                 benefits: [
                     'Automate 80% of repetitive supply chain tasks',
-                    'Reduce manual errors with intelligent automation',
+                    'Reduce manual errors with automated workflows',
                     'Connect with other systems via Flowtilla integration'
                 ]
             },
@@ -1030,7 +1030,7 @@ export const productPagesData: ProductsMap = {
                 benefits: [
                     'Track project profitability in real-time',
                     'Prevent budget overruns with alerts',
-                    'Integrate seamlessly with Accounting system'
+                    'Connect to Accounting system'
                 ]
             },
             { 
@@ -1161,7 +1161,7 @@ export const productPagesData: ProductsMap = {
         },
         socialProof: {
             testimonial: {
-                quote: 'Project Management helped us deliver projects 40% faster and reduce costs by 25%. The integration with HR and Accounting is seamless, and the Agile tools are excellent.',
+                quote: 'Project Management helped us deliver projects 40% faster and reduce costs by 25%. The integration with HR and Accounting is straightforward, and the Agile tools are excellent.',
                 author: 'Sarah Martinez',
                 title: 'Project Manager',
                 company: 'TechServices',
@@ -1461,7 +1461,7 @@ export const productPagesData: ProductsMap = {
         hero: {
             headline: 'Complete HR Management System',
             subheadline: 'Recruitment, onboarding, payroll, attendance, performance management, learning & development, and compliance. End-to-end HRMS solution.',
-            valueProposition: 'Manage your entire workforce from hire to retire with our comprehensive HRMS platform. Automate payroll, track performance, ensure compliance, and empower employees with self-service.',
+            valueProposition: 'Manage your entire workforce from hire to retire with our comprehensive HRMS platform. Automate payroll, track performance, ensure compliance, and give employees self-service access.',
             primaryCTA: 'Start Free Trial',
             secondaryCTA: 'Watch Demo',
             stats: [
@@ -1598,7 +1598,7 @@ export const productPagesData: ProductsMap = {
             { 
                 icon: Smartphone, 
                 title: 'Employee Self-Service Portal', 
-                description: 'Mobile app for leave requests, payslip access, document management, profile updates, benefits enrollment, expense claims, and performance reviews. Empower employees.',
+                description: 'Mobile app for leave requests, payslip access, document management, profile updates, benefits enrollment, expense claims, and performance reviews. Self-service for employees.',
                 benefits: [
                     'Reduce HR inquiries by 50% with self-service',
                     'Enable employees to access information 24/7',
@@ -1715,7 +1715,7 @@ export const productPagesData: ProductsMap = {
         hero: {
             headline: 'Complete Equity Compensation Management Platform',
             subheadline: 'Grant management, vesting schedules, cap table management, exercise workflows, tax compliance, and employee portal. End-to-end ESOP solution.',
-            valueProposition: 'Manage your entire equity compensation program from grants to exercises. Automate vesting, track cap tables, ensure compliance, and empower employees with self-service.',
+            valueProposition: 'Manage your entire equity compensation program from grants to exercises. Automate vesting, track cap tables, ensure compliance, and give employees self-service access.',
             primaryCTA: 'Start Free Trial',
             secondaryCTA: 'Watch Demo',
             stats: [
@@ -1776,7 +1776,7 @@ export const productPagesData: ProductsMap = {
                 benefits: [
                     'Calculate vesting automatically in real-time',
                     'Track vesting schedules across all employees',
-                    'Handle accelerated vesting rules seamlessly'
+                    'Handle accelerated vesting rules without manual work'
                 ]
             },
             { 
@@ -1802,7 +1802,7 @@ export const productPagesData: ProductsMap = {
             { 
                 icon: Smartphone, 
                 title: 'Employee Portal', 
-                description: 'Grant visibility, vesting status, exercise calculator, tax impact calculator, equity statements, and exercise requests. Empower employees with self-service.',
+                description: 'Grant visibility, vesting status, exercise calculator, tax impact calculator, equity statements, and exercise requests. Self-service portal for employees.',
                 benefits: [
                     'Provide employees 24/7 access to equity information',
                     'Enable employees to calculate exercise impact',
@@ -1924,7 +1924,7 @@ export const productPagesData: ProductsMap = {
     'flowtilla': {
         hero: {
             headline: 'Visual Workflow Automation Platform',
-            subheadline: 'No-code workflow builder, AI-powered automation, 100+ app integrations, and pre-built templates. Automate any business process visually.',
+            subheadline: 'No-code workflow builder, rule-based automation, 100+ app integrations, and pre-built templates. Automate business processes visually.',
             valueProposition: 'Connect all your apps and automate complex business processes with our visual workflow builder. No coding required—build powerful automations with drag-and-drop simplicity.',
             primaryCTA: 'Start Free Trial',
             secondaryCTA: 'Watch Demo',
@@ -1951,8 +1951,8 @@ export const productPagesData: ProductsMap = {
             description: 'Flowtilla connects all your apps and automates complex business processes visually. Build powerful workflows with drag-and-drop simplicity, integrate AI capabilities, and connect 100+ apps—all without writing code.',
             differentiators: [
                 { icon: Workflow, text: 'Visual Builder: Drag-and-drop workflow design' },
-                { icon: Bot, text: 'AI-Powered: LLM integration for intelligent automation' },
-                { icon: Link, text: '100+ Integrations: Connect all your apps seamlessly' },
+                { icon: Bot, text: 'Workflow automation: connect CRM actions to other Zopkit apps' },
+                { icon: Link, text: '100+ Integrations: Connect your apps in one place' },
                 { icon: LayoutTemplate, text: 'Template Library: Pre-built workflow templates' },
                 { icon: Zap, text: 'Real-Time: Instant workflow execution' },
                 { icon: Activity, text: 'Monitoring: Complete workflow visibility' },
@@ -1991,12 +1991,12 @@ export const productPagesData: ProductsMap = {
             },
             { 
                 icon: Bot, 
-                title: 'AI Components', 
-                description: 'LLM integration (OpenAI, Anthropic), data extraction, text generation, decision making, and AI-powered workflow suggestions. Add intelligence to workflows.',
+                title: 'AI Components',
+                description: 'Optional LLM integration (OpenAI, Anthropic) for data extraction, text generation, and workflow suggestions when you need them.',
                 benefits: [
-                    'Extract data from unstructured content with AI',
-                    'Generate text and content automatically',
-                    'Get AI-powered workflow optimization suggestions'
+                    'Extract data from unstructured content',
+                    'Generate text and content on demand',
+                    'Get workflow optimization suggestions'
                 ]
             },
             { 
@@ -2041,12 +2041,12 @@ export const productPagesData: ProductsMap = {
             },
             { 
                 icon: Sparkles, 
-                title: 'AI Co-pilot', 
-                description: 'Workflow suggestions, optimization recommendations, error resolution help, natural language workflow creation, and intelligent automation insights. Get AI assistance.',
+                title: 'Workflow Assistant',
+                description: 'Workflow suggestions, optimization recommendations, error resolution help, and natural language workflow creation when you want guided setup.',
                 benefits: [
-                    'Get AI suggestions for workflow improvements',
+                    'Get suggestions for workflow improvements',
                     'Create workflows using natural language',
-                    'Automatically resolve common workflow errors'
+                    'Resolve common workflow errors faster'
                 ]
             },
             { 
@@ -2064,7 +2064,7 @@ export const productPagesData: ProductsMap = {
             {
                 title: 'Lead-to-Cash',
                 description: 'Complete sales automation from lead capture to invoice generation. Automate lead routing, qualification, quote generation, order processing, and invoicing.',
-                benefits: ['Automate lead routing', 'Generate quotes automatically', 'Process orders seamlessly', 'Create invoices automatically', 'Track sales pipeline'],
+                benefits: ['Automate lead routing', 'Generate quotes automatically', 'Process orders end-to-end', 'Create invoices automatically', 'Track sales pipeline'],
             },
             {
                 title: 'Employee Onboarding',
@@ -2165,7 +2165,7 @@ export const productPagesData: ProductsMap = {
     'zopkit-academy': {
         hero: {
             headline: 'Enterprise Learning Management System',
-            subheadline: 'Course creation, assessments, gamification, AI tutor, certificates, and analytics. Complete LMS for corporate training and education.',
+            subheadline: 'Course creation, assessments, gamification, learning assistant, certificates, and analytics. Complete LMS for corporate training and education.',
             valueProposition: 'Deliver engaging learning experiences with our comprehensive LMS. Create courses, track progress, gamify learning, and certify learners—all in one platform.',
             primaryCTA: 'Start Free Trial',
             secondaryCTA: 'Watch Demo',
@@ -2189,11 +2189,11 @@ export const productPagesData: ProductsMap = {
         },
         solution: {
             headline: 'Transform Training with Complete LMS Platform',
-            description: 'Zopkit Academy provides everything you need to deliver effective training. Create engaging courses, assess learners, gamify learning, provide AI-powered assistance, and track progress—all integrated with your HRMS.',
+            description: 'Zopkit Academy provides everything you need to deliver effective training. Create engaging courses, assess learners, gamify learning, offer optional tutor assistance, and track progress—all integrated with your HRMS.',
             differentiators: [
                 { icon: Book, text: 'Course Builder: Create engaging courses easily' },
                 { icon: Award, text: 'Gamification: Badges, leaderboards, and rewards' },
-                { icon: Bot, text: 'AI Tutor: Personalized learning assistance' },
+                { icon: Bot, text: 'Learning Assistant: Optional personalized help' },
                 { icon: Trophy, text: 'Certificates: Digital certificates with verification' },
                 { icon: BarChart3, text: 'Analytics: Track learning progress and effectiveness' },
                 { icon: Link, text: 'Integration: Connect with HRMS and other systems' },
@@ -2217,7 +2217,7 @@ export const productPagesData: ProductsMap = {
                 benefits: [
                     'Support all major content formats',
                     'Deliver interactive and engaging content',
-                    'Host live training sessions seamlessly'
+                    'Host live training sessions in-app'
                 ]
             },
             { 
@@ -2252,8 +2252,8 @@ export const productPagesData: ProductsMap = {
             },
             { 
                 icon: Bot, 
-                title: 'AI Tutor', 
-                description: 'Personalized assistance, question answering, learning recommendations, progress analysis, and adaptive learning. Provide intelligent learning support.',
+                title: 'Learning Assistant',
+                description: 'Optional personalized assistance, question answering, learning recommendations, progress analysis, and adaptive learning paths.',
                 benefits: [
                     'Provide 24/7 personalized learning assistance',
                     'Recommend courses based on progress',
@@ -2283,11 +2283,11 @@ export const productPagesData: ProductsMap = {
             { 
                 icon: Users, 
                 title: 'Instructor Tools', 
-                description: 'Student management, grading interface, communication tools, performance monitoring, and class management. Empower instructors with powerful tools.',
+                description: 'Student management, grading interface, communication tools, performance monitoring, and class management. Tools built for instructors.',
                 benefits: [
                     'Manage all students from one dashboard',
                     'Grade assignments efficiently',
-                    'Communicate with learners seamlessly'
+                    'Communicate with learners in one place'
                 ]
             },
             { 
@@ -2297,7 +2297,7 @@ export const productPagesData: ProductsMap = {
                 benefits: [
                     'Sync training records with HRMS automatically',
                     'Integrate with video platforms and conferencing',
-                    'Enable SSO for seamless access'
+                    'Enable SSO for single sign-on access'
                 ]
             },
         ],
@@ -2350,7 +2350,7 @@ export const productPagesData: ProductsMap = {
                         'All content types',
                         'Gamification',
                         'Learning paths',
-                        'AI Tutor',
+                        'Learning Assistant',
                         'Advanced analytics',
                         'HRMS integration',
                         'Priority support'
@@ -2380,7 +2380,7 @@ export const productPagesData: ProductsMap = {
         },
         socialProof: {
             testimonial: {
-                quote: 'Zopkit Academy transformed our training program. We increased course completion rates from 60% to 85% with gamification, and the AI tutor provides excellent support to our learners. The HRMS integration makes it seamless.',
+                quote: 'Zopkit Academy transformed our training program. We increased course completion rates from 60% to 85% with gamification, and the learning assistant helps learners when they get stuck. HRMS integration keeps records in sync.',
                 author: 'Emily Rodriguez',
                 title: 'L&D Manager',
                 company: 'EduCo',
@@ -2640,9 +2640,9 @@ export const productPagesData: ProductsMap = {
     },
     'b2c-crm': {
         hero: {
-            headline: 'AI-Powered B2C Customer Engagement Platform',
-            subheadline: 'Customer lifecycle management, AI-powered campaigns, smart segmentation, engagement widgets, and automated journeys. Complete B2C CRM solution.',
-            valueProposition: 'Engage customers at every stage of their journey with AI-powered campaigns, automated lifecycle management, and intelligent segmentation. Drive growth with data-driven customer engagement.',
+            headline: 'B2C customer engagement in one workspace',
+            subheadline: 'Manage lifecycle stages, campaigns, segments, and engagement touchpoints from a single CRM.',
+            valueProposition: 'Track customers from first visit through retention with shared data, campaign tools, and lifecycle views in one system.',
             primaryCTA: 'Start Free Trial',
             secondaryCTA: 'Watch Demo',
             stats: [
@@ -2664,12 +2664,12 @@ export const productPagesData: ProductsMap = {
             ],
         },
         solution: {
-            headline: 'Engage Customers Intelligently with AI-Powered CRM',
-            description: 'Our B2C CRM provides complete customer lifecycle management with AI-powered campaign creation, smart segmentation, engagement widgets, automated journeys, and real-time analytics. Engage customers at every stage with personalized experiences.',
+            headline: 'Run B2C engagement from one customer record',
+            description: 'Manage lifecycle stages, campaigns, segments, and engagement widgets without switching between separate marketing and support tools.',
             differentiators: [
-                { icon: Bot, text: 'AI-Powered: AI campaign creation and optimization' },
-                { icon: Users, text: 'Lifecycle Management: Track customers through journey stages' },
-                { icon: Target, text: 'Smart Segments: Intelligent customer segmentation' },
+                { icon: Bot, text: 'Campaign builder: create and schedule multi-step journeys' },
+                { icon: Users, text: 'Lifecycle views: track customers through each stage' },
+                { icon: Target, text: 'Segments: group customers by behavior and profile' },
                 { icon: Zap, text: 'Engagement Widgets: Interactive customer engagement tools' },
                 { icon: BarChart3, text: 'Real-Time Analytics: Live performance tracking' },
                 { icon: Workflow, text: 'AI Journeys: Automated customer journey automation' },
@@ -2688,22 +2688,22 @@ export const productPagesData: ProductsMap = {
             },
             { 
                 icon: Bot, 
-                title: 'AI Campaign Creator', 
-                description: 'AI-powered campaign creation with natural language input, strategy generation, campaign templates, and automated optimization. Create campaigns in minutes, not hours.',
+                title: 'Campaign Builder',
+                description: 'Campaign creation with natural language input, strategy templates, campaign templates, and optimization tools. Create campaigns in minutes, not hours.',
                 benefits: [
-                    'Create campaigns 10x faster with AI assistance',
-                    'Generate campaign strategies from natural language',
-                    'Optimize campaigns automatically with AI'
+                    'Create campaigns faster with templates',
+                    'Draft campaign strategies from briefs',
+                    'Optimize campaigns with built-in analytics'
                 ]
             },
             { 
                 icon: Target, 
-                title: 'Smart Segments', 
-                description: 'Intelligent customer segmentation with demographics, behavior, lifecycle stage, engagement scores, and predictive clustering. Target the right customers at the right time.',
+                title: 'Customer Segments',
+                description: 'Customer segmentation with demographics, behavior, lifecycle stage, engagement scores, and clustering. Target the right customers at the right time.',
                 benefits: [
-                    'Create segments automatically with AI',
-                    'Target customers based on behavior and lifecycle',
-                    'Predict customer needs with clustering'
+                    'Build segments from behavior and lifecycle data',
+                    'Target customers based on engagement',
+                    'Group customers with rule-based clustering'
                 ]
             },
             { 
@@ -2763,7 +2763,7 @@ export const productPagesData: ProductsMap = {
                 benefits: [
                     'Track performance in real-time',
                     'Analyze customer lifecycle trends',
-                    'Get AI-powered insights and recommendations'
+                    'Get insights and recommendations from analytics'
                 ]
             },
             { 
@@ -2871,7 +2871,7 @@ export const productPagesData: ProductsMap = {
         },
         finalCTA: {
             headline: 'Ready to Transform Your Customer Engagement?',
-            description: 'Join 1,000+ companies using Growth AI OS to engage customers intelligently and drive growth.',
+            description: 'Join 1,000+ companies using Growth AI OS to engage customers and drive growth.',
             primaryCTA: 'Start Free Trial',
             secondaryCTAs: ['Schedule Demo', 'Contact Sales'],
         },

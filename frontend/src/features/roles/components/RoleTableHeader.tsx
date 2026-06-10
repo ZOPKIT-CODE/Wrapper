@@ -1,4 +1,3 @@
-import React from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 
 interface RoleTableHeaderProps {
@@ -22,10 +21,7 @@ export function RoleTableHeader({
       <div className="grid grid-cols-12 gap-4 text-sm font-semibold text-gray-700">
         <div className="flex items-center gap-3">
           <Checkbox
-            checked={isAllSelected}
-            ref={(el) => {
-              if (el) el.indeterminate = isIndeterminate;
-            }}
+            checked={isIndeterminate ? 'indeterminate' : isAllSelected}
             onCheckedChange={isAllSelected ? onClearSelection : onSelectAll}
           />
         </div>

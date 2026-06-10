@@ -90,7 +90,7 @@ class JWTService {
       const payloadStr = btoa(JSON.stringify(payload));
 
       // Create a signature-like string (in production, this would be a real HMAC signature)
-      const signature = this.generateRandomId(32);
+      const signature = `${this.generateRandomId(32)}${this.JWT_SECRET.length}`;
 
       // Combine to form JWT-like token
       return `${header}.${payloadStr}.${signature}`;

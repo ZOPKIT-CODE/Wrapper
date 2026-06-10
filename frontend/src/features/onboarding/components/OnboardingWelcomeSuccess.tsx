@@ -89,12 +89,7 @@ export const OnboardingWelcomeSuccess: React.FC<OnboardingWelcomeSuccessProps> =
   }, [currentStep, steps.length]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-[#1B2E5A]/[0.06] to-slate-50 p-4 relative overflow-hidden">
-      {/* Background decorative elements — deep blue wash (tenant dashboard) */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-10 h-72 w-72 rounded-full bg-[#1B2E5A]/10 blur-3xl" />
-        <div className="absolute bottom-20 right-10 h-96 w-96 rounded-full bg-blue-300/15 blur-3xl" />
-      </div>
+    <div className="min-h-screen bg-background p-4 relative overflow-hidden">
 
       <div className="relative max-w-6xl mx-auto pt-6 pb-6">
         {/* Main Welcome Card */}
@@ -104,10 +99,10 @@ export const OnboardingWelcomeSuccess: React.FC<OnboardingWelcomeSuccessProps> =
           initial={{ scale: 0.9, opacity: 0, y: 30 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           transition={{ type: 'spring', stiffness: 100, damping: 15 }}
-          className="relative rounded-2xl border-b-8 border-r-4 border-blue-200/60 bg-white px-6 pb-8 pt-10 text-center shadow-[0_30px_60px_-12px_rgba(27,46,90,0.12),0_10px_20px_-5px_rgba(27,46,90,0.08)]"
+          className="relative rounded-lg border border-border bg-card px-6 pb-8 pt-10 text-center"
         >
           <div className="mb-5 flex justify-center px-1">
-            <div className="flex aspect-square w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/80 bg-white p-2 shadow-md ring-1 ring-slate-200/60 sm:w-20">
+            <div className="flex aspect-square w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-white p-2 sm:w-20">
               <img
                 src={config.ONBOARDING_LOGO_URL}
                 alt="Zopkit"
@@ -115,84 +110,41 @@ export const OnboardingWelcomeSuccess: React.FC<OnboardingWelcomeSuccessProps> =
               />
             </div>
           </div>
-          {/* Ribbon Header */}
-          <div className="absolute -top-5 left-1/2 z-20 flex w-[115%] -translate-x-1/2 items-center justify-center filter drop-shadow-xl">
-            {/* Left Fold */}
-            <div className="h-8 w-6 translate-x-1.5 translate-y-5 skew-y-12 rounded-l-sm bg-[#152247] transform" />
 
-            {/* Main Ribbon — deep blue (#1B2E5A) */}
-            <div className="relative flex transform cursor-default items-center justify-center rounded-lg bg-gradient-to-b from-[#243A6C] to-[#1B2E5A] px-10 py-3 text-xl font-black text-white shadow-lg transition-transform duration-300 hover:scale-[1.02]">
-              <span className="drop-shadow-md">Welcome to Zopkit!</span>
-              <div className="absolute bottom-1 left-2 right-2 top-1 rounded-md border-2 border-dashed border-white/25" />
-            </div>
+          <h1 className="text-2xl font-medium text-foreground tracking-[-0.02em] mb-1">
+            Welcome to Zopkit
+          </h1>
 
-            {/* Right Fold */}
-            <div className="h-8 w-6 -translate-x-1.5 translate-y-5 -skew-y-12 rounded-r-sm bg-[#152247] transform" />
-          </div>
+          <p className="text-sm font-medium text-muted-foreground mb-5">
+            {companyName ? `${companyName} is ready` : 'Your workspace is ready'}
+          </p>
 
-          <p className="text-sm font-bold tracking-wide text-[#1B2E5A] dark:text-blue-200">
+          <p className="text-sm font-medium text-primary">
             Grow · Scale · Thrive
           </p>
 
           {/* Content */}
           <div className="mt-5 mb-2">
-            {/* Credits Announcement */}
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2 }}
-              className="mb-3 animate-pulse text-base font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400"
+              className="mb-4 text-base font-medium text-foreground"
             >
-              You've Unlocked 1000 Free Credits
+              1,000 free credits added to your account
             </motion.p>
 
-            {/* Credit Visuals - White Capsule with Yellow Coins */}
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.4, type: 'spring' }}
-              className="relative flex flex-col items-center mb-4"
-            >
-              {/* White Capsule/Pill Shape */}
-              <div className="relative w-28 h-16 bg-white rounded-full shadow-lg flex items-center justify-center mb-2">
-                {/* Glow effect */}
-                <div className="absolute inset-0 bg-white rounded-full blur-xl opacity-60"></div>
-                
-                {/* Yellow Coins Inside */}
-                <div className="relative z-10 flex items-center gap-1">
-                  <div className="w-7 h-7 bg-yellow-400 rounded-full shadow-md transform -rotate-12"></div>
-                  <div className="w-7 h-7 bg-yellow-400 rounded-full shadow-md transform rotate-12 -ml-2"></div>
-                </div>
-              </div>
-
-              {/* Yellow Dollar Sign Below */}
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.6, type: 'spring' }}
-                className="w-9 h-9 bg-yellow-400 rounded-full flex items-center justify-center shadow-lg"
-              >
-                <span className="text-white font-black text-base">$</span>
-              </motion.div>
-            </motion.div>
-
-            {/* Platform Description */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
               className="mb-3"
             >
-              <h2 className="mb-1.5 text-lg font-bold leading-tight text-[#1B2E5A] dark:text-slate-100">
-                The All-in-One Platform
-              </h2>
-              <p className="text-slate-500 text-xs leading-relaxed max-w-xs mx-auto mb-3">
-                Manage your team, finances, and growth in one unified workspace designed for modern businesses.
+              <p className="text-muted-foreground text-sm leading-relaxed max-w-xs mx-auto mb-3">
+                Manage your team, finances, and operations from one workspace.
               </p>
-            
             </motion.div>
 
-            {/* Go to Dashboard Button - enabled only after stepper completes all 4 steps */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -200,29 +152,17 @@ export const OnboardingWelcomeSuccess: React.FC<OnboardingWelcomeSuccessProps> =
               className="mt-2"
             >
               {currentStep < steps.length && (
-                <p className="text-xs text-slate-500 mb-2">Complete the setup above to continue</p>
+                <p className="text-xs text-muted-foreground mb-2">Complete the setup below to continue</p>
               )}
               <Button
                 onClick={handleGoToDashboard}
                 disabled={isNavigating || currentStep < steps.length}
-                className="group relative mx-auto w-full max-w-xs rounded-xl bg-[#1B2E5A] py-5 text-sm font-bold text-white shadow-lg transition-all hover:bg-[#243A6C] hover:shadow-xl disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-60"
+                className="mx-auto w-full max-w-xs rounded-lg py-5 text-sm font-medium"
               >
                 {isNavigating ? 'Taking you there...' : currentStep < steps.length ? 'Complete setup to continue...' : 'Go to Dashboard'}
-                {currentStep >= steps.length && !isNavigating && (
-                  <motion.span
-                    className="ml-2 inline-block"
-                    animate={{ x: [0, 5, 0] }}
-                    transition={{ duration: 1.5, repeat: Infinity }}
-                  >
-                    →
-                  </motion.span>
-                )}
               </Button>
             </motion.div>
           </div>
-
-          {/* Card Reflection/Shadow on background */}
-          <div className="absolute -bottom-4 left-4 right-4 h-8 bg-black/10 blur-xl rounded-full"></div>
         </motion.div>
           </div>
         </div>
@@ -234,10 +174,9 @@ export const OnboardingWelcomeSuccess: React.FC<OnboardingWelcomeSuccessProps> =
           transition={{ delay: 0.8 }}
           className="mb-2 flex justify-center"
         >
-          <div className="w-full max-w-6xl overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900">
-            {/* Header */}
-            <div className="flex h-12 items-center justify-between border-b border-slate-100 bg-slate-50/90 px-4 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/80 sm:px-6">
-              <h3 className="text-lg font-bold text-[#1B2E5A]">Setting Up Your Workspace</h3>
+          <div className="w-full max-w-6xl overflow-hidden rounded-lg border border-border bg-white shadow-sm">
+            <div className="flex h-12 items-center justify-between border-b border-border bg-muted/30 px-4 sm:px-6">
+              <h3 className="text-base font-medium text-foreground">Setting up your workspace</h3>
               <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
                 <span>Progress: {Math.round((currentStep / steps.length) * 100)}%</span>
               </div>
@@ -256,7 +195,7 @@ export const OnboardingWelcomeSuccess: React.FC<OnboardingWelcomeSuccessProps> =
 
                 {/* Active Progress Line - fills from first circle center to current step circle center */}
                 <motion.div
-                  className="absolute left-[12.5%] top-8 z-0 h-2 rounded-full shadow-lg shadow-blue-900/20"
+                  className="absolute left-[12.5%] top-8 z-0 h-2 rounded-full bg-primary"
                   initial={{ width: '0%' }}
                   animate={{
                     width:
@@ -265,9 +204,6 @@ export const OnboardingWelcomeSuccess: React.FC<OnboardingWelcomeSuccessProps> =
                         : '0%',
                   }}
                   transition={{ duration: 0.5, ease: 'easeInOut' }}
-                  style={{
-                    background: 'linear-gradient(to right, #1B2E5A, #3b82f6)',
-                  }}
                 />
 
                 {/* Steps Grid */}
@@ -285,21 +221,21 @@ export const OnboardingWelcomeSuccess: React.FC<OnboardingWelcomeSuccessProps> =
                           relative z-10 mx-auto flex h-16 w-16 scale-100 items-center justify-center rounded-full border-[3px] bg-white transition-all duration-500
                           ${
                             isActive
-                              ? 'scale-110 border-white shadow-xl ring-4 ring-[#1B2E5A]/25 ring-offset-2'
+                              ? 'scale-105 border-primary/30 ring-2 ring-primary/15'
                               : isCompleted
-                                ? 'scale-100 border-white bg-gradient-to-br from-[#1B2E5A] to-[#243A6C] text-white shadow-md'
-                                : 'border-slate-100 text-slate-300 shadow-sm'
+                                ? 'scale-100 border-primary bg-primary text-primary-foreground'
+                                : 'border-border text-muted-foreground'
                           }
                         `}
                         >
                           {isActive && (
-                            <div className="absolute inset-0 animate-ping rounded-full bg-[#1B2E5A]/20 opacity-30" />
+                            <div className="absolute inset-0 animate-ping rounded-full bg-primary/20 opacity-30" />
                           )}
 
                           {isCompleted ? (
                             <CheckCircle2 className="h-6 w-6 text-white transition-all duration-300" />
                           ) : (
-                            <Icon className={`h-6 w-6 transition-all duration-300 ${isActive ? 'scale-110 text-[#1B2E5A]' : ''}`} />
+                            <Icon className={`h-6 w-6 transition-all duration-300 ${isActive ? 'scale-110 text-primary' : ''}`} />
                           )}
 
                           {/* Checkmark badge */}
@@ -317,7 +253,7 @@ export const OnboardingWelcomeSuccess: React.FC<OnboardingWelcomeSuccessProps> =
                           </div>
                           <div className={`
                             text-xs font-bold transition-all duration-300
-                            ${isActive ? 'text-[#1B2E5A] scale-105' : isCompleted ? 'text-slate-700' : 'text-slate-400'}
+                            ${isActive ? 'text-primary scale-105' : isCompleted ? 'text-slate-700' : 'text-slate-400'}
                           `}>
                             {step.title}
                           </div>
@@ -344,12 +280,11 @@ export const OnboardingWelcomeSuccess: React.FC<OnboardingWelcomeSuccessProps> =
           transition={{ delay: 1.4 }}
           className="mt-4 text-center"
         >
-          <div className="inline-flex items-center gap-2 rounded-full border border-[#1B2E5A]/15 bg-white/90 px-6 py-3 shadow-lg backdrop-blur-sm dark:border-slate-700 dark:bg-slate-900/90">
+          <div className="inline-flex items-center gap-2 rounded-lg border border-border bg-muted/20 px-6 py-3">
             <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600" />
-            <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-              Your organization is ready!{' '}
-              <span className="font-bold text-[#1B2E5A] dark:text-blue-300">1000 free credits</span> have been
-              added to your account.
+            <span className="text-sm font-medium text-foreground">
+              Your organization is ready.{' '}
+              <span className="font-medium text-primary">1,000 free credits</span> have been added.
             </span>
           </div>
         </motion.div>

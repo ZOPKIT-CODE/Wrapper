@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { api, applicationAssignmentAPI } from '@/lib/api';
+import { useCallback, useMemo } from 'react';
+import { api } from '@/lib/api';
 import { useOptimizedQuery, useBatchedQueries } from './useOptimizedQuery';
 import { cacheHelpers, CACHE_KEYS } from '@/lib/cache';
 import { toast } from 'sonner';

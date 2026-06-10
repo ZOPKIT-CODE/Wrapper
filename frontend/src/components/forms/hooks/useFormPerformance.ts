@@ -5,7 +5,7 @@ import { useFormContext } from '../contexts/FormContext';
  * Hook for form performance optimizations
  */
 export const useFormPerformance = () => {
-  const { methods, currentStep, config } = useFormContext();
+  const { methods } = useFormContext();
   
   // Memoized form values to prevent unnecessary re-renders
   const formValues = useMemo(() => methods.getValues(), [methods.watch()]);
@@ -107,36 +107,35 @@ export const useLazyFieldComponents = () => {
     
     try {
       // Dynamic import based on field type
-      let component;
       switch (fieldType) {
         case 'text':
         case 'email':
         case 'password':
-          component = await import('../field-components/TextField');
+          await import('../field-components/TextField');
           break;
         case 'select':
-          component = await import('../field-components/SelectField');
+          await import('../field-components/SelectField');
           break;
         case 'switch':
-          component = await import('../field-components/SwitchField');
+          await import('../field-components/SwitchField');
           break;
         case 'textarea':
-          component = await import('../field-components/TextareaField');
+          await import('../field-components/TextareaField');
           break;
         case 'number':
-          component = await import('../field-components/NumberField');
+          await import('../field-components/NumberField');
           break;
         case 'date':
-          component = await import('../field-components/DateField');
+          await import('../field-components/DateField');
           break;
         case 'file':
-          component = await import('../field-components/FileField');
+          await import('../field-components/FileField');
           break;
         case 'checkbox':
-          component = await import('../field-components/CheckboxField');
+          await import('../field-components/CheckboxField');
           break;
         case 'radio':
-          component = await import('../field-components/RadioField');
+          await import('../field-components/RadioField');
           break;
         default:
           console.warn(`Unknown field type: ${fieldType}`);

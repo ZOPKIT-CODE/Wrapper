@@ -1,8 +1,6 @@
-import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { EnhancedFormContent } from '../components/EnhancedFormContent';
 import { FormProvider } from '../contexts/FormContext';
-import { useForm } from 'react-hook-form';
 
 // Mock react-hook-form
 jest.mock('react-hook-form', () => ({

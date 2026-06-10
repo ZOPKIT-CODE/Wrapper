@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -23,6 +23,7 @@ import {
 } from 'lucide-react'
 import { ZopkitRoundLoader } from '@/components/common/feedback/ZopkitRoundLoader'
 import { useNavigate } from '@tanstack/react-router'
+import type { OrganizationEntity } from '../types'
 
 // --- Types (inlined to avoid circular deps) ---
 
@@ -78,20 +79,6 @@ interface Location {
   freeCredits?: number
 }
 
-interface Entity {
-  entityId: string
-  entityName: string
-  entityType: 'organization' | 'location' | 'department' | 'team'
-  entityLevel: number
-  hierarchyPath: string
-  fullHierarchyPath: string
-  parentEntityId?: string
-  responsiblePersonId?: string
-  isActive: boolean
-  children: Entity[]
-  availableCredits?: number
-}
-
 export interface TreeNodeProps {
   org: Organization | Location
   level?: number
@@ -100,13 +87,13 @@ export interface TreeNodeProps {
   selectedItems: string[]
   getResponsiblePersonName: (userId: string) => string
   onEdit: (org: Organization) => void
-  onAssignManager: (entity: Entity) => void
-  onAllocateCredits: (entity: Entity) => void
+  onAssignManager: (entity: OrganizationEntity) => void
+  onAllocateCredits: (entity: OrganizationEntity) => void
   onTransferCredits: (org: Organization) => void
   onDelete: (entityId: string, entityName?: string) => void
-  setEditingEntity: (entity: Entity | null) => void
+  setEditingEntity: (entity: OrganizationEntity | null) => void
   setShowEditResponsiblePerson: (show: boolean) => void
-  setSelectedEntity: (entity: Entity | null) => void
+  setSelectedEntity: (entity: OrganizationEntity | null) => void
   setAllocationForm: (form: any) => void
   setShowAllocationDialog: (show: boolean) => void
 }
@@ -142,7 +129,7 @@ export function TreeNode({
       <div
         className={`
           group flex items-center p-3 mb-2 rounded-xl border transition-all duration-200 relative
-          ${isSelected ? 'border-[#1B2E5A]/40 bg-[#1B2E5A]/5 dark:bg-[#1B2E5A]/10 shadow-md' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-sm'}
+          ${isSelected ? 'border-primary/40 bg-primary/5 shadow-md' : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'}
         `}
       >
         {/* Controls: Expand/Checkbox */}
@@ -151,7 +138,7 @@ export function TreeNode({
             {hasChildren ? (
               <button
                 onClick={(e) => { e.stopPropagation(); setExpanded(!expanded) }}
-                className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-colors text-slate-500"
+                className="p-1 hover:bg-slate-100 rounded-md transition-colors text-slate-500"
                 aria-label={expanded ? 'Collapse' : 'Expand'}
               >
                 {expanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
@@ -166,8 +153,8 @@ export function TreeNode({
         <div className={`
           w-10 h-10 rounded-lg flex items-center justify-center mr-4 shadow-sm border border-opacity-10
           ${isLocation
-            ? 'bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-200 text-emerald-600 dark:from-emerald-900/30 dark:to-emerald-900/10 dark:border-emerald-800 dark:text-emerald-400'
-            : 'bg-[#1B2E5A]/10 border-[#1B2E5A]/20 text-[#1B2E5A] dark:from-blue-900/30 dark:to-blue-900/10 dark:border-blue-800 dark:text-blue-400'
+            ? 'bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-200 text-emerald-600'
+            : 'bg-primary/10 border-primary/20 text-primary'
           }
         `}>
           {isLocation ? <MapPin className="w-5 h-5" /> : <Building className="w-5 h-5" />}
@@ -177,40 +164,40 @@ export function TreeNode({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             {level > 0 && (
-              <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-700">
+              <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 bg-slate-100 text-slate-600 border-slate-300">
                 L{level + 1}
               </Badge>
             )}
-            <span className="dark:text-slate-100 truncate text-sm sm:text-base" style={{ fontFamily: 'var(--zk-display)', fontWeight: 600, letterSpacing: '-0.025em', color: 'var(--zk-ink)' }}>
+            <span className="truncate text-sm sm:text-base" style={{ fontFamily: 'var(--zk-display)', fontWeight: 600, letterSpacing: '-0.025em', color: 'var(--zk-ink)' }}>
               {org.entityName}
             </span>
             <Badge variant={org.isActive !== false ? 'outline' : 'destructive'} className="text-[10px] px-1.5 py-0 h-5">
               {org.isActive !== false ? 'Active' : 'Inactive'}
             </Badge>
             {isLocation && (
-              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5 bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400">
+              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5 bg-emerald-100 text-emerald-700 border-emerald-200">
                 {(org as Location).locationType || 'Location'}
               </Badge>
             )}
             {(org as any).entityLevel !== null && (org as any).entityLevel !== undefined && (
-              <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 bg-[#1B2E5A]/5 dark:bg-[#1B2E5A]/10 text-[#1B2E5A] dark:text-blue-400 border-[#1B2E5A]/20 dark:border-blue-800">
+              <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 bg-primary/5 text-primary border-primary/20">
                 Level {(org as any).entityLevel}
               </Badge>
             )}
           </div>
-          <div className="flex items-center gap-3 mt-1 text-xs text-slate-500 dark:text-slate-400">
+          <div className="flex items-center gap-3 mt-1 text-xs text-slate-500">
             <span className="flex items-center gap-1">
               <Users className="w-3 h-3" />
               {org.responsiblePersonId ? getResponsiblePersonName(org.responsiblePersonId) : 'Unassigned'}
             </span>
             <span className="flex items-center gap-1" title={`Available: ${typeof (org as any).availableCredits === 'string' ? parseFloat((org as any).availableCredits) || 0 : (typeof (org as any).availableCredits === 'number' ? (org as any).availableCredits : 0)}, Reserved: ${typeof (org as any).reservedCredits === 'string' ? parseFloat((org as any).reservedCredits) || 0 : (typeof (org as any).reservedCredits === 'number' ? (org as any).reservedCredits : 0)}`}>
               <CreditCard className="w-3 h-3" />
-              <span className="dark:text-slate-300" style={{ fontFamily: 'var(--zk-mono)', fontWeight: 600, letterSpacing: '-0.02em', color: 'var(--zk-ink)' }}>
+              <span style={{ fontFamily: 'var(--zk-mono)', fontWeight: 600, letterSpacing: '-0.02em', color: 'var(--zk-ink)' }}>
                 {(typeof (org as any).availableCredits === 'string'
                   ? parseFloat((org as any).availableCredits) || 0
                   : (typeof (org as any).availableCredits === 'number' ? (org as any).availableCredits : 0)).toLocaleString(undefined, { maximumFractionDigits: 2 })}
               </span>
-              <span className="dark:text-slate-400" style={{ fontFamily: 'var(--zk-font)', fontSize: 12, color: 'var(--zk-muted)' }}>Credits</span>
+              <span style={{ fontFamily: 'var(--zk-font)', fontSize: 12, color: 'var(--zk-muted)' }}>Credits</span>
             </span>
           </div>
         </div>
@@ -222,7 +209,7 @@ export function TreeNode({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 text-slate-500 hover:text-[#1B2E5A]"
+                className="h-8 w-8 text-slate-500 hover:text-primary"
                 onClick={() =>
                   navigate({
                     to: '/dashboard/organization/create',
@@ -259,7 +246,7 @@ export function TreeNode({
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:text-[#1B2E5A]">
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:text-primary">
                 <MoreHorizontal className="w-4 h-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -272,14 +259,14 @@ export function TreeNode({
                 <Edit className="w-4 h-4 mr-2" /> Edit Details
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => {
-                setEditingEntity(org as Entity)
+                setEditingEntity(org as OrganizationEntity)
                 setShowEditResponsiblePerson(true)
               }}>
                 <UserCog className="w-4 h-4 mr-2" /> Assign Manager
               </DropdownMenuItem>
               {!isLocation && (
                 <DropdownMenuItem onClick={() => {
-                  setSelectedEntity(org as Entity)
+                  setSelectedEntity(org as OrganizationEntity)
                   setAllocationForm({ targetApplication: '', creditAmount: 0, allocationPurpose: '', autoReplenish: false })
                   setShowAllocationDialog(true)
                 }}>
@@ -310,7 +297,7 @@ export function TreeNode({
 
       {/* Children (Recursive) */}
       {expanded && hasChildren && (
-        <div className="space-y-1 relative pb-2 mt-1 ml-6 pl-4 border-l-2 border-slate-200 dark:border-slate-800">
+        <div className="space-y-1 relative pb-2 mt-1 ml-6 pl-4 border-l-2 border-slate-200">
           {orgChildren.map((child: any) => (
             <TreeNode
               key={child.entityId}

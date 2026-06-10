@@ -1,8 +1,19 @@
-import React, { useEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { useAuth } from '@/lib/auth/cognito-auth'
 import { ZopkitRoundLoader } from '@/components/common/feedback/ZopkitRoundLoader'
 import { useNavigate } from '@tanstack/react-router'
 import { clearStaleAuthStorage, isInvalidGrantError, markSessionRecoveryReason } from '@/lib/auth/session-recovery'
+
+function authErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message
+  if (typeof error === 'object' && error !== null && 'message' in error) {
+    return String((error as { message: unknown }).message)
+  }
+  if (typeof error === 'object' && error !== null && 'error_description' in error) {
+    return String((error as { error_description: unknown }).error_description)
+  }
+  return ''
+}
 
 export function AuthCallback() {
   const { isLoading, isAuthenticated, error, user } = useAuth()
@@ -33,8 +44,10 @@ export function AuthCallback() {
       }
 
       if (error) {
-        const errorMessage = error.message || (error as any)?.error_description || ''
-        const errorCode = (error as any)?.error || ''
+        const errorMessage = authErrorMessage(error)
+        const errorCode = typeof error === 'object' && error !== null && 'error' in error
+          ? String((error as { error: unknown }).error)
+          : ''
 
         const isInvalidGrant = isInvalidGrantError(error)
 
@@ -50,10 +63,7 @@ export function AuthCallback() {
             clearStaleAuthStorage()
             markSessionRecoveryReason('invalid_grant')
             hasNavigatedRef.current = true
-            navigate({
-              to: '/login?error=Session%20expired.%20Please%20sign%20in%20again.',
-              replace: true,
-            })
+            window.location.replace('/login?error=Session%20expired.%20Please%20sign%20in%20again.')
             return
           }
 
@@ -114,7 +124,7 @@ export function AuthCallback() {
 
         hasNavigatedRef.current = true
         if (onboardingParam === 'complete') {
-          navigate({ to: '/dashboard/applications?onboarding=complete', replace: true })
+          window.location.replace('/dashboard/applications?onboarding=complete')
         } else {
           navigate({ to: '/dashboard/applications', replace: true })
         }
@@ -133,8 +143,10 @@ export function AuthCallback() {
   }, [isLoading, isAuthenticated, error, navigate, user])
 
   if (error && !isAuthenticated) {
-    const errorMessage = error.message || (error as any)?.error_description || ''
-    const errorCode = (error as any)?.error || ''
+    const errorMessage = authErrorMessage(error)
+    const errorCode = typeof error === 'object' && error !== null && 'error' in error
+      ? String((error as { error: unknown }).error)
+      : ''
 
     const isInvalidGrant = isInvalidGrantError(error)
 
@@ -199,10 +211,7 @@ export function AuthCallback() {
               onClick={() => {
                 clearStaleAuthStorage()
                 markSessionRecoveryReason('invalid_grant')
-                navigate({
-                  to: '/login?error=Session%20expired.%20Please%20sign%20in%20again.',
-                  replace: true,
-                })
+                window.location.replace('/login?error=Session%20expired.%20Please%20sign%20in%20again.')
               }}
               className="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700"
             >
@@ -218,7 +227,7 @@ export function AuthCallback() {
         <div className="text-center">
           <div className="text-red-600 text-6xl mb-4">⚠️</div>
           <h2 className="text-xl font-semibold text-red-900 mb-2">Authentication Error</h2>
-          <p className="text-red-700 mb-4">{error.message || 'An error occurred during authentication'}</p>
+          <p className="text-red-700 mb-4">{authErrorMessage(error) || 'An error occurred during authentication'}</p>
           <button
             onClick={() => navigate({ to: '/login', replace: true })}
             className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
@@ -234,7 +243,7 @@ export function AuthCallback() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="text-center">
         <ZopkitRoundLoader size="xl" className="mx-auto mb-4" />
-        <h2 className="text-xl font-semibold text-[#1B2E5A] mb-2">Completing authentication...</h2>
+        <h2 className="text-xl font-semibold text-primary mb-2">Completing authentication...</h2>
         <p className="text-gray-600">Please wait while we log you in.</p>
       </div>
     </div>

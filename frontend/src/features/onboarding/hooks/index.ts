@@ -3,7 +3,7 @@
  */
 
 import { useState, useCallback, useEffect } from 'react';
-import { useForm, UseFormReturn, useFormState, useWatch } from 'react-hook-form';
+import { useForm, UseFormReturn, useFormState, useWatch, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { newBusinessData, existingBusinessData } from '../schemas';
 import { StepConfig } from '../config/flowConfigs';
@@ -29,7 +29,7 @@ export const useOnboardingForm = (
     : onboardingFormSchema;
 
   return useForm<newBusinessData | existingBusinessData>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(schema) as Resolver<newBusinessData | existingBusinessData>,
     mode: 'onChange',
     reValidateMode: 'onChange',
     shouldUnregister: false,

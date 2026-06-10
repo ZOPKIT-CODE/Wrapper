@@ -4,6 +4,7 @@ import { DynamicIcon } from '@/features/landing/components/Icons';
 import { products } from '@/data/content';
 import type { Product } from '@/types';
 import { config } from '@/lib/config';
+import { cn } from '@/lib/utils';
 
 /** Default ring radius in viewBox units (0–100). */
 export const DEFAULT_ORBITAL_R = 36;
@@ -338,7 +339,7 @@ export const OrbitalEcosystem: React.FC<OrbitalEcosystemProps> = ({
       transition={{ duration: 0.5, delay: 0.06 }}
       className={motionClassName}
     >
-      <div className={orbitFrameClass}>
+      <div className={cn(orbitFrameClass, 'orbital-ecosystem')} data-theme={theme}>
         <svg
           className="absolute inset-0 w-full h-full overflow-visible z-0"
           viewBox="-14 -14 128 128"
@@ -357,7 +358,7 @@ export const OrbitalEcosystem: React.FC<OrbitalEcosystemProps> = ({
             cy="50"
             r={orbitRadius}
             fill="none"
-            stroke={isDark ? 'rgba(255,255,255,0.18)' : '#cbd5e1'}
+            stroke="var(--orbit-grid-stroke)"
             strokeWidth={isHero ? 0.28 : 0.35}
             opacity={isHero ? (isDark ? 0.7 : 0.14) : 0.9}
             style={{ pointerEvents: 'none' }}
@@ -373,9 +374,7 @@ export const OrbitalEcosystem: React.FC<OrbitalEcosystemProps> = ({
                 y1="50"
                 x2={app.x}
                 y2={app.y}
-                stroke={isDark
-                  ? (isActive ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.1)')
-                  : (isActive ? '#334155' : '#e2e8f0')}
+                stroke={isActive ? 'var(--orbit-edge-active)' : 'var(--orbit-edge-idle)'}
                 strokeWidth={isActive ? 0.45 : 0.18}
                 opacity={isActive ? 1 : 0.55}
                 className="transition-all duration-300"
@@ -391,7 +390,7 @@ export const OrbitalEcosystem: React.FC<OrbitalEcosystemProps> = ({
                 <path
                   d={d}
                   fill="none"
-                  stroke={isDark ? 'rgba(255,255,255,0.08)' : '#1B2E5A'}
+                  stroke="var(--orbit-dep-faint)"
                   strokeWidth="0.68"
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -401,7 +400,7 @@ export const OrbitalEcosystem: React.FC<OrbitalEcosystemProps> = ({
               <path
                 d={d}
                 fill="none"
-                stroke={isDark ? 'rgba(255,255,255,0.35)' : 'rgba(15,23,42,0.18)'}
+                stroke="var(--orbit-dep-flow)"
                 strokeWidth={isHero ? 0.48 : 0.48}
                 strokeDasharray="2.2 2.8"
                 strokeLinecap="round"
@@ -431,8 +430,8 @@ export const OrbitalEcosystem: React.FC<OrbitalEcosystemProps> = ({
           <div
             className={
               isHero
-                ? `w-14 h-14 sm:w-[4.5rem] sm:h-[4.5rem] lg:w-24 lg:h-24 rounded-full bg-[#1B2E5A] flex items-center justify-center mx-auto overflow-hidden ring-[3px] sm:ring-4 shadow-lg ${isDark ? 'ring-white/25 shadow-blue-500/20' : 'ring-white'}`
-                : `w-11 h-11 sm:w-16 sm:h-16 lg:w-20 lg:h-20 rounded-full bg-[#1B2E5A] flex items-center justify-center mx-auto overflow-hidden ring-2 sm:ring-4 ${isDark ? 'ring-white/20' : 'ring-white'}`
+                ? `w-14 h-14 sm:w-[4.5rem] sm:h-[4.5rem] lg:w-24 lg:h-24 rounded-full bg-primary flex items-center justify-center mx-auto overflow-hidden ring-[3px] sm:ring-4 shadow-lg ${isDark ? 'ring-white/25 shadow-blue-500/20' : 'ring-white'}`
+                : `w-11 h-11 sm:w-16 sm:h-16 lg:w-20 lg:h-20 rounded-full bg-primary flex items-center justify-center mx-auto overflow-hidden ring-2 sm:ring-4 ${isDark ? 'ring-white/20' : 'ring-white'}`
             }
           >
             <img
@@ -482,11 +481,11 @@ export const OrbitalEcosystem: React.FC<OrbitalEcosystemProps> = ({
                     ${
                       isActive
                         ? isDark
-                          ? 'bg-white ring-2 ring-white/40 ring-offset-2 ring-offset-transparent scale-110 shadow-lg shadow-white/10'
-                          : 'bg-[#0F1B3D] ring-2 ring-[#0F1B3D] ring-offset-2 ring-offset-white scale-110 shadow-md'
+                          ? 'bg-background ring-2 ring-white/40 ring-offset-2 ring-offset-transparent scale-110 shadow-lg shadow-white/10'
+                          : 'bg-[var(--orbit-node-active-bg)] ring-2 ring-[var(--orbit-node-active-bg)] ring-offset-2 ring-offset-background scale-110 shadow-md'
                         : isDark
                           ? 'bg-white/10 border border-white/15 backdrop-blur-sm group-hover:bg-white/20 group-hover:border-white/30 group-hover:scale-105'
-                          : 'bg-slate-50 border border-slate-200 group-hover:border-slate-300 group-hover:bg-white group-hover:shadow-sm group-hover:scale-105'
+                          : 'bg-[var(--orbit-node-idle-bg)] border border-[var(--orbit-node-idle-border)] group-hover:border-border group-hover:bg-background group-hover:shadow-sm group-hover:scale-105'
                     }
                   `}
               >
@@ -498,8 +497,8 @@ export const OrbitalEcosystem: React.FC<OrbitalEcosystemProps> = ({
                       : 'w-3.5 h-3.5 sm:w-[18px] sm:h-[18px] lg:w-5 lg:h-5'
                   } ${
                     isActive
-                      ? isDark ? 'text-[#1B2E5A]' : 'text-white'
-                      : isDark ? 'text-white/55 group-hover:text-white/90' : 'text-slate-500 group-hover:text-slate-700'
+                      ? isDark ? 'text-primary' : 'text-primary-foreground'
+                      : isDark ? 'text-white/55 group-hover:text-white/90' : 'text-muted-foreground group-hover:text-foreground'
                   }`}
                 />
               </div>
@@ -509,11 +508,11 @@ export const OrbitalEcosystem: React.FC<OrbitalEcosystemProps> = ({
                 } ${
                   isActive
                     ? isHero
-                      ? `text-[8px] sm:text-[11px] lg:text-[12px] font-bold ${isDark ? 'text-white' : 'text-[#1B2E5A]'}`
-                      : `text-[7px] sm:text-[10px] lg:text-[11px] font-bold ${isDark ? 'text-white' : 'text-[#1B2E5A]'}`
+                      ? `text-[8px] sm:text-[11px] lg:text-[12px] font-bold ${isDark ? 'text-white' : 'text-primary'}`
+                      : `text-[7px] sm:text-[10px] lg:text-[11px] font-bold ${isDark ? 'text-white' : 'text-primary'}`
                     : isHero
-                      ? `text-[7px] sm:text-[10px] lg:text-[11px] font-medium ${isDark ? 'text-white/50 group-hover:text-white/80' : 'text-slate-600 group-hover:text-slate-700'}`
-                      : `text-[6px] sm:text-[9px] lg:text-[10px] font-medium ${isDark ? 'text-white/50 group-hover:text-white/80' : 'text-slate-600 group-hover:text-slate-700'}`
+                      ? `text-[7px] sm:text-[10px] lg:text-[11px] font-medium ${isDark ? 'text-white/50 group-hover:text-white/80' : 'text-muted-foreground group-hover:text-foreground'}`
+                      : `text-[6px] sm:text-[9px] lg:text-[10px] font-medium ${isDark ? 'text-white/50 group-hover:text-white/80' : 'text-muted-foreground group-hover:text-foreground'}`
                 }`}
               >
                 <span className={`sm:hidden px-1.5 py-0.5 rounded-md ${isDark ? 'bg-transparent' : 'bg-white/90'}`}>{app.short}</span>
@@ -526,7 +525,7 @@ export const OrbitalEcosystem: React.FC<OrbitalEcosystemProps> = ({
         {/* Hover tooltip — appears above the hovered connection line's midpoint */}
         {hoveredEdge && (
           <div
-            className="absolute z-50 px-2 py-1 rounded-md bg-[#0F1B3D] text-white text-[11px] font-medium shadow-[0_4px_12px_rgba(15,23,42,0.15)] pointer-events-none whitespace-nowrap"
+            className="absolute z-50 px-2 py-1 rounded-md bg-[var(--orbit-tooltip-bg)] text-primary-foreground text-[11px] font-medium shadow-md pointer-events-none whitespace-nowrap"
             style={{
               left: `${hoveredEdge.lx}%`,
               top: `${hoveredEdge.ly}%`,
@@ -542,7 +541,7 @@ export const OrbitalEcosystem: React.FC<OrbitalEcosystemProps> = ({
 
   const mobileStrip = showMobileStrip ? (
     <div className={layout === 'grid' ? 'col-span-full lg:hidden mt-4' : 'lg:hidden mt-4'}>
-      <p className={`text-[10px] font-semibold uppercase tracking-widest mb-2 ${isDark ? 'text-white/35' : 'text-slate-400'}`}>Explore the ecosystem</p>
+      <p className={`text-[10px] font-semibold uppercase tracking-widest mb-2 ${isDark ? 'text-white/35' : 'text-muted-foreground'}`}>Explore the ecosystem</p>
       <div ref={scrollContainerRef} className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
         {orbitApps.map((app) => {
           const isActive = activeProduct.id === app.id;
@@ -558,17 +557,17 @@ export const OrbitalEcosystem: React.FC<OrbitalEcosystemProps> = ({
               className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs transition-all cursor-pointer font-sans ${
                 isActive
                   ? isDark
-                    ? 'bg-white text-[#0C1829] font-bold shadow-sm'
-                    : 'bg-[#1B2E5A] text-white font-bold shadow-sm'
+                    ? 'bg-background text-[var(--orbit-tab-active-text)] font-bold shadow-sm'
+                    : 'bg-primary text-primary-foreground font-bold shadow-sm'
                   : isDark
                     ? 'bg-white/10 text-white/65 font-medium hover:bg-white/18'
-                    : 'bg-slate-100 text-slate-600 font-medium hover:bg-slate-200'
+                    : 'bg-muted text-muted-foreground font-medium hover:bg-accent'
               }`}
             >
               <DynamicIcon name={app.icon} className={`w-3.5 h-3.5 ${
                 isActive
-                  ? isDark ? 'text-[#0C1829]' : 'text-white'
-                  : isDark ? 'text-white/40' : 'text-slate-400'
+                  ? isDark ? 'text-[var(--orbit-tab-active-text)]' : 'text-primary-foreground'
+                  : isDark ? 'text-white/40' : 'text-muted-foreground'
               }`} />
               {displayLabel}
             </button>

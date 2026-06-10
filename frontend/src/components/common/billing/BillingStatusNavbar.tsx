@@ -1,19 +1,13 @@
-import React from 'react';
-import { Coins, Calendar, Crown, AlertTriangle, Clock, Shield, ArrowUp, Sparkles } from 'lucide-react';
+import { Calendar, Crown, AlertTriangle, Clock, Shield, Sparkles } from 'lucide-react';
 import { useCreditStatusQuery, useSubscriptionCurrent } from '@/hooks/useSharedQueries';
-import { useAuth } from '@/lib/auth/cognito-auth';
 import { formatDate } from '@/lib/utils';
 import { cn } from '@/lib/utils';
-import { useNavigate } from '@tanstack/react-router';
 
 interface BillingStatusNavbarProps {
   className?: string;
 }
 
 export function BillingStatusNavbar({ className }: BillingStatusNavbarProps) {
-  const { isAuthenticated } = useAuth();
-  const navigate = useNavigate();
-
   // Fetch credit status
   const { data: creditResponse, isLoading: creditLoading } = useCreditStatusQuery();
 
@@ -49,25 +43,16 @@ export function BillingStatusNavbar({ className }: BillingStatusNavbarProps) {
     seasonalCredits = 0,
     creditExpiry,
     lowBalanceThreshold = 100,
-    criticalBalanceThreshold = 10
   } = creditData;
 
   // Calculate expiry status early
   const isExpiringSoon = creditExpiry ? new Date(creditExpiry) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) : false;
 
   const isLowBalance = availableCredits <= lowBalanceThreshold;
-  const isCriticalBalance = availableCredits <= criticalBalanceThreshold;
-
-  // Determine status color based on credit balance
-  const getStatusColor = () => {
-    if (isCriticalBalance) return 'text-red-600 dark:text-red-400';
-    if (isLowBalance) return 'text-orange-600 dark:text-orange-400';
-    return 'text-green-600 dark:text-green-400';
-  };
 
   const getExpiryColor = () => {
-    if (isExpiringSoon) return 'text-orange-600 dark:text-orange-400';
-    return 'text-gray-600 dark:text-gray-400';
+    if (isExpiringSoon) return 'text-orange-600';
+    return 'text-gray-600';
   };
 
   // Map plan IDs to proper plan names
@@ -86,23 +71,6 @@ export function BillingStatusNavbar({ className }: BillingStatusNavbarProps) {
   const planName = planNameMap[planId] || 
                    (planId === 'credit_based' ? 'Free' : planId.charAt(0).toUpperCase() + planId.slice(1)) || 
                    'Free';
-  const isFreePlan = subscription.plan === 'free' || !subscription.plan;
-  const showUpgradePrompt = isFreePlan || subscription.plan === 'starter';
-
-  // Get categorized expiry dates - prioritize subscription expiry for consistency
-  // Use subscription.currentPeriodEnd as the primary source (same as billing page)
-  const subscriptionExpiryDate = subscription?.currentPeriodEnd;
-  // Credit expiry fields come exclusively from creditData (useCreditStatusQuery).
-  // subscription no longer carries credit data.
-  const freeCreditsExpiry = creditData?.freeCreditsExpiry || subscriptionExpiryDate;
-  const paidCreditsExpiry = creditData?.paidCreditsExpiry ?? null;
-  const seasonalCreditsExpiry = creditData?.seasonalCreditsExpiry ?? null;
-  
-  // Format date consistently with billing page (includes year)
-  const formatExpiryDate = (date: string | null | undefined) => {
-    if (!date) return null;
-    return formatDate(date); // Uses the same formatDate utility as billing page
-  };
 
   return (
     <div className={cn("flex items-center gap-3 px-4 py-2 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300", className)}>

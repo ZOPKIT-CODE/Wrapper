@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
 } from '../ui/dropdown-menu';
-import { LogOut, User, Settings, Building, ChevronDown } from 'lucide-react';
+import { LogOut, User, Settings, ChevronDown } from 'lucide-react';
 import { logger } from '@/lib/logger';
 
 interface AuthButtonProps {
@@ -36,7 +36,7 @@ const providerConfig = {
   microsoft: {
     icon: '🪟',
     name: 'Microsoft',
-    className: 'bg-[#1B2E5A] hover:bg-[#152449] text-white'
+    className: 'bg-primary hover:bg-primary-hover text-white'
   },
   apple: {
     icon: '🍎',
@@ -46,7 +46,7 @@ const providerConfig = {
   linkedin: {
     icon: '💼',
     name: 'LinkedIn',
-    className: 'bg-[#1B2E5A] hover:bg-[#152449] text-white'
+    className: 'bg-primary hover:bg-primary-hover text-white'
   }
 };
 

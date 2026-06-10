@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Users, Building2, CreditCard, TrendingUp, AlertTriangle, RefreshCw, Download, UserCheck } from 'lucide-react';
+import { Loader2, Users, Building2, CreditCard, AlertTriangle, RefreshCw, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
 
@@ -137,8 +137,8 @@ const AdminDashboard: React.FC = () => {
   }
 
   return (
-    <Container wide className="dashboard-actionable-cursors">
-      <div className="rounded-2xl bg-gradient-to-br from-[#11254d] via-[#1B2E5A] to-[#0f1f40] p-6 text-white shadow-2xl mb-6">
+    <Container className="dashboard-actionable-cursors">
+      <div className="rounded-2xl bg-gradient-to-br from-primary-hover via-primary to-[#0f1f40] p-6 text-white shadow-2xl mb-6">
 
         <div className="flex items-center justify-between">
           <div>
@@ -166,7 +166,7 @@ const AdminDashboard: React.FC = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-7 bg-[#1B2E5A] text-white">
+        <TabsList className="grid w-full grid-cols-7 bg-primary text-white">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="tenants-entities">Tenants & Entities</TabsTrigger>
           <TabsTrigger value="credits">Credits</TabsTrigger>

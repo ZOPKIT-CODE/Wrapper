@@ -60,7 +60,7 @@ export const PersonalDetailsStep = ({ form, userClassification }: PersonalDetail
   const isPhoneRequired = userClassification === 'withGST' || userClassification === 'enterprise';
 
   // Shared Styles
-  const inputClasses = "w-full px-4 py-3.5 bg-white border border-slate-200 rounded-xl text-[#1B2E5A] placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-200 hover:border-slate-300 shadow-sm";
+  const inputClasses = "w-full px-4 py-3.5 bg-white border border-slate-200 rounded-xl text-primary placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-200 hover:border-slate-300 shadow-sm";
   const labelClasses = "block text-sm font-semibold text-slate-700 mb-1.5 ml-1";
 
   return (
@@ -73,7 +73,7 @@ export const PersonalDetailsStep = ({ form, userClassification }: PersonalDetail
             </Badge>
           )}
         </div>
-        <h1 className="text-3xl font-bold tracking-tight text-[#1B2E5A]">
+        <h1 className="text-3xl font-bold tracking-tight text-primary">
           {personalizedContent.title}
         </h1>
         <p className="text-lg text-slate-500 leading-relaxed max-w-2xl">

@@ -1,11 +1,11 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { CrmRoleTemplatesSection } from './components/CrmRoleTemplatesSection';
-import { ShieldPlus, MoreVertical, Eye, Edit, Copy, Trash2, Search, Download, Archive, RefreshCw, Shield, Plus, Crown, Users } from 'lucide-react';
+import { ShieldPlus, MoreVertical, Eye, Edit, Copy, Trash2, Search, Download, Archive, Shield, Plus, Crown } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -20,7 +20,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
@@ -32,11 +31,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-import { ApplicationModuleRoleBuilder } from './ApplicationModuleRoleBuilder';
 import api, { Role } from '@/lib/api';
 import { usePermissionRefreshTrigger } from '@/features/roles/PermissionRefreshNotification';
-import { useQueryClient } from '@tanstack/react-query';
-import { EnhancedPermissionSummary } from './EnhancedPermissionSummary';
+import type { BulkAction } from '@/types/role-management';
 import { useTheme } from '@/components/theme/ThemeProvider';
 import { useRoles, useInvalidateQueries } from '@/hooks/useSharedQueries';
 import { getPermissionSummary as getPermissionSummaryUtil } from './utils/permissionUtils';
@@ -70,7 +67,6 @@ const getPermissionSummary = (permissions: Record<string, any> | string[]) => {
 
 export function RoleManagementDashboard() {
   const { actualTheme } = useTheme();
-  const queryClient = useQueryClient();
   const { triggerRefresh } = usePermissionRefreshTrigger();
   const navigate = useNavigate();
 
@@ -79,10 +75,6 @@ export function RoleManagementDashboard() {
   const [selectedRoles, setSelectedRoles] = useState<Set<string>>(new Set());
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletingRole, setDeletingRole] = useState<{ id: string; name: string } | null>(null);
-  const [showRoleBuilder, setShowRoleBuilder] = useState(false);
-  const [showAppModuleBuilder, setShowAppModuleBuilder] = useState(false);
-  const [editingRole, setEditingRole] = useState<DashboardRole | null>(null);
-
   // Enhanced filters
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<'all' | 'custom' | 'system'>('all');
@@ -90,10 +82,8 @@ export function RoleManagementDashboard() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
   // Pagination
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
-  const [totalCount, setTotalCount] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
+  const [currentPage] = useState(1);
+  const [pageSize] = useState(20);
 
   // Use shared hook with caching instead of direct API calls
   const { data: rolesData = [], isLoading: rolesLoading, isFetching: rolesFetching, refetch: refetchRoles } = useRoles({
@@ -107,7 +97,7 @@ export function RoleManagementDashboard() {
   useEffect(() => {
     if (rolesData.length > 0) {
       // Normalize permissions for all roles (convert JSON strings to objects)
-      const normalizedRoles = rolesData.map(role => ({
+      const normalizedRoles = rolesData.map((role: Role) => ({
         ...role,
         permissions: normalizePermissions(role.permissions),
         restrictions: typeof role.restrictions === 'string'
@@ -158,16 +148,8 @@ export function RoleManagementDashboard() {
       const paginatedRoles = filteredRoles.slice(startIndex, startIndex + pageSize);
 
       setRoles(paginatedRoles);
-      setTotalCount(filteredRoles.length);
-      setTotalPages(Math.ceil(filteredRoles.length / pageSize));
     }
   }, [rolesData, currentPage, pageSize, sortBy, sortOrder]);
-
-  // Load roles function - now uses shared hook
-  const loadRoles = async () => {
-    invalidateRoles();
-    await refetchRoles();
-  };
 
   const handleCreateRole = () => {
     navigate({ to: '/dashboard/roles/new' });
@@ -284,120 +266,6 @@ export function RoleManagementDashboard() {
     }
   }, [bulkDeleteRoles]);
 
-  const handleRoleSave = useCallback(async (roleData: any) => {
-    // Check if this is a success callback from ApplicationModuleRoleBuilder
-    const isSuccessCallback = roleData.roleId && (roleData.selectedApps || roleData.roleName);
-
-    if (isSuccessCallback) {
-      // The role has already been created/updated, refresh the list and close
-
-      try {
-        invalidateRoles();
-        await refetchRoles(); // Force immediate refetch
-      } catch (error) {
-        console.error('⚠️ Failed to refresh roles:', error);
-      }
-
-      setShowRoleBuilder(false);
-      setShowAppModuleBuilder(false);
-      setEditingRole(null);
-      return;
-    }
-
-    try {
-      let response;
-      let payload: any;
-
-      // Check if this data is coming from AdvancedRoleBuilder or ApplicationModuleRoleBuilder
-      const isAdvancedRoleBuilder = roleData.permissions && typeof roleData.permissions === 'object' &&
-        roleData.restrictions && typeof roleData.restrictions === 'object' &&
-        !roleData.selectedApps; // AdvancedRoleBuilder doesn't have selectedApps
-
-      const isApplicationModuleBuilder = roleData.selectedApps && roleData.selectedModules && roleData.selectedPermissions;
-
-      if (isAdvancedRoleBuilder) {
-        // Data from AdvancedRoleBuilder - transform to proper format for /roles endpoint
-        payload = {
-          name: roleData.name,
-          description: roleData.description,
-          color: roleData.color,
-          icon: roleData.icon,
-          permissions: roleData.permissions,
-          restrictions: roleData.restrictions, // Already in correct object format
-          inheritance: roleData.inheritance,
-          metadata: roleData.metadata
-        };
-
-        if (payload.roleId || editingRole?.roleId) {
-          const roleId = payload.roleId || editingRole?.roleId;
-          delete payload.roleId; // Remove roleId from payload as it's in the URL
-          response = await api.put(`/permissions/roles/${roleId}`, payload);
-        } else {
-          delete payload.roleId;
-          response = await api.post('/permissions/roles', payload);
-        }
-
-      } else if (isApplicationModuleBuilder) {
-        // Data from ApplicationModuleRoleBuilder - use custom role service endpoints
-        payload = { ...roleData };
-
-        if (payload.roleId || editingRole?.roleId) {
-          const roleId = payload.roleId || editingRole?.roleId;
-          delete payload.roleId;
-          response = await api.put(`/custom-roles/update-from-builder/${roleId}`, payload);
-        } else {
-          delete payload.roleId;
-          response = await api.post('/custom-roles/create-from-builder', payload);
-        }
-
-      } else {
-        // Fallback for other sources - use general roles endpoint
-        payload = { ...roleData };
-
-        if (payload.roleId || editingRole?.roleId) {
-          const roleId = payload.roleId || editingRole?.roleId;
-          delete payload.roleId;
-          response = await api.put(`/permissions/roles/${roleId}`, payload);
-        } else {
-          delete payload.roleId;
-          response = await api.post('/permissions/roles', payload);
-        }
-      }
-
-      if (response.data.success) {
-
-        // Invalidate and refetch roles data to show updated list
-        try {
-          invalidateRoles();
-          await refetchRoles(); // Force immediate refetch
-        } catch (error) {
-          console.error('⚠️ Failed to refresh roles:', error);
-          // Fallback: Force page reload if cache invalidation fails
-          window.location.reload();
-        }
-
-        // Reset state
-        setShowRoleBuilder(false);
-        setShowAppModuleBuilder(false);
-        setEditingRole(null);
-
-        toast.success(editingRole ? 'Role updated successfully!' : 'Role created successfully!');
-      } else {
-        console.error('❌ Role save failed:', response.data);
-        toast.error(response.data.error || 'Failed to save role');
-      }
-    } catch (error: any) {
-      console.error('🚨 Error in handleRoleSave:', error);
-
-      // Check if it's a validation error about restrictions
-      if (error.response?.status === 400 && error.response?.data?.message?.includes('restrictions must be object')) {
-        toast.error('Invalid role restrictions format. Please check your role configuration.');
-      } else {
-        toast.error(error.response?.data?.message || error.message || 'Failed to save role');
-      }
-    }
-  }, [editingRole, queryClient, loadRoles]);
-
   const toggleRoleSelection = useCallback((roleId: string) => {
     setSelectedRoles(prev => {
       const newSet = new Set(prev);
@@ -488,7 +356,7 @@ export function RoleManagementDashboard() {
             <div
               className={cn(
                 "w-11 h-11 rounded-xl flex items-center justify-center shrink-0 shadow-sm ring-1 ring-black/5",
-                !role.color && "dark:bg-blue-900/20 dark:text-blue-400"
+                !role.color && "dark:bg-blue-900/20"
               )}
               style={role.color ? { backgroundColor: `${role.color}18`, color: role.color, border: `1px solid ${role.color}25` } : { backgroundColor: 'color-mix(in srgb, var(--zk-navy) 10%, transparent)', color: 'var(--zk-navy)' }}
             >
@@ -535,7 +403,7 @@ export function RoleManagementDashboard() {
               <span className="opacity-50" style={{ fontFamily: 'var(--zk-mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase' }}>Apps</span>
               <span style={{ fontFamily: 'var(--zk-mono)', fontSize: 14, fontWeight: 700, letterSpacing: '-0.02em' }}>{displayApps}</span>
             </div>
-            <div className="w-px h-6 bg-slate-200 dark:bg-slate-700 mx-1"></div>
+            <div className="w-px h-6 bg-slate-200 mx-1"></div>
             <div className="flex flex-col items-center">
               <span className="opacity-50" style={{ fontFamily: 'var(--zk-mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase' }}>Modules</span>
               <span style={{ fontFamily: 'var(--zk-mono)', fontSize: 14, fontWeight: 700, letterSpacing: '-0.02em' }}>{displayModules}</span>
@@ -546,24 +414,24 @@ export function RoleManagementDashboard() {
         <td className="px-5 py-4 align-middle">
           <div className="flex flex-wrap items-center gap-2 justify-center">
             {permissionSummary.admin > 0 && (
-              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-rose-50 border border-rose-100 dark:bg-rose-500/10 dark:border-rose-500/20" title="Admin Permissions">
+              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-rose-50 border border-rose-100" title="Admin Permissions">
                 <div className="w-1.5 h-1.5 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.6)]" />
-                <span className="text-rose-700 dark:text-rose-400" style={{ fontFamily: 'var(--zk-mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.06em' }}>{permissionSummary.admin}</span>
+                <span className="text-rose-700" style={{ fontFamily: 'var(--zk-mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.06em' }}>{permissionSummary.admin}</span>
               </div>
             )}
             {permissionSummary.write > 0 && (
-              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-50 border border-amber-100 dark:bg-amber-500/10 dark:border-amber-500/20" title="Write Permissions">
+              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-50 border border-amber-100" title="Write Permissions">
                 <div className="w-1.5 h-1.5 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)]" />
-                <span className="text-amber-700 dark:text-amber-400" style={{ fontFamily: 'var(--zk-mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.06em' }}>{permissionSummary.write}</span>
+                <span className="text-amber-700" style={{ fontFamily: 'var(--zk-mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.06em' }}>{permissionSummary.write}</span>
               </div>
             )}
             {permissionSummary.read > 0 && (
-              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-100 dark:bg-emerald-500/10 dark:border-emerald-500/20" title="Read Permissions">
+              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-100" title="Read Permissions">
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
-                <span className="text-emerald-700 dark:text-emerald-400" style={{ fontFamily: 'var(--zk-mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.06em' }}>{permissionSummary.read}</span>
+                <span className="text-emerald-700" style={{ fontFamily: 'var(--zk-mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.06em' }}>{permissionSummary.read}</span>
               </div>
             )}
-            <div className="ml-1 text-slate-400 dark:text-slate-500" style={{ fontFamily: 'var(--zk-mono)', fontSize: 10, fontWeight: 500 }}>
+            <div className="ml-1 text-slate-400" style={{ fontFamily: 'var(--zk-mono)', fontSize: 10, fontWeight: 500 }}>
               {displayCount} total
             </div>
           </div>
@@ -577,7 +445,7 @@ export function RoleManagementDashboard() {
                 "h-5 uppercase",
                 actualTheme === 'dark'
                   ? role.isSystemRole ? "bg-[#1B2E5A]/30 text-blue-300 border-blue-500/40" : "bg-slate-700 text-slate-300 border-slate-600"
-                  : "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600"
+                  : "bg-slate-100 text-slate-700 border-slate-200"
               )}
               style={{ fontFamily: 'var(--zk-mono)', fontSize: 10, letterSpacing: '0.06em', fontWeight: 500 }}
             >
@@ -595,7 +463,7 @@ export function RoleManagementDashboard() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-9 w-9 p-0 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 hover:ring-1 hover:ring-slate-200 dark:hover:ring-slate-600"
+                className="h-9 w-9 p-0 rounded-lg hover:bg-slate-100 hover:ring-1 hover:ring-slate-200"
                 onClick={(e) => e.stopPropagation()}
               >
                 <MoreVertical className="w-4 h-4" />
@@ -976,7 +844,7 @@ export function RoleManagementDashboard() {
                 </tr>
               </thead>
               <tbody className={cn(
-                "divide-y divide-slate-100 dark:divide-slate-800/80",
+                "divide-y divide-slate-100",
                 actualTheme === 'dark' && 'divide-slate-700/50',
                 actualTheme === 'monochrome' && 'divide-gray-700/50'
               )}>

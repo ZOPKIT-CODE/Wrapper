@@ -36,10 +36,10 @@ export function OrganizationCreateStepper({
                 className={cn(
                   'flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors',
                   index === currentStep
-                    ? 'bg-[#1B2E5A] text-white shadow-sm'
+                    ? 'bg-primary text-white shadow-sm'
                     : index < currentStep
-                      ? 'bg-[#1B2E5A] text-white'
-                      : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400',
+                      ? 'bg-primary text-white'
+                      : 'bg-slate-100 text-slate-500',
                 )}
               >
                 {index < currentStep ? <Check className="h-3.5 w-3.5" strokeWidth={3} /> : index + 1}
@@ -51,11 +51,11 @@ export function OrganizationCreateStepper({
                 aria-hidden
               >
                 {/* Track */}
-                <div className="absolute left-0 right-0 top-1/2 h-0.5 -translate-y-1/2 rounded-full bg-slate-200 dark:bg-slate-700" />
+                <div className="absolute left-0 right-0 top-1/2 h-0.5 -translate-y-1/2 rounded-full bg-slate-200" />
                 {/* Filled path — deep blue when this segment is completed */}
                 <div
                   className={cn(
-                    'absolute left-0 top-1/2 h-0.5 -translate-y-1/2 rounded-full bg-[#1B2E5A] transition-[width] duration-300 ease-out',
+                    'absolute left-0 top-1/2 h-0.5 -translate-y-1/2 rounded-full bg-primary transition-[width] duration-300 ease-out',
                     segmentProgress(currentStep, index) ? 'w-full' : 'w-0',
                   )}
                 />
@@ -73,9 +73,9 @@ export function OrganizationCreateStepper({
             className={cn(
               'text-center text-[11px] leading-tight sm:text-xs',
               index === currentStep
-                ? 'font-medium text-[#1B2E5A] dark:text-[#1B2E5A]/60'
+                ? 'font-medium text-primary'
                 : index < currentStep
-                  ? 'text-[#1B2E5A]/90 dark:text-[#8BA3D4]'
+                  ? 'text-primary/90'
                   : 'text-slate-400',
             )}
           >

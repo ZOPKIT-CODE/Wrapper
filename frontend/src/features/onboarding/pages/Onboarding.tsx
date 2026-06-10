@@ -1,6 +1,5 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useAuth } from '@/lib/auth/cognito-auth';
-import { useTheme } from '@/components/theme/ThemeProvider';
 import { OnboardingForm } from '../components/OnboardingForm';
 import { onboardingLogger } from '../utils/onboardingLogger';
 
@@ -9,38 +8,11 @@ import { onboardingLogger } from '../utils/onboardingLogger';
  */
 const OnboardingPage: React.FC = () => {
     const { isLoading: isAuthLoading } = useAuth();
-    const { theme, setTheme } = useTheme();
-
-    // Force light theme for onboarding page - use ref to prevent infinite loops
-    const originalThemeRef = React.useRef<string | null>(null);
-
-    useEffect(() => {
-        // Store original theme only once
-        if (originalThemeRef.current === null) {
-            originalThemeRef.current = theme;
-        }
-
-        // Only set theme if it's not already light
-        if (theme !== 'light') {
-            onboardingLogger.info('Forcing light theme for onboarding page', { previousTheme: theme });
-            setTheme('light');
-        }
-
-        // Restore original theme when component unmounts
-        return () => {
-            const originalTheme = originalThemeRef.current;
-            if (originalTheme && originalTheme !== 'light') {
-                onboardingLogger.info('Restoring original theme on unmount', { originalTheme });
-                setTheme(originalTheme);
-            }
-        };
-    }, []); // Only run on mount/unmount - remove theme dependency to prevent loops
 
     if (isAuthLoading) {
         onboardingLogger.debug('Onboarding page: auth loading');
     }
 
-    // Show loading while determining authentication status
     if (isAuthLoading) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -52,7 +24,6 @@ const OnboardingPage: React.FC = () => {
         );
     }
 
-    // OnboardingForm handles flow selection internally with optimized performance
     return (
         <div className="h-screen w-full overflow-hidden">
             <OnboardingForm />

@@ -43,7 +43,7 @@ export const TextareaField: React.FC<FieldComponentProps> = ({
                 formField.onChange(e);
                 onChange(e.target.value);
               }}
-              onBlur={(e) => {
+              onBlur={(_e) => {
                 formField.onBlur();
                 onBlur?.();
               }}

@@ -34,8 +34,7 @@ export {
 // Field components
 export * from './field-components'
 
-// Types
-export * from './types'
+// Types: import from './types' directly (names collide with field components in this barrel)
 
 // Examples (configs & schemas only)
 export { onboardingFormConfig } from './examples/onboardingConfig'

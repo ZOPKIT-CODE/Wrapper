@@ -17,10 +17,8 @@ import {
 } from "@/components/ui/sheet"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
-  Tooltip,
   TooltipContent,
   TooltipProvider,
-  TooltipTrigger,
 } from "@/components/ui/tooltip"
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state"
@@ -264,7 +262,7 @@ function SidebarTrigger({
       data-slot="sidebar-trigger"
       variant="ghost"
       size="icon"
-      className={cn("size-7 hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent dark:hover:text-accent-foreground", className)}
+      className={cn("size-7 hover:bg-accent hover:text-accent-foreground", className)}
       onClick={(event) => {
         onClick?.(event)
         toggleSidebar()
@@ -478,9 +476,9 @@ const sidebarMenuButtonVariants = cva(
       variant: {
         default: "text-white/70 hover:text-white hover:bg-white/10 rounded-xl",
         outline:
-          "bg-background shadow-[0_0_0_1px_hsl(var(--sidebar-border))] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:shadow-[0_0_0_1px_hsl(var(--sidebar-accent))]",
+          "border border-sidebar-border bg-background hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
         curved:
-          "text-white/70 hover:text-white hover:bg-white/10 rounded-l-full rounded-r-none relative transition-all duration-200 ease-in-out -mr-2 w-[calc(100%+8px)] pr-4 data-[active=true]:bg-white data-[active=true]:text-[#2A2359] data-[active=true]:font-bold data-[active=true]:shadow-none data-[active=true]:hover:bg-white data-[active=true]:hover:text-[#2A2359] z-50 overflow-visible data-[active=true]:before:content-[''] data-[active=true]:before:absolute data-[active=true]:before:right-0 data-[active=true]:before:-top-8 data-[active=true]:before:w-8 data-[active=true]:before:h-8 data-[active=true]:before:bg-transparent data-[active=true]:before:rounded-br-[32px] data-[active=true]:before:shadow-[10px_10px_0_10px_white] data-[active=true]:after:content-[''] data-[active=true]:after:absolute data-[active=true]:after:right-0 data-[active=true]:after:-bottom-8 data-[active=true]:after:w-8 data-[active=true]:after:h-8 data-[active=true]:after:bg-transparent data-[active=true]:after:rounded-tr-[32px] data-[active=true]:after:shadow-[10px_-10px_0_10px_white]"
+          "text-white/70 hover:text-white hover:bg-white/10 rounded-l-full rounded-r-none relative transition-all duration-200 ease-in-out -mr-2 w-[calc(100%+8px)] pr-4 data-[active=true]:bg-white data-[active=true]:text-primary data-[active=true]:font-bold data-[active=true]:shadow-none data-[active=true]:hover:bg-white data-[active=true]:hover:text-[#2A2359] z-50 overflow-visible data-[active=true]:before:content-[''] data-[active=true]:before:absolute data-[active=true]:before:right-0 data-[active=true]:before:-top-8 data-[active=true]:before:w-8 data-[active=true]:before:h-8 data-[active=true]:before:bg-transparent data-[active=true]:before:rounded-br-[32px] data-[active=true]:before:shadow-[10px_10px_0_10px_white] data-[active=true]:after:content-[''] data-[active=true]:after:absolute data-[active=true]:after:right-0 data-[active=true]:after:-bottom-8 data-[active=true]:after:w-8 data-[active=true]:after:h-8 data-[active=true]:after:bg-transparent data-[active=true]:after:rounded-tr-[32px] data-[active=true]:after:shadow-[10px_-10px_0_10px_white]"
       },
       size: {
         default: "h-10 text-sm",

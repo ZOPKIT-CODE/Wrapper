@@ -19,6 +19,10 @@ export interface AuthUser {
   email?: string;
   given_name?: string;
   family_name?: string;
+  /** Kinde-compat aliases used across the app */
+  givenName?: string;
+  familyName?: string;
+  picture?: string;
   name?: string;
   permissions?: string[];
   organization?: unknown;

@@ -19,7 +19,7 @@ import { Application } from "@/types/application";
 import { config } from "@/lib/config";
 import * as Popover from "@radix-ui/react-popover";
 
-const S = '"Helvetica Neue", Helvetica, Arial, sans-serif';
+const S = 'Inter, ui-sans-serif, system-ui, sans-serif';
 
 // ─── Reuse-tracking hook ───────────────────────────────────────────────────────
 
@@ -54,7 +54,7 @@ function useRecentlyUsedApps() {
 
 const STYLES = `
 .zkm-root, .zkm-root *, .zkm-pop, .zkm-pop * { box-sizing: border-box; }
-.zkm-root :focus-visible { outline: 2px solid #2754c5; outline-offset: 2px; }
+.zkm-root :focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 
 .zkm-hero { padding: 90px 64px 150px; }
 .zkm-herogrid { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.05fr); gap: 56px; align-items: center; max-width: 1280px; margin: 0 auto; position: relative; z-index: 1; }
@@ -76,43 +76,43 @@ const STYLES = `
 @media (max-width: 1120px) { .zkm-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } }
 @media (max-width: 720px) { .zkm-grid { grid-template-columns: 1fr; } }
 
-.zkm-card { position: relative; display: grid; grid-template-columns: 174px 1fr; background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; min-height: 174px; cursor: pointer; box-shadow: 0 1px 0 rgba(15,28,58,0.03); transition: border-color 120ms ease, box-shadow 120ms ease, background-color 120ms ease; color: inherit; }
-.zkm-card:hover, .zkm-card:focus-visible { border-color: #cbd2dc; box-shadow: 0 4px 20px rgba(15,28,58,0.08); }
+.zkm-card { position: relative; display: grid; grid-template-columns: 174px 1fr; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; min-height: 174px; cursor: pointer; box-shadow: none; transition: border-color 120ms ease, box-shadow 120ms ease, background-color 120ms ease; color: inherit; }
+.zkm-card:hover, .zkm-card:focus-visible { border-color: var(--border); box-shadow: 0 4px 20px color-mix(in oklch, var(--primary) 8%, transparent); }
 @media (max-width: 560px) { .zkm-card { grid-template-columns: 120px 1fr; } }
 
 .zkm-iconbtn { transition: background-color 120ms ease, color 120ms ease; }
-.zkm-iconbtn:hover, .zkm-iconbtn[data-state="open"] { background: #e4e9f8; color: #1e3a8a; }
+.zkm-iconbtn:hover, .zkm-iconbtn[data-state="open"] { background: var(--accent); color: var(--primary); }
 
 .zkm-cta { transition: background-color 120ms ease, border-color 120ms ease; }
-.zkm-cta:hover { background: #1e3a8a; border-color: #1e3a8a; }
+.zkm-cta:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
 
 .zkm-search { transition: border-color 120ms ease, box-shadow 120ms ease, background-color 120ms ease; }
-.zkm-search:focus-within { border-color: #2754c5; box-shadow: 0 0 0 3px rgba(39,84,197,0.12); background: #fff; }
+.zkm-search:focus-within { border-color: var(--ring); box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring) 12%, transparent); background: var(--background); }
 .zkm-searchinput { border: none; outline: none; background: transparent; }
 
 .zkm-chip { transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease; }
-.zkm-chip:hover { background: #e9eefb; border-color: #c7d2ec; }
-.zkm-chip[aria-pressed="true"] { background: #142a5e; color: #fff; border-color: #142a5e; }
+.zkm-chip:hover { background: var(--accent); border-color: var(--border); }
+.zkm-chip[aria-pressed="true"] { background: var(--primary); color: var(--primary-foreground); border-color: var(--primary); }
 
 .zkm-tab { transition: background-color 120ms ease, color 120ms ease; }
-.zkm-tab:hover { color: #0b1220; }
-.zkm-tab[aria-selected="true"] { background: #fff; color: #0b1220; border-color: #e2e4ea; }
+.zkm-tab:hover { color: var(--foreground); }
+.zkm-tab[aria-selected="true"] { background: var(--background); color: var(--foreground); border-color: var(--border); }
 
 .zkm-quick { transition: background-color 120ms ease, border-color 120ms ease; }
-.zkm-quick:hover { background: #eef2fb; border-color: #c7d2ec; }
+.zkm-quick:hover { background: var(--accent); border-color: var(--border); }
 
 .zkm-input { transition: border-color 120ms ease, box-shadow 120ms ease; }
-.zkm-input:focus-within { border-color: #2754c5; box-shadow: 0 0 0 3px rgba(39,84,197,0.12); }
+.zkm-input:focus-within { border-color: var(--ring); box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring) 12%, transparent); }
 .zkm-textinput { border: none; outline: none; background: transparent; }
 
 .zkm-send { transition: background-color 120ms ease; }
-.zkm-send:hover { background: #1e3a8a; }
-.zkm-send:disabled { background: #cbd5e1; cursor: not-allowed; }
+.zkm-send:hover { background: var(--primary-hover); }
+.zkm-send:disabled { background: var(--muted); cursor: not-allowed; }
 
 .zkm-pop { transition: none; }
 .zkm-popbtn { transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease; }
-.zkm-popbtn-primary:hover { background: #1e3a8a; }
-.zkm-popbtn-ghost:hover { background: #f1f5f9; }
+.zkm-popbtn-primary:hover { background: var(--primary-hover); }
+.zkm-popbtn-ghost:hover { background: var(--muted); }
 
 @media (prefers-reduced-motion: reduce) {
   .zkm-root *, .zkm-pop * { transition: none !important; }
@@ -197,46 +197,48 @@ interface AppStyle {
     foot: string
 }
 
+const NAVY = 'var(--primary)'
+const NAVY_DARK = 'var(--primary-hover)'
+
 const APP_STYLES: Record<string, AppStyle> = {
     crm: {
-        glyphBg: 'linear-gradient(160deg, #1e3a8a 0%, #142a5e 100%)',
+        glyphBg: NAVY,
         icon: <IconCRM />,
         chip: 'Sales',
         foot: 'Included with workspace',
     },
-    // Real appCode from API is 'accounting'
     accounting: {
-        glyphBg: 'linear-gradient(160deg, #0e7a6f 0%, #06544c 100%)',
+        glyphBg: NAVY_DARK,
         icon: <IconFinance />,
         chip: 'Finance',
         foot: 'Included with workspace',
     },
     financialaccounting: {
-        glyphBg: 'linear-gradient(160deg, #0e7a6f 0%, #06544c 100%)',
+        glyphBg: NAVY_DARK,
         icon: <IconFinance />,
         chip: 'Finance',
         foot: 'Included with workspace',
     },
     hr: {
-        glyphBg: 'linear-gradient(150deg, #ff7a3d 0%, #e85a1c 100%)',
+        glyphBg: 'color-mix(in oklch, var(--primary) 88%, var(--foreground))',
         icon: <IconHR />,
         chip: 'HR',
         foot: 'Included with workspace',
     },
     inventory: {
-        glyphBg: '#0b1220',
+        glyphBg: 'var(--illustration-nav)',
         icon: <IconInventory />,
         chip: 'Operations',
         foot: 'Included with workspace',
     },
     procurement: {
-        glyphBg: 'linear-gradient(160deg, #6c5ce7 0%, #4c3bbf 100%)',
+        glyphBg: NAVY,
         icon: <IconProcurement />,
         chip: 'Operations',
         foot: 'Included with workspace',
     },
     helpdesk: {
-        glyphBg: 'linear-gradient(160deg, #be185d 0%, #831843 100%)',
+        glyphBg: 'var(--primary-hover)',
         icon: <IconHelpdesk />,
         chip: 'Support',
         foot: 'Included with workspace',
@@ -244,9 +246,9 @@ const APP_STYLES: Record<string, AppStyle> = {
 }
 
 const FALLBACK_GLYPHS: AppStyle[] = [
-    { glyphBg: 'linear-gradient(160deg, #1e3a8a 0%, #142a5e 100%)', icon: <IconDefault />, chip: 'Business Suite', foot: 'Included with workspace' },
-    { glyphBg: 'linear-gradient(160deg, #0e7a6f 0%, #06544c 100%)', icon: <IconDefault />, chip: 'Business Suite', foot: 'Included with workspace' },
-    { glyphBg: 'linear-gradient(150deg, #ff7a3d 0%, #e85a1c 100%)', icon: <IconDefault />, chip: 'Business Suite', foot: 'Included with workspace' },
+    { glyphBg: NAVY, icon: <IconDefault />, chip: 'Business Suite', foot: 'Included with workspace' },
+    { glyphBg: NAVY_DARK, icon: <IconDefault />, chip: 'Business Suite', foot: 'Included with workspace' },
+    { glyphBg: 'color-mix(in oklch, var(--primary) 88%, var(--foreground))', icon: <IconDefault />, chip: 'Business Suite', foot: 'Included with workspace' },
 ]
 
 function getAppStyle(appCode: string, index: number): AppStyle {
@@ -377,10 +379,10 @@ function buildScenarios(applications: Application[]): Scenario[] {
 
 function badgeColors(value: string): [string, string] {
     const t = value.toLowerCase()
-    if (t === "won") return ["#059669", "#d1fae5"]
-    if (t === "lost") return ["#dc2626", "#fee2e2"]
-    if (t === "negotiation") return ["#d97706", "#fef3c7"]
-    return ["#16a34a", "#dcfce7"]
+    if (t === "won") return ["var(--illustration-success)", "var(--illustration-success-tint)"]
+    if (t === "lost") return ["var(--destructive)", "color-mix(in oklch, var(--destructive) 12%, var(--background))"]
+    if (t === "negotiation") return ["var(--illustration-warning)", "color-mix(in oklch, var(--illustration-warning) 15%, var(--background))"]
+    return ["var(--illustration-success)", "var(--illustration-success-tint)"]
 }
 
 const ReplyBody = memo(function ReplyBody({ reply }: { reply: Reply }) {
@@ -390,11 +392,11 @@ const ReplyBody = memo(function ReplyBody({ reply }: { reply: Reply }) {
     if (reply.kind === "bullets") {
         return (
             <div>
-                {reply.title && <div style={{ fontWeight: 700, marginBottom: 6, color: "#0f172a" }}>{reply.title}</div>}
+                {reply.title && <div style={{ fontWeight: 700, marginBottom: 6, color: "var(--foreground)" }}>{reply.title}</div>}
                 <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 4 }}>
                     {reply.items.map((item, i) => (
                         <li key={i} style={{ paddingLeft: 14, position: "relative", lineHeight: 1.5 }}>
-                            <span style={{ position: "absolute", left: 0, color: "#94a3b8" }}>•</span>
+                            <span style={{ position: "absolute", left: 0, color: "var(--chart-3)" }}>•</span>
                             {item}
                         </li>
                     ))}
@@ -405,15 +407,15 @@ const ReplyBody = memo(function ReplyBody({ reply }: { reply: Reply }) {
     // table
     return (
         <div>
-            {reply.title && <div style={{ fontWeight: 700, marginBottom: 6, color: "#0f172a" }}>{reply.title}</div>}
-            <div style={{ border: "1px solid #e2e8f0", borderRadius: 8, overflow: "hidden", background: "#fff" }}>
-                <div style={{ display: "flex", padding: "5px 10px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
+            {reply.title && <div style={{ fontWeight: 700, marginBottom: 6, color: "var(--foreground)" }}>{reply.title}</div>}
+            <div style={{ border: "1px solid var(--border)", borderRadius: 8, overflow: "hidden", background: "var(--background)" }}>
+                <div style={{ display: "flex", padding: "5px 10px", background: "var(--illustration-panel)", borderBottom: "1px solid var(--border)" }}>
                     {reply.columns.map((c, i) => (
-                        <span key={i} style={{ flex: i === 0 ? "0 0 34px" : 1, fontSize: 9.5, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: 0.5 }}>{c}</span>
+                        <span key={i} style={{ flex: i === 0 ? "0 0 34px" : 1, fontSize: 9.5, fontWeight: 700, color: "var(--chart-3)", textTransform: "uppercase", letterSpacing: 0.5 }}>{c}</span>
                     ))}
                 </div>
                 {reply.rows.map((row, ri) => (
-                    <div key={ri} style={{ display: "flex", alignItems: "center", padding: "5px 10px", background: ri % 2 ? "#f8faff" : "#fff", borderBottom: ri < reply.rows.length - 1 ? "1px solid #f1f5f9" : "none" }}>
+                    <div key={ri} style={{ display: "flex", alignItems: "center", padding: "5px 10px", background: ri % 2 ? "var(--illustration-info-bg)" : "var(--background)", borderBottom: ri < reply.rows.length - 1 ? "1px solid var(--illustration-panel-alt)" : "none" }}>
                         {row.map((cell, ci) => {
                             const isBadge = reply.badgeCol === ci
                             if (isBadge) {
@@ -425,13 +427,13 @@ const ReplyBody = memo(function ReplyBody({ reply }: { reply: Reply }) {
                                 )
                             }
                             return (
-                                <span key={ci} style={{ flex: ci === 0 ? "0 0 34px" : 1, fontSize: 11, color: ci === 0 ? "#94a3b8" : "#0f172a", fontWeight: ci === 1 ? 500 : 400 }}>{cell}</span>
+                                <span key={ci} style={{ flex: ci === 0 ? "0 0 34px" : 1, fontSize: 11, color: ci === 0 ? "var(--chart-3)" : "var(--foreground)", fontWeight: ci === 1 ? 500 : 400 }}>{cell}</span>
                             )
                         })}
                     </div>
                 ))}
             </div>
-            {reply.note && <div style={{ marginTop: 6, fontSize: 10.5, color: "#94a3b8" }}>{reply.note}</div>}
+            {reply.note && <div style={{ marginTop: 6, fontSize: 10.5, color: "var(--chart-3)" }}>{reply.note}</div>}
         </div>
     )
 })
@@ -440,7 +442,7 @@ const MessageRow = memo(function MessageRow({ message }: { message: ChatMessage 
     const isUser = message.role === "user"
     return (
         <div style={{ display: "flex", gap: 8, marginBottom: 10, flexDirection: isUser ? "row-reverse" : "row" }}>
-            <div aria-hidden="true" style={{ width: 22, height: 22, borderRadius: 6, flexShrink: 0, display: "grid", placeItems: "center", color: "#fff", fontSize: 9, fontWeight: 800, background: isUser ? "#142a5e" : "#7c3aed" }}>
+            <div aria-hidden="true" style={{ width: 22, height: 22, borderRadius: 6, flexShrink: 0, display: "grid", placeItems: "center", color: "var(--background)", fontSize: 9, fontWeight: 800, background: isUser ? "var(--primary-hover)" : "var(--primary)" }}>
                 {isUser ? "You" : "Z"}
             </div>
             <div style={{
@@ -449,9 +451,9 @@ const MessageRow = memo(function MessageRow({ message }: { message: ChatMessage 
                 lineHeight: 1.5,
                 padding: "8px 11px",
                 borderRadius: isUser ? "12px 12px 3px 12px" : "12px 12px 12px 3px",
-                background: isUser ? "#142a5e" : "#f4f6fb",
-                color: isUser ? "#fff" : "#334155",
-                border: isUser ? "none" : "1px solid #eef0f5",
+                background: isUser ? "var(--primary-hover)" : "var(--illustration-info-bg)",
+                color: isUser ? "var(--background)" : "var(--muted-foreground)",
+                border: isUser ? "none" : "1px solid var(--border)",
             }}>
                 <ReplyBody reply={message.reply} />
             </div>
@@ -501,22 +503,22 @@ const HeroAgentDemo = memo(function HeroAgentDemo({ scenarios }: { scenarios: Sc
 
     return (
         <div style={{ width: "100%", maxWidth: 640, marginLeft: "auto" }}>
-            <div style={{ background: "#fff", borderRadius: 8, boxShadow: "0 1px 0 rgba(15,28,58,0.04), 0 24px 60px rgba(15,28,58,0.12), 0 8px 20px rgba(15,28,58,0.05)", overflow: "hidden", border: "1px solid #e2e4ea" }}>
+            <div style={{ background: "var(--background)", borderRadius: 8, boxShadow: "0 1px 0 rgba(15,28,58,0.04), 0 8px 24px rgba(15,28,58,0.08)", overflow: "hidden", border: "1px solid var(--border)" }}>
                 {/* macOS title bar */}
-                <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 12px", background: "#f0f1f4", borderBottom: "1px solid #e2e4ea" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 12px", background: "var(--muted)", borderBottom: "1px solid var(--border)" }}>
                     <div style={{ display: "flex", gap: 6 }} aria-hidden="true">
-                        <i style={{ width: 11, height: 11, borderRadius: "50%", background: "#ff605c", display: "inline-block" }} />
-                        <i style={{ width: 11, height: 11, borderRadius: "50%", background: "#ffbd44", display: "inline-block" }} />
-                        <i style={{ width: 11, height: 11, borderRadius: "50%", background: "#00ca4e", display: "inline-block" }} />
+                        <i style={{ width: 11, height: 11, borderRadius: "50%", background: "var(--window-dot-close)", display: "inline-block" }} />
+                        <i style={{ width: 11, height: 11, borderRadius: "50%", background: "var(--window-dot-minimize)", display: "inline-block" }} />
+                        <i style={{ width: 11, height: 11, borderRadius: "50%", background: "var(--window-dot-maximize)", display: "inline-block" }} />
                     </div>
-                    <div style={{ flex: 1, height: 22, background: "#fff", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#6b7280", border: "1px solid #e2e4ea" }}>
+                    <div style={{ flex: 1, height: 22, background: "var(--background)", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "var(--muted-foreground)", border: "1px solid var(--border)" }}>
                         {scenario.url}
                     </div>
                 </div>
 
                 {/* App tabs — switch the agent context instantly */}
                 {scenarios.length > 1 && (
-                    <div role="tablist" aria-label="Demo app" style={{ display: "flex", gap: 4, padding: "8px 12px 0", background: "#f0f1f4" }}>
+                    <div role="tablist" aria-label="Demo app" style={{ display: "flex", gap: 4, padding: "8px 12px 0", background: "var(--muted)" }}>
                         {scenarios.map((sc, i) => (
                             <button
                                 key={sc.id}
@@ -528,8 +530,8 @@ const HeroAgentDemo = memo(function HeroAgentDemo({ scenarios }: { scenarios: Sc
                                 style={{
                                     border: "1px solid transparent",
                                     borderBottom: "none",
-                                    background: i === tab ? "#fff" : "transparent",
-                                    color: i === tab ? "#0b1220" : "#6b7280",
+                                    background: i === tab ? "var(--background)" : "transparent",
+                                    color: i === tab ? "var(--foreground)" : "var(--muted-foreground)",
                                     fontFamily: S,
                                     fontSize: 11.5,
                                     fontWeight: 600,
@@ -545,12 +547,12 @@ const HeroAgentDemo = memo(function HeroAgentDemo({ scenarios }: { scenarios: Sc
                 )}
 
                 {/* Chat surface */}
-                <div style={{ display: "flex", flexDirection: "column", height: 320, background: "#fff" }}>
-                    <div style={{ height: 32, display: "flex", alignItems: "center", gap: 6, padding: "0 14px", borderBottom: "1px solid #f1f5f9", flexShrink: 0 }}>
-                        <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#10b981" }} aria-hidden="true" />
-                        <span style={{ fontSize: 10.5, fontWeight: 600, color: "#64748b" }}>connected</span>
-                        <span style={{ color: "#e2e8f0" }} aria-hidden="true">·</span>
-                        <span style={{ fontSize: 10.5, color: "#94a3b8" }}>live data</span>
+                <div style={{ display: "flex", flexDirection: "column", height: 320, background: "var(--background)" }}>
+                    <div style={{ height: 32, display: "flex", alignItems: "center", gap: 6, padding: "0 14px", borderBottom: "1px solid var(--illustration-panel-alt)", flexShrink: 0 }}>
+                        <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--illustration-success)" }} aria-hidden="true" />
+                        <span style={{ fontSize: 10.5, fontWeight: 600, color: "var(--muted-foreground)" }}>connected</span>
+                        <span style={{ color: "var(--border)" }} aria-hidden="true">·</span>
+                        <span style={{ fontSize: 10.5, color: "var(--chart-3)" }}>live data</span>
                     </div>
 
                     <div
@@ -564,14 +566,14 @@ const HeroAgentDemo = memo(function HeroAgentDemo({ scenarios }: { scenarios: Sc
                     </div>
 
                     {/* Quick actions */}
-                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap", padding: "8px 12px 4px", borderTop: "1px solid #f1f5f9", flexShrink: 0 }}>
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap", padding: "8px 12px 4px", borderTop: "1px solid var(--illustration-panel-alt)", flexShrink: 0 }}>
                         {scenario.quick.map(q => (
                             <button
                                 key={q}
                                 type="button"
                                 className="zkm-quick"
                                 onClick={() => send(q)}
-                                style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 100, padding: "3px 10px", fontFamily: S, fontSize: 10.5, fontWeight: 500, color: "#475569", whiteSpace: "nowrap", cursor: "pointer" }}
+                                style={{ background: "var(--illustration-panel)", border: "1px solid var(--border)", borderRadius: 100, padding: "3px 10px", fontFamily: S, fontSize: 10.5, fontWeight: 500, color: "var(--muted-foreground)", whiteSpace: "nowrap", cursor: "pointer" }}
                             >
                                 + {q}
                             </button>
@@ -580,21 +582,21 @@ const HeroAgentDemo = memo(function HeroAgentDemo({ scenarios }: { scenarios: Sc
 
                     {/* Input */}
                     <form onSubmit={onSubmit} style={{ padding: "6px 12px 10px", flexShrink: 0 }}>
-                        <div className="zkm-input" style={{ display: "flex", alignItems: "center", gap: 8, border: "1.5px solid #e2e8f0", borderRadius: 8, padding: "5px 6px 5px 11px", background: "#fafafa" }}>
+                        <div className="zkm-input" style={{ display: "flex", alignItems: "center", gap: 8, border: "1.5px solid var(--border)", borderRadius: 8, padding: "5px 6px 5px 11px", background: "var(--muted)" }}>
                             <input
                                 className="zkm-textinput"
                                 value={input}
                                 onChange={e => setInput(e.target.value)}
                                 placeholder="Ask about a deal, an invoice — or type a request"
                                 aria-label="Message the Zopkit agent"
-                                style={{ flex: 1, fontFamily: S, fontSize: 11.5, color: "#0f172a", minWidth: 0 }}
+                                style={{ flex: 1, fontFamily: S, fontSize: 11.5, color: "var(--foreground)", minWidth: 0 }}
                             />
                             <button
                                 type="submit"
                                 className="zkm-send"
                                 disabled={!input.trim()}
                                 aria-label="Send message"
-                                style={{ width: 26, height: 26, borderRadius: 6, border: "none", background: input.trim() ? "#142a5e" : "#cbd5e1", color: "#fff", display: "grid", placeItems: "center", cursor: input.trim() ? "pointer" : "not-allowed", flexShrink: 0 }}
+                                style={{ width: 26, height: 26, borderRadius: 6, border: "none", background: input.trim() ? "var(--primary-hover)" : "var(--border)", color: "var(--background)", display: "grid", placeItems: "center", cursor: input.trim() ? "pointer" : "not-allowed", flexShrink: 0 }}
                             >
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
                             </button>
@@ -643,8 +645,8 @@ const MarketplaceCard = memo(function MarketplaceCard({ application, index, onLa
             style={{ fontFamily: S }}
         >
             {/* Icon column */}
-            <div style={{ background: '#eef1fb', display: 'grid', placeItems: 'center' }}>
-                <div style={{ width: 78, height: 78, borderRadius: 14, background: style.glyphBg, display: 'grid', placeItems: 'center', color: '#fff', boxShadow: '0 1px 0 rgba(0,0,0,0.05)' }}>
+            <div style={{ background: 'var(--illustration-primary-tint)', display: 'grid', placeItems: 'center' }}>
+                <div style={{ width: 78, height: 78, borderRadius: 14, background: style.glyphBg, display: 'grid', placeItems: 'center', color: 'var(--background)', boxShadow: '0 1px 0 rgba(0,0,0,0.05)' }}>
                     {style.icon}
                 </div>
             </div>
@@ -660,7 +662,7 @@ const MarketplaceCard = memo(function MarketplaceCard({ application, index, onLa
                             aria-label={`About ${application.appName}`}
                             onClick={stop}
                             onKeyDown={stop}
-                            style={{ position: 'absolute', top: 12, right: 12, width: 28, height: 28, borderRadius: 6, border: 'none', background: 'transparent', color: '#9ca3af', cursor: 'pointer', display: 'grid', placeItems: 'center', padding: 0 }}
+                            style={{ position: 'absolute', top: 12, right: 12, width: 28, height: 28, borderRadius: 6, border: 'none', background: 'transparent', color: 'var(--muted-foreground)', cursor: 'pointer', display: 'grid', placeItems: 'center', padding: 0 }}
                         >
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                                 <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
@@ -677,38 +679,38 @@ const MarketplaceCard = memo(function MarketplaceCard({ application, index, onLa
                             sideOffset={8}
                             collisionPadding={12}
                             onClick={stop}
-                            style={{ zIndex: 200, width: 288, background: '#fff', border: '1px solid #e5e7eb', borderRadius: 10, boxShadow: '0 12px 40px rgba(15,28,58,0.16)', padding: 16, fontFamily: S, color: '#0b1220' }}
+                            style={{ zIndex: 200, width: 288, background: 'var(--background)', border: '1px solid var(--border)', borderRadius: 10, boxShadow: '0 12px 40px rgba(15,28,58,0.16)', padding: 16, fontFamily: S, color: 'var(--foreground)' }}
                         >
                             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                                <div style={{ width: 36, height: 36, borderRadius: 8, background: style.glyphBg, display: 'grid', placeItems: 'center', color: '#fff', flexShrink: 0 }}>
+                                <div style={{ width: 36, height: 36, borderRadius: 8, background: style.glyphBg, display: 'grid', placeItems: 'center', color: 'var(--background)', flexShrink: 0 }}>
                                     <span style={{ display: 'grid', placeItems: 'center', transform: 'scale(0.55)', transformOrigin: 'center' }}>{style.icon}</span>
                                 </div>
                                 <div style={{ minWidth: 0 }}>
                                     <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: '-0.005em', lineHeight: 1.2 }}>{application.appName}</div>
-                                    <div style={{ fontSize: 11, color: '#6b7280' }}>{style.chip}</div>
+                                    <div style={{ fontSize: 11, color: 'var(--muted-foreground)' }}>{style.chip}</div>
                                 </div>
                             </div>
 
-                            <p style={{ margin: '0 0 12px', fontSize: 12.5, color: '#374151', lineHeight: 1.5 }}>
+                            <p style={{ margin: '0 0 12px', fontSize: 12.5, color: 'var(--muted-foreground)', lineHeight: 1.5 }}>
                                 {application.description || 'Access and manage this application from your workspace.'}
                             </p>
 
                             <div style={{ display: 'flex', gap: 16, marginBottom: 14, fontSize: 11.5 }}>
                                 <div>
-                                    <div style={{ color: '#9ca3af', marginBottom: 2 }}>Status</div>
-                                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontWeight: 600, color: application.isEnabled ? '#16a34a' : '#d97706' }}>
+                                    <div style={{ color: 'var(--muted-foreground)', marginBottom: 2 }}>Status</div>
+                                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontWeight: 600, color: application.isEnabled ? 'var(--illustration-success)' : 'var(--illustration-warning)' }}>
                                         <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'currentColor' }} aria-hidden="true" />
                                         {application.isEnabled ? 'Enabled' : 'Disabled'}
                                     </div>
                                 </div>
                                 <div>
-                                    <div style={{ color: '#9ca3af', marginBottom: 2 }}>Modules</div>
-                                    <div style={{ fontWeight: 600, color: '#0b1220' }}>{moduleCount > 0 ? moduleCount : '—'}</div>
+                                    <div style={{ color: 'var(--muted-foreground)', marginBottom: 2 }}>Modules</div>
+                                    <div style={{ fontWeight: 600, color: 'var(--foreground)' }}>{moduleCount > 0 ? moduleCount : '—'}</div>
                                 </div>
                                 {host && (
                                     <div style={{ minWidth: 0 }}>
-                                        <div style={{ color: '#9ca3af', marginBottom: 2 }}>Opens at</div>
-                                        <div style={{ fontWeight: 600, color: '#0b1220', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 110 }}>{host}</div>
+                                        <div style={{ color: 'var(--muted-foreground)', marginBottom: 2 }}>Opens at</div>
+                                        <div style={{ fontWeight: 600, color: 'var(--foreground)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 110 }}>{host}</div>
                                     </div>
                                 )}
                             </div>
@@ -719,7 +721,7 @@ const MarketplaceCard = memo(function MarketplaceCard({ application, index, onLa
                                         type="button"
                                         className="zkm-popbtn zkm-popbtn-primary"
                                         onClick={launch}
-                                        style={{ flex: 1, padding: '8px 12px', borderRadius: 6, border: 'none', background: '#142a5e', color: '#fff', fontFamily: S, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+                                        style={{ flex: 1, padding: '8px 12px', borderRadius: 6, border: 'none', background: 'var(--primary-hover)', color: 'var(--background)', fontFamily: S, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
                                     >
                                         Open app
                                     </button>
@@ -730,28 +732,28 @@ const MarketplaceCard = memo(function MarketplaceCard({ application, index, onLa
                                             type="button"
                                             className="zkm-popbtn zkm-popbtn-ghost"
                                             onClick={() => onDetails(application)}
-                                            style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid #e5e7eb', background: '#fff', color: '#374151', fontFamily: S, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+                                            style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--background)', color: 'var(--muted-foreground)', fontFamily: S, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
                                         >
                                             Manage
                                         </button>
                                     </Popover.Close>
                                 )}
                             </div>
-                            <Popover.Arrow style={{ fill: '#fff' }} width={14} height={7} />
+                            <Popover.Arrow style={{ fill: 'var(--background)' }} width={14} height={7} />
                         </Popover.Content>
                     </Popover.Portal>
                 </Popover.Root>
 
-                <h3 style={{ fontSize: 17, fontWeight: 700, color: '#0b1220', letterSpacing: '-0.005em', margin: '0 0 8px', paddingRight: 36 }}>
+                <h3 style={{ fontSize: 17, fontWeight: 700, color: 'var(--foreground)', letterSpacing: '-0.005em', margin: '0 0 8px', paddingRight: 36 }}>
                     {application.appName}
                 </h3>
-                <span style={{ display: 'inline-block', background: '#e4e9f8', color: '#1e3a8a', fontSize: 11.5, fontWeight: 500, padding: '3px 8px', borderRadius: 3, marginBottom: 12, alignSelf: 'flex-start' }}>
+                <span style={{ display: 'inline-block', background: 'var(--illustration-primary-tint)', color: 'var(--primary)', fontSize: 11.5, fontWeight: 500, padding: '3px 8px', borderRadius: 3, marginBottom: 12, alignSelf: 'flex-start' }}>
                     {style.chip}
                 </span>
-                <p style={{ fontSize: 13.5, color: '#1f2937', lineHeight: 1.45, margin: '0 0 auto' }}>
+                <p style={{ fontSize: 13.5, color: 'var(--muted-foreground)', lineHeight: 1.45, margin: '0 0 auto' }}>
                     {application.description || 'Access and manage this application from your workspace.'}
                 </p>
-                <div style={{ fontSize: 12.5, color: '#6b7280', paddingTop: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ fontSize: 12.5, color: 'var(--muted-foreground)', paddingTop: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }} aria-hidden="true">
                         <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                         <path d="M15 3h6v6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -810,14 +812,14 @@ function AvailableApps({ applications, companyName, onLaunch, onDetails, canMana
     const clear = useCallback(() => { setQuery(""); setCategory("All") }, [])
 
     return (
-        <section id="apps" className="zkm-section" style={{ background: '#fff' }}>
+        <section id="apps" className="zkm-section" style={{ background: 'var(--background)' }}>
             <div style={{ maxWidth: 1280, margin: '0 auto' }}>
                 <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, marginBottom: 24 }}>
                     <div>
-                        <h2 style={{ fontSize: 22, fontWeight: 800, letterSpacing: '-0.01em', color: '#0b1220', margin: '0 0 6px' }}>
+                        <h2 style={{ fontSize: 22, fontWeight: 800, letterSpacing: '-0.01em', color: 'var(--foreground)', margin: '0 0 6px' }}>
                             Available apps
                         </h2>
-                        <p style={{ fontSize: 14, color: '#4b5563', margin: 0 }} aria-live="polite">
+                        <p style={{ fontSize: 14, color: 'var(--muted-foreground)', margin: 0 }} aria-live="polite">
                             {isFiltering
                                 ? `Showing ${filtered.length} of ${total} app${total !== 1 ? 's' : ''}`
                                 : `${total} module${total !== 1 ? 's' : ''} in your ${companyName} workspace.`}
@@ -825,8 +827,8 @@ function AvailableApps({ applications, companyName, onLaunch, onDetails, canMana
                     </div>
 
                     {showControls && (
-                        <div className="zkm-search" style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '8px 12px', minWidth: 240 }}>
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true" style={{ color: '#9ca3af', flexShrink: 0 }}>
+                        <div className="zkm-search" style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--illustration-panel)', border: '1px solid var(--border)', borderRadius: 8, padding: '8px 12px', minWidth: 240 }}>
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true" style={{ color: 'var(--muted-foreground)', flexShrink: 0 }}>
                                 <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
                                 <path d="M20 20l-3.5-3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                             </svg>
@@ -837,7 +839,7 @@ function AvailableApps({ applications, companyName, onLaunch, onDetails, canMana
                                 onChange={e => setQuery(e.target.value)}
                                 placeholder="Search apps"
                                 aria-label="Search apps"
-                                style={{ fontFamily: S, fontSize: 13.5, color: '#0b1220', width: 180 }}
+                                style={{ fontFamily: S, fontSize: 13.5, color: 'var(--foreground)', width: 180 }}
                             />
                         </div>
                     )}
@@ -852,7 +854,7 @@ function AvailableApps({ applications, companyName, onLaunch, onDetails, canMana
                                 className="zkm-chip"
                                 aria-pressed={category === cat}
                                 onClick={() => setCategory(cat)}
-                                style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', color: '#475569', fontFamily: S, fontSize: 12.5, fontWeight: 500, padding: '6px 14px', borderRadius: 100, cursor: 'pointer' }}
+                                style={{ background: 'var(--illustration-panel-alt)', border: '1px solid var(--border)', color: 'var(--muted-foreground)', fontFamily: S, fontSize: 12.5, fontWeight: 500, padding: '6px 14px', borderRadius: 100, cursor: 'pointer' }}
                             >
                                 {cat}
                             </button>
@@ -874,14 +876,14 @@ function AvailableApps({ applications, companyName, onLaunch, onDetails, canMana
                         ))}
                     </div>
                 ) : (
-                    <div style={{ padding: '56px 24px', textAlign: 'center', border: '1px dashed #e2e8f0', borderRadius: 10, color: '#6b7280' }}>
-                        <div style={{ fontSize: 15, fontWeight: 600, color: '#374151', marginBottom: 6 }}>No apps match your search</div>
+                    <div style={{ padding: '56px 24px', textAlign: 'center', border: '1px dashed var(--border)', borderRadius: 8, color: 'var(--muted-foreground)' }}>
+                        <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--muted-foreground)', marginBottom: 6 }}>No apps match your search</div>
                         <div style={{ fontSize: 13.5, marginBottom: 16 }}>Try a different term or category.</div>
                         <button
                             type="button"
                             className="zkm-cta"
                             onClick={clear}
-                            style={{ padding: '9px 18px', borderRadius: 6, border: '1px solid #142a5e', background: '#142a5e', color: '#fff', fontFamily: S, fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}
+                            style={{ padding: '9px 18px', borderRadius: 6, border: '1px solid var(--primary-hover)', background: 'var(--primary-hover)', color: 'var(--background)', fontFamily: S, fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}
                         >
                             Clear filters
                         </button>
@@ -925,40 +927,37 @@ function InvitedMarketplaceView({ applications, onLaunch, onDetails }: {
     const scenarios = useMemo(() => buildScenarios(applications), [applications])
 
     return (
-        <div className="zkm-root" style={{ fontFamily: S, color: '#0b1220', background: '#fff', WebkitFontSmoothing: 'antialiased', fontSize: 15, lineHeight: 1.5 }}>
+        <div className="zkm-root" style={{ fontFamily: S, color: 'var(--foreground)', background: 'var(--background)', WebkitFontSmoothing: 'antialiased', fontSize: 15, lineHeight: 1.5 }}>
             {/* ── Hero band ── */}
-            <section className="zkm-hero" style={{ position: 'relative', background: 'radial-gradient(900px 480px at 92% 30%, #e2eefc 0%, transparent 60%), linear-gradient(180deg, #f5faff 0%, #eaf3fd 90%)', overflow: 'hidden' }}>
-                {/* Curved white bottom */}
-                <div style={{ position: 'absolute', left: '-10%', right: '-10%', bottom: -180, height: 300, background: '#fff', borderRadius: '50%', zIndex: 0 }} aria-hidden="true" />
+            <section className="zkm-hero" style={{ position: 'relative', background: 'var(--muted)', borderBottom: '1px solid var(--border)', overflow: 'hidden' }}>
 
                 <div className="zkm-herogrid">
                     {/* Left: copy */}
                     <div>
                         <div style={{ marginBottom: 22 }}>
-                            <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: '0.08em', color: '#0b1220', textTransform: 'uppercase' }}>
-                                Welcome to <span style={{ color: '#142a5e' }}>{companyName} Marketplace</span>
+                            <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--muted-foreground)' }}>
+                                Welcome to <span style={{ color: 'var(--primary)' }}>{companyName} Marketplace</span>
                             </span>
                         </div>
 
-                        <h1 className="zkm-h1" style={{ fontWeight: 800, lineHeight: 1.04, letterSpacing: '-0.025em', color: '#0b1220', margin: '0 0 10px' }}>
+                        <h1 className="zkm-h1" style={{ fontWeight: 500, lineHeight: 1.04, letterSpacing: '-0.02em', color: 'var(--foreground)', margin: '0 0 10px' }}>
                             {timeGreeting}, {fullName}.
                         </h1>
 
-                        <p style={{ fontWeight: 600, fontSize: 20, lineHeight: 1.3, color: '#142a5e', letterSpacing: '-0.01em', margin: '0 0 18px' }}>
-                            The unified suite your business runs on.
+                        <p style={{ fontWeight: 500, fontSize: 18, lineHeight: 1.4, color: 'var(--primary)', letterSpacing: '-0.01em', margin: '0 0 18px' }}>
+                            Your apps, one workspace.
                         </p>
 
-                        <p style={{ color: '#1f2937', fontSize: 15, lineHeight: 1.6, maxWidth: 460, margin: '0 0 36px' }}>
+                        <p className="text-muted-foreground text-[15px] leading-relaxed max-w-[460px] mb-9">
                             Zopkit brings your entire operational stack together — scalable, secure, and purpose-built for running every part of your business from a single workspace.
                         </p>
 
                         {isTenantAdmin && (
-                            <div style={{ display: 'flex', gap: 12 }}>
+                            <div className="flex gap-3">
                                 <button
                                     type="button"
-                                    className="zkm-cta"
+                                    className="zkm-cta inline-flex items-center justify-center gap-2 text-[15px] font-medium px-6 py-3 rounded-md cursor-pointer bg-primary text-primary-foreground border border-primary min-w-[180px]"
                                     onClick={() => navigate({ to: '/dashboard/organization' })}
-                                    style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize: 13, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '16px 26px', borderRadius: 4, cursor: 'pointer', background: '#142a5e', color: '#fff', border: '1.5px solid #142a5e', minWidth: 200 }}
                                 >
                                     Admin Console →
                                 </button>

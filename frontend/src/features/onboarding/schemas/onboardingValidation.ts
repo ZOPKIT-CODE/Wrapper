@@ -410,7 +410,7 @@ export const onboardingFormSchema = z
         message: 'Billing street address is required',
         path: ['billingStreet'],
       });
-    } else if (hasBillingStreet) {
+    } else if (hasBillingStreet && data.billingStreet) {
       // Validate billingStreet format if provided
       if (data.billingStreet.length < 10) {
         ctx.addIssue({

@@ -82,7 +82,7 @@ export function UpdateAvailableBanner() {
   const [countdown, setCountdown] = useState<number | null>(null);
   // Guards against double-click / keyboard re-fire starting two parallel SW handshakes.
   const reloadInFlight = useRef(false);
-  const countdownIntervalRef = useRef<ReturnType<typeof window.setInterval> | null>(null);
+  const countdownIntervalRef = useRef<number | null>(null);
 
   /**
    * Cache-busting reload. Appending a one-shot query string defeats both the
@@ -232,7 +232,6 @@ export function UpdateAvailableBanner() {
         // Shape + elevation.
         'rounded-xl border border-border',
         // Dark theme: stronger border + slightly lighter surface so text pops.
-        'dark:border-white/25 dark:bg-neutral-800',
         // Background: slightly frosted; falls back to near-opaque for browsers
         // without backdrop-filter support.
         'bg-background/95 backdrop-blur-sm',

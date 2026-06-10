@@ -124,8 +124,7 @@ export const FlowSelector: React.FC<FlowSelectorProps> = ({
                   userClassification === 'freemium' && 'bg-gray-100 text-gray-800',
                   userClassification === 'growth' && 'bg-blue-100 text-blue-800',
                   userClassification === 'enterprise' && 'bg-purple-100 text-purple-800',
-                  // Account types
-                  userClassification === 'aspiringFounder' && 'bg-cyan-100 text-cyan-800',
+                  // Account types (aspiringFounder badge hidden — see guard above)
                   userClassification === 'corporateEmployee' && 'bg-violet-100 text-violet-800',
                   // Special classifications
                   userClassification === 'dinVerification' && 'bg-yellow-100 text-yellow-800',
@@ -136,7 +135,7 @@ export const FlowSelector: React.FC<FlowSelectorProps> = ({
               </Badge>
             )}
           </div>
-          <h1 className="text-4xl font-bold text-[#1B2E5A] mb-4">
+          <h1 className="text-4xl font-bold text-primary mb-4">
             {getPersonalizedGreeting()}
           </h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
@@ -265,7 +264,7 @@ export const FlowSelector: React.FC<FlowSelectorProps> = ({
                   </div>
                   <CardTitle className={cn(
                     'text-2xl font-bold',
-                    isSelected ? (flow.color === 'green' ? 'text-green-700' : 'text-blue-700') : 'text-[#1B2E5A]'
+                    isSelected ? (flow.color === 'green' ? 'text-green-700' : 'text-blue-700') : 'text-primary'
                   )}>
                     {flow.title}
                   </CardTitle>
@@ -303,7 +302,7 @@ export const FlowSelector: React.FC<FlowSelectorProps> = ({
                       'w-full mt-6',
                       flow.color === 'green'
                         ? 'bg-green-600 hover:bg-green-700'
-                        : 'bg-[#1B2E5A] hover:bg-[#152449]',
+                        : 'bg-primary hover:bg-primary-hover',
                       isSelected && 'ring-2 ring-white'
                     )}
                     variant={isSelected ? 'default' : 'outline'}

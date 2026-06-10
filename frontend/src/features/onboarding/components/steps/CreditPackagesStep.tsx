@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { UseFormReturn } from 'react-hook-form';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Coins, CheckCircle2, Sparkles, Loader2, Info } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { newBusinessData, existingBusinessData } from '../../schemas';
 import { UserClassification } from '../FlowSelector';
 import { useQuery } from '@tanstack/react-query';
@@ -141,7 +140,7 @@ export const CreditPackagesStep: React.FC<CreditPackagesStepProps> = ({ form }) 
             <Coins className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-[#1B2E5A]">Credit Packages</h2>
+            <h2 className="text-2xl font-bold text-primary">Credit Packages</h2>
             <p className="text-slate-600 text-sm">Choose a credit package that fits your needs (optional)</p>
           </div>
         </div>
@@ -213,7 +212,7 @@ export const CreditPackagesStep: React.FC<CreditPackagesStepProps> = ({ form }) 
                       <CardTitle className="text-lg">{pkg.name}</CardTitle>
                     </div>
                     <div className="space-y-1">
-                      <div className="text-3xl font-bold text-[#1B2E5A]">
+                      <div className="text-3xl font-bold text-primary">
                         {pkg.price === 0 ? 'Free' : `$${pkg.price}`}
                         {pkg.price > 0 && (
                           <span className="text-sm font-normal text-slate-500">/{pkg.currency}</span>

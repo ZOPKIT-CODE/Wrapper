@@ -1,6 +1,4 @@
-import React from 'react'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -42,7 +40,7 @@ export function OrganizationEditDialog({
             <Input
               value={editForm.name}
               onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-              className="focus:ring-2 focus:ring-[#1B2E5A] focus:border-[#1B2E5A] transition-colors"
+              className="focus:ring-2 focus:ring-ring focus:border-primary transition-colors"
             />
           </div>
           <div className="grid gap-2">
@@ -50,7 +48,7 @@ export function OrganizationEditDialog({
             <Textarea
               value={editForm.description}
               onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-              className="focus:ring-2 focus:ring-[#1B2E5A] focus:border-[#1B2E5A] transition-colors"
+              className="focus:ring-2 focus:ring-ring focus:border-primary transition-colors"
             />
           </div>
           <div className="flex items-center space-x-2">
@@ -58,7 +56,7 @@ export function OrganizationEditDialog({
               type="checkbox"
               checked={editForm.isActive}
               onChange={(e) => setEditForm({ ...editForm, isActive: e.target.checked })}
-              className="rounded border-gray-300 focus:ring-2 focus:ring-[#1B2E5A] focus:ring-offset-0"
+              className="rounded border-gray-300 focus:ring-2 focus:ring-ring focus:ring-offset-0"
             />
             <Label>Active</Label>
           </div>

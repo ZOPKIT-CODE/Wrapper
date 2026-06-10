@@ -441,7 +441,7 @@ const PaymentSuccess: React.FC = () => {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#1B2E5A] border-t-transparent mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent mx-auto mb-4"></div>
           <p className="text-slate-600 font-bold">Confirming payment...</p>
         </div>
       </div>
@@ -460,7 +460,7 @@ const PaymentSuccess: React.FC = () => {
             <CardDescription>{paymentError instanceof Error ? paymentError.message : 'Missing session information'}</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={() => navigate({ to: '/dashboard/billing' })} className="w-full bg-[#1B2E5A] hover:bg-[#162447] text-white font-bold rounded-xl py-6">
+            <Button onClick={() => navigate({ to: '/dashboard/billing' })} className="w-full bg-primary hover:bg-primary-hover text-white font-bold rounded-xl py-6">
               Return to Billing
             </Button>
           </CardContent>
@@ -477,7 +477,7 @@ const PaymentSuccess: React.FC = () => {
           animate={{ scale: 1, opacity: 1, rotateX: 0 }}
           transition={{ type: 'spring', stiffness: 260, damping: 20 }}
           style={{ x, y }}
-          className="bg-[#1B2E5A]/5 rounded-[2.5rem] pt-10 pb-6 px-6 text-center shadow-[0_40px_80px_-15px_rgba(59,130,246,0.2)] border-b-4 border-r-4 border-[#1B2E5A]/20 relative z-10 overflow-visible group"
+          className="bg-primary/5 rounded-[2.5rem] pt-10 pb-6 px-6 text-center shadow-[0_40px_80px_-15px_rgba(59,130,246,0.2)] border-b-4 border-r-4 border-primary/20 relative z-10 overflow-visible group"
         >
           {/* Animated Background Gradient */}
           <div className="absolute inset-0 bg-gradient-to-br from-blue-100/50 via-transparent to-blue-50/30 rounded-[2.5rem] opacity-50 group-hover:opacity-75 transition-opacity duration-500" />
@@ -492,7 +492,7 @@ const PaymentSuccess: React.FC = () => {
           >
             <div className="h-8 w-6 bg-gradient-to-b from-blue-700 to-blue-800 transform skew-y-12 translate-y-5 translate-x-2 rounded-l-sm shadow-lg" />
             <motion.div
-              className="bg-[#1B2E5A] text-white text-lg font-black py-2.5 px-8 rounded-xl relative flex items-center justify-center shadow-2xl"
+              className="bg-primary text-primary-foreground text-lg font-black py-2.5 px-8 rounded-xl relative flex items-center justify-center shadow-2xl"
               whileHover={{ scale: 1.05 }}
               animate={{ boxShadow: [
                 "0 20px 40px -12px rgba(59, 130, 246, 0.4)",
@@ -516,7 +516,7 @@ const PaymentSuccess: React.FC = () => {
 
           <div className="mt-2 relative z-10">
             <motion.p
-              className="text-[#1B2E5A] font-black text-base uppercase tracking-[0.15em] mb-1"
+              className="text-primary font-black text-base uppercase tracking-[0.15em] mb-1"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
@@ -569,7 +569,7 @@ const PaymentSuccess: React.FC = () => {
                 animate={{ scale: 1, rotate: 0 }}
                 whileHover={{ scale: 1.1, rotate: 360 }}
                 transition={{ delay: 0.5, type: 'spring', stiffness: 200, duration: 0.5 }}
-                className="absolute bottom-1 right-1 bg-[#1B2E5A] text-white font-black text-xl w-10 h-10 rounded-full flex items-center justify-center border-4 border-white shadow-2xl"
+                className="absolute bottom-1 right-1 bg-primary text-white font-black text-xl w-10 h-10 rounded-full flex items-center justify-center border-4 border-white shadow-2xl"
               >
                 $
               </motion.div>
@@ -603,7 +603,7 @@ const PaymentSuccess: React.FC = () => {
             </motion.div>
 
             <motion.h2
-              className="text-xl font-black text-[#1B2E5A] mb-2 tracking-tight"
+              className="text-xl font-black text-primary mb-2 tracking-tight"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.6 }}
@@ -688,7 +688,7 @@ const PaymentSuccess: React.FC = () => {
                   <CardHeader className="p-4 lg:p-5 pb-3 bg-gradient-to-br from-slate-50/80 to-white border-b border-slate-100 relative z-10">
                     <div className="flex items-center justify-between gap-4">
                       <div className="min-w-0">
-                        <CardTitle className="text-lg font-black text-[#1B2E5A] tracking-tight flex items-center gap-2">
+                        <CardTitle className="text-lg font-black text-primary tracking-tight flex items-center gap-2">
                           <motion.div
                             className="p-1.5 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg text-white shadow-lg shrink-0"
                             whileHover={{ rotate: 360, scale: 1.1 }}
@@ -712,7 +712,7 @@ const PaymentSuccess: React.FC = () => {
                         >
                           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">New Total</p>
                           <motion.p
-                            className="text-2xl font-black text-[#1B2E5A] tracking-tighter"
+                            className="text-2xl font-black text-primary tracking-tighter"
                             animate={{ scale: [1, 1.05, 1] }}
                             transition={{ duration: 2, repeat: Infinity }}
                           >
@@ -749,14 +749,14 @@ const PaymentSuccess: React.FC = () => {
                       {/* New Balance */}
                       <div className="space-y-2.5">
                         <h3 className="text-[9px] font-black text-blue-600 uppercase tracking-[0.2em] flex items-center gap-1.5 mb-2">
-                          <div className="w-1.5 h-1.5 bg-[#1B2E5A] rounded-full animate-pulse shrink-0" />
+                          <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse shrink-0" />
                           New Balance
                         </h3>
                         <div className="space-y-2">
                           {currentState && (
                             <>
                               <motion.div 
-                                className="p-3 bg-[#1B2E5A]/5 border-2 border-[#1B2E5A]/20 rounded-xl flex justify-between items-center gap-3 relative overflow-hidden group shadow-lg shadow-blue-100/50"
+                                className="p-3 bg-primary/5 border-2 border-primary/20 rounded-xl flex justify-between items-center gap-3 relative overflow-hidden group shadow-lg shadow-blue-100/50"
                                 whileHover={{ scale: 1.02, borderColor: "rgb(59 130 246)" }}
                                 initial={{ x: 20, opacity: 0 }}
                                 animate={{ x: 0, opacity: 1 }}
@@ -775,14 +775,14 @@ const PaymentSuccess: React.FC = () => {
                                       animate={{ scale: 1 }}
                                       transition={{ delay: 0.5, type: "spring" }}
                                     >
-                                      <span className="text-[10px] font-black text-[#1B2E5A] bg-white/90 px-1.5 py-0.5 rounded-full shadow-sm border border-[#1B2E5A]/20">
+                                      <span className="text-[10px] font-black text-primary bg-white/90 px-1.5 py-0.5 rounded-full shadow-sm border border-primary/20">
                                         +{(currentState.credits - (previousState?.credits || 0)).toLocaleString()}
                                       </span>
                                     </motion.div>
                                   )}
                                 </div>
                                 <motion.span
-                                  className="text-xl font-black text-[#1B2E5A] relative z-10 tabular-nums shrink-0"
+                                  className="text-xl font-black text-primary relative z-10 tabular-nums shrink-0"
                                   animate={{ scale: [1, 1.1, 1] }}
                                   transition={{ duration: 2, repeat: Infinity }}
                                 >
@@ -794,7 +794,7 @@ const PaymentSuccess: React.FC = () => {
                                   transition={{ duration: 3, repeat: Infinity }}
                                 />
                               </motion.div>
-                              <div className="p-3 bg-[#1B2E5A]/5 border border-[#1B2E5A]/10 rounded-xl flex justify-between items-center gap-3">
+                              <div className="p-3 bg-primary/5 border border-primary/10 rounded-xl flex justify-between items-center gap-3">
                                 <span className="text-xs font-bold text-blue-700 shrink-0">Current Plan</span>
                                 <span className="text-xs font-black text-blue-900 uppercase bg-white/80 px-2 py-0.5 rounded-full shadow-sm">{currentState.plan}</span>
                               </div>
@@ -816,7 +816,7 @@ const PaymentSuccess: React.FC = () => {
                 >
                   <Button
                     onClick={() => navigate({ to: '/dashboard/applications' })}
-                    className="w-full px-6 py-5 bg-[#1B2E5A] hover:bg-[#152449] text-white font-black rounded-xl transition-all shadow-2xl shadow-blue-200/50 flex items-center justify-center gap-2 text-base group relative overflow-hidden"
+                    className="w-full px-6 py-5 bg-primary hover:bg-primary-hover text-white font-black rounded-xl transition-all shadow-2xl shadow-blue-200/50 flex items-center justify-center gap-2 text-base group relative overflow-hidden"
                   >
                     <Shimmer className="opacity-30" />
                     <motion.div
@@ -838,7 +838,7 @@ const PaymentSuccess: React.FC = () => {
                   <Button
                     onClick={() => navigate({ to: '/dashboard/billing' })}
                     variant="outline"
-                    className="px-6 py-5 border-2 border-slate-200 hover:border-[#1B2E5A]/20 hover:bg-blue-50/50 text-slate-600 hover:text-blue-700 font-black rounded-xl transition-all flex items-center justify-center gap-2 text-sm group"
+                    className="px-6 py-5 border-2 border-slate-200 hover:border-primary/20 hover:bg-blue-50/50 text-slate-600 hover:text-blue-700 font-black rounded-xl transition-all flex items-center justify-center gap-2 text-sm group"
                   >
                     <CreditCard className="w-5 h-5 group-hover:scale-110 transition-transform" />
                     View Billing
@@ -855,13 +855,13 @@ const PaymentSuccess: React.FC = () => {
                   <div className="absolute inset-0 bg-gradient-to-br from-blue-50/0 to-blue-50/0 group-hover:from-blue-50/50 group-hover:to-transparent transition-all duration-500 rounded-[2rem]" />
                   <Shimmer className="rounded-[2rem] opacity-0 group-hover:opacity-100" />
                   <CardHeader className="pb-2 pt-4 px-4 relative z-10">
-                    <CardTitle className="text-base font-black text-[#1B2E5A] flex items-center gap-2">
+                    <CardTitle className="text-base font-black text-primary flex items-center gap-2">
                       <motion.div
                         className="p-1.5 bg-slate-50 rounded-lg group-hover:bg-blue-50 transition-colors"
                         whileHover={{ rotate: [0, -10, 10, -10, 0] }}
                         transition={{ duration: 0.5 }}
                       >
-                        <FileText className="w-4 h-4 text-slate-400 group-hover:text-[#1B2E5A] transition-colors" />
+                        <FileText className="w-4 h-4 text-slate-400 group-hover:text-primary transition-colors" />
                       </motion.div>
                       Receipt
                     </CardTitle>
@@ -871,7 +871,7 @@ const PaymentSuccess: React.FC = () => {
                     {/* Primary transaction reference */}
                     {paymentType !== 'plan_upgrade' && (
                       <motion.div
-                        className="p-3 bg-slate-50 rounded-xl border border-slate-100 group-hover:border-[#1B2E5A]/20 transition-colors"
+                        className="p-3 bg-slate-50 rounded-xl border border-slate-100 group-hover:border-primary/20 transition-colors"
                         whileHover={{ scale: 1.01 }}
                       >
                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Transaction ID</p>
@@ -897,12 +897,12 @@ const PaymentSuccess: React.FC = () => {
                           </div>
                           <div className="flex justify-between items-center">
                             <span className="text-[10px] font-bold text-slate-500">New Plan</span>
-                            <span className="text-[10px] font-black text-[#1B2E5A] capitalize">{planUpgradeDetails.plan}</span>
+                            <span className="text-[10px] font-black text-primary capitalize">{planUpgradeDetails.plan}</span>
                           </div>
                           <div className="border-t border-blue-100 pt-1.5 mt-1.5">
                             <div className="flex justify-between items-center">
                               <span className="text-[10px] font-bold text-slate-500">Prorated Amount</span>
-                              <span className="text-[10px] font-black text-[#1B2E5A]">
+                              <span className="text-[10px] font-black text-primary">
                                 {formatCurrency(planUpgradeDetails.amount, planUpgradeDetails.currency)}
                               </span>
                             </div>
@@ -917,14 +917,14 @@ const PaymentSuccess: React.FC = () => {
                       {paymentType === 'plan_upgrade' ? (
                         <div className="flex justify-between items-center">
                           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Upgrade Date</p>
-                          <p className="text-[10px] font-bold text-[#1B2E5A]">
+                          <p className="text-[10px] font-bold text-primary">
                             {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                           </p>
                         </div>
                       ) : (paymentInfo?.paidAt || paymentInfo?.processedAt) ? (
                         <div className="flex justify-between items-center">
                           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Payment Date</p>
-                          <p className="text-[10px] font-bold text-[#1B2E5A]">
+                          <p className="text-[10px] font-bold text-primary">
                             {new Date(paymentInfo.paidAt || paymentInfo.processedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                           </p>
                         </div>
@@ -934,7 +934,7 @@ const PaymentSuccess: React.FC = () => {
                       {paymentInfo?.paymentMethodDetails?.card && (
                         <div className="flex justify-between items-center">
                           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Card</p>
-                          <p className="text-[10px] font-bold text-[#1B2E5A]">
+                          <p className="text-[10px] font-bold text-primary">
                             {paymentInfo.paymentMethodDetails.card.brand?.toUpperCase()} •••• {paymentInfo.paymentMethodDetails.card.last4}
                           </p>
                         </div>
@@ -944,7 +944,7 @@ const PaymentSuccess: React.FC = () => {
                       {planDetails?.name && (
                         <div className="flex justify-between items-center">
                           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Plan</p>
-                          <p className="text-[10px] font-bold text-[#1B2E5A] capitalize">
+                          <p className="text-[10px] font-bold text-primary capitalize">
                             {planDetails.name} · Annual billing
                           </p>
                         </div>
@@ -954,7 +954,7 @@ const PaymentSuccess: React.FC = () => {
                       {paymentInfo?.subscription?.renewalDate && (
                         <div className="flex justify-between items-center">
                           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Renews</p>
-                          <p className="text-[10px] font-bold text-[#1B2E5A]">
+                          <p className="text-[10px] font-bold text-primary">
                             {new Date(paymentInfo.subscription.renewalDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                           </p>
                         </div>
@@ -964,7 +964,7 @@ const PaymentSuccess: React.FC = () => {
                       {paymentInfo?.invoiceNumber && (
                         <div className="flex justify-between items-center">
                           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Invoice #</p>
-                          <p className="text-[10px] font-bold text-[#1B2E5A]">{paymentInfo.invoiceNumber}</p>
+                          <p className="text-[10px] font-bold text-primary">{paymentInfo.invoiceNumber}</p>
                         </div>
                       )}
                     </div>
@@ -980,7 +980,7 @@ const PaymentSuccess: React.FC = () => {
                           {paymentType === 'plan_upgrade' ? 'Prorated Charge' : 'Total Paid'}
                         </p>
                         <motion.p
-                          className="text-xl font-black text-[#1B2E5A]"
+                          className="text-xl font-black text-primary"
                           animate={{ scale: [1, 1.05, 1] }}
                           transition={{ duration: 2, repeat: Infinity }}
                         >
@@ -994,7 +994,7 @@ const PaymentSuccess: React.FC = () => {
                         animate={{ scale: 1, rotate: 0 }}
                         transition={{ delay: 0.5, type: "spring" }}
                       >
-                        <Badge className="bg-[#1B2E5A] text-white border-0 font-black px-3 py-0.5 rounded-full text-[9px] tracking-widest mb-0.5 shadow-lg shadow-blue-100 relative overflow-hidden">
+                        <Badge className="bg-primary text-primary-foreground border-0 font-black px-3 py-0.5 rounded-full text-[9px] tracking-widest mb-0.5 shadow-lg shadow-blue-100 relative overflow-hidden">
                           <Shimmer className="opacity-50" />
                           <span className="relative z-10 flex items-center gap-1">
                             <CheckCircle2 className="w-2.5 h-2.5" />
@@ -1016,7 +1016,7 @@ const PaymentSuccess: React.FC = () => {
                           onClick={handleDownloadInvoice}
                           disabled={isDownloading}
                           variant="outline"
-                          className="w-full border border-[#1B2E5A]/20 hover:border-[#1B2E5A]/40 hover:bg-[#1B2E5A]/5 text-[#1B2E5A] font-black rounded-xl py-4 text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                          className="w-full border border-primary/20 hover:border-primary/40 hover:bg-primary/5 text-primary font-black rounded-xl py-4 text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2"
                         >
                           {isDownloading
                             ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />Generating PDF...</>
@@ -1032,7 +1032,7 @@ const PaymentSuccess: React.FC = () => {
               {/* Help Card */}
               <motion.div variants={itemVariants}>
                 <motion.div
-                  className="bg-[#1B2E5A] rounded-[2rem] p-4 lg:p-5 text-white relative overflow-hidden group shadow-2xl shadow-blue-200"
+                  className="bg-primary rounded-[2rem] p-4 lg:p-5 text-white relative overflow-hidden group shadow-2xl shadow-blue-200"
                   whileHover={{ scale: 1.02 }}
                   transition={{ type: "spring", stiffness: 300 }}
                 >

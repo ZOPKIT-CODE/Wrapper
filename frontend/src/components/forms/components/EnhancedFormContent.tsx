@@ -61,7 +61,7 @@ export const EnhancedFormContent: React.FC<EnhancedFormContentProps> = ({
             <MotionAnimatedTransition direction={transitionDirection}>
               <div className="space-y-6">
                 {currentStepConfig.fields.map(
-                  (field: { id: string }, index: number) => (
+                  (field: { id: string }, _index: number) => (
                     <div key={field.id} data-animate>
                       {renderField(field)}
                     </div>

@@ -204,7 +204,7 @@ export const AccountSettings: React.FC = () => {
         setLogoFile(null);
       }
 
-      const updateData: Partial<AccountSettingsData> = {
+      const updateData: Record<string, unknown> = {
         mailingAddressSameAsRegistered: data.mailingAddressSameAsRegistered ?? true,
       };
 
@@ -213,15 +213,15 @@ export const AccountSettings: React.FC = () => {
         if (value !== undefined && value !== null && value !== '') {
           if (typeof value === 'object' && !Array.isArray(value)) {
             if (Object.keys(value).length > 0) {
-              updateData[key as keyof AccountSettingsData] = value;
+              updateData[key] = value;
             }
           } else {
-            updateData[key as keyof AccountSettingsData] = value;
+            updateData[key] = value;
           }
         }
       });
 
-      await api.patch('/tenants/current', updateData);
+      await api.patch('/tenants/current', updateData as Partial<AccountSettingsData>);
       // Refresh tenant cache so logo/name updates appear in sidebar immediately
       queryClient.invalidateQueries({ queryKey: queryKeys.tenant });
       addToast('Account settings updated successfully', { type: 'success' });

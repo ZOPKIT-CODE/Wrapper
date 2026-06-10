@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { FormControl, FormDescription, FormField, FormItem, FormLabel } from '@/components/ui/form';
+import { FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { FieldComponentProps, PasswordField as PasswordFieldType } from '../types';
 import { cn } from '@/lib/utils';
 import { ConditionalErrorMessage } from '../components/ConditionalErrorMessage';

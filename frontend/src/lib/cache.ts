@@ -78,7 +78,6 @@ class EnhancedCache {
 
   // Clear all cache
   clear(): void {
-    const size = this.storage.size;
     this.storage.clear();
   }
 
@@ -88,7 +87,7 @@ class EnhancedCache {
     let validEntries = 0;
     let expiredEntries = 0;
 
-    for (const [key, entry] of this.storage.entries()) {
+    for (const [, entry] of this.storage.entries()) {
       const isExpired = (now - entry.timestamp) > entry.ttl;
       if (isExpired) {
         expiredEntries++;
@@ -136,6 +135,8 @@ export const CACHE_KEYS = {
   APPLICATIONS: 'applications',
   MODULES: 'modules',
   DASHBOARD_METRICS: 'dashboard_metrics',
+  DASHBOARD_USERS: 'dashboard_users',
+  PAYMENT_STATS: 'payment_stats',
 } as const;
 
 // Helper functions for common cache operations
@@ -163,6 +164,11 @@ export const cacheHelpers = {
   invalidateDashboard: () => {
     cache.invalidate(CACHE_KEYS.DASHBOARD_METRICS);
     cache.invalidatePattern('dashboard');
+  },
+
+  invalidateApplications: () => {
+    cache.invalidate(CACHE_KEYS.APPLICATIONS);
+    cache.invalidatePattern('applications');
   },
 
 

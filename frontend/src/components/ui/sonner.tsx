@@ -3,12 +3,13 @@ import { Toaster as Sonner } from "sonner"
 
 type ToasterProps = React.ComponentProps<typeof Sonner>
 
+/** Sonner needs a theme prop; styling elsewhere uses Tailwind dark: + CSS variables. */
 const Toaster = ({ ...props }: ToasterProps) => {
   const { actualTheme } = useTheme()
 
   return (
     <Sonner
-      theme={actualTheme as ToasterProps["theme"]}
+      theme={(actualTheme === 'monochrome' ? 'light' : actualTheme) as ToasterProps["theme"]}
       className="toaster group"
       position="top-right"
       offset="80px"

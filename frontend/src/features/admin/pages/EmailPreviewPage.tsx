@@ -4,7 +4,7 @@
  *
  * A developer tool — remove the route from router.tsx when done.
  */
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'

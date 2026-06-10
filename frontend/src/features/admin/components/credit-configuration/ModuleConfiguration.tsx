@@ -108,7 +108,7 @@ export const ModuleConfiguration: React.FC<ModuleConfigurationProps> = ({
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <Settings className="w-4 h-4 text-blue-600" />
-                      <h6 className="font-medium text-[#1B2E5A]">{module.moduleName}</h6>
+                      <h6 className="font-medium text-primary">{module.moduleName}</h6>
                       <Badge variant="outline" className="text-xs">
                         {module.permissions?.length || 0} permissions
                       </Badge>

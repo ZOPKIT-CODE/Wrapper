@@ -164,7 +164,7 @@ export class EnhancedValidation {
   static async validateField(
     field: FormField,
     value: any,
-    allValues: FormValues
+    _allValues: FormValues
   ): Promise<{ isValid: boolean; error?: string }> {
     try {
       const schema = this.createFieldSchema(field);

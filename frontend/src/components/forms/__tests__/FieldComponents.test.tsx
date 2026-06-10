@@ -1,4 +1,3 @@
-import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { TextField } from '../field-components/TextField';
 import { SelectField } from '../field-components/SelectField';

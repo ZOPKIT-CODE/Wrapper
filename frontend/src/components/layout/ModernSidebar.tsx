@@ -39,7 +39,7 @@ function ZopkitLogo({ size = 38 }: { size?: number }) {
         <div style={{
             width: size,
             height: size,
-            borderRadius: 10,
+            borderRadius: 8,
             background: 'var(--zk-navy)',
             display: 'grid',
             placeItems: 'center',
@@ -60,7 +60,7 @@ function ZopkitLogo({ size = 38 }: { size?: number }) {
                 width: 5,
                 height: 5,
                 borderRadius: '50%',
-                background: '#bfd0fa',
+                background: 'var(--zk-blue-200)',
                 animation: 'zk-pulseDot 2s ease-in-out infinite',
             }} />
         </div>
@@ -88,7 +88,7 @@ function TenantLogo({
         return (
             <div style={{
                 width: size, height: size,
-                borderRadius: 10,
+                borderRadius: 8,
                 background: 'var(--zk-paper)',
                 border: '1px solid var(--zk-line)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -112,8 +112,8 @@ function TenantLogo({
     return (
         <div style={{
             width: size, height: size,
-            borderRadius: 10,
-            background: 'linear-gradient(140deg, #1c3a8f 0%, #0a1638 100%)',
+            borderRadius: 8,
+            background: 'linear-gradient(140deg, var(--zk-blue-600) 0%, var(--zk-blue-900) 100%)',
             display: 'grid', placeItems: 'center',
             color: 'white',
             fontFamily: 'var(--zk-display)',
@@ -152,7 +152,7 @@ function SidebarNavItem({
                 padding: isCollapsed ? '10px 0' : '8px 12px',
                 justifyContent: isCollapsed ? 'center' : 'flex-start',
                 borderRadius: 9,
-                color: isActive ? '#ffffff' : (hover ? '#ffffff' : 'var(--zk-navy-muted)'),
+                color: isActive ? 'white' : (hover ? 'white' : 'var(--zk-navy-muted)'),
                 background: isActive ? 'rgba(255,255,255,0.16)' : (hover ? 'rgba(255,255,255,0.08)' : 'transparent'),
                 border: isActive ? '1px solid rgba(255,255,255,0.18)' : '1px solid transparent',
                 boxShadow: isActive ? '0 6px 16px -8px rgba(0,0,0,0.45)' : 'none',
@@ -189,7 +189,7 @@ function SidebarNavItem({
                             padding: '1px 6px',
                             borderRadius: 4,
                             background: isActive ? 'rgba(255,255,255,0.12)' : 'transparent',
-                            color: isActive ? '#ffffff' : 'var(--zk-navy-muted)',
+                            color: isActive ? 'white' : 'var(--zk-navy-muted)',
                             fontFamily: 'var(--zk-mono)',
                         }}>
                             {item.badge}
@@ -267,7 +267,7 @@ export function ModernSidebar({
                 width: w,
                 flexShrink: 0,
                 background: 'var(--zk-navy)',
-                color: '#ffffff',
+                color: 'white',
                 display: 'flex',
                 flexDirection: 'column',
                 padding: '20px 14px',
@@ -305,7 +305,7 @@ export function ModernSidebar({
                             fontWeight: 600,
                             letterSpacing: '-0.035em',
                             fontFamily: 'var(--zk-display)',
-                            color: '#ffffff',
+                            color: 'white',
                             lineHeight: 1.2,
                         }}>
                             {companyName.toLowerCase()}
@@ -361,7 +361,7 @@ export function ModernSidebar({
                     height: 32,
                     flexShrink: 0,
                     borderRadius: 9,
-                    background: 'linear-gradient(140deg, #1c3a8f, #0a1638)',
+                    background: 'linear-gradient(140deg, var(--zk-blue-600), var(--zk-blue-900))',
                     display: 'grid',
                     placeItems: 'center',
                     color: 'white',
@@ -385,7 +385,7 @@ export function ModernSidebar({
                                 fontSize: 12.5,
                                 fontWeight: 600,
                                 letterSpacing: '-0.005em',
-                                color: '#ffffff',
+                                color: 'white',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
                                 whiteSpace: 'nowrap',
@@ -416,7 +416,7 @@ export function ModernSidebar({
                                 border: 'none',
                                 cursor: 'pointer',
                             }}
-                            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#ffffff' }}
+                            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'white' }}
                             onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--zk-navy-muted)' }}
                         >
                             <LogOut size={14} />

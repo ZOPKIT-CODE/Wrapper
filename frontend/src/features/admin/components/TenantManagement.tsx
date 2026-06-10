@@ -7,8 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Loader2, Search, Users, Building2, CreditCard, Eye, Power, PowerOff, Download, Plus, ChevronRight, ChevronDown, Trash2 } from 'lucide-react';
+import { Loader2, Search, Users, Building2, CreditCard, Eye, Power, PowerOff, Download, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { runMutationWithFeedback } from '@/lib/mutation-feedback';
@@ -27,47 +26,6 @@ interface Tenant {
   totalCredits: number;
   reservedCredits: number;
   lastActivity: string | null;
-}
-
-interface TenantDetails {
-  tenant: Tenant;
-  users: any[];
-  entitySummary: {
-    total: number;
-    organizations: number;
-    locations: number;
-    departments: number;
-    teams: number;
-    active: number;
-  };
-  creditSummary: {
-    totalCredits: number;
-    reservedCredits: number;
-    activeEntities: number;
-    averageCredits: number;
-  };
-  recentActivity: any[];
-  recentCreditActivity?: Array<{
-    transactionId: string;
-    tenantId: string;
-    entityId?: string;
-    entityName?: string;
-    entityType?: string;
-    transactionType: string;
-    amount: string;
-    operationCode: string;
-    createdAt: string;
-  }>;
-  entityHierarchy?: Array<{
-    entityId: string;
-    entityType: string;
-    entityName: string;
-    entityCode: string;
-    isActive: boolean;
-    availableCredits: string;
-    reservedCredits: string;
-    children?: Array<any>;
-  }>;
 }
 
 export const TenantManagement: React.FC = () => {
@@ -134,7 +92,7 @@ export const TenantManagement: React.FC = () => {
   const handleViewDetails = async (tenant: Tenant) => {
     try {
       // Fetch tenant details, entity hierarchy, and recent credit activity in parallel
-      const [detailsResponse, hierarchyResponse, creditActivityResponse] = await Promise.all([
+      const [detailsResponse] = await Promise.all([
         api.get(`/admin/tenants/${tenant.tenantId}/details`),
         api.get(`/admin/entities/hierarchy/${tenant.tenantId}`),
         api.get('/admin/credits/transactions', {
@@ -228,42 +186,6 @@ export const TenantManagement: React.FC = () => {
       console.error('Failed to clean orphaned credits:', error);
     } finally {
       setMutatingTenantId(null);
-    }
-  };
-
-  const handleAllocateCredits = async (entityId: string, amount: number, operationCode: string) => {
-    try {
-      const response = await runMutationWithFeedback({
-        scope: 'admin-bulk-credit-allocation',
-        idParts: [entityId, amount, operationCode],
-        loadingMessage: 'Allocating credits...',
-        successMessage: `Allocated ${amount} credits successfully`,
-        errorMessage: 'Failed to allocate credits',
-        execute: (idempotencyKey) => api.post('/admin/credits/bulk-allocate', {
-          allocations: [{
-            entityId,
-            amount: amount.toString(),
-            operationCode
-          }],
-          reason: 'Admin manual allocation'
-        }, {
-          headers: {
-            'X-Idempotency-Key': idempotencyKey
-          }
-        })
-      });
-
-      if (response.data.success) {
-        queryClient.invalidateQueries({ queryKey: ['tenant'] });
-        queryClient.invalidateQueries({ queryKey: ['creditStatus'] });
-        queryClient.invalidateQueries({ queryKey: ['credit'] });
-        fetchTenants();
-
-        return response.data;
-      }
-    } catch (error) {
-      console.error('Failed to allocate credits:', error);
-      throw error;
     }
   };
 
@@ -516,167 +438,6 @@ export const TenantManagement: React.FC = () => {
         </CardContent>
       </Card>
 
-    </div>
-  );
-};
-
-// Component to display entity hierarchy with credit information
-interface EntityNode {
-  entityId: string;
-  entityType: string;
-  entityName: string;
-  entityCode: string;
-  isActive: boolean;
-  availableCredits: string;
-  reservedCredits: string;
-  children?: EntityNode[];
-}
-
-interface EntityHierarchyWithCreditsProps {
-  hierarchy: EntityNode[];
-  onAllocateCredits: (entityId: string, amount: number, operationCode: string) => void;
-}
-
-const EntityHierarchyWithCredits: React.FC<EntityHierarchyWithCreditsProps> = ({
-  hierarchy,
-  onAllocateCredits
-}) => {
-  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
-  const [allocatingEntity, setAllocatingEntity] = useState<string | null>(null);
-  const [allocationAmounts, setAllocationAmounts] = useState<Record<string, string>>({});
-
-  const toggleNode = (entityId: string) => {
-    const newExpanded = new Set(expandedNodes);
-    if (newExpanded.has(entityId)) {
-      newExpanded.delete(entityId);
-    } else {
-      newExpanded.add(entityId);
-    }
-    setExpandedNodes(newExpanded);
-  };
-
-  const handleAllocation = async (entityId: string) => {
-    const amount = parseFloat(allocationAmounts[entityId] || '0');
-    if (isNaN(amount) || amount <= 0) {
-      toast.error('Please enter a valid amount');
-      return;
-    }
-
-    setAllocatingEntity(entityId);
-    try {
-      await onAllocateCredits(entityId, amount, 'admin.manual_allocation');
-      // Clear the allocation amount for this entity after successful allocation
-      setAllocationAmounts(prev => ({
-        ...prev,
-        [entityId]: ''
-      }));
-    } catch (error) {
-      console.error('Allocation error:', error);
-    } finally {
-      setAllocatingEntity(null);
-    }
-  };
-
-  const handleAmountChange = (entityId: string, value: string) => {
-    setAllocationAmounts(prev => ({
-      ...prev,
-      [entityId]: value
-    }));
-  };
-
-  const renderEntityNode = (node: EntityNode, level: number = 0) => {
-    const isExpanded = expandedNodes.has(node.entityId);
-    const hasChildren = node.children && node.children.length > 0;
-
-    return (
-      <div key={node.entityId}>
-        <div className="flex items-center justify-between py-2 px-2 border-l-2 border-l-gray-200"
-             style={{ marginLeft: `${level * 20}px` }}>
-          <div className="flex items-center gap-2 flex-1">
-            {hasChildren ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => toggleNode(node.entityId)}
-                className="h-6 w-6 p-0"
-              >
-                {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-              </Button>
-            ) : (
-              <div className="w-6" />
-            )}
-
-            <div className="flex items-center gap-2">
-              <Building2 className="h-4 w-4 text-muted-foreground" />
-              <div>
-                <div className="font-medium text-sm">{node.entityName}</div>
-                <div className="text-xs text-muted-foreground">
-                  {node.entityType} • {node.entityCode}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <div className="text-right">
-              <div className="text-sm font-medium">
-                {(parseFloat(node.availableCredits) || 0).toFixed(2)} credits
-              </div>
-              <div className="text-xs text-muted-foreground">
-                Reserved: {(parseFloat(node.reservedCredits) || 0).toFixed(2)}
-              </div>
-            </div>
-
-            <Badge variant={node.isActive ? "default" : "secondary"}>
-              {node.isActive ? "Active" : "Inactive"}
-            </Badge>
-
-            <div className="flex gap-1">
-              <Input
-                type="number"
-                placeholder="Amount"
-                value={allocationAmounts[node.entityId] || ''}
-                onChange={(e) => handleAmountChange(node.entityId, e.target.value)}
-                className="w-20 h-8 text-xs"
-                disabled={allocatingEntity === node.entityId}
-                min="0"
-                step="0.01"
-              />
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => handleAllocation(node.entityId)}
-                disabled={allocatingEntity === node.entityId || !allocationAmounts[node.entityId] || allocationAmounts[node.entityId] === '0'}
-                className="h-8"
-              >
-                {allocatingEntity === node.entityId ? (
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                ) : (
-                  <Plus className="h-3 w-3" />
-                )}
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {isExpanded && hasChildren && (
-          <div>
-            {node.children!.map(child => renderEntityNode(child, level + 1))}
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  return (
-    <div className="space-y-2">
-      {hierarchy.length === 0 ? (
-        <div className="text-center py-8">
-          <p className="text-muted-foreground">No entities found</p>
-        </div>
-      ) : (
-        hierarchy.map(node => renderEntityNode(node))
-      )}
     </div>
   );
 };

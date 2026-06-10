@@ -93,10 +93,10 @@ export function useBilling() {
   const [showCancelDialog, setShowCancelDialog] = useState(false)
   const [selectedPaymentForRefund, setSelectedPaymentForRefund] = useState<string | null>(null)
   const [refundReason, setRefundReason] = useState('')
-  const [profileCompleted, setProfileCompleted] = useState<boolean | null>(null)
-  const [isCheckingProfile, setIsCheckingProfile] = useState(false)
+  const [, setProfileCompleted] = useState<boolean | null>(null)
+  const [, setIsCheckingProfile] = useState(false)
 
-  const { isAuthenticated, isLoading, user, getToken, login } = useAuth()
+  const { isAuthenticated, isLoading, getToken, login } = useAuth()
 
   const upgradeMode = search['upgrade'] === 'true'
   const paymentCancelled = search['payment'] === 'cancelled'
@@ -439,8 +439,12 @@ export function useBilling() {
           queryClient.invalidateQueries({ queryKey: ['credit'] })
         }
       }
-    } catch (error: unknown & { response?: { data?: { message?: string } } }) {
-      toast.error((error as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Failed to purchase plan')
+    } catch (error: unknown) {
+      const message =
+        typeof error === 'object' && error !== null && 'response' in error
+          ? (error as { response?: { data?: { message?: string } } }).response?.data?.message
+          : undefined
+      toast.error(message ?? 'Failed to purchase plan')
     } finally {
       setIsUpgrading(false)
       setSelectedPlan(null)
