@@ -10,8 +10,9 @@ interface OnboardingPageGuardProps {
 
 export const OnboardingPageGuard = ({ children }: OnboardingPageGuardProps) => {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
-  const { data: authData, isLoading: authStatusLoading } = useAuthStatus()
-  const { data: onboardingResponse, isLoading: onboardingLoading } = useOnboardingStatus()
+  const { data: authData } = useAuthStatus()
+  const { data: onboardingResponse, isLoading: onboardingLoading } =
+    useOnboardingStatus()
 
   const onboardingData = onboardingResponse?.data
   const backendAuthStatus = authData?.authStatus
@@ -19,10 +20,12 @@ export const OnboardingPageGuard = ({ children }: OnboardingPageGuardProps) => {
   // Show loading while checking authentication and onboarding status
   if (authLoading || (isAuthenticated && (authLoading || onboardingLoading))) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="text-center">
           <AnimatedLoader size="lg" className="mb-6" />
-          <p className="text-gray-600 dark:text-gray-300 text-lg font-medium">Checking onboarding status...</p>
+          <p className="text-lg font-medium text-gray-600 dark:text-gray-300">
+            Checking onboarding status...
+          </p>
         </div>
       </div>
     )
@@ -38,16 +41,18 @@ export const OnboardingPageGuard = ({ children }: OnboardingPageGuardProps) => {
 
   if (onboardingData) {
     // Use the direct API response format from the user's example
-    isOnboarded = onboardingData.isOnboarded === true ||
-                  onboardingData.onboardingStep === 'completed' ||
-                  !onboardingData.needsOnboarding
+    isOnboarded =
+      onboardingData.isOnboarded === true ||
+      onboardingData.onboardingStep === 'completed' ||
+      !onboardingData.needsOnboarding
   }
 
   if (backendAuthStatus) {
     // Fallback to auth status if onboarding data isn't available
-    isOnboarded = backendAuthStatus.onboardingCompleted === true ||
-                  backendAuthStatus.userType === 'INVITED_USER' ||
-                  backendAuthStatus.isInvitedUser === true
+    isOnboarded =
+      backendAuthStatus.onboardingCompleted === true ||
+      backendAuthStatus.userType === 'INVITED_USER' ||
+      backendAuthStatus.isInvitedUser === true
   }
 
   // If onboarding is completed, redirect to dashboard

@@ -1,109 +1,137 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  ReactNode,
+} from 'react'
 
 export interface GlobalLoadingState {
-  isLoading: boolean;
-  loadingMessage: string;
-  loadingProgress?: number;
-  loadingType: 'page' | 'overlay' | 'inline' | 'button';
+  isLoading: boolean
+  loadingMessage: string
+  loadingProgress?: number
+  loadingType: 'page' | 'overlay' | 'inline' | 'button'
 }
 
 export interface LoadingContextType {
   // Global loading state
-  globalLoading: GlobalLoadingState;
-  
+  globalLoading: GlobalLoadingState
+
   // Actions
-  setGlobalLoading: (loading: Partial<GlobalLoadingState>) => void;
-  clearGlobalLoading: () => void;
-  
+  setGlobalLoading: (loading: Partial<GlobalLoadingState>) => void
+  clearGlobalLoading: () => void
+
   // Specific loading states
-  setPageLoading: (message?: string) => void;
-  setOverlayLoading: (message?: string, progress?: number) => void;
-  setInlineLoading: (message?: string) => void;
-  setButtonLoading: (message?: string) => void;
-  
+  setPageLoading: (message?: string) => void
+  setOverlayLoading: (message?: string, progress?: number) => void
+  setInlineLoading: (message?: string) => void
+  setButtonLoading: (message?: string) => void
+
   // Loading state management
-  startLoading: (type: GlobalLoadingState['loadingType'], message?: string, progress?: number) => void;
-  stopLoading: () => void;
+  startLoading: (
+    type: GlobalLoadingState['loadingType'],
+    message?: string,
+    progress?: number
+  ) => void
+  stopLoading: () => void
 }
 
-const LoadingContext = createContext<LoadingContextType | undefined>(undefined);
+const LoadingContext = createContext<LoadingContextType | undefined>(undefined)
 
 export interface LoadingProviderProps {
-  children: ReactNode;
+  children: ReactNode
 }
 
 export function LoadingProvider({ children }: LoadingProviderProps) {
   const [globalLoading, setGlobalLoadingState] = useState<GlobalLoadingState>({
     isLoading: false,
     loadingMessage: '',
-    loadingType: 'page'
-  });
+    loadingType: 'page',
+  })
 
-  const setGlobalLoading = useCallback((loading: Partial<GlobalLoadingState>) => {
-    setGlobalLoadingState(prev => ({
-      ...prev,
-      ...loading,
-      isLoading: loading.isLoading ?? true
-    }));
-  }, []);
+  const setGlobalLoading = useCallback(
+    (loading: Partial<GlobalLoadingState>) => {
+      setGlobalLoadingState((prev) => ({
+        ...prev,
+        ...loading,
+        isLoading: loading.isLoading ?? true,
+      }))
+    },
+    []
+  )
 
   const clearGlobalLoading = useCallback(() => {
     setGlobalLoadingState({
       isLoading: false,
       loadingMessage: '',
-      loadingType: 'page'
-    });
-  }, []);
+      loadingType: 'page',
+    })
+  }, [])
 
-  const setPageLoading = useCallback((message = 'Loading...') => {
-    setGlobalLoading({
-      isLoading: true,
-      loadingMessage: message,
-      loadingType: 'page'
-    });
-  }, [setGlobalLoading]);
+  const setPageLoading = useCallback(
+    (message = 'Loading...') => {
+      setGlobalLoading({
+        isLoading: true,
+        loadingMessage: message,
+        loadingType: 'page',
+      })
+    },
+    [setGlobalLoading]
+  )
 
-  const setOverlayLoading = useCallback((message = 'Loading...', progress?: number) => {
-    setGlobalLoading({
-      isLoading: true,
-      loadingMessage: message,
-      loadingProgress: progress,
-      loadingType: 'overlay'
-    });
-  }, [setGlobalLoading]);
+  const setOverlayLoading = useCallback(
+    (message = 'Loading...', progress?: number) => {
+      setGlobalLoading({
+        isLoading: true,
+        loadingMessage: message,
+        loadingProgress: progress,
+        loadingType: 'overlay',
+      })
+    },
+    [setGlobalLoading]
+  )
 
-  const setInlineLoading = useCallback((message = 'Loading...') => {
-    setGlobalLoading({
-      isLoading: true,
-      loadingMessage: message,
-      loadingType: 'inline'
-    });
-  }, [setGlobalLoading]);
+  const setInlineLoading = useCallback(
+    (message = 'Loading...') => {
+      setGlobalLoading({
+        isLoading: true,
+        loadingMessage: message,
+        loadingType: 'inline',
+      })
+    },
+    [setGlobalLoading]
+  )
 
-  const setButtonLoading = useCallback((message = 'Loading...') => {
-    setGlobalLoading({
-      isLoading: true,
-      loadingMessage: message,
-      loadingType: 'button'
-    });
-  }, [setGlobalLoading]);
+  const setButtonLoading = useCallback(
+    (message = 'Loading...') => {
+      setGlobalLoading({
+        isLoading: true,
+        loadingMessage: message,
+        loadingType: 'button',
+      })
+    },
+    [setGlobalLoading]
+  )
 
-  const startLoading = useCallback((
-    type: GlobalLoadingState['loadingType'], 
-    message = 'Loading...', 
-    progress?: number
-  ) => {
-    setGlobalLoading({
-      isLoading: true,
-      loadingMessage: message,
-      loadingProgress: progress,
-      loadingType: type
-    });
-  }, [setGlobalLoading]);
+  const startLoading = useCallback(
+    (
+      type: GlobalLoadingState['loadingType'],
+      message = 'Loading...',
+      progress?: number
+    ) => {
+      setGlobalLoading({
+        isLoading: true,
+        loadingMessage: message,
+        loadingProgress: progress,
+        loadingType: type,
+      })
+    },
+    [setGlobalLoading]
+  )
 
   const stopLoading = useCallback(() => {
-    clearGlobalLoading();
-  }, [clearGlobalLoading]);
+    clearGlobalLoading()
+  }, [clearGlobalLoading])
 
   const value: LoadingContextType = {
     globalLoading,
@@ -114,34 +142,32 @@ export function LoadingProvider({ children }: LoadingProviderProps) {
     setInlineLoading,
     setButtonLoading,
     startLoading,
-    stopLoading
-  };
+    stopLoading,
+  }
 
   return (
-    <LoadingContext.Provider value={value}>
-      {children}
-    </LoadingContext.Provider>
-  );
+    <LoadingContext.Provider value={value}>{children}</LoadingContext.Provider>
+  )
 }
 
 export function useLoadingContext(): LoadingContextType {
-  const context = useContext(LoadingContext);
+  const context = useContext(LoadingContext)
   if (context === undefined) {
-    throw new Error('useLoadingContext must be used within a LoadingProvider');
+    throw new Error('useLoadingContext must be used within a LoadingProvider')
   }
-  return context;
+  return context
 }
 
 // Hook for easy access to global loading state
 export function useGlobalLoading() {
-  const { globalLoading, startLoading, stopLoading } = useLoadingContext();
-  
+  const { globalLoading, startLoading, stopLoading } = useLoadingContext()
+
   return {
     isLoading: globalLoading.isLoading,
     message: globalLoading.loadingMessage,
     progress: globalLoading.loadingProgress,
     type: globalLoading.loadingType,
     startLoading,
-    stopLoading
-  };
+    stopLoading,
+  }
 }

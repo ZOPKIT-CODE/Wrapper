@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/lib/auth/cognito-auth'
 import { useLocation } from '@tanstack/react-router'
-import { api, subscriptionAPI, creditAPI } from '@/lib/api'
 import { useCreditStatusQuery } from '@/hooks/useSharedQueries'
 import { toast } from 'sonner'
 
@@ -53,29 +52,32 @@ export function useCreditStatus() {
   const location = useLocation()
 
   // Don't make credit API calls during onboarding - user hasn't set up organization yet
-  const isOnboardingPage = location.pathname === '/onboarding' || location.pathname.startsWith('/onboarding/')
+  const isOnboardingPage =
+    location.pathname === '/onboarding' ||
+    location.pathname.startsWith('/onboarding/')
   const enableCreditQueries = !!isAuthenticated && !!user && !isOnboardingPage
 
-  const { data: creditResponse, isLoading: creditLoading, error: creditError, refetch: refetchCredit } = useCreditStatusQuery(enableCreditQueries)
+  const { data: creditResponse } = useCreditStatusQuery(enableCreditQueries)
 
   // Initialize with localStorage check to prevent flash
   const [creditStatus, setCreditStatus] = useState<CreditStatus | null>(null)
-  const [expiredData, setExpiredData] = useState<CreditExpiredData | null>(() => {
-    // Check localStorage immediately on initialization
-    const storedExpiry = localStorage.getItem('creditExpired')
-    if (storedExpiry) {
-      try {
-        return JSON.parse(storedExpiry)
-      } catch {
-        localStorage.removeItem('creditExpired') // Clean up invalid data
+  const [expiredData, setExpiredData] = useState<CreditExpiredData | null>(
+    () => {
+      // Check localStorage immediately on initialization
+      const storedExpiry = localStorage.getItem('creditExpired')
+      if (storedExpiry) {
+        try {
+          return JSON.parse(storedExpiry)
+        } catch {
+          localStorage.removeItem('creditExpired') // Clean up invalid data
+        }
       }
+      return null
     }
-    return null
-  })
+  )
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [retryCount, setRetryCount] = useState(0)
-  const maxRetries = 3
+  const [, setRetryCount] = useState(0)
 
   const creditData = creditResponse?.data
 
@@ -110,11 +112,17 @@ export function useCreditStatus() {
         const availableCredits = parseFloat(creditData.availableCredits || 0)
         const totalCredits = parseFloat(creditData.totalCredits || 0)
         const reservedCredits = parseFloat(creditData.reservedCredits || 0)
-        const lowBalanceThreshold = parseFloat(creditData.lowBalanceThreshold || 100)
-        const criticalBalanceThreshold = parseFloat(creditData.criticalBalanceThreshold || 10)
+        const lowBalanceThreshold = parseFloat(
+          creditData.lowBalanceThreshold || 100
+        )
+        const criticalBalanceThreshold = parseFloat(
+          creditData.criticalBalanceThreshold || 10
+        )
 
         // Check if credits are low or critical
-        const isLowBalance = availableCredits <= lowBalanceThreshold && availableCredits > criticalBalanceThreshold
+        const isLowBalance =
+          availableCredits <= lowBalanceThreshold &&
+          availableCredits > criticalBalanceThreshold
         const isCriticalBalance = availableCredits <= criticalBalanceThreshold
         const hasCredits = availableCredits > 0
 
@@ -130,7 +138,7 @@ export function useCreditStatus() {
             message: `You have only ${availableCredits} credits remaining. Purchase more credits to continue using the service.`,
             threshold: criticalBalanceThreshold,
             currentValue: availableCredits,
-            actionRequired: 'purchase_credits'
+            actionRequired: 'purchase_credits',
           })
         } else if (isLowBalance) {
           alerts.push({
@@ -141,7 +149,7 @@ export function useCreditStatus() {
             message: `You have ${availableCredits} credits remaining. Consider purchasing more credits.`,
             threshold: lowBalanceThreshold,
             currentValue: availableCredits,
-            actionRequired: 'purchase_credits'
+            actionRequired: 'purchase_credits',
           })
         }
 
@@ -149,7 +157,9 @@ export function useCreditStatus() {
         if (creditData.creditExpiry) {
           const expiryDate = new Date(creditData.creditExpiry)
           const now = new Date()
-          const daysUntilExpiry = Math.floor((expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+          const daysUntilExpiry = Math.floor(
+            (expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+          )
 
           if (daysUntilExpiry <= 30 && daysUntilExpiry > 0) {
             alerts.push({
@@ -160,7 +170,7 @@ export function useCreditStatus() {
               message: `${availableCredits} credits will expire in ${daysUntilExpiry} days.`,
               threshold: daysUntilExpiry,
               currentValue: availableCredits,
-              actionRequired: 'purchase_credits'
+              actionRequired: 'purchase_credits',
             })
           }
         }
@@ -175,15 +185,19 @@ export function useCreditStatus() {
           reservedCredits,
           availableCredits,
           totalCredits,
-          lastPurchase: creditData.lastPurchase ? new Date(creditData.lastPurchase) : undefined,
-          creditExpiry: creditData.creditExpiry ? new Date(creditData.creditExpiry) : undefined,
+          lastPurchase: creditData.lastPurchase
+            ? new Date(creditData.lastPurchase)
+            : undefined,
+          creditExpiry: creditData.creditExpiry
+            ? new Date(creditData.creditExpiry)
+            : undefined,
           lowBalanceThreshold,
           criticalBalanceThreshold,
           restrictionsActive: isCriticalBalance,
           usageThisPeriod: parseFloat(creditData.usageThisPeriod || 0),
           periodLimit: parseFloat(creditData.periodLimit || 0),
           periodType: creditData.periodType || 'month',
-          alerts
+          alerts,
         })
 
         // Reset retry count on successful credit check
@@ -191,7 +205,6 @@ export function useCreditStatus() {
 
         // Handle critical balance scenarios
         if (isCriticalBalance) {
-
           const newExpiredData: CreditExpiredData = {
             expired: true,
             message: `You have only ${availableCredits} credits remaining. Purchase more credits to continue using the service.`,
@@ -201,7 +214,7 @@ export function useCreditStatus() {
             blockAppLoading: false,
             isLowBalance,
             isCriticalBalance,
-            alerts
+            alerts,
           }
 
           setExpiredData(newExpiredData)
@@ -217,7 +230,6 @@ export function useCreditStatus() {
           localStorage.removeItem('creditExpired')
           setExpiredData(null)
         }
-
       } else {
         // No credit data found - this might be a new user
         setCreditStatus({
@@ -235,13 +247,15 @@ export function useCreditStatus() {
           usageThisPeriod: 0,
           periodLimit: 0,
           periodType: 'month',
-          alerts: []
+          alerts: [],
         })
         setExpiredData(null)
       }
-
     } catch (error: any) {
-      console.error('❌ useCreditStatus: Error processing credit status:', error)
+      console.error(
+        '❌ useCreditStatus: Error processing credit status:',
+        error
+      )
 
       // Handle different types of errors
       if (error.response?.status === 401) {
@@ -279,11 +293,17 @@ export function useCreditStatus() {
       }, 1000)
     }
 
-    window.addEventListener('creditPurchaseSuccess', handleCreditPurchaseSuccess)
+    window.addEventListener(
+      'creditPurchaseSuccess',
+      handleCreditPurchaseSuccess
+    )
     window.addEventListener('creditPurchased', handleCreditPurchaseSuccess)
 
     return () => {
-      window.removeEventListener('creditPurchaseSuccess', handleCreditPurchaseSuccess)
+      window.removeEventListener(
+        'creditPurchaseSuccess',
+        handleCreditPurchaseSuccess
+      )
       window.removeEventListener('creditPurchased', handleCreditPurchaseSuccess)
     }
   }, [checkCreditStatus])
@@ -294,25 +314,22 @@ export function useCreditStatus() {
       const lastToastTime = localStorage.getItem('lastCreditAlertToast')
       const now = Date.now()
 
-      if (!lastToastTime || (now - parseInt(lastToastTime)) > 30000) { // 30 second cooldown
+      if (!lastToastTime || now - parseInt(lastToastTime) > 30000) {
+        // 30 second cooldown
         localStorage.setItem('lastCreditAlertToast', now.toString())
 
-        const severity = expiredData.isCriticalBalance ? 'error' : 'warning'
         const icon = expiredData.isCriticalBalance ? '⚠️' : '💰'
 
-        toast.error(
-          `${icon} ${expiredData.message}`,
-          {
-            duration: 8000,
-            position: 'top-center',
-            style: {
-              background: expiredData.isCriticalBalance ? '#dc2626' : '#f59e0b',
-              color: 'white',
-              fontWeight: 'bold'
-            },
-            icon: '⏰'
-          }
-        )
+        toast.error(`${icon} ${expiredData.message}`, {
+          duration: 8000,
+          position: 'top-center',
+          style: {
+            background: expiredData.isCriticalBalance ? '#dc2626' : '#f59e0b',
+            color: 'white',
+            fontWeight: 'bold',
+          },
+          icon: '⏰',
+        })
       }
     }
   }, [expiredData])
@@ -328,8 +345,10 @@ export function useCreditStatus() {
   const getDisplayMessage = (): string => {
     if (!creditStatus) return 'Loading credit status...'
     if (!creditStatus.hasCredits) return 'No credits available'
-    if (creditStatus.restrictionsActive) return `Critical balance: ${creditStatus.availableCredits} credits`
-    if (creditStatus.isLowBalance) return `Low balance: ${creditStatus.availableCredits} credits`
+    if (creditStatus.restrictionsActive)
+      return `Critical balance: ${creditStatus.availableCredits} credits`
+    if (creditStatus.isLowBalance)
+      return `Low balance: ${creditStatus.availableCredits} credits`
     return `${creditStatus.availableCredits} credits available`
   }
 
@@ -339,7 +358,8 @@ export function useCreditStatus() {
   }
 
   // Enhanced derived state
-  const isExpired = expiredData?.expired || creditStatus?.restrictionsActive || false
+  const isExpired =
+    expiredData?.expired || creditStatus?.restrictionsActive || false
   const availableCredits = creditStatus?.availableCredits || 0
   const shouldBlockApp = expiredData?.blockAppLoading || false
   const hasLowBalance = creditStatus?.isLowBalance || false
@@ -369,38 +389,72 @@ export function useTrialStatus() {
   const creditStatus = useCreditStatus()
 
   // Convert credit status to trial status format
-  const trialStatus = creditStatus.creditStatus ? {
-    hasTrial: creditStatus.creditStatus.hasCredits,
-    isExpired: creditStatus.creditStatus.restrictionsActive,
-    plan: creditStatus.creditStatus.plan,
-    status: creditStatus.creditStatus.status,
-    trialStart: creditStatus.creditStatus.lastPurchase,
-    trialEnd: creditStatus.creditStatus.creditExpiry,
-    timeRemaining: creditStatus.creditStatus.creditExpiry ?
-      Math.max(0, creditStatus.creditStatus.creditExpiry.getTime() - Date.now()) : 0,
-    timeRemainingHuman: creditStatus.getDisplayMessage(),
-    daysRemaining: creditStatus.creditStatus.creditExpiry ?
-      Math.max(0, Math.floor((creditStatus.creditStatus.creditExpiry.getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : 0,
-    hoursRemaining: creditStatus.creditStatus.creditExpiry ?
-      Math.max(0, Math.floor((creditStatus.creditStatus.creditExpiry.getTime() - Date.now()) / (1000 * 60 * 60))) : 0,
-    minutesRemaining: creditStatus.creditStatus.creditExpiry ?
-      Math.max(0, Math.floor((creditStatus.creditStatus.creditExpiry.getTime() - Date.now()) / (1000 * 60))) : 0,
-    expiredDuration: creditStatus.creditStatus.restrictionsActive ? 'insufficient credits' : undefined,
-    restrictionsActive: creditStatus.creditStatus.restrictionsActive
-  } : null
+  const trialStatus = creditStatus.creditStatus
+    ? {
+        hasTrial: creditStatus.creditStatus.hasCredits,
+        isExpired: creditStatus.creditStatus.restrictionsActive,
+        plan: creditStatus.creditStatus.plan,
+        status: creditStatus.creditStatus.status,
+        trialStart: creditStatus.creditStatus.lastPurchase,
+        trialEnd: creditStatus.creditStatus.creditExpiry,
+        timeRemaining: creditStatus.creditStatus.creditExpiry
+          ? Math.max(
+              0,
+              creditStatus.creditStatus.creditExpiry.getTime() - Date.now()
+            )
+          : 0,
+        timeRemainingHuman: creditStatus.getDisplayMessage(),
+        daysRemaining: creditStatus.creditStatus.creditExpiry
+          ? Math.max(
+              0,
+              Math.floor(
+                (creditStatus.creditStatus.creditExpiry.getTime() -
+                  Date.now()) /
+                  (1000 * 60 * 60 * 24)
+              )
+            )
+          : 0,
+        hoursRemaining: creditStatus.creditStatus.creditExpiry
+          ? Math.max(
+              0,
+              Math.floor(
+                (creditStatus.creditStatus.creditExpiry.getTime() -
+                  Date.now()) /
+                  (1000 * 60 * 60)
+              )
+            )
+          : 0,
+        minutesRemaining: creditStatus.creditStatus.creditExpiry
+          ? Math.max(
+              0,
+              Math.floor(
+                (creditStatus.creditStatus.creditExpiry.getTime() -
+                  Date.now()) /
+                  (1000 * 60)
+              )
+            )
+          : 0,
+        expiredDuration: creditStatus.creditStatus.restrictionsActive
+          ? 'insufficient credits'
+          : undefined,
+        restrictionsActive: creditStatus.creditStatus.restrictionsActive,
+      }
+    : null
 
-  const trialExpiredData = creditStatus.expiredData ? {
-    expired: creditStatus.expiredData.expired,
-    message: creditStatus.expiredData.message,
-    trialEnd: creditStatus.expiredData.purchaseUrl, // Using purchase URL as trial end equivalent
-    trialEndFormatted: new Date().toLocaleDateString(),
-    expiredDuration: 'insufficient credits',
-    plan: 'credit_based',
-    upgradeUrl: creditStatus.expiredData.purchaseUrl,
-    blockAppLoading: creditStatus.expiredData.blockAppLoading,
-    isTrialExpired: creditStatus.expiredData.isCriticalBalance,
-    isSubscriptionExpired: false
-  } : null
+  const trialExpiredData = creditStatus.expiredData
+    ? {
+        expired: creditStatus.expiredData.expired,
+        message: creditStatus.expiredData.message,
+        trialEnd: creditStatus.expiredData.purchaseUrl, // Using purchase URL as trial end equivalent
+        trialEndFormatted: new Date().toLocaleDateString(),
+        expiredDuration: 'insufficient credits',
+        plan: 'credit_based',
+        upgradeUrl: creditStatus.expiredData.purchaseUrl,
+        blockAppLoading: creditStatus.expiredData.blockAppLoading,
+        isTrialExpired: creditStatus.expiredData.isCriticalBalance,
+        isSubscriptionExpired: false,
+      }
+    : null
 
   return {
     ...creditStatus,
@@ -411,4 +465,4 @@ export function useTrialStatus() {
     getDisplayMessage: creditStatus.getDisplayMessage,
     daysRemaining: trialStatus?.daysRemaining || 0,
   }
-} 
+}

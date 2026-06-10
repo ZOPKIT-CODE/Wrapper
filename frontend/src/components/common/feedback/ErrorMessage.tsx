@@ -1,49 +1,46 @@
-import React from 'react';
-import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { AlertTriangle, RefreshCw } from 'lucide-react'
 
 interface ErrorMessageProps {
-  title: string;
-  message: string;
-  onRetry?: () => void;
-  className?: string;
+  title: string
+  message: string
+  onRetry?: () => void
+  className?: string
 }
 
 /**
  * Error Message Component
- * 
+ *
  * Features:
  * - Consistent error display
  * - Optional retry functionality
  * - Accessible design
  */
-export function ErrorMessage({ 
-  title, 
-  message, 
+export function ErrorMessage({
+  title,
+  message,
   onRetry,
-  className = ''
+  className = '',
 }: ErrorMessageProps) {
   return (
-    <div className={`bg-red-50 border border-red-200 rounded-lg p-6 ${className}`}>
+    <div
+      className={`rounded-lg border border-red-200 bg-red-50 p-6 ${className}`}
+    >
       <div className="flex items-start">
-        <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5 mr-3 flex-shrink-0" />
+        <AlertTriangle className="mt-0.5 mr-3 h-5 w-5 flex-shrink-0 text-red-600" />
         <div className="flex-1">
-          <h3 className="text-lg font-semibold text-red-800 mb-2">
-            {title}
-          </h3>
-          <p className="text-red-600 mb-4">
-            {message}
-          </p>
+          <h3 className="mb-2 text-lg font-semibold text-red-800">{title}</h3>
+          <p className="mb-4 text-red-600">{message}</p>
           {onRetry && (
             <button
               onClick={onRetry}
-              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors duration-200"
+              className="flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-white transition-colors duration-200 hover:bg-red-700"
             >
-              <RefreshCw className="w-4 h-4" />
+              <RefreshCw className="h-4 w-4" />
               Try Again
             </button>
           )}
         </div>
       </div>
     </div>
-  );
+  )
 }

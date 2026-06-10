@@ -20,13 +20,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Skeleton } from '@/components/ui/skeleton'
-import { 
-  MoreVertical, 
-  Search, 
-  Filter,
+import {
+  MoreVertical,
+  Search,
   ChevronDown,
   ChevronUp,
-  ArrowUpDown
+  ArrowUpDown,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -85,7 +84,7 @@ export function DataTable<T = any>({
   searchPlaceholder = 'Search...',
   title,
   description,
-  onRefresh
+  onRefresh,
 }: DataTableProps<T>) {
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState<string | null>(null)
@@ -108,11 +107,14 @@ export function DataTable<T = any>({
 
     // Apply search filter
     if (search) {
-      filtered = data.filter(item => {
-        return columns.some(column => {
+      filtered = data.filter((item) => {
+        return columns.some((column) => {
           if (!column.searchable) return false
           const value = (item as any)[column.key]
-          return value && value.toString().toLowerCase().includes(search.toLowerCase())
+          return (
+            value &&
+            value.toString().toLowerCase().includes(search.toLowerCase())
+          )
         })
       })
     }
@@ -122,7 +124,7 @@ export function DataTable<T = any>({
       filtered = [...filtered].sort((a, b) => {
         const aVal = (a as any)[sortBy]
         const bVal = (b as any)[sortBy]
-        
+
         if (sortOrder === 'asc') {
           return aVal > bVal ? 1 : -1
         } else {
@@ -144,7 +146,7 @@ export function DataTable<T = any>({
   // Selection handlers
   const handleSelectAll = (checked: boolean) => {
     if (!onSelectionChange) return
-    
+
     if (checked) {
       onSelectionChange(new Set(paginatedData.map(getItemId)))
     } else {
@@ -154,7 +156,7 @@ export function DataTable<T = any>({
 
   const handleSelectItem = (itemId: string, checked: boolean) => {
     if (!onSelectionChange) return
-    
+
     const newSelection = new Set(selectedItems)
     if (checked) {
       newSelection.add(itemId)
@@ -164,13 +166,16 @@ export function DataTable<T = any>({
     onSelectionChange(newSelection)
   }
 
-  const isAllSelected = paginatedData.length > 0 && 
-    paginatedData.every(item => selectedItems.has(getItemId(item)))
-  const isPartiallySelected = paginatedData.some(item => selectedItems.has(getItemId(item))) && !isAllSelected
+  const isAllSelected =
+    paginatedData.length > 0 &&
+    paginatedData.every((item) => selectedItems.has(getItemId(item)))
+  const isPartiallySelected =
+    paginatedData.some((item) => selectedItems.has(getItemId(item))) &&
+    !isAllSelected
 
   if (loading) {
     return (
-      <div className={cn("space-y-4", className)}>
+      <div className={cn('space-y-4', className)}>
         {title && (
           <div className="space-y-2">
             <Skeleton className="h-8 w-64" />
@@ -187,12 +192,14 @@ export function DataTable<T = any>({
   }
 
   return (
-    <div className={cn("space-y-4", className)}>
+    <div className={cn('space-y-4', className)}>
       {/* Header */}
       {(title || description) && (
         <div>
           {title && <h3 className="text-lg font-semibold">{title}</h3>}
-          {description && <p className="text-sm text-muted-foreground">{description}</p>}
+          {description && (
+            <p className="text-muted-foreground text-sm">{description}</p>
+          )}
         </div>
       )}
 
@@ -201,22 +208,20 @@ export function DataTable<T = any>({
         <div className="flex items-center space-x-2">
           {searchable && (
             <div className="relative">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Search className="text-muted-foreground absolute top-2.5 left-2 h-4 w-4" />
               <Input
                 placeholder={searchPlaceholder}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-8 w-64"
+                className="w-64 pl-8"
               />
             </div>
           )}
           {selectedItems.size > 0 && (
-            <Badge variant="secondary">
-              {selectedItems.size} selected
-            </Badge>
+            <Badge variant="secondary">{selectedItems.size} selected</Badge>
           )}
         </div>
-        
+
         <div className="flex items-center space-x-2">
           {onRefresh && (
             <Button variant="outline" size="sm" onClick={onRefresh}>
@@ -237,13 +242,17 @@ export function DataTable<T = any>({
                     checked={isAllSelected}
                     onCheckedChange={handleSelectAll}
                     aria-label="Select all"
-                    className={isPartiallySelected ? 'data-[state=checked]:bg-blue-500' : ''}
+                    className={
+                      isPartiallySelected
+                        ? 'data-[state=checked]:bg-blue-500'
+                        : ''
+                    }
                   />
                 </TableHead>
               )}
-              
+
               {columns.map((column) => (
-                <TableHead 
+                <TableHead
                   key={column.key}
                   className={cn(column.className)}
                   style={{ width: column.width }}
@@ -270,18 +279,22 @@ export function DataTable<T = any>({
                   )}
                 </TableHead>
               ))}
-              
+
               {actions.length > 0 && (
                 <TableHead className="w-16">Actions</TableHead>
               )}
             </TableRow>
           </TableHeader>
-          
+
           <TableBody>
             {paginatedData.length === 0 ? (
               <TableRow>
-                <TableCell 
-                  colSpan={columns.length + (selectable ? 1 : 0) + (actions.length > 0 ? 1 : 0)}
+                <TableCell
+                  colSpan={
+                    columns.length +
+                    (selectable ? 1 : 0) +
+                    (actions.length > 0 ? 1 : 0)
+                  }
                   className="h-24 text-center"
                 >
                   {emptyMessage}
@@ -291,29 +304,32 @@ export function DataTable<T = any>({
               paginatedData.map((item, index) => {
                 const itemId = getItemId(item)
                 const isSelected = selectedItems.has(itemId)
-                
+
                 return (
-                  <TableRow key={itemId} className={isSelected ? 'bg-muted/50' : ''}>
+                  <TableRow
+                    key={itemId}
+                    className={isSelected ? 'bg-muted/50' : ''}
+                  >
                     {selectable && (
                       <TableCell>
                         <Checkbox
                           checked={isSelected}
-                          onCheckedChange={(checked) => handleSelectItem(itemId, checked as boolean)}
+                          onCheckedChange={(checked) =>
+                            handleSelectItem(itemId, checked as boolean)
+                          }
                           aria-label={`Select item ${itemId}`}
                         />
                       </TableCell>
                     )}
-                    
+
                     {columns.map((column) => (
                       <TableCell key={column.key} className={column.className}>
-                        {column.render ? (
-                          column.render(item, index)
-                        ) : (
-                          (item as any)[column.key]
-                        )}
+                        {column.render
+                          ? column.render(item, index)
+                          : (item as any)[column.key]}
                       </TableCell>
                     ))}
-                    
+
                     {actions.length > 0 && (
                       <TableCell>
                         <DropdownMenu>
@@ -325,14 +341,20 @@ export function DataTable<T = any>({
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
                             <DropdownMenuSeparator />
-                            
+
                             {actions.map((action, actionIndex) => (
                               <React.Fragment key={action.key}>
-                                {action.separator && actionIndex > 0 && <DropdownMenuSeparator />}
+                                {action.separator && actionIndex > 0 && (
+                                  <DropdownMenuSeparator />
+                                )}
                                 <DropdownMenuItem
                                   onClick={() => action.onClick(item)}
                                   disabled={action.disabled?.(item)}
-                                  className={action.variant === 'destructive' ? 'text-red-600' : ''}
+                                  className={
+                                    action.variant === 'destructive'
+                                      ? 'text-red-600'
+                                      : ''
+                                  }
                                 >
                                   <action.icon className="mr-2 h-4 w-4" />
                                   {action.label}
@@ -354,8 +376,10 @@ export function DataTable<T = any>({
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">
-            Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, filteredData.length)} of {filteredData.length} results
+          <div className="text-muted-foreground text-sm">
+            Showing {(currentPage - 1) * pageSize + 1} to{' '}
+            {Math.min(currentPage * pageSize, filteredData.length)} of{' '}
+            {filteredData.length} results
           </div>
           <div className="flex items-center space-x-2">
             <Button
@@ -372,7 +396,7 @@ export function DataTable<T = any>({
                 return (
                   <Button
                     key={page}
-                    variant={currentPage === page ? "default" : "outline"}
+                    variant={currentPage === page ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => setCurrentPage(page)}
                   >
@@ -384,7 +408,9 @@ export function DataTable<T = any>({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+              onClick={() =>
+                setCurrentPage(Math.min(totalPages, currentPage + 1))
+              }
               disabled={currentPage === totalPages}
             >
               Next
@@ -394,4 +420,4 @@ export function DataTable<T = any>({
       )}
     </div>
   )
-} 
+}

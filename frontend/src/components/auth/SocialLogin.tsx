@@ -1,131 +1,113 @@
-import React, { useState } from 'react';
-import { useAuth } from '@/lib/auth/cognito-auth';
-import { Button } from '../ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Shield, Loader2 } from 'lucide-react';
-import { logger } from '@/lib/logger';
-
+import React, { useState } from 'react'
+import { useAuth } from '@/lib/auth/cognito-auth'
+import { Button } from '../ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
+import { Shield, Loader2 } from 'lucide-react'
+import { logger } from '@/lib/logger'
 
 interface SocialLoginProps {
-  orgCode?: string;
-  redirectUri?: string;
-  title?: string;
-  subtitle?: string;
-  providers?: string[];
-  onSuccess?: (user: any) => void;
-  onError?: (error: string) => void;
+  orgCode?: string
+  redirectUri?: string
+  title?: string
+  subtitle?: string
+  providers?: string[]
+  onSuccess?: (user: any) => void
+  onError?: (error: string) => void
 }
-
-const providerConfig = {
-  google: {
-    icon: '🔍',
-    name: 'Google',
-    className: 'bg-white hover:bg-gray-50 text-gray-900 border border-gray-300',
-    primary: true
-  },
-  github: {
-    icon: '🐙',
-    name: 'GitHub',
-    className: 'bg-gray-900 hover:bg-gray-800 text-white'
-  },
-  microsoft: {
-    icon: '🪟',
-    name: 'Microsoft',
-    className: 'bg-[#1B2E5A] hover:bg-[#152449] text-white'
-  },
-  apple: {
-    icon: '🍎',
-    name: 'Apple',
-    className: 'bg-black hover:bg-gray-900 text-white'
-  },
-  linkedin: {
-    icon: '💼',
-    name: 'LinkedIn',
-    className: 'bg-[#1B2E5A] hover:bg-[#152449] text-white'
-  }
-};
 
 export const SocialLogin: React.FC<SocialLoginProps> = ({
   orgCode,
   redirectUri,
-  title = "Sign In",
-  subtitle = "Choose your preferred authentication method",
+  title = 'Sign In',
+  subtitle = 'Choose your preferred authentication method',
   providers = ['google', 'github', 'microsoft', 'apple', 'linkedin'],
   onSuccess,
-  onError
+  onError,
 }) => {
-  const { login, isLoading, isAuthenticated, user } = useAuth();
-  const [loadingProvider, setLoadingProvider] = useState<string | null>(null);
+  const { login, isLoading, isAuthenticated, user } = useAuth()
+  const [loadingProvider, setLoadingProvider] = useState<string | null>(null)
 
   // Use provided organization code - no auto-detection
-  const finalOrgCode = orgCode;
+  const finalOrgCode = orgCode
 
   // Handle successful authentication
   React.useEffect(() => {
     if (isAuthenticated && user && onSuccess) {
-      onSuccess(user);
+      onSuccess(user)
     }
-  }, [isAuthenticated, user, onSuccess]);
+  }, [isAuthenticated, user, onSuccess])
 
   const handleLogin = async (provider: string) => {
     try {
-      setLoadingProvider(provider);
+      setLoadingProvider(provider)
 
       // Cognito: pass the provider straight through to federate (skips the hosted-UI selector).
-      const loginOptions: any = { provider };
+      const loginOptions: any = { provider }
 
       // Add organization context if available
       if (finalOrgCode) {
-        loginOptions.org_code = finalOrgCode;
-        logger.debug('🏢 SocialLogin: Using organization code for login:', finalOrgCode);
+        loginOptions.org_code = finalOrgCode
+        logger.debug(
+          '🏢 SocialLogin: Using organization code for login:',
+          finalOrgCode
+        )
       }
 
       // Check for external redirect parameters
-      const urlParams = new URLSearchParams(window.location.search);
-      const redirectTo = urlParams.get('redirect_to');
-      const app = urlParams.get('app');
-      
+      const urlParams = new URLSearchParams(window.location.search)
+      const redirectTo = urlParams.get('redirect_to')
+      const app = urlParams.get('app')
+
       // For invitation flows, use popup to prevent redirect issues
-      const isInvitationFlow = window.location.pathname.includes('/invite/accept');
-      
+      const isInvitationFlow =
+        window.location.pathname.includes('/invite/accept')
+
       if (isInvitationFlow) {
-        logger.debug('🎯 SocialLogin: Invitation flow detected, using popup authentication');
-        loginOptions.popup = true;
+        logger.debug(
+          '🎯 SocialLogin: Invitation flow detected, using popup authentication'
+        )
+        loginOptions.popup = true
         // Don't set redirect options for popup auth
       } else if (redirectTo) {
-        logger.debug('🔄 SocialLogin: External redirect detected:', redirectTo);
+        logger.debug('🔄 SocialLogin: External redirect detected:', redirectTo)
         loginOptions.app_state = {
           redirectTo,
-          app: app || 'external'
-        };
+          app: app || 'external',
+        }
       } else if (redirectUri) {
         // Add custom redirect URI if provided
         loginOptions.app_state = {
-          redirectTo: redirectUri
-        };
+          redirectTo: redirectUri,
+        }
       }
 
-      logger.debug('🚀 SocialLogin: Login options:', loginOptions);
-      await login(loginOptions);
+      logger.debug('🚀 SocialLogin: Login options:', loginOptions)
+      await login(loginOptions)
     } catch (error) {
-      logger.error(`${provider} login error:`, error);
-      setLoadingProvider(null);
+      logger.error(`${provider} login error:`, error)
+      setLoadingProvider(null)
       if (onError) {
-        onError(`Failed to authenticate with ${provider}`);
+        onError(`Failed to authenticate with ${provider}`)
       }
     }
-  };
+  }
 
   if (isAuthenticated) {
     return (
-      <Card className="max-w-md w-full shadow-xl">
+      <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="text-center">
-          <Shield className="h-12 w-12 text-green-600 mx-auto mb-4" />
-          <CardTitle className="text-2xl text-green-600">Authentication Successful!</CardTitle>
+          <Shield className="mx-auto mb-4 h-12 w-12 text-green-600" />
+          <CardTitle className="text-2xl text-green-600">
+            Authentication Successful!
+          </CardTitle>
         </CardHeader>
         <CardContent className="text-center">
-          <p className="text-gray-600 mb-4">
-            Welcome, {user?.givenName || user?.email}!
+          <p className="mb-4 text-gray-600">
+            Welcome,{' '}
+            {(typeof user?.givenName === 'string'
+              ? user.givenName
+              : undefined) || user?.email}
+            !
           </p>
           {finalOrgCode && (
             <p className="text-sm text-gray-500">
@@ -134,33 +116,33 @@ export const SocialLogin: React.FC<SocialLoginProps> = ({
           )}
         </CardContent>
       </Card>
-    );
+    )
   }
 
   // Only show Google provider
-  const googleProvider = providers.includes('google') ? 'google' : null;
-  
+  const googleProvider = providers.includes('google') ? 'google' : null
+
   if (!googleProvider) {
-    return null;
+    return null
   }
 
-  const config = providerConfig.google;
-  const isProviderLoading = loadingProvider === 'google' || (isLoading && loadingProvider === 'google');
+  const isProviderLoading =
+    loadingProvider === 'google' || (isLoading && loadingProvider === 'google')
 
   return (
     <div className="w-full">
       {title && (
-        <div className="text-center mb-6">
-          <CardTitle className="text-2xl mb-2">{title}</CardTitle>
+        <div className="mb-6 text-center">
+          <CardTitle className="mb-2 text-2xl">{title}</CardTitle>
           {subtitle && <p className="text-gray-600">{subtitle}</p>}
         </div>
       )}
-      
+
       <div className="space-y-6">
         <Button
           onClick={() => handleLogin('google')}
           disabled={isLoading || isProviderLoading}
-          className="w-full flex items-center justify-center space-x-4 py-6 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-200 hover:border-gray-300 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 font-semibold text-base"
+          className="flex w-full items-center justify-center space-x-4 rounded-xl border-2 border-gray-200 bg-white py-6 text-base font-semibold text-gray-900 shadow-md transition-all duration-200 hover:border-gray-300 hover:bg-gray-50 hover:shadow-lg"
           variant="outline"
         >
           {isProviderLoading ? (
@@ -193,16 +175,18 @@ export const SocialLogin: React.FC<SocialLoginProps> = ({
           )}
         </Button>
 
-        <div className="text-center text-xs text-gray-500 leading-relaxed pt-4 border-t border-gray-100">
+        <div className="border-t border-gray-100 pt-4 text-center text-xs leading-relaxed text-gray-500">
           <p>
             By continuing, you agree to our Terms of Service and Privacy Policy.
             <br />
-            <span className="text-gray-400">Your credentials are never stored on our servers.</span>
+            <span className="text-gray-400">
+              Your credentials are never stored on our servers.
+            </span>
           </p>
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default SocialLogin; 
+export default SocialLogin

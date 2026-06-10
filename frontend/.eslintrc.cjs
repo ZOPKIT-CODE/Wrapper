@@ -22,7 +22,9 @@ module.exports = {
       { allowConstantExport: true },
     ],
     '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-    '@typescript-eslint/no-explicit-any': 'error',
+    // ~543 pre-existing `any`s: keep as a (non-blocking) warning so the eslint gate
+    // can enforce everything else now, and burn the `any` debt down over time.
+    '@typescript-eslint/no-explicit-any': 'warn',
     'no-console': ['warn', { allow: ['error'] }],
     'prefer-const': 'error',
   },

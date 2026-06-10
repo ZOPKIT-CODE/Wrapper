@@ -1,41 +1,42 @@
 // Browser-compatible JWT service for CRM authentication
 // This replaces the custom code generation that was causing infinite redirects
 
-import { JWT_SECRET, WRAPPER_DOMAIN } from '../lib/config';
+import { JWT_SECRET, WRAPPER_DOMAIN } from '../lib/config'
 
 // Define user interface for type safety - compatible with Kinde UserProfile
 interface User {
-  id: string;
-  email: string;
-  name?: string;
-  givenName?: string;
+  id: string
+  email: string
+  name?: string
+  givenName?: string
   organization?: {
-    code?: string;
-  };
-  tenantId?: string;
-  permissions?: string[];
+    code?: string
+  }
+  tenantId?: string
+  permissions?: string[]
 }
 
 // Extended interface for Kinde UserProfile compatibility
 interface IdpUserProfile {
-  id: string;
-  email?: string;
-  givenName?: string;
-  familyName?: string;
+  id: string
+  email?: string
+  givenName?: string
+  familyName?: string
   organization?: {
-    code?: string;
-  };
-  [key: string]: any; // Allow additional properties
+    code?: string
+  }
+  [key: string]: any // Allow additional properties
 }
 
 class JWTService {
-  private readonly JWT_SECRET: string;
-  private readonly WRAPPER_DOMAIN: string;
+  private readonly WRAPPER_DOMAIN: string
 
   constructor() {
-    // Get environment variables from config
-    this.JWT_SECRET = JWT_SECRET || this.generateFallbackSecret();
-    this.WRAPPER_DOMAIN = WRAPPER_DOMAIN;
+    // Get environment variables from config. The resolved secret isn't stored on
+    // the instance (tokens are minted via generateSecureToken), but resolving it
+    // here preserves the dev-only fallback warning when JWT_SECRET is unset.
+    void (JWT_SECRET || this.generateFallbackSecret())
+    this.WRAPPER_DOMAIN = WRAPPER_DOMAIN
   }
 
   /**
@@ -48,8 +49,10 @@ class JWTService {
       const payload = {
         sub: user.id,
         email: user.email || 'unknown@example.com',
-        name: (user as any).name || user.givenName || user.email || 'Unknown User',
-        org_code: user.organization?.code || (user as any).tenantId || 'default',
+        name:
+          (user as any).name || user.givenName || user.email || 'Unknown User',
+        org_code:
+          user.organization?.code || (user as any).tenantId || 'default',
         iss: this.WRAPPER_DOMAIN,
         aud: ['crm'],
         exp: Math.floor(Date.now() / 1000) + 3600, // 1 hour expiration
@@ -57,21 +60,20 @@ class JWTService {
         permissions: (user as any).permissions || [],
         jti: this.generateRandomId(), // Unique token ID
         source: 'wrapper',
-        app: 'crm'
-      };
+        app: 'crm',
+      }
 
       // For now, generate a secure placeholder token that looks like JWT
       // In production, this should call your backend JWT service
-      const token = this.generateSecureToken(payload);
-      
-      return token;
+      const token = this.generateSecureToken(payload)
 
+      return token
     } catch (error) {
-      console.error('❌ Error generating CRM JWT token:', error);
-      
+      console.error('❌ Error generating CRM JWT token:', error)
+
       // Fallback to secure random token if JWT fails
-      const fallbackToken = `jwt_fallback_${Date.now()}_${this.generateRandomId()}`;
-      return fallbackToken;
+      const fallbackToken = `jwt_fallback_${Date.now()}_${this.generateRandomId()}`
+      return fallbackToken
     }
   }
 
@@ -81,22 +83,24 @@ class JWTService {
   private generateSecureToken(payload: any): string {
     try {
       // Create a base64-encoded header
-      const header = btoa(JSON.stringify({
-        typ: 'JWT',
-        alg: 'HS256'
-      }));
+      const header = btoa(
+        JSON.stringify({
+          typ: 'JWT',
+          alg: 'HS256',
+        })
+      )
 
       // Create a base64-encoded payload
-      const payloadStr = btoa(JSON.stringify(payload));
+      const payloadStr = btoa(JSON.stringify(payload))
 
       // Create a signature-like string (in production, this would be a real HMAC signature)
-      const signature = this.generateRandomId(32);
+      const signature = this.generateRandomId(32)
 
       // Combine to form JWT-like token
-      return `${header}.${payloadStr}.${signature}`;
+      return `${header}.${payloadStr}.${signature}`
     } catch (error) {
-      console.error('❌ Error generating secure token:', error);
-      return `jwt_secure_${Date.now()}_${this.generateRandomId()}`;
+      console.error('❌ Error generating secure token:', error)
+      return `jwt_secure_${Date.now()}_${this.generateRandomId()}`
     }
   }
 
@@ -107,16 +111,18 @@ class JWTService {
     try {
       if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
         // Use Web Crypto API if available
-        const array = new Uint8Array(length);
-        crypto.getRandomValues(array);
-        return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+        const array = new Uint8Array(length)
+        crypto.getRandomValues(array)
+        return Array.from(array, (byte) =>
+          byte.toString(16).padStart(2, '0')
+        ).join('')
       } else {
         // Fallback to Math.random for older browsers
-        return Math.random().toString(36).substr(2, length);
+        return Math.random().toString(36).substr(2, length)
       }
     } catch (error) {
-      console.warn('⚠️ Error generating random ID, using fallback:', error);
-      return Math.random().toString(36).substr(2, length);
+      console.warn('⚠️ Error generating random ID, using fallback:', error)
+      return Math.random().toString(36).substr(2, length)
     }
   }
 
@@ -126,15 +132,15 @@ class JWTService {
   verifyToken(token: string): any {
     try {
       // For now, just decode the token to extract payload
-      const parts = token.split('.');
+      const parts = token.split('.')
       if (parts.length === 3) {
-        const payload = JSON.parse(atob(parts[1]));
-        return payload;
+        const payload = JSON.parse(atob(parts[1]))
+        return payload
       }
-      return null;
+      return null
     } catch (error) {
-      console.error('❌ JWT token verification failed:', error);
-      return null;
+      console.error('❌ JWT token verification failed:', error)
+      return null
     }
   }
 
@@ -143,10 +149,10 @@ class JWTService {
    * In production, this should always be set via environment variables
    */
   private generateFallbackSecret(): string {
-    const fallbackSecret = this.generateRandomId(64);
-    console.warn('⚠️ JWT_SECRET not set, using generated fallback secret');
-    console.warn('⚠️ Set JWT_SECRET environment variable for production use');
-    return fallbackSecret;
+    const fallbackSecret = this.generateRandomId(64)
+    console.warn('⚠️ JWT_SECRET not set, using generated fallback secret')
+    console.warn('⚠️ Set JWT_SECRET environment variable for production use')
+    return fallbackSecret
   }
 
   /**
@@ -154,20 +160,20 @@ class JWTService {
    */
   getTokenExpiry(token: string): string | null {
     try {
-      const decoded = this.verifyToken(token);
+      const decoded = this.verifyToken(token)
       if (decoded && decoded.exp) {
-        return new Date(decoded.exp * 1000).toISOString();
+        return new Date(decoded.exp * 1000).toISOString()
       }
-      return null;
+      return null
     } catch (error) {
-      console.error('❌ Error decoding token for expiry:', error);
-      return null;
+      console.error('❌ Error decoding token for expiry:', error)
+      return null
     }
   }
 }
 
 // Export singleton instance
-export const jwtService = new JWTService();
+export const jwtService = new JWTService()
 
 // Also export the class for testing purposes
-export { JWTService };
+export { JWTService }

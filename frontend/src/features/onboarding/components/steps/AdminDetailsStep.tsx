@@ -1,20 +1,38 @@
-import { Input } from '@/components/ui/input';
-import { FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { UseFormReturn } from 'react-hook-form';
-import { newBusinessData, existingBusinessData, CONTACT_METHODS, CONTACT_SALUTATIONS, CONTACT_AUTHORITY_LEVELS, COUNTRIES } from '../../schemas';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { UserClassification } from '../FlowSelector';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Info, CheckCircle2, XCircle, Loader2, ShieldCheck } from 'lucide-react';
-import React, { memo, useEffect, useState } from 'react';
-import { useAuth } from '@/lib/auth/cognito-auth';
-import { useWatch } from 'react-hook-form';
-import { getCountryConfig } from '../../config/countryConfig';
-import { onboardingAPI } from '@/lib/api';
-import { useToast } from '../Toast';
+import { Input } from '@/components/ui/input'
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { UseFormReturn } from 'react-hook-form'
+import {
+  newBusinessData,
+  existingBusinessData,
+  CONTACT_METHODS,
+  CONTACT_SALUTATIONS,
+  CONTACT_AUTHORITY_LEVELS,
+} from '../../schemas'
+import { Badge } from '@/components/ui/badge'
+import { UserClassification } from '../FlowSelector'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
+import { Info } from 'lucide-react'
+import React, { memo } from 'react'
+import { useAuth } from '@/lib/auth/cognito-auth'
+import { useWatch } from 'react-hook-form'
 
 const PHONE_EXAMPLES: Record<string, string> = {
   IN: '+91 98765 43210',
@@ -25,623 +43,715 @@ const PHONE_EXAMPLES: Record<string, string> = {
   SG: '+65 9123 4567',
   CA: '+1 (555) 123-4567',
   AU: '+61 412 345 678',
-};
-
-const getPhonePlaceholder = (countryCode: string): string =>
-  PHONE_EXAMPLES[countryCode] ?? '+1 (555) 123-4567';
-
-interface AdminDetailsStepProps {
-  form: UseFormReturn<newBusinessData | existingBusinessData>;
-  userClassification?: UserClassification;
 }
 
-export const AdminDetailsStep = memo(({ form, userClassification }: AdminDetailsStepProps) => {
-  const { user } = useAuth();
-  const { addToast } = useToast();
-  
-  // Watch tax registration and PAN fields
-  const taxRegistered = useWatch({ control: form.control, name: 'taxRegistered' });
-  const panNumber = useWatch({ control: form.control, name: 'panNumber' });
-  const businessDetailsCountry = useWatch({ control: form.control, name: 'businessDetails.country' as any });
-  const rootCountry = useWatch({ control: form.control, name: 'country' });
-  const companyName = useWatch({ control: form.control, name: 'businessDetails.companyName' as any });
-  
-  const country = businessDetailsCountry || rootCountry || 'IN';
-  const countryConfig = getCountryConfig(country);
-  const labels = {
-    taxId: countryConfig.taxSystem.idLabel,
-  };
-  
-  // PAN Verification states
-  const [panVerificationStatus, setPanVerificationStatus] = useState<'idle' | 'verifying' | 'verified' | 'error'>('idle');
-  const [panVerificationMessage, setPanVerificationMessage] = useState<string>('');
-  
-  // PAN Verification Handler
-  const handleVerifyPAN = async () => {
-    if (!panNumber || panNumber.length !== 10) {
-      addToast('Please enter a valid PAN number (10 characters)', { type: 'error', duration: 3000 });
-      return;
-    }
+const getPhonePlaceholder = (countryCode: string): string =>
+  PHONE_EXAMPLES[countryCode] ?? '+1 (555) 123-4567'
 
-    setPanVerificationStatus('verifying');
-    setPanVerificationMessage('');
+interface AdminDetailsStepProps {
+  form: UseFormReturn<newBusinessData | existingBusinessData>
+  userClassification?: UserClassification
+}
 
-    try {
-      const response = await onboardingAPI.verifyPAN(panNumber.toUpperCase(), companyName || undefined);
-      
-      if (response.data.verified) {
-        setPanVerificationStatus('verified');
-        setPanVerificationMessage('PAN verified successfully');
-        addToast('PAN verified successfully', { type: 'success', duration: 3000 });
-        form.setValue('panVerified' as any, true, { shouldValidate: false });
-      } else {
-        setPanVerificationStatus('error');
-        setPanVerificationMessage(response.data.message || 'PAN verification failed');
-        addToast(response.data.message || 'PAN verification failed', { type: 'error', duration: 5000 });
-        form.setValue('panVerified' as any, false, { shouldValidate: false });
+export const AdminDetailsStep = memo(
+  ({ form, userClassification }: AdminDetailsStepProps) => {
+    const { user } = useAuth()
+
+    // Watch country fields to derive locale-specific placeholders.
+    const businessDetailsCountry = useWatch({
+      control: form.control,
+      name: 'businessDetails.country' as any,
+    })
+    const rootCountry = useWatch({ control: form.control, name: 'country' })
+
+    const country = businessDetailsCountry || rootCountry || 'IN'
+
+    // Sync Admin Email (and name) from Kinde only once on mount so form state matches display.
+    // Run only once when user is available to avoid overwriting user-typed/cleared values (fixes state issues when typing and backspacing).
+    const hasSyncedFromIdpRef = React.useRef(false)
+    React.useLayoutEffect(() => {
+      if (!user?.email || hasSyncedFromIdpRef.current) return
+      hasSyncedFromIdpRef.current = true
+      const updates: Array<{ field: any; value: any }> = []
+      const currentAdminEmail = form.getValues('adminEmail')
+      if (
+        !currentAdminEmail ||
+        (typeof currentAdminEmail === 'string' && !currentAdminEmail.trim())
+      ) {
+        updates.push({ field: 'adminEmail', value: user.email })
       }
-    } catch (error: any) {
-      setPanVerificationStatus('error');
-      const errorMessage = error.response?.data?.message || 'Failed to verify PAN. Please try again.';
-      setPanVerificationMessage(errorMessage);
-      addToast(errorMessage, { type: 'error', duration: 5000 });
-      form.setValue('panVerified' as any, false, { shouldValidate: false });
-    }
-  };
-  
-  // Sync Admin Email (and name) from Kinde only once on mount so form state matches display.
-  // Run only once when user is available to avoid overwriting user-typed/cleared values (fixes state issues when typing and backspacing).
-  const hasSyncedFromIdpRef = React.useRef(false);
-  React.useLayoutEffect(() => {
-    if (!user?.email || hasSyncedFromIdpRef.current) return;
-    hasSyncedFromIdpRef.current = true;
-    const updates: Array<{ field: any; value: any }> = [];
-    const currentAdminEmail = form.getValues('adminEmail');
-    if (!currentAdminEmail || (typeof currentAdminEmail === 'string' && !currentAdminEmail.trim())) {
-      updates.push({ field: 'adminEmail', value: user.email });
-    }
-    if (user.givenName) {
-      const currentFirst = form.getValues('firstName');
-      if (!currentFirst || (typeof currentFirst === 'string' && !currentFirst.trim())) {
-        updates.push({ field: 'firstName', value: user.givenName });
+      if (user.givenName) {
+        const currentFirst = form.getValues('firstName')
+        if (
+          !currentFirst ||
+          (typeof currentFirst === 'string' && !currentFirst.trim())
+        ) {
+          updates.push({ field: 'firstName', value: user.givenName })
+        }
+      }
+      if (user.familyName) {
+        const currentLast = form.getValues('lastName')
+        if (
+          !currentLast ||
+          (typeof currentLast === 'string' && !currentLast.trim())
+        ) {
+          updates.push({ field: 'lastName', value: user.familyName })
+        }
+      }
+      updates.forEach(({ field, value }) => {
+        form.setValue(field as any, value, {
+          shouldValidate: false,
+          shouldDirty: false,
+        })
+      })
+    }, [user?.email, user?.givenName, user?.familyName, form])
+
+    // Get personalized content based on user classification
+    const phonePlaceholder = getPhonePlaceholder(country)
+
+    const getPersonalizedContent = () => {
+      switch (userClassification) {
+        case 'aspiringFounder':
+          return {
+            title: 'Admin Account Setup',
+            description:
+              'Set up your administrator account as the company founder.',
+            emailPlaceholder: 'founder@yourcompany.com',
+            showDomainIntegration: false,
+          }
+        case 'corporateEmployee':
+          return {
+            title: 'Corporate Admin Setup',
+            description:
+              'Configure your administrator access for the corporate environment.',
+            emailPlaceholder: 'admin@company.com',
+            showDomainIntegration: true,
+          }
+        case 'withDomainMail':
+          return {
+            title: 'Professional Admin Setup',
+            description:
+              'Complete your professional administrator account configuration.',
+            emailPlaceholder: 'admin@yourdomain.com',
+            showDomainIntegration: true,
+          }
+        case 'enterprise':
+          return {
+            title: 'Enterprise Administrator',
+            description:
+              'Set up your enterprise administrator account with advanced features.',
+            emailPlaceholder: 'admin@enterprise.com',
+            showDomainIntegration: true,
+          }
+        default:
+          return {
+            title: 'Admin Details',
+            description: 'Provide administrator contact and account details.',
+            emailPlaceholder: 'admin@company.com',
+            showDomainIntegration: false,
+          }
       }
     }
-    if (user.familyName) {
-      const currentLast = form.getValues('lastName');
-      if (!currentLast || (typeof currentLast === 'string' && !currentLast.trim())) {
-        updates.push({ field: 'lastName', value: user.familyName });
-      }
-    }
-    updates.forEach(({ field, value }) => {
-      form.setValue(field as any, value, { shouldValidate: false, shouldDirty: false });
-    });
-  }, [user?.email, user?.givenName, user?.familyName, form]);
+    const personalizedContent = getPersonalizedContent()
+    const requiresMobileVerification =
+      userClassification === 'withGST' || userClassification === 'enterprise'
 
-  // Get personalized content based on user classification
-  const phonePlaceholder = getPhonePlaceholder(country);
+    // Shared Styles
+    const inputClasses =
+      'w-full px-4 py-3.5 bg-white border border-slate-200 rounded-xl text-[#1B2E5A] placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-200 hover:border-slate-300 shadow-sm'
+    const labelClasses =
+      'block text-sm font-semibold text-slate-700 mb-1.5 ml-1'
 
-  const getPersonalizedContent = () => {
-    switch (userClassification) {
-      case 'aspiringFounder':
-        return {
-          title: 'Admin Account Setup',
-          description: 'Set up your administrator account as the company founder.',
-          emailPlaceholder: 'founder@yourcompany.com',
-          showDomainIntegration: false
-        };
-      case 'corporateEmployee':
-        return {
-          title: 'Corporate Admin Setup',
-          description: 'Configure your administrator access for the corporate environment.',
-          emailPlaceholder: 'admin@company.com',
-          showDomainIntegration: true
-        };
-      case 'withDomainMail':
-        return {
-          title: 'Professional Admin Setup',
-          description: 'Complete your professional administrator account configuration.',
-          emailPlaceholder: 'admin@yourdomain.com',
-          showDomainIntegration: true
-        };
-      case 'enterprise':
-        return {
-          title: 'Enterprise Administrator',
-          description: 'Set up your enterprise administrator account with advanced features.',
-          emailPlaceholder: 'admin@enterprise.com',
-          showDomainIntegration: true
-        };
-      default:
-        return {
-          title: 'Admin Details',
-          description: 'Provide administrator contact and account details.',
-          emailPlaceholder: 'admin@company.com',
-          showDomainIntegration: false
-        };
-    }
-  };
-  const personalizedContent = getPersonalizedContent();
-  const requiresMobileVerification = userClassification === 'withGST' || userClassification === 'enterprise';
-
-  // Shared Styles
-  const inputClasses = "w-full px-4 py-3.5 bg-white border border-slate-200 rounded-xl text-[#1B2E5A] placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-200 hover:border-slate-300 shadow-sm";
-  const labelClasses = "block text-sm font-semibold text-slate-700 mb-1.5 ml-1";
-
-  return (
-    <div className="space-y-8">
-      <div className="space-y-2">
-        <div className="flex items-center gap-2 mb-4">
-          {userClassification && userClassification !== 'aspiringFounder' && (
-            <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-100 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide">
-              {userClassification.replace(/([A-Z])/g, ' $1').trim()}
-            </Badge>
-          )}
-        </div>
-        <h1 className="text-3xl font-bold tracking-tight text-[#1B2E5A]">
-          {personalizedContent.title}
-        </h1>
-        <p className="text-lg text-slate-500 leading-relaxed max-w-2xl">
-          {personalizedContent.description}
-        </p>
-      </div>
-
-      <TooltipProvider delayDuration={200}>
-        <div className="space-y-8 max-w-5xl glass-card p-8 sm:p-10 rounded-2xl shadow-soft">
-          {/* MANDATORY FIELDS SECTION */}
-          <div className="space-y-6">
-            <div className="pb-4 border-b border-slate-200">
-              <h2 className="text-lg font-bold text-[#1B2E5A] flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-red-500"></span>
-                Required Information
-              </h2>
-              <p className="text-sm text-slate-500 mt-1">These fields are mandatory to complete your account setup</p>
-            </div>
-
-            {/* Personal Name Fields */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormField
-            control={form.control}
-            name={"firstName" as any}
-            render={({ field }) => (
-              <FormItem>
-                    <FormLabel className={`${labelClasses} flex items-center gap-2`}>
-                  First Name <span className="text-red-500">*</span>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
-                          <p className="font-semibold mb-1">Mandatory Field</p>
-                          <p>Your first name as the primary administrator. Used for account identification, official communications, and user profile setup.</p>
-                        </TooltipContent>
-                      </Tooltip>
-                </FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    value={field.value || ''}
-                    className={inputClasses}
-                    placeholder="Enter your first name"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+    return (
+      <div className="space-y-8">
+        <div className="space-y-2">
+          <div className="mb-4 flex items-center gap-2">
+            {userClassification && userClassification !== 'aspiringFounder' && (
+              <Badge
+                variant="secondary"
+                className="rounded-full border-blue-100 bg-blue-50 px-3 py-1 text-xs font-semibold tracking-wide text-blue-700 uppercase"
+              >
+                {userClassification.replace(/([A-Z])/g, ' $1').trim()}
+              </Badge>
             )}
-          />
-
-          <FormField
-            control={form.control}
-            name={"lastName" as any}
-            render={({ field }) => (
-              <FormItem>
-                    <FormLabel className={`${labelClasses} flex items-center gap-2`}>
-                  Last Name <span className="text-red-500">*</span>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
-                          <p className="font-semibold mb-1">Mandatory Field</p>
-                          <p>Your last name as the primary administrator. Required for complete identification and official account documentation.</p>
-                        </TooltipContent>
-                      </Tooltip>
-                </FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    value={field.value || ''}
-                    className={inputClasses}
-                    placeholder="Enter your last name"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-            {/* Email and Mobile */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormField
-            control={form.control}
-            name="adminEmail"
-            render={({ field }) => (
-              <FormItem>
-                    <FormLabel className={`${labelClasses} flex items-center gap-2`}>
-                  Admin Email <span className="text-red-500">*</span>
-                  {userClassification === 'withDomainMail' && (
-                    <span className="text-xs text-green-600 ml-2 font-normal bg-green-50 px-2 py-0.5 rounded-full">Professional domain</span>
-                  )}
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
-                          <p className="font-semibold mb-1">Mandatory Field</p>
-                          <p>Primary email address for the administrator account. Automatically filled from your account. Used for login, account recovery, important notifications, and official communications.</p>
-                        </TooltipContent>
-                      </Tooltip>
-                </FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    value={field.value || user?.email || ''}
-                    type="email"
-                    readOnly
-                    className={`${inputClasses} bg-slate-50 cursor-not-allowed`}
-                    placeholder={personalizedContent.emailPlaceholder}
-                  />
-                </FormControl>
-                {/* Don't show validation error when field is read-only and auto-filled from auth provider */}
-                {!user?.email && <FormMessage />}
-                {personalizedContent.showDomainIntegration && (
-                  <p className="text-xs text-green-600 mt-1 font-medium flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                    Domain integration available
-                  </p>
-                )}
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="adminMobile"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className={labelClasses}>
-                  Admin Mobile {requiresMobileVerification ? <span className="text-red-500">*</span> : <span className="text-slate-400 font-normal">(Optional)</span>}
-                </FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    value={field.value || ''}
-                    type="tel"
-                    className={inputClasses}
-                    placeholder={phonePlaceholder}
-                  />
-                </FormControl>
-                <FormMessage />
-                {requiresMobileVerification && (
-                  <p className="text-xs text-blue-600 mt-1 font-medium">
-                    Verification required
-                  </p>
-                )}
-              </FormItem>
-            )}
-          />
-        </div>
           </div>
+          <h1 className="text-3xl font-bold tracking-tight text-[#1B2E5A]">
+            {personalizedContent.title}
+          </h1>
+          <p className="max-w-2xl text-lg leading-relaxed text-slate-500">
+            {personalizedContent.description}
+          </p>
+        </div>
 
-          {/* OPTIONAL FIELDS SECTION */}
-          <div className="space-y-6 pt-6 border-t-2 border-slate-200">
-            <div className="pb-4">
-              <h2 className="text-lg font-bold text-slate-700 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-slate-300"></span>
-                Additional Information (Optional)
-              </h2>
-              <p className="text-sm text-slate-500 mt-1">Enhance your profile with these optional details for better communication and organization</p>
+        <TooltipProvider delayDuration={200}>
+          <div className="glass-card shadow-soft max-w-5xl space-y-8 rounded-2xl p-8 sm:p-10">
+            {/* MANDATORY FIELDS SECTION */}
+            <div className="space-y-6">
+              <div className="border-b border-slate-200 pb-4">
+                <h2 className="flex items-center gap-2 text-lg font-bold text-[#1B2E5A]">
+                  <span className="h-2 w-2 rounded-full bg-red-500"></span>
+                  Required Information
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  These fields are mandatory to complete your account setup
+                </p>
+              </div>
+
+              {/* Personal Name Fields */}
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name={'firstName' as any}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel
+                        className={`${labelClasses} flex items-center gap-2`}
+                      >
+                        First Name <span className="text-red-500">*</span>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-4 w-4 cursor-help text-slate-400 hover:text-slate-600" />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
+                            <p className="mb-1 font-semibold">
+                              Mandatory Field
+                            </p>
+                            <p>
+                              Your first name as the primary administrator. Used
+                              for account identification, official
+                              communications, and user profile setup.
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          value={field.value || ''}
+                          className={inputClasses}
+                          placeholder="Enter your first name"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name={'lastName' as any}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel
+                        className={`${labelClasses} flex items-center gap-2`}
+                      >
+                        Last Name <span className="text-red-500">*</span>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-4 w-4 cursor-help text-slate-400 hover:text-slate-600" />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
+                            <p className="mb-1 font-semibold">
+                              Mandatory Field
+                            </p>
+                            <p>
+                              Your last name as the primary administrator.
+                              Required for complete identification and official
+                              account documentation.
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          value={field.value || ''}
+                          className={inputClasses}
+                          placeholder="Enter your last name"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* Email and Mobile */}
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="adminEmail"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel
+                        className={`${labelClasses} flex items-center gap-2`}
+                      >
+                        Admin Email <span className="text-red-500">*</span>
+                        {userClassification === 'withDomainMail' && (
+                          <span className="ml-2 rounded-full bg-green-50 px-2 py-0.5 text-xs font-normal text-green-600">
+                            Professional domain
+                          </span>
+                        )}
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-4 w-4 cursor-help text-slate-400 hover:text-slate-600" />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
+                            <p className="mb-1 font-semibold">
+                              Mandatory Field
+                            </p>
+                            <p>
+                              Primary email address for the administrator
+                              account. Automatically filled from your account.
+                              Used for login, account recovery, important
+                              notifications, and official communications.
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          value={field.value || user?.email || ''}
+                          type="email"
+                          readOnly
+                          className={`${inputClasses} cursor-not-allowed bg-slate-50`}
+                          placeholder={personalizedContent.emailPlaceholder}
+                        />
+                      </FormControl>
+                      {/* Don't show validation error when field is read-only and auto-filled from auth provider */}
+                      {!user?.email && <FormMessage />}
+                      {personalizedContent.showDomainIntegration && (
+                        <p className="mt-1 flex items-center gap-1 text-xs font-medium text-green-600">
+                          <span className="h-1.5 w-1.5 rounded-full bg-green-500"></span>
+                          Domain integration available
+                        </p>
+                      )}
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="adminMobile"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className={labelClasses}>
+                        Admin Mobile{' '}
+                        {requiresMobileVerification ? (
+                          <span className="text-red-500">*</span>
+                        ) : (
+                          <span className="font-normal text-slate-400">
+                            (Optional)
+                          </span>
+                        )}
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          value={field.value || ''}
+                          type="tel"
+                          className={inputClasses}
+                          placeholder={phonePlaceholder}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                      {requiresMobileVerification && (
+                        <p className="mt-1 text-xs font-medium text-blue-600">
+                          Verification required
+                        </p>
+                      )}
+                    </FormItem>
+                  )}
+                />
+              </div>
             </div>
 
-            {/* Salutation and Job Title */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormField
-            control={form.control}
-            name="contactSalutation"
-            render={({ field }) => (
-              <FormItem>
-                    <FormLabel className={`${labelClasses} flex items-center gap-2`}>
-                      Salutation
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
-                          <p>Formal title (Mr., Mrs., Dr., etc.) used in professional communications and official documents.</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </FormLabel>
-                <Select onValueChange={field.onChange} value={field.value || ''}>
-                  <FormControl>
-                    <SelectTrigger className={inputClasses}>
-                      <SelectValue placeholder="Select salutation" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent className="rounded-xl border-slate-200 shadow-lg bg-white">
-                    {CONTACT_SALUTATIONS.map((sal) => (
-                      <SelectItem key={sal.id} value={sal.id} className="py-3 cursor-pointer focus:bg-blue-50">
-                        {sal.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+            {/* OPTIONAL FIELDS SECTION */}
+            <div className="space-y-6 border-t-2 border-slate-200 pt-6">
+              <div className="pb-4">
+                <h2 className="flex items-center gap-2 text-lg font-bold text-slate-700">
+                  <span className="h-2 w-2 rounded-full bg-slate-300"></span>
+                  Additional Information (Optional)
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Enhance your profile with these optional details for better
+                  communication and organization
+                </p>
+              </div>
 
-          <FormField
-            control={form.control}
-            name="contactJobTitle"
-            render={({ field }) => (
-              <FormItem>
-                    <FormLabel className={`${labelClasses} flex items-center gap-2`}>
-                      Job Title
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
-                          <p>Your professional position helps us personalize communications and understand your role in decision-making processes.</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    value={field.value || ''}
-                    className={inputClasses}
-                    placeholder="e.g. CEO, Founder, CTO"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+              {/* Salutation and Job Title */}
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="contactSalutation"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel
+                        className={`${labelClasses} flex items-center gap-2`}
+                      >
+                        Salutation
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-4 w-4 cursor-help text-slate-400 hover:text-slate-600" />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
+                            <p>
+                              Formal title (Mr., Mrs., Dr., etc.) used in
+                              professional communications and official
+                              documents.
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value || ''}
+                      >
+                        <FormControl>
+                          <SelectTrigger className={inputClasses}>
+                            <SelectValue placeholder="Select salutation" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent className="rounded-xl border-slate-200 bg-white shadow-lg">
+                          {CONTACT_SALUTATIONS.map((sal) => (
+                            <SelectItem
+                              key={sal.id}
+                              value={sal.id}
+                              className="cursor-pointer py-3 focus:bg-blue-50"
+                            >
+                              {sal.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            {/* Middle Name and Department */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormField
-            control={form.control}
-            name="contactMiddleName"
-            render={({ field }) => (
-              <FormItem>
-                    <FormLabel className={`${labelClasses} flex items-center gap-2`}>
-                      Middle Name
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
-                          <p>Complete your full legal name for official documents and compliance requirements.</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    value={field.value || ''}
-                    className={inputClasses}
-                    placeholder="Middle name"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                <FormField
+                  control={form.control}
+                  name="contactJobTitle"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel
+                        className={`${labelClasses} flex items-center gap-2`}
+                      >
+                        Job Title
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-4 w-4 cursor-help text-slate-400 hover:text-slate-600" />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
+                            <p>
+                              Your professional position helps us personalize
+                              communications and understand your role in
+                              decision-making processes.
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          value={field.value || ''}
+                          className={inputClasses}
+                          placeholder="e.g. CEO, Founder, CTO"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
-          <FormField
-            control={form.control}
-            name="contactDepartment"
-            render={({ field }) => (
-              <FormItem>
-                    <FormLabel className={`${labelClasses} flex items-center gap-2`}>
-                      Department
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
-                          <p>Your department helps route communications appropriately and ensures you receive relevant updates.</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    value={field.value || ''}
-                    className={inputClasses}
-                    placeholder="e.g. Operations, Finance"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+              {/* Middle Name and Department */}
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="contactMiddleName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel
+                        className={`${labelClasses} flex items-center gap-2`}
+                      >
+                        Middle Name
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-4 w-4 cursor-help text-slate-400 hover:text-slate-600" />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
+                            <p>
+                              Complete your full legal name for official
+                              documents and compliance requirements.
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          value={field.value || ''}
+                          className={inputClasses}
+                          placeholder="Middle name"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            {/* Authority Level and Preferred Contact Method */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormField
-            control={form.control}
-            name="contactAuthorityLevel"
-            render={({ field }) => (
-              <FormItem>
-                    <FormLabel className={`${labelClasses} flex items-center gap-2`}>
-                      Authority Level
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
-                          <p>Indicates your decision-making authority level, helping us prioritize communications and route important matters appropriately.</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </FormLabel>
-                <Select onValueChange={field.onChange} value={field.value || ''}>
-                  <FormControl>
-                    <SelectTrigger className={inputClasses}>
-                      <SelectValue placeholder="Select authority level" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent className="rounded-xl border-slate-200 shadow-lg bg-white">
-                    {CONTACT_AUTHORITY_LEVELS.map((level) => (
-                      <SelectItem key={level.id} value={level.id} className="py-3 cursor-pointer focus:bg-blue-50">
-                        {level.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                <FormField
+                  control={form.control}
+                  name="contactDepartment"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel
+                        className={`${labelClasses} flex items-center gap-2`}
+                      >
+                        Department
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-4 w-4 cursor-help text-slate-400 hover:text-slate-600" />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
+                            <p>
+                              Your department helps route communications
+                              appropriately and ensures you receive relevant
+                              updates.
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          value={field.value || ''}
+                          className={inputClasses}
+                          placeholder="e.g. Operations, Finance"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
-          <FormField
-            control={form.control}
-            name="preferredContactMethod"
-            render={({ field }) => (
-              <FormItem>
-                    <FormLabel className={`${labelClasses} flex items-center gap-2`}>
-                      Preferred Contact Method
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
-                          <p>Your preferred method helps us contact you efficiently for important updates, support, and account-related matters.</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </FormLabel>
-                <Select onValueChange={field.onChange} value={field.value || ''}>
-                  <FormControl>
-                    <SelectTrigger className={inputClasses}>
-                      <SelectValue placeholder="Select method" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent className="rounded-xl border-slate-200 shadow-lg bg-white">
-                    {CONTACT_METHODS.map((method) => (
-                      <SelectItem key={method.id} value={method.id} className="py-3 cursor-pointer focus:bg-blue-50">
-                        {method.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+              {/* Authority Level and Preferred Contact Method */}
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="contactAuthorityLevel"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel
+                        className={`${labelClasses} flex items-center gap-2`}
+                      >
+                        Authority Level
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-4 w-4 cursor-help text-slate-400 hover:text-slate-600" />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
+                            <p>
+                              Indicates your decision-making authority level,
+                              helping us prioritize communications and route
+                              important matters appropriately.
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value || ''}
+                      >
+                        <FormControl>
+                          <SelectTrigger className={inputClasses}>
+                            <SelectValue placeholder="Select authority level" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent className="rounded-xl border-slate-200 bg-white shadow-lg">
+                          {CONTACT_AUTHORITY_LEVELS.map((level) => (
+                            <SelectItem
+                              key={level.id}
+                              value={level.id}
+                              className="cursor-pointer py-3 focus:bg-blue-50"
+                            >
+                              {level.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            {/* Direct Phone and Mobile Phone */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormField
-            control={form.control}
-            name="contactDirectPhone"
-            render={({ field }) => (
-              <FormItem>
-                    <FormLabel className={`${labelClasses} flex items-center gap-2`}>
-                      Direct Phone
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
-                          <p>Your direct office line for urgent business matters and account verification purposes.</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    value={field.value || ''}
-                    type="tel"
-                    className={inputClasses}
-                    placeholder={phonePlaceholder}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                <FormField
+                  control={form.control}
+                  name="preferredContactMethod"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel
+                        className={`${labelClasses} flex items-center gap-2`}
+                      >
+                        Preferred Contact Method
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-4 w-4 cursor-help text-slate-400 hover:text-slate-600" />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
+                            <p>
+                              Your preferred method helps us contact you
+                              efficiently for important updates, support, and
+                              account-related matters.
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value || ''}
+                      >
+                        <FormControl>
+                          <SelectTrigger className={inputClasses}>
+                            <SelectValue placeholder="Select method" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent className="rounded-xl border-slate-200 bg-white shadow-lg">
+                          {CONTACT_METHODS.map((method) => (
+                            <SelectItem
+                              key={method.id}
+                              value={method.id}
+                              className="cursor-pointer py-3 focus:bg-blue-50"
+                            >
+                              {method.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
-          <FormField
-            control={form.control}
-            name="contactMobilePhone"
-            render={({ field }) => (
-              <FormItem>
-                    <FormLabel className={`${labelClasses} flex items-center gap-2`}>
-                      Mobile Phone
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
-                          <p>Alternative mobile number for backup contact and SMS notifications for security alerts.</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    value={field.value || ''}
-                    type="tel"
-                    className={inputClasses}
-                    placeholder={phonePlaceholder}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+              {/* Direct Phone and Mobile Phone */}
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="contactDirectPhone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel
+                        className={`${labelClasses} flex items-center gap-2`}
+                      >
+                        Direct Phone
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-4 w-4 cursor-help text-slate-400 hover:text-slate-600" />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
+                            <p>
+                              Your direct office line for urgent business
+                              matters and account verification purposes.
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          value={field.value || ''}
+                          type="tel"
+                          className={inputClasses}
+                          placeholder={phonePlaceholder}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            {/* Billing Email */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormField
-            control={form.control}
-            name="billingEmail"
-            render={({ field }) => (
-              <FormItem>
-                    <FormLabel className={`${labelClasses} flex items-center gap-2`}>
-                      Billing Email
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
-                          <p>Separate email for billing invoices and payment-related communications. If not provided, admin email will be used.</p>
-                        </TooltipContent>
-                      </Tooltip>
-                </FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    value={field.value || ''}
-                    type="email"
-                    className={inputClasses}
-                    placeholder="billing@company.com"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                <FormField
+                  control={form.control}
+                  name="contactMobilePhone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel
+                        className={`${labelClasses} flex items-center gap-2`}
+                      >
+                        Mobile Phone
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-4 w-4 cursor-help text-slate-400 hover:text-slate-600" />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
+                            <p>
+                              Alternative mobile number for backup contact and
+                              SMS notifications for security alerts.
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          value={field.value || ''}
+                          type="tel"
+                          className={inputClasses}
+                          placeholder={phonePlaceholder}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* Billing Email */}
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="billingEmail"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel
+                        className={`${labelClasses} flex items-center gap-2`}
+                      >
+                        Billing Email
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-4 w-4 cursor-help text-slate-400 hover:text-slate-600" />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
+                            <p>
+                              Separate email for billing invoices and
+                              payment-related communications. If not provided,
+                              admin email will be used.
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          value={field.value || ''}
+                          type="email"
+                          className={inputClasses}
+                          placeholder="billing@company.com"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </div>
-        </div>
 
-          {/* PAN / Tax Registration Section - commented out as of now */}
-          {/* <div className="space-y-6 pt-6 border-t-2 border-slate-200">
+            {/* PAN / Tax Registration Section - commented out as of now */}
+            {/* <div className="space-y-6 pt-6 border-t-2 border-slate-200">
             <div className="pb-4">
               <h2 className="text-lg font-bold text-slate-700 flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-slate-300"></span>
@@ -808,45 +918,65 @@ export const AdminDetailsStep = memo(({ form, userClassification }: AdminDetails
               </div>
             )}
           </div> */}
-        </div>
-
-        {/* Feature Highlights based on Classification */}
-        {personalizedContent.showDomainIntegration && (
-            <div className="bg-green-50 border border-green-100 rounded-xl p-5">
-            <h4 className="font-semibold text-green-900 mb-2 text-sm">Professional Domain Benefits</h4>
-            <div className="space-y-1.5">
-              {['Custom email domain', 'Enhanced credibility', 'Unified communications'].map((benefit, i) => (
-                <div key={i} className="flex items-center text-sm text-green-700">
-                  <div className="w-4 h-4 rounded-full bg-green-200 flex items-center justify-center mr-2">
-                    <div className="w-1.5 h-1.5 bg-green-600 rounded-full"></div>
-                  </div>
-                  {benefit}
-                </div>
-              ))}
-            </div>
           </div>
-        )}
 
-        {userClassification === 'enterprise' && (
-            <div className="bg-purple-50 border border-purple-100 rounded-xl p-5">
-            <h4 className="font-semibold text-purple-900 mb-2 text-sm">Enterprise Security Included</h4>
-            <div className="space-y-1.5">
-              {['MFA Setup', 'SSO Configuration', 'Audit Logs'].map((benefit, i) => (
-                 <div key={i} className="flex items-center text-sm text-purple-700">
-                  <div className="w-4 h-4 rounded-full bg-purple-200 flex items-center justify-center mr-2">
-                    <div className="w-1.5 h-1.5 bg-purple-600 rounded-full"></div>
+          {/* Feature Highlights based on Classification */}
+          {personalizedContent.showDomainIntegration && (
+            <div className="rounded-xl border border-green-100 bg-green-50 p-5">
+              <h4 className="mb-2 text-sm font-semibold text-green-900">
+                Professional Domain Benefits
+              </h4>
+              <div className="space-y-1.5">
+                {[
+                  'Custom email domain',
+                  'Enhanced credibility',
+                  'Unified communications',
+                ].map((benefit, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center text-sm text-green-700"
+                  >
+                    <div className="mr-2 flex h-4 w-4 items-center justify-center rounded-full bg-green-200">
+                      <div className="h-1.5 w-1.5 rounded-full bg-green-600"></div>
+                    </div>
+                    {benefit}
                   </div>
-                  {benefit}
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        )}
-      </TooltipProvider>
-    </div>
-  );
-}, (prevProps, nextProps) => {
-  // Only re-render if form control changes or userClassification changes
-  return prevProps.userClassification === nextProps.userClassification && 
-         prevProps.form.control === nextProps.form.control;
-});
+          )}
+
+          {userClassification === 'enterprise' && (
+            <div className="rounded-xl border border-purple-100 bg-purple-50 p-5">
+              <h4 className="mb-2 text-sm font-semibold text-purple-900">
+                Enterprise Security Included
+              </h4>
+              <div className="space-y-1.5">
+                {['MFA Setup', 'SSO Configuration', 'Audit Logs'].map(
+                  (benefit, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center text-sm text-purple-700"
+                    >
+                      <div className="mr-2 flex h-4 w-4 items-center justify-center rounded-full bg-purple-200">
+                        <div className="h-1.5 w-1.5 rounded-full bg-purple-600"></div>
+                      </div>
+                      {benefit}
+                    </div>
+                  )
+                )}
+              </div>
+            </div>
+          )}
+        </TooltipProvider>
+      </div>
+    )
+  },
+  (prevProps, nextProps) => {
+    // Only re-render if form control changes or userClassification changes
+    return (
+      prevProps.userClassification === nextProps.userClassification &&
+      prevProps.form.control === nextProps.form.control
+    )
+  }
+)

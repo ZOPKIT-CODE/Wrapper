@@ -13,12 +13,14 @@ export const queryKeys = {
   entityScope: ['entityScope'] as const,
   tenant: ['tenant'] as const,
   tenantApps: (tenantId: string) => ['tenantApps', tenantId] as const,
-  applicationAllocations: (entityId?: string) => ['applicationAllocations', entityId].filter(Boolean) as const,
+  applicationAllocations: (entityId?: string) =>
+    ['applicationAllocations', entityId].filter(Boolean),
   notifications: ['notifications'] as const,
   unreadCount: ['unreadCount'] as const,
-  users: (entityId?: string | null) => ['users', entityId].filter(Boolean) as const,
-  entities: (tenantId?: string) => ['entities', tenantId].filter(Boolean) as const,
-  roles: (filters?: { search?: string; type?: string }) => ['roles', filters] as const,
+  users: (entityId?: string | null) => ['users', entityId].filter(Boolean),
+  entities: (tenantId?: string) => ['entities', tenantId].filter(Boolean),
+  roles: (filters?: { search?: string; type?: string }) =>
+    ['roles', filters] as const,
   subscriptionCurrent: ['subscription', 'current'] as const,
 } as const
 
@@ -48,19 +50,21 @@ export function useEntityScope() {
   const { isAuthenticated, user } = useAuth()
   const location = useLocation()
   const { data: authData } = useAuthStatus()
-  
-  const isOnboardingPage = location.pathname === '/onboarding' || location.pathname.startsWith('/onboarding/')
+
+  const isOnboardingPage =
+    location.pathname === '/onboarding' ||
+    location.pathname.startsWith('/onboarding/')
   const isTenantAdmin = authData?.authStatus?.isTenantAdmin === true
 
   return useQuery({
     queryKey: queryKeys.entityScope,
     queryFn: async () => {
       const response = await api.get('/admin/entity-scope')
-      
+
       if (response.data.success) {
         return response.data.scope
       }
-      
+
       throw new Error('Failed to fetch entity scope')
     },
     // Entity scope is an admin-only API; avoid unnecessary 401s for regular users.
@@ -75,8 +79,8 @@ export function useEntityScope() {
     placeholderData: {
       scope: 'none' as const,
       entityIds: [],
-      isUnrestricted: false
-    }
+      isUnrestricted: false,
+    },
   })
 }
 
@@ -85,8 +89,10 @@ export function useTenant(tenantId?: string) {
   const { isAuthenticated, user } = useAuth()
   const location = useLocation()
   const { data: authData } = useAuthStatus()
-  
-  const isOnboardingPage = location.pathname === '/onboarding' || location.pathname.startsWith('/onboarding/')
+
+  const isOnboardingPage =
+    location.pathname === '/onboarding' ||
+    location.pathname.startsWith('/onboarding/')
   const effectiveTenantId = tenantId || authData?.authStatus?.tenantId
 
   return useQuery({
@@ -95,7 +101,7 @@ export function useTenant(tenantId?: string) {
       if (!effectiveTenantId) {
         throw new Error('Tenant ID is required')
       }
-      
+
       const response = await api.get('/admin/tenant', {
         headers: {
           'X-Tenant-ID': effectiveTenantId,
@@ -105,14 +111,16 @@ export function useTenant(tenantId?: string) {
       if (response.data?.success && response.data?.data) {
         return response.data.data
       }
-      
+
       throw new Error('Failed to fetch tenant details')
     },
-    enabled: !!isAuthenticated && !!user && !!effectiveTenantId && !isOnboardingPage,
+    enabled:
+      !!isAuthenticated && !!user && !!effectiveTenantId && !isOnboardingPage,
     staleTime: 5 * 60 * 1000, // 5 minutes - tenant data doesn't change often
     gcTime: 15 * 60 * 1000, // 15 minutes cache
     retry: (failureCount, error: any) => {
-      if (error?.response?.status === 401 || error?.response?.status === 404) return false
+      if (error?.response?.status === 401 || error?.response?.status === 404)
+        return false
       return failureCount < 2
     },
   })
@@ -124,7 +132,7 @@ export function useTenant(tenantId?: string) {
 export function useTenantApplications(tenantId?: string) {
   const { isAuthenticated, user } = useAuth()
   const { data: authData } = useAuthStatus()
-  
+
   const effectiveTenantId = tenantId || authData?.authStatus?.tenantId
 
   return useQuery({
@@ -133,16 +141,20 @@ export function useTenantApplications(tenantId?: string) {
       if (!effectiveTenantId) {
         throw new Error('Tenant ID is required')
       }
-      
+
       // /api/applications returns tenant's enabled apps for any authenticated user
       const response = await api.get('/applications')
-      
+
       if (response.data?.success) {
         // /api/applications returns { success, data: [...] }; tenant-apps returns { success, data: { applications: [...] } }
-        const apps = response.data.data?.applications ?? response.data.data ?? response.data.applications ?? []
+        const apps =
+          response.data.data?.applications ??
+          response.data.data ??
+          response.data.applications ??
+          []
         return Array.isArray(apps) ? apps : []
       }
-      
+
       throw new Error('Failed to fetch tenant applications')
     },
     enabled: !!isAuthenticated && !!user && !!effectiveTenantId,
@@ -153,7 +165,7 @@ export function useTenantApplications(tenantId?: string) {
       return failureCount < 2
     },
     // Return empty array as placeholder
-    placeholderData: []
+    placeholderData: [],
   })
 }
 
@@ -165,21 +177,23 @@ export function useApplicationAllocations(entityId?: string) {
     queryKey: queryKeys.applicationAllocations(entityId),
     queryFn: async () => {
       if (entityId) {
-        const response = await api.get(`/admin/credits/entity/${entityId}/application-allocations`)
-        
+        const response = await api.get(
+          `/admin/credits/entity/${entityId}/application-allocations`
+        )
+
         if (response.data?.success) {
           const allocations = response.data.data?.allocations || []
           return allocations
         }
       } else {
         const response = await api.get('/admin/credits/application-allocations')
-        
+
         if (response.data?.success) {
           const allocations = response.data.data?.allocations || []
           return allocations
         }
       }
-      
+
       throw new Error('Failed to fetch application allocations')
     },
     enabled: !!isAuthenticated && !!user,
@@ -189,7 +203,7 @@ export function useApplicationAllocations(entityId?: string) {
       if (error?.response?.status === 401) return false
       return failureCount < 2
     },
-    placeholderData: []
+    placeholderData: [],
   })
 }
 
@@ -197,23 +211,26 @@ export function useApplicationAllocations(entityId?: string) {
 // Multiple components can call this — TanStack Query deduplicates by queryKey.
 // IMPORTANT: the default options object is stable (module-level constant) so all
 // callers that pass no options share the exact same query key and cache entry.
-const DEFAULT_NOTIFICATION_OPTIONS = {} as const;
+const DEFAULT_NOTIFICATION_OPTIONS = {} as const
 
-export function useNotifications(options: {
-  limit?: number;
-  offset?: number;
-  includeRead?: boolean;
-  includeDismissed?: boolean;
-  type?: string;
-  priority?: string;
-} = DEFAULT_NOTIFICATION_OPTIONS) {
+export function useNotifications(
+  options: {
+    limit?: number
+    offset?: number
+    includeRead?: boolean
+    includeDismissed?: boolean
+    type?: string
+    priority?: string
+  } = DEFAULT_NOTIFICATION_OPTIONS
+) {
   const { isAuthenticated, user } = useAuth()
 
   // Stable key: only include non-default options to avoid different {} refs
-  const hasCustomOptions = options !== DEFAULT_NOTIFICATION_OPTIONS && Object.keys(options).length > 0;
+  const hasCustomOptions =
+    options !== DEFAULT_NOTIFICATION_OPTIONS && Object.keys(options).length > 0
   const queryKey = hasCustomOptions
     ? [...queryKeys.notifications, options]
-    : queryKeys.notifications;
+    : queryKeys.notifications
 
   return useQuery({
     queryKey,
@@ -222,8 +239,10 @@ export function useNotifications(options: {
 
       if (options.limit) params.append('limit', options.limit.toString())
       if (options.offset) params.append('offset', options.offset.toString())
-      if (options.includeRead !== undefined) params.append('includeRead', options.includeRead.toString())
-      if (options.includeDismissed !== undefined) params.append('includeDismissed', options.includeDismissed.toString())
+      if (options.includeRead !== undefined)
+        params.append('includeRead', options.includeRead.toString())
+      if (options.includeDismissed !== undefined)
+        params.append('includeDismissed', options.includeDismissed.toString())
       if (options.type) params.append('type', options.type)
       if (options.priority) params.append('priority', options.priority)
 
@@ -244,7 +263,7 @@ export function useNotifications(options: {
       if (error?.response?.status === 401) return false
       return failureCount < 2
     },
-    placeholderData: []
+    placeholderData: [],
   })
 }
 
@@ -252,7 +271,9 @@ export function useNotifications(options: {
 // Eliminates the /api/notifications/unread-count endpoint entirely.
 export function useUnreadCount() {
   const { data: notifications = [] } = useNotifications()
-  const count = (notifications as Array<{ isRead?: boolean }>).filter(n => !n.isRead).length
+  const count = (notifications as Array<{ isRead?: boolean }>).filter(
+    (n) => !n.isRead
+  ).length
   return { data: count }
 }
 
@@ -279,9 +300,9 @@ export function useCreditStatusQuery(enabled: boolean = true) {
 
 // Shared credit usage summary hook
 export function useCreditUsageSummary(params?: {
-  period?: 'day' | 'week' | 'month' | 'year';
-  startDate?: string;
-  endDate?: string;
+  period?: 'day' | 'week' | 'month' | 'year'
+  startDate?: string
+  endDate?: string
 }) {
   const { isAuthenticated, user } = useAuth()
 
@@ -323,11 +344,11 @@ export function useCreditStats() {
 
 // Shared credit transaction history hook
 export function useCreditTransactionHistory(params?: {
-  page?: number;
-  limit?: number;
-  type?: string;
-  startDate?: string;
-  endDate?: string;
+  page?: number
+  limit?: number
+  type?: string
+  startDate?: string
+  endDate?: string
 }) {
   const { isAuthenticated, user } = useAuth()
 
@@ -358,7 +379,10 @@ export function useSubscriptionCurrent() {
         const response = await subscriptionAPI.getCurrent()
         return response.data.data
       } catch (error: any) {
-        console.error('❌ useSubscriptionCurrent: Error fetching subscription:', error)
+        console.error(
+          '❌ useSubscriptionCurrent: Error fetching subscription:',
+          error
+        )
         if (error.response?.status === 404) {
           return {
             plan: 'free',
@@ -366,7 +390,7 @@ export function useSubscriptionCurrent() {
             currentPeriodEnd: null,
             trialEnd: null,
             amount: 0,
-            currency: 'USD'
+            currency: 'USD',
           }
         }
         throw error
@@ -388,12 +412,12 @@ export function useUsers(entityId?: string | null) {
     queryFn: async () => {
       const params = entityId ? { entityId } : {}
       const response = await api.get('/tenants/current/users', { params })
-      
+
       if (response.data.success) {
         const users = response.data.data || []
         return users
       }
-      
+
       throw new Error('Failed to fetch users')
     },
     enabled: !!isAuthenticated && !!user,
@@ -403,61 +427,71 @@ export function useUsers(entityId?: string | null) {
       if (error?.response?.status === 401) return false
       return failureCount < 2
     },
-    placeholderData: []
+    placeholderData: [],
   })
 }
 
 // Shared roles hook with caching
-export function useRoles(filters?: { search?: string; type?: 'all' | 'custom' | 'system' }) {
+export function useRoles(filters?: {
+  search?: string
+  type?: 'all' | 'custom' | 'system'
+}) {
   const { isAuthenticated, user } = useAuth()
 
   return useQuery({
     queryKey: queryKeys.roles(filters),
     queryFn: async () => {
-      
       // Try the new all roles endpoint first, fallback to paginated endpoint
       try {
         const response = await api.get('/admin/roles/all')
-        
+
         if (response.data.success) {
           let rolesData = response.data.data || []
-          
+
           // Apply filters client-side if needed
           if (filters?.search) {
             const searchLower = filters.search.toLowerCase()
-            rolesData = rolesData.filter((role: any) => 
-              role.roleName?.toLowerCase().includes(searchLower) ||
-              role.description?.toLowerCase().includes(searchLower)
+            rolesData = rolesData.filter(
+              (role: any) =>
+                role.roleName?.toLowerCase().includes(searchLower) ||
+                role.description?.toLowerCase().includes(searchLower)
             )
           }
-          
+
           if (filters?.type === 'system') {
-            rolesData = rolesData.filter((role: any) => role.isSystemRole === true)
+            rolesData = rolesData.filter(
+              (role: any) => role.isSystemRole === true
+            )
           } else if (filters?.type === 'custom') {
-            rolesData = rolesData.filter((role: any) => role.isSystemRole === false)
+            rolesData = rolesData.filter(
+              (role: any) => role.isSystemRole === false
+            )
           }
-          
+
           return rolesData
         }
       } catch (error: any) {
-        console.warn('⚠️ Failed to fetch from /admin/roles/all, trying fallback:', error.message)
+        console.warn(
+          '⚠️ Failed to fetch from /admin/roles/all, trying fallback:',
+          error.message
+        )
       }
-      
+
       // Fallback to paginated endpoint
       const response = await api.get('/permissions/roles', {
         params: {
           search: filters?.search,
           type: filters?.type !== 'all' ? filters?.type : undefined,
           page: 1,
-          limit: 100 // Max allowed by API
-        }
+          limit: 100, // Max allowed by API
+        },
       })
-      
+
       if (response.data.success) {
         const rolesData = response.data.data?.data || response.data.data || []
         return rolesData
       }
-      
+
       throw new Error('Failed to fetch roles')
     },
     enabled: !!isAuthenticated && !!user,
@@ -466,7 +500,7 @@ export function useRoles(filters?: { search?: string; type?: 'all' | 'custom' | 
     retry: (failureCount, error: any) => {
       if (error?.response?.status === 401) return false
       return failureCount < 2
-    }
+    },
   })
 }
 
@@ -477,7 +511,6 @@ export function useOnboardingStatus() {
   return useQuery({
     queryKey: queryKeys.onboardingStatus,
     queryFn: async () => {
-      
       // Build query params with user info as fallback for token validation failures
       const params = new URLSearchParams()
       if (user?.id) {
@@ -486,10 +519,10 @@ export function useOnboardingStatus() {
       if (user?.email) {
         params.append('email', user.email)
       }
-      
+
       const queryString = params.toString()
       const url = `/onboarding/status${queryString ? `?${queryString}` : ''}`
-      
+
       const response = await api.get(url)
       return response.data
     },
@@ -508,31 +541,51 @@ export function useInvalidateQueries() {
   const queryClient = useQueryClient()
 
   return {
-    invalidateAuthStatus: () => queryClient.invalidateQueries({ queryKey: queryKeys.authStatus }),
-    invalidateCreditStatus: () => queryClient.invalidateQueries({ queryKey: queryKeys.creditStatus }),
-    invalidateOnboardingStatus: () => queryClient.invalidateQueries({ queryKey: queryKeys.onboardingStatus }),
-    invalidateEntityScope: () => queryClient.invalidateQueries({ queryKey: queryKeys.entityScope }),
-    invalidateTenant: (tenantId?: string) => queryClient.invalidateQueries({ queryKey: [...queryKeys.tenant, tenantId] }),
-    invalidateTenantApps: (tenantId: string) => queryClient.invalidateQueries({ queryKey: queryKeys.tenantApps(tenantId) }),
-    invalidateApplicationAllocations: (entityId?: string) => queryClient.invalidateQueries({ queryKey: queryKeys.applicationAllocations(entityId) }),
-    invalidateNotifications: () => queryClient.invalidateQueries({ queryKey: queryKeys.notifications }),
-    invalidateUnreadCount: () => queryClient.invalidateQueries({ queryKey: queryKeys.unreadCount }),
-    invalidateUsers: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
-    invalidateEntities: (tenantId?: string) => queryClient.invalidateQueries({ queryKey: queryKeys.entities(tenantId || '') }),
+    invalidateAuthStatus: () =>
+      queryClient.invalidateQueries({ queryKey: queryKeys.authStatus }),
+    invalidateCreditStatus: () =>
+      queryClient.invalidateQueries({ queryKey: queryKeys.creditStatus }),
+    invalidateOnboardingStatus: () =>
+      queryClient.invalidateQueries({ queryKey: queryKeys.onboardingStatus }),
+    invalidateEntityScope: () =>
+      queryClient.invalidateQueries({ queryKey: queryKeys.entityScope }),
+    invalidateTenant: (tenantId?: string) =>
+      queryClient.invalidateQueries({
+        queryKey: [...queryKeys.tenant, tenantId],
+      }),
+    invalidateTenantApps: (tenantId: string) =>
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.tenantApps(tenantId),
+      }),
+    invalidateApplicationAllocations: (entityId?: string) =>
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.applicationAllocations(entityId),
+      }),
+    invalidateNotifications: () =>
+      queryClient.invalidateQueries({ queryKey: queryKeys.notifications }),
+    invalidateUnreadCount: () =>
+      queryClient.invalidateQueries({ queryKey: queryKeys.unreadCount }),
+    invalidateUsers: () =>
+      queryClient.invalidateQueries({ queryKey: ['users'] }),
+    invalidateEntities: (tenantId?: string) =>
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.entities(tenantId || ''),
+      }),
     invalidateRoles: () => {
       queryClient.invalidateQueries({ queryKey: ['roles'] })
       // Also invalidate user management queries so useAvailableRoles reflects new roles immediately
       queryClient.invalidateQueries({ queryKey: ['users'] })
     },
     invalidateAll: () => queryClient.invalidateQueries(),
-    prefetchAuthStatus: () => queryClient.prefetchQuery({
-      queryKey: queryKeys.authStatus,
-      queryFn: async () => {
-        const response = await api.get('/admin/auth-status')
-        return response.data
-      },
-      staleTime: 2 * 60 * 1000,
-    }),
+    prefetchAuthStatus: () =>
+      queryClient.prefetchQuery({
+        queryKey: queryKeys.authStatus,
+        queryFn: async () => {
+          const response = await api.get('/admin/auth-status')
+          return response.data
+        },
+        staleTime: 2 * 60 * 1000,
+      }),
   }
 }
 

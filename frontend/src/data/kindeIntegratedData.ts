@@ -1,4 +1,4 @@
-import { PermissionItem, User, Role } from './mockPermissions'
+import { PermissionItem, Role } from './mockPermissions'
 
 // Kinde Layer - Basic Tool Access
 export interface IdpPermission {
@@ -14,7 +14,11 @@ export interface IdpPermission {
 // Enhanced Permission with Granular Controls
 export interface GranularPermission extends PermissionItem {
   idpPermissionId?: string
-  restrictions: GranularRestriction[]
+  /** @deprecated legacy IDP field carried by the mock data; use idpPermissionId */
+  kindePermissionId?: string
+  // Restrictions are referenced by their GranularRestriction.id (see granularRestrictions),
+  // but inline GranularRestriction objects are also permitted.
+  restrictions: (GranularRestriction | string)[]
   contexts: PermissionContext[]
   valueConstraints: ValueConstraint[]
   timeConstraints: TimeConstraint[]
@@ -25,8 +29,20 @@ export interface GranularPermission extends PermissionItem {
 export interface GranularRestriction {
   id: string
   name: string
-  type: 'value_limit' | 'time_based' | 'location_based' | 'data_scope' | 'action_frequency' | 'approval_required'
-  category: 'financial' | 'temporal' | 'geographical' | 'data_privacy' | 'workflow' | 'security'
+  type:
+    | 'value_limit'
+    | 'time_based'
+    | 'location_based'
+    | 'data_scope'
+    | 'action_frequency'
+    | 'approval_required'
+  category:
+    | 'financial'
+    | 'temporal'
+    | 'geographical'
+    | 'data_privacy'
+    | 'workflow'
+    | 'security'
   icon: string
   color: string
   configurable: boolean
@@ -69,7 +85,12 @@ export interface DataAccessRule {
 export interface PermissionContext {
   id: string
   name: string
-  trigger: 'record_value' | 'user_role' | 'time_period' | 'approval_status' | 'record_age'
+  trigger:
+    | 'record_value'
+    | 'user_role'
+    | 'time_period'
+    | 'approval_status'
+    | 'record_age'
   conditions: any
   effects: {
     enableActions?: string[]
@@ -119,10 +140,14 @@ export const granularRestrictions: GranularRestriction[] = [
     validation: {
       min: 1000,
       max: 10000000,
-      required: true
+      required: true,
     },
-    affectedActions: ['crm.deals.create', 'crm.deals.edit', 'crm.deals.approve'],
-    description: 'Maximum deal value that can be created or edited'
+    affectedActions: [
+      'crm.deals.create',
+      'crm.deals.edit',
+      'crm.deals.approve',
+    ],
+    description: 'Maximum deal value that can be created or edited',
   },
   {
     id: 'time_business_hours',
@@ -132,10 +157,15 @@ export const granularRestrictions: GranularRestriction[] = [
     icon: '🕒',
     color: '#3B82F6',
     configurable: true,
-    defaultValue: { start: '09:00', end: '17:00', timezone: 'UTC', weekdays: true },
+    defaultValue: {
+      start: '09:00',
+      end: '17:00',
+      timezone: 'UTC',
+      weekdays: true,
+    },
     validation: { required: false },
     affectedActions: ['hr.payroll.process', 'accounting.invoices.approve'],
-    description: 'Restrict access to business hours only'
+    description: 'Restrict access to business hours only',
   },
   {
     id: 'approval_high_value',
@@ -145,10 +175,14 @@ export const granularRestrictions: GranularRestriction[] = [
     icon: '✋',
     color: '#F59E0B',
     configurable: true,
-    defaultValue: { threshold: 25000, approvers: ['manager'], escalation: true },
+    defaultValue: {
+      threshold: 25000,
+      approvers: ['manager'],
+      escalation: true,
+    },
     validation: { required: true },
     affectedActions: ['crm.deals.approve', 'accounting.expenses.approve'],
-    description: 'Requires approval for high-value transactions'
+    description: 'Requires approval for high-value transactions',
   },
   {
     id: 'data_own_records',
@@ -160,8 +194,12 @@ export const granularRestrictions: GranularRestriction[] = [
     configurable: false,
     defaultValue: true,
     validation: { required: false },
-    affectedActions: ['crm.contacts.view', 'crm.deals.view', 'hr.employees.view'],
-    description: 'User can only access their own records'
+    affectedActions: [
+      'crm.contacts.view',
+      'crm.deals.view',
+      'hr.employees.view',
+    ],
+    description: 'User can only access their own records',
   },
   {
     id: 'location_office_only',
@@ -174,7 +212,7 @@ export const granularRestrictions: GranularRestriction[] = [
     defaultValue: { allowedIPs: ['192.168.1.0/24'], geoRestriction: true },
     validation: { required: false },
     affectedActions: ['hr.payroll.view', 'accounting.reports.export'],
-    description: 'Access restricted to office locations'
+    description: 'Access restricted to office locations',
   },
   {
     id: 'frequency_daily_limit',
@@ -187,8 +225,8 @@ export const granularRestrictions: GranularRestriction[] = [
     defaultValue: { daily: 100, hourly: 10 },
     validation: { min: 1, max: 1000, required: true },
     affectedActions: ['crm.contacts.export', 'hr.employees.export'],
-    description: 'Limit number of actions per time period'
-  }
+    description: 'Limit number of actions per time period',
+  },
 ]
 
 // Kinde Permissions (Tool-level access)
@@ -200,7 +238,7 @@ export const idpPermissions: IdpPermission[] = [
     tool: 'crm',
     type: 'tool_access',
     subscriptionLevel: 'starter',
-    isEnabled: true
+    isEnabled: true,
   },
   {
     id: 'kinde_hr_access',
@@ -209,7 +247,7 @@ export const idpPermissions: IdpPermission[] = [
     tool: 'hr',
     type: 'tool_access',
     subscriptionLevel: 'professional',
-    isEnabled: true
+    isEnabled: true,
   },
   {
     id: 'kinde_advanced_analytics',
@@ -218,7 +256,7 @@ export const idpPermissions: IdpPermission[] = [
     tool: 'all',
     type: 'feature_flag',
     subscriptionLevel: 'enterprise',
-    isEnabled: false
+    isEnabled: false,
   },
   {
     id: 'kinde_api_access',
@@ -227,8 +265,8 @@ export const idpPermissions: IdpPermission[] = [
     tool: 'all',
     type: 'feature_flag',
     subscriptionLevel: 'professional',
-    isEnabled: true
-  }
+    isEnabled: true,
+  },
 ]
 
 // Enhanced Granular Permissions
@@ -236,7 +274,8 @@ export const granularPermissions: GranularPermission[] = [
   {
     id: 'crm.contacts.view',
     name: 'View Contacts',
-    description: 'View and browse contact information with customizable restrictions',
+    description:
+      'View and browse contact information with customizable restrictions',
     category: 'CRM - Contacts',
     tool: 'crm',
     resource: 'contacts',
@@ -254,33 +293,33 @@ export const granularPermissions: GranularPermission[] = [
         conditions: { contact_value: { $gte: 100000 } },
         effects: {
           enableActions: ['crm.contacts.priority_support'],
-          addRestrictions: ['approval_high_value']
-        }
-      }
+          addRestrictions: ['approval_high_value'],
+        },
+      },
     ],
     valueConstraints: [
       {
         field: 'contact_value',
         operator: '<=',
         value: 500000,
-        currency: 'USD'
-      }
+        currency: 'USD',
+      },
     ],
     timeConstraints: [
       {
         type: 'business_hours',
         value: { start: '09:00', end: '17:00' },
-        timezone: 'UTC'
-      }
+        timezone: 'UTC',
+      },
     ],
     dataAccessRules: [
       {
         scope: 'team_records',
         filters: { department: 'sales' },
         fieldRestrictions: ['ssn', 'personal_notes'],
-        exportLimits: { daily: 100, weekly: 500, monthly: 2000 }
-      }
-    ]
+        exportLimits: { daily: 100, weekly: 500, monthly: 2000 },
+      },
+    ],
   },
   {
     id: 'crm.deals.approve',
@@ -294,7 +333,11 @@ export const granularPermissions: GranularPermission[] = [
     color: '#059669',
     level: 'admin',
     kindePermissionId: 'kinde_crm_access',
-    restrictions: ['financial_deal_limit', 'approval_high_value', 'time_business_hours'],
+    restrictions: [
+      'financial_deal_limit',
+      'approval_high_value',
+      'time_business_hours',
+    ],
     contexts: [
       {
         id: 'weekend_approval',
@@ -303,34 +346,34 @@ export const granularPermissions: GranularPermission[] = [
         conditions: { isWeekend: true, dealValue: { $gte: 50000 } },
         effects: {
           disableActions: ['crm.deals.approve'],
-          addRestrictions: ['approval_high_value']
-        }
-      }
+          addRestrictions: ['approval_high_value'],
+        },
+      },
     ],
     valueConstraints: [
       {
         field: 'deal_value',
         operator: '<=',
         value: 1000000,
-        currency: 'USD'
-      }
+        currency: 'USD',
+      },
     ],
     timeConstraints: [
       {
         type: 'business_hours',
         value: { start: '08:00', end: '18:00' },
-        timezone: 'UTC'
-      }
+        timezone: 'UTC',
+      },
     ],
     dataAccessRules: [
       {
         scope: 'department_records',
         filters: { status: 'pending_approval' },
         fieldRestrictions: [],
-        exportLimits: { daily: 50, weekly: 200, monthly: 800 }
-      }
-    ]
-  }
+        exportLimits: { daily: 50, weekly: 200, monthly: 800 },
+      },
+    ],
+  },
 ]
 
 // Custom Role Templates
@@ -343,10 +386,15 @@ export const customRoleTemplates: CustomRole[] = [
     icon: '🏆',
     type: 'custom',
     userCount: 0,
-    permissions: ['crm.contacts.view', 'crm.contacts.create', 'crm.deals.view', 'crm.deals.create'],
+    permissions: [
+      'crm.contacts.view',
+      'crm.contacts.create',
+      'crm.deals.view',
+      'crm.deals.create',
+    ],
     restrictions: {
       'crm.deals.value_limit': 500000,
-      'crm.contacts.bulk_actions': true
+      'crm.contacts.bulk_actions': true,
     },
     createdAt: new Date().toISOString(),
     isDefault: false,
@@ -360,22 +408,22 @@ export const customRoleTemplates: CustomRole[] = [
       excludePermissions: [],
       additionalPermissions: ['crm.deals.approve'],
       overrideRestrictions: {
-        'financial_deal_limit': 500000
-      }
+        financial_deal_limit: 500000,
+      },
     },
     autoAssignmentRules: {
       department: ['sales'],
       seniority: 'senior',
       conditions: [
         { field: 'sales_performance', operator: '>=', value: 90 },
-        { field: 'tenure_months', operator: '>=', value: 12 }
-      ]
+        { field: 'tenure_months', operator: '>=', value: 12 },
+      ],
     },
     approvalWorkflow: {
       required: true,
       approvers: ['sales_director'],
-      escalation: []
-    }
+      escalation: [],
+    },
   },
   {
     id: 'template_financial_controller',
@@ -385,7 +433,11 @@ export const customRoleTemplates: CustomRole[] = [
     icon: '💼',
     type: 'custom',
     userCount: 0,
-    permissions: ['accounting.invoices.view', 'accounting.invoices.create', 'accounting.reports.view'],
+    permissions: [
+      'accounting.invoices.view',
+      'accounting.invoices.create',
+      'accounting.reports.view',
+    ],
     restrictions: {},
     createdAt: new Date().toISOString(),
     isDefault: false,
@@ -397,17 +449,20 @@ export const customRoleTemplates: CustomRole[] = [
     inheritanceRules: {
       inheritAll: true,
       excludePermissions: [],
-      additionalPermissions: ['accounting.reports.export', 'accounting.budgets.approve'],
-      overrideRestrictions: {}
+      additionalPermissions: [
+        'accounting.reports.export',
+        'accounting.budgets.approve',
+      ],
+      overrideRestrictions: {},
     },
     autoAssignmentRules: {
       department: ['finance', 'accounting'],
-      jobTitle: ['controller', 'financial controller', 'finance director']
+      jobTitle: ['controller', 'financial controller', 'finance director'],
     },
     approvalWorkflow: {
       required: true,
       approvers: ['cfo', 'ceo'],
-      escalation: []
-    }
-  }
+      escalation: [],
+    },
+  },
 ]

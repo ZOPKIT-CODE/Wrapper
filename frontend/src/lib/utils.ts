@@ -1,6 +1,6 @@
-import { User } from "@/types/user-management"
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { User } from '@/types/user-management'
+import { clsx, type ClassValue } from 'clsx'
+import { twMerge } from 'tailwind-merge'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -17,7 +17,7 @@ export function formatDate(date: Date | string | null | undefined) {
   return dateObj.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
-    day: 'numeric'
+    day: 'numeric',
   })
 }
 
@@ -42,7 +42,7 @@ export function formatDateTime(date: Date | string | null | undefined) {
 export function formatCurrency(amount: number, currency: string = 'USD') {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: currency.toUpperCase()
+    currency: currency.toUpperCase(),
   }).format(amount)
 }
 
@@ -54,27 +54,27 @@ export function formatPercentage(percentage: number) {
   return new Intl.NumberFormat('en-US', {
     style: 'percent',
     minimumFractionDigits: 2,
-    maximumFractionDigits: 2
+    maximumFractionDigits: 2,
   }).format(percentage)
 }
 
 export const getUserStatus = (user: User): string => {
-  if (!user.isActive) return 'Pending';
-  if (!user.onboardingCompleted) return 'Setup Required';
-  return 'Active';
+  if (!user.isActive) return 'Pending'
+  if (!user.onboardingCompleted) return 'Setup Required'
+  return 'Active'
 }
 
 export const getStatusColor = (user: User): string => {
-  const status = getUserStatus(user);
+  const status = getUserStatus(user)
   switch (status) {
-    case 'Active': 
-      return 'bg-green-100 text-green-800';
-    case 'Pending': 
-      return 'bg-yellow-100 text-yellow-800';
-    case 'Setup Required': 
-      return 'bg-orange-100 text-orange-800';
-    default: 
-      return 'bg-gray-100 text-gray-800';
+    case 'Active':
+      return 'bg-green-100 text-green-800'
+    case 'Pending':
+      return 'bg-yellow-100 text-yellow-800'
+    case 'Setup Required':
+      return 'bg-orange-100 text-orange-800'
+    default:
+      return 'bg-gray-100 text-gray-800'
   }
 }
 
@@ -92,15 +92,17 @@ export class PerformanceMonitor {
       console.warn(`No start time found for measurement: ${name}`)
       return 0
     }
-    
+
     const duration = performance.now() - startTime
     this.measurements.delete(name)
-    
+
     // Log slow operations
     if (duration > 100) {
-      console.warn(`Slow operation detected: ${name} took ${duration.toFixed(2)}ms`)
+      console.warn(
+        `Slow operation detected: ${name} took ${duration.toFixed(2)}ms`
+      )
     }
-    
+
     return duration
   }
 
@@ -116,15 +118,17 @@ export class PerformanceMonitor {
 export class ErrorTracker {
   static captureException(error: Error, context?: any): void {
     console.error('Error captured:', error, context)
-    
+
     // In production, send to error tracking service
     if (import.meta.env.PROD) {
       // Example: Sentry.captureException(error, { extra: context })
     }
   }
 
-  static captureMessage(message: string, level: 'info' | 'warning' | 'error' = 'info'): void {
-    
+  static captureMessage(
+    _message: string,
+    _level: 'info' | 'warning' | 'error' = 'info'
+  ): void {
     // In production, send to monitoring service
     if (import.meta.env.PROD) {
       // Example: Sentry.captureMessage(message, level)
@@ -151,27 +155,32 @@ export function debounce<T extends (...args: any[]) => any>(
 
 // Sleep utility
 export function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms))
+  return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
 /** UUID v4 regex - matches standard UUID format */
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 /** Check if a string is a valid UUID */
 export function isValidUUID(str: string | null | undefined): boolean {
-  return typeof str === 'string' && str.trim() !== '' && UUID_REGEX.test(str.trim());
+  return (
+    typeof str === 'string' && str.trim() !== '' && UUID_REGEX.test(str.trim())
+  )
 }
 
 /** Filter an array of role IDs to only include valid UUIDs (excludes display strings like "No role assigned") */
-export function filterValidRoleIds(roleIds: (string | null | undefined)[]): string[] {
-  return roleIds.filter((id): id is string => isValidUUID(id));
+export function filterValidRoleIds(
+  roleIds: (string | null | undefined)[]
+): string[] {
+  return roleIds.filter((id): id is string => isValidUUID(id))
 }
 
 // Get initials from name
 export function getInitials(name: string): string {
   return name
     .split(' ')
-    .map(word => word.charAt(0))
+    .map((word) => word.charAt(0))
     .join('')
     .toUpperCase()
     .slice(0, 2)
@@ -182,45 +191,48 @@ export function getInitials(name: string): string {
  * Returns true if serverVersion > clientVersion
  * Handles non-semver strings by falling back to string comparison or returning false
  */
-export function isVersionNewer(serverVersion: string, clientVersion: string): boolean {
+export function isVersionNewer(
+  serverVersion: string,
+  clientVersion: string
+): boolean {
   if (!serverVersion || !clientVersion) {
-    return false;
+    return false
   }
 
   // Parse semver strings (x.y.z format)
   const parseVersion = (version: string): number[] => {
     // Remove any leading 'v' and split by '.'
-    const cleaned = version.replace(/^v/i, '').trim();
-    const parts = cleaned.split('.');
-    
+    const cleaned = version.replace(/^v/i, '').trim()
+    const parts = cleaned.split('.')
+
     // Extract numeric parts, defaulting to 0 for missing parts
     return [
       parseInt(parts[0] || '0', 10) || 0,
       parseInt(parts[1] || '0', 10) || 0,
-      parseInt(parts[2] || '0', 10) || 0
-    ];
-  };
+      parseInt(parts[2] || '0', 10) || 0,
+    ]
+  }
 
   try {
-    const serverParts = parseVersion(serverVersion);
-    const clientParts = parseVersion(clientVersion);
+    const serverParts = parseVersion(serverVersion)
+    const clientParts = parseVersion(clientVersion)
 
     // Compare major, minor, patch
     for (let i = 0; i < 3; i++) {
       if (serverParts[i] > clientParts[i]) {
-        return true;
+        return true
       }
       if (serverParts[i] < clientParts[i]) {
-        return false;
+        return false
       }
     }
 
     // Versions are equal
-    return false;
+    return false
   } catch (error) {
     // If parsing fails, fall back to string comparison
     // Only return true if strings are different and server > client lexicographically
     // This is conservative - we don't want to show banner incorrectly
-    return serverVersion !== clientVersion && serverVersion > clientVersion;
+    return serverVersion !== clientVersion && serverVersion > clientVersion
   }
 }

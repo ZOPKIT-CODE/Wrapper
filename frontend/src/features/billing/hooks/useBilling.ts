@@ -10,16 +10,15 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/lib/auth/cognito-auth'
 import { toast } from 'sonner'
 
-import {
-  subscriptionAPI,
-  creditAPI,
-  setIdpTokenGetter,
-  api
-} from '@/lib/api'
+import { subscriptionAPI, creditAPI, setIdpTokenGetter, api } from '@/lib/api'
 import { useSubscriptionCurrent } from '@/hooks/useSharedQueries'
 import { applicationPlansFallback } from '../constants/billingPlans'
 import { mapSubscriptionPlansResponse } from '../utils/mapSubscriptionPlansResponse'
-import type { ApplicationPlan, CheckoutCurrency, CreditPricing } from '@/types/pricing'
+import type {
+  ApplicationPlan,
+  CheckoutCurrency,
+  CreditPricing,
+} from '@/types/pricing'
 
 /** Display subscription shape — subscription table fields only. Credit data comes from useCreditStatusQuery. */
 export interface DisplaySubscription {
@@ -34,11 +33,18 @@ export interface DisplaySubscription {
   [key: string]: unknown
 }
 
-function ensureValidSubscription(sub: DisplaySubscription | null | undefined): DisplaySubscription | null {
+function ensureValidSubscription(
+  sub: DisplaySubscription | null | undefined
+): DisplaySubscription | null {
   if (!sub) return null
   let validCurrentPeriodEnd = sub.currentPeriodEnd
-  if (!validCurrentPeriodEnd || isNaN(new Date(validCurrentPeriodEnd).getTime())) {
-    validCurrentPeriodEnd = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
+  if (
+    !validCurrentPeriodEnd ||
+    isNaN(new Date(validCurrentPeriodEnd).getTime())
+  ) {
+    validCurrentPeriodEnd = new Date(
+      Date.now() + 365 * 24 * 60 * 60 * 1000
+    ).toISOString()
   }
   return { ...sub, currentPeriodEnd: validCurrentPeriodEnd }
 }
@@ -46,14 +52,22 @@ function ensureValidSubscription(sub: DisplaySubscription | null | undefined): D
 const defaultDisplaySubscription: DisplaySubscription = {
   plan: 'free',
   status: 'active',
-  currentPeriodEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+  currentPeriodEnd: new Date(
+    Date.now() + 365 * 24 * 60 * 60 * 1000
+  ).toISOString(),
   amount: 0,
-  currency: 'USD'
+  currency: 'USD',
 }
 
 const BILLING_PRICE_CURRENCY_KEY = 'wrapper.billing.price-currency'
 
-const BILLING_PAGE_TABS = ['subscription', 'topups', 'plans', 'history', 'expiry'] as const
+const BILLING_PAGE_TABS = [
+  'subscription',
+  'topups',
+  'plans',
+  'history',
+  'expiry',
+] as const
 
 function readStoredCheckoutCurrency(): CheckoutCurrency {
   try {
@@ -76,9 +90,8 @@ export function useBilling() {
     allowed: BILLING_PAGE_TABS,
     defaultTab: 'subscription',
   })
-  const [checkoutCurrency, setCheckoutCurrencyState] = useState<CheckoutCurrency>(() =>
-    readStoredCheckoutCurrency()
-  )
+  const [checkoutCurrency, setCheckoutCurrencyState] =
+    useState<CheckoutCurrency>(() => readStoredCheckoutCurrency())
 
   const setCheckoutCurrency = useCallback((c: CheckoutCurrency) => {
     setCheckoutCurrencyState(c)
@@ -91,12 +104,14 @@ export function useBilling() {
   const [isUpgrading, setIsUpgrading] = useState(false)
   const [needsOnboarding, setNeedsOnboarding] = useState(false)
   const [showCancelDialog, setShowCancelDialog] = useState(false)
-  const [selectedPaymentForRefund, setSelectedPaymentForRefund] = useState<string | null>(null)
+  const [selectedPaymentForRefund, setSelectedPaymentForRefund] = useState<
+    string | null
+  >(null)
   const [refundReason, setRefundReason] = useState('')
-  const [profileCompleted, setProfileCompleted] = useState<boolean | null>(null)
-  const [isCheckingProfile, setIsCheckingProfile] = useState(false)
+  const [, setProfileCompleted] = useState<boolean | null>(null)
+  const [, setIsCheckingProfile] = useState(false)
 
-  const { isAuthenticated, isLoading, user, getToken, login } = useAuth()
+  const { isAuthenticated, isLoading, getToken, login } = useAuth()
 
   const upgradeMode = search['upgrade'] === 'true'
   const paymentCancelled = search['payment'] === 'cancelled'
@@ -154,7 +169,7 @@ export function useBilling() {
   const {
     data: subscription,
     isLoading: subscriptionLoading,
-    refetch: refetchSubscription
+    refetch: refetchSubscription,
   } = useSubscriptionCurrent()
 
   const { data: plansFromApi } = useQuery({
@@ -165,11 +180,13 @@ export function useBilling() {
       return mapSubscriptionPlansResponse(raw)
     },
     enabled: isAuthenticated && !mockMode,
-    retry: 1
+    retry: 1,
   })
 
   const applicationPlans: ApplicationPlan[] =
-    plansFromApi && plansFromApi.length > 0 ? plansFromApi : applicationPlansFallback
+    plansFromApi && plansFromApi.length > 0
+      ? plansFromApi
+      : applicationPlansFallback
 
   const { data: creditPricing } = useQuery<CreditPricing>({
     queryKey: ['credit', 'pricing'],
@@ -182,10 +199,7 @@ export function useBilling() {
     retry: 1,
   })
 
-  const {
-    data: creditBalance,
-    refetch: refetchCreditBalance
-  } = useQuery({
+  const { data: creditBalance, refetch: refetchCreditBalance } = useQuery({
     queryKey: ['credit', 'current'],
     queryFn: async () => {
       try {
@@ -193,28 +207,34 @@ export function useBilling() {
         return response.data.data
       } catch (error: unknown) {
         console.warn('Failed to fetch credit balance:', error)
-        return { availableCredits: 0, freeCredits: 0, paidCredits: 0, totalCredits: 0 }
+        return {
+          availableCredits: 0,
+          freeCredits: 0,
+          paidCredits: 0,
+          totalCredits: 0,
+        }
       }
     },
     enabled: isAuthenticated && !mockMode,
-    retry: 1
-  })
-
-  const { data: creditAllocations, isLoading: creditAllocationsLoading } = useQuery({
-    queryKey: ['credit', 'allocations'],
-    queryFn: async () => {
-      try {
-        const response = await creditAPI.getTenantAllocations()
-        return response.data.data ?? []
-      } catch (error: unknown) {
-        console.warn('Failed to fetch credit allocations:', error)
-        return []
-      }
-    },
-    enabled: isAuthenticated && !mockMode,
-    staleTime: 2 * 60 * 1000,
     retry: 1,
   })
+
+  const { data: creditAllocations, isLoading: creditAllocationsLoading } =
+    useQuery({
+      queryKey: ['credit', 'allocations'],
+      queryFn: async () => {
+        try {
+          const response = await creditAPI.getTenantAllocations()
+          return response.data.data ?? []
+        } catch (error: unknown) {
+          console.warn('Failed to fetch credit allocations:', error)
+          return []
+        }
+      },
+      enabled: isAuthenticated && !mockMode,
+      staleTime: 2 * 60 * 1000,
+      retry: 1,
+    })
 
   const { data: entityBalances, isLoading: entityBalancesLoading } = useQuery({
     queryKey: ['credit', 'entity-balances'],
@@ -244,30 +264,41 @@ export function useBilling() {
       }
     },
     enabled: isAuthenticated && !mockMode,
-    retry: 1
+    retry: 1,
   })
 
   const displaySubscription: DisplaySubscription =
-    ensureValidSubscription(subscription as DisplaySubscription) ?? defaultDisplaySubscription
+    ensureValidSubscription(subscription as DisplaySubscription) ??
+    defaultDisplaySubscription
   const displayBillingHistory = billingHistory ?? []
 
   const createCheckoutMutation = useMutation({
-    mutationFn: async ({ planId, currency }: { planId: string; currency: CheckoutCurrency }) => {
+    mutationFn: async ({
+      planId,
+      currency,
+    }: {
+      planId: string
+      currency: CheckoutCurrency
+    }) => {
       if (mockMode) {
         await new Promise((r) => setTimeout(r, 2000))
-        return { checkoutUrl: `https://checkout.stripe.com/pay/mock-${planId}-${currency}#test` }
+        return {
+          checkoutUrl: `https://checkout.stripe.com/pay/mock-${planId}-${currency}#test`,
+        }
       }
       const response = await subscriptionAPI.createCheckout({
         planId,
         currency,
         successUrl: `${window.location.origin}/payment-success?type=credit_purchase&session_id={CHECKOUT_SESSION_ID}`,
-        cancelUrl: `${window.location.origin}/billing?payment=cancelled`
+        cancelUrl: `${window.location.origin}/billing?payment=cancelled`,
       })
       return response.data.data
     },
     onSuccess: (data) => {
       if (data?.checkoutUrl) {
-        toast.success('Redirecting to secure payment page...', { duration: 2000 })
+        toast.success('Redirecting to secure payment page...', {
+          duration: 2000,
+        })
         setTimeout(() => {
           if (mockMode) setIsUpgrading(false)
           else window.location.href = data.checkoutUrl
@@ -277,51 +308,102 @@ export function useBilling() {
         setIsUpgrading(false)
       }
     },
-    onError: (error: unknown & { response?: { data?: { action?: string } }; message?: string }) => {
-      if ((error as { response?: { data?: { action?: string } } })?.response?.data?.action === 'redirect_to_onboarding') {
+    onError: (
+      error: unknown & {
+        response?: { data?: { action?: string } }
+        message?: string
+      }
+    ) => {
+      if (
+        (error as { response?: { data?: { action?: string } } })?.response?.data
+          ?.action === 'redirect_to_onboarding'
+      ) {
         setNeedsOnboarding(true)
-        toast.error('Please complete onboarding first to create a subscription.', { duration: 5000 })
+        toast.error(
+          'Please complete onboarding first to create a subscription.',
+          { duration: 5000 }
+        )
       } else {
-        toast.error((error as { message?: string }).message ?? 'Failed to create checkout session', { duration: 8000 })
+        toast.error(
+          (error as { message?: string }).message ??
+            'Failed to create checkout session',
+          { duration: 8000 }
+        )
       }
       setIsUpgrading(false)
-    }
+    },
   })
 
   const changePlanMutation = useMutation({
-    mutationFn: async ({ planId, currency }: { planId: string; currency: CheckoutCurrency }) => {
-      const response = await subscriptionAPI.changePlan({ planId, currency, billingCycle: 'yearly' })
+    mutationFn: async ({
+      planId,
+      currency,
+    }: {
+      planId: string
+      currency: CheckoutCurrency
+    }) => {
+      const response = await subscriptionAPI.changePlan({
+        planId,
+        currency,
+        billingCycle: 'yearly',
+      })
       return response.data
     },
     onSuccess: (data) => {
       if (data?.checkoutUrl) {
-        toast.success('Redirecting to secure payment page...', { duration: 2000 })
-        setTimeout(() => window.location.href = data.checkoutUrl, 1000)
+        toast.success('Redirecting to secure payment page...', {
+          duration: 2000,
+        })
+        setTimeout(() => (window.location.href = data.checkoutUrl), 1000)
       } else {
-        toast.success(data?.message ?? 'Plan changed successfully!', { duration: 3000 })
+        toast.success(data?.message ?? 'Plan changed successfully!', {
+          duration: 3000,
+        })
         refetchSubscription()
         setIsUpgrading(false)
       }
     },
-    onError: (error: unknown & { response?: { data?: { message?: string } } }) => {
-      toast.error((error as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Failed to change plan')
+    onError: (
+      error: unknown & { response?: { data?: { message?: string } } }
+    ) => {
+      toast.error(
+        (error as { response?: { data?: { message?: string } } })?.response
+          ?.data?.message ?? 'Failed to change plan'
+      )
       setIsUpgrading(false)
-    }
+    },
   })
 
   const refundMutation = useMutation({
-    mutationFn: async ({ paymentId, reason }: { paymentId: string; amount?: number; reason?: string }) => {
-      const response = await subscriptionAPI.processRefund({ paymentId, reason })
+    mutationFn: async ({
+      paymentId,
+      reason,
+    }: {
+      paymentId: string
+      amount?: number
+      reason?: string
+    }) => {
+      const response = await subscriptionAPI.processRefund({
+        paymentId,
+        reason,
+      })
       return response.data
     },
     onSuccess: () => {
       toast.success('Refund processed successfully!', { duration: 3000 })
       setSelectedPaymentForRefund(null)
-      queryClient.invalidateQueries({ queryKey: ['subscription', 'billing-history'] })
+      queryClient.invalidateQueries({
+        queryKey: ['subscription', 'billing-history'],
+      })
     },
-    onError: (error: unknown & { response?: { data?: { message?: string } } }) => {
-      toast.error((error as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Failed to process refund')
-    }
+    onError: (
+      error: unknown & { response?: { data?: { message?: string } } }
+    ) => {
+      toast.error(
+        (error as { response?: { data?: { message?: string } } })?.response
+          ?.data?.message ?? 'Failed to process refund'
+      )
+    },
   })
 
   const checkProfileStatus = async () => {
@@ -379,13 +461,15 @@ export function useBilling() {
     try {
       const selectedPlanData = applicationPlans.find((p) => p.id === planId)
       if (!selectedPlanData) throw new Error('Selected plan not found')
-      const hasActiveSubscription = displaySubscription?.status === 'active' && displaySubscription?.plan !== 'free'
+      const hasActiveSubscription =
+        displaySubscription?.status === 'active' &&
+        displaySubscription?.plan !== 'free'
       if (hasActiveSubscription) {
         try {
           const response = await subscriptionAPI.changePlan({
             planId,
             billingCycle: 'yearly',
-            currency: checkoutCurrency
+            currency: checkoutCurrency,
           })
           const data = response.data.data
           if (data?.upgraded) {
@@ -414,7 +498,7 @@ export function useBilling() {
             planId,
             currency: checkoutCurrency,
             successUrl: `${window.location.origin}/payment-success?type=subscription&session_id={CHECKOUT_SESSION_ID}`,
-            cancelUrl: `${window.location.origin}/billing?payment=cancelled&type=subscription`
+            cancelUrl: `${window.location.origin}/billing?payment=cancelled&type=subscription`,
           })
           if (response.data.data?.checkoutUrl) {
             window.location.href = response.data.data.checkoutUrl
@@ -429,7 +513,7 @@ export function useBilling() {
           planId,
           currency: checkoutCurrency,
           successUrl: `${window.location.origin}/payment-success?type=subscription&session_id={CHECKOUT_SESSION_ID}`,
-          cancelUrl: `${window.location.origin}/billing?payment=cancelled&type=subscription`
+          cancelUrl: `${window.location.origin}/billing?payment=cancelled&type=subscription`,
         })
         if (response.data.data?.checkoutUrl) {
           window.location.href = response.data.data.checkoutUrl
@@ -439,8 +523,11 @@ export function useBilling() {
           queryClient.invalidateQueries({ queryKey: ['credit'] })
         }
       }
-    } catch (error: unknown & { response?: { data?: { message?: string } } }) {
-      toast.error((error as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Failed to purchase plan')
+    } catch (error: unknown) {
+      toast.error(
+        (error as { response?: { data?: { message?: string } } })?.response
+          ?.data?.message ?? 'Failed to purchase plan'
+      )
     } finally {
       setIsUpgrading(false)
       setSelectedPlan(null)
@@ -456,15 +543,22 @@ export function useBilling() {
     if (status?.profileCompleted) {
       setSelectedPlan(planId)
       setIsUpgrading(true)
-      toast.loading(`Setting up your ${planId} plan upgrade...`, { duration: 2000 })
+      toast.loading(`Setting up your ${planId} plan upgrade...`, {
+        duration: 2000,
+      })
       try {
-        await createCheckoutMutation.mutateAsync({ planId, currency: checkoutCurrency })
+        await createCheckoutMutation.mutateAsync({
+          planId,
+          currency: checkoutCurrency,
+        })
       } catch {
         setIsUpgrading(false)
         toast.error('Payment failed. Please try again.')
       }
     } else {
-      navigate({ to: `/dashboard/billing/upgrade?plan=${planId}&currency=${checkoutCurrency}` })
+      navigate({
+        to: `/dashboard/billing/upgrade?plan=${planId}&currency=${checkoutCurrency}`,
+      })
     }
   }
 
@@ -512,6 +606,6 @@ export function useBilling() {
     handleUpgrade,
     checkProfileStatus,
     refetchSubscription,
-    refetchCreditBalance
+    refetchCreditBalance,
   }
 }

@@ -1,45 +1,51 @@
-import React from 'react';
-import { Coins, Calendar, Crown, AlertTriangle, Clock, Shield, ArrowUp, Sparkles } from 'lucide-react';
-import { useCreditStatusQuery, useSubscriptionCurrent } from '@/hooks/useSharedQueries';
-import { useAuth } from '@/lib/auth/cognito-auth';
-import { formatDate } from '@/lib/utils';
-import { cn } from '@/lib/utils';
-import { useNavigate } from '@tanstack/react-router';
+import {
+  Calendar,
+  Crown,
+  AlertTriangle,
+  Clock,
+  Shield,
+  Sparkles,
+} from 'lucide-react'
+import {
+  useCreditStatusQuery,
+  useSubscriptionCurrent,
+} from '@/hooks/useSharedQueries'
+import { formatDate } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 
 interface BillingStatusNavbarProps {
-  className?: string;
+  className?: string
 }
 
 export function BillingStatusNavbar({ className }: BillingStatusNavbarProps) {
-  const { isAuthenticated } = useAuth();
-  const navigate = useNavigate();
-
   // Fetch credit status
-  const { data: creditResponse, isLoading: creditLoading } = useCreditStatusQuery();
+  const { data: creditResponse, isLoading: creditLoading } =
+    useCreditStatusQuery()
 
   // Fetch subscription status using shared hook
-  const { data: subscription, isLoading: subscriptionLoading } = useSubscriptionCurrent();
+  const { data: subscription, isLoading: subscriptionLoading } =
+    useSubscriptionCurrent()
 
-  const creditData = creditResponse?.data;
-  const isLoading = creditLoading || subscriptionLoading;
+  const creditData = creditResponse?.data
+  const isLoading = creditLoading || subscriptionLoading
 
   if (isLoading) {
     return (
-      <div className={cn("flex items-center gap-3 px-3 py-2", className)}>
-        <div className="animate-pulse flex items-center gap-2">
-          <div className="w-4 h-4 bg-gray-300 rounded"></div>
-          <div className="w-16 h-3 bg-gray-300 rounded"></div>
+      <div className={cn('flex items-center gap-3 px-3 py-2', className)}>
+        <div className="flex animate-pulse items-center gap-2">
+          <div className="h-4 w-4 rounded bg-gray-300"></div>
+          <div className="h-3 w-16 rounded bg-gray-300"></div>
         </div>
-        <div className="animate-pulse flex items-center gap-2">
-          <div className="w-4 h-4 bg-gray-300 rounded"></div>
-          <div className="w-12 h-3 bg-gray-300 rounded"></div>
+        <div className="flex animate-pulse items-center gap-2">
+          <div className="h-4 w-4 rounded bg-gray-300"></div>
+          <div className="h-3 w-12 rounded bg-gray-300"></div>
         </div>
       </div>
-    );
+    )
   }
 
   if (!creditData || !subscription) {
-    return null;
+    return null
   }
 
   const {
@@ -49,105 +55,100 @@ export function BillingStatusNavbar({ className }: BillingStatusNavbarProps) {
     seasonalCredits = 0,
     creditExpiry,
     lowBalanceThreshold = 100,
-    criticalBalanceThreshold = 10
-  } = creditData;
+  } = creditData
 
   // Calculate expiry status early
-  const isExpiringSoon = creditExpiry ? new Date(creditExpiry) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) : false;
+  const isExpiringSoon = creditExpiry
+    ? new Date(creditExpiry) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+    : false
 
-  const isLowBalance = availableCredits <= lowBalanceThreshold;
-  const isCriticalBalance = availableCredits <= criticalBalanceThreshold;
-
-  // Determine status color based on credit balance
-  const getStatusColor = () => {
-    if (isCriticalBalance) return 'text-red-600 dark:text-red-400';
-    if (isLowBalance) return 'text-orange-600 dark:text-orange-400';
-    return 'text-green-600 dark:text-green-400';
-  };
+  const isLowBalance = availableCredits <= lowBalanceThreshold
 
   const getExpiryColor = () => {
-    if (isExpiringSoon) return 'text-orange-600 dark:text-orange-400';
-    return 'text-gray-600 dark:text-gray-400';
-  };
+    if (isExpiringSoon) return 'text-orange-600 dark:text-orange-400'
+    return 'text-gray-600 dark:text-gray-400'
+  }
 
   // Map plan IDs to proper plan names
   const planNameMap: Record<string, string> = {
-    'free': 'Free',
-    'starter': 'Starter',
-    'professional': 'Professional',
-    'premium': 'Premium',
-    'enterprise': 'Enterprise',
-    'standard': 'Standard',
-    'credit_based': 'Free' // Map credit_based to Free as default
-  };
-  
+    free: 'Free',
+    starter: 'Starter',
+    professional: 'Professional',
+    premium: 'Premium',
+    enterprise: 'Enterprise',
+    standard: 'Standard',
+    credit_based: 'Free', // Map credit_based to Free as default
+  }
+
   // Get plan name - prioritize mapping, fallback to capitalized plan ID, default to Free
-  const planId = subscription.plan || 'free';
-  const planName = planNameMap[planId] || 
-                   (planId === 'credit_based' ? 'Free' : planId.charAt(0).toUpperCase() + planId.slice(1)) || 
-                   'Free';
-  const isFreePlan = subscription.plan === 'free' || !subscription.plan;
-  const showUpgradePrompt = isFreePlan || subscription.plan === 'starter';
-
-  // Get categorized expiry dates - prioritize subscription expiry for consistency
-  // Use subscription.currentPeriodEnd as the primary source (same as billing page)
-  const subscriptionExpiryDate = subscription?.currentPeriodEnd;
-  // Credit expiry fields come exclusively from creditData (useCreditStatusQuery).
-  // subscription no longer carries credit data.
-  const freeCreditsExpiry = creditData?.freeCreditsExpiry || subscriptionExpiryDate;
-  const paidCreditsExpiry = creditData?.paidCreditsExpiry ?? null;
-  const seasonalCreditsExpiry = creditData?.seasonalCreditsExpiry ?? null;
-  
-  // Format date consistently with billing page (includes year)
-  const formatExpiryDate = (date: string | null | undefined) => {
-    if (!date) return null;
-    return formatDate(date); // Uses the same formatDate utility as billing page
-  };
-
+  const planId = subscription.plan || 'free'
+  const planName =
+    planNameMap[planId] ||
+    (planId === 'credit_based'
+      ? 'Free'
+      : planId.charAt(0).toUpperCase() + planId.slice(1)) ||
+    'Free'
   return (
-    <div className={cn("flex items-center gap-3 px-4 py-2 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300", className)}>
+    <div
+      className={cn(
+        'flex items-center gap-3 rounded-xl border border-gray-100 bg-white px-4 py-2 shadow-sm transition-all duration-300 hover:shadow-md',
+        className
+      )}
+    >
       {/* Subscription Plan Expiry - SHOWN FIRST */}
       {subscription?.currentPeriodEnd && (
-        <div className="group flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-gray-50 transition-colors cursor-help" title={`Plan ${subscription.plan === 'free' ? 'expires' : 'renews'} on ${formatDate(subscription.currentPeriodEnd)}`}>
-          <Calendar className={cn("w-4 h-4 transition-transform group-hover:scale-110", getExpiryColor())} />
+        <div
+          className="group flex cursor-help items-center gap-2 rounded-lg px-2 py-1 transition-colors hover:bg-gray-50"
+          title={`Plan ${subscription.plan === 'free' ? 'expires' : 'renews'} on ${formatDate(subscription.currentPeriodEnd)}`}
+        >
+          <Calendar
+            className={cn(
+              'h-4 w-4 transition-transform group-hover:scale-110',
+              getExpiryColor()
+            )}
+          />
           <div className="flex flex-col leading-none">
-            <span className="text-[10px] uppercase tracking-wider font-semibold text-gray-500">
+            <span className="text-[10px] font-semibold tracking-wider text-gray-500 uppercase">
               {subscription.plan === 'free' ? 'Expires' : 'Renews'}
             </span>
-            <span className={cn("text-xs font-bold", getExpiryColor())}>
+            <span className={cn('text-xs font-bold', getExpiryColor())}>
               {formatDate(subscription.currentPeriodEnd).split(',')[0]}
             </span>
           </div>
         </div>
       )}
 
-      <div className="w-px h-8 bg-gray-100"></div>
+      <div className="h-8 w-px bg-gray-100"></div>
 
       {/* Subscription Plan */}
-      <div className="group flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-purple-50 transition-colors">
-        <div className="p-1 bg-purple-100 rounded-full group-hover:bg-purple-200 transition-colors">
-          <Crown className="w-3 h-3 text-purple-600" />
+      <div className="group flex items-center gap-2 rounded-lg px-2 py-1 transition-colors hover:bg-purple-50">
+        <div className="rounded-full bg-purple-100 p-1 transition-colors group-hover:bg-purple-200">
+          <Crown className="h-3 w-3 text-purple-600" />
         </div>
         <div className="flex flex-col leading-none">
-          <span className="text-[10px] uppercase tracking-wider font-semibold text-gray-500">Plan</span>
+          <span className="text-[10px] font-semibold tracking-wider text-gray-500 uppercase">
+            Plan
+          </span>
           <span className="text-xs font-bold text-[#1B2E5A] capitalize">
             {planName}
           </span>
         </div>
       </div>
 
-      <div className="w-px h-8 bg-gray-100"></div>
+      <div className="h-8 w-px bg-gray-100"></div>
 
       {/* Credits Section - Show Paid and Free Credits */}
       <div className="flex items-center gap-1">
         {/* Paid Credits */}
         {paidCredits > 0 && (
-          <div className="group flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-amber-50 transition-colors">
-            <div className="p-1 bg-amber-100 rounded-full group-hover:bg-amber-200 transition-colors">
-              <Shield className="w-3 h-3 text-amber-600" />
+          <div className="group flex items-center gap-2 rounded-lg px-2 py-1 transition-colors hover:bg-amber-50">
+            <div className="rounded-full bg-amber-100 p-1 transition-colors group-hover:bg-amber-200">
+              <Shield className="h-3 w-3 text-amber-600" />
             </div>
             <div className="flex flex-col leading-none">
-              <span className="text-[10px] uppercase tracking-wider font-semibold text-gray-500">Paid</span>
+              <span className="text-[10px] font-semibold tracking-wider text-gray-500 uppercase">
+                Paid
+              </span>
               <span className="text-xs font-bold text-[#1B2E5A]">
                 {paidCredits.toLocaleString()}
               </span>
@@ -156,12 +157,14 @@ export function BillingStatusNavbar({ className }: BillingStatusNavbarProps) {
         )}
 
         {/* Free Credits */}
-        <div className="group flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-emerald-50 transition-colors">
-          <div className="p-1 bg-emerald-100 rounded-full group-hover:bg-emerald-200 transition-colors">
-            <Clock className="w-3 h-3 text-emerald-600" />
+        <div className="group flex items-center gap-2 rounded-lg px-2 py-1 transition-colors hover:bg-emerald-50">
+          <div className="rounded-full bg-emerald-100 p-1 transition-colors group-hover:bg-emerald-200">
+            <Clock className="h-3 w-3 text-emerald-600" />
           </div>
           <div className="flex flex-col leading-none">
-            <span className="text-[10px] uppercase tracking-wider font-semibold text-gray-500">Free</span>
+            <span className="text-[10px] font-semibold tracking-wider text-gray-500 uppercase">
+              Free
+            </span>
             <span className="text-xs font-bold text-[#1B2E5A]">
               {freeCredits.toLocaleString()}
             </span>
@@ -170,12 +173,14 @@ export function BillingStatusNavbar({ className }: BillingStatusNavbarProps) {
 
         {/* Seasonal Credits - Only if present */}
         {seasonalCredits > 0 && (
-          <div className="group flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-indigo-50 transition-colors">
-            <div className="p-1 bg-indigo-100 rounded-full group-hover:bg-indigo-200 transition-colors">
-              <Sparkles className="w-3 h-3 text-indigo-600" />
+          <div className="group flex items-center gap-2 rounded-lg px-2 py-1 transition-colors hover:bg-indigo-50">
+            <div className="rounded-full bg-indigo-100 p-1 transition-colors group-hover:bg-indigo-200">
+              <Sparkles className="h-3 w-3 text-indigo-600" />
             </div>
             <div className="flex flex-col leading-none">
-              <span className="text-[10px] uppercase tracking-wider font-semibold text-gray-500">Seasonal</span>
+              <span className="text-[10px] font-semibold tracking-wider text-gray-500 uppercase">
+                Seasonal
+              </span>
               <span className="text-xs font-bold text-[#1B2E5A]">
                 {seasonalCredits.toLocaleString()}
               </span>
@@ -187,12 +192,12 @@ export function BillingStatusNavbar({ className }: BillingStatusNavbarProps) {
       {/* Low Balance Warning */}
       {(isLowBalance || isExpiringSoon) && (
         <>
-          <div className="w-px h-8 bg-gray-100"></div>
-          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-orange-50 animate-pulse">
-            <AlertTriangle className="w-4 h-4 text-orange-500" />
+          <div className="h-8 w-px bg-gray-100"></div>
+          <div className="flex h-8 w-8 animate-pulse items-center justify-center rounded-full bg-orange-50">
+            <AlertTriangle className="h-4 w-4 text-orange-500" />
           </div>
         </>
       )}
     </div>
-  );
+  )
 }

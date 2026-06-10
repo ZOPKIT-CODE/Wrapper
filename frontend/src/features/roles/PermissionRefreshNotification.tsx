@@ -1,105 +1,141 @@
-import React, { useState, useEffect } from 'react';
-import { RefreshCw, AlertCircle, X, Check } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useUserContext } from '@/contexts/UserContextProvider';
-import { toast } from 'sonner';
-import ActionableAlert from '@/components/common/data-display/ActionableAlert';
+import React, { useState, useEffect } from 'react'
+import { RefreshCw, Check } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { useUserContextSafe } from '@/contexts/UserContextProvider'
+import { toast } from 'sonner'
+import ActionableAlert from '@/components/common/data-display/ActionableAlert'
 
 interface PermissionRefreshNotificationProps {
-  className?: string;
+  className?: string
 }
 
-export const PermissionRefreshNotification: React.FC<PermissionRefreshNotificationProps> = ({ className }) => {
-  // Guard against context not being available
-  let contextValue;
-  try {
-    contextValue = useUserContext();
-  } catch (error) {
-    return null;
-  }
+export const PermissionRefreshNotification: React.FC<
+  PermissionRefreshNotificationProps
+> = ({ className }) => {
+  // Guard against context not being available. useUserContextSafe returns null
+  // instead of throwing, so the hook is always called unconditionally.
+  const contextValue = useUserContextSafe()
 
-  const { refreshUserContext, loading, lastRefreshTime, autoRefresh, setAutoRefresh } = contextValue;
-  const [isVisible, setIsVisible] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [lastNotificationTime, setLastNotificationTime] = useState<Date | null>(null);
+  const refreshUserContext = contextValue?.refreshUserContext
+  const loading = contextValue?.loading
+  const lastRefreshTime = contextValue?.lastRefreshTime
+  const autoRefresh = contextValue?.autoRefresh
+  const setAutoRefresh = contextValue?.setAutoRefresh
+  const [isVisible, setIsVisible] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [lastNotificationTime, setLastNotificationTime] = useState<Date | null>(
+    null
+  )
 
   // Show notification when permissions might be stale (5+ minutes since last refresh)
   useEffect(() => {
     const checkPermissionStaleness = () => {
-      if (!lastRefreshTime) return;
-      
-      const now = new Date();
-      const timeSinceRefresh = now.getTime() - lastRefreshTime.getTime();
-      const staleThreshold = 5 * 60 * 1000; // 5 minutes
-      
-      if (timeSinceRefresh > staleThreshold && !autoRefresh) {
-        setIsVisible(true);
-        setLastNotificationTime(now);
-      }
-    };
+      if (!lastRefreshTime) return
 
-    const interval = setInterval(checkPermissionStaleness, 60000); // Check every minute
-    return () => clearInterval(interval);
-  }, [lastRefreshTime, autoRefresh]);
+      const now = new Date()
+      const timeSinceRefresh = now.getTime() - lastRefreshTime.getTime()
+      const staleThreshold = 5 * 60 * 1000 // 5 minutes
+
+      if (timeSinceRefresh > staleThreshold && !autoRefresh) {
+        setIsVisible(true)
+        setLastNotificationTime(now)
+      }
+    }
+
+    const interval = setInterval(checkPermissionStaleness, 60000) // Check every minute
+    return () => clearInterval(interval)
+  }, [lastRefreshTime, autoRefresh])
 
   // Listen for storage events from admin panel
   useEffect(() => {
     const handleStorageChange = (event: StorageEvent) => {
       if (event.key === 'permissions_updated') {
-        const data = event.newValue ? JSON.parse(event.newValue) : null;
+        const data = event.newValue ? JSON.parse(event.newValue) : null
         if (data && data.timestamp) {
-          setIsVisible(true);
-          setLastNotificationTime(new Date(data.timestamp));
-          toast.info('Your permissions may have been updated. Click to refresh.');
+          setIsVisible(true)
+          setLastNotificationTime(new Date(data.timestamp))
+          toast.info(
+            'Your permissions may have been updated. Click to refresh.'
+          )
           // Remove the flag after showing notification
-          localStorage.removeItem('permissions_updated');
+          localStorage.removeItem('permissions_updated')
         }
       }
-    };
+    }
 
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+    window.addEventListener('storage', handleStorageChange)
+    return () => window.removeEventListener('storage', handleStorageChange)
+  }, [])
 
   const handleRefresh = async () => {
-    setIsRefreshing(true);
+    setIsRefreshing(true)
     try {
-      await refreshUserContext();
-      setIsVisible(false);
-      toast.success('Permissions refreshed successfully!');
+      await refreshUserContext?.()
+      setIsVisible(false)
+      toast.success('Permissions refreshed successfully!')
     } catch (error) {
-      toast.error('Failed to refresh permissions');
+      toast.error('Failed to refresh permissions')
     } finally {
-      setIsRefreshing(false);
+      setIsRefreshing(false)
     }
-  };
+  }
 
   const handleDismiss = () => {
-    setIsVisible(false);
-  };
+    setIsVisible(false)
+  }
 
   const handleEnableAutoRefresh = () => {
-    setAutoRefresh(true);
-    setIsVisible(false);
-    toast.success('Auto-refresh enabled. Your permissions will stay up to date.');
-  };
+    setAutoRefresh?.(true)
+    setIsVisible(false)
+    toast.success(
+      'Auto-refresh enabled. Your permissions will stay up to date.'
+    )
+  }
 
-  if (!isVisible) return null;
+  if (!contextValue) return null
+  if (!isVisible) return null
 
   return (
     <div className={`fixed top-4 right-4 z-50 max-w-md ${className}`}>
-      <ActionableAlert title="Your permissions may have changed" subTitle={lastNotificationTime ? `Last detected: ${lastNotificationTime.toLocaleTimeString()}` : lastRefreshTime ? `Last refreshed: ${lastRefreshTime.toLocaleTimeString()}` : undefined}
-               actions={<div className="flex gap-2 mt-2">
-        <Button size="sm" variant="outline" className="border-yellow-300 text-yellow-800 hover:bg-yellow-100" onClick={handleRefresh} disabled={isRefreshing || loading}>
-          {isRefreshing || loading ? <RefreshCw className="h-3 w-3 mr-1 animate-spin" /> : <RefreshCw className="h-3 w-3 mr-1" />}
-          Refresh Now
-        </Button>
-        <Button size="sm" variant="outline" className="border-yellow-300 text-yellow-800 hover:bg-yellow-100" onClick={handleEnableAutoRefresh}>
-          <Check className="h-3 w-3 mr-1" />
-          Enable Auto-refresh
-        </Button>
-      </div>} severity="warning" onClose={handleDismiss} />
+      <ActionableAlert
+        title="Your permissions may have changed"
+        subTitle={
+          lastNotificationTime
+            ? `Last detected: ${lastNotificationTime.toLocaleTimeString()}`
+            : lastRefreshTime
+              ? `Last refreshed: ${lastRefreshTime.toLocaleTimeString()}`
+              : undefined
+        }
+        actions={
+          <div className="mt-2 flex gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-yellow-300 text-yellow-800 hover:bg-yellow-100"
+              onClick={handleRefresh}
+              disabled={isRefreshing || loading}
+            >
+              {isRefreshing || loading ? (
+                <RefreshCw className="mr-1 h-3 w-3 animate-spin" />
+              ) : (
+                <RefreshCw className="mr-1 h-3 w-3" />
+              )}
+              Refresh Now
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-yellow-300 text-yellow-800 hover:bg-yellow-100"
+              onClick={handleEnableAutoRefresh}
+            >
+              <Check className="mr-1 h-3 w-3" />
+              Enable Auto-refresh
+            </Button>
+          </div>
+        }
+        severity="warning"
+        onClose={handleDismiss}
+      />
       {/* <Alert className="border-yellow-200 bg-yellow-50 text-yellow-800">
         <AlertCircle className="h-4 w-4" />
         <AlertDescription className="pr-8">
@@ -152,54 +188,62 @@ export const PermissionRefreshNotification: React.FC<PermissionRefreshNotificati
         </Button>
       </Alert> */}
     </div>
-  );
-};
+  )
+}
 
 // Component for showing current permission status in header/nav
-export const PermissionStatusIndicator: React.FC<{ className?: string }> = ({ className }) => {
-  // Guard against context not being available
-  let contextValue;
-  try {
-    contextValue = useUserContext();
-  } catch (error) {
-    return null;
-  }
+export const PermissionStatusIndicator: React.FC<{ className?: string }> = ({
+  className,
+}) => {
+  // Guard against context not being available. useUserContextSafe returns null
+  // instead of throwing, so the hook is always called unconditionally.
+  const contextValue = useUserContextSafe()
 
-  const { lastRefreshTime, autoRefresh, refreshUserContext, loading } = contextValue;
-  const [isStale, setIsStale] = useState(false);
+  const lastRefreshTime = contextValue?.lastRefreshTime
+  const autoRefresh = contextValue?.autoRefresh
+  const refreshUserContext = contextValue?.refreshUserContext
+  const loading = contextValue?.loading
+  const [isStale, setIsStale] = useState(false)
 
   useEffect(() => {
     const checkStaleness = () => {
-      if (!lastRefreshTime) return;
-      
-      const now = new Date();
-      const timeSinceRefresh = now.getTime() - lastRefreshTime.getTime();
-      const staleThreshold = 10 * 60 * 1000; // 10 minutes
-      
-      setIsStale(timeSinceRefresh > staleThreshold && !autoRefresh);
-    };
+      if (!lastRefreshTime) return
 
-    const interval = setInterval(checkStaleness, 30000); // Check every 30 seconds
-    checkStaleness(); // Check immediately
+      const now = new Date()
+      const timeSinceRefresh = now.getTime() - lastRefreshTime.getTime()
+      const staleThreshold = 10 * 60 * 1000 // 10 minutes
 
-    return () => clearInterval(interval);
-  }, [lastRefreshTime, autoRefresh]);
+      setIsStale(timeSinceRefresh > staleThreshold && !autoRefresh)
+    }
 
-  if (!lastRefreshTime) return null;
+    const interval = setInterval(checkStaleness, 30000) // Check every 30 seconds
+    checkStaleness() // Check immediately
+
+    return () => clearInterval(interval)
+  }, [lastRefreshTime, autoRefresh])
+
+  if (!contextValue) return null
+  if (!lastRefreshTime) return null
 
   return (
     <div className={`flex items-center gap-2 text-sm ${className}`}>
       <div className="flex items-center gap-1">
-        <div className={`w-2 h-2 rounded-full ${
-          isStale ? 'bg-yellow-500' : autoRefresh ? 'bg-green-500' : 'bg-gray-400'
-        }`} />
+        <div
+          className={`h-2 w-2 rounded-full ${
+            isStale
+              ? 'bg-yellow-500'
+              : autoRefresh
+                ? 'bg-green-500'
+                : 'bg-gray-400'
+          }`}
+        />
         <span className="text-gray-600">
           {isStale && 'Permissions may be outdated'}
           {!isStale && autoRefresh && 'Auto-refreshing'}
           {!isStale && !autoRefresh && 'Up to date'}
         </span>
       </div>
-      
+
       {isStale && (
         <Button
           size="sm"
@@ -217,25 +261,30 @@ export const PermissionStatusIndicator: React.FC<{ className?: string }> = ({ cl
         </Button>
       )}
     </div>
-  );
-};
+  )
+}
 
 // Hook for triggering permission refresh from admin actions
 export const usePermissionRefreshTrigger = () => {
   const triggerRefresh = (message?: string) => {
     // Set a flag that other tabs can detect
-    localStorage.setItem('permissions_updated', JSON.stringify({
-      timestamp: new Date().toISOString(),
-      message: message || 'Permissions have been updated'
-    }));
-    
-    // Trigger storage event in current tab
-    window.dispatchEvent(new StorageEvent('storage', {
-      key: 'permissions_updated',
-      newValue: localStorage.getItem('permissions_updated'),
-      oldValue: null
-    }));
-  };
+    localStorage.setItem(
+      'permissions_updated',
+      JSON.stringify({
+        timestamp: new Date().toISOString(),
+        message: message || 'Permissions have been updated',
+      })
+    )
 
-  return { triggerRefresh };
-}; 
+    // Trigger storage event in current tab
+    window.dispatchEvent(
+      new StorageEvent('storage', {
+        key: 'permissions_updated',
+        newValue: localStorage.getItem('permissions_updated'),
+        oldValue: null,
+      })
+    )
+  }
+
+  return { triggerRefresh }
+}

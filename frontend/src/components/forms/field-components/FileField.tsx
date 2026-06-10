@@ -1,11 +1,16 @@
-import React, { useRef } from 'react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { FormControl, FormDescription, FormField, FormItem, FormLabel } from '@/components/ui/form';
-import { FieldComponentProps, FileField as FileFieldType } from '../types';
-import { cn } from '@/lib/utils';
-import { ConditionalErrorMessage } from '../components/ConditionalErrorMessage';
-import { Upload, X } from 'lucide-react';
+import React, { useRef } from 'react'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import {
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+} from '@/components/ui/form'
+import { FieldComponentProps, FileField as FileFieldType } from '../types'
+import { cn } from '@/lib/utils'
+import { ConditionalErrorMessage } from '../components/ConditionalErrorMessage'
+import { Upload, X } from 'lucide-react'
 
 /**
  * File field component using shadcn Form components
@@ -16,67 +21,70 @@ export const FileField: React.FC<FieldComponentProps> = ({
   onChange,
   onBlur,
   disabled,
-  className
+  className,
 }) => {
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const fileField = field as FileFieldType;
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const fileField = field as FileFieldType
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
+    const files = e.target.files
     if (files) {
       if (fileField.multiple) {
-        const fileArray = Array.from(files);
-        onChange(fileArray);
+        const fileArray = Array.from(files)
+        onChange(fileArray)
       } else {
-        onChange(files[0] || null);
+        onChange(files[0] || null)
       }
     }
-  };
+  }
 
   const handleRemoveFile = () => {
-    onChange(null);
+    onChange(null)
     if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+      fileInputRef.current.value = ''
     }
-  };
+  }
 
   const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
+    if (bytes === 0) return '0 Bytes'
+    const k = 1024
+    const sizes = ['Bytes', 'KB', 'MB', 'GB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+  }
 
   const getFileDisplayName = () => {
     if (Array.isArray(value)) {
-      return `${value.length} file(s) selected`;
+      return `${value.length} file(s) selected`
     }
-    return value?.name || '';
-  };
+    return value instanceof File ? value.name : ''
+  }
 
   return (
     <FormField
       name={field.id}
       render={({ field: formField }) => (
         <FormItem className={cn(className)}>
-          <FormLabel className={cn(
-            field.required && "after:content-['*'] after:ml-0.5 after:text-destructive"
-          )}>
+          <FormLabel
+            className={cn(
+              field.required &&
+                "after:text-destructive after:ml-0.5 after:content-['*']"
+            )}
+          >
             {field.label}
           </FormLabel>
-          
+
           <div className="space-y-2">
             <Input
               ref={fileInputRef}
               type="file"
               onChange={(e) => {
-                formField.onChange(e);
-                handleFileChange(e);
+                formField.onChange(e)
+                handleFileChange(e)
               }}
-              onBlur={(e) => {
-                formField.onBlur(e);
-                onBlur?.();
+              onBlur={() => {
+                formField.onBlur()
+                onBlur?.()
               }}
               disabled={disabled || field.disabled}
               accept={fileField.accept}
@@ -84,7 +92,7 @@ export const FileField: React.FC<FieldComponentProps> = ({
               className="hidden"
               required={field.required}
             />
-            
+
             <div className="flex items-center space-x-2">
               <Button
                 type="button"
@@ -96,7 +104,7 @@ export const FileField: React.FC<FieldComponentProps> = ({
                 <Upload className="h-4 w-4" />
                 <span>Choose File{fileField.multiple ? 's' : ''}</span>
               </Button>
-              
+
               {value && (
                 <Button
                   type="button"
@@ -109,26 +117,24 @@ export const FileField: React.FC<FieldComponentProps> = ({
                 </Button>
               )}
             </div>
-            
+
             {value && (
-              <div className="text-sm text-muted-foreground">
+              <div className="text-muted-foreground text-sm">
                 {getFileDisplayName()}
-                {!Array.isArray(value) && value?.size && (
+                {value instanceof File && value.size && (
                   <span className="ml-2">({formatFileSize(value.size)})</span>
                 )}
               </div>
             )}
           </div>
-          
+
           {field.helpText && (
-            <FormDescription>
-              {field.helpText}
-            </FormDescription>
+            <FormDescription>{field.helpText}</FormDescription>
           )}
-          
+
           <ConditionalErrorMessage fieldName={field.id} />
         </FormItem>
       )}
     />
-  );
-};
+  )
+}
