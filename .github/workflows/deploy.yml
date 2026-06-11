@@ -17,7 +17,7 @@ on:
       service:
         description: "ECS service to deploy"
         type: choice
-        options: [wrapper-web, crm-web, fa-web, fa-consumer]
+        options: [wrapper-web, crm-web, crm-worker, fa-web, fa-consumer]
         default: wrapper-web
       image_tag:
         description: "Image tag to deploy (blank = build from this commit; for rollback pass an existing SHA)"
@@ -59,6 +59,8 @@ jobs:
           case "$SERVICE" in
             wrapper-web) echo "ecr=wrapper-backend"; echo "ecr=wrapper-backend" >>"$GITHUB_OUTPUT"; echo "migrate=true" >>"$GITHUB_OUTPUT"; echo "health=https://api.staging.zopkit.com/health" >>"$GITHUB_OUTPUT"; echo "build_here=true" >>"$GITHUB_OUTPUT" ;;
             crm-web)     echo "ecr=crm-backend" >>"$GITHUB_OUTPUT"; echo "migrate=true"  >>"$GITHUB_OUTPUT"; echo "health=https://crm-api.staging.zopkit.com/health" >>"$GITHUB_OUTPUT"; echo "build_here=false" >>"$GITHUB_OUTPUT" ;;
+            # crm-worker shares crm-web's image + DB; crm-web's deploy migrates. Headless: no health URL.
+            crm-worker)  echo "ecr=crm-backend" >>"$GITHUB_OUTPUT"; echo "migrate=false" >>"$GITHUB_OUTPUT"; echo "health=" >>"$GITHUB_OUTPUT"; echo "build_here=false" >>"$GITHUB_OUTPUT" ;;
             fa-web)      echo "ecr=fa-backend"  >>"$GITHUB_OUTPUT"; echo "migrate=true"  >>"$GITHUB_OUTPUT"; echo "health=https://accounting-api.staging.zopkit.com/api/health/health/live" >>"$GITHUB_OUTPUT"; echo "build_here=false" >>"$GITHUB_OUTPUT" ;;
             fa-consumer) echo "ecr=fa-backend"  >>"$GITHUB_OUTPUT"; echo "migrate=false" >>"$GITHUB_OUTPUT"; echo "health=" >>"$GITHUB_OUTPUT"; echo "build_here=false" >>"$GITHUB_OUTPUT" ;;
             *) echo "Unknown service $SERVICE"; exit 1 ;;
