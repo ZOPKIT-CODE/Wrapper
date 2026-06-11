@@ -87,6 +87,12 @@ echo "════════════════════════�
 read -r -p "Proceed? [y/N] " ok; [[ "$ok" == "y" || "$ok" == "Y" ]] || exit 0
 
 # ---- 1+2. build & push -----------------------------------------------------
+# Idempotent rerun: ECR tags are IMMUTABLE — if this tag already exists, the
+# image is final; skip build+push instead of dying on the re-push (lets a
+# deploy that failed at a later step be re-run with the same tag).
+if aws ecr describe-images --repository-name "$ECR_REPO" --image-ids imageTag="$TAG"      --region "$AWS_REGION" >/dev/null 2>&1; then
+  echo "▶ [1/6+2/6] image $TAG already in ECR (immutable) — skipping build+push"
+else
 echo "▶ [1/6] docker build (linux/amd64)…"
 ( cd "$REPO" && docker build --platform linux/amd64 -f "$DOCKERFILE" --target "$TARGET" -t "$IMAGE" "$CONTEXT" )
 
@@ -94,6 +100,7 @@ echo "▶ [2/6] push to ECR…"
 aws ecr get-login-password --region "$AWS_REGION" \
   | docker login --username AWS --password-stdin "$ECR_HOST"
 docker push "$IMAGE"
+fi
 
 # ---- 3. release: record tag + terraform apply (registers the NEW task def) --
 # Must run BEFORE migrate: ECS run-task cannot override a container image, so the
