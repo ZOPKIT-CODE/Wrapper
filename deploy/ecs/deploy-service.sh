@@ -6,7 +6,7 @@
 #   Example: ./deploy-service.sh wrapper-web            # tag = current git SHA
 #            ./deploy-service.sh wrapper-web 1a2b3c4     # explicit tag
 #
-# Services: wrapper-web | crm-web | fa-web | fa-consumer
+# Services: wrapper-web | crm-web | crm-worker | fa-web | fa-consumer
 #
 # What it does (the 6-step deploy unit from the playbook):
 #   1. build   — docker build for linux/amd64 (Fargate is x86)
@@ -41,7 +41,7 @@ source "$SCRIPT_DIR/deploy.env"
 TASK_ASSIGN_PUBLIC_IP="${TASK_ASSIGN_PUBLIC_IP:-DISABLED}"  # ENABLED for public-subnet/no-NAT setups
 
 SERVICE="${1:-}"
-[[ -n "$SERVICE" ]] || { echo "Usage: $0 <wrapper-web|crm-web|fa-web|fa-consumer> [image_tag]"; exit 1; }
+[[ -n "$SERVICE" ]] || { echo "Usage: $0 <wrapper-web|crm-web|crm-worker|fa-web|fa-consumer> [image_tag]"; exit 1; }
 
 # ---- per-service config ----------------------------------------------------
 # Each backend lives in its OWN repo; set REPO/DOCKERFILE/CONTEXT accordingly.
@@ -58,6 +58,11 @@ case "$SERVICE" in
     DOCKERFILE="${CRM_DOCKERFILE:-server/Dockerfile}"; CONTEXT="."; TARGET="${CRM_TARGET:-production}"
     MIGRATE=true;  MIGRATE_CMD="${CRM_MIGRATE_CMD:-[\"npm\",\"run\",\"db:migrate\"]}"  # VERIFY for CRM image
     HEALTH_URL="${CRM_HEALTH_URL:-}" ;;
+  crm-worker)
+    ECR_REPO="crm-backend"; REPO="${CRM_REPO:?set CRM_REPO in deploy.env}"
+    DOCKERFILE="${CRM_DOCKERFILE:-server/Dockerfile}"; CONTEXT="."; TARGET="${CRM_TARGET:-production}"
+    MIGRATE=false; MIGRATE_CMD=''   # shares crm-web's DB — crm-web's deploy migrates
+    HEALTH_URL='' ;;                # headless (PROCESS_ROLE=worker), no ALB
   fa-web)
     ECR_REPO="fa-backend"; REPO="${FA_REPO:?set FA_REPO in deploy.env}"
     DOCKERFILE="${FA_DOCKERFILE:-server/Dockerfile}"; CONTEXT="."; TARGET="${FA_TARGET:-production}"
