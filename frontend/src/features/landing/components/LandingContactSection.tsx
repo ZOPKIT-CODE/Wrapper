@@ -1,24 +1,28 @@
-import { Button } from '@/components/ui/button';
-import api from '@/lib/api';
-import { toast } from 'sonner';
+import { Button } from '@/components/ui/button'
+import api from '@/lib/api'
+import { toast } from 'sonner'
+import { LandingSectionIntro } from '@/features/landing/components/LandingSectionIntro'
 
 export type ContactFormState = {
-  name: string;
-  email: string;
-  company: string;
-  phone: string;
-  jobTitle: string;
-  companySize: string;
-  preferredTime: string;
-  comments: string;
-};
+  name: string
+  email: string
+  company: string
+  phone: string
+  jobTitle: string
+  companySize: string
+  preferredTime: string
+  comments: string
+}
 
 type LandingContactSectionProps = {
-  contactForm: ContactFormState;
-  setContactForm: React.Dispatch<React.SetStateAction<ContactFormState>>;
-  isSubmitting: boolean;
-  setIsSubmitting: (value: boolean) => void;
-};
+  contactForm: ContactFormState
+  setContactForm: React.Dispatch<React.SetStateAction<ContactFormState>>
+  isSubmitting: boolean
+  setIsSubmitting: (value: boolean) => void
+}
+
+const inputClass = 'landing-input h-10 px-3'
+const textareaClass = 'landing-input min-h-[7.5rem] resize-none px-3 py-2.5'
 
 export function LandingContactSection({
   contactForm,
@@ -27,22 +31,22 @@ export function LandingContactSection({
   setIsSubmitting,
 }: LandingContactSectionProps) {
   return (
-    <section id="contact" className="py-16 sm:py-24 bg-background border-b border-border">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid lg:grid-cols-12 gap-10 lg:gap-14">
-          <div className="lg:col-span-4 lg:pt-2">
-            <p className="landing-section-eyebrow landing-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
-              Sales
-            </p>
-            <h2 className="mt-2 landing-display text-3xl font-semibold text-foreground">
-              Talk to sales
-            </h2>
-            <p className="mt-3 text-muted-foreground text-sm leading-relaxed max-w-xs">
-              We reply within one business day. Hyderabad office, Mon-Fri 9-6 IST.
-            </p>
+    <section
+      id="contact"
+      className="landing-section border-border bg-background border-b py-20 sm:py-24"
+    >
+      <div className="landing-section-inner">
+        <div className="grid gap-10 lg:grid-cols-12 lg:gap-14">
+          <div className="lg:col-span-4 lg:pt-1">
+            <LandingSectionIntro
+              eyebrow="Sales"
+              title="Talk to sales"
+              lead="We reply within one business day. Hyderabad office, Mon–Fri 9–6 IST."
+              className="max-w-xs"
+            />
             <dl className="mt-8 space-y-4 text-sm">
               <div>
-                <dt className="landing-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                <dt className="landing-mono text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
                   Email
                 </dt>
                 <dd className="mt-1">
@@ -55,33 +59,40 @@ export function LandingContactSection({
                 </dd>
               </div>
               <div>
-                <dt className="landing-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                <dt className="landing-mono text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
                   Phone
                 </dt>
                 <dd className="mt-1">
-                  <a href="tel:8971055515" className="text-foreground hover:text-primary transition-colors">
+                  <a
+                    href="tel:8971055515"
+                    className="text-foreground hover:text-primary transition-colors"
+                  >
                     8971055515
                   </a>
                 </dd>
               </div>
               <div>
-                <dt className="landing-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                <dt className="landing-mono text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
                   Office
                 </dt>
-                <dd className="mt-1 text-foreground">Hi-Tech City, Hyderabad</dd>
+                <dd className="text-foreground mt-1">
+                  Hi-Tech City, Hyderabad
+                </dd>
               </div>
             </dl>
           </div>
 
           <form
-            className="lg:col-span-8 landing-contact-form grid sm:grid-cols-2 gap-x-6 gap-y-5"
+            className="landing-contact-form landing-fade-in landing-fade-in-delay-1 grid gap-x-6 gap-y-5 sm:grid-cols-2 lg:col-span-8"
             onSubmit={async (e) => {
-              e.preventDefault();
-              setIsSubmitting(true);
+              e.preventDefault()
+              setIsSubmitting(true)
               try {
-                const response = await api.post('/contact/submit', contactForm);
+                const response = await api.post('/contact/submit', contactForm)
                 if (response.data.success) {
-                  toast.success("Thanks. We'll be in touch within one business day.");
+                  toast.success(
+                    "Thanks. We'll be in touch within one business day."
+                  )
                   setContactForm({
                     name: '',
                     email: '',
@@ -91,9 +102,9 @@ export function LandingContactSection({
                     companySize: '',
                     preferredTime: '',
                     comments: '',
-                  });
+                  })
                 } else {
-                  throw new Error(response.data.message || 'Failed to submit');
+                  throw new Error(response.data.message || 'Failed to submit')
                 }
               } catch (error: unknown) {
                 const message =
@@ -108,28 +119,36 @@ export function LandingContactSection({
                   'message' in error.response.data &&
                   typeof error.response.data.message === 'string'
                     ? error.response.data.message
-                    : 'Something went wrong. Please try again.';
-                toast.error(message);
+                    : 'Something went wrong. Please try again.'
+                toast.error(message)
               } finally {
-                setIsSubmitting(false);
+                setIsSubmitting(false)
               }
             }}
           >
             <div className="space-y-1.5 sm:col-span-1">
-              <label htmlFor="c-name" className="text-sm font-medium">
+              <label
+                htmlFor="c-name"
+                className="text-foreground text-sm font-medium"
+              >
                 Name
               </label>
               <input
                 id="c-name"
                 required
                 value={contactForm.name}
-                onChange={(e) => setContactForm((p) => ({ ...p, name: e.target.value }))}
-                className="w-full h-10 px-3 rounded-sm border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                onChange={(e) =>
+                  setContactForm((p) => ({ ...p, name: e.target.value }))
+                }
+                className={inputClass}
                 placeholder="Priya Mehta"
               />
             </div>
             <div className="space-y-1.5 sm:col-span-1">
-              <label htmlFor="c-email" className="text-sm font-medium">
+              <label
+                htmlFor="c-email"
+                className="text-foreground text-sm font-medium"
+              >
                 Work email
               </label>
               <input
@@ -137,33 +156,45 @@ export function LandingContactSection({
                 type="email"
                 required
                 value={contactForm.email}
-                onChange={(e) => setContactForm((p) => ({ ...p, email: e.target.value }))}
-                className="w-full h-10 px-3 rounded-sm border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                onChange={(e) =>
+                  setContactForm((p) => ({ ...p, email: e.target.value }))
+                }
+                className={inputClass}
                 placeholder="priya@company.com"
               />
             </div>
             <div className="space-y-1.5 sm:col-span-1">
-              <label htmlFor="c-company" className="text-sm font-medium">
+              <label
+                htmlFor="c-company"
+                className="text-foreground text-sm font-medium"
+              >
                 Company
               </label>
               <input
                 id="c-company"
                 required
                 value={contactForm.company}
-                onChange={(e) => setContactForm((p) => ({ ...p, company: e.target.value }))}
-                className="w-full h-10 px-3 rounded-sm border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                onChange={(e) =>
+                  setContactForm((p) => ({ ...p, company: e.target.value }))
+                }
+                className={inputClass}
                 placeholder="Northline Logistics"
               />
             </div>
             <div className="space-y-1.5 sm:col-span-1">
-              <label htmlFor="c-size" className="text-sm font-medium">
+              <label
+                htmlFor="c-size"
+                className="text-foreground text-sm font-medium"
+              >
                 Team size
               </label>
               <select
                 id="c-size"
                 value={contactForm.companySize}
-                onChange={(e) => setContactForm((p) => ({ ...p, companySize: e.target.value }))}
-                className="w-full h-10 px-3 rounded-sm border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                onChange={(e) =>
+                  setContactForm((p) => ({ ...p, companySize: e.target.value }))
+                }
+                className={inputClass}
               >
                 <option value="">Select</option>
                 <option value="1-10">1-10</option>
@@ -174,23 +205,32 @@ export function LandingContactSection({
               </select>
             </div>
             <div className="space-y-1.5 sm:col-span-2">
-              <label htmlFor="c-msg" className="text-sm font-medium">
+              <label
+                htmlFor="c-msg"
+                className="text-foreground text-sm font-medium"
+              >
                 Message
               </label>
               <textarea
                 id="c-msg"
                 rows={4}
                 value={contactForm.comments}
-                onChange={(e) => setContactForm((p) => ({ ...p, comments: e.target.value }))}
-                className="w-full px-3 py-2.5 rounded-sm border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-ring resize-none"
+                onChange={(e) =>
+                  setContactForm((p) => ({ ...p, comments: e.target.value }))
+                }
+                className={textareaClass}
                 placeholder="What should connect first in your stack?"
               />
             </div>
-            <div className="sm:col-span-2 flex items-center justify-between gap-4 flex-wrap">
-                  <Button type="submit" disabled={isSubmitting} className="landing-btn-primary rounded-full h-10 px-6 font-medium">
+            <div className="flex flex-wrap items-center justify-between gap-4 sm:col-span-2">
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="landing-btn-primary h-10 rounded-full px-6 font-medium"
+              >
                 {isSubmitting ? 'Sending...' : 'Send message'}
               </Button>
-              <p className="text-xs text-muted-foreground landing-mono">
+              <p className="landing-mono text-muted-foreground text-xs">
                 Typical reply within 1 business day
               </p>
             </div>
@@ -198,5 +238,5 @@ export function LandingContactSection({
         </div>
       </div>
     </section>
-  );
+  )
 }

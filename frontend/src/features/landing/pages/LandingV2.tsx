@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect } from 'react'
 
 import { LandingScreenshotHero } from '@/features/landing/components/LandingScreenshotHero'
 import { LandingCapabilityRow } from '@/features/landing/components/LandingCapabilityRow'
@@ -15,6 +15,7 @@ import { consumeSessionRecoveryReason } from '@/lib/auth/session-recovery'
 import { LandingFooter } from '@/components/layout/LandingFooter'
 import { MarketingNavbar } from '@/components/layout/MarketingNavbar'
 import { MarketingPageShell } from '@/components/layout/MarketingPageShell'
+import { useLandingSectionScroll } from '@/features/landing/useLandingSectionScroll'
 
 /** Vercel-minimal screenshot-led landing (design iteration v2). */
 const LandingV2: React.FC = () => {
@@ -29,19 +30,14 @@ const LandingV2: React.FC = () => {
     comments: '',
   })
   const [isSubmittingContact, setIsSubmittingContact] = useState(false)
-
-  const scrollToContact = useCallback(() => {
-    const el = document.getElementById('contact')
-    if (el) el.scrollIntoView({ behavior: 'smooth' })
-  }, [])
-
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'instant' })
-  }, [])
+  const { scrollToContact } = useLandingSectionScroll()
 
   useEffect(() => {
     const recoveryReason = consumeSessionRecoveryReason()
-    if (recoveryReason === 'invalid_grant' || recoveryReason === 'session_expired') {
+    if (
+      recoveryReason === 'invalid_grant' ||
+      recoveryReason === 'session_expired'
+    ) {
       toast.error('Your session has expired. Please sign in again.', {
         id: 'session-expired',
         duration: 6000,
@@ -54,7 +50,7 @@ const LandingV2: React.FC = () => {
 
   return (
     <MarketingPageShell>
-      <MarketingNavbar minimal />
+      <MarketingNavbar minimal onBookDemo={scrollToContact} />
 
       <main>
         <LandingScreenshotHero onBookDemo={scrollToContact} />

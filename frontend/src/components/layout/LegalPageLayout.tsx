@@ -1,17 +1,18 @@
-import React, { useEffect } from 'react';
-import { LandingFooter } from '@/components/layout/LandingFooter';
-import { MarketingNavbar } from '@/components/layout/MarketingNavbar';
-import { MarketingPageShell } from '@/components/layout/MarketingPageShell';
+import React, { useEffect } from 'react'
+import { LandingFooter } from '@/components/layout/LandingFooter'
+import { MarketingNavbar } from '@/components/layout/MarketingNavbar'
+import { MarketingPageShell } from '@/components/layout/MarketingPageShell'
+import { useMarketingContactCta } from '@/features/landing/useMarketingContactCta'
 
 interface LegalPageLayoutProps {
-  title: string;
-  lastUpdated?: string;
-  children: React.ReactNode;
-  wide?: boolean;
-  contained?: boolean;
-  docIntro?: React.ReactNode;
-  tableOfContents?: { id: string; label: string }[];
-  hideStartTrialCta?: boolean;
+  title: string
+  lastUpdated?: string
+  children: React.ReactNode
+  wide?: boolean
+  contained?: boolean
+  docIntro?: React.ReactNode
+  tableOfContents?: { id: string; label: string }[]
+  hideStartTrialCta?: boolean
 }
 
 export function LegalPageLayout({
@@ -23,37 +24,48 @@ export function LegalPageLayout({
   docIntro,
   tableOfContents,
 }: LegalPageLayoutProps) {
+  const scrollToContact = useMarketingContactCta()
+
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'instant' });
-  }, []);
+    window.scrollTo({ top: 0, behavior: 'instant' })
+  }, [])
 
   return (
     <MarketingPageShell>
-      <MarketingNavbar minimal />
+      <MarketingNavbar minimal onBookDemo={scrollToContact} />
 
-      <main className={`relative pt-28 sm:pt-32 pb-16 mx-auto px-4 sm:px-6 lg:px-8 ${wide ? 'max-w-6xl' : 'max-w-4xl'}`}>
+      <main
+        className={`relative mx-auto px-4 pt-28 pb-16 sm:px-6 sm:pt-32 lg:px-8 ${wide ? 'max-w-6xl' : 'max-w-4xl'}`}
+      >
         {contained ? (
-          <div className="border-b border-border pb-12 md:pb-16">
-            <h1 className="landing-display text-3xl md:text-4xl font-semibold text-foreground tracking-tight">{title}</h1>
+          <div className="border-border border-b pb-12 md:pb-16">
+            <h1 className="landing-display text-foreground text-3xl font-semibold tracking-tight md:text-4xl">
+              {title}
+            </h1>
             {lastUpdated && (
-              <p className="landing-mono text-xs text-muted-foreground mt-3">Last updated: {lastUpdated}</p>
+              <p className="landing-mono text-muted-foreground mt-3 text-xs">
+                Last updated: {lastUpdated}
+              </p>
             )}
             {docIntro && (
-              <div className="mt-6 text-muted-foreground text-[15px] leading-relaxed max-w-3xl border-l border-border pl-4">
+              <div className="text-muted-foreground border-border mt-6 max-w-3xl border-l pl-4 text-[15px] leading-relaxed">
                 {docIntro}
               </div>
             )}
             {tableOfContents && tableOfContents.length > 0 && (
-              <nav aria-label="Table of contents" className="mt-10 pt-8 border-t border-border">
-                <p className="landing-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground mb-3">
+              <nav
+                aria-label="Table of contents"
+                className="border-border mt-10 border-t pt-8"
+              >
+                <p className="landing-mono text-muted-foreground mb-3 text-[11px] tracking-[0.12em] uppercase">
                   On this page
                 </p>
-                <ol className="space-y-2 text-sm text-muted-foreground">
+                <ol className="text-muted-foreground space-y-2 text-sm">
                   {tableOfContents.map((item) => (
                     <li key={item.id}>
                       <a
                         href={`#${item.id}`}
-                        className="landing-text-link hover:text-foreground transition-colors underline-offset-4 hover:underline"
+                        className="landing-text-link hover:text-foreground underline-offset-4 transition-colors hover:underline"
                       >
                         {item.label}
                       </a>
@@ -62,7 +74,9 @@ export function LegalPageLayout({
                 </ol>
               </nav>
             )}
-            <div className="mt-10 max-w-none flex flex-col gap-0">{children}</div>
+            <div className="mt-10 flex max-w-none flex-col gap-0">
+              {children}
+            </div>
           </div>
         ) : (
           <>{children}</>
@@ -71,5 +85,5 @@ export function LegalPageLayout({
 
       <LandingFooter marketing />
     </MarketingPageShell>
-  );
+  )
 }

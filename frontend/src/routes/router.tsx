@@ -23,6 +23,7 @@ import { RootRedirect } from './RootRedirect'
 import { OnboardingHintBanner } from '@/components/OnboardingHintBanner'
 import {
   Landing,
+  LandingV2,
   ProductPage,
   IndustryPage,
   PrivacyPolicy,
@@ -174,6 +175,11 @@ const landingRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/landing',
   component: AuthRedirectLanding,
+})
+const landingV2Route = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/landing-v2',
+  component: LandingV2,
 })
 const productRoute = createRoute({
   getParentRoute: () => rootRoute,

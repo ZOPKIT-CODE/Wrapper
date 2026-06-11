@@ -1,112 +1,65 @@
-import { useNavigate } from '@tanstack/react-router';
-
-import { Button } from '@/components/ui/button';
-
-import { LandingBrowserFrame } from '@/features/landing/components/LandingBrowserFrame';
-
-
+import { useNavigate } from '@tanstack/react-router'
+import { Button } from '@/components/ui/button'
+import { LandingBrowserFrame } from '@/features/landing/components/LandingBrowserFrame'
+import { LandingSectionIntro } from '@/features/landing/components/LandingSectionIntro'
+import { scrollToLandingContact } from '@/features/landing/landing-scroll'
 
 type LandingClosingCtaProps = {
-
-  onBookDemo?: () => void;
-
-};
-
-
-
-export function LandingClosingCta({ onBookDemo }: LandingClosingCtaProps) {
-
-  const navigate = useNavigate();
-
-
-
-  return (
-
-    <section className="landing-closing border-b border-border overflow-hidden bg-background">
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
-
-        <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
-
-          <div className="max-w-lg">
-
-            <h2 className="landing-display text-2xl sm:text-3xl font-semibold text-foreground leading-snug text-balance tracking-tight">
-
-              See the workspace on your data, not a slide deck
-
-            </h2>
-
-            <p className="mt-4 text-sm sm:text-base text-muted-foreground leading-relaxed max-w-md">
-
-              Walk through CRM, finance, and ops in one session. We map your current stack and show where records can connect first.
-
-            </p>
-
-            <div className="mt-8 flex flex-wrap items-center gap-4">
-
-              <Button
-
-                size="lg"
-
-                onClick={onBookDemo}
-
-                className="landing-btn-primary rounded-full h-11 px-7 text-sm font-medium"
-
-              >
-
-                Book a demo
-
-              </Button>
-
-              <button
-
-                type="button"
-
-                onClick={() => navigate({ to: '/pricing' })}
-
-                className="landing-text-link text-sm font-medium transition-colors cursor-pointer underline-offset-4 hover:underline"
-
-              >
-
-                See pricing
-
-              </button>
-
-            </div>
-
-          </div>
-
-
-
-          <div className="min-w-0 landing-closing-frame">
-
-            <LandingBrowserFrame url="app.zopkit.com" maxContentHeight={260} variant="hero">
-
-              <img
-
-                src="/fa-dashboard.svg"
-
-                alt=""
-
-                className="w-full h-auto block"
-
-                loading="lazy"
-
-                decoding="async"
-
-              />
-
-            </LandingBrowserFrame>
-
-          </div>
-
-        </div>
-
-      </div>
-
-    </section>
-
-  );
-
+  onBookDemo?: () => void
 }
 
+export function LandingClosingCta({ onBookDemo }: LandingClosingCtaProps) {
+  const navigate = useNavigate()
+  const handleBookDemo = onBookDemo ?? (() => scrollToLandingContact('smooth'))
+
+  return (
+    <section className="landing-closing landing-section border-border bg-background overflow-hidden border-b">
+      <div className="landing-section-inner py-20 sm:py-24">
+        <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
+          <div className="max-w-lg">
+            <LandingSectionIntro
+              eyebrow="Next steps"
+              title="See the workspace on your data, not a slide deck"
+              lead="Walk through CRM, finance, and ops in one session. We map your current stack and show where records can connect first."
+              titleClassName="max-w-md"
+            />
+
+            <div className="landing-fade-in landing-fade-in-delay-1 mt-8 flex flex-wrap items-center gap-4">
+              <Button
+                type="button"
+                size="lg"
+                onClick={handleBookDemo}
+                className="landing-btn-primary h-11 rounded-full px-7 text-sm font-medium"
+              >
+                Book a demo
+              </Button>
+              <button
+                type="button"
+                onClick={() => navigate({ to: '/pricing' })}
+                className="landing-text-link cursor-pointer text-sm font-medium underline-offset-4 transition-colors hover:underline"
+              >
+                See pricing
+              </button>
+            </div>
+          </div>
+
+          <div className="landing-closing-frame landing-fade-in landing-fade-in-delay-2 min-w-0">
+            <LandingBrowserFrame
+              url="app.zopkit.com"
+              maxContentHeight={260}
+              variant="hero"
+            >
+              <img
+                src="/fa-dashboard.svg"
+                alt=""
+                className="block h-auto w-full"
+                loading="lazy"
+                decoding="async"
+              />
+            </LandingBrowserFrame>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
