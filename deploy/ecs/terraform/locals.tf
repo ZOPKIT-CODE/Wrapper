@@ -74,7 +74,7 @@ locals {
       listener_rule_priority = 10
     }
     "crm-web" = {
-      enabled                = false # deployed gradually (flip to true when ready)
+      enabled                = true # staging live; prod DNS cutover pending (legacy crm.zopkit.com on another ALB)
       app                    = "crm"
       role                   = "crm"
       ecr_repo               = "crm-backend"
