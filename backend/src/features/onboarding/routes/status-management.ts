@@ -1,5 +1,8 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { z } from 'zod';
+// zod/v4 entry: fastify-type-provider-zod@5 validates via the v4 core
+// (schema._zod.run) — classic-'zod' (v3) schemas crash it with
+// "Cannot read properties of undefined (reading 'run')" on EVERY request.
+import { z } from 'zod/v4';
 import Logger from '../../../utils/logger.js';
 import { authenticateToken, invalidateUserCache } from '../../../middleware/auth/auth.js';
 import { db } from '../../../db/index.js';
