@@ -254,5 +254,8 @@ export async function errorHandler(error: FastifyError, request: FastifyRequest,
     });
   }
 
+  // If a response already went out (error thrown mid/post-send), sending again
+  // just produces the ERR_HTTP_HEADERS_SENT / FST_ERR_REP_ALREADY_SENT cascade.
+  if (reply.sent) return;
   reply.code(statusCode).send(response);
 }

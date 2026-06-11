@@ -63,7 +63,9 @@ if (dsn || otlpEndpoint) {
     // A client is still created when DSN is absent (OTLP-only mode); `enabled`
     // keeps it from trying to ship events to Sentry in that case.
     enabled: !!dsn,
-    environment: process.env.NODE_ENV || 'development',
+    // SENTRY_ENVIRONMENT (set per env by ECS) wins — NODE_ENV is 'production'
+    // in BOTH staging and prod images, which mislabeled staging events.
+    environment: process.env.SENTRY_ENVIRONMENT || process.env.NODE_ENV || 'development',
     release: process.env.SENTRY_RELEASE || process.env.npm_package_version || '1.0.0',
     // Financial-grade default: never auto-attach IPs, cookies, request bodies.
     sendDefaultPii: false,
