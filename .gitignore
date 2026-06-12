@@ -53,3 +53,4 @@ package-lock 2.json
 
 # pnpm store
 .pnpm-store/
+deploy/ecs/terraform/image-tags.auto.tfvars.json
