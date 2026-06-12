@@ -36,7 +36,12 @@ permissions:
   contents: write   # commit the deployed image-tag record
 
 concurrency:
-  group: deploy-${{ github.event.inputs.service || github.event.client_payload.service || 'wrapper-web' }}
+  # ONE queue for ALL services: every release applies the SAME terraform state,
+  # and S3-native locking hard-fails under contention races (-lock-timeout does
+  # not reliably retry when the competing lock vanishes mid-check — observed
+  # runs 27394420919, 27397355572). Queueing serializes them; each release is
+  # only minutes long.
+  group: deploy-queue
   cancel-in-progress: false
 
 env:
