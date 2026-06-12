@@ -311,6 +311,7 @@ function RoleStatCard({
   label,
   value,
   icon: Icon,
+  color,
 }: {
   label: string
   value: number

@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react'
 import { useNavigate, useLocation } from '@tanstack/react-router'
 import { useAuth } from '@/lib/auth/cognito-auth'
 import useSilentAuth from '@/hooks/useSilentAuth'
-import LoadingSpinner from '@/components/ui/LoadingSpinner'
+import { AuthFlowLoading } from '@/components/layout/AuthFlowLayout'
 import { logger } from '@/lib/logger'
 
 interface SilentAuthGuardProps {
@@ -153,18 +153,15 @@ export const SilentAuthGuard: React.FC<SilentAuthGuardProps> = ({
     !initializationComplete
   ) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <LoadingSpinner size="lg" />
-          <p className="mt-4 text-gray-600">
-            {isLoading
-              ? 'Initializing authentication...'
-              : isChecking
-                ? 'Checking for existing session...'
-                : 'Loading application...'}
-          </p>
-        </div>
-      </div>
+      <AuthFlowLoading
+        message={
+          isLoading
+            ? 'Initializing authentication...'
+            : isChecking
+              ? 'Checking for existing session...'
+              : 'Loading application...'
+        }
+      />
     )
   }
 

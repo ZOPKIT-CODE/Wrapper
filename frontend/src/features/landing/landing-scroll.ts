@@ -16,7 +16,11 @@ export function isLandingSectionId(id: string): id is LandingSectionId {
 
 export function isLandingPath(pathname: string) {
   return (
-    pathname === '/' || pathname === '/landing' || pathname === '/landing-v2'
+    pathname === '/' ||
+    pathname === '/landing' ||
+    pathname === '/landing/classic' ||
+    pathname === '/landing/v2' ||
+    pathname === '/landing/v3'
   )
 }
 

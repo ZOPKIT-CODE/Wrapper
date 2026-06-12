@@ -25,8 +25,6 @@ import { ZopkitRoundLoader } from '@/components/common/feedback/ZopkitRoundLoade
 import { useNavigate } from '@tanstack/react-router'
 import type { Entity } from '@/features/organizations/types'
 
-// --- Types (inlined to avoid circular deps) ---
-
 interface Organization {
   entityId: string
   entityName: string
@@ -100,11 +98,11 @@ export interface TreeNodeProps {
   selectedItems: string[]
   getResponsiblePersonName: (userId: string) => string
   onEdit: (org: Organization) => void
-  onAssignManager: (entity: OrganizationEntity) => void
-  onAllocateCredits: (entity: OrganizationEntity) => void
+  onAssignManager: (entity: Entity) => void
+  onAllocateCredits: (entity: Entity) => void
   onTransferCredits: (org: Organization) => void
   onDelete: (entityId: string, entityName?: string) => void
-  setEditingEntity: (entity: OrganizationEntity | null) => void
+  setEditingEntity: (entity: Entity | null) => void
   setShowEditResponsiblePerson: (show: boolean) => void
   setSelectedEntity: (entity: Entity | null) => void
   setAllocationForm: (form: AllocationForm) => void
@@ -282,7 +280,7 @@ export function TreeNode({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 text-slate-500 hover:text-primary"
+                className="hover:text-primary h-8 w-8 text-slate-500"
                 onClick={() =>
                   navigate({
                     to: '/dashboard/organization/create',

@@ -1,0 +1,268 @@
+/* ─── Volumetric beam scatter (Tyndall / dust-in-cone) ─── */
+
+[data-landing] .hero-projection-particles {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  overflow: hidden;
+  clip-path: polygon(50% 100%, 16% 0%, 84% 0%);
+  mix-blend-mode: screen;
+  isolation: isolate;
+}
+
+/* Soft fog column — brighter near emitter, fades upward */
+[data-landing] .hero-projection-particles__haze {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      ellipse 28% 18% at 50% 100%,
+      rgba(220, 250, 255, 0.22) 0%,
+      rgba(120, 210, 255, 0.08) 45%,
+      transparent 72%
+    ),
+    linear-gradient(
+      to top,
+      rgba(180, 235, 255, 0.14) 0%,
+      rgba(94, 231, 255, 0.06) 28%,
+      rgba(46, 140, 255, 0.02) 58%,
+      transparent 100%
+    );
+  opacity: 0.95;
+  animation: hero-beam-haze-breathe 6.5s ease-in-out infinite;
+}
+
+@keyframes hero-beam-haze-breathe {
+  0%,
+  100% {
+    opacity: 0.82;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+[data-landing] .hero-projection-particles__layer {
+  position: absolute;
+  inset: 0;
+}
+
+[data-landing] .hero-projection-particles__layer--flares {
+  z-index: 1;
+}
+
+[data-landing] .hero-projection-particles__layer--streaks {
+  z-index: 2;
+}
+
+[data-landing] .hero-projection-particles__layer--motes {
+  z-index: 3;
+}
+
+/* Shared ray travel — linear path along cone generator */
+[data-landing] .hero-projection-particles__speck,
+[data-landing] .hero-projection-particles__dust,
+[data-landing] .hero-projection-particles__streak,
+[data-landing] .hero-projection-particles__flare {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  opacity: 0;
+  will-change: transform, opacity, filter;
+  animation: hero-beam-ray-travel var(--p-dur) cubic-bezier(0.22, 0.05, 0.18, 1)
+    infinite;
+  animation-delay: var(--p-delay);
+}
+
+/* Tiny sharp glints — brief flash in dense part of beam */
+[data-landing] .hero-projection-particles__speck {
+  width: var(--p-size);
+  height: var(--p-size);
+  margin-left: calc(var(--p-size) * -0.5);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 35% 30%,
+    rgba(255, 255, 255, 1) 0%,
+    rgba(230, 252, 255, 0.9) 30%,
+    rgba(140, 220, 255, 0.35) 65%,
+    transparent 100%
+  );
+  box-shadow:
+    0 0 2px 0 rgba(255, 255, 255, 0.9),
+    0 0 6px 1px rgba(180, 245, 255, 0.55);
+}
+
+/* Soft out-of-focus dust bokeh */
+[data-landing] .hero-projection-particles__dust {
+  width: var(--p-size);
+  height: calc(var(--p-size) * var(--p-depth, 0.5));
+  margin-left: calc(var(--p-size) * -0.5);
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse 100% 80% at 40% 35%,
+    rgba(255, 255, 255, 0.75) 0%,
+    rgba(170, 235, 255, 0.45) 40%,
+    rgba(94, 231, 255, 0.12) 75%,
+    transparent 100%
+  );
+  box-shadow: 0 0 calc(4px + var(--p-size)) calc(1px + var(--p-size) * 0.2)
+    rgba(120, 210, 255, 0.35);
+  filter: blur(calc(0.3px + var(--p-depth) * 1.4px));
+}
+
+/* Motion-blur streak aligned to ray path */
+[data-landing] .hero-projection-particles__streak {
+  width: calc(0.35px + var(--p-size) * 0.22);
+  height: calc(var(--p-size) * 5.5);
+  margin-left: calc((0.35px + var(--p-size) * 0.22) * -0.5);
+  border-radius: 999px;
+  transform-origin: center bottom;
+  background: linear-gradient(
+    to top,
+    rgba(255, 255, 255, 0.95) 0%,
+    rgba(210, 248, 255, 0.65) 18%,
+    rgba(120, 210, 255, 0.28) 55%,
+    rgba(94, 231, 255, 0.04) 100%
+  );
+  box-shadow:
+    0 0 4px 0 rgba(200, 248, 255, 0.5),
+    0 0 10px 1px rgba(94, 231, 255, 0.25);
+  filter: blur(calc(0.2px + var(--p-depth) * 0.6px));
+}
+
+/* Rare large bloom crossing the column */
+[data-landing] .hero-projection-particles__flare {
+  width: calc(var(--p-size) * 1.6);
+  height: calc(var(--p-size) * 1.6);
+  margin-left: calc(var(--p-size) * -0.8);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(255, 255, 255, 0.55) 0%,
+    rgba(180, 240, 255, 0.2) 35%,
+    rgba(94, 231, 255, 0.06) 65%,
+    transparent 100%
+  );
+  filter: blur(calc(1px + var(--p-depth) * 2px));
+}
+
+/*
+ * Tyndall-style visibility curve:
+ * dark at origin → rapid brighten → sustained mid-beam → diffuse fade at screen
+ */
+@keyframes hero-beam-ray-travel {
+  0% {
+    transform: translate(0, 2px) scale(0.15);
+    opacity: 0;
+    filter: blur(calc(1.5px + var(--p-depth) * 2px));
+  }
+  3% {
+    opacity: 0;
+  }
+  8% {
+    transform: translate(
+        calc(var(--p-angle) * 34% * 0.06 + var(--p-wobble) * 0.15%),
+        -6%
+      )
+      scale(0.45);
+    opacity: calc(var(--p-peak) * 0.35);
+  }
+  18% {
+    transform: translate(
+        calc(var(--p-angle) * 34% * 0.22 + var(--p-wobble) * 0.35%),
+        -20%
+      )
+      scale(0.7);
+    opacity: var(--p-peak);
+    filter: blur(calc(0.4px + var(--p-depth) * 1px));
+  }
+  42% {
+    transform: translate(
+        calc(
+          var(--p-angle) * 34% * 0.48 + var(--p-wobble) * 0.55% +
+            var(--p-drift) * 0.2%
+        ),
+        -44%
+      )
+      scale(0.92);
+    opacity: calc(var(--p-peak) * 0.98);
+  }
+  68% {
+    transform: translate(
+        calc(var(--p-angle) * 34% * 0.74 + var(--p-wobble) * 0.4%),
+        -70%
+      )
+      scale(1);
+    opacity: calc(var(--p-peak) * 0.65);
+    filter: blur(calc(0.6px + var(--p-depth) * 1.6px));
+  }
+  88% {
+    transform: translate(
+        calc(var(--p-angle) * 34% * 0.92 + var(--p-wobble) * 0.2%),
+        -90%
+      )
+      scale(1.02);
+    opacity: calc(var(--p-peak) * 0.22);
+  }
+  100% {
+    transform: translate(
+        calc(var(--p-angle) * 34% + var(--p-wobble) * 0.1%),
+        calc(-100% - 3px)
+      )
+      scale(1.05);
+    opacity: 0;
+    filter: blur(calc(1.2px + var(--p-depth) * 2.5px));
+  }
+}
+
+[data-landing] .hero-projection-particles__streak {
+  animation-name: hero-beam-streak-travel;
+}
+
+@keyframes hero-beam-streak-travel {
+  0% {
+    transform: translate(0, 2px) rotate(var(--p-rot, 0deg)) scaleY(0.2);
+    opacity: 0;
+  }
+  5% {
+    opacity: 0;
+  }
+  12% {
+    transform: translate(calc(var(--p-angle) * 34% * 0.1), -10%)
+      rotate(var(--p-rot, 0deg)) scaleY(0.55);
+    opacity: calc(var(--p-peak) * 0.5);
+  }
+  25% {
+    transform: translate(
+        calc(var(--p-angle) * 34% * 0.28 + var(--p-wobble) * 0.25%),
+        -26%
+      )
+      rotate(var(--p-rot, 0deg)) scaleY(0.85);
+    opacity: var(--p-peak);
+  }
+  55% {
+    transform: translate(
+        calc(var(--p-angle) * 34% * 0.58 + var(--p-drift) * 0.15%),
+        -54%
+      )
+      rotate(var(--p-rot, 0deg)) scaleY(1);
+    opacity: calc(var(--p-peak) * 0.75);
+  }
+  82% {
+    transform: translate(calc(var(--p-angle) * 34% * 0.86), -82%)
+      rotate(var(--p-rot, 0deg)) scaleY(1.05);
+    opacity: calc(var(--p-peak) * 0.18);
+  }
+  100% {
+    transform: translate(calc(var(--p-angle) * 34%), calc(-100% - 2px))
+      rotate(var(--p-rot, 0deg)) scaleY(1.1);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-landing] .hero-projection-particles {
+    display: none;
+  }
+}

@@ -19,11 +19,14 @@ export function MetricCard({
   isLoading: boolean
 }) {
   const colorClasses = {
-    blue: 'text-[#1B2E5A] bg-[#1B2E5A]/10',
-    sky: 'text-[#1B2E5A] bg-[#1B2E5A]/10',
-    green: 'text-green-600 bg-green-100',
-    purple: 'text-purple-600 bg-purple-100',
-    yellow: 'text-yellow-600 bg-yellow-100',
+    blue: 'text-primary bg-primary/10',
+    sky: 'text-primary bg-primary/10',
+    green:
+      'text-emerald-600 bg-emerald-500/15 dark:text-emerald-300 dark:bg-emerald-500/20',
+    purple:
+      'text-purple-600 bg-purple-500/15 dark:text-purple-300 dark:bg-purple-500/20',
+    yellow:
+      'text-amber-600 bg-amber-500/15 dark:text-amber-300 dark:bg-amber-500/20',
   }
 
   if (isLoading) {
@@ -50,17 +53,20 @@ export function MetricCard({
           <div className="flex-1 space-y-3">
             <Typography
               variant="lead"
-              className="text-sm font-medium text-gray-600"
+              className="text-muted-foreground text-sm font-medium"
             >
               {title}
             </Typography>
             <Typography
               variant="h3"
-              className="text-2xl font-bold text-[#1B2E5A]"
+              className="text-foreground text-2xl font-bold"
             >
               {value}
             </Typography>
-            <Typography variant="muted" className="text-xs text-gray-500">
+            <Typography
+              variant="muted"
+              className="text-muted-foreground text-xs"
+            >
               {trend} from last month
             </Typography>
           </div>

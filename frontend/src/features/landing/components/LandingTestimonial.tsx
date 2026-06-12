@@ -1,17 +1,10 @@
-import type { Testimonial } from '@/types';
-
-
+import type { Testimonial } from '@/types'
 
 type LandingTestimonialProps = {
-
-  quote: Testimonial;
-
-};
-
-
+  quote: Testimonial
+}
 
 function initials(name: string) {
-
   return name
 
     .split(' ')
@@ -22,69 +15,40 @@ function initials(name: string) {
 
     .slice(0, 2)
 
-    .toUpperCase();
-
+    .toUpperCase()
 }
 
-
-
 export function LandingTestimonial({ quote }: LandingTestimonialProps) {
-
   return (
-
-    <section className="landing-section-muted border-b border-border bg-background">
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
-
-        <div className="grid lg:grid-cols-[minmax(0,1fr)_auto] gap-8 lg:gap-14 items-start">
-
-          <blockquote className="landing-testimonial-accent relative pl-5 sm:pl-6 border-l border-border max-w-3xl">
-
-            <p className="landing-display text-xl sm:text-2xl font-medium text-foreground leading-snug tracking-tight">
-
+    <section className="landing-section landing-section-muted border-border bg-background border-b">
+      <div className="landing-section-inner py-20 sm:py-24">
+        <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-14">
+          <blockquote className="landing-testimonial-accent border-border relative max-w-3xl border-l pl-5 sm:pl-6">
+            <p className="landing-display text-foreground text-xl leading-snug font-medium tracking-tight sm:text-2xl">
               &ldquo;{quote.quote}&rdquo;
-
             </p>
-
           </blockquote>
 
-
-
-          <footer className="flex items-center gap-3 lg:pt-1 shrink-0">
-
+          <footer className="flex shrink-0 items-center gap-3 lg:pt-1">
             <div
-
-              className="landing-avatar w-9 h-9 rounded-full border flex items-center justify-center landing-mono text-[10px] font-medium text-muted-foreground"
-
+              className="landing-avatar landing-mono text-muted-foreground flex h-9 w-9 items-center justify-center rounded-full border text-[10px] font-medium"
               aria-hidden="true"
-
             >
-
               {initials(quote.author)}
-
             </div>
 
             <div>
-
-              <p className="text-sm font-medium text-foreground">{quote.author}</p>
-
-              <p className="text-xs text-muted-foreground mt-0.5">
-
-                {quote.role}, {quote.company}
-
+              <p className="text-foreground text-sm font-medium">
+                {quote.author}
               </p>
 
+              <p className="text-muted-foreground mt-0.5 text-xs">
+                {quote.role}, {quote.company}
+              </p>
             </div>
-
           </footer>
-
         </div>
-
       </div>
-
     </section>
-
-  );
-
+  )
 }
-

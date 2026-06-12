@@ -47,6 +47,12 @@ const MARKETING_NAV_PRODUCTS = [
   { id: 'b2c-crm', name: 'B2C CRM', icon: 'ShoppingCart' },
 ] as const
 
+export const LANDING_SECTION_NAV_ITEMS = [
+  { name: 'Workflows', link: '/#workflows' },
+  { name: 'Industries', link: '/#industries' },
+  { name: 'Resources', link: '/#resources' },
+] as const
+
 export const DEFAULT_MARKETING_NAV_ITEMS = [
   { name: 'Pricing', link: '/pricing' },
   { name: 'Blog', link: '/blog' },
@@ -261,7 +267,14 @@ export function MarketingNavbar({
           }
 
           if (targetPath !== currentPath) {
-            navigate({ to: targetPath as '/landing' | '/landing-v2' | '/' })
+            navigate({
+              to: targetPath as
+                | '/'
+                | '/landing'
+                | '/landing/classic'
+                | '/landing/v2'
+                | '/landing/v3',
+            })
           }
 
           scrollToLandingSectionWhenReady(hash, 'smooth')
@@ -292,7 +305,9 @@ export function MarketingNavbar({
     [navigate, closeNavDropdowns]
   )
 
-  const navItems = DEFAULT_MARKETING_NAV_ITEMS
+  const navItems = minimal
+    ? [...LANDING_SECTION_NAV_ITEMS, ...DEFAULT_MARKETING_NAV_ITEMS]
+    : DEFAULT_MARKETING_NAV_ITEMS
 
   const linkClass = minimal
     ? 'marketing-nav-link px-3 py-2 font-medium transition-colors duration-150 cursor-pointer'
@@ -309,7 +324,7 @@ export function MarketingNavbar({
         className={cn(
           'cursor-pointer text-[13px] font-medium transition-colors',
           minimal
-            ? 'marketing-nav-link px-2 py-1'
+            ? 'marketing-nav-link marketing-nav-sign-in px-2 py-1'
             : 'text-primary hover:text-primary-hover px-2 py-1'
         )}
       >
@@ -344,11 +359,14 @@ export function MarketingNavbar({
         Book a demo
       </NavbarButton>
       <NavbarButton
-        variant={cta.variant}
+        variant="ghost"
         onClick={cta.action}
         disabled={cta.disabled}
         as="button"
-        className={cn(minimal && 'marketing-nav-cta', 'w-full justify-center')}
+        className={cn(
+          minimal && 'marketing-nav-sign-in',
+          'w-full justify-center'
+        )}
       >
         {cta.icon}
         {cta.label}
@@ -587,6 +605,7 @@ export function MarketingNavbar({
         <MobileNavMenu
           isOpen={isMobileMenuOpen}
           onClose={() => setIsMobileMenuOpen(false)}
+          className={cn(minimal && 'marketing-nav-mobile-menu')}
         >
           <div className="mb-2">
             <p

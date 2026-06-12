@@ -29,9 +29,6 @@ const routeMap: Record<string, string> = {
   // Admin routes
   '/admin': 'Admin',
 
-  // Suite routes
-  '/suite': 'Business Suite',
-
   // Public routes
   '/landing': 'Landing',
   '/login': 'Login',

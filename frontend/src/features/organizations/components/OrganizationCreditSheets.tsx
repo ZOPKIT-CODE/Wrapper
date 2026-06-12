@@ -356,7 +356,7 @@ export function CreditTransferSheet({
 export interface AllocateCreditSheetProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  selectedEntity: OrganizationEntity | null
+  selectedEntity: Entity | null
   effectiveApplications: Application[]
   allocationForm: AllocationForm
   setAllocationForm: (form: AllocationForm) => void
@@ -502,7 +502,7 @@ export function AllocateCreditSheet({
           </div>
         </div>
 
-        <SheetFooter className="mt-0 shrink-0 flex-row justify-end gap-2 border-t border-primary/10 bg-muted px-6 py-4">
+        <SheetFooter className="border-primary/10 bg-muted mt-0 shrink-0 flex-row justify-end gap-2 border-t px-6 py-4">
           <PearlButton variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </PearlButton>

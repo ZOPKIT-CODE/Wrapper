@@ -1,0 +1,49 @@
+[data-landing] .hero-scan-flash {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 0;
+  z-index: 8;
+  pointer-events: none;
+  overflow: visible;
+}
+
+[data-landing] .hero-scan-flash__beam {
+  position: absolute;
+  left: 4%;
+  right: 4%;
+  top: 50%;
+  height: 2px;
+  margin-top: -1px;
+  transform-origin: left center;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(94, 231, 255, 0.25) 18%,
+    rgba(200, 248, 255, 0.85) 50%,
+    rgba(94, 231, 255, 0.25) 82%,
+    transparent 100%
+  );
+  box-shadow:
+    0 0 12px 2px rgba(94, 231, 255, 0.45),
+    0 0 32px 6px rgba(77, 200, 255, 0.2);
+  mix-blend-mode: screen;
+}
+
+[data-landing] .hero-scan-flash__core {
+  position: absolute;
+  top: 50%;
+  width: min(140px, 18vw);
+  height: 3px;
+  margin-top: -1.5px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.95) 45%,
+    rgba(200, 248, 255, 0.7) 55%,
+    transparent
+  );
+  box-shadow: 0 0 20px 4px rgba(94, 231, 255, 0.65);
+  mix-blend-mode: screen;
+}

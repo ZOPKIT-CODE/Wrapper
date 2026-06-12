@@ -22,10 +22,6 @@ export const NumberField: React.FC<FieldComponentProps> = ({
   disabled,
   className,
 }) => {
-  const numberField = field as NumberFieldType;
-  const inputValue =
-    typeof value === 'string' || typeof value === 'number' ? value : '';
-
   return (
     <FormField
       name={field.id}

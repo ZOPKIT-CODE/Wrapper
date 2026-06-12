@@ -12,6 +12,10 @@ import {
   consumeSessionRecoveryReason,
   consumePostLoginRedirect,
 } from '@/lib/auth/session-recovery'
+import {
+  AuthFlowLayout,
+  AuthFlowLoading,
+} from '@/components/layout/AuthFlowLayout'
 
 const crmCallbackPath = CRM_CALLBACK_PATH || '/callback'
 
@@ -121,8 +125,6 @@ const C = {
 const FONT_SANS = "'Inter', 'Inter Tight', system-ui, -apple-system, sans-serif"
 const FONT_MONO =
   "'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace"
-const FONT_SERIF = "'Instrument Serif', Georgia, serif"
-
 // ---------------------------------------------------------------------------
 // Rise animation helper — typed so it spreads cleanly onto motion.* elements
 // ---------------------------------------------------------------------------
@@ -233,54 +235,8 @@ const Corners = () => (
   </>
 )
 
-// Minimal centered spinner screen — replaces the old glassmorphism loading card
 function LoadingView({ message }: { message: string }) {
-  return (
-    <div
-      style={{
-        background: C.bg,
-        minHeight: '100vh',
-        fontFamily: FONT_SANS,
-        color: C.ink,
-        WebkitFontSmoothing: 'antialiased',
-      }}
-    >
-      <Ambient />
-      <div
-        style={{
-          minHeight: '100vh',
-          display: 'grid',
-          placeItems: 'center',
-          padding: 32,
-        }}
-      >
-        <div style={{ textAlign: 'center' }}>
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 0.9, repeat: Infinity, ease: 'linear' }}
-            style={{
-              width: 20,
-              height: 20,
-              borderRadius: '50%',
-              border: `2px solid ${C.line}`,
-              borderTopColor: C.ink,
-              margin: '0 auto 14px',
-            }}
-          />
-          <p
-            style={{
-              color: C.muted,
-              fontSize: 14,
-              lineHeight: 1.5,
-              letterSpacing: '-0.01em',
-            }}
-          >
-            {message}
-          </p>
-        </div>
-      </div>
-    </div>
-  )
+  return <AuthFlowLoading message={message} />
 }
 
 // ---------------------------------------------------------------------------
@@ -493,21 +449,18 @@ export function Login() {
   // ---------------------------------------------------------------------------
 
   return (
-    <div
+    <AuthFlowLayout
+      hideHeader
+      className="relative overflow-x-hidden"
       style={{
-        background: C.bg,
-        minHeight: '100vh',
         fontFamily: FONT_SANS,
         color: C.ink,
-        WebkitFontSmoothing: 'antialiased',
         textRendering: 'optimizeLegibility',
-        overflowX: 'hidden',
       }}
     >
       <Ambient />
       <Corners />
 
-      {/* Centered page grid */}
       <div
         style={{
           minHeight: '100vh',
@@ -561,9 +514,8 @@ export function Login() {
                 Welcome{' '}
                 <span
                   style={{
-                    fontFamily: FONT_SERIF,
                     fontStyle: 'italic',
-                    fontSize: '1.1em',
+                    fontSize: '1.05em',
                     letterSpacing: '-0.02em',
                   }}
                 >
@@ -642,7 +594,7 @@ export function Login() {
           </motion.p>
         </div>
       </div>
-    </div>
+    </AuthFlowLayout>
   )
 }
 

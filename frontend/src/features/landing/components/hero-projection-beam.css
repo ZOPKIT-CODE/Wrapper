@@ -1,0 +1,45 @@
+/* ─── Volumetric projection beam ─── */
+
+[data-landing] .hero-projection-beam {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  overflow: hidden;
+  mix-blend-mode: screen;
+}
+
+[data-landing] .hero-projection-beam__cone {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+[data-landing] .hero-projection-beam__shape {
+  filter: blur(1.2px);
+}
+
+[data-landing] .hero-projection-beam__core {
+  filter: blur(0.5px);
+  mix-blend-mode: screen;
+}
+
+[data-landing] .hero-projection-beam__ray {
+  --ray-o: 0.07;
+  animation: hero-beam-ray-shimmer 5.5s ease-in-out infinite;
+}
+
+@keyframes hero-beam-ray-shimmer {
+  0%,
+  100% {
+    opacity: calc(var(--ray-o) * 0.55);
+  }
+  35% {
+    opacity: calc(var(--ray-o) * 1.2);
+  }
+  62% {
+    opacity: calc(var(--ray-o) * 0.75);
+  }
+}
+
+/* Opacity driven by Framer Motion — do not override (causes pre-puck beam flash) */

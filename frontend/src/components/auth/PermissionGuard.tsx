@@ -1,7 +1,7 @@
 import { ReactNode, useState, useEffect } from 'react'
 import { Navigate } from '@tanstack/react-router'
 import { useAuth } from '@/lib/auth/cognito-auth'
-import AnimatedLoader from '@/components/common/feedback/AnimatedLoader'
+import { AuthFlowLoading } from '@/components/layout/AuthFlowLayout'
 import { logger } from '@/lib/logger'
 
 interface PermissionGuardProps {
@@ -127,16 +127,7 @@ export function PermissionGuard({
 
   // Show loading while checking authentication or permissions
   if (isLoading || !permissionChecked) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="text-center">
-          <AnimatedLoader size="md" className="mb-6" />
-          <p className="text-base font-medium text-gray-600 dark:text-gray-300">
-            Checking permissions...
-          </p>
-        </div>
-      </div>
-    )
+    return <AuthFlowLoading message="Checking permissions..." />
   }
 
   // Redirect to login if not authenticated
@@ -170,16 +161,7 @@ export function MultiPermissionGuard({
   const { isLoading, isAuthenticated, getPermissions } = useAuth()
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="text-center">
-          <AnimatedLoader size="md" className="mb-6" />
-          <p className="text-base font-medium text-gray-600 dark:text-gray-300">
-            Checking permissions...
-          </p>
-        </div>
-      </div>
-    )
+    return <AuthFlowLoading message="Checking permissions..." />
   }
 
   if (!isAuthenticated) {
@@ -220,16 +202,7 @@ export function AnyPermissionGuard({
   const { isLoading, isAuthenticated, getPermissions } = useAuth()
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="text-center">
-          <AnimatedLoader size="md" className="mb-6" />
-          <p className="text-base font-medium text-gray-600 dark:text-gray-300">
-            Checking permissions...
-          </p>
-        </div>
-      </div>
-    )
+    return <AuthFlowLoading message="Checking permissions..." />
   }
 
   if (!isAuthenticated) {

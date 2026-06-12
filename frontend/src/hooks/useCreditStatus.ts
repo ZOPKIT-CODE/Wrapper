@@ -77,7 +77,6 @@ export function useCreditStatus() {
   )
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [, setRetryCount] = useState(0)
 
   const creditData = creditResponse?.data
 

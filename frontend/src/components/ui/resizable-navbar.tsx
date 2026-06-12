@@ -95,7 +95,7 @@ export const NavBody = ({ children, className }: NavBodyProps) => {
     <div
       className={cn(
         'pointer-events-auto relative z-50 hidden flex-row items-center justify-between lg:flex',
-        'w-full border-b border-white/10 bg-white/10 px-8 py-3 backdrop-blur-xl',
+        'border-border bg-background/95 w-full border-b px-8 py-3 backdrop-blur-sm',
         className
       )}
     >
@@ -165,7 +165,7 @@ export const MobileNav = ({ children, className }: MobileNavProps) => {
     <div
       className={cn(
         'pointer-events-auto relative z-50 flex flex-col items-center justify-between lg:hidden',
-        'w-full border-b border-white/10 bg-white/10 backdrop-blur-xl',
+        'border-border bg-background/95 w-full border-b backdrop-blur-sm',
         className
       )}
     >

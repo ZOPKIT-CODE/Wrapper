@@ -17,7 +17,7 @@ import { MarketingNavbar } from '@/components/layout/MarketingNavbar'
 import { MarketingPageShell } from '@/components/layout/MarketingPageShell'
 import { useLandingSectionScroll } from '@/features/landing/useLandingSectionScroll'
 
-/** Vercel-minimal screenshot-led landing (design iteration v2). */
+/** Landing v2 — screenshot-led variant (archived at /landing/v2). Production landing is `/`. */
 const LandingV2: React.FC = () => {
   const [contactForm, setContactForm] = useState({
     name: '',

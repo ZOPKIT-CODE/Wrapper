@@ -19,6 +19,7 @@ import {
 } from '../schemas'
 import { getFlowConfig } from '../config/flowConfigs'
 import { onboardingLogger } from '../utils/onboardingLogger'
+import { AuthFlowLoading } from '@/components/layout/AuthFlowLayout'
 // Note: getStepNumberForField and getDisplayNameForField are available for future use
 
 /**
@@ -763,14 +764,16 @@ export const OnboardingForm = () => {
             <h2 className="mb-2 text-2xl font-bold text-red-600">
               Configuration Error
             </h2>
-            <p className="mb-4 text-gray-600">Flow configuration not found</p>
+            <p className="text-muted-foreground mb-4">
+              Flow configuration not found
+            </p>
             <button
               onClick={() => {
                 setCurrentStep(1)
                 form.reset()
                 window.location.reload()
               }}
-              className="rounded-lg bg-[#1B2E5A] px-4 py-2 text-white hover:bg-[#152449]"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-4 py-2"
             >
               Reload Page
             </button>
@@ -783,17 +786,7 @@ export const OnboardingForm = () => {
   if (!flowConfig.steps || flowConfig.steps.length === 0) {
     return (
       <ErrorBoundary onError={handleError}>
-        <div className="flex h-screen w-full items-center justify-center overflow-hidden bg-gray-50">
-          <div className="text-center">
-            <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-blue-600"></div>
-            <h2 className="mb-2 text-xl font-semibold text-[#1B2E5A]">
-              Loading Form
-            </h2>
-            <p className="text-gray-600">
-              Preparing your onboarding experience...
-            </p>
-          </div>
-        </div>
+        <AuthFlowLoading message="Preparing your onboarding experience..." />
       </ErrorBoundary>
     )
   }

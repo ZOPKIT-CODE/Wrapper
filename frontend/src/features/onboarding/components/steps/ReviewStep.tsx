@@ -62,17 +62,17 @@ const DetailRow = ({
   value: string | React.ReactNode
   icon?: React.ComponentType<{ className?: string }>
 }) => (
-  <div className="group/row flex items-start gap-3 rounded-lg p-2 transition-colors hover:bg-blue-50/60">
+  <div className="group/row hover:bg-primary/5/60 flex items-start gap-3 rounded-lg p-2 transition-colors">
     {Icon && (
       <div className="rounded-md bg-blue-50 p-1.5 text-blue-950 transition-colors group-hover/row:bg-blue-100 group-hover/row:text-blue-950">
         <Icon className="h-3.5 w-3.5" />
       </div>
     )}
     <div className="flex-1">
-      <p className="mb-0.5 text-[10px] font-bold tracking-wider text-slate-400 uppercase">
+      <p className="text-muted-foreground mb-0.5 text-[10px] font-bold tracking-wider uppercase">
         {label}
       </p>
-      <div className="text-sm font-semibold break-words text-slate-800">
+      <div className="text-foreground text-sm font-semibold break-words">
         {value}
       </div>
     </div>
@@ -101,21 +101,21 @@ const SectionCard = ({
     initial="hidden"
     animate="visible"
     variants={fadeIn}
-    className="group overflow-hidden rounded-3xl border border-slate-200/80 bg-white/90 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_40px_-8px_rgba(30,58,138,0.12)]"
+    className="group border-border/80 bg-card/90 overflow-hidden rounded-3xl border shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_40px_-8px_rgba(30,58,138,0.12)]"
   >
-    <div className="flex items-center justify-between border-b border-blue-100/60 bg-white/80 px-6 py-4">
+    <div className="bg-card/80 flex items-center justify-between border-b border-blue-100/60 px-6 py-4">
       <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-50 text-blue-950 transition-colors duration-300 group-hover:bg-blue-100 group-hover:text-blue-950">
+        <div className="group-hover:text-primary flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-50 text-blue-950 transition-colors duration-300 group-hover:bg-blue-100">
           <Icon className="h-5 w-5" />
         </div>
-        <h3 className="text-lg font-bold text-slate-800">{title}</h3>
+        <h3 className="text-foreground text-lg font-bold">{title}</h3>
       </div>
       {!!stepNumber && !!onEditStep && (
         <Button
           variant="ghost"
           size="sm"
           onClick={() => onEditStep(stepNumber)}
-          className="translate-x-2 text-slate-400 opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100 hover:bg-blue-50 hover:text-blue-950"
+          className="text-muted-foreground hover:bg-primary/5 hover:text-primary translate-x-2 opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100"
         >
           <Edit2 className="mr-2 h-4 w-4" />
           <span className="text-xs font-semibold">Edit</span>
@@ -192,11 +192,11 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
               </div>
 
               {values.businessDetails?.description && (
-                <div className="mt-4 rounded-2xl border border-slate-100 bg-slate-50 p-4">
-                  <p className="mb-2 text-[10px] font-bold text-slate-400 uppercase">
+                <div className="border-border bg-muted mt-4 rounded-2xl border p-4">
+                  <p className="text-muted-foreground mb-2 text-[10px] font-bold uppercase">
                     Business Description
                   </p>
-                  <p className="text-sm leading-relaxed text-slate-600 italic">
+                  <p className="text-muted-foreground text-sm leading-relaxed italic">
                     "{values.businessDetails.description}"
                   </p>
                 </div>
@@ -218,7 +218,7 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
                   label="Tax Status"
                   value={
                     <span
-                      className={`inline-flex items-center gap-1.5 ${values.taxRegistered ? 'text-blue-800' : 'text-slate-500'}`}
+                      className={`inline-flex items-center gap-1.5 ${values.taxRegistered ? 'text-primary' : 'text-muted-foreground'}`}
                     >
                       {values.taxRegistered ? (
                         <CheckCircle className="h-3.5 w-3.5" />
@@ -250,14 +250,14 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
                   />
                 )}
 
-                <div className="border-t border-slate-100 pt-4 sm:col-span-2">
+                <div className="border-border border-t pt-4 sm:col-span-2">
                   <div className="mb-3 flex items-center gap-2">
                     <MapPin className="h-4 w-4 text-blue-950" />
-                    <span className="text-sm font-semibold text-[#1B2E5A]">
+                    <span className="text-primary text-sm font-semibold">
                       Billing Address
                     </span>
                   </div>
-                  <p className="pl-6 text-sm leading-relaxed text-slate-600">
+                  <p className="text-muted-foreground pl-6 text-sm leading-relaxed">
                     {values.billingStreet || values.billingAddress || 'N/A'}
                     <br />
                     {[
@@ -289,15 +289,15 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
           >
             <div className="space-y-6">
               <div className="mb-6 flex items-center gap-4 rounded-2xl border border-blue-100/80 bg-gradient-to-r from-blue-50/80 to-white p-4">
-                <div className="flex h-14 w-14 items-center justify-center rounded-full border-4 border-blue-100 bg-white text-xl font-bold text-blue-950 shadow-sm">
+                <div className="bg-card flex h-14 w-14 items-center justify-center rounded-full border-4 border-blue-100 text-xl font-bold text-blue-950 shadow-sm">
                   {values.firstName?.[0] || 'A'}
                   {values.lastName?.[0] || ''}
                 </div>
                 <div>
-                  <p className="text-lg font-bold text-[#1B2E5A]">
+                  <p className="text-primary text-lg font-bold">
                     {values.firstName} {values.lastName}
                   </p>
-                  <div className="flex items-center gap-2 text-sm text-slate-500">
+                  <div className="text-muted-foreground flex items-center gap-2 text-sm">
                     <Briefcase className="h-3.5 w-3.5" />
                     {values.contactJobTitle || 'Administrator'}
                   </div>
@@ -337,27 +337,27 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
             onEditStep={onEditStep}
           >
             <div className="grid grid-cols-2 gap-4">
-              <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4 text-center transition-colors hover:bg-slate-100">
-                <span className="mb-1 block text-[10px] font-bold text-slate-400 uppercase">
+              <div className="border-border bg-muted hover:bg-muted rounded-2xl border p-4 text-center transition-colors">
+                <span className="text-muted-foreground mb-1 block text-[10px] font-bold uppercase">
                   Currency
                 </span>
-                <span className="font-bold text-slate-700">
+                <span className="text-foreground font-bold">
                   {values.defaultCurrency || 'USD'}
                 </span>
               </div>
-              <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4 text-center transition-colors hover:bg-slate-100">
-                <span className="mb-1 block text-[10px] font-bold text-slate-400 uppercase">
+              <div className="border-border bg-muted hover:bg-muted rounded-2xl border p-4 text-center transition-colors">
+                <span className="text-muted-foreground mb-1 block text-[10px] font-bold uppercase">
                   Language
                 </span>
-                <span className="font-bold text-slate-700">
+                <span className="text-foreground font-bold">
                   {values.defaultLanguage || 'English'}
                 </span>
               </div>
-              <div className="col-span-2 rounded-2xl border border-slate-100 bg-slate-50 p-4 text-center transition-colors hover:bg-slate-100">
-                <span className="mb-1 block text-[10px] font-bold text-slate-400 uppercase">
+              <div className="border-border bg-muted hover:bg-muted col-span-2 rounded-2xl border p-4 text-center transition-colors">
+                <span className="text-muted-foreground mb-1 block text-[10px] font-bold uppercase">
                   Timezone
                 </span>
-                <span className="font-bold text-slate-700">
+                <span className="text-foreground font-bold">
                   {values.defaultTimeZone || 'UTC'}
                 </span>
               </div>
@@ -372,7 +372,7 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
           transition={{ delay: 0.4 }}
           className="mt-12 mb-10"
         >
-          <div className="mx-auto max-w-3xl rounded-3xl border border-slate-200/80 bg-white/90 p-8 shadow-xl shadow-blue-950/[0.06] backdrop-blur-xl">
+          <div className="border-border/80 bg-card/90 mx-auto max-w-3xl rounded-3xl border p-8 shadow-xl shadow-blue-950/[0.06] backdrop-blur-xl">
             <FormField
               control={form.control}
               name={
@@ -392,17 +392,17 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
                     />
                   </FormControl>
                   <div className="flex-1 space-y-2 leading-none">
-                    <FormLabel className="cursor-pointer text-base font-bold text-[#1B2E5A] transition-colors hover:text-blue-950">
+                    <FormLabel className="text-primary hover:text-primary cursor-pointer text-base font-bold transition-colors">
                       I accept the Terms and Conditions
                     </FormLabel>
-                    <p className="text-sm leading-relaxed text-slate-500">
+                    <p className="text-muted-foreground text-sm leading-relaxed">
                       By checking this box, you confirm that all provided
                       information is accurate and you agree to our{' '}
                       <Link
                         to="/terms"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="font-semibold text-blue-900 decoration-2 underline-offset-2 transition-all hover:text-blue-950 hover:underline"
+                        className="hover:text-primary font-semibold text-blue-900 decoration-2 underline-offset-2 transition-all hover:underline"
                       >
                         Terms and Conditions
                       </Link>{' '}
@@ -411,18 +411,18 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
                         to="/privacy"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="font-semibold text-blue-900 decoration-2 underline-offset-2 transition-all hover:text-blue-950 hover:underline"
+                        className="hover:text-primary font-semibold text-blue-900 decoration-2 underline-offset-2 transition-all hover:underline"
                       >
                         Privacy Policy
                       </Link>
                       .
                     </p>
-                    <p className="mt-1 text-sm text-slate-500">
+                    <p className="text-muted-foreground mt-1 text-sm">
                       <Link
                         to="/terms"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 font-medium text-blue-900 decoration-2 underline-offset-2 transition-all hover:text-blue-950 hover:underline"
+                        className="hover:text-primary inline-flex items-center gap-1 font-medium text-blue-900 decoration-2 underline-offset-2 transition-all hover:underline"
                       >
                         Read our full Terms and Conditions
                       </Link>
@@ -433,9 +433,9 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
               )}
             />
 
-            <div className="mt-8 flex flex-col items-center justify-between gap-6 border-t border-slate-100 pt-8 md:flex-row">
-              <div className="flex items-center gap-2 rounded-full bg-slate-50 px-3 py-1.5 text-xs font-semibold tracking-wide text-slate-400 uppercase">
-                <ShieldCheck className="h-4 w-4 text-blue-800" />
+            <div className="border-border mt-8 flex flex-col items-center justify-between gap-6 border-t pt-8 md:flex-row">
+              <div className="bg-muted text-muted-foreground flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold tracking-wide uppercase">
+                <ShieldCheck className="text-primary h-4 w-4" />
                 Secure 256-bit SSL Encrypted
               </div>
             </div>

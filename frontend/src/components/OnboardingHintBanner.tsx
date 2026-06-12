@@ -5,14 +5,18 @@ import { useAuthStatus } from '@/hooks/useSharedQueries'
 const MARKETING_PATHS = [
   '/',
   '/landing',
+  '/landing/v2',
+  '/landing/v3',
+  '/landing/classic',
   '/pricing',
   '/privacy',
   '/terms',
   '/cookies',
   '/refund-policy',
   '/security',
+  '/blog',
 ]
-const MARKETING_PREFIXES = ['/products/', '/industries/']
+const MARKETING_PREFIXES = ['/products/', '/industries/', '/blog/']
 
 function isMarketingPath(pathname: string): boolean {
   if (MARKETING_PATHS.includes(pathname)) return true

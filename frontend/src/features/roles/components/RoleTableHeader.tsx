@@ -17,8 +17,8 @@ export function RoleTableHeader({
   const isIndeterminate = selectedCount > 0 && selectedCount < totalRoles
 
   return (
-    <div className="border-b bg-gray-50 p-6">
-      <div className="grid grid-cols-12 gap-4 text-sm font-semibold text-gray-700">
+    <div className="bg-muted/50 border-b p-6">
+      <div className="text-foreground grid grid-cols-12 gap-4 text-sm font-semibold">
         <div className="flex items-center gap-3">
           <Checkbox
             checked={isAllSelected}

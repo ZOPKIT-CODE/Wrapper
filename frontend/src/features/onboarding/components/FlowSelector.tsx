@@ -119,7 +119,7 @@ export const FlowSelector: React.FC<FlowSelectorProps> = ({
   return (
     <div
       className={cn(
-        'flex min-h-screen items-center justify-center bg-gray-50 p-8',
+        'bg-muted flex min-h-screen items-center justify-center p-8',
         className
       )}
     >
@@ -135,7 +135,7 @@ export const FlowSelector: React.FC<FlowSelectorProps> = ({
                   userClassification === 'withGST' &&
                     'bg-green-100 text-green-800',
                   userClassification === 'withoutGST' &&
-                    'bg-blue-100 text-blue-800',
+                    'text-primary bg-blue-100',
                   // Email domain paths
                   userClassification === 'withDomainMail' &&
                     'bg-purple-100 text-purple-800',
@@ -148,9 +148,8 @@ export const FlowSelector: React.FC<FlowSelectorProps> = ({
                     'bg-pink-100 text-pink-800',
                   // Tier classifications
                   userClassification === 'freemium' &&
-                    'bg-gray-100 text-gray-800',
-                  userClassification === 'growth' &&
-                    'bg-blue-100 text-blue-800',
+                    'bg-muted text-foreground',
+                  userClassification === 'growth' && 'text-primary bg-blue-100',
                   userClassification === 'enterprise' &&
                     'bg-purple-100 text-purple-800',
                   // Account types (aspiringFounder is excluded by the guard above)
@@ -169,10 +168,10 @@ export const FlowSelector: React.FC<FlowSelectorProps> = ({
               </Badge>
             )}
           </div>
-          <h1 className="mb-4 text-4xl font-bold text-[#1B2E5A]">
+          <h1 className="text-primary mb-4 text-4xl font-bold">
             {getPersonalizedGreeting()}
           </h1>
-          <p className="mx-auto max-w-2xl text-xl text-gray-600">
+          <p className="text-muted-foreground mx-auto max-w-2xl text-xl">
             {getPersonalizedDescription()}
           </p>
         </div>
@@ -379,28 +378,28 @@ export const FlowSelector: React.FC<FlowSelectorProps> = ({
                         ? flow.color === 'green'
                           ? 'text-green-700'
                           : 'text-blue-700'
-                        : 'text-[#1B2E5A]'
+                        : 'text-primary'
                     )}
                   >
                     {flow.title}
                   </CardTitle>
-                  <CardDescription className="text-base leading-relaxed text-gray-600">
+                  <CardDescription className="text-muted-foreground text-base leading-relaxed">
                     {flow.description}
                   </CardDescription>
                 </CardHeader>
 
                 <CardContent className="pt-0">
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between text-sm text-gray-500">
+                    <div className="text-muted-foreground flex items-center justify-between text-sm">
                       <span>Steps:</span>
                       <span className="font-medium">{flowDetails.steps}</span>
                     </div>
-                    <div className="flex items-center justify-between text-sm text-gray-500">
+                    <div className="text-muted-foreground flex items-center justify-between text-sm">
                       <span>Estimated time:</span>
                       <span className="font-medium">{flowDetails.time}</span>
                     </div>
                     <div className="space-y-2">
-                      <div className="flex items-center justify-between text-sm text-gray-500">
+                      <div className="text-muted-foreground flex items-center justify-between text-sm">
                         <span>Features:</span>
                       </div>
                       <div className="flex flex-wrap gap-1">

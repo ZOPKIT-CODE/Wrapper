@@ -1,144 +1,69 @@
 import * as React from 'react'
 import { Badge, type BadgeProps } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
-import { useTheme } from '@/components/theme/ThemeProvider'
 
-// Extended badge variants for theme-specific styling
-const getThemeVariantClasses = (
-  variant: string,
-  size: string,
-  actualTheme: string
-) => {
-  const isMonochrome = actualTheme === 'monochrome'
+const semanticBadge = (
+  token: 'success' | 'warning' | 'info' | 'destructive' | 'muted'
+) =>
+  cn(
+    'border-transparent shadow',
+    token === 'success' &&
+      'bg-success text-success-foreground hover:bg-success/90',
+    token === 'warning' &&
+      'bg-warning text-warning-foreground hover:bg-warning/90',
+    token === 'info' && 'bg-info text-info-foreground hover:bg-info/90',
+    token === 'destructive' &&
+      'bg-destructive text-destructive-foreground hover:bg-destructive/90',
+    token === 'muted' && 'bg-muted text-muted-foreground hover:bg-muted/80'
+  )
 
-  const variantClasses: Record<string, string> = {
-    // Status variants
-    success: isMonochrome
-      ? 'border-transparent bg-gray-600 text-white shadow hover:bg-gray-700'
-      : 'border-transparent bg-green-500 text-white shadow hover:bg-green-600',
-    warning: isMonochrome
-      ? 'border-transparent bg-gray-500 text-white shadow hover:bg-gray-600'
-      : 'border-transparent bg-yellow-500 text-white shadow hover:bg-yellow-600',
-    info: isMonochrome
-      ? 'border-transparent bg-gray-600 text-white shadow hover:bg-gray-700'
-      : 'border-transparent bg-[#1B2E5A] text-white shadow hover:bg-[#162447]',
-    muted:
-      'border-transparent bg-muted text-muted-foreground hover:bg-muted/80',
-    ghost: 'border-transparent hover:bg-accent hover:text-accent-foreground',
-    dot: 'border-transparent bg-dot bg-center bg-no-repeat bg-[length:8px_8px] text-foreground',
-    // Business status variants
-    active: isMonochrome
-      ? 'border-transparent bg-gray-700 text-white shadow hover:bg-gray-800'
-      : 'border-transparent bg-emerald-500 text-white shadow hover:bg-emerald-600',
-    inactive: isMonochrome
-      ? 'border-transparent bg-gray-400 text-white shadow hover:bg-gray-500'
-      : 'border-transparent bg-gray-400 text-white shadow hover:bg-gray-500',
-    // Priority variants
-    high: isMonochrome
-      ? 'border-transparent bg-gray-800 text-white shadow hover:bg-gray-900'
-      : 'border-transparent bg-red-500 text-white shadow hover:bg-red-600',
-    medium: isMonochrome
-      ? 'border-transparent bg-gray-600 text-white shadow hover:bg-gray-700'
-      : 'border-transparent bg-orange-500 text-white shadow hover:bg-orange-600',
-    low: isMonochrome
-      ? 'border-transparent bg-gray-500 text-white shadow hover:bg-gray-600'
-      : 'border-transparent bg-gray-500 text-white shadow hover:bg-gray-600',
-    // Category variants
-    feature: isMonochrome
-      ? 'border-transparent bg-gray-600 text-white shadow hover:bg-gray-700'
-      : 'border-transparent bg-purple-500 text-white shadow hover:bg-purple-600',
-    bug: isMonochrome
-      ? 'border-transparent bg-gray-700 text-white shadow hover:bg-gray-800'
-      : 'border-transparent bg-red-600 text-white shadow hover:bg-red-700',
-    enhancement: isMonochrome
-      ? 'border-transparent bg-gray-600 text-white shadow hover:bg-gray-700'
-      : 'border-transparent bg-[#1B2E5A] text-white shadow hover:bg-[#162447]',
-    // SaaS-specific variants
-    trial: isMonochrome
-      ? 'border-transparent bg-gray-600 text-white shadow hover:bg-gray-700'
-      : 'border-transparent bg-[#1B2E5A] text-white shadow hover:bg-[#162447]',
-    premium: isMonochrome
-      ? 'border-transparent bg-gray-700 text-white shadow hover:bg-gray-800'
-      : 'border-transparent bg-gradient-to-r from-yellow-400 to-yellow-600 text-black shadow hover:from-yellow-500 hover:to-yellow-700',
-    enterprise: isMonochrome
-      ? 'border-transparent bg-gray-800 text-white shadow hover:bg-gray-900'
-      : 'border-transparent bg-gradient-to-r from-gray-700 to-gray-900 text-white shadow hover:from-gray-800 hover:to-black',
-    beta: isMonochrome
-      ? 'border-transparent bg-gray-600 text-white shadow hover:bg-gray-700'
-      : 'border-transparent bg-violet-500 text-white shadow hover:bg-violet-600',
-    deprecated: isMonochrome
-      ? 'border-transparent bg-gray-500 text-white shadow hover:bg-gray-600 line-through'
-      : 'border-transparent bg-gray-500 text-white shadow hover:bg-gray-600 line-through',
-    // Subscription status
-    subscribed: isMonochrome
-      ? 'border-transparent bg-gray-700 text-white shadow hover:bg-gray-800'
-      : 'border-transparent bg-green-600 text-white shadow hover:bg-green-700',
-    expired: isMonochrome
-      ? 'border-transparent bg-gray-600 text-white shadow hover:bg-gray-700'
-      : 'border-transparent bg-red-500 text-white shadow hover:bg-red-600',
-    cancelled: isMonochrome
-      ? 'border-transparent bg-gray-500 text-white shadow hover:bg-gray-600'
-      : 'border-transparent bg-gray-500 text-white shadow hover:bg-gray-600',
-    // User roles
-    admin: isMonochrome
-      ? 'border-transparent bg-gray-800 text-white shadow hover:bg-gray-900'
-      : 'border-transparent bg-red-600 text-white shadow hover:bg-red-700',
-    moderator: isMonochrome
-      ? 'border-transparent bg-gray-600 text-white shadow hover:bg-gray-700'
-      : 'border-transparent bg-orange-500 text-white shadow hover:bg-orange-600',
-    user: isMonochrome
-      ? 'border-transparent bg-gray-600 text-white shadow hover:bg-gray-700'
-      : 'border-transparent bg-[#1B2E5A] text-white shadow hover:bg-[#162447]',
-    guest: isMonochrome
-      ? 'border-transparent bg-gray-400 text-white shadow hover:bg-gray-500'
-      : 'border-transparent bg-gray-400 text-white shadow hover:bg-gray-500',
-    // Data states
-    synced: isMonochrome
-      ? 'border-transparent bg-gray-700 text-white shadow hover:bg-gray-800'
-      : 'border-transparent bg-green-500 text-white shadow hover:bg-green-600',
-    syncing: isMonochrome
-      ? 'border-transparent bg-gray-600 text-white shadow hover:bg-gray-700 animate-pulse'
-      : 'border-transparent bg-yellow-500 text-white shadow hover:bg-yellow-600 animate-pulse',
-    failed: isMonochrome
-      ? 'border-transparent bg-gray-600 text-white shadow hover:bg-gray-700'
-      : 'border-transparent bg-red-500 text-white shadow hover:bg-red-600',
-    // API status
-    online: isMonochrome
-      ? 'border-transparent bg-gray-700 text-white shadow hover:bg-gray-800'
-      : 'border-transparent bg-green-500 text-white shadow hover:bg-green-600',
-    offline: isMonochrome
-      ? 'border-transparent bg-gray-600 text-white shadow hover:bg-gray-700'
-      : 'border-transparent bg-red-500 text-white shadow hover:bg-red-600',
-    maintenance: isMonochrome
-      ? 'border-transparent bg-gray-600 text-white shadow hover:bg-gray-700'
-      : 'border-transparent bg-yellow-500 text-white shadow hover:bg-yellow-600',
-    // Integration status
-    connected: isMonochrome
-      ? 'border-transparent bg-gray-700 text-white shadow hover:bg-gray-800'
-      : 'border-transparent bg-green-500 text-white shadow hover:bg-green-600',
-    disconnected: isMonochrome
-      ? 'border-transparent bg-gray-600 text-white shadow hover:bg-gray-700'
-      : 'border-transparent bg-red-500 text-white shadow hover:bg-red-600',
-    pending: isMonochrome
-      ? 'border-transparent bg-gray-600 text-white shadow hover:bg-gray-700'
-      : 'border-transparent bg-yellow-500 text-white shadow hover:bg-yellow-600',
-    critical: isMonochrome
-      ? 'border-transparent bg-gray-800 text-white shadow hover:bg-gray-900'
-      : 'border-transparent bg-red-500 text-white shadow hover:bg-red-600',
-  }
+const variantClasses: Record<string, string> = {
+  success: semanticBadge('success'),
+  warning: semanticBadge('warning'),
+  info: semanticBadge('info'),
+  muted: semanticBadge('muted'),
+  ghost: 'border-transparent hover:bg-accent hover:text-accent-foreground',
+  dot: 'border-transparent bg-dot bg-center bg-no-repeat bg-[length:8px_8px] text-foreground',
+  active: semanticBadge('success'),
+  inactive: semanticBadge('muted'),
+  pending: semanticBadge('warning'),
+  high: semanticBadge('destructive'),
+  medium: semanticBadge('warning'),
+  low: semanticBadge('muted'),
+  feature:
+    'border-transparent bg-accent text-accent-foreground shadow hover:bg-accent/90',
+  bug: semanticBadge('destructive'),
+  enhancement: semanticBadge('info'),
+  trial: semanticBadge('info'),
+  premium:
+    'border-transparent bg-gradient-to-r from-yellow-400 to-yellow-600 text-black shadow hover:from-yellow-500 hover:to-yellow-700',
+  enterprise:
+    'border-transparent bg-gradient-to-r from-gray-700 to-gray-900 text-white shadow hover:from-gray-800 hover:to-black',
+  beta: 'border-transparent bg-accent text-accent-foreground shadow hover:bg-accent/90',
+  deprecated: cn(semanticBadge('muted'), 'line-through'),
+  subscribed: semanticBadge('success'),
+  expired: semanticBadge('destructive'),
+  cancelled: semanticBadge('muted'),
+  admin: semanticBadge('destructive'),
+  moderator: semanticBadge('warning'),
+  user: semanticBadge('info'),
+  guest: semanticBadge('muted'),
+  synced: semanticBadge('success'),
+  syncing: cn(semanticBadge('warning'), 'animate-pulse'),
+  failed: semanticBadge('destructive'),
+  online: semanticBadge('success'),
+  offline: semanticBadge('destructive'),
+  maintenance: semanticBadge('warning'),
+  connected: semanticBadge('success'),
+  disconnected: semanticBadge('destructive'),
+  critical: semanticBadge('destructive'),
+}
 
-  const sizeClasses: Record<string, string> = {
-    sm: 'px-2 py-0.5 text-xs',
-    default: 'px-2.5 py-0.5 text-xs',
-    lg: 'px-3 py-1 text-sm',
-    xl: 'px-4 py-1.5 text-base',
-  }
-
-  // Get variant classes, fallback to empty string if not found
-  const variantClass = variantClasses[variant] || ''
-  const sizeClass = sizeClasses[size] || sizeClasses.default
-
-  return cn(variantClass, sizeClass)
+const sizeClasses: Record<string, string> = {
+  sm: 'px-2 py-0.5 text-xs',
+  default: 'px-2.5 py-0.5 text-xs',
+  lg: 'px-3 py-1 text-sm',
+  xl: 'px-4 py-1.5 text-base',
 }
 
 export interface ThemeBadgeProps extends Omit<BadgeProps, 'variant'> {
@@ -189,12 +114,7 @@ export interface ThemeBadgeProps extends Omit<BadgeProps, 'variant'> {
 
 /**
  * Extended Badge component with theme-specific variants.
- * Extends the base Badge component with additional color and size variants.
- *
- * Usage:
- * <ThemeBadge variant="success" size="lg">Completed</ThemeBadge>
- * <ThemeBadge variant="warning">Pending</ThemeBadge>
- * <ThemeBadge variant="high" size="sm">High Priority</ThemeBadge>
+ * Status colors use semantic tokens (--success, --warning, --info).
  */
 export const ThemeBadge = ({
   className,
@@ -203,9 +123,6 @@ export const ThemeBadge = ({
   children,
   ...props
 }: ThemeBadgeProps) => {
-  const { actualTheme } = useTheme()
-
-  // Check if it's a base Badge variant or theme variant
   const isBaseVariant = [
     'default',
     'secondary',
@@ -214,14 +131,6 @@ export const ThemeBadge = ({
   ].includes(variant)
 
   if (isBaseVariant) {
-    // Use base Badge with size classes
-    const sizeClasses: Record<string, string> = {
-      sm: 'px-2 py-0.5 text-xs',
-      default: 'px-2.5 py-0.5 text-xs',
-      lg: 'px-3 py-1 text-sm',
-      xl: 'px-4 py-1.5 text-base',
-    }
-
     return (
       <Badge
         variant={variant as 'default' | 'secondary' | 'destructive' | 'outline'}
@@ -237,11 +146,14 @@ export const ThemeBadge = ({
     )
   }
 
-  // Use theme variants
-  const themeClasses = getThemeVariantClasses(variant, size, actualTheme)
+  const themeClass = variantClasses[variant] || variantClasses.success
+  const sizeClass = sizeClasses[size] || sizeClasses.default
 
   return (
-    <Badge className={cn(themeClasses, className)} {...props}>
+    <Badge
+      className={cn(themeClass, sizeClass, 'rounded-full', className)}
+      {...props}
+    >
       {children}
     </Badge>
   )

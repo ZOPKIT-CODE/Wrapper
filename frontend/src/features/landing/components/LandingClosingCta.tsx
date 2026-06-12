@@ -1,5 +1,5 @@
 import { useNavigate } from '@tanstack/react-router'
-import { Button } from '@/components/ui/button'
+import { MarketingButton } from '@/components/marketing/MarketingButton'
 import { LandingBrowserFrame } from '@/features/landing/components/LandingBrowserFrame'
 import { LandingSectionIntro } from '@/features/landing/components/LandingSectionIntro'
 import { scrollToLandingContact } from '@/features/landing/landing-scroll'
@@ -25,28 +25,23 @@ export function LandingClosingCta({ onBookDemo }: LandingClosingCtaProps) {
             />
 
             <div className="landing-fade-in landing-fade-in-delay-1 mt-8 flex flex-wrap items-center gap-4">
-              <Button
-                type="button"
-                size="lg"
-                onClick={handleBookDemo}
-                className="landing-btn-primary h-11 rounded-full px-7 text-sm font-medium"
-              >
+              <MarketingButton type="button" onClick={handleBookDemo}>
                 Book a demo
-              </Button>
-              <button
+              </MarketingButton>
+              <MarketingButton
                 type="button"
+                marketingVariant="link"
                 onClick={() => navigate({ to: '/pricing' })}
-                className="landing-text-link cursor-pointer text-sm font-medium underline-offset-4 transition-colors hover:underline"
               >
                 See pricing
-              </button>
+              </MarketingButton>
             </div>
           </div>
 
           <div className="landing-closing-frame landing-fade-in landing-fade-in-delay-2 min-w-0">
             <LandingBrowserFrame
               url="app.zopkit.com"
-              maxContentHeight={260}
+              maxContentHeight={320}
               variant="hero"
             >
               <img

@@ -10,6 +10,7 @@ export {
   CardError,
   PageEmpty,
   CardEmpty,
+  SkeletonCard,
   InlineLoading,
   InlineError,
   InlineEmpty,

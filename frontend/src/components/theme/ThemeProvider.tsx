@@ -1,6 +1,65 @@
-import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react'
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useState,
+  useMemo,
+  useCallback,
+} from 'react'
 
 type Theme = 'light' | 'dark' | 'monochrome' | 'system'
+
+const VALID_THEMES: Theme[] = ['light', 'dark', 'monochrome', 'system']
+
+function readStoredTheme(storageKey: string, fallback: Theme): Theme {
+  if (typeof window === 'undefined') return fallback
+
+  const stored = localStorage.getItem(storageKey) as Theme | null
+  if (stored && VALID_THEMES.includes(stored)) return stored
+
+  // Migrate legacy key from older builds
+  if (storageKey === 'zopkit-theme') {
+    const legacy = localStorage.getItem('theme') as Theme | null
+    if (legacy && VALID_THEMES.includes(legacy)) {
+      localStorage.setItem(storageKey, legacy)
+      localStorage.removeItem('theme')
+      return legacy
+    }
+  }
+
+  return fallback
+}
+
+function applyThemeClass(theme: Theme) {
+  const root = window.document.documentElement
+  let resolvedTheme: 'light' | 'dark' | 'monochrome'
+
+  if (theme === 'system') {
+    resolvedTheme = window.matchMedia('(prefers-color-scheme: dark)').matches
+      ? 'dark'
+      : 'light'
+  } else if (theme === 'monochrome') {
+    resolvedTheme = 'monochrome'
+  } else {
+    resolvedTheme = theme
+  }
+
+  root.classList.remove('dark', 'monochrome')
+  root.removeAttribute('data-theme')
+
+  if (resolvedTheme === 'dark') {
+    root.classList.add('dark')
+    root.dataset.theme = 'dark'
+  } else if (resolvedTheme === 'monochrome') {
+    root.classList.add('monochrome')
+    root.dataset.theme = 'monochrome'
+  } else {
+    root.dataset.theme = 'light'
+  }
+
+  return resolvedTheme
+}
 
 interface ThemeContextType {
   theme: Theme
@@ -28,49 +87,25 @@ interface ThemeProviderProps {
 
 export function ThemeProvider({
   children,
-  defaultTheme = 'system',
+  defaultTheme = 'light',
   storageKey = 'theme',
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(defaultTheme)
-  const [actualTheme, setActualTheme] = useState<'light' | 'dark' | 'monochrome'>('light')
+  const [theme, setTheme] = useState<Theme>(() =>
+    readStoredTheme(storageKey, defaultTheme)
+  )
+  const [actualTheme, setActualTheme] = useState<
+    'light' | 'dark' | 'monochrome'
+  >('light')
+
+  useLayoutEffect(() => {
+    setActualTheme(applyThemeClass(theme))
+  }, [theme])
 
   useEffect(() => {
-    const storedTheme = localStorage.getItem(storageKey) as Theme
-    if (storedTheme && ['light', 'dark', 'monochrome', 'system'].includes(storedTheme)) {
-      setTheme(storedTheme)
-    }
-  }, [storageKey])
-
-  useEffect(() => {
-    const root = window.document.documentElement
-
-    const updateTheme = () => {
-      let resolvedTheme: 'light' | 'dark' | 'monochrome'
-
-      if (theme === 'system') {
-        resolvedTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-      } else if (theme === 'monochrome') {
-        resolvedTheme = 'monochrome'
-      } else {
-        resolvedTheme = theme
-      }
-
-      setActualTheme(resolvedTheme)
-      root.classList.remove('dark', 'monochrome')
-
-      if (resolvedTheme === 'dark') {
-        root.classList.add('dark')
-      } else if (resolvedTheme === 'monochrome') {
-        root.classList.add('monochrome')
-      }
-    }
-
-    updateTheme()
-
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
     const handleChange = () => {
       if (theme === 'system') {
-        updateTheme()
+        setActualTheme(applyThemeClass('system'))
       }
     }
 
@@ -78,20 +113,23 @@ export function ThemeProvider({
     return () => mediaQuery.removeEventListener('change', handleChange)
   }, [theme])
 
-  const setThemeCallback = useCallback((newTheme: Theme) => {
-    setTheme(newTheme)
-    localStorage.setItem(storageKey, newTheme)
-  }, [storageKey])
-
-  const value = useMemo(() => ({
-    theme,
-    setTheme: setThemeCallback,
-    actualTheme,
-  }), [theme, actualTheme, setThemeCallback])
-
-  return (
-    <ThemeContext.Provider value={value}>
-      {children}
-    </ThemeContext.Provider>
+  const setThemeCallback = useCallback(
+    (newTheme: Theme) => {
+      localStorage.setItem(storageKey, newTheme)
+      setTheme(newTheme)
+      setActualTheme(applyThemeClass(newTheme))
+    },
+    [storageKey]
   )
+
+  const value = useMemo(
+    () => ({
+      theme,
+      setTheme: setThemeCallback,
+      actualTheme,
+    }),
+    [theme, actualTheme, setThemeCallback]
+  )
+
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
 }

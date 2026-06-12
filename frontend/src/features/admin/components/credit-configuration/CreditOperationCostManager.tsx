@@ -60,16 +60,6 @@ interface RawApplication {
   modules?: RawApplicationModule[]
 }
 
-type ApiError = {
-  message?: string;
-  response?: { status?: number; statusText?: string; data?: unknown };
-  config?: { url?: string; method?: string };
-};
-
-function asApiError(error: unknown): ApiError {
-  return typeof error === 'object' && error !== null ? (error as ApiError) : {};
-}
-
 // Main component - significantly simplified
 const CreditOperationCostManager: React.FC = () => {
   // Core state

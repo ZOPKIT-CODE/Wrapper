@@ -139,10 +139,10 @@ export const SettingsOverviewStep: React.FC<SettingsOverviewStepProps> = ({
             <Settings2 className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-[#1B2E5A]">
+            <h2 className="text-primary text-2xl font-bold">
               Settings Overview
             </h2>
-            <p className="text-sm text-slate-600">
+            <p className="text-muted-foreground text-sm">
               Explore what you can configure after onboarding
             </p>
           </div>
@@ -151,15 +151,15 @@ export const SettingsOverviewStep: React.FC<SettingsOverviewStepProps> = ({
 
       {/* Info Banner */}
       <motion.div variants={fadeInUp}>
-        <Card className="border-slate-200 bg-slate-50/50">
+        <Card className="border-border bg-muted/50">
           <CardContent className="pt-6">
             <div className="flex items-start gap-3">
-              <Info className="mt-0.5 h-5 w-5 flex-shrink-0 text-slate-600" />
+              <Info className="text-muted-foreground mt-0.5 h-5 w-5 flex-shrink-0" />
               <div className="space-y-1">
-                <p className="text-sm font-medium text-primary">
+                <p className="text-primary text-sm font-medium">
                   Configure After Onboarding
                 </p>
-                <p className="text-sm text-slate-700">
+                <p className="text-foreground text-sm">
                   These settings are available in your dashboard after
                   onboarding. You can update company details, payment methods,
                   tax information, and more at any time.
@@ -172,7 +172,7 @@ export const SettingsOverviewStep: React.FC<SettingsOverviewStepProps> = ({
 
       {/* Settings Sections Grid */}
       <motion.div variants={fadeInUp} className="space-y-4">
-        <h3 className="text-lg font-semibold text-[#1B2E5A]">
+        <h3 className="text-primary text-lg font-semibold">
           Available Settings
         </h3>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -196,17 +196,17 @@ export const SettingsOverviewStep: React.FC<SettingsOverviewStepProps> = ({
                         <Icon className="h-6 w-6 text-white" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <h4 className="mb-1 font-semibold text-[#1B2E5A]">
+                        <h4 className="text-primary mb-1 font-semibold">
                           {section.name}
                         </h4>
-                        <p className="mb-3 text-sm text-slate-600">
+                        <p className="text-muted-foreground mb-3 text-sm">
                           {section.description}
                         </p>
                         <ul className="space-y-1.5">
                           {section.features.map((feature, idx) => (
                             <li
                               key={idx}
-                              className="flex items-start gap-2 text-xs text-slate-600"
+                              className="text-muted-foreground flex items-start gap-2 text-xs"
                             >
                               <CheckCircle2 className="mt-0.5 h-3 w-3 flex-shrink-0 text-green-500" />
                               <span>{feature}</span>
@@ -214,7 +214,7 @@ export const SettingsOverviewStep: React.FC<SettingsOverviewStepProps> = ({
                           ))}
                         </ul>
                       </div>
-                      <ArrowRight className="mt-1 h-5 w-5 flex-shrink-0 text-slate-400 opacity-0 transition-opacity group-hover:opacity-100" />
+                      <ArrowRight className="text-muted-foreground mt-1 h-5 w-5 flex-shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
                     </div>
                   </CardContent>
                 </Card>
@@ -247,7 +247,7 @@ export const SettingsOverviewStep: React.FC<SettingsOverviewStepProps> = ({
 
       {/* Note */}
       <motion.div variants={fadeInUp} className="pt-2 text-center">
-        <p className="text-xs text-slate-500">
+        <p className="text-muted-foreground text-xs">
           Settings are pre-configured with the information you provide during
           onboarding. You can modify them anytime.
         </p>

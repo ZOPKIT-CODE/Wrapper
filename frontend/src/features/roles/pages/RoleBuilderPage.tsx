@@ -67,9 +67,9 @@ export function RoleBuilderPage() {
     return (
       <Container>
         <div className="flex min-h-[400px] flex-col items-center justify-center space-y-4">
-          <AlertCircle className="h-12 w-12 text-gray-400" />
+          <AlertCircle className="text-muted-foreground h-12 w-12" />
           <h2 className="text-xl font-semibold">Role Not Found</h2>
-          <p className="text-gray-600">
+          <p className="text-muted-foreground">
             The role you're trying to edit doesn't exist.
           </p>
           <Button

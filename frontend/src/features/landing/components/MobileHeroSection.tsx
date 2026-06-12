@@ -2,8 +2,10 @@
 
 import { useNavigate } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
+import { landingHeroCopy } from '../landing-hero-copy'
 import { landingFonts, landingType } from '../landing-typography'
 import { scrollToLandingContact } from '../landing-scroll'
+import { LandingHeroBackdrop } from './LandingHeroBackdrop'
 
 const HD_W = 1440
 const HD_H = 1280
@@ -148,9 +150,9 @@ function HDHeadline() {
           letterSpacing: landingType.displayTracking,
         }}
       >
-        Intelligent agents
+        {landingHeroCopy.headlineLine1}
         <br />
-        driving influential decisions
+        {landingHeroCopy.headlineLine2}
       </h1>
       <p
         className="landing-lead"
@@ -162,7 +164,7 @@ function HDHeadline() {
           fontWeight: 400,
         }}
       >
-        across interconnected applications
+        {landingHeroCopy.subtext}
       </p>
     </div>
   )
@@ -1084,8 +1086,9 @@ export function MobileHeroSection({ onBookDemo }: { onBookDemo?: () => void }) {
   const scale = vw / HD_W
   const scaledContentH = Math.round(HD_VISIBLE_H * scale)
   return (
-    <section className="landing-hero border-border bg-background border-b">
-      <div className="landing-hero-actions px-4 pt-2 pb-4">
+    <section className="landing-hero border-border border-b">
+      <LandingHeroBackdrop />
+      <div className="landing-hero-actions relative z-[4] px-4 pt-2 pb-4">
         <Button
           type="button"
           size="lg"
@@ -1108,7 +1111,7 @@ export function MobileHeroSection({ onBookDemo }: { onBookDemo?: () => void }) {
           height: scaledContentH + NAV_OFFSET,
           position: 'relative',
           overflow: 'hidden',
-          background: 'var(--background)',
+          background: 'transparent',
         }}
       >
         <div

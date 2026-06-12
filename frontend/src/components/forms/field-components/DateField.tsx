@@ -22,9 +22,6 @@ export const DateField: React.FC<FieldComponentProps> = ({
   disabled,
   className,
 }) => {
-  const dateField = field as DateFieldType;
-  const inputValue = typeof value === 'string' || typeof value === 'number' ? String(value) : '';
-
   return (
     <FormField
       name={field.id}

@@ -2,7 +2,7 @@ import React from 'react'
 import { Navigate } from '@tanstack/react-router'
 import { useAuth } from '@/lib/auth/cognito-auth'
 import { useAuthStatus, useOnboardingStatus } from '@/hooks/useSharedQueries'
-import AnimatedLoader from '@/components/common/feedback/AnimatedLoader'
+import { AuthFlowLoading } from '@/components/layout/AuthFlowLayout'
 
 interface OnboardingPageGuardProps {
   children: React.ReactNode
@@ -19,16 +19,7 @@ export const OnboardingPageGuard = ({ children }: OnboardingPageGuardProps) => {
 
   // Show loading while checking authentication and onboarding status
   if (authLoading || (isAuthenticated && (authLoading || onboardingLoading))) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="text-center">
-          <AnimatedLoader size="lg" className="mb-6" />
-          <p className="text-lg font-medium text-gray-600 dark:text-gray-300">
-            Checking onboarding status...
-          </p>
-        </div>
-      </div>
-    )
+    return <AuthFlowLoading message="Checking onboarding status..." />
   }
 
   // If not authenticated, redirect to landing

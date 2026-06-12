@@ -107,8 +107,8 @@ export interface OrganizationTreeViewProps {
   // Selected entities
   selectedOrg: Organization | null
   setSelectedOrg: (o: Organization | null) => void
-  selectedEntity: OrganizationEntity | null
-  setSelectedEntity: React.Dispatch<React.SetStateAction<OrganizationEntity | null>>
+  selectedEntity: Entity | null
+  setSelectedEntity: React.Dispatch<React.SetStateAction<Entity | null>>
   // Forms
   createForm: CreateForm
   setCreateForm: (f: CreateForm) => void

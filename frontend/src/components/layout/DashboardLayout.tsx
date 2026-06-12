@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, Suspense } from 'react'
 import { ModernSidebar } from '@/components/layout/ModernSidebar'
+import { ApplicationsHubTopBar } from '@/components/layout/ApplicationsHubTopBar'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import { BreadcrumbLabelProvider } from '@/contexts/BreadcrumbLabelContext'
 import { ErrorBoundary } from '@/errors/ErrorBoundary'
@@ -238,6 +239,10 @@ export function DashboardLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const params = useParams({ strict: false })
+  const searchParams = useSearch({ strict: false }) as Record<
+    string,
+    string | undefined
+  >
 
   // Fetch user and tenant data from context (safe: returns null during HMR/init)
   const ctx = useUserContextSafe()
@@ -370,15 +375,26 @@ export function DashboardLayout() {
   if (location.pathname === '/dashboard/applications') {
     return (
       <BreadcrumbLabelProvider>
-        <ErrorBoundary>
-          <Outlet key={location.pathname} />
-        </ErrorBoundary>
+        <div
+          data-dashboard
+          className="relative flex min-h-screen flex-col"
+          style={{
+            background: 'var(--background)',
+            color: 'var(--foreground)',
+          }}
+        >
+          <ApplicationsHubTopBar />
+          <ErrorBoundary>
+            <Outlet key={location.pathname} />
+          </ErrorBoundary>
+        </div>
       </BreadcrumbLabelProvider>
     )
   }
 
   return (
     <SidebarProvider
+      data-dashboard
       className="dashboard-actionable-cursors dashboard-instant-scroll"
       style={{ background: 'var(--zk-bg)' }}
     >
@@ -401,7 +417,8 @@ export function DashboardLayout() {
               top: 0,
               zIndex: 30,
               height: 60,
-              background: 'rgba(248,250,252,0.85)',
+              background:
+                'color-mix(in oklch, var(--background) 88%, transparent)',
               backdropFilter: 'saturate(1.5) blur(14px)',
               WebkitBackdropFilter: 'saturate(1.5) blur(14px)',
               borderBottom: '1px solid var(--zk-line)',

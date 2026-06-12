@@ -162,10 +162,8 @@ export const CreditPackagesStep: React.FC<CreditPackagesStepProps> = ({
             <Coins className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-[#1B2E5A]">
-              Credit Packages
-            </h2>
-            <p className="text-sm text-slate-600">
+            <h2 className="text-primary text-2xl font-bold">Credit Packages</h2>
+            <p className="text-muted-foreground text-sm">
               Choose a credit package that fits your needs (optional)
             </p>
           </div>
@@ -224,7 +222,7 @@ export const CreditPackagesStep: React.FC<CreditPackagesStepProps> = ({
                   className={`relative cursor-pointer transition-all duration-300 ${
                     selectedPackage === pkg.id
                       ? 'bg-amber-50/50 shadow-lg ring-2 ring-amber-500'
-                      : 'border-slate-200 hover:shadow-md'
+                      : 'border-border hover:shadow-md'
                   }`}
                   onClick={() => handlePackageSelect(pkg.id)}
                 >
@@ -242,15 +240,15 @@ export const CreditPackagesStep: React.FC<CreditPackagesStepProps> = ({
                       <CardTitle className="text-lg">{pkg.name}</CardTitle>
                     </div>
                     <div className="space-y-1">
-                      <div className="text-3xl font-bold text-primary">
+                      <div className="text-primary text-3xl font-bold">
                         {pkg.price === 0 ? 'Free' : `$${pkg.price}`}
                         {pkg.price > 0 && (
-                          <span className="text-sm font-normal text-slate-500">
+                          <span className="text-muted-foreground text-sm font-normal">
                             /{pkg.currency}
                           </span>
                         )}
                       </div>
-                      <div className="text-sm text-slate-600">
+                      <div className="text-muted-foreground text-sm">
                         {pkg.credits.toLocaleString()} credits
                       </div>
                     </div>
@@ -268,7 +266,7 @@ export const CreditPackagesStep: React.FC<CreditPackagesStepProps> = ({
                           {pkg.features.map((feature, idx) => (
                             <li
                               key={idx}
-                              className="flex items-start gap-2 text-sm text-slate-700"
+                              className="text-foreground flex items-start gap-2 text-sm"
                             >
                               <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-500" />
                               <span>{feature}</span>
@@ -279,8 +277,8 @@ export const CreditPackagesStep: React.FC<CreditPackagesStepProps> = ({
                     </div>
 
                     {pkg.price > 0 && (
-                      <div className="border-t border-slate-200 pt-3">
-                        <p className="text-center text-xs text-slate-500">
+                      <div className="border-border border-t pt-3">
+                        <p className="text-muted-foreground text-center text-xs">
                           ${calculateUnitPrice(pkg.credits, pkg.price)} per
                           credit
                         </p>
@@ -330,7 +328,7 @@ export const CreditPackagesStep: React.FC<CreditPackagesStepProps> = ({
 
       {/* Note */}
       <motion.div variants={fadeInUp} className="text-center">
-        <p className="text-xs text-slate-500">
+        <p className="text-muted-foreground text-xs">
           You can change your package selection anytime from the Billing page
           after onboarding.
         </p>

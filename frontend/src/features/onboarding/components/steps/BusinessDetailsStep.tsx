@@ -211,14 +211,14 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(
     }, [localizationConfig, selectedCountry, applyRegionalSettingsFromCountry])
 
     const cardClasses =
-      'rounded-xl border border-slate-200/70 bg-white p-6 shadow-[0_4px_32px_-8px_rgba(15,23,42,0.08)] ring-1 ring-slate-900/[0.04] sm:p-8 md:p-10'
+      'rounded-xl border border-border/70 bg-card p-6 shadow-[0_4px_32px_-8px_rgba(15,23,42,0.08)] ring-1 ring-foreground/[0.04] sm:p-8 md:p-10'
     const labelClasses =
-      'mb-1.5 flex items-center gap-2 text-sm font-medium text-slate-700'
+      'mb-1.5 flex items-center gap-2 text-sm font-medium text-foreground'
     const inputContainerClasses = 'relative group'
     const inputClasses =
-      'h-10 w-full rounded-md border border-slate-300 bg-white pl-4 pr-4 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm outline-none transition-colors hover:border-blue-200 focus:border-blue-700 focus:ring-2 focus:ring-blue-600/20'
+      'h-10 w-full rounded-md border border-border bg-card pl-4 pr-4 text-sm text-foreground placeholder:text-muted-foreground shadow-sm outline-none transition-colors hover:border-blue-200 focus:border-blue-700 focus:ring-2 focus:ring-blue-600/20'
     const iconClasses =
-      'absolute left-3 top-2.5 h-4 w-4 text-slate-400 group-focus-within:text-blue-700'
+      'absolute left-3 top-2.5 h-4 w-4 text-muted-foreground group-focus-within:text-blue-700'
 
     return (
       <TooltipProvider delayDuration={200}>
@@ -238,7 +238,7 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(
             <h1 className="mb-1.5 text-2xl font-semibold tracking-tight text-blue-950 md:text-[1.65rem]">
               {content.title}
             </h1>
-            <p className="max-w-xl text-sm leading-relaxed text-slate-600">
+            <p className="text-muted-foreground max-w-xl text-sm leading-relaxed">
               {content.description}
             </p>
           </div>
@@ -258,7 +258,7 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(
                       <span className="text-red-500">*</span>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Info className="h-4 w-4 cursor-help text-slate-400 hover:text-slate-600" />
+                          <Info className="text-muted-foreground hover:text-muted-foreground h-4 w-4 cursor-help" />
                         </TooltipTrigger>
                         <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                           <p className="mb-1 font-semibold">Mandatory Field</p>
@@ -285,17 +285,17 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(
                       <FormControl>
                         <SelectTrigger className={`${inputClasses}`}>
                           <div className="flex items-center gap-2">
-                            <Globe className="h-4 w-4 text-slate-400" />
+                            <Globe className="text-muted-foreground h-4 w-4" />
                             <SelectValue placeholder="Select country" />
                           </div>
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent className="rounded-lg border-slate-200 bg-white/95 shadow-xl backdrop-blur-xl">
+                      <SelectContent className="border-border bg-card/95 rounded-lg shadow-xl backdrop-blur-xl">
                         {COUNTRIES.map((country) => (
                           <SelectItem
                             key={country.id}
                             value={country.id}
-                            className="cursor-pointer py-2.5 hover:bg-slate-50 focus:bg-slate-50"
+                            className="hover:bg-muted focus:bg-muted cursor-pointer py-2.5"
                           >
                             <span className="flex items-center gap-2">
                               <span className="text-base leading-none">
@@ -316,7 +316,7 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(
                         )
                         return (
                           <div className="mt-2 rounded-md border border-blue-100 bg-blue-50/60 p-2.5">
-                            <p className="flex items-center gap-2 text-xs font-medium text-slate-700">
+                            <p className="text-foreground flex items-center gap-2 text-xs font-medium">
                               <span className="text-base leading-none">
                                 {c?.flag}
                               </span>
@@ -344,7 +344,7 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(
                       Company Name <span className="text-red-500">*</span>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Info className="h-4 w-4 cursor-help text-slate-400 hover:text-slate-600" />
+                          <Info className="text-muted-foreground hover:text-muted-foreground h-4 w-4 cursor-help" />
                         </TooltipTrigger>
                         <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                           <p className="mb-1 font-semibold">Mandatory Field</p>
@@ -386,7 +386,7 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(
                       Company Website
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Info className="h-4 w-4 cursor-help text-slate-400 hover:text-slate-600" />
+                          <Info className="text-muted-foreground hover:text-muted-foreground h-4 w-4 cursor-help" />
                         </TooltipTrigger>
                         <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                           <p>
@@ -426,7 +426,7 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(
                         Company Type <span className="text-red-500">*</span>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Info className="h-4 w-4 cursor-help text-slate-400 hover:text-slate-600" />
+                            <Info className="text-muted-foreground hover:text-muted-foreground h-4 w-4 cursor-help" />
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                             <p className="mb-1 font-semibold">
@@ -448,20 +448,20 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(
                         <FormControl>
                           <SelectTrigger className={`${inputClasses}`}>
                             <div className="flex items-center gap-2">
-                              <Briefcase className="h-4 w-4 text-slate-400" />
+                              <Briefcase className="text-muted-foreground h-4 w-4" />
                               <SelectValue placeholder="Select company type" />
                             </div>
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent
                           position="popper"
-                          className="max-h-[300px] rounded-lg border-slate-200 bg-white/95 shadow-xl backdrop-blur-xl"
+                          className="border-border bg-card/95 max-h-[300px] rounded-lg shadow-xl backdrop-blur-xl"
                         >
                           {COMPANY_TYPES.map((type) => (
                             <SelectItem
                               key={type.id}
                               value={type.id}
-                              className="cursor-pointer py-2.5 hover:bg-slate-50 focus:bg-slate-50"
+                              className="hover:bg-muted focus:bg-muted cursor-pointer py-2.5"
                             >
                               {type.name}
                             </SelectItem>
@@ -483,7 +483,7 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(
                         Business Type <span className="text-red-500">*</span>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Info className="h-4 w-4 cursor-help text-slate-400 hover:text-slate-600" />
+                            <Info className="text-muted-foreground hover:text-muted-foreground h-4 w-4 cursor-help" />
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                             <p className="mb-1 font-semibold">
@@ -505,17 +505,17 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(
                         <FormControl>
                           <SelectTrigger className={`${inputClasses} pl-4`}>
                             <div className="flex items-center gap-2">
-                              <FileText className="h-4 w-4 text-slate-400" />
+                              <FileText className="text-muted-foreground h-4 w-4" />
                               <SelectValue placeholder="Select type" />
                             </div>
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent className="max-h-[300px] rounded-xl border-slate-200 bg-white/95 shadow-xl backdrop-blur-xl">
+                        <SelectContent className="border-border bg-card/95 max-h-[300px] rounded-xl shadow-xl backdrop-blur-xl">
                           {BUSINESS_TYPES.map((type) => (
                             <SelectItem
                               key={type.id}
                               value={type.id}
-                              className="cursor-pointer py-3 focus:bg-slate-50"
+                              className="focus:bg-muted cursor-pointer py-3"
                             >
                               {type.name}
                             </SelectItem>
@@ -536,12 +536,12 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(
                         className={`${labelClasses} flex items-center gap-2`}
                       >
                         Team Size{' '}
-                        <span className="font-normal text-slate-400">
+                        <span className="text-muted-foreground font-normal">
                           (Optional)
                         </span>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Info className="h-4 w-4 cursor-help text-slate-400 hover:text-slate-600" />
+                            <Info className="text-muted-foreground hover:text-muted-foreground h-4 w-4 cursor-help" />
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                             <p className="mb-1 font-semibold">Optional Field</p>
@@ -560,17 +560,17 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(
                         <FormControl>
                           <SelectTrigger className={inputClasses}>
                             <div className="flex items-center gap-2">
-                              <Users2 className="h-4 w-4 text-slate-400" />
+                              <Users2 className="text-muted-foreground h-4 w-4" />
                               <SelectValue placeholder="Select size" />
                             </div>
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent className="rounded-xl border-slate-200 bg-white/95 shadow-xl backdrop-blur-xl">
+                        <SelectContent className="border-border bg-card/95 rounded-xl shadow-xl backdrop-blur-xl">
                           {ORGANIZATION_SIZES.map((size) => (
                             <SelectItem
                               key={size.id}
                               value={size.id}
-                              className="cursor-pointer py-3 focus:bg-slate-50"
+                              className="focus:bg-muted cursor-pointer py-3"
                             >
                               {size.name}
                             </SelectItem>
@@ -591,12 +591,12 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(
                         className={`${labelClasses} flex items-center gap-2`}
                       >
                         Primary CRM Use Case{' '}
-                        <span className="font-normal text-slate-400">
+                        <span className="text-muted-foreground font-normal">
                           (Optional)
                         </span>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Info className="h-4 w-4 cursor-help text-slate-400 hover:text-slate-600" />
+                            <Info className="text-muted-foreground hover:text-muted-foreground h-4 w-4 cursor-help" />
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                             <p className="mb-1 font-semibold">Optional Field</p>
@@ -615,33 +615,33 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(
                         <FormControl>
                           <SelectTrigger className={inputClasses}>
                             <div className="flex items-center gap-2">
-                              <Settings2 className="h-4 w-4 text-slate-400" />
+                              <Settings2 className="text-muted-foreground h-4 w-4" />
                               <SelectValue placeholder="Select primary use case" />
                             </div>
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent className="rounded-xl border-slate-200 bg-white/95 shadow-xl backdrop-blur-xl">
+                        <SelectContent className="border-border bg-card/95 rounded-xl shadow-xl backdrop-blur-xl">
                           <SelectItem
                             value="sales"
-                            className="cursor-pointer py-3 focus:bg-slate-50"
+                            className="focus:bg-muted cursor-pointer py-3"
                           >
                             Sales Pipeline & Revenue
                           </SelectItem>
                           <SelectItem
                             value="support"
-                            className="cursor-pointer py-3 focus:bg-slate-50"
+                            className="focus:bg-muted cursor-pointer py-3"
                           >
                             Customer Support & Ticketing
                           </SelectItem>
                           <SelectItem
                             value="marketing"
-                            className="cursor-pointer py-3 focus:bg-slate-50"
+                            className="focus:bg-muted cursor-pointer py-3"
                           >
                             Marketing & Lead Generation
                           </SelectItem>
                           <SelectItem
                             value="full"
-                            className="cursor-pointer py-3 focus:bg-slate-50"
+                            className="focus:bg-muted cursor-pointer py-3"
                           >
                             Full CRM (Sales + Support + Marketing)
                           </SelectItem>
@@ -662,12 +662,12 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(
                       className={`${labelClasses} flex items-center gap-2`}
                     >
                       Brief Description{' '}
-                      <span className="font-normal text-slate-400">
+                      <span className="text-muted-foreground font-normal">
                         (Optional)
                       </span>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Info className="h-4 w-4 cursor-help text-slate-400 hover:text-slate-600" />
+                          <Info className="text-muted-foreground hover:text-muted-foreground h-4 w-4 cursor-help" />
                         </TooltipTrigger>
                         <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                           <p className="mb-1 font-semibold">Optional Field</p>
@@ -684,7 +684,7 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(
                         {...field}
                         value={field.value || ''}
                         rows={4}
-                        className={`${inputClasses} h-auto min-h-[120px] resize-none bg-white pt-3`}
+                        className={`${inputClasses} bg-card h-auto min-h-[120px] resize-none pt-3`}
                         placeholder={content.placeholder}
                       />
                     </FormControl>
@@ -700,7 +700,7 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(
                 className={`overflow-hidden rounded-lg border transition-colors duration-700 ${
                   regionalFlash
                     ? 'border-blue-300 bg-blue-50/90'
-                    : 'border-blue-100 bg-slate-50/60'
+                    : 'bg-muted/60 border-blue-100'
                 }`}
               >
                 <CollapsibleTrigger asChild>
@@ -711,31 +711,31 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(
                       e.preventDefault()
                       setIsRegionalSettingsOpen(!isRegionalSettingsOpen)
                     }}
-                    className="group flex h-auto w-full items-center justify-between p-4 hover:bg-slate-50/50"
+                    className="group hover:bg-muted/50 flex h-auto w-full items-center justify-between p-4"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 shadow-sm group-hover:border-slate-300">
+                      <div className="border-border bg-card text-muted-foreground group-hover:border-border flex h-9 w-9 items-center justify-center rounded-lg border shadow-sm">
                         <Settings2 className="h-4 w-4" />
                       </div>
                       <div className="text-left">
                         <h4 className="flex items-center gap-2 text-sm font-semibold tracking-tight text-blue-950">
                           Regional Settings
                           {selectedCountry && selectedCountry !== 'OTHER' && (
-                            <span className="rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600">
+                            <span className="border-border bg-muted text-muted-foreground rounded-full border px-2 py-0.5 text-[10px] font-medium">
                               Auto
                             </span>
                           )}
                         </h4>
-                        <p className="text-xs font-normal text-slate-500">
+                        <p className="text-muted-foreground text-xs font-normal">
                           Currency, Language, Timezone
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
                       {isRegionalSettingsOpen ? (
-                        <ChevronUp className="h-4 w-4 text-slate-400" />
+                        <ChevronUp className="text-muted-foreground h-4 w-4" />
                       ) : (
-                        <ChevronDown className="h-4 w-4 text-slate-400 group-hover:text-slate-600" />
+                        <ChevronDown className="text-muted-foreground group-hover:text-muted-foreground h-4 w-4" />
                       )}
                     </div>
                   </Button>
@@ -744,7 +744,7 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(
                   className="space-y-4 p-4 pt-0"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <div className="mb-4 h-px w-full bg-slate-100"></div>
+                  <div className="bg-muted mb-4 h-px w-full"></div>
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <FormField
                       control={form.control}
@@ -754,14 +754,14 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(
                           <FormLabel
                             className={`${labelClasses} flex items-center gap-2`}
                           >
-                            <DollarSign className="h-4 w-4 text-slate-500" />
+                            <DollarSign className="text-muted-foreground h-4 w-4" />
                             Currency{' '}
-                            <span className="font-normal text-slate-400">
+                            <span className="text-muted-foreground font-normal">
                               (Auto)
                             </span>
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <Info className="h-4 w-4 cursor-help text-slate-400 hover:text-slate-600" />
+                                <Info className="text-muted-foreground hover:text-muted-foreground h-4 w-4 cursor-help" />
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                                 <p className="mb-1 font-semibold">
@@ -783,18 +783,18 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(
                           >
                             <FormControl>
                               <SelectTrigger
-                                className={`${inputClasses} bg-white`}
+                                className={`${inputClasses} bg-card`}
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 <SelectValue placeholder="Select currency" />
                               </SelectTrigger>
                             </FormControl>
-                            <SelectContent className="max-h-[200px] rounded-lg border-slate-200 bg-white/95 shadow-xl backdrop-blur-xl">
+                            <SelectContent className="border-border bg-card/95 max-h-[200px] rounded-lg shadow-xl backdrop-blur-xl">
                               {CURRENCIES.map((c) => (
                                 <SelectItem
                                   key={c.id}
                                   value={c.id}
-                                  className="cursor-pointer py-2.5 hover:bg-slate-50 focus:bg-slate-50"
+                                  className="hover:bg-muted focus:bg-muted cursor-pointer py-2.5"
                                 >
                                   {c.name}
                                 </SelectItem>
@@ -814,14 +814,14 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(
                           <FormLabel
                             className={`${labelClasses} flex items-center gap-2`}
                           >
-                            <Globe className="h-4 w-4 text-slate-500" />
+                            <Globe className="text-muted-foreground h-4 w-4" />
                             Language{' '}
-                            <span className="font-normal text-slate-400">
+                            <span className="text-muted-foreground font-normal">
                               (Auto)
                             </span>
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <Info className="h-4 w-4 cursor-help text-slate-400 hover:text-slate-600" />
+                                <Info className="text-muted-foreground hover:text-muted-foreground h-4 w-4 cursor-help" />
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                                 <p className="mb-1 font-semibold">
@@ -843,18 +843,18 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(
                           >
                             <FormControl>
                               <SelectTrigger
-                                className={`${inputClasses} bg-white`}
+                                className={`${inputClasses} bg-card`}
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 <SelectValue placeholder="Select language" />
                               </SelectTrigger>
                             </FormControl>
-                            <SelectContent className="max-h-[200px] rounded-lg border-slate-200 bg-white/95 shadow-xl backdrop-blur-xl">
+                            <SelectContent className="border-border bg-card/95 max-h-[200px] rounded-lg shadow-xl backdrop-blur-xl">
                               {LANGUAGES.map((l) => (
                                 <SelectItem
                                   key={l.id}
                                   value={l.id}
-                                  className="cursor-pointer py-2.5 hover:bg-slate-50 focus:bg-slate-50"
+                                  className="hover:bg-muted focus:bg-muted cursor-pointer py-2.5"
                                 >
                                   {l.name}
                                 </SelectItem>
@@ -874,14 +874,14 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(
                           <FormLabel
                             className={`${labelClasses} flex items-center gap-2`}
                           >
-                            <Clock className="h-4 w-4 text-slate-500" />
+                            <Clock className="text-muted-foreground h-4 w-4" />
                             Timezone{' '}
-                            <span className="font-normal text-slate-400">
+                            <span className="text-muted-foreground font-normal">
                               (Auto)
                             </span>
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <Info className="h-4 w-4 cursor-help text-slate-400 hover:text-slate-600" />
+                                <Info className="text-muted-foreground hover:text-muted-foreground h-4 w-4 cursor-help" />
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                                 <p className="mb-1 font-semibold">
@@ -903,18 +903,18 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(
                           >
                             <FormControl>
                               <SelectTrigger
-                                className={`${inputClasses} bg-white`}
+                                className={`${inputClasses} bg-card`}
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 <SelectValue placeholder="Select timezone" />
                               </SelectTrigger>
                             </FormControl>
-                            <SelectContent className="max-h-[200px] rounded-lg border-slate-200 bg-white/95 shadow-xl backdrop-blur-xl">
+                            <SelectContent className="border-border bg-card/95 max-h-[200px] rounded-lg shadow-xl backdrop-blur-xl">
                               {TIMEZONES.map((t) => (
                                 <SelectItem
                                   key={t.id}
                                   value={t.id}
-                                  className="cursor-pointer py-2.5 hover:bg-slate-50 focus:bg-slate-50"
+                                  className="hover:bg-muted focus:bg-muted cursor-pointer py-2.5"
                                 >
                                   {t.name}
                                 </SelectItem>
@@ -934,14 +934,14 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(
                           <FormLabel
                             className={`${labelClasses} flex items-center gap-2`}
                           >
-                            <Calendar className="h-4 w-4 text-slate-500" />
+                            <Calendar className="text-muted-foreground h-4 w-4" />
                             Locale Format{' '}
-                            <span className="font-normal text-slate-400">
+                            <span className="text-muted-foreground font-normal">
                               (Auto)
                             </span>
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <Info className="h-4 w-4 cursor-help text-slate-400 hover:text-slate-600" />
+                                <Info className="text-muted-foreground hover:text-muted-foreground h-4 w-4 cursor-help" />
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                                 <p className="mb-1 font-semibold">
@@ -963,18 +963,18 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(
                           >
                             <FormControl>
                               <SelectTrigger
-                                className={`${inputClasses} bg-white`}
+                                className={`${inputClasses} bg-card`}
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 <SelectValue placeholder="Select locale" />
                               </SelectTrigger>
                             </FormControl>
-                            <SelectContent className="max-h-[200px] rounded-lg border-slate-200 bg-white/95 shadow-xl backdrop-blur-xl">
+                            <SelectContent className="border-border bg-card/95 max-h-[200px] rounded-lg shadow-xl backdrop-blur-xl">
                               {LOCALES.map((l) => (
                                 <SelectItem
                                   key={l.id}
                                   value={l.id}
-                                  className="cursor-pointer py-2.5 hover:bg-slate-50 focus:bg-slate-50"
+                                  className="hover:bg-muted focus:bg-muted cursor-pointer py-2.5"
                                 >
                                   {l.name}
                                 </SelectItem>
@@ -991,7 +991,7 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(
 
               {showGSTField && (
                 <div>
-                  <div className="relative flex flex-col gap-4 overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-6">
+                  <div className="border-border bg-muted relative flex flex-col gap-4 overflow-hidden rounded-xl border p-6">
                     <div className="absolute top-0 right-0 p-4 opacity-10">
                       <CheckCircle2 className="h-24 w-24 text-blue-900/10" />
                     </div>
@@ -1007,14 +1007,14 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(
                             <Input
                               {...field}
                               value={field.value || ''}
-                              className={`${inputClasses} border-slate-300 bg-white font-mono tracking-wide uppercase focus:border-slate-500`}
+                              className={`${inputClasses} border-border bg-card font-mono tracking-wide uppercase focus:border-slate-500`}
                               placeholder="22AAAAA0000A1Z5"
                             />
                           </FormControl>
                           <FormMessage />
                           <div className="mt-2 flex items-center gap-2">
                             <div className="h-1.5 w-1.5 rounded-full bg-emerald-500"></div>
-                            <p className="text-xs font-medium text-slate-600">
+                            <p className="text-muted-foreground text-xs font-medium">
                               Automated compliance verification active
                             </p>
                           </div>

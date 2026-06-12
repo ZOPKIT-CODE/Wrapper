@@ -165,8 +165,8 @@ export function OrganizationTreeManagement({
   employees?: Employee[]
   showEditResponsiblePerson: boolean
   setShowEditResponsiblePerson: (show: boolean) => void
-  editingEntity: OrganizationEntity | null
-  setEditingEntity: (entity: OrganizationEntity | null) => void
+  editingEntity: Entity | null
+  setEditingEntity: (entity: Entity | null) => void
   getResponsiblePersonName: (userId: string) => string
   loadResponsiblePersonNames: (
     entities: (Entity | Organization)[]
@@ -229,7 +229,7 @@ export function OrganizationTreeManagement({
   const [showCreditTransfer, setShowCreditTransfer] = useState(false)
   const [showAllocationDialog, setShowAllocationDialog] = useState(false)
   const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null)
-  const [selectedEntity, setSelectedEntity] = useState<OrganizationEntity | null>(null)
+  const [selectedEntity, setSelectedEntity] = useState<Entity | null>(null)
   const [createFormStep, setCreateFormStep] = useState(0)
   const [managerUsers] = useState<PersonSource[]>([])
   const [createForm, setCreateForm] = useState<CreateForm>({
