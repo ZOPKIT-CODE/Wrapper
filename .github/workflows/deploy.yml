@@ -105,6 +105,35 @@ jobs:
           # dying with "Error acquiring the state lock".
           terraform apply -auto-approve -lock-timeout=300s -target="module.services[\"$SERVICE\"]"
 
+      # Record IMMEDIATELY after a successful apply, for EVERY release — this used
+      # to be gated on build_here (wrapper-web only) and sit after migrate/smoke.
+      # Result: dispatched CRM/FA releases deployed but never recorded, main's tag
+      # record went stale, and the next apply from main silently ROLLED the service
+      # BACK to a 4-commit-old image (caught by the onboarding canary 2026-06-12).
+      - name: Commit deployed tag record
+        run: |
+          cd ${{ env.TF_DIR }}
+          git config user.name "github-actions"; git config user.email "actions@github.com"
+          TAG="${{ steps.cfg.outputs.tag }}"
+          record() {
+            node -e 'const fs=require("fs");const f="image-tags.auto.tfvars.json";const j=fs.existsSync(f)?JSON.parse(fs.readFileSync(f)):{service_image_tags:{}};j.service_image_tags=j.service_image_tags||{};j.service_image_tags[process.argv[1]]=process.argv[2];fs.writeFileSync(f,JSON.stringify(j,null,2)+"\n")' "$SERVICE" "$TAG"
+            git add image-tags.auto.tfvars.json
+          }
+          record
+          git diff --cached --quiet && exit 0
+          git commit -m "ci(deploy): $SERVICE -> $TAG [skip ci]"
+          # Conflict-free retry: re-apply the one-key merge on the fresh tip
+          # rather than rebasing (sibling releases edit the same file).
+          for i in 1 2 3; do
+            git push && exit 0
+            git fetch origin main && git reset --hard origin/main
+            record
+            git diff --cached --quiet && exit 0
+            git commit -m "ci(deploy): $SERVICE -> $TAG [skip ci]"
+          done
+          echo "::error::tag record push failed — main's image-tags.auto.tfvars.json is STALE for $SERVICE (live=$TAG); the next apply from main will ROLL THIS SERVICE BACK"
+          exit 1
+
       - name: Run DB migrations (web services)
         if: steps.cfg.outputs.migrate == 'true'
         working-directory: ${{ env.TF_DIR }}
@@ -131,15 +160,6 @@ jobs:
             [ "$c" = "200" ] && { echo "health 200"; exit 0; }
             echo "($i) $c"; sleep 6
           done; echo "::error::health never 200"; exit 1
-
-      - name: Commit deployed tag record
-        if: steps.cfg.outputs.build_here == 'true'
-        run: |
-          cd ${{ env.TF_DIR }}
-          git config user.name "github-actions"; git config user.email "actions@github.com"
-          git add image-tags.auto.tfvars.json
-          git diff --cached --quiet || git commit -m "ci(deploy): $SERVICE -> ${{ steps.cfg.outputs.tag }} [skip ci]"
-          git push || true
 
   # Wrapper frontend: only on the wrapper repo's own deploys of wrapper-web.
   frontend:
