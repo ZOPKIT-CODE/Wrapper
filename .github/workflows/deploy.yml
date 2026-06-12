@@ -95,7 +95,10 @@ jobs:
           terraform init -input=false
           # merge this service's tag into the committed tag record
           node -e 'const fs=require("fs");const f="image-tags.auto.tfvars.json";const j=fs.existsSync(f)?JSON.parse(fs.readFileSync(f)):{service_image_tags:{}};j.service_image_tags=j.service_image_tags||{};j.service_image_tags[process.argv[1]]=process.argv[2];fs.writeFileSync(f,JSON.stringify(j,null,2)+"\n")' "$SERVICE" "${{ steps.cfg.outputs.tag }}"
-          terraform apply -auto-approve -target="module.services[\"$SERVICE\"]"
+          # Dispatched releases for sibling services (e.g. crm-web + crm-worker) can
+          # run concurrently against the SAME state — wait for the lock instead of
+          # dying with "Error acquiring the state lock".
+          terraform apply -auto-approve -lock-timeout=300s -target="module.services[\"$SERVICE\"]"
 
       - name: Run DB migrations (web services)
         if: steps.cfg.outputs.migrate == 'true'
