@@ -9,7 +9,10 @@ import { eq, and, inArray, sql } from 'drizzle-orm';
 import ErrorResponses from '../../../utils/error-responses.js';
 import { PLAN_ACCESS_MATRIX } from '../../../data/permission-matrix.js';
 import Logger from '../../../utils/logger.js';
-import { z } from 'zod';
+// zod/v4 entry: fastify-type-provider-zod@5 validates via the v4 core
+// (schema._zod.run) — classic-'zod' (v3) schemas crash it with
+// "Cannot read properties of undefined (reading 'run')" on EVERY request.
+import { z } from 'zod/v4';
 
 export default async function subscriptionRoutes(
   fastify: FastifyInstance,

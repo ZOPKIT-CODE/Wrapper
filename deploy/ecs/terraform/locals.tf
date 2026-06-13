@@ -63,6 +63,7 @@ locals {
       memory                 = 1024
       container_port         = 3000
       command                = []
+      extra_env              = {}
       needs_alb              = true
       host_header            = local.fqdn["wrapper"].api
       health_check_path      = "/health"
@@ -74,7 +75,7 @@ locals {
       listener_rule_priority = 10
     }
     "crm-web" = {
-      enabled                = false # deployed gradually (flip to true when ready)
+      enabled                = true # live in staging AND prod (crm.zopkit.com cut over 2026-06-11)
       app                    = "crm"
       role                   = "crm"
       ecr_repo               = "crm-backend"
@@ -82,15 +83,36 @@ locals {
       memory                 = 1024
       container_port         = 4000
       command                = []
+      extra_env              = { PROCESS_ROLE = "web" } # API only — background machinery runs in crm-worker
       needs_alb              = true
       host_header            = local.fqdn["crm"].api
       health_check_path      = "/health"
       stickiness_enabled     = false
-      autoscaling_enabled    = false # PINNED: crmOutboxPoller not leader-gated
+      autoscaling_enabled    = true # UNPINNED: outbox poller + SQS consumer moved to crm-worker; in-process crons are advisory-locked
+      desired_count          = 1
+      min_count              = 1
+      max_count              = 3
+      listener_rule_priority = 20
+    }
+    "crm-worker" = {
+      enabled                = true
+      app                    = "crm"
+      role                   = "crm"
+      ecr_repo               = "crm-backend"
+      cpu                    = 512
+      memory                 = 1024
+      container_port         = null
+      command                = []
+      extra_env              = { PROCESS_ROLE = "worker" } # schedulers + SQS consumer + outbox poller
+      needs_alb              = false
+      host_header            = null
+      health_check_path      = null
+      stickiness_enabled     = false
+      autoscaling_enabled    = false # PINNED: outbox poller has no SKIP-LOCKED claim — exactly one worker
       desired_count          = 1
       min_count              = 1
       max_count              = 1
-      listener_rule_priority = 20
+      listener_rule_priority = null
     }
     "fa-web" = {
       enabled                = false # deployed gradually (flip to true when ready)
@@ -101,6 +123,7 @@ locals {
       memory                 = 1024
       container_port         = 3002
       command                = []
+      extra_env              = {}
       needs_alb              = true
       host_header            = local.fqdn["fa"].api
       health_check_path      = "/api/health/health/live" # NOT the aggregate /api/health/health
@@ -120,6 +143,7 @@ locals {
       memory                 = 512
       container_port         = null
       command                = ["node", "dist/scripts/accounting-sqs-consumer-runner.js"]
+      extra_env              = {}
       needs_alb              = false
       host_header            = null
       health_check_path      = null
@@ -216,6 +240,10 @@ locals {
   service_env_common = {
     for app, cfg in local.apps : app => {
       NODE_ENV                    = "production"
+      # Honest telemetry labels: NODE_ENV is 'production' in BOTH envs' images,
+      # which filed staging's Sentry events under environment:production.
+      # Backends read SENTRY_ENVIRONMENT first (wrapper PR #28; crm/fa to follow).
+      SENTRY_ENVIRONMENT          = var.environment
       BYPASS_TRIAL_RESTRICTIONS   = tostring(var.bypass_trial_restrictions)
       AWS_REGION                  = var.aws_region
       COGNITO_REGION              = var.aws_region
@@ -256,6 +284,8 @@ locals {
       SNS_BUSINESS_TOPIC_ARN = aws_sns_topic.topics["business_events"].arn
       WRAPPER_API_URL        = "https://${local.fqdn["wrapper"].api}"
       CORS_ORIGINS           = "https://${local.fqdn["crm"].frontend}"
+      # CRM's @fastify/cors reads CLIENT_URL (CORS_ORIGINS kept for forward-compat)
+      CLIENT_URL             = "https://${local.fqdn["crm"].frontend}"
     })
     fa = merge(local.service_env_common["fa"], {
       SERVER_PORT                   = "3002"

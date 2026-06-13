@@ -51,6 +51,9 @@ export const trackActivity = (options: TrackActivityOptions = {}) => {
     // Store original reply.send method to track after response
     const originalSend = reply.send.bind(reply);
     reply.send = function(payload: unknown) {
+      // Double-send guard: error paths can re-enter send after the response
+      // already went out (see error-handler) — never call originalSend twice.
+      if (reply.sent) return reply;
       // Call original send method
       const result = originalSend(payload);
       
