@@ -1,77 +1,9 @@
 import { db } from '../../db/index.js';
 import { eq, and } from 'drizzle-orm';
 import { userRoleAssignments, customRoles } from '../../db/schema/index.js';
-import type { FastifyRequest, FastifyReply } from 'fastify';
 import type { UserPermissions } from '../../types/common.js';
 import Logger from '../../utils/logger.js';
 
-export function requirePermissions(requiredPermissions: string[]) {
-  return async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
-    request.log.debug({
-      requiredPermissions,
-      userId: request.userContext?.internalUserId,
-      tenantId: request.userContext?.tenantId,
-      isAuthenticated: request.userContext?.isAuthenticated,
-      isAdmin: request.userContext?.isAdmin,
-      isTenantAdmin: request.userContext?.isTenantAdmin
-    }, 'Permission check initiated');
-
-    if (!request.userContext?.isAuthenticated) {
-      request.log.debug('User not authenticated');
-      reply.code(401).send({ error: 'Authentication required' });
-      return;
-    }
-
-    // NO ADMIN BYPASS: tenant admins do not skip the permission check. Their power
-    // comes from an enumerated system role, which getUserPermissions resolves to
-    // modules:'*'. See [[feedback-no-admin-bypass]] and ensureTenantAdminRole.
-    if (!request.userContext.internalUserId || !request.userContext.tenantId) {
-      reply.code(403).send({ error: 'Forbidden', message: 'User context incomplete for permission check' });
-      return;
-    }
-
-    try {
-      request.log.debug('Fetching user permissions...');
-      const userPermissions = await getUserPermissions(
-        request.userContext.internalUserId,
-        request.userContext.tenantId
-      );
-
-      request.log.debug({
-        moduleCount: typeof userPermissions.modules === 'string' ? 'all' : Object.keys(userPermissions.modules).length,
-        roleCount: userPermissions.roles.length,
-        modules: typeof userPermissions.modules === 'string' ? '*' : Object.keys(userPermissions.modules),
-        roles: userPermissions.roles.map(r => r.roleName)
-      }, 'User permissions fetched');
-
-      const hasPermission = checkPermissions(userPermissions, requiredPermissions);
-      
-      request.log.debug({
-        hasPermission,
-        required: requiredPermissions,
-        userModules: typeof userPermissions.modules === 'string' ? '*' : Object.keys(userPermissions.modules)
-      }, 'Permission check result');
-
-      if (!hasPermission) {
-        request.log.debug({
-          required: requiredPermissions,
-          userPermissions: userPermissions.modules
-        }, 'Permission denied');
-        reply.code(403).send({ 
-          error: 'Insufficient permissions',
-          required: requiredPermissions
-        });
-        return;
-      }
-
-      request.log.debug('Permission granted');
-      request.userContext.permissions = userPermissions;
-    } catch (error) {
-      request.log.error({ err: error }, 'Permission check failed');
-      reply.code(500).send({ error: 'Permission check failed' });
-    }
-  };
-}
 
 export async function getUserPermissions(userId: string, tenantId: string): Promise<UserPermissions> {
   try {

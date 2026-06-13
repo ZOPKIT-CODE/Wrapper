@@ -26,27 +26,32 @@ export function ApplicationPlansTab({
   isUpgrading,
   selectedPlan,
   checkoutCurrency,
-  onCheckoutCurrencyChange
+  onCheckoutCurrencyChange,
 }: ApplicationPlansTabProps) {
   return (
     <div className="space-y-8">
-      <div className="max-w-3xl mx-auto">
+      <div className="mx-auto max-w-3xl">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
-          <div className="text-center sm:text-left flex-1 min-w-0">
+          <div className="min-w-0 flex-1 text-center sm:text-left">
             <h2 className={cn(DASHBOARD_PAGE_TITLE_CLASS, 'mb-3')}>
               Application Plans
             </h2>
-            <p className={cn(DASHBOARD_PAGE_DESCRIPTION_CLASS, 'leading-relaxed')}>
+            <p
+              className={cn(
+                DASHBOARD_PAGE_DESCRIPTION_CLASS,
+                'leading-relaxed'
+              )}
+            >
               Prices shown per month for comparison. Billed annually.
             </p>
-            <div className="mt-3 flex items-center justify-center sm:justify-start gap-2 text-sm text-muted-foreground">
-              <Calendar className="w-4 h-4 shrink-0" />
+            <div className="text-muted-foreground mt-3 flex items-center justify-center gap-2 text-sm sm:justify-start">
+              <Calendar className="h-4 w-4 shrink-0" />
               <span>Credits renew each billing year</span>
             </div>
           </div>
-          <div className="flex justify-center sm:justify-end sm:pt-1 shrink-0">
+          <div className="flex shrink-0 justify-center sm:justify-end sm:pt-1">
             <div
-              className="inline-flex rounded-full border border-slate-200 p-1 bg-slate-50"
+              className="inline-flex rounded-full border border-slate-200 bg-slate-50 p-1"
               role="group"
               aria-label="Billing currency"
             >
@@ -54,7 +59,7 @@ export function ApplicationPlansTab({
                 type="button"
                 onClick={() => onCheckoutCurrencyChange('usd')}
                 className={cn(
-                  'px-4 py-1.5 rounded-full text-sm font-semibold transition-colors min-w-[3.25rem]',
+                  'min-w-[3.25rem] rounded-full px-4 py-1.5 text-sm font-semibold transition-colors',
                   checkoutCurrency === 'usd'
                     ? 'bg-primary text-white shadow'
                     : 'text-slate-600 hover:bg-white/80'
@@ -66,7 +71,7 @@ export function ApplicationPlansTab({
                 type="button"
                 onClick={() => onCheckoutCurrencyChange('inr')}
                 className={cn(
-                  'px-4 py-1.5 rounded-full text-sm font-semibold transition-colors min-w-[3.25rem]',
+                  'min-w-[3.25rem] rounded-full px-4 py-1.5 text-sm font-semibold transition-colors',
                   checkoutCurrency === 'inr'
                     ? 'bg-primary text-white shadow'
                     : 'text-slate-600 hover:bg-white/80'
@@ -79,12 +84,12 @@ export function ApplicationPlansTab({
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-10 items-start">
+      <div className="mx-auto max-w-7xl">
+        <div className="grid grid-cols-1 items-start gap-8 md:grid-cols-3 lg:gap-10">
           {applicationPlans.map((plan, index) => (
             <div
               key={plan.id}
-              className="flex justify-center items-start animate-slide-in-up"
+              className="animate-slide-in-up flex items-start justify-center"
               style={{ animationDelay: `${index * 150}ms` }}
             >
               <PricingCard

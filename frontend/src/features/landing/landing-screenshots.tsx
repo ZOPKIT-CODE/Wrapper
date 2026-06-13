@@ -1,15 +1,15 @@
-import type { ReactNode } from 'react';
-import { getCRMFeatureSvg } from '@/features/landing/pages/getCRMFeatureSvg';
+import type { ReactNode } from 'react'
+import { getCRMFeatureSvg } from '@/features/landing/pages/getCRMFeatureSvg'
 
 export type LandingScreenshotTab = {
-  id: string;
-  label: string;
-  url: string;
-  caption: string;
-  detail: string;
-  productId?: string;
-  render: () => ReactNode;
-};
+  id: string
+  label: string
+  url: string
+  caption: string
+  detail: string
+  productId?: string
+  render: () => ReactNode
+}
 
 export const HERO_SHOWCASE_TABS: LandingScreenshotTab[] = [
   {
@@ -22,7 +22,7 @@ export const HERO_SHOWCASE_TABS: LandingScreenshotTab[] = [
       <img
         src="/fa-dashboard.svg"
         alt="Zopkit workspace dashboard"
-        className="w-full h-auto block"
+        className="block h-auto w-full"
         loading="eager"
         decoding="async"
       />
@@ -36,7 +36,7 @@ export const HERO_SHOWCASE_TABS: LandingScreenshotTab[] = [
     detail: 'Leads, stages, and weighted forecast without export.',
     productId: 'b2b-crm',
     render: () => (
-      <div className="leading-none [&_svg]:w-full [&_svg]:h-auto [&_svg]:block">
+      <div className="leading-none [&_svg]:block [&_svg]:h-auto [&_svg]:w-full">
         {getCRMFeatureSvg(0)}
       </div>
     ),
@@ -52,7 +52,7 @@ export const HERO_SHOWCASE_TABS: LandingScreenshotTab[] = [
       <img
         src="/fa-general-ledger.svg"
         alt="Zopkit finance general ledger"
-        className="w-full h-auto block"
+        className="block h-auto w-full"
         loading="lazy"
         decoding="async"
       />
@@ -69,13 +69,13 @@ export const HERO_SHOWCASE_TABS: LandingScreenshotTab[] = [
       <img
         src="/accounting-flow.svg"
         alt="Zopkit operations workflow"
-        className="w-full h-auto block"
+        className="block h-auto w-full"
         loading="lazy"
         decoding="async"
       />
     ),
   },
-];
+]
 
 export const MODULE_RAIL_ITEMS = [
   {
@@ -84,7 +84,7 @@ export const MODULE_RAIL_ITEMS = [
     desc: 'Pipeline, accounts, and forecast in one view.',
     url: 'app.zopkit.com/crm',
     render: () => (
-      <div className="leading-none [&_svg]:w-[200%] [&_svg]:h-auto [&_svg]:block origin-top-left scale-[0.5]">
+      <div className="origin-top-left scale-[0.5] leading-none [&_svg]:block [&_svg]:h-auto [&_svg]:w-[200%]">
         {getCRMFeatureSvg(1)}
       </div>
     ),
@@ -99,7 +99,7 @@ export const MODULE_RAIL_ITEMS = [
       <img
         src="/fa-bank-reconciliation.svg"
         alt=""
-        className="w-full h-auto block object-top"
+        className="block h-auto w-full object-top"
         loading="lazy"
         decoding="async"
       />
@@ -115,7 +115,7 @@ export const MODULE_RAIL_ITEMS = [
       <img
         src="/fa-cost-accounting.svg"
         alt=""
-        className="w-full h-auto block object-top"
+        className="block h-auto w-full object-top"
         loading="lazy"
         decoding="async"
       />
@@ -131,7 +131,7 @@ export const MODULE_RAIL_ITEMS = [
       <img
         src="/fa-compliance-audit.svg"
         alt=""
-        className="w-full h-auto block object-top"
+        className="block h-auto w-full object-top"
         loading="lazy"
         decoding="async"
       />
@@ -144,7 +144,7 @@ export const MODULE_RAIL_ITEMS = [
     desc: 'Delivery, budget, and client billing tied to CRM.',
     url: 'app.zopkit.com/projects',
     render: () => (
-      <div className="leading-none [&_svg]:w-[200%] [&_svg]:h-auto [&_svg]:block origin-top-left scale-[0.5]">
+      <div className="origin-top-left scale-[0.5] leading-none [&_svg]:block [&_svg]:h-auto [&_svg]:w-[200%]">
         {getCRMFeatureSvg(3)}
       </div>
     ),
@@ -159,14 +159,14 @@ export const MODULE_RAIL_ITEMS = [
       <img
         src="/fa-multi-entity.svg"
         alt=""
-        className="w-full h-auto block object-top"
+        className="block h-auto w-full object-top"
         loading="lazy"
         decoding="async"
       />
     ),
     maxHeight: 200,
   },
-] as const;
+] as const
 
 export const SPOTLIGHT_FEATURES = [
   {
@@ -175,9 +175,13 @@ export const SPOTLIGHT_FEATURES = [
     title: 'CRM that shares the same customer record as finance',
     body: 'When a deal closes, billing and fulfillment see the update immediately. No CSV handoffs between sales and ops.',
     url: 'app.zopkit.com/crm/deals',
-    bullets: ['Kanban pipeline with weighted forecast', 'Account hierarchy and contact timeline', 'Quotes tied to subscription billing'],
+    bullets: [
+      'Kanban pipeline with weighted forecast',
+      'Account hierarchy and contact timeline',
+      'Quotes tied to subscription billing',
+    ],
     render: () => (
-      <div className="leading-none [&_svg]:w-full [&_svg]:h-auto [&_svg]:block">
+      <div className="leading-none [&_svg]:block [&_svg]:h-auto [&_svg]:w-full">
         {getCRMFeatureSvg(0)}
       </div>
     ),
@@ -188,15 +192,19 @@ export const SPOTLIGHT_FEATURES = [
     title: 'Finance built for multi-entity close, not spreadsheets',
     body: 'Ledgers, reconciliation, and audit trails run on the same permissions model as the rest of the suite.',
     url: 'app.zopkit.com/finance/close',
-    bullets: ['General ledger with period controls', 'Bank reconciliation and multi-currency', 'Compliance-ready audit history'],
+    bullets: [
+      'General ledger with period controls',
+      'Bank reconciliation and multi-currency',
+      'Compliance-ready audit history',
+    ],
     render: () => (
       <img
         src="/fa-general-ledger.svg"
         alt="Zopkit finance ledger"
-        className="w-full h-auto block"
+        className="block h-auto w-full"
         loading="lazy"
         decoding="async"
       />
     ),
   },
-] as const;
+] as const

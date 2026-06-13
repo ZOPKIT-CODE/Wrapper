@@ -1,19 +1,19 @@
-import { cn } from '@/lib/utils';
-import AnimatedLoader from './AnimatedLoader';
+import { cn } from '@/lib/utils'
+import AnimatedLoader from './AnimatedLoader'
 
 const sizeClasses = {
   xs: 'w-4 h-4',
   sm: 'w-6 h-6',
   md: 'w-8 h-8',
   lg: 'w-10 h-10',
-  xl: 'w-12 h-12'
-} as const;
+  xl: 'w-12 h-12',
+} as const
 
-export type ZopkitRoundLoaderSize = keyof typeof sizeClasses | 'page';
+export type ZopkitRoundLoaderSize = keyof typeof sizeClasses | 'page'
 
 interface ZopkitRoundLoaderProps {
-  size?: ZopkitRoundLoaderSize;
-  className?: string;
+  size?: ZopkitRoundLoaderSize
+  className?: string
 }
 
 /**
@@ -23,24 +23,25 @@ interface ZopkitRoundLoaderProps {
  */
 export function ZopkitRoundLoader({
   size = 'md',
-  className = ''
+  className = '',
 }: ZopkitRoundLoaderProps) {
   if (size === 'page') {
-    return <AnimatedLoader size="md" className={className} />;
+    return <AnimatedLoader size="md" className={className} />
   }
 
-  const sizeClass = sizeClasses[size as keyof typeof sizeClasses] ?? sizeClasses.md;
+  const sizeClass =
+    sizeClasses[size as keyof typeof sizeClasses] ?? sizeClasses.md
 
   return (
     <div
       className={cn(
-        'rounded-full border-2 border-slate-200 border-t-blue-600 animate-spin flex-shrink-0',
+        'flex-shrink-0 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600',
         sizeClass,
         className
       )}
       aria-hidden
     />
-  );
+  )
 }
 
-export default ZopkitRoundLoader;
+export default ZopkitRoundLoader

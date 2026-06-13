@@ -51,7 +51,7 @@ jobs:
     # role's trust policy) AND triggers this environment's protection rules.
     environment: infra-${{ github.event.inputs.environment }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Resolve workspace + var-file
         id: cfg

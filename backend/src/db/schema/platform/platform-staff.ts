@@ -2,7 +2,6 @@ import {
   pgTable, uuid, varchar, text, boolean,
   timestamp, index
 } from 'drizzle-orm/pg-core';
-import { tenantUsers } from '../core/users.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PLATFORM STAFF
@@ -41,8 +40,10 @@ export const platformStaff = pgTable('platform_staff', {
   // Stored as text array: ['credit_config:read', 'credit_config:write']
   grantedPermissions: text('granted_permissions').array().notNull(),
 
-  // Who granted access (must be an existing super-admin tenant user).
-  grantedBy:  uuid('granted_by').references(() => tenantUsers.userId).notNull(),
+  // UUID of the platform admin who granted access. Plain reference — no FK to the
+  // tenant plane; platform staff are a separate identity pool. Nullable to allow
+  // the bootstrap grant (first staff member has no prior granter).
+  grantedBy:  uuid('granted_by'),
   grantedAt:  timestamp('granted_at').defaultNow().notNull(),
 
   // Access MUST expire. Max 30 days enforced in the grant endpoint.
@@ -54,7 +55,7 @@ export const platformStaff = pgTable('platform_staff', {
   // Set to false to revoke instantly without waiting for expiry.
   isActive:   boolean('is_active').default(true).notNull(),
 
-  revokedBy:     uuid('revoked_by').references(() => tenantUsers.userId),
+  revokedBy:     uuid('revoked_by'),
   revokedAt:     timestamp('revoked_at'),
   revokedReason: text('revoked_reason'),
 

@@ -1,108 +1,122 @@
-import React, { useEffect, useRef } from 'react';
-import { Check, ChevronRight, FileText } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useFormContext } from '../contexts/FormContext';
+import React, { useEffect, useRef } from 'react'
+import { Check, ChevronRight, FileText } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { useFormContext } from '../contexts/FormContext'
 
 /**
  * Enhanced progress indicator component with sidebar layout using context
  */
-export const ProgressIndicator: React.FC<{ className?: string }> = ({ className }) => {
-  const {
-    currentStep,
-    config,
-    goToStep
-  } = useFormContext();
+export const ProgressIndicator: React.FC<{ className?: string }> = ({
+  className,
+}) => {
+  const { currentStep, config, goToStep } = useFormContext()
 
-  const stepTitles = config.steps.map(step => step.title);
-  const indicatorRef = useRef<HTMLDivElement>(null);
-  
+  const stepTitles = config.steps.map((step) => step.title)
+  const indicatorRef = useRef<HTMLDivElement>(null)
+
   // Animate progress indicator on step change
   useEffect(() => {
-    if (!indicatorRef.current) return;
+    if (!indicatorRef.current) return
 
-    const stepItems = Array.from(indicatorRef.current.querySelectorAll('.step-item'));
-    
+    const stepItems = Array.from(
+      indicatorRef.current.querySelectorAll('.step-item')
+    )
+
     stepItems.forEach((item, index) => {
-      const element = item as HTMLElement;
-      element.style.opacity = '0.7';
-      element.style.transition = 'opacity 0.3s ease-out';
-      
+      const element = item as HTMLElement
+      element.style.opacity = '0.7'
+      element.style.transition = 'opacity 0.3s ease-out'
+
       setTimeout(() => {
-        element.style.opacity = '1';
-      }, index * 100);
-    });
-  }, [currentStep]);
-  
+        element.style.opacity = '1'
+      }, index * 100)
+    })
+  }, [currentStep])
+
   // Define sub-steps for each step based on actual step content
   const stepSubSteps: Record<number, string[]> = React.useMemo(() => {
-    const subSteps: Record<number, string[]> = {};
-    
+    const subSteps: Record<number, string[]> = {}
+
     config.steps.forEach((step, index) => {
       // Generate sub-steps based on field types or step content
-      if (step.fields.some(field => field.type === 'select')) {
-        subSteps[index] = ['Selection', 'Details'];
-      } else if (step.fields.some(field => field.type === 'switch' || field.type === 'checkbox')) {
-        subSteps[index] = ['Preferences', 'Settings'];
-      } else if (step.fields.some(field => field.id.includes('address') || field.id.includes('street'))) {
-        subSteps[index] = ['Address', 'Location'];
+      if (step.fields.some((field) => field.type === 'select')) {
+        subSteps[index] = ['Selection', 'Details']
+      } else if (
+        step.fields.some(
+          (field) => field.type === 'switch' || field.type === 'checkbox'
+        )
+      ) {
+        subSteps[index] = ['Preferences', 'Settings']
+      } else if (
+        step.fields.some(
+          (field) => field.id.includes('address') || field.id.includes('street')
+        )
+      ) {
+        subSteps[index] = ['Address', 'Location']
       } else {
-        subSteps[index] = ['Basic Info', 'Details'];
+        subSteps[index] = ['Basic Info', 'Details']
       }
-    });
-    
-    return subSteps;
-  }, [config.steps]);
+    })
+
+    return subSteps
+  }, [config.steps])
 
   // Function to get sub-steps for a specific step
   const getSubStepsForStep = (stepIndex: number): string[] | null => {
-    return stepSubSteps[stepIndex] || null;
-  };
+    return stepSubSteps[stepIndex] || null
+  }
   return (
-    <div ref={indicatorRef} className={cn('w-80 border-r border-gray-200 bg-white p-8 h-full', className)}>
+    <div
+      ref={indicatorRef}
+      className={cn(
+        'h-full w-80 border-r border-gray-200 bg-white p-8',
+        className
+      )}
+    >
       {/* Brand/Logo Section */}
       <div className="mb-12">
-        <div className="flex items-center space-x-3 mb-2">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">G</span>
+        <div className="mb-2 flex items-center space-x-3">
+          <div className="bg-primary flex h-8 w-8 items-center justify-center rounded-lg">
+            <span className="text-sm font-bold text-white">G</span>
           </div>
-          <span className="text-xl font-semibold text-primary">Zopkit</span>
+          <span className="text-primary text-xl font-semibold">Zopkit</span>
         </div>
       </div>
 
       {/* Steps Navigation */}
       <div className="space-y-1">
         {stepTitles.map((title, index) => {
-          const isCompleted = index < currentStep;
-          const isCurrent = index === currentStep;
-          const isUpcoming = index > currentStep;
+          const isCompleted = index < currentStep
+          const isCurrent = index === currentStep
+          const isUpcoming = index > currentStep
 
           return (
             <div key={index} className="space-y-2">
               {/* Main Step */}
               <div
                 className={cn(
-                  'step-item flex items-center space-x-3 py-3 px-4 rounded-lg transition-all duration-200',
-                  isCurrent && 'bg-blue-50 border border-blue-200',
-                  isCompleted && 'hover:bg-gray-50 cursor-pointer',
+                  'step-item flex items-center space-x-3 rounded-lg px-4 py-3 transition-all duration-200',
+                  isCurrent && 'border border-blue-200 bg-blue-50',
+                  isCompleted && 'cursor-pointer hover:bg-gray-50',
                   isUpcoming && 'opacity-60'
                 )}
                 onClick={() => {
                   if (isCompleted || isCurrent) {
-                    goToStep(index);
+                    goToStep(index)
                   }
                 }}
               >
                 {/* Step Circle */}
                 <div
                   className={cn(
-                    'flex items-center justify-center w-8 h-8 rounded-full border-2 transition-all duration-200',
-                    isCompleted && 'bg-green-500 border-green-500 text-white',
+                    'flex h-8 w-8 items-center justify-center rounded-full border-2 transition-all duration-200',
+                    isCompleted && 'border-green-500 bg-green-500 text-white',
                     isCurrent && 'bg-primary border-primary text-white',
-                    isUpcoming && 'bg-gray-200 border-gray-300 text-gray-500'
+                    isUpcoming && 'border-gray-300 bg-gray-200 text-gray-500'
                   )}
                 >
                   {isCompleted ? (
-                    <Check className="w-4 h-4" />
+                    <Check className="h-4 w-4" />
                   ) : (
                     <span className="text-sm font-semibold">{index + 1}</span>
                   )}
@@ -114,7 +128,7 @@ export const ProgressIndicator: React.FC<{ className?: string }> = ({ className 
                     className={cn(
                       'text-sm font-medium transition-colors',
                       isCompleted && 'text-gray-500',
-                      isCurrent && 'text-blue-700 font-semibold',
+                      isCurrent && 'font-semibold text-blue-700',
                       isUpcoming && 'text-gray-400'
                     )}
                   >
@@ -124,7 +138,7 @@ export const ProgressIndicator: React.FC<{ className?: string }> = ({ className 
 
                 {/* Current Step Indicator */}
                 {isCurrent && (
-                  <ChevronRight className="w-4 h-4 text-blue-600" />
+                  <ChevronRight className="h-4 w-4 text-blue-600" />
                 )}
               </div>
 
@@ -132,35 +146,41 @@ export const ProgressIndicator: React.FC<{ className?: string }> = ({ className 
               {isCurrent && getSubStepsForStep(index) && (
                 <div className="ml-11 space-y-1">
                   {getSubStepsForStep(index)!.map((subStep, subIndex) => (
-                    <div 
+                    <div
                       key={subIndex}
                       className={cn(
-                        'flex items-center space-x-2 py-1 px-3 rounded-md',
+                        'flex items-center space-x-2 rounded-md px-3 py-1',
                         subIndex === 0 ? 'bg-blue-100' : ''
                       )}
                     >
-                      <span className={cn(
-                        'text-xs',
-                        subIndex === 0 ? 'font-medium text-blue-700' : 'text-gray-500'
-                      )}>
+                      <span
+                        className={cn(
+                          'text-xs',
+                          subIndex === 0
+                            ? 'font-medium text-blue-700'
+                            : 'text-gray-500'
+                        )}
+                      >
                         {subStep}
                       </span>
-                      {subIndex === 0 && <ChevronRight className="w-3 h-3 text-blue-600" />}
+                      {subIndex === 0 && (
+                        <ChevronRight className="h-3 w-3 text-blue-600" />
+                      )}
                     </div>
                   ))}
                 </div>
               )}
             </div>
-          );
+          )
         })}
       </div>
 
       {/* Decorative Element */}
       <div className="mt-16 flex justify-center">
-        <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center opacity-60">
-          <FileText className="w-8 h-8 text-blue-400" />
+        <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-blue-100 opacity-60">
+          <FileText className="h-8 w-8 text-blue-400" />
         </div>
       </div>
     </div>
-  );
-};
+  )
+}

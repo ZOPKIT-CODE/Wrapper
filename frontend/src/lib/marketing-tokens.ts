@@ -76,7 +76,7 @@ export const svgMock: Record<string, string> = {
   INFO_BORDER: mkt.primaryTintBorder,
   SUCCESS_BORDER: mkt.successTintBorder,
   INFO: mkt.info,
-  ff: "system-ui,-apple-system,sans-serif",
+  ff: 'system-ui,-apple-system,sans-serif',
 }
 
 /** Card theme presets for ProductPage feature cards (index 0–3). */
@@ -101,7 +101,8 @@ export const productCardThemes = [
     titleColor: mkt.titleColor,
     descColor: mkt.descColor,
     benefitColor: mkt.benefitColor,
-    cardShadow: '0 2px 8px color-mix(in oklch, var(--foreground) 5%, transparent), 0 12px 40px color-mix(in oklch, var(--primary) 8%, transparent)',
+    cardShadow:
+      '0 2px 8px color-mix(in oklch, var(--foreground) 5%, transparent), 0 12px 40px color-mix(in oklch, var(--primary) 8%, transparent)',
     floatChipBg: mkt.floatChipBg,
     floatChipBorder: mkt.floatChipBorder,
     floatChipText: mkt.floatChipText,
@@ -123,12 +124,14 @@ export const productCardThemes = [
     checkColor: mkt.primary,
     frameBg: mkt.frameBg,
     frameBorder: mkt.frameBorder,
-    frameGlowColor: 'color-mix(in oklch, var(--illustration-success) 9%, transparent)',
+    frameGlowColor:
+      'color-mix(in oklch, var(--illustration-success) 9%, transparent)',
     fadeColor: mkt.successTint,
     titleColor: mkt.titleColor,
     descColor: mkt.descColor,
     benefitColor: mkt.benefitColor,
-    cardShadow: '0 2px 8px color-mix(in oklch, var(--foreground) 5%, transparent), 0 12px 40px color-mix(in oklch, var(--illustration-success) 7%, transparent)',
+    cardShadow:
+      '0 2px 8px color-mix(in oklch, var(--foreground) 5%, transparent), 0 12px 40px color-mix(in oklch, var(--illustration-success) 7%, transparent)',
     floatChipBg: mkt.floatChipBg,
     floatChipBorder: mkt.floatChipBorder,
     floatChipText: mkt.floatChipText,
@@ -150,12 +153,15 @@ export const productCardThemes = [
     checkColor: mkt.primary,
     frameBg: mkt.frameBg,
     frameBorder: mkt.frameBorder,
-    frameGlowColor: 'color-mix(in oklch, var(--illustration-warning) 8%, transparent)',
-    fadeColor: 'color-mix(in oklch, var(--illustration-warning) 6%, var(--background))',
+    frameGlowColor:
+      'color-mix(in oklch, var(--illustration-warning) 8%, transparent)',
+    fadeColor:
+      'color-mix(in oklch, var(--illustration-warning) 6%, var(--background))',
     titleColor: mkt.titleColor,
     descColor: mkt.descColor,
     benefitColor: mkt.benefitColor,
-    cardShadow: '0 2px 8px color-mix(in oklch, var(--foreground) 5%, transparent), 0 12px 40px color-mix(in oklch, var(--illustration-warning) 7%, transparent)',
+    cardShadow:
+      '0 2px 8px color-mix(in oklch, var(--foreground) 5%, transparent), 0 12px 40px color-mix(in oklch, var(--illustration-warning) 7%, transparent)',
     floatChipBg: mkt.floatChipBg,
     floatChipBorder: mkt.floatChipBorder,
     floatChipText: mkt.floatChipText,
@@ -182,7 +188,8 @@ export const productCardThemes = [
     titleColor: mkt.titleColor,
     descColor: mkt.descColor,
     benefitColor: mkt.benefitColor,
-    cardShadow: '0 2px 8px color-mix(in oklch, var(--foreground) 5%, transparent), 0 12px 40px color-mix(in oklch, var(--chart-4) 7%, transparent)',
+    cardShadow:
+      '0 2px 8px color-mix(in oklch, var(--foreground) 5%, transparent), 0 12px 40px color-mix(in oklch, var(--chart-4) 7%, transparent)',
     floatChipBg: mkt.floatChipBg,
     floatChipBorder: mkt.floatChipBorder,
     floatChipText: mkt.floatChipText,

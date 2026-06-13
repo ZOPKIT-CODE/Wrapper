@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.repository_owner != '' }}   # skip on forks without the secret
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Check production schema drift
         env:
           PROD_DB_URL: ${{ secrets.PROD_DB_URL }}

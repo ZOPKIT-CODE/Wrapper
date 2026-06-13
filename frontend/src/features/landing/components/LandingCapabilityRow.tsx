@@ -14,29 +14,31 @@ const CAPABILITIES = [
     title: 'Shared billing',
     body: 'Subscriptions and credits run through a single account. Finance sees the full picture.',
   },
-] as const;
+] as const
 
 export function LandingCapabilityRow() {
   return (
-    <section className="border-b border-border bg-background">
-      <div className="max-w-7xl mx-auto grid md:grid-cols-3">
+    <section className="border-border bg-background border-b">
+      <div className="mx-auto grid max-w-7xl md:grid-cols-3">
         {CAPABILITIES.map((item, i) => (
           <article
             key={item.title}
-            className={`px-6 sm:px-8 py-10 sm:py-12 ${
-              i < CAPABILITIES.length - 1 ? 'md:border-r border-border' : ''
-            } ${i < CAPABILITIES.length - 1 ? 'border-b md:border-b-0 border-border' : ''}`}
+            className={`px-6 py-10 sm:px-8 sm:py-12 ${
+              i < CAPABILITIES.length - 1 ? 'border-border md:border-r' : ''
+            } ${i < CAPABILITIES.length - 1 ? 'border-border border-b md:border-b-0' : ''}`}
           >
-            <p className="landing-capability-index landing-mono text-[11px] text-muted-foreground tracking-wider">{item.index}</p>
-            <h2 className="mt-2 landing-display text-xl sm:text-2xl font-semibold text-foreground">
+            <p className="landing-capability-index landing-mono text-muted-foreground text-[11px] tracking-wider">
+              {item.index}
+            </p>
+            <h2 className="landing-display text-foreground mt-2 text-xl font-semibold sm:text-2xl">
               {item.title}
             </h2>
-            <p className="mt-3 text-sm sm:text-[15px] text-muted-foreground leading-relaxed max-w-sm">
+            <p className="text-muted-foreground mt-3 max-w-sm text-sm leading-relaxed sm:text-[15px]">
               {item.body}
             </p>
           </article>
         ))}
       </div>
     </section>
-  );
+  )
 }

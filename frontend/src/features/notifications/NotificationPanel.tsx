@@ -129,7 +129,7 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
               <button
                 type="button"
                 onClick={handleMarkAllAsRead}
-                className="flex items-center gap-1 text-xs font-medium text-primary hover:text-primary-hover"
+                className="text-primary hover:text-primary-hover flex items-center gap-1 text-xs font-medium"
               >
                 <Check className="h-3 w-3" />
                 Mark all read
@@ -149,8 +149,8 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
                 </div>
               ) : filteredNotifications.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 text-center">
-                  <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/8">
-                    <Bell className="h-6 w-6 text-primary/40" />
+                  <div className="bg-primary/8 mb-4 flex h-14 w-14 items-center justify-center rounded-2xl">
+                    <Bell className="text-primary/40 h-6 w-6" />
                   </div>
                   <h3 className="mb-1 text-sm font-semibold text-gray-700 dark:text-slate-200">
                     {activeFilter === 'unread'
@@ -169,7 +169,7 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
                       size="sm"
                       onClick={handleCreateSampleNotifications}
                       disabled={creatingSamples}
-                      className="border-primary/20 text-xs text-primary hover:bg-primary/5"
+                      className="border-primary/20 text-primary hover:bg-primary/5 text-xs"
                     >
                       {creatingSamples ? (
                         <>

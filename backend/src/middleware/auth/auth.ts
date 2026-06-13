@@ -515,7 +515,10 @@ async function processAuthenticatedUser(request: FastifyRequest, reply: FastifyR
 
   const isTenantAdmin = effectiveUserRecord?.isTenantAdmin || false;
   const email = effectiveUserRecord?.email || idpUser.email || '';
-  const isPlatformAdmin = isPlatformAdminIdentity({ groups: idpUser.groups, email });
+  // isPlatformAdmin must use the token email (idpUser.email), not the DB record's email.
+  // Using the DB email would allow a tenant row with a bootstrap-allowlist email to
+  // elevate to platform-admin even if the token's email differs.
+  const isPlatformAdmin = isPlatformAdminIdentity({ groups: idpUser.groups, email: idpUser.email });
   request.userContext = {
     userId: idpUser.userId,
     idpSub: idpUser.userId,
@@ -753,6 +756,12 @@ export function requirePermission(permission: string | string[]) {
       });
       return;
     }
+
+    // Platform admins operate outside the tenant plane — they have no tenant context
+    // and need no role assignment. Their identity is the Cognito platform-admins group,
+    // verified by isPlatformAdminIdentity() during token processing. This is NOT a
+    // tenant-admin bypass; it is a separate identity plane with its own security boundary.
+    if (request.userContext.isPlatformAdmin) return;
 
     // NO ADMIN BYPASS: tenant admins go through the normal permission check. Their
     // power comes from an enumerated system role (getUserPermissions → modules:'*'),

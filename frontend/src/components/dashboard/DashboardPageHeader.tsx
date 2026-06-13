@@ -41,30 +41,47 @@ export function DashboardPageHeader({
   return (
     <div
       className={cn(
-        'flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between pb-6 border-b',
-        className,
+        'flex flex-col gap-4 border-b pb-6 sm:flex-row sm:items-start sm:justify-between',
+        className
       )}
       style={{ borderColor: 'var(--zk-line)' }}
     >
       <div className="min-w-0 space-y-1.5">
-        <p style={{
-          fontSize: 11,
-          fontFamily: 'var(--zk-mono)',
-          color: 'var(--zk-muted-2)',
-          letterSpacing: '0.12em',
-          textTransform: 'uppercase',
-          margin: 0,
-        }}>Workspace</p>
+        <p
+          style={{
+            fontSize: 11,
+            fontFamily: 'var(--zk-mono)',
+            color: 'var(--zk-muted-2)',
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+            margin: 0,
+          }}
+        >
+          Workspace
+        </p>
         <h1
           className={DASHBOARD_PAGE_TITLE_CLASS}
-          style={{ fontFamily: 'var(--zk-display)', color: 'var(--zk-ink)', letterSpacing: '-0.03em' }}
-        >{title}</h1>
+          style={{
+            fontFamily: 'var(--zk-display)',
+            color: 'var(--zk-ink)',
+            letterSpacing: '-0.03em',
+          }}
+        >
+          {title}
+        </h1>
         {description != null && description !== false ? (
-          <p className={DASHBOARD_PAGE_DESCRIPTION_CLASS} style={{ color: 'var(--zk-muted)' }}>{description}</p>
+          <p
+            className={DASHBOARD_PAGE_DESCRIPTION_CLASS}
+            style={{ color: 'var(--zk-muted)' }}
+          >
+            {description}
+          </p>
         ) : null}
       </div>
       {actions ? (
-        <div className="flex shrink-0 flex-wrap items-center gap-3">{actions}</div>
+        <div className="flex shrink-0 flex-wrap items-center gap-3">
+          {actions}
+        </div>
       ) : null}
     </div>
   )

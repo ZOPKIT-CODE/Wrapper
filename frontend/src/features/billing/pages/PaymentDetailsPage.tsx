@@ -15,7 +15,7 @@ import {
   Coins,
   FileText,
   ReceiptText,
-  Loader2
+  Loader2,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -32,7 +32,14 @@ import { generateInvoicePDF } from '@/lib/invoiceGenerator'
 
 // ─── Status helpers ─────────────────────────────────────────────────────────
 
-type StatusKey = 'succeeded' | 'failed' | 'canceled' | 'refunded' | 'partially_refunded' | 'disputed' | string
+type StatusKey =
+  | 'succeeded'
+  | 'failed'
+  | 'canceled'
+  | 'refunded'
+  | 'partially_refunded'
+  | 'disputed'
+  | string
 
 function getStatusConfig(status: StatusKey) {
   switch (status) {
@@ -41,61 +48,65 @@ function getStatusConfig(status: StatusKey) {
         label: 'Paid',
         icon: <CheckCircle className="h-4 w-4" />,
         badge: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-        headerAccent: 'bg-emerald-500'
+        headerAccent: 'bg-emerald-500',
       }
     case 'failed':
       return {
         label: 'Failed',
         icon: <XCircle className="h-4 w-4" />,
         badge: 'bg-red-50 text-red-700 border-red-200',
-        headerAccent: 'bg-red-500'
+        headerAccent: 'bg-red-500',
       }
     case 'canceled':
       return {
         label: 'Canceled',
         icon: <XCircle className="h-4 w-4" />,
         badge: 'bg-slate-100 text-slate-600 border-slate-200',
-        headerAccent: 'bg-slate-400'
+        headerAccent: 'bg-slate-400',
       }
     case 'refunded':
       return {
         label: 'Refunded',
         icon: <RefreshCw className="h-4 w-4" />,
         badge: 'bg-orange-50 text-orange-700 border-orange-200',
-        headerAccent: 'bg-orange-500'
+        headerAccent: 'bg-orange-500',
       }
     case 'partially_refunded':
       return {
         label: 'Partial Refund',
         icon: <RefreshCw className="h-4 w-4" />,
         badge: 'bg-orange-50 text-orange-700 border-orange-200',
-        headerAccent: 'bg-orange-400'
+        headerAccent: 'bg-orange-400',
       }
     case 'disputed':
       return {
         label: 'Disputed',
         icon: <AlertTriangle className="h-4 w-4" />,
         badge: 'bg-violet-50 text-violet-700 border-violet-200',
-        headerAccent: 'bg-violet-500'
+        headerAccent: 'bg-violet-500',
       }
     default:
       return {
         label: status,
         icon: <Clock className="h-4 w-4" />,
         badge: 'bg-amber-50 text-amber-700 border-amber-200',
-        headerAccent: 'bg-amber-400'
+        headerAccent: 'bg-amber-400',
       }
   }
 }
 
 function getPaymentType(type?: string): string {
   switch (type) {
-    case 'credit_purchase': return 'Credit Purchase'
-    case 'subscription': return 'Subscription'
-    case 'plan_upgrade': return 'Plan Upgrade'
-    default: return type
-      ? type.charAt(0).toUpperCase() + type.slice(1).replace(/_/g, ' ')
-      : 'Payment'
+    case 'credit_purchase':
+      return 'Credit Purchase'
+    case 'subscription':
+      return 'Subscription'
+    case 'plan_upgrade':
+      return 'Plan Upgrade'
+    default:
+      return type
+        ? type.charAt(0).toUpperCase() + type.slice(1).replace(/_/g, ' ')
+        : 'Payment'
   }
 }
 
@@ -105,7 +116,7 @@ function CopyRow({
   label,
   value,
   copiedId,
-  onCopy
+  onCopy,
 }: {
   label: string
   value: string
@@ -114,16 +125,22 @@ function CopyRow({
 }) {
   const id = label.toLowerCase().replace(/\s+/g, '-')
   return (
-    <div className="flex items-center justify-between gap-3 py-2.5 border-b border-slate-50 last:border-0">
+    <div className="flex items-center justify-between gap-3 border-b border-slate-50 py-2.5 last:border-0">
       <div className="min-w-0 flex-1">
-        <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">{label}</p>
-        <p className="font-mono text-xs text-slate-700 break-all">{value}</p>
+        <p className="mb-0.5 text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+          {label}
+        </p>
+        <p className="font-mono text-xs break-all text-slate-700">{value}</p>
       </div>
       <button
         onClick={() => onCopy(value, id)}
-        className="shrink-0 p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-primary transition-colors"
+        className="hover:text-primary shrink-0 rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100"
       >
-        {copiedId === id ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
+        {copiedId === id ? (
+          <Check className="h-3.5 w-3.5 text-emerald-500" />
+        ) : (
+          <Copy className="h-3.5 w-3.5" />
+        )}
       </button>
     </div>
   )
@@ -131,11 +148,19 @@ function CopyRow({
 
 // ─── Detail row ──────────────────────────────────────────────────────────────
 
-function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
+function DetailRow({
+  label,
+  value,
+}: {
+  label: string
+  value: React.ReactNode
+}) {
   return (
-    <div className="flex items-start justify-between gap-3 py-3 border-b border-slate-50 last:border-0">
-      <span className="text-sm text-slate-500 shrink-0">{label}</span>
-      <span className="text-sm font-semibold text-primary text-right">{value}</span>
+    <div className="flex items-start justify-between gap-3 border-b border-slate-50 py-3 last:border-0">
+      <span className="shrink-0 text-sm text-slate-500">{label}</span>
+      <span className="text-primary text-right text-sm font-semibold">
+        {value}
+      </span>
     </div>
   )
 }
@@ -145,7 +170,7 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
 function TimelineStep({
   label,
   value,
-  isLast = false
+  isLast = false,
 }: {
   label: string
   value: string
@@ -154,14 +179,14 @@ function TimelineStep({
   return (
     <div className="flex gap-4">
       <div className="flex flex-col items-center">
-        <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-          <div className="h-2 w-2 rounded-full bg-primary" />
+        <div className="bg-primary/10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full">
+          <div className="bg-primary h-2 w-2 rounded-full" />
         </div>
-        {!isLast && <div className="w-px flex-1 bg-slate-100 mt-1" />}
+        {!isLast && <div className="mt-1 w-px flex-1 bg-slate-100" />}
       </div>
-      <div className="pb-5 min-w-0">
+      <div className="min-w-0 pb-5">
         <p className="text-xs font-medium text-slate-500">{label}</p>
-        <p className="text-sm font-semibold text-primary mt-0.5">{value}</p>
+        <p className="text-primary mt-0.5 text-sm font-semibold">{value}</p>
       </div>
     </div>
   )
@@ -187,12 +212,16 @@ export function PaymentDetailsPage() {
         console.warn('Failed to fetch billing history:', error)
         return []
       }
-    }
+    },
   })
 
   const payment = React.useMemo(() => {
     if (!billingHistory || !paymentId) return null
-    return (billingHistory as BillingHistoryItem[]).find((p: BillingHistoryItem) => p.id === paymentId) || null
+    return (
+      (billingHistory as BillingHistoryItem[]).find(
+        (p: BillingHistoryItem) => p.id === paymentId
+      ) || null
+    )
   }, [billingHistory, paymentId])
 
   const copyToClipboard = (text: string, id: string) => {
@@ -209,7 +238,7 @@ export function PaymentDetailsPage() {
     if (!payment) return
     setIsDownloading(true)
     // Double-rAF ensures the spinner actually paints before jsPDF blocks the main thread
-    await new Promise<void>(resolve =>
+    await new Promise<void>((resolve) =>
       requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
     )
     try {
@@ -228,16 +257,20 @@ export function PaymentDetailsPage() {
     if (payment) {
       const paymentType = getPaymentType(payment.type)
       const paymentDate = payment.createdAt ? formatDate(payment.createdAt) : ''
-      const label = paymentDate ? `${paymentType} - ${paymentDate}` : paymentType
+      const label = paymentDate
+        ? `${paymentType} - ${paymentDate}`
+        : paymentType
       setLastSegmentLabel(label)
     }
-    return () => { setLastSegmentLabel(null) }
+    return () => {
+      setLastSegmentLabel(null)
+    }
   }, [payment, setLastSegmentLabel])
 
   if (isLoading) {
     return (
       <Container>
-        <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex min-h-[400px] items-center justify-center">
           <AnimatedLoader size="md" />
         </div>
       </Container>
@@ -247,14 +280,22 @@ export function PaymentDetailsPage() {
   if (!payment) {
     return (
       <Container>
-        <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+        <div className="flex min-h-[400px] flex-col items-center justify-center space-y-4">
           <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
             <AlertTriangle className="h-7 w-7 text-slate-400" />
           </div>
-          <h2 className="text-xl font-semibold text-primary">Payment Not Found</h2>
-          <p className="text-slate-500 text-sm">The payment you're looking for doesn't exist or has been removed.</p>
-          <Button onClick={() => navigate({ to: '/dashboard/billing' })} variant="outline" size="sm">
-            <ArrowLeft className="h-4 w-4 mr-2" />
+          <h2 className="text-primary text-xl font-semibold">
+            Payment Not Found
+          </h2>
+          <p className="text-sm text-slate-500">
+            The payment you're looking for doesn't exist or has been removed.
+          </p>
+          <Button
+            onClick={() => navigate({ to: '/dashboard/billing' })}
+            variant="outline"
+            size="sm"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Billing
           </Button>
         </div>
@@ -267,14 +308,23 @@ export function PaymentDetailsPage() {
     ? `#${payment.invoiceNumber}`
     : `#${payment.id.slice(0, 8).toUpperCase()}`
   const paymentDate = formatDate(payment.paidAt || payment.createdAt || '')
-  const hasFinancialBreakdown = ((payment.taxAmount ?? 0) > 0 || (payment.processingFees ?? 0) > 0)
+  const hasFinancialBreakdown =
+    (payment.taxAmount ?? 0) > 0 || (payment.processingFees ?? 0) > 0
 
   // Timeline items (only non-empty)
   const timelineItems = [
-    payment.requestedAt ? { label: 'Requested', value: formatDate(payment.requestedAt) } : null,
-    payment.createdAt ? { label: 'Created', value: formatDate(payment.createdAt) } : null,
-    payment.paidAt ? { label: 'Payment Confirmed', value: formatDate(payment.paidAt) } : null,
-    payment.creditedAt ? { label: 'Credits Applied', value: formatDate(payment.creditedAt) } : null,
+    payment.requestedAt
+      ? { label: 'Requested', value: formatDate(payment.requestedAt) }
+      : null,
+    payment.createdAt
+      ? { label: 'Created', value: formatDate(payment.createdAt) }
+      : null,
+    payment.paidAt
+      ? { label: 'Payment Confirmed', value: formatDate(payment.paidAt) }
+      : null,
+    payment.creditedAt
+      ? { label: 'Credits Applied', value: formatDate(payment.creditedAt) }
+      : null,
   ].filter(Boolean) as { label: string; value: string }[]
 
   return (
@@ -282,15 +332,14 @@ export function PaymentDetailsPage() {
       {/* print: add a <style> tag to hide navigation on print */}
       <style>{`@media print { .no-print { display: none !important; } }`}</style>
 
-      <div className="space-y-6 max-w-3xl mx-auto">
-
+      <div className="mx-auto max-w-3xl space-y-6">
         {/* ── Navigation ── */}
         <div className="no-print flex items-center gap-3">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => navigate({ to: '/dashboard/billing' })}
-            className="gap-2 text-slate-500 hover:text-primary"
+            className="hover:text-primary gap-2 text-slate-500"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Billing
@@ -298,22 +347,26 @@ export function PaymentDetailsPage() {
         </div>
 
         {/* ── Invoice Header ── */}
-        <Card className="rounded-3xl border border-primary/10 bg-white shadow-sm overflow-hidden">
+        <Card className="border-primary/10 overflow-hidden rounded-3xl border bg-white shadow-sm">
           {/* Navy header band */}
-          <div className="bg-gradient-to-r from-primary to-primary-hover px-8 py-7 text-white">
+          <div className="from-primary to-primary-hover bg-gradient-to-r px-8 py-7 text-white">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <div className="flex items-center gap-2 mb-1">
+                <div className="mb-1 flex items-center gap-2">
                   <ReceiptText className="h-4 w-4 text-blue-300" />
-                  <p className="text-blue-200 text-xs font-semibold uppercase tracking-widest">Invoice</p>
+                  <p className="text-xs font-semibold tracking-widest text-blue-200 uppercase">
+                    Invoice
+                  </p>
                 </div>
                 <h1 className="text-3xl font-bold text-white">{invoiceRef}</h1>
-                <p className="text-blue-200 text-sm mt-2 flex items-center gap-1.5">
+                <p className="mt-2 flex items-center gap-1.5 text-sm text-blue-200">
                   <Calendar className="h-3.5 w-3.5" />
                   {paymentDate}
                 </p>
               </div>
-              <Badge className={`${statusCfg.badge} flex items-center gap-1.5 border px-3 py-1.5 text-sm font-semibold`}>
+              <Badge
+                className={`${statusCfg.badge} flex items-center gap-1.5 border px-3 py-1.5 text-sm font-semibold`}
+              >
                 {statusCfg.icon}
                 {statusCfg.label}
               </Badge>
@@ -322,24 +375,36 @@ export function PaymentDetailsPage() {
 
           {/* Invoice overview */}
           <CardContent className="p-6">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <div className="rounded-2xl bg-slate-50 border border-slate-100 p-3">
-                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Amount</p>
-                <p className="text-xl font-bold text-primary">{formatCurrency(payment.amount || 0)}</p>
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+              <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
+                <p className="mb-1 text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+                  Amount
+                </p>
+                <p className="text-primary text-xl font-bold">
+                  {formatCurrency(payment.amount || 0)}
+                </p>
               </div>
-              <div className="rounded-2xl bg-slate-50 border border-slate-100 p-3">
-                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Currency</p>
-                <p className="text-xl font-bold text-primary">{(payment.currency || 'USD').toUpperCase()}</p>
+              <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
+                <p className="mb-1 text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+                  Currency
+                </p>
+                <p className="text-primary text-xl font-bold">
+                  {(payment.currency || 'USD').toUpperCase()}
+                </p>
               </div>
-              <div className="rounded-2xl bg-slate-50 border border-slate-100 p-3">
-                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Type</p>
-                <p className="text-sm font-bold text-primary capitalize leading-tight mt-0.5">
+              <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
+                <p className="mb-1 text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+                  Type
+                </p>
+                <p className="text-primary mt-0.5 text-sm leading-tight font-bold capitalize">
                   {getPaymentType(payment.type)}
                 </p>
               </div>
-              <div className="rounded-2xl bg-slate-50 border border-slate-100 p-3">
-                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Method</p>
-                <p className="text-sm font-bold text-primary capitalize leading-tight mt-0.5">
+              <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
+                <p className="mb-1 text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+                  Method
+                </p>
+                <p className="text-primary mt-0.5 text-sm leading-tight font-bold capitalize">
                   {payment.paymentMethodDetails?.card
                     ? `${payment.paymentMethodDetails.card.brand?.toUpperCase()} ···· ${payment.paymentMethodDetails.card.last4}`
                     : payment.paymentMethod || 'Card'}
@@ -348,8 +413,10 @@ export function PaymentDetailsPage() {
             </div>
 
             {payment.description && (
-              <div className="mt-4 rounded-xl bg-slate-50 border border-slate-100 px-4 py-3">
-                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Description</p>
+              <div className="mt-4 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
+                <p className="mb-1 text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+                  Description
+                </p>
                 <p className="text-sm text-slate-700">{payment.description}</p>
               </div>
             )}
@@ -359,38 +426,50 @@ export function PaymentDetailsPage() {
         {/* ── Financial Breakdown ── */}
         {hasFinancialBreakdown && (
           <Card className="rounded-3xl border border-slate-100 bg-white shadow-sm">
-            <CardHeader className="pb-3 border-b border-slate-50">
+            <CardHeader className="border-b border-slate-50 pb-3">
               <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
-                  <FileText className="h-4 w-4 text-primary" />
+                <div className="bg-primary/10 flex h-9 w-9 items-center justify-center rounded-xl">
+                  <FileText className="text-primary h-4 w-4" />
                 </div>
-                <CardTitle className="text-sm font-bold text-primary">Financial Breakdown</CardTitle>
+                <CardTitle className="text-primary text-sm font-bold">
+                  Financial Breakdown
+                </CardTitle>
               </div>
             </CardHeader>
             <CardContent className="p-5">
-              <div className="rounded-xl border border-slate-100 overflow-hidden">
+              <div className="overflow-hidden rounded-xl border border-slate-100">
                 <div className="divide-y divide-slate-50">
-                  <div className="flex justify-between items-center px-4 py-3">
+                  <div className="flex items-center justify-between px-4 py-3">
                     <span className="text-sm text-slate-500">Subtotal</span>
-                    <span className="text-sm font-semibold text-primary">
+                    <span className="text-primary text-sm font-semibold">
                       {formatCurrency(payment.netAmount || payment.amount || 0)}
                     </span>
                   </div>
                   {(payment.taxAmount ?? 0) > 0 && (
-                    <div className="flex justify-between items-center px-4 py-3">
+                    <div className="flex items-center justify-between px-4 py-3">
                       <span className="text-sm text-slate-500">Tax</span>
-                      <span className="text-sm font-semibold text-primary">{formatCurrency(payment.taxAmount ?? 0)}</span>
+                      <span className="text-primary text-sm font-semibold">
+                        {formatCurrency(payment.taxAmount ?? 0)}
+                      </span>
                     </div>
                   )}
                   {(payment.processingFees ?? 0) > 0 && (
-                    <div className="flex justify-between items-center px-4 py-3">
-                      <span className="text-sm text-slate-500">Processing Fees</span>
-                      <span className="text-sm font-semibold text-primary">{formatCurrency(payment.processingFees ?? 0)}</span>
+                    <div className="flex items-center justify-between px-4 py-3">
+                      <span className="text-sm text-slate-500">
+                        Processing Fees
+                      </span>
+                      <span className="text-primary text-sm font-semibold">
+                        {formatCurrency(payment.processingFees ?? 0)}
+                      </span>
                     </div>
                   )}
-                  <div className="flex justify-between items-center px-4 py-3 bg-primary/5">
-                    <span className="text-sm font-bold text-primary">Total</span>
-                    <span className="text-base font-bold text-primary">{formatCurrency(payment.amount || 0)}</span>
+                  <div className="bg-primary/5 flex items-center justify-between px-4 py-3">
+                    <span className="text-primary text-sm font-bold">
+                      Total
+                    </span>
+                    <span className="text-primary text-base font-bold">
+                      {formatCurrency(payment.amount || 0)}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -399,36 +478,50 @@ export function PaymentDetailsPage() {
         )}
 
         {/* ── Credit Details ── */}
-        {(payment.creditsPurchased != null || payment.type === 'credit_purchase') && (
+        {(payment.creditsPurchased != null ||
+          payment.type === 'credit_purchase') && (
           <Card className="rounded-3xl border border-slate-100 bg-white shadow-sm">
-            <CardHeader className="pb-3 border-b border-slate-50">
+            <CardHeader className="border-b border-slate-50 pb-3">
               <div className="flex items-center gap-3">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100">
                   <Coins className="h-4 w-4 text-emerald-600" />
                 </div>
-                <CardTitle className="text-sm font-bold text-primary">Credit Details</CardTitle>
+                <CardTitle className="text-primary text-sm font-bold">
+                  Credit Details
+                </CardTitle>
               </div>
             </CardHeader>
             <CardContent className="p-5">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {payment.creditsPurchased != null && (
-                  <div className="rounded-2xl bg-emerald-50 border border-emerald-100 p-4 text-center">
-                    <p className="text-[10px] font-semibold text-emerald-500 uppercase tracking-wider mb-1">Credits Purchased</p>
-                    <p className="text-2xl font-bold text-emerald-700">{payment.creditsPurchased.toLocaleString()}</p>
+                  <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-center">
+                    <p className="mb-1 text-[10px] font-semibold tracking-wider text-emerald-500 uppercase">
+                      Credits Purchased
+                    </p>
+                    <p className="text-2xl font-bold text-emerald-700">
+                      {payment.creditsPurchased.toLocaleString()}
+                    </p>
                   </div>
                 )}
                 {payment.unitPrice != null && (
-                  <div className="rounded-2xl bg-slate-50 border border-slate-100 p-4 text-center">
-                    <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Unit Price</p>
-                    <p className="text-2xl font-bold text-primary">{formatCurrency(payment.unitPrice)}</p>
-                    <p className="text-xs text-slate-400 mt-0.5">per credit</p>
+                  <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4 text-center">
+                    <p className="mb-1 text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+                      Unit Price
+                    </p>
+                    <p className="text-primary text-2xl font-bold">
+                      {formatCurrency(payment.unitPrice)}
+                    </p>
+                    <p className="mt-0.5 text-xs text-slate-400">per credit</p>
                   </div>
                 )}
               </div>
               {payment.expiryDate && (
-                <div className="mt-3 flex items-center gap-2 text-xs text-slate-500 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2.5">
-                  <Clock className="h-3.5 w-3.5 text-amber-500 shrink-0" />
-                  Credits expire on <strong className="text-amber-700">{formatDate(payment.expiryDate)}</strong>
+                <div className="mt-3 flex items-center gap-2 rounded-xl border border-amber-100 bg-amber-50 px-3 py-2.5 text-xs text-slate-500">
+                  <Clock className="h-3.5 w-3.5 shrink-0 text-amber-500" />
+                  Credits expire on{' '}
+                  <strong className="text-amber-700">
+                    {formatDate(payment.expiryDate)}
+                  </strong>
                 </div>
               )}
             </CardContent>
@@ -436,20 +529,35 @@ export function PaymentDetailsPage() {
         )}
 
         {/* ── Refund Information ── */}
-        {((payment.amountRefunded ?? 0) > 0 || payment.status === 'refunded') && (
+        {((payment.amountRefunded ?? 0) > 0 ||
+          payment.status === 'refunded') && (
           <Card className="rounded-3xl border border-orange-100 bg-white shadow-sm">
-            <CardHeader className="pb-3 border-b border-orange-50 bg-orange-50/30">
+            <CardHeader className="border-b border-orange-50 bg-orange-50/30 pb-3">
               <div className="flex items-center gap-3">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-100">
                   <RefreshCw className="h-4 w-4 text-orange-600" />
                 </div>
-                <CardTitle className="text-sm font-bold text-primary">Refund Information</CardTitle>
+                <CardTitle className="text-primary text-sm font-bold">
+                  Refund Information
+                </CardTitle>
               </div>
             </CardHeader>
             <CardContent className="p-5">
               <div className="divide-y divide-slate-50">
-                <DetailRow label="Refunded Amount" value={<span className="text-orange-600">{formatCurrency(payment.amountRefunded || 0)}</span>} />
-                <DetailRow label="Refund Date" value={payment.refundedAt ? formatDate(payment.refundedAt) : 'N/A'} />
+                <DetailRow
+                  label="Refunded Amount"
+                  value={
+                    <span className="text-orange-600">
+                      {formatCurrency(payment.amountRefunded || 0)}
+                    </span>
+                  }
+                />
+                <DetailRow
+                  label="Refund Date"
+                  value={
+                    payment.refundedAt ? formatDate(payment.refundedAt) : 'N/A'
+                  }
+                />
                 {payment.refundReason && (
                   <DetailRow label="Reason" value={payment.refundReason} />
                 )}
@@ -459,20 +567,37 @@ export function PaymentDetailsPage() {
         )}
 
         {/* ── Dispute Information ── */}
-        {((payment.amountDisputed ?? 0) > 0 || payment.status === 'disputed') && (
+        {((payment.amountDisputed ?? 0) > 0 ||
+          payment.status === 'disputed') && (
           <Card className="rounded-3xl border border-violet-100 bg-white shadow-sm">
-            <CardHeader className="pb-3 border-b border-violet-50 bg-violet-50/30">
+            <CardHeader className="border-b border-violet-50 bg-violet-50/30 pb-3">
               <div className="flex items-center gap-3">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-100">
                   <AlertTriangle className="h-4 w-4 text-violet-600" />
                 </div>
-                <CardTitle className="text-sm font-bold text-primary">Dispute Information</CardTitle>
+                <CardTitle className="text-primary text-sm font-bold">
+                  Dispute Information
+                </CardTitle>
               </div>
             </CardHeader>
             <CardContent className="p-5">
               <div className="divide-y divide-slate-50">
-                <DetailRow label="Disputed Amount" value={<span className="text-red-600">{formatCurrency(payment.amountDisputed || 0)}</span>} />
-                <DetailRow label="Status" value={<span className="capitalize">{payment.disputeStatus || 'Open'}</span>} />
+                <DetailRow
+                  label="Disputed Amount"
+                  value={
+                    <span className="text-red-600">
+                      {formatCurrency(payment.amountDisputed || 0)}
+                    </span>
+                  }
+                />
+                <DetailRow
+                  label="Status"
+                  value={
+                    <span className="capitalize">
+                      {payment.disputeStatus || 'Open'}
+                    </span>
+                  }
+                />
                 {payment.disputeReason && (
                   <DetailRow label="Reason" value={payment.disputeReason} />
                 )}
@@ -484,12 +609,14 @@ export function PaymentDetailsPage() {
         {/* ── Timeline ── */}
         {timelineItems.length > 0 && (
           <Card className="rounded-3xl border border-slate-100 bg-white shadow-sm">
-            <CardHeader className="pb-3 border-b border-slate-50">
+            <CardHeader className="border-b border-slate-50 pb-3">
               <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
-                  <Calendar className="h-4 w-4 text-primary" />
+                <div className="bg-primary/10 flex h-9 w-9 items-center justify-center rounded-xl">
+                  <Calendar className="text-primary h-4 w-4" />
                 </div>
-                <CardTitle className="text-sm font-bold text-primary">Timeline</CardTitle>
+                <CardTitle className="text-primary text-sm font-bold">
+                  Timeline
+                </CardTitle>
               </div>
             </CardHeader>
             <CardContent className="p-5">
@@ -508,35 +635,68 @@ export function PaymentDetailsPage() {
         )}
 
         {/* ── Support Reference ── */}
-        {(payment.batchId || payment.stripePaymentIntentId || payment.stripeChargeId || payment.stripeInvoiceId) && (
+        {(payment.batchId ||
+          payment.stripePaymentIntentId ||
+          payment.stripeChargeId ||
+          payment.stripeInvoiceId) && (
           <Card className="rounded-3xl border border-slate-100 bg-white shadow-sm">
-            <CardHeader className="pb-3 border-b border-slate-50">
+            <CardHeader className="border-b border-slate-50 pb-3">
               <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
-                  <CreditCard className="h-4 w-4 text-primary" />
+                <div className="bg-primary/10 flex h-9 w-9 items-center justify-center rounded-xl">
+                  <CreditCard className="text-primary h-4 w-4" />
                 </div>
                 <div>
-                  <CardTitle className="text-sm font-bold text-primary">Support Reference</CardTitle>
-                  <p className="text-xs text-slate-400 mt-0.5">Share these IDs with support when troubleshooting</p>
+                  <CardTitle className="text-primary text-sm font-bold">
+                    Support Reference
+                  </CardTitle>
+                  <p className="mt-0.5 text-xs text-slate-400">
+                    Share these IDs with support when troubleshooting
+                  </p>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="p-5">
-              <div className="rounded-xl border border-slate-100 bg-slate-50/50 p-3 divide-y divide-slate-100">
+              <div className="divide-y divide-slate-100 rounded-xl border border-slate-100 bg-slate-50/50 p-3">
                 {payment.id && (
-                  <CopyRow label="Payment ID" value={payment.id} copiedId={copiedId} onCopy={copyToClipboard} />
+                  <CopyRow
+                    label="Payment ID"
+                    value={payment.id}
+                    copiedId={copiedId}
+                    onCopy={copyToClipboard}
+                  />
                 )}
                 {payment.batchId && (
-                  <CopyRow label="Batch ID" value={payment.batchId} copiedId={copiedId} onCopy={copyToClipboard} />
+                  <CopyRow
+                    label="Batch ID"
+                    value={payment.batchId}
+                    copiedId={copiedId}
+                    onCopy={copyToClipboard}
+                  />
                 )}
                 {payment.stripePaymentIntentId && (
-                  <CopyRow label="Stripe Payment Intent" value={payment.stripePaymentIntentId} copiedId={copiedId} onCopy={copyToClipboard} />
+                  <CopyRow
+                    label="Stripe Payment Intent"
+                    value={payment.stripePaymentIntentId}
+                    copiedId={copiedId}
+                    onCopy={copyToClipboard}
+                  />
                 )}
-                {payment.stripeChargeId && payment.stripeChargeId !== payment.stripePaymentIntentId && (
-                  <CopyRow label="Stripe Charge ID" value={payment.stripeChargeId} copiedId={copiedId} onCopy={copyToClipboard} />
-                )}
+                {payment.stripeChargeId &&
+                  payment.stripeChargeId !== payment.stripePaymentIntentId && (
+                    <CopyRow
+                      label="Stripe Charge ID"
+                      value={payment.stripeChargeId}
+                      copiedId={copiedId}
+                      onCopy={copyToClipboard}
+                    />
+                  )}
                 {payment.stripeInvoiceId && (
-                  <CopyRow label="Stripe Invoice ID" value={payment.stripeInvoiceId} copiedId={copiedId} onCopy={copyToClipboard} />
+                  <CopyRow
+                    label="Stripe Invoice ID"
+                    value={payment.stripeInvoiceId}
+                    copiedId={copiedId}
+                    onCopy={copyToClipboard}
+                  />
                 )}
               </div>
             </CardContent>
@@ -544,12 +704,12 @@ export function PaymentDetailsPage() {
         )}
 
         {/* ── Actions ── */}
-        <div className="no-print flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 border-t border-slate-100">
+        <div className="no-print flex flex-col items-center justify-between gap-3 border-t border-slate-100 pt-2 sm:flex-row">
           <Button
             variant="outline"
             size="sm"
             onClick={() => navigate({ to: '/dashboard/billing' })}
-            className="gap-2 text-slate-500 hover:text-primary"
+            className="hover:text-primary gap-2 text-slate-500"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Billing
@@ -560,17 +720,17 @@ export function PaymentDetailsPage() {
               <Button
                 variant="outline"
                 size="sm"
-                className="border-orange-200 text-orange-600 hover:bg-orange-50 hover:border-orange-300"
+                className="border-orange-200 text-orange-600 hover:border-orange-300 hover:bg-orange-50"
                 onClick={handleRefund}
               >
-                <RefreshCw className="h-4 w-4 mr-2" />
+                <RefreshCw className="mr-2 h-4 w-4" />
                 Request Refund
               </Button>
             )}
             <Button
               variant="default"
               size="sm"
-              className="bg-primary hover:bg-primary-hover text-white shadow-sm gap-2 min-w-[150px]"
+              className="bg-primary hover:bg-primary-hover min-w-[150px] gap-2 text-white shadow-sm"
               onClick={handleDownloadInvoice}
               disabled={isDownloading}
             >
@@ -588,7 +748,6 @@ export function PaymentDetailsPage() {
             </Button>
           </div>
         </div>
-
       </div>
     </Container>
   )

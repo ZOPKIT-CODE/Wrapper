@@ -1,8 +1,16 @@
-import type { ReactNode } from 'react';
-import { Link } from '@tanstack/react-router';
-import { Linkedin, Facebook, Instagram, AtSign, Mail, MapPin, Phone } from 'lucide-react';
-import { config } from '@/lib/config';
-import { cn } from '@/lib/utils';
+import type { ReactNode } from 'react'
+import { Link } from '@tanstack/react-router'
+import {
+  Linkedin,
+  Facebook,
+  Instagram,
+  AtSign,
+  Mail,
+  MapPin,
+  Phone,
+} from 'lucide-react'
+import { config } from '@/lib/config'
+import { cn } from '@/lib/utils'
 
 const footerPolicyLinks = [
   { to: '/privacy', label: 'Privacy' },
@@ -10,7 +18,7 @@ const footerPolicyLinks = [
   { to: '/refund-policy', label: 'Refunds' },
   { to: '/cookies', label: 'Cookies' },
   { to: '/security', label: 'Security' },
-] as const;
+] as const
 
 const productLinks = [
   { to: '/products/b2b-crm', label: 'B2B CRM' },
@@ -23,14 +31,14 @@ const productLinks = [
   { to: '/products/esop-system', label: 'ESOP' },
   { to: '/products/zopkit-academy', label: 'Academy' },
   { to: '/products/zopkit-itsm', label: 'ITSM' },
-] as const;
+] as const
 
 const industryLinks = [
   { to: '/industries/e-commerce', label: 'E-Commerce & Retail' },
   { to: '/industries/saas', label: 'SaaS & Technology' },
   { to: '/industries/manufacturing', label: 'Manufacturing' },
   { to: '/industries/professional-services', label: 'Professional Services' },
-] as const;
+] as const
 
 const resourceLinks = [
   { to: '/pricing', label: 'Pricing' },
@@ -40,35 +48,39 @@ const resourceLinks = [
   { to: '/help', label: 'Help center' },
   { to: '/community', label: 'Community' },
   { to: '/roadmap', label: 'Roadmap' },
-] as const;
+] as const
 
 type LandingFooterProps = {
   /** Applies landing-page typography and spacing */
-  marketing?: boolean;
-};
+  marketing?: boolean
+}
 
 export function LandingFooter({ marketing = false }: LandingFooterProps) {
   return (
     <footer
       className={cn(
-        'border-t border-border bg-background',
+        'border-border bg-background border-t',
         marketing && 'landing-footer landing-footer-minimal'
       )}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-14 sm:pt-16 pb-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10 lg:gap-8">
-          <div className="lg:col-span-4 space-y-5">
-            <Link to="/" className="inline-flex items-center cursor-pointer">
+      <div className="mx-auto max-w-7xl px-4 pt-14 pb-10 sm:px-6 sm:pt-16 lg:px-8">
+        <div className="grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-12 lg:gap-8">
+          <div className="space-y-5 lg:col-span-4">
+            <Link to="/" className="inline-flex cursor-pointer items-center">
               <img
                 src={config.FULL_LOGO_URL}
                 alt="Zopkit"
                 className="h-9 w-auto object-contain"
               />
             </Link>
-            <p className="text-sm text-muted-foreground leading-relaxed max-w-sm">
-              One workspace for CRM, finance, HR, and operations. Shared identity, records, and billing across every module.
+            <p className="text-muted-foreground max-w-sm text-sm leading-relaxed">
+              One workspace for CRM, finance, HR, and operations. Shared
+              identity, records, and billing across every module.
             </p>
-            <nav className="flex flex-wrap gap-2" aria-label="Zopkit on social media">
+            <nav
+              className="flex flex-wrap gap-2"
+              aria-label="Zopkit on social media"
+            >
               <SocialLink
                 href="https://www.linkedin.com/company/zopkit/posts/?feedView=all"
                 icon={<Linkedin size={16} />}
@@ -126,28 +138,36 @@ export function LandingFooter({ marketing = false }: LandingFooterProps) {
 
           <div className="lg:col-span-4">
             <FooterHeading marketing={marketing}>Contact</FooterHeading>
-            <ul className="mt-4 space-y-3 text-sm text-muted-foreground">
+            <ul className="text-muted-foreground mt-4 space-y-3 text-sm">
               <li className="flex items-start gap-2.5">
-                <MapPin className="w-4 h-4 text-foreground/70 shrink-0 mt-0.5" />
+                <MapPin className="text-foreground/70 mt-0.5 h-4 w-4 shrink-0" />
                 <span>Hi-Tech City, Hyderabad</span>
               </li>
               <li className="flex items-center gap-2.5">
-                <Phone className="w-4 h-4 text-foreground/70 shrink-0" />
-                <a href="tel:8971055515" className="hover:text-foreground transition-colors">
+                <Phone className="text-foreground/70 h-4 w-4 shrink-0" />
+                <a
+                  href="tel:8971055515"
+                  className="hover:text-foreground transition-colors"
+                >
                   8971055515
                 </a>
               </li>
               <li className="flex items-center gap-2.5">
-                <Mail className="w-4 h-4 text-foreground/70 shrink-0" />
-                <a href="mailto:sales@zopkit.com" className="hover:text-foreground transition-colors">
+                <Mail className="text-foreground/70 h-4 w-4 shrink-0" />
+                <a
+                  href="mailto:sales@zopkit.com"
+                  className="hover:text-foreground transition-colors"
+                >
                   sales@zopkit.com
                 </a>
               </li>
             </ul>
 
-            <div className="mt-8 landing-newsletter-box rounded-sm border border-border p-4">
-              <p className="text-sm font-medium text-foreground">Product updates</p>
-              <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+            <div className="landing-newsletter-box border-border mt-8 rounded-sm border p-4">
+              <p className="text-foreground text-sm font-medium">
+                Product updates
+              </p>
+              <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
                 New modules, workflow templates, and release notes. No spam.
               </p>
               <form
@@ -158,11 +178,11 @@ export function LandingFooter({ marketing = false }: LandingFooterProps) {
                   type="email"
                   placeholder="Work email"
                   aria-label="Email for newsletter"
-                  className="flex-1 min-w-0 h-9 px-3 rounded-sm border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                  className="border-border bg-background focus:ring-ring h-9 min-w-0 flex-1 rounded-sm border px-3 text-sm focus:ring-1 focus:outline-none"
                 />
                 <button
                   type="submit"
-                  className="h-9 px-3.5 rounded-full bg-foreground text-background text-sm font-medium hover:opacity-[0.88] transition-opacity cursor-pointer shrink-0"
+                  className="bg-foreground text-background h-9 shrink-0 cursor-pointer rounded-full px-3.5 text-sm font-medium transition-opacity hover:opacity-[0.88]"
                 >
                   Join
                 </button>
@@ -171,19 +191,19 @@ export function LandingFooter({ marketing = false }: LandingFooterProps) {
           </div>
         </div>
 
-        <div className="mt-12 pt-6 border-t border-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <p className="text-xs text-muted-foreground landing-mono">
+        <div className="border-border mt-12 flex flex-col gap-4 border-t pt-6 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-muted-foreground landing-mono text-xs">
             © {new Date().getFullYear()} Zopkit Inc.
           </p>
           <nav
-            className="flex flex-wrap gap-x-4 gap-y-2 text-xs text-muted-foreground"
+            className="text-muted-foreground flex flex-wrap gap-x-4 gap-y-2 text-xs"
             aria-label="Legal and policy documents"
           >
             {footerPolicyLinks.map((item) => (
               <Link
                 key={item.to}
                 to={item.to}
-                className="hover:text-foreground transition-colors cursor-pointer"
+                className="hover:text-foreground cursor-pointer transition-colors"
               >
                 {item.label}
               </Link>
@@ -192,7 +212,7 @@ export function LandingFooter({ marketing = false }: LandingFooterProps) {
         </div>
       </div>
     </footer>
-  );
+  )
 }
 
 function FooterHeading({
@@ -200,21 +220,21 @@ function FooterHeading({
   marketing,
   className,
 }: {
-  children: ReactNode;
-  marketing?: boolean;
-  className?: string;
+  children: ReactNode
+  marketing?: boolean
+  className?: string
 }) {
   return (
     <h3
       className={cn(
-        'text-xs font-medium uppercase tracking-[0.12em] text-foreground/80',
+        'text-foreground/80 text-xs font-medium tracking-[0.12em] uppercase',
         marketing && 'landing-mono',
         className
       )}
     >
       {children}
     </h3>
-  );
+  )
 }
 
 function SocialLink({
@@ -222,21 +242,21 @@ function SocialLink({
   icon,
   label,
 }: {
-  href: string;
-  icon: ReactNode;
-  label: string;
+  href: string
+  icon: ReactNode
+  label: string
 }) {
   return (
     <a
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="w-9 h-9 rounded-sm border border-border bg-background flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors cursor-pointer"
+      className="border-border bg-background text-muted-foreground hover:text-foreground hover:border-foreground/20 flex h-9 w-9 cursor-pointer items-center justify-center rounded-sm border transition-colors"
       aria-label={label}
     >
       {icon}
     </a>
-  );
+  )
 }
 
 function FooterLink({ to, children }: { to: string; children: ReactNode }) {
@@ -244,10 +264,10 @@ function FooterLink({ to, children }: { to: string; children: ReactNode }) {
     <li>
       <Link
         to={to}
-        className="text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+        className="text-muted-foreground hover:text-foreground cursor-pointer text-sm transition-colors"
       >
         {children}
       </Link>
     </li>
-  );
+  )
 }

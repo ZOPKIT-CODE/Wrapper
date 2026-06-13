@@ -33,10 +33,10 @@ export function BulkActions({
       <CardContent className="p-4">
         <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
           <div className="flex items-center gap-6">
-            <span className="text-sm font-medium text-primary">
+            <span className="text-primary text-sm font-medium">
               {selectedCount} role{selectedCount !== 1 ? 's' : ''} selected
             </span>
-            <span className="text-sm text-primary/70">
+            <span className="text-primary/70 text-sm">
               from {totalCount} total roles
             </span>
           </div>

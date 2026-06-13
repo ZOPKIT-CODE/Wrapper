@@ -839,7 +839,7 @@ export function ApplicationModuleRoleBuilder({
                   <PearlButton
                     variant="outline"
                     onClick={onCancel}
-                    className="text-slate-500 hover:text-primary"
+                    className="hover:text-primary text-slate-500"
                   >
                     Cancel
                   </PearlButton>

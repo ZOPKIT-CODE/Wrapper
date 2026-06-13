@@ -291,8 +291,8 @@ export function CreateOrganizationPage() {
 
       <Card className="border-slate-200/80 shadow-sm">
         <CardHeader className="space-y-4 border-b border-slate-100 pb-5">
-          <CardTitle className="flex items-center gap-2 text-lg font-semibold text-primary">
-            <Building className="h-5 w-5 text-primary" />
+          <CardTitle className="text-primary flex items-center gap-2 text-lg font-semibold">
+            <Building className="text-primary h-5 w-5" />
             {steps[currentStep].title}
           </CardTitle>
           <CardDescription className="text-sm">
