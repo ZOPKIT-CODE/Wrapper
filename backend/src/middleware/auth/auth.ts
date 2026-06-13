@@ -564,7 +564,8 @@ export async function authMiddleware(request: FastifyRequest, reply: FastifyRepl
   // Skip if already authenticated by an earlier preHandler in the same request lifecycle.
   // Routes that have both a global hook preHandler AND a per-route preHandler would otherwise
   // run full token validation + DB queries twice (400-800ms duplicate cost).
-  if (request.userContext?.tenantId) return;
+  // NOTE: platform admins have tenantId=null, so check isAuthenticated — not tenantId.
+  if (request.userContext?.isAuthenticated) return;
 
   // CORS preflight has no auth headers; never 401 here or the browser blocks the real request.
   if (request.method.toUpperCase() === 'OPTIONS') {
@@ -674,13 +675,10 @@ export async function authMiddleware(request: FastifyRequest, reply: FastifyRepl
 
     const refreshToken = (request as any).cookies?.idp_refresh_token;
     if (refreshToken) {
-      try {
-        const refreshSuccess = await handleTokenRefresh(request, reply, refreshToken);
-        if (refreshSuccess) return;
-      } catch (refreshError: unknown) {
-        const refErr = refreshError as Error;
-        Logger.log('error', 'auth', 'auth-middleware', '❌ Token refresh failed', { error: refErr.message });
-      }
+      // handleTokenRefresh always calls reply.send() itself — return immediately after
+      // so we never attempt a second send (which throws "Cannot write headers after sent").
+      await handleTokenRefresh(request, reply, refreshToken);
+      return;
     }
 
     reply.code(401).send({
