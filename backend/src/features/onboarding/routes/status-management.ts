@@ -11,6 +11,7 @@ import { eq, and, desc } from 'drizzle-orm';
 import { TenantService } from '../../../services/tenant-service.js';
 import { verifyCognitoToken } from '../../auth/services/cognito-service.js';
 import { isPlatformAdminIdentity } from '../../../middleware/auth/platform-plane.js';
+import { getActivePlatformStaff } from '../../../middleware/auth/platform-permission-middleware.js';
 import { SubscriptionService } from '../../../features/subscriptions/index.js';
 import { shouldLogVerbose } from '../../../utils/verbose-log.js';
 
@@ -246,16 +247,21 @@ export default async function statusManagementRoutes(
         };
       }
 
-      // Platform admins live outside the tenant plane — they have no tenant_users record
-      // and must never be routed through onboarding. Short-circuit here so Login.tsx
-      // redirects them to /company-admin instead of /onboarding.
-      if (isPlatformAdminIdentity({ groups: idpGroups, email: email as string | null })) {
+      // Platform admins and staff live outside the tenant plane — no tenant_users record,
+      // must never be routed through onboarding. Short-circuit so Login.tsx redirects to /company-admin.
+      const isPlatformAdmin = isPlatformAdminIdentity({ groups: idpGroups, email: email as string | null });
+      const staffRecord = !isPlatformAdmin && idpSub ? await getActivePlatformStaff(idpSub as string) : null;
+      const isPlatformStaff = staffRecord !== null;
+
+      if (isPlatformAdmin || isPlatformStaff) {
+        const userType = isPlatformAdmin ? 'PLATFORM_ADMIN' : 'PLATFORM_STAFF';
         return {
           success: true,
           data: {
             isOnboarded: true,
             needsOnboarding: false,
-            isPlatformAdmin: true,
+            isPlatformAdmin,
+            isPlatformStaff,
             onboardingStep: 'completed',
             savedFormData: {},
             user: { id: idpSub, email, idpSub }
@@ -266,10 +272,11 @@ export default async function statusManagementRoutes(
             internalUserId: null,
             tenantId: null,
             email,
-            isPlatformAdmin: true,
+            isPlatformAdmin,
+            isPlatformStaff,
             needsOnboarding: false,
             onboardingCompleted: true,
-            userType: 'PLATFORM_ADMIN',
+            userType,
           }
         };
       }

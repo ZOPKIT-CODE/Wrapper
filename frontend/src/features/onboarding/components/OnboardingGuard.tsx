@@ -50,10 +50,12 @@ export const OnboardingGuard = React.memo(
       // Only run onboarding check when auth/onboarding data is ready
       if (!backendAuthStatus && !onboardingData && !authReady) return
 
-      // Platform admins have no tenant — bypass onboarding entirely
+      // Platform admins and staff have no tenant — bypass onboarding entirely
       if (
         backendAuthStatus?.isPlatformAdmin ||
-        onboardingData?.isPlatformAdmin
+        backendAuthStatus?.isPlatformStaff ||
+        onboardingData?.isPlatformAdmin ||
+        onboardingData?.isPlatformStaff
       ) {
         setOnboardingStatus({
           needsOnboarding: false,

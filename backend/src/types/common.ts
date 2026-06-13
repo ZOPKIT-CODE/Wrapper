@@ -16,6 +16,8 @@ export interface UserContext {
   isSuperAdmin: boolean;
   /** Internal platform operator (Cognito platform-admin group / bootstrap allowlist). Cross-tenant plane. */
   isPlatformAdmin: boolean;
+  /** Delegated platform operator with a valid, non-expired row in platform_staff. Cross-tenant plane. */
+  isPlatformStaff: boolean;
   permissions?: UserPermissions;
 }
 
