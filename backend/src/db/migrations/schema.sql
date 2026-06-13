@@ -1110,7 +1110,7 @@ CREATE TABLE public.platform_staff (
     email character varying(255) NOT NULL,
     name character varying(255) NOT NULL,
     granted_permissions text[] NOT NULL,
-    granted_by uuid NOT NULL,
+    granted_by uuid,
     granted_at timestamp without time zone DEFAULT now() NOT NULL,
     expires_at timestamp without time zone NOT NULL,
     reason text NOT NULL,
@@ -3140,20 +3140,7 @@ ALTER TABLE ONLY public.platform_audit_logs
     ADD CONSTRAINT platform_audit_logs_staff_id_fkey FOREIGN KEY (staff_id) REFERENCES public.platform_staff(staff_id);
 
 
---
--- Name: platform_staff platform_staff_granted_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.platform_staff
-    ADD CONSTRAINT platform_staff_granted_by_fkey FOREIGN KEY (granted_by) REFERENCES public.tenant_users(user_id);
-
-
---
--- Name: platform_staff platform_staff_revoked_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.platform_staff
-    ADD CONSTRAINT platform_staff_revoked_by_fkey FOREIGN KEY (revoked_by) REFERENCES public.tenant_users(user_id);
+-- platform_staff_granted_by_fkey and platform_staff_revoked_by_fkey removed (migration 0008).
 
 
 --
