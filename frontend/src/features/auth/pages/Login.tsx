@@ -363,7 +363,13 @@ export function Login() {
         // If a session expiry parked a return path (e.g. /company-admin), honor it
         // for an onboarded user instead of the default dashboard.
         const parkedReturn = consumePostLoginRedirect()
+        // Platform admins have no tenant plane — send them to the admin dashboard.
         if (
+          status.authStatus?.isPlatformAdmin ||
+          status.authStatus?.userType === 'PLATFORM_ADMIN'
+        ) {
+          navigate({ to: parkedReturn || '/company-admin', replace: true })
+        } else if (
           parkedReturn &&
           status.user &&
           status.isOnboarded &&
