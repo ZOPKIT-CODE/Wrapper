@@ -262,7 +262,7 @@ export function MarketingNavbar({
           const targetPath = path === '/' ? currentPath : path
 
           if (!isLandingPath(currentPath)) {
-            navigate({ to: '/' as '/', hash })
+            navigate({ to: '/' as const, hash })
             return
           }
 
