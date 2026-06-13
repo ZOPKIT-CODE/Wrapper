@@ -22,6 +22,12 @@ export function requirePermissions(requiredPermissions: string[]) {
       return;
     }
 
+    // Platform admins operate outside the tenant plane — they have no tenant context
+    // and need no role assignment. Their identity is the Cognito platform-admins group,
+    // verified by isPlatformAdminIdentity() during token processing. This is NOT a
+    // tenant-admin bypass; it is a separate identity plane with its own security boundary.
+    if (request.userContext.isPlatformAdmin) return;
+
     // NO ADMIN BYPASS: tenant admins do not skip the permission check. Their power
     // comes from an enumerated system role, which getUserPermissions resolves to
     // modules:'*'. See [[feedback-no-admin-bypass]] and ensureTenantAdminRole.
