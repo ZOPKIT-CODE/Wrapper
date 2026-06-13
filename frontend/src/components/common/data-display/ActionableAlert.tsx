@@ -5,39 +5,36 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui'
 import { X } from 'lucide-react'
 
-const alertVariants = cva(
-  "border rounded-lg p-4",
-  {
-    variants: {
-      severity: {
-        default: "border-gray-200 bg-gray-50 text-gray-800",
-        destructive: "border-red-200 bg-red-50 text-red-800",
-        warning: "border-yellow-200 bg-yellow-50 text-yellow-800",
-        success: "border-green-200 bg-green-50 text-green-800"
-      }
+const alertVariants = cva('border rounded-lg p-4', {
+  variants: {
+    severity: {
+      default: 'border-border bg-muted/50 text-foreground',
+      destructive:
+        'border-destructive/30 bg-destructive/10 text-destructive dark:text-red-300',
+      warning:
+        'border-amber-500/30 bg-amber-500/10 text-amber-900 dark:text-amber-200',
+      success:
+        'border-emerald-500/30 bg-emerald-500/10 text-emerald-900 dark:text-emerald-200',
     },
-    defaultVariants: {
-      severity: "default"
-    }
-  }
-)
+  },
+  defaultVariants: {
+    severity: 'default',
+  },
+})
 
-const subtitleVariants = cva(
-  "text-sm",
-  {
-    variants: {
-      severity: {
-        default: "text-gray-700",
-        destructive: "text-red-700",
-        warning: "text-yellow-700",
-        success: "text-green-700"
-      }
+const subtitleVariants = cva('text-sm', {
+  variants: {
+    severity: {
+      default: 'text-muted-foreground',
+      destructive: 'text-destructive/90 dark:text-red-300/90',
+      warning: 'text-amber-800 dark:text-amber-200/90',
+      success: 'text-emerald-800 dark:text-emerald-200/90',
     },
-    defaultVariants: {
-      severity: "default"
-    }
-  }
-)
+  },
+  defaultVariants: {
+    severity: 'default',
+  },
+})
 
 interface ActionableAlertProps extends VariantProps<typeof alertVariants> {
   title: string
@@ -47,41 +44,33 @@ interface ActionableAlertProps extends VariantProps<typeof alertVariants> {
   onClose?: () => void
 }
 
-export default function ActionableAlert({ 
-  title, 
-  subTitle, 
-  actions, 
+export default function ActionableAlert({
+  title,
+  subTitle,
+  actions,
   severity,
   className,
-  onClose
+  onClose,
 }: ActionableAlertProps) {
   return (
-    <Alert className={cn(alertVariants({ severity }), "relative", className)}>
+    <Alert className={cn(alertVariants({ severity }), 'relative', className)}>
       <div className="flex items-start justify-between">
         <div className="flex-1 pr-8">
-          <AlertTitle className="font-medium mb-1">
-            {title}
-          </AlertTitle>
-          
-         <AlertDescription className={subtitleVariants({ severity })}>
-         {subTitle && (
-            <div className={subtitleVariants({ severity })}>
-              {subTitle}
-            </div>
-          )}
-          
-          {actions && ( 
-            <div className="flex gap-2 mt-3">
-              {actions}  
-            </div>
-          )}
-         </AlertDescription>
+          <AlertTitle className="mb-1 font-medium">{title}</AlertTitle>
+
+          <AlertDescription className={subtitleVariants({ severity })}>
+            {subTitle && (
+              <div className={subtitleVariants({ severity })}>{subTitle}</div>
+            )}
+
+            {actions && <div className="mt-3 flex gap-2">{actions}</div>}
+          </AlertDescription>
         </div>
-        
+
         {onClose && (
-          <Button 
-            variant="ghost" 
-            size="icon" 
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={onClose}
             className="h-6 w-6 p-0 hover:bg-transparent"
           >

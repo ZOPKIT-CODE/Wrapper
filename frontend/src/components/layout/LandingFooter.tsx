@@ -1,213 +1,273 @@
-import React from 'react';
-import { Link } from '@tanstack/react-router';
-import { Linkedin, Facebook, Instagram, AtSign, Mail, MapPin, Phone } from 'lucide-react';
-import { config } from '@/lib/config';
+import type { ReactNode } from 'react'
+import { Link } from '@tanstack/react-router'
+import {
+  Linkedin,
+  Facebook,
+  Instagram,
+  AtSign,
+  Mail,
+  MapPin,
+  Phone,
+} from 'lucide-react'
+import { config } from '@/lib/config'
+import { cn } from '@/lib/utils'
 
 const footerPolicyLinks = [
-  { to: '/privacy', label: 'Privacy Policy' },
-  { to: '/terms', label: 'Terms of Service' },
-  { to: '/refund-policy', label: 'Cancellation & Refund Policy' },
-  { to: '/cookies', label: 'Cookie Policy' },
+  { to: '/privacy', label: 'Privacy' },
+  { to: '/terms', label: 'Terms' },
+  { to: '/refund-policy', label: 'Refunds' },
+  { to: '/cookies', label: 'Cookies' },
   { to: '/security', label: 'Security' },
-] as const;
+] as const
 
-export function LandingFooter() {
+const productLinks = [
+  { to: '/products/b2b-crm', label: 'B2B CRM' },
+  { to: '/products/financial-accounting', label: 'Finance' },
+  { to: '/products/operations-management', label: 'Operations' },
+  { to: '/products/hrms', label: 'HRMS' },
+  { to: '/products/project-management', label: 'Projects' },
+  { to: '/products/flowtilla', label: 'Flowtilla' },
+  { to: '/products/b2c-crm', label: 'B2C CRM' },
+  { to: '/products/esop-system', label: 'ESOP' },
+  { to: '/products/zopkit-academy', label: 'Academy' },
+  { to: '/products/zopkit-itsm', label: 'ITSM' },
+] as const
+
+const industryLinks = [
+  { to: '/industries/e-commerce', label: 'E-Commerce & Retail' },
+  { to: '/industries/saas', label: 'SaaS & Technology' },
+  { to: '/industries/manufacturing', label: 'Manufacturing' },
+  { to: '/industries/professional-services', label: 'Professional Services' },
+] as const
+
+const resourceLinks = [
+  { to: '/pricing', label: 'Pricing' },
+  { to: '/blog', label: 'Blog' },
+  { to: '/case-studies', label: 'Case studies' },
+  { to: '/docs', label: 'Documentation' },
+  { to: '/help', label: 'Help center' },
+  { to: '/community', label: 'Community' },
+  { to: '/roadmap', label: 'Roadmap' },
+] as const
+
+type LandingFooterProps = {
+  /** Applies landing-page typography and spacing */
+  marketing?: boolean
+}
+
+export function LandingFooter({ marketing = false }: LandingFooterProps) {
   return (
-    <footer className="bg-slate-50 pt-20 pb-10 border-t border-slate-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12 mb-16">
-          
-          {/* Brand Column */}
-          <div className="space-y-6">
-            <Link to="/" className="flex items-center space-x-2 block w-fit cursor-pointer">
+    <footer
+      className={cn(
+        'border-border bg-background border-t',
+        marketing && 'landing-footer landing-footer-minimal'
+      )}
+    >
+      <div className="mx-auto max-w-7xl px-4 pt-14 pb-10 sm:px-6 sm:pt-16 lg:px-8">
+        <div className="grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-12 lg:gap-8">
+          <div className="space-y-5 lg:col-span-4">
+            <Link to="/" className="inline-flex cursor-pointer items-center">
               <img
                 src={config.FULL_LOGO_URL}
                 alt="Zopkit"
-                className="h-10 rounded-xl w-auto object-contain"
+                className="h-9 w-auto object-contain"
               />
             </Link>
-            <p className="text-slate-600 leading-relaxed">
-              The complete business operating system for modern companies. Streamline operations, boost productivity, and scale faster.
+            <p className="text-muted-foreground max-w-sm text-sm leading-relaxed">
+              One workspace for CRM, finance, HR, and operations. Shared
+              identity, records, and billing across every module.
             </p>
-            <nav className="flex flex-wrap gap-3" aria-label="Zopkit on social media">
+            <nav
+              className="flex flex-wrap gap-2"
+              aria-label="Zopkit on social media"
+            >
               <SocialLink
                 href="https://www.linkedin.com/company/zopkit/posts/?feedView=all"
-                icon={<Linkedin size={20} />}
+                icon={<Linkedin size={16} />}
                 label="Zopkit on LinkedIn"
-                target="_blank"
-                rel="noopener noreferrer"
               />
               <SocialLink
                 href="https://www.facebook.com/Zopkit/photos/"
-                icon={<Facebook size={20} />}
+                icon={<Facebook size={16} />}
                 label="Zopkit on Facebook"
-                target="_blank"
-                rel="noopener noreferrer"
               />
               <SocialLink
                 href="https://www.instagram.com/iamzopkit/"
-                icon={<Instagram size={20} />}
+                icon={<Instagram size={16} />}
                 label="Zopkit on Instagram"
-                target="_blank"
-                rel="noopener noreferrer"
               />
               <SocialLink
                 href="https://www.threads.com/@iamzopkit"
-                icon={<AtSign size={20} />}
+                icon={<AtSign size={16} />}
                 label="Zopkit on Threads"
-                target="_blank"
-                rel="noopener noreferrer"
               />
             </nav>
           </div>
 
-          {/* Product Column */}
-          <div>
-            <h3 className="font-bold text-[#1B2E5A] mb-6 text-lg">Product</h3>
-            <ul className="space-y-4">
-              <FooterLink to="/products/affiliate-connect">Affiliate Connect</FooterLink>
-              <FooterLink to="/products/b2b-crm">B2B CRM</FooterLink>
-              <FooterLink to="/products/b2c-crm">B2C CRM</FooterLink>
-              <FooterLink to="/products/operations-management">Operations Management</FooterLink>
-              <FooterLink to="/products/project-management">Project Management</FooterLink>
-              <FooterLink to="/products/financial-accounting">Financial Accounting</FooterLink>
-              <FooterLink to="/products/hrms">HRMS</FooterLink>
-              <FooterLink to="/products/esop-system">ESOP System</FooterLink>
-              <FooterLink to="/products/flowtilla">Flowtilla</FooterLink>
-              <FooterLink to="/products/zopkit-academy">Zopkit Academy</FooterLink>
-              <FooterLink to="/products/zopkit-itsm">Zopkit ITSM</FooterLink>
+          <div className="lg:col-span-2">
+            <FooterHeading marketing={marketing}>Product</FooterHeading>
+            <ul className="mt-4 space-y-2.5">
+              {productLinks.map((link) => (
+                <FooterLink key={link.to} to={link.to}>
+                  {link.label}
+                </FooterLink>
+              ))}
             </ul>
           </div>
 
-          {/* Industries Column */}
-          <div>
-            <h3 className="font-bold text-[#1B2E5A] mb-6 text-lg">Industries</h3>
-            <ul className="space-y-4">
-              <FooterLink to="/industries/e-commerce">E-Commerce & Retail</FooterLink>
-              <FooterLink to="/industries/saas">SaaS & Technology</FooterLink>
-              <FooterLink to="/industries/manufacturing">Manufacturing</FooterLink>
-              <FooterLink to="/industries/professional-services">Professional Services</FooterLink>
+          <div className="lg:col-span-2">
+            <FooterHeading marketing={marketing}>Industries</FooterHeading>
+            <ul className="mt-4 space-y-2.5">
+              {industryLinks.map((link) => (
+                <FooterLink key={link.to} to={link.to}>
+                  {link.label}
+                </FooterLink>
+              ))}
+            </ul>
+            <FooterHeading marketing={marketing} className="mt-8">
+              Resources
+            </FooterHeading>
+            <ul className="mt-4 space-y-2.5">
+              {resourceLinks.map((link) => (
+                <FooterLink key={link.to} to={link.to}>
+                  {link.label}
+                </FooterLink>
+              ))}
             </ul>
           </div>
 
-          {/* Resources Column */}
-          <div>
-            <h3 className="font-bold text-[#1B2E5A] mb-6 text-lg">Resources</h3>
-            <ul className="space-y-4">
-              <FooterLink to="/blog">Blog</FooterLink>
-              <FooterLink to="/case-studies">Case Studies</FooterLink>
-              <FooterLink to="/docs">Documentation</FooterLink>
-              <FooterLink to="/help">Help Center</FooterLink>
-              <FooterLink to="/community">Community</FooterLink>
-              <FooterLink to="/roadmap">Product Roadmap</FooterLink>
-              <FooterLink to="/pricing">Pricing</FooterLink>
-            </ul>
-          </div>
-
-          {/* Contact Column */}
-          <div>
-            <h3 className="font-bold text-[#1B2E5A] mb-6 text-lg">Contact</h3>
-            <ul className="space-y-4">
-              <li className="flex items-start gap-3 text-slate-600">
-                <MapPin className="w-5 h-5 text-[#1B2E5A] shrink-0 mt-0.5" />
+          <div className="lg:col-span-4">
+            <FooterHeading marketing={marketing}>Contact</FooterHeading>
+            <ul className="text-muted-foreground mt-4 space-y-3 text-sm">
+              <li className="flex items-start gap-2.5">
+                <MapPin className="text-foreground/70 mt-0.5 h-4 w-4 shrink-0" />
                 <span>Hi-Tech City, Hyderabad</span>
               </li>
-              <li className="flex items-center gap-3 text-slate-600">
-                <Phone className="w-5 h-5 text-[#1B2E5A] shrink-0" />
-                <span>8971055515</span>
+              <li className="flex items-center gap-2.5">
+                <Phone className="text-foreground/70 h-4 w-4 shrink-0" />
+                <a
+                  href="tel:8971055515"
+                  className="hover:text-foreground transition-colors"
+                >
+                  8971055515
+                </a>
               </li>
-              <li className="flex items-center gap-3 text-slate-600">
-                <Mail className="w-5 h-5 text-[#1B2E5A] shrink-0" />
-                <span>sales@zopkit.com</span>
+              <li className="flex items-center gap-2.5">
+                <Mail className="text-foreground/70 h-4 w-4 shrink-0" />
+                <a
+                  href="mailto:sales@zopkit.com"
+                  className="hover:text-foreground transition-colors"
+                >
+                  sales@zopkit.com
+                </a>
               </li>
             </ul>
-            
-            <div className="mt-8">
-              <h4 className="font-semibold text-[#1B2E5A] mb-2">Subscribe to our newsletter</h4>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <input 
-                  type="email" 
-                  placeholder="Enter your email" 
-                  className="bg-white border border-slate-300 text-[#1B2E5A] rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-[#1B2E5A]/20 focus:border-[#1B2E5A]/40 transition-all"
-                />
-                <button type="button" className="bg-[#1B2E5A] hover:bg-[#243B6E] text-white px-4 py-2 rounded-lg font-medium transition-colors cursor-pointer">
-                  Go
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
 
-        {/* Legal & policies — centered; policy URLs for compliance (e.g. payments onboarding) */}
-        <div className="border-t border-slate-200 pt-10 sm:pt-12 pb-2">
-          <div className="mx-auto text-center px-2 max-w-7xl">
-            <h2 className="text-sm font-semibold text-[#1B2E5A] tracking-wide uppercase mb-4">
-              Legal &amp; policies
-            </h2>
-            <p className="text-slate-600 text-sm mb-6 leading-relaxed max-w-2xl mx-auto">
-              Our privacy, terms, cancellation &amp; refund, and security policies describe how we handle your data,
-              subscriptions, and payments.
-            </p>
-            <div className="flex justify-center overflow-x-auto pb-1 [scrollbar-width:thin]">
-              <nav
-                className="inline-flex flex-nowrap items-center justify-center text-xs sm:text-sm text-[#1B2E5A]"
-                aria-label="Legal and policy documents"
+            <div className="landing-newsletter-box border-border mt-8 rounded-sm border p-4">
+              <p className="text-foreground text-sm font-medium">
+                Product updates
+              </p>
+              <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
+                New modules, workflow templates, and release notes. No spam.
+              </p>
+              <form
+                className="mt-3 flex gap-2"
+                onSubmit={(e) => e.preventDefault()}
               >
-                {footerPolicyLinks.map((item, i) => (
-                  <React.Fragment key={item.to}>
-                    {i > 0 && (
-                      <span className="text-slate-300 px-2 sm:px-2.5 shrink-0 select-none" aria-hidden>
-                        |
-                      </span>
-                    )}
-                    <Link
-                      to={item.to}
-                      className="font-medium hover:underline underline-offset-2 whitespace-nowrap shrink-0 cursor-pointer"
-                    >
-                      {item.label}
-                    </Link>
-                  </React.Fragment>
-                ))}
-              </nav>
+                <input
+                  type="email"
+                  placeholder="Work email"
+                  aria-label="Email for newsletter"
+                  className="border-border bg-background focus:ring-ring h-9 min-w-0 flex-1 rounded-sm border px-3 text-sm focus:ring-1 focus:outline-none"
+                />
+                <button
+                  type="submit"
+                  className="bg-foreground text-background h-9 shrink-0 cursor-pointer rounded-full px-3.5 text-sm font-medium transition-opacity hover:opacity-[0.88]"
+                >
+                  Join
+                </button>
+              </form>
             </div>
           </div>
         </div>
 
-        <div className="pt-8 border-t border-slate-200 text-center">
-          <p className="text-slate-500 text-sm">
-            © {new Date().getFullYear()} Zopkit Inc. All rights reserved.
+        <div className="border-border mt-12 flex flex-col gap-4 border-t pt-6 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-muted-foreground landing-mono text-xs">
+            © {new Date().getFullYear()} Zopkit Inc.
           </p>
+          <nav
+            className="text-muted-foreground flex flex-wrap gap-x-4 gap-y-2 text-xs"
+            aria-label="Legal and policy documents"
+          >
+            {footerPolicyLinks.map((item) => (
+              <Link
+                key={item.to}
+                to={item.to}
+                className="hover:text-foreground cursor-pointer transition-colors"
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
         </div>
       </div>
     </footer>
-  );
+  )
 }
 
-function SocialLink({ href, icon, label, target, rel }: { href: string; icon: React.ReactNode; label: string; target?: string; rel?: string }) {
+function FooterHeading({
+  children,
+  marketing,
+  className,
+}: {
+  children: ReactNode
+  marketing?: boolean
+  className?: string
+}) {
+  return (
+    <h3
+      className={cn(
+        'text-foreground/80 text-xs font-medium tracking-[0.12em] uppercase',
+        marketing && 'landing-mono',
+        className
+      )}
+    >
+      {children}
+    </h3>
+  )
+}
+
+function SocialLink({
+  href,
+  icon,
+  label,
+}: {
+  href: string
+  icon: ReactNode
+  label: string
+}) {
   return (
     <a
       href={href}
-      target={target}
-      rel={rel}
-      className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-[#1B2E5A]/5 hover:text-[#1B2E5A] hover:border-[#1B2E5A]/20 transition-all duration-300 shadow-sm hover:shadow cursor-pointer"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="border-border bg-background text-muted-foreground hover:text-foreground hover:border-foreground/20 flex h-9 w-9 cursor-pointer items-center justify-center rounded-sm border transition-colors"
       aria-label={label}
     >
       {icon}
     </a>
-  );
+  )
 }
 
-function FooterLink({ to, children }: { to: string; children: React.ReactNode }) {
+function FooterLink({ to, children }: { to: string; children: ReactNode }) {
   return (
     <li>
-      <Link 
-        to={to} 
-        className="text-slate-600 hover:text-[#1B2E5A] transition-colors flex items-center gap-1 group cursor-pointer"
+      <Link
+        to={to}
+        className="text-muted-foreground hover:text-foreground cursor-pointer text-sm transition-colors"
       >
-        <span className="w-1 h-1 rounded-full bg-slate-300 group-hover:bg-[#1B2E5A] transition-colors mr-2"></span>
         {children}
       </Link>
     </li>
-  );
+  )
 }
-

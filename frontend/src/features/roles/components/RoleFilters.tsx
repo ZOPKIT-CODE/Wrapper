@@ -35,11 +35,11 @@ export function RoleFilters({
         {/* Search Bar */}
         <div className="flex flex-col gap-4 lg:flex-row">
           <div className="flex-1 space-y-2">
-            <label className="text-sm font-medium text-gray-700">
+            <label className="text-foreground text-sm font-medium">
               Search Roles
             </label>
             <div className="relative">
-              <Search className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 transform text-gray-400" />
+              <Search className="text-muted-foreground absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 transform" />
               <Input
                 placeholder="Search by role name, description, or department..."
                 value={filters.searchQuery}
@@ -66,7 +66,7 @@ export function RoleFilters({
         {/* Filter Row */}
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">
+            <label className="text-foreground text-sm font-medium">
               Role Type
             </label>
             <Select
@@ -87,7 +87,9 @@ export function RoleFilters({
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Sort By</label>
+            <label className="text-foreground text-sm font-medium">
+              Sort By
+            </label>
             <Select
               value={`${filters.sortBy}-${filters.sortOrder}`}
               onValueChange={(value: string) => {
@@ -125,14 +127,14 @@ export function RoleFilters({
 
         {/* Results Summary */}
         <div className="flex items-center justify-between border-t pt-4">
-          <div className="text-sm text-gray-600">
+          <div className="text-muted-foreground text-sm">
             Showing {filteredCount} of {totalCount} roles
           </div>
 
           {/* Active Filters Display */}
           {hasActiveFilters && (
             <div className="flex flex-wrap gap-2">
-              <span className="text-sm font-medium text-gray-600">
+              <span className="text-muted-foreground text-sm font-medium">
                 Active filters:
               </span>
               {filters.searchQuery && (

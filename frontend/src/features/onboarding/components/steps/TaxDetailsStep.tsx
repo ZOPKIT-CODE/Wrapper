@@ -318,22 +318,22 @@ export const TaxDetailsStep = memo(
                 userClassification !== 'aspiringFounder' && (
                   <Badge
                     variant="outline"
-                    className="rounded-full border-slate-200 bg-white/50 px-3 py-1 text-[10px] font-bold tracking-widest text-slate-600 uppercase shadow-sm"
+                    className="border-border bg-card/50 text-muted-foreground rounded-full px-3 py-1 text-[10px] font-bold tracking-widest uppercase shadow-sm"
                   >
                     {userClassification.replace(/([A-Z])/g, ' $1').trim()}
                   </Badge>
                 )}
               <Badge
                 variant="outline"
-                className="rounded-full border-slate-200 bg-white/50 px-3 py-1 text-[10px] font-bold tracking-widest text-slate-600 uppercase shadow-sm"
+                className="border-border bg-card/50 text-muted-foreground rounded-full px-3 py-1 text-[10px] font-bold tracking-widest uppercase shadow-sm"
               >
                 {COUNTRIES.find((c) => c.id === country)?.name || country}
               </Badge>
             </div>
-            <h1 className="mb-3 text-3xl font-extrabold tracking-tight text-[#1B2E5A] drop-shadow-sm md:text-4xl">
+            <h1 className="text-primary mb-3 text-3xl font-extrabold tracking-tight drop-shadow-sm md:text-4xl">
               Tax & Compliance Details
             </h1>
-            <p className="max-w-2xl text-lg leading-relaxed font-light text-slate-500">
+            <p className="text-muted-foreground max-w-2xl text-lg leading-relaxed font-light">
               Configure your tax registration status and address details for
               billing compliance.
             </p>
@@ -341,21 +341,21 @@ export const TaxDetailsStep = memo(
 
           <div className="space-y-8">
             {/* Registration Status Switch */}
-            <div className="space-y-6 rounded-lg border border-blue-100 bg-white p-8 shadow-sm ring-1 ring-blue-950/[0.04]">
+            <div className="bg-card space-y-6 rounded-lg border border-blue-100 p-8 shadow-sm ring-1 ring-blue-950/[0.04]">
               <FormField
                 control={form.control}
                 name="vatGstRegistered"
                 render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border border-slate-200 bg-white/70 p-4 backdrop-blur-sm">
+                  <FormItem className="border-border bg-card/70 flex flex-row items-center justify-between rounded-lg border p-4 backdrop-blur-sm">
                     <div className="flex-1 space-y-0.5 pr-4">
-                      <FormLabel className="flex items-center gap-2 text-base font-semibold text-[#1B2E5A]">
+                      <FormLabel className="text-primary flex items-center gap-2 text-base font-semibold">
                         VAT/GST Registered{' '}
-                        <span className="font-normal text-slate-400">
+                        <span className="text-muted-foreground font-normal">
                           (Optional)
                         </span>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Info className="h-4 w-4 cursor-help text-slate-400 hover:text-slate-600" />
+                            <Info className="text-muted-foreground hover:text-muted-foreground h-4 w-4 cursor-help" />
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                             <p className="mb-1 font-semibold">Optional Field</p>
@@ -369,7 +369,7 @@ export const TaxDetailsStep = memo(
                           </TooltipContent>
                         </Tooltip>
                       </FormLabel>
-                      <FormDescription className="text-sm text-slate-500">
+                      <FormDescription className="text-muted-foreground text-sm">
                         Do you have a VAT, GST, or Sales Tax registration?{' '}
                         {vatGstRegistered && (
                           <span className="font-medium text-amber-600">
@@ -407,8 +407,8 @@ export const TaxDetailsStep = memo(
 
             {/* Conditional GST/VAT Fields */}
             {vatGstRegistered && (
-              <div className="space-y-6 rounded-lg border border-blue-100 bg-white p-8 shadow-sm ring-1 ring-blue-950/[0.04]">
-                <h3 className="text-lg font-semibold text-[#1B2E5A]">
+              <div className="bg-card space-y-6 rounded-lg border border-blue-100 p-8 shadow-sm ring-1 ring-blue-950/[0.04]">
+                <h3 className="text-primary text-lg font-semibold">
                   Registration Numbers
                 </h3>
 
@@ -424,13 +424,13 @@ export const TaxDetailsStep = memo(
                             {vatGstRegistered ? (
                               <span className="text-red-500">*</span>
                             ) : (
-                              <span className="font-normal text-slate-400">
+                              <span className="text-muted-foreground font-normal">
                                 (Optional)
                               </span>
                             )}
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <Info className="h-4 w-4 cursor-help text-slate-400 hover:text-slate-600" />
+                                <Info className="text-muted-foreground hover:text-muted-foreground h-4 w-4 cursor-help" />
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                                 <p className="mb-1 font-semibold">
@@ -525,12 +525,12 @@ export const TaxDetailsStep = memo(
                         <FormItem>
                           <FormLabel className="flex items-center gap-2">
                             {labels.vatId}{' '}
-                            <span className="font-normal text-slate-400">
+                            <span className="text-muted-foreground font-normal">
                               (Optional)
                             </span>
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <Info className="h-4 w-4 cursor-help text-slate-400 hover:text-slate-600" />
+                                <Info className="text-muted-foreground hover:text-muted-foreground h-4 w-4 cursor-help" />
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                                 <p className="mb-1 font-semibold">
@@ -562,8 +562,8 @@ export const TaxDetailsStep = memo(
             )}
 
             {/* Address Section */}
-            <div className="space-y-6 rounded-lg border border-blue-100 bg-white p-8 shadow-sm ring-1 ring-blue-950/[0.04]">
-              <h3 className="text-lg font-semibold text-[#1B2E5A]">
+            <div className="bg-card space-y-6 rounded-lg border border-blue-100 p-8 shadow-sm ring-1 ring-blue-950/[0.04]">
+              <h3 className="text-primary text-lg font-semibold">
                 Billing Address
               </h3>
 
@@ -576,7 +576,7 @@ export const TaxDetailsStep = memo(
                       Street Address <span className="text-red-500">*</span>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Info className="h-4 w-4 cursor-help text-slate-400 hover:text-slate-600" />
+                          <Info className="text-muted-foreground hover:text-muted-foreground h-4 w-4 cursor-help" />
                         </TooltipTrigger>
                         <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                           <p className="mb-1 font-semibold">Mandatory Field</p>
@@ -624,7 +624,7 @@ export const TaxDetailsStep = memo(
                         City <span className="text-red-500">*</span>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Info className="h-4 w-4 cursor-help text-slate-400 hover:text-slate-600" />
+                            <Info className="text-muted-foreground hover:text-muted-foreground h-4 w-4 cursor-help" />
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                             <p className="mb-1 font-semibold">
@@ -658,7 +658,7 @@ export const TaxDetailsStep = memo(
                         Postal/ZIP Code <span className="text-red-500">*</span>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Info className="h-4 w-4 cursor-help text-slate-400 hover:text-slate-600" />
+                            <Info className="text-muted-foreground hover:text-muted-foreground h-4 w-4 cursor-help" />
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                             <p className="mb-1 font-semibold">
@@ -698,13 +698,13 @@ export const TaxDetailsStep = memo(
                           <span className="text-red-500">*</span>
                         )}
                         {!stateFieldConfig.required && (
-                          <span className="font-normal text-slate-400">
+                          <span className="text-muted-foreground font-normal">
                             (Optional)
                           </span>
                         )}
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Info className="h-4 w-4 cursor-help text-slate-400 hover:text-slate-600" />
+                            <Info className="text-muted-foreground hover:text-muted-foreground h-4 w-4 cursor-help" />
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                             <p className="mb-1 font-semibold">
@@ -798,16 +798,16 @@ export const TaxDetailsStep = memo(
                 control={form.control}
                 name="mailingAddressSameAsRegistered"
                 render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border border-slate-200 bg-white/70 p-4 backdrop-blur-sm">
+                  <FormItem className="border-border bg-card/70 flex flex-row items-center justify-between rounded-lg border p-4 backdrop-blur-sm">
                     <div className="flex-1 space-y-0.5 pr-4">
-                      <FormLabel className="flex items-center gap-2 text-base font-semibold text-[#1B2E5A]">
+                      <FormLabel className="text-primary flex items-center gap-2 text-base font-semibold">
                         Mailing Address{' '}
-                        <span className="font-normal text-slate-400">
+                        <span className="text-muted-foreground font-normal">
                           (Optional)
                         </span>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Info className="h-4 w-4 cursor-help text-slate-400 hover:text-slate-600" />
+                            <Info className="text-muted-foreground hover:text-muted-foreground h-4 w-4 cursor-help" />
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                             <p className="mb-1 font-semibold">Optional Field</p>
@@ -820,7 +820,7 @@ export const TaxDetailsStep = memo(
                           </TooltipContent>
                         </Tooltip>
                       </FormLabel>
-                      <FormDescription className="text-sm text-slate-500">
+                      <FormDescription className="text-muted-foreground text-sm">
                         Same as billing/registered address?
                       </FormDescription>
                     </div>
@@ -838,8 +838,8 @@ export const TaxDetailsStep = memo(
 
               {/* Mailing Address Fields (Conditional) */}
               {mailingAddressSame === false && (
-                <div className="space-y-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
-                  <h4 className="text-sm font-medium text-slate-700">
+                <div className="border-border bg-muted space-y-4 rounded-lg border p-4">
+                  <h4 className="text-foreground text-sm font-medium">
                     Mailing Address Details
                   </h4>
                   <FormField

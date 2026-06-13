@@ -1,0 +1,199 @@
+/* ─── Tiered hologram puck — idle motion ─── */
+
+@keyframes pp-idle {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotateX(0deg) rotateZ(0deg);
+  }
+  20% {
+    transform: translate3d(0, -1.5px, 0) rotateX(1.4deg) rotateZ(-0.45deg);
+  }
+  45% {
+    transform: translate3d(0, -2.5px, 0) rotateX(0.5deg) rotateZ(0.35deg);
+  }
+  70% {
+    transform: translate3d(0, -1.2px, 0) rotateX(-1deg) rotateZ(0.55deg);
+  }
+}
+
+@keyframes pp-hotspot {
+  0%,
+  100% {
+    opacity: 0.82;
+    transform: scale(1);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+  70% {
+    opacity: 0.92;
+    transform: scale(1.04);
+  }
+}
+
+@keyframes pp-hotspot-core {
+  0%,
+  100% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+  35% {
+    opacity: 1;
+    transform: scale(1.18);
+  }
+  65% {
+    opacity: 0.95;
+    transform: scale(1.06);
+  }
+}
+
+@keyframes pp-led-chase {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  12% {
+    opacity: 1;
+  }
+  28% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes pp-groove-pulse {
+  0%,
+  100% {
+    stroke-opacity: 0.55;
+    filter: brightness(0.9);
+  }
+  50% {
+    stroke-opacity: 1;
+    filter: brightness(1.35);
+  }
+}
+
+@keyframes pp-band-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes pp-well-breathe {
+  0%,
+  100% {
+    stroke-opacity: 0.35;
+  }
+  50% {
+    stroke-opacity: 0.75;
+  }
+}
+
+@keyframes pp-port-blink {
+  0%,
+  100% {
+    stroke-opacity: 0.2;
+  }
+  50% {
+    stroke-opacity: 0.85;
+  }
+}
+
+@keyframes pp-glow-drift {
+  0%,
+  100% {
+    filter: drop-shadow(0 16px 28px rgba(0, 0, 0, 0.75))
+      drop-shadow(0 0 24px rgba(94, 231, 255, 0.42))
+      drop-shadow(0 0 48px rgba(46, 140, 255, 0.16));
+  }
+  50% {
+    filter: drop-shadow(0 18px 30px rgba(0, 0, 0, 0.78))
+      drop-shadow(0 0 34px rgba(94, 231, 255, 0.62))
+      drop-shadow(0 0 60px rgba(46, 140, 255, 0.28));
+  }
+}
+
+[data-landing] .hero-projector-puck {
+  display: block;
+  flex-shrink: 0;
+  transform-style: preserve-3d;
+}
+
+[data-landing] .hero-projector-puck--alive {
+  animation: pp-idle 7s ease-in-out infinite;
+  transform-origin: center bottom;
+}
+
+[data-landing] .hero-projector-puck__svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+[data-landing] .hero-projector-puck__core {
+  animation: pp-hotspot 2.8s ease-in-out infinite;
+  transform-origin: center;
+  transform-box: fill-box;
+}
+
+[data-landing] .hero-projector-puck__core-hot {
+  animation: pp-hotspot-core 2.8s ease-in-out infinite;
+  transform-origin: center;
+  transform-box: fill-box;
+}
+
+[data-landing] .hero-projector-puck__led {
+  animation: pp-led-chase 2.1s ease-in-out infinite;
+}
+
+[data-landing] .hero-projector-puck__groove {
+  animation: pp-groove-pulse 3.6s ease-in-out infinite;
+}
+
+[data-landing] .hero-projector-puck__band {
+  animation: pp-band-pulse 4.2s ease-in-out infinite;
+}
+
+[data-landing] .hero-projector-puck__band--2 {
+  animation-delay: 0.65s;
+}
+
+[data-landing] .hero-projector-puck__well-ring {
+  animation: pp-well-breathe 3s ease-in-out infinite;
+}
+
+[data-landing] .hero-projector-puck__port {
+  animation: pp-port-blink 2.4s ease-in-out infinite;
+}
+
+[data-landing] .landing-hero-projection-puck {
+  perspective: 680px;
+  perspective-origin: 50% 100%;
+}
+
+[data-landing] .landing-hero--cinematic .hero-projector-puck--alive {
+  animation:
+    pp-idle 7s ease-in-out infinite,
+    pp-glow-drift 5.5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-landing] .hero-projector-puck--alive {
+    animation: none !important;
+  }
+
+  [data-landing] .hero-projector-puck__core,
+  [data-landing] .hero-projector-puck__core-hot,
+  [data-landing] .hero-projector-puck__led,
+  [data-landing] .hero-projector-puck__groove,
+  [data-landing] .hero-projector-puck__band,
+  [data-landing] .hero-projector-puck__well-ring,
+  [data-landing] .hero-projector-puck__port {
+    animation: none !important;
+  }
+}

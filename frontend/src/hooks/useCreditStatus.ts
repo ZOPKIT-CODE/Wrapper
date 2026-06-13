@@ -77,7 +77,6 @@ export function useCreditStatus() {
   )
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [, setRetryCount] = useState(0)
 
   const creditData = creditResponse?.data
 
@@ -201,7 +200,6 @@ export function useCreditStatus() {
         })
 
         // Reset retry count on successful credit check
-        setRetryCount(0)
 
         // Handle critical balance scenarios
         if (isCriticalBalance) {

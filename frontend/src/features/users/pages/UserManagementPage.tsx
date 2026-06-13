@@ -81,8 +81,7 @@ function StatCard({
         padding: '18px 20px',
         background: 'var(--zk-paper)',
         border: '1px solid var(--zk-line)',
-        borderRadius: 12,
-        boxShadow: '0 1px 4px rgba(15,32,80,0.05)',
+        borderRadius: 8,
       }}
     >
       <div

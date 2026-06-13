@@ -1,0 +1,578 @@
+/* Cinematic sci-fi hero — holographic projection stack (classic landing)
+ * Shape system: marketing CTAs = pill; HUD screens = 12–14px; chips/tags = 4–6px; agent cards = flat top bar + 0–7px bottom.
+ */
+[data-landing] .landing-hero--cinematic {
+  --holo-cyan: #5ee7ff;
+  --holo-cyan-dim: rgba(94, 231, 255, 0.55);
+  --holo-glass: rgba(8, 22, 48, 0.52);
+  --holo-edge: rgba(94, 231, 255, 0.38);
+  color: rgba(232, 244, 255, 0.95);
+  background: #020610;
+  isolation: isolate;
+}
+
+[data-landing] .landing-hero--cinematic .landing-display,
+[data-landing] .landing-hero--cinematic .landing-hero-subtext {
+  font-family: 'Bricolage Grotesque', var(--landing-font-display);
+}
+
+[data-landing] .landing-hero--cinematic .landing-hero-headline-line {
+  color: rgba(240, 248, 255, 0.97) !important;
+  text-shadow: 0 0 40px rgba(94, 231, 255, 0.12);
+}
+
+[data-landing]
+  .landing-hero--cinematic
+  .landing-hero-headline-line.landing-hero-headline-sub {
+  color: rgba(148, 200, 255, 0.72) !important;
+  text-shadow: none;
+}
+
+[data-landing]
+  .landing-hero--cinematic
+  .landing-hero-headline-line:nth-child(2) {
+  color: var(--holo-cyan) !important;
+  text-shadow: 0 0 48px rgba(94, 231, 255, 0.35);
+}
+
+[data-landing] .landing-hero--cinematic .landing-hero-subtext {
+  color: rgba(148, 200, 255, 0.72);
+}
+
+[data-landing] .landing-hero--cinematic .landing-text-link {
+  color: rgba(180, 220, 255, 0.78);
+}
+
+[data-landing] .landing-hero--cinematic .landing-text-link:hover {
+  color: var(--holo-cyan);
+}
+
+[data-landing] .landing-hero--cinematic .landing-btn-primary {
+  background-color: rgba(240, 248, 255, 0.96) !important;
+  color: #020610 !important;
+  box-shadow:
+    0 0 0 1px rgba(94, 231, 255, 0.25),
+    0 8px 32px rgba(0, 0, 0, 0.45),
+    0 0 24px rgba(94, 231, 255, 0.15) !important;
+}
+
+/* Lab backdrop */
+[data-landing] .hero-cine-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  background:
+    radial-gradient(
+      ellipse 120% 80% at 50% 100%,
+      rgba(15, 40, 80, 0.55),
+      transparent 58%
+    ),
+    radial-gradient(
+      ellipse 60% 45% at 12% 22%,
+      rgba(94, 231, 255, 0.06),
+      transparent 50%
+    ),
+    linear-gradient(180deg, #020610 0%, #061018 42%, #0a1628 100%);
+}
+
+[data-landing] .hero-cine-backdrop__grid {
+  position: absolute;
+  left: -20%;
+  right: -20%;
+  bottom: -8%;
+  height: 55%;
+  background-image:
+    linear-gradient(rgba(94, 231, 255, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(94, 231, 255, 0.07) 1px, transparent 1px);
+  background-size: 48px 48px;
+  transform: perspective(500px) rotateX(68deg);
+  transform-origin: center bottom;
+  mask-image: linear-gradient(to top, #000 15%, transparent 88%);
+  opacity: 0.55;
+}
+
+[data-landing] .hero-cine-backdrop__vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 85% 75% at 50% 45%,
+    transparent 35%,
+    rgba(2, 6, 16, 0.72) 100%
+  );
+}
+
+[data-landing] .hero-cine-backdrop__ceiling {
+  position: absolute;
+  top: 0;
+  left: 10%;
+  right: 10%;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(94, 231, 255, 0.35),
+    transparent
+  );
+  filter: blur(0.5px);
+  opacity: 0.7;
+}
+
+/* Atmosphere particles + bloom */
+[data-landing] .hero-cine-atmosphere {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+[data-landing] .hero-cine-atmosphere canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+[data-landing] .hero-cine-bloom {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      ellipse 55% 40% at 50% 72%,
+      rgba(94, 231, 255, 0.14),
+      transparent 65%
+    ),
+    radial-gradient(
+      ellipse 30% 20% at 50% 88%,
+      rgba(255, 255, 255, 0.08),
+      transparent 70%
+    );
+  mix-blend-mode: screen;
+  opacity: 0.85;
+}
+
+[data-landing] .hero-cine-anamorphic {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  top: 42%;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(94, 231, 255, 0.45),
+    transparent
+  );
+  filter: blur(1px);
+  opacity: 0.35;
+  transform: scaleX(0.92);
+}
+
+/* Stage depth */
+[data-landing] .landing-hero--cinematic .landing-hero-stage {
+  position: relative;
+  z-index: 2;
+  perspective: 1600px;
+  perspective-origin: 50% 40%;
+}
+
+[data-landing] .hero-stage-ball {
+  transform-origin: center center;
+}
+
+[data-landing] .landing-hero--cinematic .landing-hero-illust-center {
+  transform-style: preserve-3d;
+  transform: rotateX(5deg);
+}
+
+[data-landing] .landing-hero--cinematic .landing-hero-illust-dashboard-wrap {
+  transform: translateZ(28px) rotateX(-2deg);
+  transform-style: preserve-3d;
+  filter: drop-shadow(0 24px 48px rgba(0, 0, 0, 0.55))
+    drop-shadow(0 0 40px rgba(94, 231, 255, 0.12));
+}
+
+[data-landing]
+  .landing-hero--cinematic
+  .landing-hero-illust-dashboard-wrap--desktop {
+  width: min(760px, 100%);
+}
+
+[data-landing]
+  .landing-hero--cinematic
+  .landing-hero-stage--no-rails
+  .landing-hero-illust-dashboard-wrap--desktop {
+  width: min(880px, 96%);
+}
+
+[data-landing]
+  .landing-hero--cinematic
+  .landing-hero-stage--no-rails
+  .landing-hero-illust-center {
+  max-width: min(920px, 100%);
+  --hero-beam-travel: clamp(220px, 32vh, 360px);
+}
+
+/* ─── Glass window system (all HUD panels) ─── */
+[data-landing] .landing-hero--cinematic .landing-hero-glass-window {
+  position: relative;
+  background: linear-gradient(
+    152deg,
+    rgba(255, 255, 255, 0.11) 0%,
+    rgba(94, 231, 255, 0.06) 32%,
+    rgba(6, 18, 40, 0.38) 100%
+  ) !important;
+  backdrop-filter: blur(18px) saturate(1.65);
+  -webkit-backdrop-filter: blur(18px) saturate(1.65);
+  border: 1px solid rgba(94, 231, 255, 0.26) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    inset 0 -1px 0 rgba(94, 231, 255, 0.08),
+    inset 0 0 40px rgba(94, 231, 255, 0.04),
+    0 8px 28px rgba(0, 0, 0, 0.38);
+  overflow: hidden;
+}
+
+[data-landing] .landing-hero--cinematic .landing-hero-glass-window::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    118deg,
+    rgba(255, 255, 255, 0.16) 0%,
+    transparent 42%,
+    transparent 68%,
+    rgba(94, 231, 255, 0.04) 100%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+[data-landing] .landing-hero--cinematic .landing-hero-glass-window::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 8%;
+  right: 8%;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.45),
+    transparent
+  );
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0.7;
+}
+
+[data-landing] .landing-hero--cinematic .landing-hero-glass-window > * {
+  position: relative;
+  z-index: 1;
+}
+
+[data-landing] .landing-hero--cinematic .landing-hero-glass-window__glow {
+  z-index: 0 !important;
+}
+
+[data-landing] .landing-hero--cinematic .landing-hero-glass-window--screen {
+  border-radius: clamp(8px, 0.8vw, 14px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    inset 0 -1px 0 rgba(94, 231, 255, 0.08),
+    inset 0 -28px 52px rgba(94, 231, 255, 0.1),
+    inset 0 0 40px rgba(94, 231, 255, 0.04),
+    0 8px 28px rgba(0, 0, 0, 0.38);
+}
+
+[data-landing] .landing-hero--cinematic .landing-hero-glass-window--sidebar {
+  border-right: 1px solid rgba(94, 231, 255, 0.2) !important;
+  border-radius: 0;
+  box-shadow:
+    inset -1px 0 0 rgba(94, 231, 255, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+[data-landing] .landing-hero--cinematic .landing-hero-glass-window--agent {
+  border-top-width: 3px !important;
+  border-top-style: solid !important;
+  border-radius: 0 0 7px 7px;
+}
+
+[data-landing] .landing-hero--cinematic .landing-hero-glass-chip {
+  position: relative;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(94, 231, 255, 0.06) 100%
+  ) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(94, 231, 255, 0.22) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+[data-landing] .landing-hero--cinematic .landing-hero-glass-tag {
+  background: linear-gradient(
+    135deg,
+    rgba(94, 231, 255, 0.12) 0%,
+    rgba(6, 18, 40, 0.35) 100%
+  ) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(94, 231, 255, 0.28) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+[data-landing] .landing-hero--cinematic .landing-hero-glass-nav-item--active {
+  background: linear-gradient(
+    90deg,
+    rgba(94, 231, 255, 0.14) 0%,
+    rgba(94, 231, 255, 0.04) 100%
+  ) !important;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+/* Main holographic screen */
+[data-landing] .landing-hero--cinematic .landing-hero-illust-screen {
+  background: linear-gradient(
+    155deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(12, 32, 64, 0.35) 42%,
+    rgba(6, 18, 40, 0.52) 100%
+  ) !important;
+  backdrop-filter: blur(20px) saturate(1.7);
+  -webkit-backdrop-filter: blur(20px) saturate(1.7);
+  border: 1px solid rgba(94, 231, 255, 0.28);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 0 60px rgba(94, 231, 255, 0.06),
+    0 0 48px rgba(94, 231, 255, 0.12);
+}
+
+[data-landing] .landing-hero--cinematic .landing-hero-illust-dashboard-frame {
+  box-shadow:
+    0 0 0 1px rgba(94, 231, 255, 0.28),
+    0 0 32px rgba(94, 231, 255, 0.15),
+    0 0 80px rgba(77, 200, 255, 0.08),
+    inset 0 0 40px rgba(94, 231, 255, 0.04) !important;
+  border-radius: inherit;
+}
+
+[data-landing] .landing-hero--cinematic .landing-hero-illust-screen img {
+  filter: brightness(0) invert(1) opacity(0.92);
+  opacity: 0.88;
+}
+
+/* Side HUD panels — glass windows */
+[data-landing] .landing-hero--cinematic .landing-hero-illust-side-card {
+  border-top-width: 2px !important;
+  border-top-style: solid !important;
+  transform: translateZ(12px);
+}
+
+[data-landing] .landing-hero--cinematic .landing-hero-illust-side-card span {
+  text-shadow: 0 0 12px rgba(94, 231, 255, 0.2);
+}
+
+[data-landing] .landing-hero--cinematic .landing-hero-illust-side-card img {
+  filter: brightness(1.1) saturate(0.8)
+    drop-shadow(0 0 6px rgba(94, 231, 255, 0.35));
+}
+
+/* Projection stack — beam travel from screen bottom to puck */
+[data-landing] .landing-hero-illust-center {
+  --hero-puck-height: clamp(76px, 9.5vw, 92px);
+  --hero-beam-travel: clamp(200px, 30vh, 340px);
+  --hero-emitter-lift: calc(var(--hero-puck-height) * 0.31);
+}
+
+[data-landing] .landing-hero-projection-stack {
+  position: absolute;
+  left: 50%;
+  right: auto;
+  bottom: calc(-1 * clamp(48px, 6vw, 64px));
+  width: min(760px, 100%);
+  height: calc(var(--hero-beam-travel) + var(--hero-emitter-lift));
+  pointer-events: none;
+  z-index: 3;
+  overflow: visible;
+  transform: translateX(-50%);
+}
+
+[data-landing]
+  .landing-hero--cinematic
+  .landing-hero-stage--no-rails
+  .landing-hero-projection-stack {
+  width: min(880px, 96%);
+}
+
+[data-landing] .landing-hero-projection-puck {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+[data-landing] .landing-hero-projection-puck__inner {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform-origin: center bottom;
+  will-change: opacity, transform;
+}
+
+/* Beam column — puck emitter to screen bottom */
+[data-landing] .landing-hero-projection-beam {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: var(--hero-emitter-lift);
+  width: 100%;
+  transform: none;
+  z-index: 2;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+[data-landing] .landing-hero-projection-beam .landing-hero-illust-cone {
+  z-index: 6;
+}
+
+/* Volumetric beam — see hero-projection-beam.css */
+
+[data-landing] .landing-hero--cinematic .landing-hero-projection-puck {
+  transform: translateX(-50%) translateZ(40px);
+}
+
+/* Cone opacity sequenced via HeroProjectionBeam motion — no !important override */
+
+[data-landing] .landing-hero--cinematic .landing-hero-illust-dashboard-wrap {
+  z-index: 4;
+}
+
+/* Neural pathway connectors */
+[data-landing] .landing-hero--cinematic .landing-hero-illust-connectors line,
+[data-landing] .landing-hero--cinematic .landing-hero-illust-connectors path {
+  filter: drop-shadow(0 0 6px rgba(94, 231, 255, 0.65));
+}
+
+@media (max-width: 1023px) {
+  [data-landing] .landing-hero--cinematic .landing-hero-illust-connectors {
+    opacity: 0.72;
+  }
+}
+
+@media (max-width: 1099px) {
+  [data-landing] .landing-hero--cinematic .landing-hero-stage--no-rails {
+    gap: 0;
+  }
+}
+
+/* Floor volumetric glow */
+[data-landing] .landing-hero--cinematic .landing-hero-floor-glow {
+  background: radial-gradient(
+    ellipse 90% 100% at 50% 100%,
+    rgba(94, 231, 255, 0.28),
+    rgba(77, 200, 255, 0.1) 32%,
+    rgba(46, 120, 255, 0.04) 52%,
+    transparent 72%
+  ) !important;
+  height: 360px !important;
+}
+
+[data-landing] .landing-hero--cinematic .hero-cine-fog {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 45%;
+  background: linear-gradient(
+    to top,
+    rgba(94, 231, 255, 0.06),
+    transparent 70%
+  );
+  pointer-events: none;
+  z-index: 2;
+  animation: hero-cine-fog-drift 12s ease-in-out infinite alternate;
+}
+
+@keyframes hero-cine-fog-drift {
+  from {
+    opacity: 0.45;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0.7;
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes hero-cine-scan {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  8% {
+    opacity: 0.35;
+  }
+  100% {
+    transform: translateY(400%);
+    opacity: 0;
+  }
+}
+
+[data-landing] .landing-hero--cinematic .hero-cine-scanline {
+  position: absolute;
+  left: 5%;
+  right: 5%;
+  height: 40%;
+  top: 25%;
+  pointer-events: none;
+  z-index: 6;
+  overflow: hidden;
+  opacity: 0.5;
+  mask-image: linear-gradient(
+    180deg,
+    transparent,
+    #000 20%,
+    #000 80%,
+    transparent
+  );
+}
+
+[data-landing] .landing-hero--cinematic .hero-cine-scanline::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(94, 231, 255, 0.5),
+    transparent
+  );
+  animation: hero-cine-scan 6s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-landing] .hero-cine-fog,
+  [data-landing] .hero-cine-scanline,
+  [data-landing] .hero-cine-scanline::after,
+  [data-landing] .landing-hero--cinematic .landing-hero-illust-projector,
+  [data-landing] .landing-hero--cinematic .landing-hero-illust-cone {
+    animation: none !important;
+  }
+}

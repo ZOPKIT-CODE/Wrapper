@@ -1,0 +1,57 @@
+﻿src/components/layout/LandingFooter.tsx(208,9): error TS2322: Type 'React.ReactNode' is not assignable to type 'import("C:/Users/RudraKishore/Documents/target2026/zopkit-code/Wrapper/node_modules/.pnpm/@types+react@18.3.1/node_modules/@types/react/index").ReactNode'.
+  Type 'bigint' is not assignable to type 'ReactNode'.
+src/components/route-breadcrumb.tsx(266,62): error TS2345: Argument of type '{ [x: string]: unknown; }' is not assignable to parameter of type 'string'.
+src/components/ui/command.tsx(31,11): error TS2322: Type 'React.ReactNode' is not assignable to type 'import("C:/Users/RudraKishore/Documents/target2026/zopkit-code/Wrapper/node_modules/.pnpm/@types+react@18.3.1/node_modules/@types/react/index").ReactNode'.
+  Type 'bigint' is not assignable to type 'ReactNode'.
+src/components/ui/drawer.tsx(39,4): error TS2559: Type '{ children: Element[]; }' has no properties in common with type 'IntrinsicAttributes'.
+src/data/kindeIntegratedData.ts(248,20): error TS2322: Type 'string' is not assignable to type 'GranularRestriction'.
+src/data/kindeIntegratedData.ts(248,40): error TS2322: Type 'string' is not assignable to type 'GranularRestriction'.
+src/data/kindeIntegratedData.ts(297,20): error TS2322: Type 'string' is not assignable to type 'GranularRestriction'.
+src/data/kindeIntegratedData.ts(297,44): error TS2322: Type 'string' is not assignable to type 'GranularRestriction'.
+src/data/kindeIntegratedData.ts(297,67): error TS2322: Type 'string' is not assignable to type 'GranularRestriction'.
+src/features/auth/pages/Login.tsx(271,52): error TS2345: Argument of type 'AuthUser' is not assignable to parameter of type 'CrmUser'.
+  Types of property 'id' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/features/onboarding/hooks/index.ts(32,5): error TS2322: Type 'Resolver<{ businessDetails: { companyName: string; country: string; businessType: string; description?: string | undefined; organizationSize?: string | undefined; }; taxRegistered: boolean; vatGstRegistered: boolean; ... 48 more ...; adminPhone?: string | undefined; }>' is not assignable to type 'Resolver<newBusinessData | existingBusinessData, any, newBusinessData | existingBusinessData>'.
+  Types of parameters 'values' and 'values' are incompatible.
+    Type 'newBusinessData | existingBusinessData' is not assignable to type '{ businessDetails: { companyName: string; country: string; businessType: string; description?: string | undefined; organizationSize?: string | undefined; }; taxRegistered: boolean; vatGstRegistered: boolean; ... 48 more ...; adminPhone?: string | undefined; }'.
+      Type 'newBusinessData' is not assignable to type '{ businessDetails: { companyName: string; country: string; businessType: string; description?: string | undefined; organizationSize?: string | undefined; }; taxRegistered: boolean; vatGstRegistered: boolean; ... 48 more ...; adminPhone?: string | undefined; }'.
+        Types of property 'businessDetails' are incompatible.
+          Type 'BusinessDetails | undefined' is not assignable to type '{ companyName: string; country: string; businessType: string; description?: string | undefined; organizationSize?: string | undefined; }'.
+            Type 'undefined' is not assignable to type '{ companyName: string; country: string; businessType: string; description?: string | undefined; organizationSize?: string | undefined; }'.
+src/features/organizations/components/OrganizationManagement.tsx(263,39): error TS2322: Type 'Dispatch<SetStateAction<Entity | null>>' is not assignable to type '(e: Entity | null) => void'.
+  Types of parameters 'value' and 'e' are incompatible.
+    Type 'Entity | null' is not assignable to type 'SetStateAction<Entity | null>'.
+      Type 'Entity' is not assignable to type 'SetStateAction<Entity | null>'.
+        Type 'Entity' is missing the following properties from type 'Entity': entityLevel, hierarchyPath, fullHierarchyPath, isActive, children
+src/features/organizations/components/OrganizationTreeNode.tsx(282,37): error TS2352: Conversion of type 'Organization' to type 'Entity' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Property 'fullHierarchyPath' is missing in type 'Organization' but required in type 'Entity'.
+src/features/organizations/components/OrganizationTreeView.tsx(308,9): error TS2719: Type 'Entity | null' is not assignable to type 'Entity | null'. Two different types with this name exist, but they are unrelated.
+  Type 'Entity' is missing the following properties from type 'Entity': entityLevel, hierarchyPath, fullHierarchyPath, isActive, children
+src/features/roles/components/RoleTableHeader.tsx(26,26): error TS2339: Property 'indeterminate' does not exist on type 'HTMLButtonElement'.
+src/features/roles/hooks/useRoleQueries.ts(136,5): error TS2322: Type '(roleId: string, force?: boolean) => Promise<void>' is not assignable to type 'MutationFunction<void, string>'.
+  Types of parameters 'force' and 'context' are incompatible.
+    Type 'MutationFunctionContext' is not assignable to type 'boolean | undefined'.
+src/features/roles/RoleManagementDashboard.tsx(100,45): error TS7006: Parameter 'role' implicitly has an 'any' type.
+src/features/settings/pages/AccountSettings.tsx(216,15): error TS2322: Type 'Record<string, any> | { pan?: string | undefined; ein?: string | undefined; vat?: string | undefined; cin?: string | undefined; }' is not assignable to type 'undefined'.
+  Type 'Record<string, any>' is not assignable to type 'undefined'.
+src/features/settings/pages/AccountSettings.tsx(219,13): error TS2322: Type 'string | number | boolean | any[]' is not assignable to type 'undefined'.
+  Type 'string' is not assignable to type 'undefined'.
+src/hooks/useDashboardData.ts(82,29): error TS2551: Property 'DASHBOARD_USERS' does not exist on type '{ readonly ROLES: "roles"; readonly PERMISSIONS: "permissions"; readonly USER_PERMISSIONS: "user_permissions"; readonly ROLE_TEMPLATES: "role_templates"; readonly USERS: "users"; readonly APPLICATIONS: "applications"; readonly MODULES: "modules"; readonly DASHBOARD_METRICS: "dashboard_metrics"; }'. Did you mean 'DASHBOARD_METRICS'?
+src/hooks/useDashboardData.ts(110,29): error TS2339: Property 'PAYMENT_STATS' does not exist on type '{ readonly ROLES: "roles"; readonly PERMISSIONS: "permissions"; readonly USER_PERMISSIONS: "user_permissions"; readonly ROLE_TEMPLATES: "role_templates"; readonly USERS: "users"; readonly APPLICATIONS: "applications"; readonly MODULES: "modules"; readonly DASHBOARD_METRICS: "dashboard_metrics"; }'.
+src/hooks/useDashboardData.ts(238,18): error TS2339: Property 'invalidateApplications' does not exist on type '{ invalidateRoles: () => void; invalidatePermissions: () => void; invalidateUsers: () => void; invalidateDashboard: () => void; clearAll: () => void; getStats: () => { total: number; valid: number; expired: number; maxSize: number; }; cleanup: () => void; }'.
+src/hooks/useNotifications.ts(9,34): error TS2339: Property 'refetch' does not exist on type '{ data: number; }'.
+src/hooks/useSeasonalCreditsCongratulatory.ts(70,7): error TS7006: Parameter 'n' implicitly has an 'any' type.
+src/hooks/useSeasonalCreditsCongratulatory.ts(80,70): error TS7006: Parameter 'n' implicitly has an 'any' type.
+src/hooks/useSeasonalCreditsCongratulatory.ts(81,73): error TS7006: Parameter 'n' implicitly has an 'any' type.
+src/hooks/useSeasonalCreditsCongratulatory.ts(87,60): error TS7006: Parameter 'notification' implicitly has an 'any' type.
+src/hooks/useSeasonalCreditsCongratulatory.ts(114,29): error TS7006: Parameter 'notification' implicitly has an 'any' type.
+src/hooks/useSeasonalCreditsCongratulatory.ts(159,7): error TS7006: Parameter 'n' implicitly has an 'any' type.
+src/hooks/useSeasonalCreditsCongratulatory.ts(164,66): error TS7006: Parameter 'n' implicitly has an 'any' type.
+src/hooks/useSeasonalCreditsCongratulatory.ts(168,37): error TS7006: Parameter 'notification' implicitly has an 'any' type.
+src/hooks/useSharedQueries.ts(16,50): error TS1355: A 'const' assertions can only be applied to references to enum members, or string, number, boolean, array, or object literals.
+src/hooks/useSharedQueries.ts(19,40): error TS1355: A 'const' assertions can only be applied to references to enum members, or string, number, boolean, array, or object literals.
+src/hooks/useSharedQueries.ts(20,36): error TS1355: A 'const' assertions can only be applied to references to enum members, or string, number, boolean, array, or object literals.
+src/hooks/useSilentAuth.ts(187,42): error TS2339: Property 'then' does not exist on type 'void'.
+src/hooks/useSilentAuth.ts(191,19): error TS7006: Parameter 'error' implicitly has an 'any' type.

@@ -283,7 +283,7 @@ export const granularPermissions: GranularPermission[] = [
     icon: '👁️',
     color: '#3B82F6',
     level: 'basic',
-    kindePermissionId: 'kinde_crm_access',
+    idpPermissionId: 'kinde_crm_access',
     restrictions: ['data_own_records', 'location_office_only'],
     contexts: [
       {

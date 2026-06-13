@@ -4,12 +4,19 @@ import { cn } from '@/lib/utils'
 
 export const ORGANIZATION_CREATE_STEPS = [
   { title: 'Basic Information', description: 'Name and type' },
-  { title: 'Location & Currency', description: 'Country, currency, and fiscal year' },
-  { title: 'Legal & Compliance', description: 'Tax ID and registration details' },
+  {
+    title: 'Location & Currency',
+    description: 'Country, currency, and fiscal year',
+  },
+  {
+    title: 'Legal & Compliance',
+    description: 'Tax ID and registration details',
+  },
   { title: 'Contact & Additional', description: 'Contact details and notes' },
 ] as const
 
-export type OrganizationCreateStepMeta = (typeof ORGANIZATION_CREATE_STEPS)[number]
+export type OrganizationCreateStepMeta =
+  (typeof ORGANIZATION_CREATE_STEPS)[number]
 
 /** Segment `i` connects step `i` and step `i + 1`. Filled when the user has moved past step `i`. */
 function segmentProgress(currentStep: number, segmentIndex: number): boolean {
@@ -36,13 +43,17 @@ export function OrganizationCreateStepper({
                 className={cn(
                   'flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors',
                   index === currentStep
-                    ? 'bg-[#1B2E5A] text-white shadow-sm'
+                    ? 'bg-primary text-white shadow-sm'
                     : index < currentStep
-                      ? 'bg-[#1B2E5A] text-white'
-                      : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400',
+                      ? 'bg-primary text-white'
+                      : 'bg-slate-100 text-slate-500'
                 )}
               >
-                {index < currentStep ? <Check className="h-3.5 w-3.5" strokeWidth={3} /> : index + 1}
+                {index < currentStep ? (
+                  <Check className="h-3.5 w-3.5" strokeWidth={3} />
+                ) : (
+                  index + 1
+                )}
               </div>
             </div>
             {index < n - 1 && (
@@ -51,12 +62,12 @@ export function OrganizationCreateStepper({
                 aria-hidden
               >
                 {/* Track */}
-                <div className="absolute left-0 right-0 top-1/2 h-0.5 -translate-y-1/2 rounded-full bg-slate-200 dark:bg-slate-700" />
+                <div className="absolute top-1/2 right-0 left-0 h-0.5 -translate-y-1/2 rounded-full bg-slate-200" />
                 {/* Filled path — deep blue when this segment is completed */}
                 <div
                   className={cn(
-                    'absolute left-0 top-1/2 h-0.5 -translate-y-1/2 rounded-full bg-[#1B2E5A] transition-[width] duration-300 ease-out',
-                    segmentProgress(currentStep, index) ? 'w-full' : 'w-0',
+                    'bg-primary absolute top-1/2 left-0 h-0.5 -translate-y-1/2 rounded-full transition-[width] duration-300 ease-out',
+                    segmentProgress(currentStep, index) ? 'w-full' : 'w-0'
                   )}
                 />
               </div>
@@ -73,10 +84,10 @@ export function OrganizationCreateStepper({
             className={cn(
               'text-center text-[11px] leading-tight sm:text-xs',
               index === currentStep
-                ? 'font-medium text-[#1B2E5A] dark:text-[#1B2E5A]/60'
+                ? 'text-primary font-medium'
                 : index < currentStep
-                  ? 'text-[#1B2E5A]/90 dark:text-[#8BA3D4]'
-                  : 'text-slate-400',
+                  ? 'text-primary/90'
+                  : 'text-slate-400'
             )}
           >
             {step.title}

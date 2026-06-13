@@ -2,24 +2,29 @@
  * Navigation Buttons Component
  */
 
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { StepConfig } from '../config/flowConfigs';
-import { Rocket, Loader2 } from 'lucide-react';
+import React from 'react'
+import { Button } from '@/components/ui/button'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
+import { StepConfig } from '../config/flowConfigs'
+import { Rocket, Loader2 } from 'lucide-react'
 
 interface NavigationButtonsProps {
-  currentStep: number;
-  stepsConfig: StepConfig[];
-  canProceed: () => boolean;
-  canSubmit: () => boolean;
+  currentStep: number
+  stepsConfig: StepConfig[]
+  canProceed: () => boolean
+  canSubmit: () => boolean
   /** Direct value from useWatch — bypasses canSubmit() for reliable button state */
-  termsAccepted?: boolean;
-  onPrev: () => void;
-  onNext: () => void;
-  onSubmit?: () => void;
-  isSubmitting?: boolean;
-  className?: string;
+  termsAccepted?: boolean
+  onPrev: () => void
+  onNext: () => void
+  onSubmit?: () => void
+  isSubmitting?: boolean
+  className?: string
 }
 
 export const NavigationButtons: React.FC<NavigationButtonsProps> = ({
@@ -34,15 +39,16 @@ export const NavigationButtons: React.FC<NavigationButtonsProps> = ({
   isSubmitting = false,
   className = '',
 }) => {
-  const isFirstStep = currentStep === 1;
-  const isLastStep = stepsConfig.length > 0 && currentStep === stepsConfig.length;
+  const isFirstStep = currentStep === 1
+  const isLastStep =
+    stepsConfig.length > 0 && currentStep === stepsConfig.length
 
-  const canProceedNow = canProceed();
+  const canProceedNow = canProceed()
   // Gate the Launch button on the live termsAccepted value so it reliably disables
   // the moment the checkbox is unchecked, independent of canSubmit() closure timing.
-  const canSubmitNow = termsAccepted && canSubmit() && !isSubmitting;
+  const canSubmitNow = termsAccepted && canSubmit() && !isSubmitting
 
-  const pct = Math.round((currentStep / (stepsConfig.length || 1)) * 100);
+  const pct = Math.round((currentStep / (stepsConfig.length || 1)) * 100)
 
   return (
     <div className={`flex items-center justify-between gap-4 ${className}`}>
@@ -51,25 +57,27 @@ export const NavigationButtons: React.FC<NavigationButtonsProps> = ({
         variant="outline"
         onClick={onPrev}
         disabled={isFirstStep}
-        className="h-11 min-w-[100px] rounded-lg border-slate-200/90 bg-white px-5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:border-blue-200 hover:bg-slate-50 hover:text-blue-950 disabled:cursor-not-allowed disabled:opacity-35"
+        className="border-border bg-card text-foreground hover:bg-muted hover:text-primary h-11 min-w-[100px] rounded-lg px-5 text-sm font-medium shadow-sm transition-colors hover:border-blue-200 disabled:cursor-not-allowed disabled:opacity-35"
       >
         <span className="flex items-center gap-2">
           <span className="text-base leading-none opacity-70">←</span> Previous
         </span>
       </Button>
 
-      <div className="flex flex-col items-center gap-1 rounded-full bg-slate-100/90 px-5 py-2 ring-1 ring-slate-200/70">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+      <div className="bg-muted/90 flex flex-col items-center gap-1 rounded-full px-5 py-2 ring-1 ring-slate-200/70">
+        <p className="text-muted-foreground text-[10px] font-semibold tracking-[0.14em] uppercase">
           Step {currentStep} of {stepsConfig.length || 0}
         </p>
         <div className="flex items-center gap-2">
-          <div className="h-1 w-16 overflow-hidden rounded-full bg-slate-200/90">
+          <div className="bg-muted h-1 w-16 overflow-hidden rounded-full">
             <div
               className="h-full rounded-full bg-gradient-to-r from-blue-700 to-blue-950 transition-[width] duration-300 ease-out"
               style={{ width: `${pct}%` }}
             />
           </div>
-          <p className="text-xs font-semibold tabular-nums text-slate-600">{pct}%</p>
+          <p className="text-muted-foreground text-xs font-semibold tabular-nums">
+            {pct}%
+          </p>
         </div>
       </div>
 
@@ -117,13 +125,23 @@ export const NavigationButtons: React.FC<NavigationButtonsProps> = ({
         >
           <span className="flex items-center gap-2">
             <span>Next</span>
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M13 7l5 5m0 0l-5 5m5-5H6"
+              />
             </svg>
           </span>
         </Button>
       )}
     </div>
-  );
-};
-
+  )
+}

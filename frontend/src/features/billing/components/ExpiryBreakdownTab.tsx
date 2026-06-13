@@ -984,7 +984,7 @@ export function ExpiryBreakdownTab({
                         {group.entityType}
                       </span>
                       <span className="text-slate-200">|</span>
-                      <span className="text-xs font-semibold text-[#1B2E5A]">
+                      <span className="text-primary text-xs font-semibold">
                         {group.totalAvailable.toLocaleString()} credits
                       </span>
                       {appBatchCount > 0 && (

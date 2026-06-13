@@ -32,4 +32,39 @@ module.exports = {
     // ASI-safety leading semicolons that this rule flags as "unnecessary").
     'no-extra-semi': 'off',
   },
+  overrides: [
+    {
+      files: ['src/features/**/*.{ts,tsx}'],
+      rules: {
+        // Phase 0: warn on new hardcoded palette usage — burn down existing debt over time.
+        'no-restricted-syntax': [
+          'warn',
+          {
+            selector:
+              'JSXAttribute[name.name="className"] Literal[value=/\\bbg-(gray|slate|zinc|stone|neutral)-/]',
+            message:
+              'Prefer semantic tokens (bg-background, bg-muted, bg-card) over Tailwind gray/slate palette classes.',
+          },
+          {
+            selector:
+              'JSXAttribute[name.name="className"] Literal[value=/\\btext-(gray|slate|zinc|stone|neutral)-/]',
+            message:
+              'Prefer text-foreground or text-muted-foreground over gray/slate text classes.',
+          },
+          {
+            selector:
+              'JSXAttribute[name.name="className"] Literal[value=/\\bborder-(gray|slate|zinc|stone|neutral)-/]',
+            message:
+              'Prefer border-border over gray/slate border classes.',
+          },
+          {
+            selector:
+              'JSXAttribute[name.name="className"] Literal[value=/#[0-9a-fA-F]{3,8}/]',
+            message:
+              'Avoid hardcoded hex in className. Use design tokens or CSS variables.',
+          },
+        ],
+      },
+    },
+  ],
 }

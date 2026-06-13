@@ -54,10 +54,10 @@ const TYPE_CONFIG: Record<NotificationType | 'default', TypeConfig> = {
   },
   purchase_success: {
     icon: CreditCard,
-    iconBg: 'bg-blue-100 dark:bg-blue-900/40',
-    iconColor: 'text-blue-600 dark:text-blue-400',
-    accent: 'border-l-blue-400 bg-blue-50/40 dark:bg-blue-900/10',
-    badge: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
+    iconBg: 'bg-blue-100',
+    iconColor: 'text-blue-600',
+    accent: 'border-l-blue-400 bg-blue-50/40',
+    badge: 'bg-blue-100 text-blue-700',
     label: 'Purchase',
   },
   plan_upgrade: {
@@ -71,18 +71,18 @@ const TYPE_CONFIG: Record<NotificationType | 'default', TypeConfig> = {
   },
   system_update: {
     icon: RefreshCw,
-    iconBg: 'bg-sky-100 dark:bg-sky-900/40',
-    iconColor: 'text-sky-600 dark:text-sky-400',
-    accent: 'border-l-sky-400 bg-sky-50/40 dark:bg-sky-900/10',
-    badge: 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300',
+    iconBg: 'bg-sky-100',
+    iconColor: 'text-sky-600',
+    accent: 'border-l-sky-400 bg-sky-50/40',
+    badge: 'bg-sky-100 text-sky-700',
     label: 'Update',
   },
   feature_announcement: {
     icon: Megaphone,
-    iconBg: 'bg-pink-100 dark:bg-pink-900/40',
-    iconColor: 'text-pink-600 dark:text-pink-400',
-    accent: 'border-l-pink-400 bg-pink-50/40 dark:bg-pink-900/10',
-    badge: 'bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300',
+    iconBg: 'bg-pink-100',
+    iconColor: 'text-pink-600',
+    accent: 'border-l-pink-400 bg-pink-50/40',
+    badge: 'bg-pink-100 text-pink-700',
     label: 'Feature',
   },
   maintenance_scheduled: {
@@ -96,26 +96,26 @@ const TYPE_CONFIG: Record<NotificationType | 'default', TypeConfig> = {
   },
   security_alert: {
     icon: ShieldAlert,
-    iconBg: 'bg-red-100 dark:bg-red-900/40',
-    iconColor: 'text-red-600 dark:text-red-400',
-    accent: 'border-l-red-400 bg-red-50/40 dark:bg-red-900/10',
-    badge: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
+    iconBg: 'bg-red-100',
+    iconColor: 'text-red-600',
+    accent: 'border-l-red-400 bg-red-50/40',
+    badge: 'bg-red-100 text-red-700',
     label: 'Security',
   },
   billing_reminder: {
     icon: CreditCard,
-    iconBg: 'bg-rose-100 dark:bg-rose-900/40',
-    iconColor: 'text-rose-600 dark:text-rose-400',
-    accent: 'border-l-rose-400 bg-rose-50/40 dark:bg-rose-900/10',
-    badge: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300',
+    iconBg: 'bg-rose-100',
+    iconColor: 'text-rose-600',
+    accent: 'border-l-rose-400 bg-rose-50/40',
+    badge: 'bg-rose-100 text-rose-700',
     label: 'Billing',
   },
   default: {
     icon: Bell,
-    iconBg: 'bg-gray-100 dark:bg-gray-800',
-    iconColor: 'text-gray-500 dark:text-gray-400',
-    accent: 'border-l-gray-300 bg-gray-50/40 dark:bg-gray-800/20',
-    badge: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
+    iconBg: 'bg-gray-100',
+    iconColor: 'text-gray-500',
+    accent: 'border-l-gray-300 bg-gray-50/40',
+    badge: 'bg-gray-100 text-gray-600',
     label: 'Notice',
   },
 }
@@ -191,7 +191,7 @@ function MetadataChips({ notification }: { notification: Notification }) {
           </span>
         )}
         {days === null && expiresAt && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+          <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-500">
             Expired
           </span>
         )}
@@ -225,7 +225,7 @@ function MetadataChips({ notification }: { notification: Notification }) {
     return (
       <div className="mt-3 flex flex-wrap items-center gap-2">
         {amount != null && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-sm font-semibold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+          <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-sm font-semibold text-blue-700">
             {currency} {amount}
           </span>
         )}
@@ -243,7 +243,7 @@ function MetadataChips({ notification }: { notification: Notification }) {
     return (
       <div className="mt-3 flex flex-wrap items-center gap-2">
         {amount != null && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-3 py-1 text-sm font-semibold text-rose-700 dark:bg-rose-900/40 dark:text-rose-300">
+          <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-3 py-1 text-sm font-semibold text-rose-700">
             {currency} {amount} due
           </span>
         )}
@@ -262,7 +262,7 @@ function MetadataChips({ notification }: { notification: Notification }) {
     return (
       <div className="mt-3 flex flex-wrap items-center gap-2">
         {version && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-700 dark:bg-sky-900/40 dark:text-sky-300">
+          <span className="inline-flex items-center gap-1 rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-700">
             v{version}
           </span>
         )}
@@ -351,7 +351,7 @@ export const NotificationItem: React.FC<NotificationDisplayProps> = ({
                 <button
                   onClick={() => onMarkAsRead(notification.notificationId)}
                   title="Mark as read"
-                  className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 hover:bg-emerald-100 hover:text-emerald-600 dark:hover:bg-emerald-900/40"
+                  className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 hover:bg-emerald-100 hover:text-emerald-600"
                 >
                   <Check className="h-3.5 w-3.5" />
                 </button>
@@ -359,7 +359,7 @@ export const NotificationItem: React.FC<NotificationDisplayProps> = ({
               <button
                 onClick={() => onDismiss(notification.notificationId)}
                 title="Dismiss"
-                className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 hover:bg-red-100 hover:text-red-500 dark:hover:bg-red-900/40"
+                className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 hover:bg-red-100 hover:text-red-500"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -367,7 +367,7 @@ export const NotificationItem: React.FC<NotificationDisplayProps> = ({
           </div>
 
           {/* Message */}
-          <p className="mt-1 text-xs leading-relaxed text-gray-600 dark:text-gray-400">
+          <p className="mt-1 text-xs leading-relaxed text-gray-600">
             {notification.message}
           </p>
 

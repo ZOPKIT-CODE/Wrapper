@@ -173,9 +173,9 @@ export const AdminDetailsStep = memo(
 
     // Shared Styles
     const inputClasses =
-      'w-full px-4 py-3.5 bg-white border border-slate-200 rounded-xl text-[#1B2E5A] placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-200 hover:border-slate-300 shadow-sm'
+      'w-full px-4 py-3.5 bg-card border border-border rounded-xl text-primary placeholder:text-muted-foreground focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-200 hover:border-border shadow-sm'
     const labelClasses =
-      'block text-sm font-semibold text-slate-700 mb-1.5 ml-1'
+      'block text-sm font-semibold text-foreground mb-1.5 ml-1'
 
     return (
       <div className="space-y-8">
@@ -190,10 +190,10 @@ export const AdminDetailsStep = memo(
               </Badge>
             )}
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-[#1B2E5A]">
+          <h1 className="text-primary text-3xl font-bold tracking-tight">
             {personalizedContent.title}
           </h1>
-          <p className="max-w-2xl text-lg leading-relaxed text-slate-500">
+          <p className="text-muted-foreground max-w-2xl text-lg leading-relaxed">
             {personalizedContent.description}
           </p>
         </div>
@@ -202,12 +202,12 @@ export const AdminDetailsStep = memo(
           <div className="glass-card shadow-soft max-w-5xl space-y-8 rounded-2xl p-8 sm:p-10">
             {/* MANDATORY FIELDS SECTION */}
             <div className="space-y-6">
-              <div className="border-b border-slate-200 pb-4">
-                <h2 className="flex items-center gap-2 text-lg font-bold text-[#1B2E5A]">
+              <div className="border-border border-b pb-4">
+                <h2 className="text-primary flex items-center gap-2 text-lg font-bold">
                   <span className="h-2 w-2 rounded-full bg-red-500"></span>
                   Required Information
                 </h2>
-                <p className="mt-1 text-sm text-slate-500">
+                <p className="text-muted-foreground mt-1 text-sm">
                   These fields are mandatory to complete your account setup
                 </p>
               </div>
@@ -225,7 +225,7 @@ export const AdminDetailsStep = memo(
                         First Name <span className="text-red-500">*</span>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Info className="h-4 w-4 cursor-help text-slate-400 hover:text-slate-600" />
+                            <Info className="text-muted-foreground hover:text-muted-foreground h-4 w-4 cursor-help" />
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                             <p className="mb-1 font-semibold">
@@ -263,7 +263,7 @@ export const AdminDetailsStep = memo(
                         Last Name <span className="text-red-500">*</span>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Info className="h-4 w-4 cursor-help text-slate-400 hover:text-slate-600" />
+                            <Info className="text-muted-foreground hover:text-muted-foreground h-4 w-4 cursor-help" />
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                             <p className="mb-1 font-semibold">
@@ -309,7 +309,7 @@ export const AdminDetailsStep = memo(
                         )}
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Info className="h-4 w-4 cursor-help text-slate-400 hover:text-slate-600" />
+                            <Info className="text-muted-foreground hover:text-muted-foreground h-4 w-4 cursor-help" />
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                             <p className="mb-1 font-semibold">
@@ -330,7 +330,7 @@ export const AdminDetailsStep = memo(
                           value={field.value || user?.email || ''}
                           type="email"
                           readOnly
-                          className={`${inputClasses} cursor-not-allowed bg-slate-50`}
+                          className={`${inputClasses} bg-muted cursor-not-allowed`}
                           placeholder={personalizedContent.emailPlaceholder}
                         />
                       </FormControl>
@@ -356,7 +356,7 @@ export const AdminDetailsStep = memo(
                         {requiresMobileVerification ? (
                           <span className="text-red-500">*</span>
                         ) : (
-                          <span className="font-normal text-slate-400">
+                          <span className="text-muted-foreground font-normal">
                             (Optional)
                           </span>
                         )}
@@ -383,13 +383,13 @@ export const AdminDetailsStep = memo(
             </div>
 
             {/* OPTIONAL FIELDS SECTION */}
-            <div className="space-y-6 border-t-2 border-slate-200 pt-6">
+            <div className="border-border space-y-6 border-t-2 pt-6">
               <div className="pb-4">
-                <h2 className="flex items-center gap-2 text-lg font-bold text-slate-700">
-                  <span className="h-2 w-2 rounded-full bg-slate-300"></span>
+                <h2 className="text-foreground flex items-center gap-2 text-lg font-bold">
+                  <span className="bg-border h-2 w-2 rounded-full"></span>
                   Additional Information (Optional)
                 </h2>
-                <p className="mt-1 text-sm text-slate-500">
+                <p className="text-muted-foreground mt-1 text-sm">
                   Enhance your profile with these optional details for better
                   communication and organization
                 </p>
@@ -408,7 +408,7 @@ export const AdminDetailsStep = memo(
                         Salutation
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Info className="h-4 w-4 cursor-help text-slate-400 hover:text-slate-600" />
+                            <Info className="text-muted-foreground hover:text-muted-foreground h-4 w-4 cursor-help" />
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                             <p>
@@ -428,7 +428,7 @@ export const AdminDetailsStep = memo(
                             <SelectValue placeholder="Select salutation" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent className="rounded-xl border-slate-200 bg-white shadow-lg">
+                        <SelectContent className="border-border bg-card rounded-xl shadow-lg">
                           {CONTACT_SALUTATIONS.map((sal) => (
                             <SelectItem
                               key={sal.id}
@@ -456,7 +456,7 @@ export const AdminDetailsStep = memo(
                         Job Title
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Info className="h-4 w-4 cursor-help text-slate-400 hover:text-slate-600" />
+                            <Info className="text-muted-foreground hover:text-muted-foreground h-4 w-4 cursor-help" />
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                             <p>
@@ -494,7 +494,7 @@ export const AdminDetailsStep = memo(
                         Middle Name
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Info className="h-4 w-4 cursor-help text-slate-400 hover:text-slate-600" />
+                            <Info className="text-muted-foreground hover:text-muted-foreground h-4 w-4 cursor-help" />
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                             <p>
@@ -528,7 +528,7 @@ export const AdminDetailsStep = memo(
                         Department
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Info className="h-4 w-4 cursor-help text-slate-400 hover:text-slate-600" />
+                            <Info className="text-muted-foreground hover:text-muted-foreground h-4 w-4 cursor-help" />
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                             <p>
@@ -566,7 +566,7 @@ export const AdminDetailsStep = memo(
                         Authority Level
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Info className="h-4 w-4 cursor-help text-slate-400 hover:text-slate-600" />
+                            <Info className="text-muted-foreground hover:text-muted-foreground h-4 w-4 cursor-help" />
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                             <p>
@@ -586,7 +586,7 @@ export const AdminDetailsStep = memo(
                             <SelectValue placeholder="Select authority level" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent className="rounded-xl border-slate-200 bg-white shadow-lg">
+                        <SelectContent className="border-border bg-card rounded-xl shadow-lg">
                           {CONTACT_AUTHORITY_LEVELS.map((level) => (
                             <SelectItem
                               key={level.id}
@@ -614,7 +614,7 @@ export const AdminDetailsStep = memo(
                         Preferred Contact Method
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Info className="h-4 w-4 cursor-help text-slate-400 hover:text-slate-600" />
+                            <Info className="text-muted-foreground hover:text-muted-foreground h-4 w-4 cursor-help" />
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                             <p>
@@ -634,7 +634,7 @@ export const AdminDetailsStep = memo(
                             <SelectValue placeholder="Select method" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent className="rounded-xl border-slate-200 bg-white shadow-lg">
+                        <SelectContent className="border-border bg-card rounded-xl shadow-lg">
                           {CONTACT_METHODS.map((method) => (
                             <SelectItem
                               key={method.id}
@@ -665,7 +665,7 @@ export const AdminDetailsStep = memo(
                         Direct Phone
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Info className="h-4 w-4 cursor-help text-slate-400 hover:text-slate-600" />
+                            <Info className="text-muted-foreground hover:text-muted-foreground h-4 w-4 cursor-help" />
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                             <p>
@@ -700,7 +700,7 @@ export const AdminDetailsStep = memo(
                         Mobile Phone
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Info className="h-4 w-4 cursor-help text-slate-400 hover:text-slate-600" />
+                            <Info className="text-muted-foreground hover:text-muted-foreground h-4 w-4 cursor-help" />
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                             <p>
@@ -738,7 +738,7 @@ export const AdminDetailsStep = memo(
                         Billing Email
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Info className="h-4 w-4 cursor-help text-slate-400 hover:text-slate-600" />
+                            <Info className="text-muted-foreground hover:text-muted-foreground h-4 w-4 cursor-help" />
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                             <p>
@@ -766,26 +766,26 @@ export const AdminDetailsStep = memo(
             </div>
 
             {/* PAN / Tax Registration Section - commented out as of now */}
-            {/* <div className="space-y-6 pt-6 border-t-2 border-slate-200">
+            {/* <div className="space-y-6 pt-6 border-t-2 border-border">
             <div className="pb-4">
-              <h2 className="text-lg font-bold text-slate-700 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-slate-300"></span>
+              <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-border"></span>
                 Tax Registration (Optional)
               </h2>
-              <p className="text-sm text-slate-500 mt-1">Provide tax registration details for compliance and invoicing</p>
+              <p className="text-sm text-muted-foreground mt-1">Provide tax registration details for compliance and invoicing</p>
             </div>
 
             <FormField
               control={form.control}
               name="taxRegistered"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border border-slate-200 p-4 bg-white/70 backdrop-blur-sm">
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border border-border p-4 bg-card/70 backdrop-blur-sm">
                   <div className="space-y-0.5 flex-1 pr-4">
-                    <FormLabel className="text-base font-semibold text-[#1B2E5A] flex items-center gap-2">
-                      Tax Registered <span className="text-slate-400 font-normal">(Optional)</span>
+                    <FormLabel className="text-base font-semibold text-primary flex items-center gap-2">
+                      Tax Registered <span className="text-muted-foreground font-normal">(Optional)</span>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-help" />
+                          <Info className="w-4 h-4 text-muted-foreground hover:text-muted-foreground cursor-help" />
                         </TooltipTrigger>
                         <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                           <p className="font-semibold mb-1">Optional Field</p>
@@ -793,7 +793,7 @@ export const AdminDetailsStep = memo(
                         </TooltipContent>
                       </Tooltip>
                     </FormLabel>
-                    <FormDescription className="text-sm text-slate-500">
+                    <FormDescription className="text-sm text-muted-foreground">
                       Is your organization registered for tax in {COUNTRIES.find(c => c.id === country)?.name}?
                     </FormDescription>
                   </div>
@@ -827,10 +827,10 @@ export const AdminDetailsStep = memo(
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="flex items-center gap-2">
-                          {labels.taxId} {taxRegistered ? <span className="text-red-500">*</span> : <span className="text-slate-400 font-normal">(Optional)</span>}
+                          {labels.taxId} {taxRegistered ? <span className="text-red-500">*</span> : <span className="text-muted-foreground font-normal">(Optional)</span>}
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-help" />
+                              <Info className="w-4 h-4 text-muted-foreground hover:text-muted-foreground cursor-help" />
                             </TooltipTrigger>
                             <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                               <p className="font-semibold mb-1">{taxRegistered ? 'Mandatory Field' : 'Optional Field'}</p>
@@ -906,10 +906,10 @@ export const AdminDetailsStep = memo(
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="flex items-center gap-2">
-                          {labels.taxId} <span className="text-slate-400 font-normal">(Optional)</span>
+                          {labels.taxId} <span className="text-muted-foreground font-normal">(Optional)</span>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-help" />
+                              <Info className="w-4 h-4 text-muted-foreground hover:text-muted-foreground cursor-help" />
                             </TooltipTrigger>
                             <TooltipContent className="max-w-xs border border-blue-800/50 bg-blue-950 text-white shadow-lg">
                               <p className="font-semibold mb-1">Optional Field</p>

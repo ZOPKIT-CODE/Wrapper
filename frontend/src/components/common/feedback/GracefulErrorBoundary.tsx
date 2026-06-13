@@ -14,7 +14,7 @@ interface GracefulErrorBoundaryProps {
 }
 
 export function GracefulErrorBoundary({
-  children: _children,
+  children,
   fallbackTitle = 'Service Temporarily Unavailable',
   fallbackMessage = "We're experiencing technical difficulties. Please try again in a moment.",
   showRetry = true,
@@ -76,6 +76,10 @@ export function GracefulErrorBoundary({
         </CardContent>
       </Card>
     )
+  }
+
+  if (!isExpired) {
+    return <>{children}</>
   }
 
   // For non-trial errors, show standard error message

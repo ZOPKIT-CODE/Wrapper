@@ -28,26 +28,46 @@ export function ThemeToggle() {
         <Button
           variant="outline"
           size="icon"
-          className="border-border/50 hover:bg-accent hover:text-accent-foreground dark:border-border dark:hover:bg-accent dark:hover:text-accent-foreground dark:text-white"
+          className="border-border bg-background hover:bg-accent hover:text-accent-foreground text-foreground"
         >
           {getThemeIcon()}
           <span className="sr-only">Toggle theme</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => setTheme('light')}>
+        <DropdownMenuItem
+          onSelect={(event) => {
+            event.preventDefault()
+            setTheme('light')
+          }}
+        >
           <Sun className="mr-2 h-4 w-4" />
           <span>Light</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme('dark')}>
+        <DropdownMenuItem
+          onSelect={(event) => {
+            event.preventDefault()
+            setTheme('dark')
+          }}
+        >
           <Moon className="mr-2 h-4 w-4" />
           <span>Dark</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme('monochrome')}>
+        <DropdownMenuItem
+          onSelect={(event) => {
+            event.preventDefault()
+            setTheme('monochrome')
+          }}
+        >
           <Palette className="mr-2 h-4 w-4" />
           <span>Monochrome</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme('system')}>
+        <DropdownMenuItem
+          onSelect={(event) => {
+            event.preventDefault()
+            setTheme('system')
+          }}
+        >
           <Monitor className="mr-2 h-4 w-4" />
           <span>System</span>
         </DropdownMenuItem>
@@ -75,7 +95,7 @@ export function SimpleThemeToggle() {
       variant="outline"
       size="icon"
       onClick={() => setTheme(actualTheme === 'light' ? 'dark' : 'light')}
-      className="border-border/50 hover:bg-accent hover:text-accent-foreground dark:border-border dark:hover:bg-accent dark:hover:text-accent-foreground h-9 w-9"
+      className="border-border bg-background hover:bg-accent hover:text-accent-foreground text-foreground h-9 w-9"
     >
       {getThemeIcon()}
       <span className="sr-only">Toggle theme</span>

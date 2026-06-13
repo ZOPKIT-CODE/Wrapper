@@ -330,7 +330,7 @@ export function CreditTransferSheet({
               creditTransferForm.destinationEntityId === 'no-orgs' ||
               creditTransferForm.destinationEntityId === 'no-locations'
             }
-            className="bg-[#1B2E5A] text-white hover:opacity-90"
+            className="bg-primary text-primary-foreground hover:opacity-90"
             style={{ backgroundColor: 'var(--zk-navy)' } as React.CSSProperties}
           >
             {isTransferringCredits ? (
@@ -502,7 +502,7 @@ export function AllocateCreditSheet({
           </div>
         </div>
 
-        <SheetFooter className="mt-0 shrink-0 flex-row justify-end gap-2 border-t border-[#1B2E5A]/10 bg-[#F0F4FA] px-6 py-4 dark:border-slate-700 dark:bg-slate-900/80">
+        <SheetFooter className="border-primary/10 bg-muted mt-0 shrink-0 flex-row justify-end gap-2 border-t px-6 py-4">
           <PearlButton variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </PearlButton>

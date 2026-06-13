@@ -25,8 +25,6 @@ import { ZopkitRoundLoader } from '@/components/common/feedback/ZopkitRoundLoade
 import { useNavigate } from '@tanstack/react-router'
 import type { Entity } from '@/features/organizations/types'
 
-// --- Types (inlined to avoid circular deps) ---
-
 interface Organization {
   entityId: string
   entityName: string
@@ -282,7 +280,7 @@ export function TreeNode({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 text-slate-500 hover:text-[#1B2E5A]"
+                className="hover:text-primary h-8 w-8 text-slate-500"
                 onClick={() =>
                   navigate({
                     to: '/dashboard/organization/create',

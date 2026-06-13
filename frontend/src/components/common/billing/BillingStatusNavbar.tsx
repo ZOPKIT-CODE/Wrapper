@@ -33,12 +33,12 @@ export function BillingStatusNavbar({ className }: BillingStatusNavbarProps) {
     return (
       <div className={cn('flex items-center gap-3 px-3 py-2', className)}>
         <div className="flex animate-pulse items-center gap-2">
-          <div className="h-4 w-4 rounded bg-gray-300"></div>
-          <div className="h-3 w-16 rounded bg-gray-300"></div>
+          <div className="bg-muted h-4 w-4 rounded"></div>
+          <div className="bg-muted h-3 w-16 rounded"></div>
         </div>
         <div className="flex animate-pulse items-center gap-2">
-          <div className="h-4 w-4 rounded bg-gray-300"></div>
-          <div className="h-3 w-12 rounded bg-gray-300"></div>
+          <div className="bg-muted h-4 w-4 rounded"></div>
+          <div className="bg-muted h-3 w-12 rounded"></div>
         </div>
       </div>
     )
@@ -66,7 +66,7 @@ export function BillingStatusNavbar({ className }: BillingStatusNavbarProps) {
 
   const getExpiryColor = () => {
     if (isExpiringSoon) return 'text-orange-600 dark:text-orange-400'
-    return 'text-gray-600 dark:text-gray-400'
+    return 'text-muted-foreground'
   }
 
   // Map plan IDs to proper plan names
@@ -91,14 +91,14 @@ export function BillingStatusNavbar({ className }: BillingStatusNavbarProps) {
   return (
     <div
       className={cn(
-        'flex items-center gap-3 rounded-xl border border-gray-100 bg-white px-4 py-2 shadow-sm transition-all duration-300 hover:shadow-md',
+        'border-border bg-card flex items-center gap-3 rounded-xl border px-4 py-2 shadow-sm transition-all duration-300 hover:shadow-md',
         className
       )}
     >
       {/* Subscription Plan Expiry - SHOWN FIRST */}
       {subscription?.currentPeriodEnd && (
         <div
-          className="group flex cursor-help items-center gap-2 rounded-lg px-2 py-1 transition-colors hover:bg-gray-50"
+          className="group hover:bg-muted/50 flex cursor-help items-center gap-2 rounded-lg px-2 py-1 transition-colors"
           title={`Plan ${subscription.plan === 'free' ? 'expires' : 'renews'} on ${formatDate(subscription.currentPeriodEnd)}`}
         >
           <Calendar
@@ -108,7 +108,7 @@ export function BillingStatusNavbar({ className }: BillingStatusNavbarProps) {
             )}
           />
           <div className="flex flex-col leading-none">
-            <span className="text-[10px] font-semibold tracking-wider text-gray-500 uppercase">
+            <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
               {subscription.plan === 'free' ? 'Expires' : 'Renews'}
             </span>
             <span className={cn('text-xs font-bold', getExpiryColor())}>
@@ -118,38 +118,38 @@ export function BillingStatusNavbar({ className }: BillingStatusNavbarProps) {
         </div>
       )}
 
-      <div className="h-8 w-px bg-gray-100"></div>
+      <div className="bg-border h-8 w-px"></div>
 
       {/* Subscription Plan */}
-      <div className="group flex items-center gap-2 rounded-lg px-2 py-1 transition-colors hover:bg-purple-50">
-        <div className="rounded-full bg-purple-100 p-1 transition-colors group-hover:bg-purple-200">
-          <Crown className="h-3 w-3 text-purple-600" />
+      <div className="group flex items-center gap-2 rounded-lg px-2 py-1 transition-colors hover:bg-purple-500/10 dark:hover:bg-purple-500/15">
+        <div className="rounded-full bg-purple-500/15 p-1 transition-colors group-hover:bg-purple-500/25 dark:bg-purple-500/20">
+          <Crown className="h-3 w-3 text-purple-600 dark:text-purple-300" />
         </div>
         <div className="flex flex-col leading-none">
-          <span className="text-[10px] font-semibold tracking-wider text-gray-500 uppercase">
+          <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
             Plan
           </span>
-          <span className="text-xs font-bold text-[#1B2E5A] capitalize">
+          <span className="text-foreground text-xs font-bold capitalize">
             {planName}
           </span>
         </div>
       </div>
 
-      <div className="h-8 w-px bg-gray-100"></div>
+      <div className="bg-border h-8 w-px"></div>
 
       {/* Credits Section - Show Paid and Free Credits */}
       <div className="flex items-center gap-1">
         {/* Paid Credits */}
         {paidCredits > 0 && (
-          <div className="group flex items-center gap-2 rounded-lg px-2 py-1 transition-colors hover:bg-amber-50">
-            <div className="rounded-full bg-amber-100 p-1 transition-colors group-hover:bg-amber-200">
-              <Shield className="h-3 w-3 text-amber-600" />
+          <div className="group flex items-center gap-2 rounded-lg px-2 py-1 transition-colors hover:bg-amber-500/10 dark:hover:bg-amber-500/15">
+            <div className="rounded-full bg-amber-500/15 p-1 transition-colors group-hover:bg-amber-500/25 dark:bg-amber-500/20">
+              <Shield className="h-3 w-3 text-amber-600 dark:text-amber-300" />
             </div>
             <div className="flex flex-col leading-none">
-              <span className="text-[10px] font-semibold tracking-wider text-gray-500 uppercase">
+              <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
                 Paid
               </span>
-              <span className="text-xs font-bold text-[#1B2E5A]">
+              <span className="text-foreground text-xs font-bold">
                 {paidCredits.toLocaleString()}
               </span>
             </div>
@@ -157,15 +157,15 @@ export function BillingStatusNavbar({ className }: BillingStatusNavbarProps) {
         )}
 
         {/* Free Credits */}
-        <div className="group flex items-center gap-2 rounded-lg px-2 py-1 transition-colors hover:bg-emerald-50">
-          <div className="rounded-full bg-emerald-100 p-1 transition-colors group-hover:bg-emerald-200">
-            <Clock className="h-3 w-3 text-emerald-600" />
+        <div className="group flex items-center gap-2 rounded-lg px-2 py-1 transition-colors hover:bg-emerald-500/10 dark:hover:bg-emerald-500/15">
+          <div className="rounded-full bg-emerald-500/15 p-1 transition-colors group-hover:bg-emerald-500/25 dark:bg-emerald-500/20">
+            <Clock className="h-3 w-3 text-emerald-600 dark:text-emerald-300" />
           </div>
           <div className="flex flex-col leading-none">
-            <span className="text-[10px] font-semibold tracking-wider text-gray-500 uppercase">
+            <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
               Free
             </span>
-            <span className="text-xs font-bold text-[#1B2E5A]">
+            <span className="text-foreground text-xs font-bold">
               {freeCredits.toLocaleString()}
             </span>
           </div>
@@ -173,15 +173,15 @@ export function BillingStatusNavbar({ className }: BillingStatusNavbarProps) {
 
         {/* Seasonal Credits - Only if present */}
         {seasonalCredits > 0 && (
-          <div className="group flex items-center gap-2 rounded-lg px-2 py-1 transition-colors hover:bg-indigo-50">
-            <div className="rounded-full bg-indigo-100 p-1 transition-colors group-hover:bg-indigo-200">
-              <Sparkles className="h-3 w-3 text-indigo-600" />
+          <div className="group flex items-center gap-2 rounded-lg px-2 py-1 transition-colors hover:bg-indigo-500/10 dark:hover:bg-indigo-500/15">
+            <div className="rounded-full bg-indigo-500/15 p-1 transition-colors group-hover:bg-indigo-500/25 dark:bg-indigo-500/20">
+              <Sparkles className="h-3 w-3 text-indigo-600 dark:text-indigo-300" />
             </div>
             <div className="flex flex-col leading-none">
-              <span className="text-[10px] font-semibold tracking-wider text-gray-500 uppercase">
+              <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
                 Seasonal
               </span>
-              <span className="text-xs font-bold text-[#1B2E5A]">
+              <span className="text-foreground text-xs font-bold">
                 {seasonalCredits.toLocaleString()}
               </span>
             </div>
@@ -192,8 +192,8 @@ export function BillingStatusNavbar({ className }: BillingStatusNavbarProps) {
       {/* Low Balance Warning */}
       {(isLowBalance || isExpiringSoon) && (
         <>
-          <div className="h-8 w-px bg-gray-100"></div>
-          <div className="flex h-8 w-8 animate-pulse items-center justify-center rounded-full bg-orange-50">
+          <div className="bg-border h-8 w-px"></div>
+          <div className="flex h-8 w-8 animate-pulse items-center justify-center rounded-full bg-orange-500/15 dark:bg-orange-500/20">
             <AlertTriangle className="h-4 w-4 text-orange-500" />
           </div>
         </>

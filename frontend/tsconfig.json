@@ -27,5 +27,11 @@
     }
   },
   "include": ["src"],
+  "exclude": [
+    "src/**/__tests__/**",
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx",
+    "src/**/hooks/*.test.ts"
+  ],
   "references": [{ "path": "./tsconfig.node.json" }]
-} 
+}

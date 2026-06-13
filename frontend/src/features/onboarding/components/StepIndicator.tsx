@@ -66,15 +66,15 @@ export const StepIndicator: React.FC<StepIndicatorProps> = ({
 
         let styles = {
           card: darkSidebar
-            ? 'border-white/[0.14] bg-white/[0.08] opacity-95 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.12)] backdrop-blur-sm'
-            : 'border-slate-200/80 bg-white/70 opacity-80',
+            ? 'border-white/[0.14] bg-card/[0.08] opacity-95 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.12)] backdrop-blur-sm'
+            : 'border-border/80 bg-card/70 opacity-80',
           iconBg: darkSidebar
-            ? 'border border-white/30 bg-white/[0.12] text-blue-50 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.18)]'
-            : 'border border-slate-200 bg-white text-slate-500',
-          title: darkSidebar ? 'text-white' : 'text-slate-500',
-          subtext: darkSidebar ? 'text-blue-100/55' : 'text-slate-400',
-          barBg: darkSidebar ? 'bg-white/15' : 'bg-slate-100',
-          barFill: darkSidebar ? 'bg-white/45' : 'bg-slate-300',
+            ? 'border border-white/30 bg-card/[0.12] text-blue-50 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.18)]'
+            : 'border border-border bg-card text-muted-foreground',
+          title: darkSidebar ? 'text-white' : 'text-muted-foreground',
+          subtext: darkSidebar ? 'text-blue-100/55' : 'text-muted-foreground',
+          barBg: darkSidebar ? 'bg-card/15' : 'bg-muted',
+          barFill: darkSidebar ? 'bg-card/45' : 'bg-border',
           shadow: '',
         }
 
@@ -83,18 +83,18 @@ export const StepIndicator: React.FC<StepIndicatorProps> = ({
             ? {
                 card: 'border-white/25 bg-gradient-to-br from-white/[0.16] to-white/[0.06] hover:from-white/[0.2] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.2)]',
                 iconBg:
-                  'border-0 bg-white text-blue-950 shadow-md shadow-black/25',
+                  'border-0 bg-card text-blue-950 shadow-md shadow-black/25',
                 title: 'text-white',
                 subtext: 'text-blue-100/75',
-                barBg: 'bg-white/25',
-                barFill: 'bg-white',
+                barBg: 'bg-card/25',
+                barFill: 'bg-card',
                 shadow: '',
               }
             : {
-                card: 'border-blue-100 bg-white hover:bg-blue-50/50',
+                card: 'border-blue-100 bg-card hover:bg-primary/5/50',
                 iconBg: 'border-0 bg-blue-950 text-white',
                 title: 'text-blue-950',
-                subtext: 'text-slate-500',
+                subtext: 'text-muted-foreground',
                 barBg: 'bg-blue-100',
                 barFill: 'bg-blue-700',
                 shadow: '',
@@ -124,18 +124,18 @@ export const StepIndicator: React.FC<StepIndicatorProps> = ({
             ? {
                 card: 'border-white/35 bg-gradient-to-br from-white/20 via-white/[0.12] to-blue-950/50 shadow-[0_8px_28px_-6px_rgba(0,0,0,0.45)] ring-1 ring-white/30',
                 iconBg:
-                  'border-0 bg-white text-blue-950 shadow-md shadow-black/25',
+                  'border-0 bg-card text-blue-950 shadow-md shadow-black/25',
                 title: 'text-white',
                 subtext: 'text-blue-100/80',
-                barBg: 'bg-white/25',
+                barBg: 'bg-card/25',
                 barFill: 'bg-gradient-to-r from-white to-blue-100',
                 shadow: '',
               }
             : {
-                card: 'border-blue-200 bg-white shadow-sm ring-1 ring-blue-100/60',
+                card: 'border-blue-200 bg-card shadow-sm ring-1 ring-blue-100/60',
                 iconBg: 'border-0 bg-blue-950 text-white',
                 title: 'text-blue-950',
-                subtext: 'text-slate-500',
+                subtext: 'text-muted-foreground',
                 barBg: 'bg-blue-100',
                 barFill: 'bg-blue-800',
                 shadow: '',
@@ -143,7 +143,7 @@ export const StepIndicator: React.FC<StepIndicatorProps> = ({
         } else if (isUpcoming) {
           styles.card = darkSidebar
             ? 'border-white/[0.08] bg-blue-950/50 opacity-75 hover:border-white/15 hover:opacity-100'
-            : 'border-slate-100 bg-slate-50/50 opacity-75 hover:opacity-100'
+            : 'border-border bg-muted/50 opacity-75 hover:opacity-100'
         }
 
         return (
@@ -175,7 +175,7 @@ export const StepIndicator: React.FC<StepIndicatorProps> = ({
                 </h4>
                 {isCompleted && (
                   <Check
-                    className={`h-3 w-3 shrink-0 ${darkSidebar ? 'text-white' : 'text-blue-800'}`}
+                    className={`h-3 w-3 shrink-0 ${darkSidebar ? 'text-white' : 'text-primary'}`}
                     strokeWidth={2.5}
                   />
                 )}
@@ -215,7 +215,7 @@ export const StepIndicator: React.FC<StepIndicatorProps> = ({
             {/* Active Indicator Line (Left Edge) */}
             {isActive && (
               <div
-                className={`absolute top-2 bottom-2 left-0 w-0.5 rounded-full ${darkSidebar ? 'bg-white' : 'bg-blue-800'}`}
+                className={`absolute top-2 bottom-2 left-0 w-0.5 rounded-full ${darkSidebar ? 'bg-card' : 'bg-blue-800'}`}
               />
             )}
           </div>
@@ -235,7 +235,7 @@ export const StepIndicator: React.FC<StepIndicatorProps> = ({
             className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md border ${
               darkSidebar
                 ? 'border-red-400/30 bg-red-950/60'
-                : 'border-red-100 bg-white'
+                : 'bg-card border-red-100'
             }`}
           >
             <AlertCircle
