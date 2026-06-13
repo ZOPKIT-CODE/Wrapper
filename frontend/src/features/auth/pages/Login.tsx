@@ -364,13 +364,18 @@ export function Login() {
         // for an onboarded user instead of the default dashboard.
         const parkedReturn = consumePostLoginRedirect()
         // Platform admins and staff have no tenant plane — send them to the admin dashboard.
+        // Never honor a parked /dashboard/* path for platform users: dashboard routes require
+        // tenant context and would immediately 401 → loop. Only allow /company-admin paths.
         if (
           status.authStatus?.isPlatformAdmin ||
           status.authStatus?.isPlatformStaff ||
           status.authStatus?.userType === 'PLATFORM_ADMIN' ||
           status.authStatus?.userType === 'PLATFORM_STAFF'
         ) {
-          navigate({ to: parkedReturn || '/company-admin', replace: true })
+          const safeReturn = parkedReturn?.startsWith('/company-admin')
+            ? parkedReturn
+            : null
+          navigate({ to: safeReturn || '/company-admin', replace: true })
         } else if (
           parkedReturn &&
           status.user &&
