@@ -127,14 +127,14 @@ export function PageError({
       className
     )}>
       <div className="text-center max-w-md mx-auto px-4">
-        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <AlertCircle className="w-8 h-8 text-red-600" />
+        <div className="w-14 h-14 rounded-md border border-destructive/20 bg-destructive/5 flex items-center justify-center mx-auto mb-4">
+          <AlertCircle className="w-7 h-7 text-destructive" />
         </div>
-        <h3 className="text-lg font-semibold mb-2">{title}</h3>
+        <h3 className="text-lg font-medium mb-2">{title}</h3>
         <p className="text-sm text-muted-foreground mb-4">{description}</p>
         {errorMessage && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded-lg mb-4">
-            <p className="text-sm text-red-800">{errorMessage}</p>
+          <div className="p-3 bg-destructive/5 border border-destructive/20 rounded-md mb-4">
+            <p className="text-sm text-destructive">{errorMessage}</p>
           </div>
         )}
         {onRetry && (
@@ -256,10 +256,10 @@ export function PageEmpty({
       className
     )}>
       <div className="text-center max-w-md mx-auto px-4">
-        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <Icon className="w-8 h-8 text-gray-400" />
+        <div className="w-14 h-14 rounded-md border border-border bg-secondary flex items-center justify-center mx-auto mb-4">
+          <Icon className="w-7 h-7 text-muted-foreground" />
         </div>
-        <h3 className="text-lg font-semibold mb-2">{title}</h3>
+        <h3 className="text-lg font-medium mb-2">{title}</h3>
         <p className="text-sm text-muted-foreground mb-4">{description}</p>
         {action}
       </div>
@@ -294,10 +294,10 @@ export function CardEmpty({
       )}
       <CardContent>
         <div className="flex flex-col items-center justify-center py-12 text-center">
-          <div className="w-12 h-12 text-muted-foreground mb-4">
-            <Icon className="w-full h-full" />
+          <div className="w-12 h-12 rounded-md border border-border bg-secondary flex items-center justify-center mb-4">
+            <Icon className="w-6 h-6 text-muted-foreground" />
           </div>
-          <h3 className="text-lg font-semibold mb-2">{title}</h3>
+          <h3 className="text-lg font-medium mb-2">{title}</h3>
           <p className="text-sm text-muted-foreground mb-4 max-w-sm">{description}</p>
           {action}
         </div>

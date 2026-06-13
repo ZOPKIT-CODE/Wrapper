@@ -23,8 +23,8 @@ export const SelectField: React.FC<FieldComponentProps> = ({
       render={({ field: formField }) => (
         <FormItem className={cn('space-y-3', className)}>
           <FormLabel className={cn(
-            'text-sm font-medium text-foreground dark:text-foreground',
-            field.required && "after:content-['*'] after:ml-0.5 after:text-destructive dark:after:text-destructive"
+            'text-sm font-medium text-foreground',
+            field.required && "after:content-['*'] after:ml-0.5 after:text-destructive"
           )}>
             {field.label}
           </FormLabel>
@@ -39,24 +39,24 @@ export const SelectField: React.FC<FieldComponentProps> = ({
             required={field.required}
           >
             <FormControl>
-              <SelectTrigger className="w-full h-12 mt-3 bg-background border-input text-foreground hover:bg-accent hover:text-accent-foreground focus:ring-ring dark:bg-background dark:border-input dark:text-foreground dark:hover:bg-accent dark:hover:text-accent-foreground">
+              <SelectTrigger className="w-full h-12 mt-3 bg-background border-input text-foreground hover:bg-accent hover:text-accent-foreground focus:ring-ring">
                 {value ? (
-                  <span className="truncate text-foreground dark:text-foreground">{selectField.options?.find(opt => String(opt.value) === String(value))?.label}</span>
+                  <span className="truncate text-foreground">{selectField.options?.find(opt => String(opt.value) === String(value))?.label}</span>
                 ) : (
-                  <span className="text-muted-foreground dark:text-muted-foreground">
+                  <span className="text-muted-foreground">
                     {field.placeholder || 'Select an option'}
                   </span>
                 )}
               </SelectTrigger>
             </FormControl>
             
-            <SelectContent className="max-h-60 bg-background border-input text-foreground dark:bg-background dark:border-input dark:text-foreground">
+            <SelectContent className="max-h-60 bg-background border-input text-foreground">
               {selectField.options?.map((option: SelectOption) => (
                 <SelectItem
                   key={option.value}
                   value={String(option.value)}
                   disabled={option.disabled}
-                  className="h-12 flex items-center text-foreground hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground dark:text-foreground dark:hover:bg-accent dark:hover:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground"
+                  className="h-12 flex items-center text-foreground hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
                 >
                   {option.label}
                 </SelectItem>
@@ -65,7 +65,7 @@ export const SelectField: React.FC<FieldComponentProps> = ({
           </Select>
           
           {field.helpText && (
-            <p className="text-sm text-muted-foreground dark:text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               {field.helpText}
             </p>
           )}

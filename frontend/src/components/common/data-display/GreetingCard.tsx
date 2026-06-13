@@ -8,7 +8,7 @@ export default function GreetingCard({ className }: { className?: string }) {
     }
     return (
         <div className={cn("flex flex-col", className)}>
-            <h1 className="text-3xl font-bold text-[#1B2E5A] leading-tight">
+            <h1 className="text-3xl font-bold text-primary leading-tight">
                 Welcome back{user?.givenName ? `, ${user.givenName}` : ''}! 👋
             </h1>
             <p className="mt-2 text-gray-600 leading-tight">

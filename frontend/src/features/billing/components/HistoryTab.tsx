@@ -161,7 +161,7 @@ function StripeRefRow({ payment }: { payment: PaymentHistoryItem }) {
     <div className="mt-3">
       <button
         onClick={() => setExpanded(v => !v)}
-        className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-[#1B2E5A] transition-colors"
+        className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-primary transition-colors"
       >
         {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
         Reference IDs
@@ -176,7 +176,7 @@ function StripeRefRow({ payment }: { payment: PaymentHistoryItem }) {
               </div>
               <button
                 onClick={() => copy(value, key)}
-                className="shrink-0 p-1.5 rounded-lg hover:bg-slate-200 text-slate-400 hover:text-[#1B2E5A] transition-colors"
+                className="shrink-0 p-1.5 rounded-lg hover:bg-slate-200 text-slate-400 hover:text-primary transition-colors"
               >
                 {copied === key ? <Check className="h-3 w-3 text-emerald-500" /> : <Copy className="h-3 w-3" />}
               </button>
@@ -206,7 +206,7 @@ function PaymentCard({
   const dateStr = formatDate(payment.paidAt || payment.createdAt || '')
 
   return (
-    <div className="group rounded-2xl border border-slate-100 bg-white p-5 hover:border-[#1B2E5A]/15 hover:shadow-md hover:shadow-[#1B2E5A]/5 transition-all duration-200">
+    <div className="rounded-lg border border-slate-200 bg-white p-5">
       <div className="flex items-start justify-between gap-4">
         {/* Left: Icon + Details */}
         <div className="flex items-start gap-4 min-w-0 flex-1">
@@ -217,7 +217,7 @@ function PaymentCard({
           <div className="min-w-0 flex-1">
             {/* Title row */}
             <div className="flex flex-wrap items-center gap-2 mb-1.5">
-              <h4 className="font-semibold text-[#1B2E5A] text-sm leading-tight truncate max-w-xs">
+              <h4 className="font-semibold text-primary text-sm leading-tight truncate max-w-xs">
                 {getPaymentTitle(payment)}
               </h4>
               <Badge className={`${statusCfg.badge} text-[10px] font-semibold border px-2 py-0.5`}>
@@ -290,14 +290,14 @@ function PaymentCard({
               ? 'bg-violet-50 border-violet-100'
               : payment.status === 'failed'
                 ? 'bg-red-50 border-red-100'
-                : 'bg-[#1B2E5A]/5 border-[#1B2E5A]/10'
+                : 'bg-primary/5 border-primary/10'
           }`}>
             <div style={{ fontFamily: 'var(--zk-mono)', fontWeight: 600 }} className={`text-base ${
               isPlanUpgrade
                 ? 'text-violet-700'
                 : payment.status === 'failed'
                   ? 'text-red-600'
-                  : 'text-[#1B2E5A]'
+                  : 'text-primary'
             }`}>
               {formatCurrency(payment.amount)}
             </div>
@@ -337,7 +337,7 @@ function PaymentCard({
                 variant="outline"
                 size="sm"
                 onClick={() => onViewDetails(payment.id)}
-                className="h-8 text-xs border-[#1B2E5A]/15 text-[#1B2E5A] hover:bg-[#1B2E5A]/5 hover:border-[#1B2E5A]/25"
+                className="h-8 text-xs border-primary/15 text-primary hover:bg-primary/5 hover:border-primary/25"
               >
                 <ExternalLink className="h-3 w-3 mr-1.5" />
                 Details
@@ -349,7 +349,7 @@ function PaymentCard({
               onClick={() => onDownload(payment)}
               disabled={isDownloading}
               style={{ background: 'var(--zk-navy)' }}
-              className="h-8 text-xs hover:bg-[#152449] text-white shadow-sm min-w-[130px]"
+              className="h-8 text-xs hover:bg-primary-hover text-white shadow-sm min-w-[130px]"
             >
               {isDownloading ? (
                 <>
@@ -433,11 +433,11 @@ export function HistoryTab({
     <div className="space-y-6">
 
       {/* ── Section header ── */}
-      <div className="rounded-3xl border border-[#1B2E5A]/10 bg-white shadow-sm p-6 relative overflow-hidden">
+      <div className="rounded-3xl border border-primary/10 bg-white shadow-sm p-6 relative overflow-hidden">
         <div className="absolute top-0 right-0 -mt-8 -mr-8 h-32 w-32 rounded-full bg-gradient-to-br from-blue-50 to-sky-50 opacity-60 blur-2xl" />
         <div className="relative flex items-center gap-4">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#1B2E5A]/10">
-            <ReceiptText className="h-5 w-5 text-[#1B2E5A]" />
+          <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10">
+            <ReceiptText className="h-5 w-5 text-primary" />
           </div>
           <div>
             <h3 style={{ fontFamily: 'var(--zk-display)', letterSpacing: '-0.025em', color: 'var(--zk-ink)', fontWeight: 600, fontSize: 18 }}>Payment History</h3>
@@ -455,35 +455,35 @@ export function HistoryTab({
         </div>
       ) : !displayBillingHistory?.length ? (
         <div className="rounded-3xl border-2 border-dashed border-slate-200 bg-slate-50/50 py-16 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-lg bg-slate-100">
             <ReceiptText className="h-7 w-7 text-slate-400" />
           </div>
-          <h4 className="text-base font-semibold text-[#1B2E5A] mb-1">No transactions yet</h4>
+          <h4 className="text-base font-semibold text-primary mb-1">No transactions yet</h4>
           <p className="text-sm text-slate-500">Your completed transactions will appear here</p>
         </div>
       ) : (
         <>
           {/* ── Stats row ── */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="rounded-2xl border border-slate-100 bg-white p-4 flex items-center gap-3 shadow-sm">
-              <div className="h-10 w-10 rounded-xl bg-[#1B2E5A]/10 flex items-center justify-center shrink-0">
-                <TrendingUp className="h-4 w-4 text-[#1B2E5A]" />
+            <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-4">
+              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                <TrendingUp className="h-4 w-4 text-primary" />
               </div>
               <div>
                 <p style={{ fontFamily: 'var(--zk-mono)', fontSize: 11, fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: 'var(--zk-muted-2)' }}>Total Spent</p>
                 <p style={{ fontFamily: 'var(--zk-mono)', fontWeight: 600, color: 'var(--zk-ink)' }} className="text-lg">{formatCurrency(stats.totalSpent)}</p>
               </div>
             </div>
-            <div className="rounded-2xl border border-slate-100 bg-white p-4 flex items-center gap-3 shadow-sm">
-              <div className="h-10 w-10 rounded-xl bg-[#1B2E5A]/10 flex items-center justify-center shrink-0">
-                <ReceiptText className="h-4 w-4 text-[#1B2E5A]" />
+            <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-4">
+              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                <ReceiptText className="h-4 w-4 text-primary" />
               </div>
               <div>
                 <p style={{ fontFamily: 'var(--zk-mono)', fontSize: 11, fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: 'var(--zk-muted-2)' }}>Transactions</p>
                 <p style={{ fontFamily: 'var(--zk-mono)', fontWeight: 600, color: 'var(--zk-ink)' }} className="text-lg">{stats.txCount}</p>
               </div>
             </div>
-            <div className="rounded-2xl border border-slate-100 bg-white p-4 flex items-center gap-3 shadow-sm">
+            <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-4">
               <div className="h-10 w-10 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0">
                 <Coins className="h-4 w-4 text-emerald-600" />
               </div>
@@ -502,8 +502,8 @@ export function HistoryTab({
                 onClick={() => setActiveFilter(key)}
                 className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-all border ${
                   activeFilter === key
-                    ? 'bg-[#1B2E5A] text-white border-[#1B2E5A] shadow-sm'
-                    : 'bg-white text-slate-600 border-slate-200 hover:border-[#1B2E5A]/30 hover:text-[#1B2E5A]'
+                    ? 'bg-primary text-white border-primary shadow-sm'
+                    : 'bg-white text-slate-600 border-slate-200 hover:border-primary/30 hover:text-primary'
                 }`}
               >
                 {label}
@@ -520,7 +520,7 @@ export function HistoryTab({
 
           {/* ── Payment list ── */}
           {filtered.length === 0 ? (
-            <div className="rounded-2xl border border-slate-100 bg-slate-50 py-10 text-center">
+            <div className="rounded-lg border border-slate-200 bg-slate-50 py-10 text-center">
               <p className="text-sm text-slate-500">No transactions in this category</p>
             </div>
           ) : (
@@ -546,8 +546,8 @@ export function HistoryTab({
         <Card className="rounded-3xl border border-slate-100 bg-white shadow-sm">
           <CardHeader className="pb-4 border-b border-slate-50">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1B2E5A]/10">
-                <Settings className="h-5 w-5 text-[#1B2E5A]" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+                <Settings className="h-5 w-5 text-primary" />
               </div>
               <div>
                 <CardTitle style={{ fontFamily: 'var(--zk-display)', letterSpacing: '-0.025em', color: 'var(--zk-ink)', fontWeight: 600 }} className="text-base">Plan Management</CardTitle>
@@ -556,7 +556,7 @@ export function HistoryTab({
             </div>
           </CardHeader>
           <CardContent className="p-5">
-            <div className="rounded-2xl border border-red-100 bg-red-50/40 p-4 flex items-center justify-between gap-4">
+            <div className="flex items-center justify-between gap-4 rounded-lg border border-red-100 bg-red-50/40 p-4">
               <div className="flex items-center gap-3">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-100">
                   <X className="h-4 w-4 text-red-600" />

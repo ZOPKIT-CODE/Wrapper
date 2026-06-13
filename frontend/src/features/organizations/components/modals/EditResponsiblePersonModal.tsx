@@ -18,8 +18,6 @@ import { toast } from 'sonner'
 import { ZopkitRoundLoader } from '@/components/common/feedback/ZopkitRoundLoader'
 import { cn } from '@/lib/utils'
 
-const BLUE = { 600: '#3B5998', 900: '#1B2E5A' } as const
-
 type EmployeeLike = {
   userId?: string
   id?: string
@@ -237,7 +235,7 @@ export function EditResponsiblePersonModal({
         side="right"
         className="flex h-full min-h-0 w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-lg [&>button]:text-white [&>button]:hover:bg-white/15"
       >
-        <SheetHeader className="shrink-0 space-y-2 border-b border-white/10 bg-[#1B2E5A] px-6 pb-5 pt-8 text-white">
+        <SheetHeader className="shrink-0 space-y-2 border-b border-white/10 bg-primary px-6 pb-5 pt-8 text-white">
           <SheetTitle className="flex items-center gap-2 text-lg font-semibold text-white">
             <UserCog className="h-5 w-5 shrink-0" aria-hidden />
             Assign Manager
@@ -263,7 +261,7 @@ export function EditResponsiblePersonModal({
                 <Select value={selectedUserId} onValueChange={setSelectedUserId}>
                   <SelectTrigger
                     id="assign-manager-user"
-                    className="focus:border-[#1B2E5A] focus:ring-2 focus:ring-[#1B2E5A]"
+                    className="focus:border-primary focus:ring-2 focus:ring-ring"
                   >
                     <SelectValue placeholder="Select a person" />
                   </SelectTrigger>
@@ -280,7 +278,7 @@ export function EditResponsiblePersonModal({
                   </SelectContent>
                 </Select>
                 {availablePeople.length === 0 && !assigneeFromApi && (
-                  <p className="text-sm text-amber-700 dark:text-amber-400">
+                  <p className="text-sm text-amber-700">
                     No active users found. Invite team members under Users first, then assign a manager here.
                   </p>
                 )}
@@ -289,23 +287,22 @@ export function EditResponsiblePersonModal({
               {selectedPerson && selectedUserId !== 'none' && (
                 <div
                   className={cn(
-                    'rounded-xl border border-[#1B2E5A]/15 bg-[#F8FAFC] p-4 dark:border-slate-700 dark:bg-slate-900/50',
+                    'rounded-lg border border-slate-200 bg-slate-50 p-4',
                   )}
                 >
-                  <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[#1B2E5A] dark:text-slate-300">
+                  <p className="mb-3 text-sm font-medium text-primary">
                     Member details
                   </p>
-                  <div className="flex gap-3 border-b border-[#1B2E5A]/10 pb-4 dark:border-slate-700">
+                  <div className="flex gap-3 border-b border-primary/10 pb-4">
                     <Avatar className="h-12 w-12 shrink-0">
                       <AvatarFallback
-                        className="text-sm font-semibold text-white"
-                        style={{ backgroundColor: BLUE[600] }}
+                        className="bg-primary text-sm font-semibold text-primary-foreground"
                       >
                         {initials(selectedPerson)}
                       </AvatarFallback>
                     </Avatar>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-base font-semibold" style={{ color: BLUE[900] }}>
+                      <p className="truncate text-base font-semibold text-primary">
                         {fullName(selectedPerson) || selectedPerson.email || '—'}
                       </p>
                       {selectedPerson.email ? (
@@ -326,7 +323,7 @@ export function EditResponsiblePersonModal({
                     </DetailRow>
                     <DetailRow label="Access">
                       {selectedPerson.isTenantAdmin ? (
-                        <Badge variant="outline" className="border-purple-200 bg-purple-50 text-purple-700 font-medium text-[11px]">
+                        <Badge variant="outline" className="border-slate-200 bg-slate-100 font-medium text-[11px] text-primary">
                           Tenant admin
                         </Badge>
                       ) : (
@@ -398,7 +395,7 @@ export function EditResponsiblePersonModal({
                     {selectedPerson.onboardingCompleted !== undefined ? (
                       <DetailRow label="Onboarding">
                         {selectedPerson.onboardingCompleted ? (
-                          <span className="text-emerald-700 dark:text-emerald-400">Completed</span>
+                          <span className="text-emerald-700">Completed</span>
                         ) : (
                           <span className="text-muted-foreground">Incomplete</span>
                         )}
@@ -418,7 +415,7 @@ export function EditResponsiblePersonModal({
           )}
         </div>
 
-        <SheetFooter className="mt-0 shrink-0 flex-row justify-end gap-2 border-t border-[#1B2E5A]/10 bg-[#F0F4FA] px-6 py-4 dark:border-slate-700 dark:bg-slate-900/80">
+        <SheetFooter className="mt-0 shrink-0 flex-row justify-end gap-2 border-t border-primary/10 bg-muted px-6 py-4">
           <Button type="button" variant="outline" onClick={onClose} disabled={saving || loadingDetail}>
             Cancel
           </Button>
@@ -426,7 +423,7 @@ export function EditResponsiblePersonModal({
             type="button"
             onClick={handleSave}
             disabled={saving || loadingDetail}
-            className="bg-[#1B2E5A] text-white hover:bg-[#243A6C]"
+            className="bg-primary text-primary-foreground hover:bg-primary-hover"
           >
             {saving ? 'Saving...' : 'Save'}
           </Button>

@@ -131,9 +131,9 @@ export function RoleRow({
           {/* Users and Modules Summary */}
           <div className="flex items-center gap-4 text-sm">
             <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-gray-400" />
+              <Users className="text-muted-foreground h-4 w-4" />
               <span className="font-medium">{role.userCount || 0}</span>
-              <span className="text-gray-500">users</span>
+              <span className="text-muted-foreground">users</span>
             </div>
             <div className="flex items-center gap-2">
               <Package className="h-4 w-4 text-blue-500" />
@@ -174,7 +174,7 @@ export function RoleRow({
                 >
                   {permissionSummary.admin}
                 </span>
-                <span className="text-xs text-gray-500">admin</span>
+                <span className="text-muted-foreground text-xs">admin</span>
               </div>
             )}
             {permissionSummary.write > 0 && (
@@ -187,7 +187,7 @@ export function RoleRow({
                 >
                   {permissionSummary.write}
                 </span>
-                <span className="text-xs text-gray-500">write</span>
+                <span className="text-muted-foreground text-xs">write</span>
               </div>
             )}
             {permissionSummary.read > 0 && (
@@ -200,7 +200,7 @@ export function RoleRow({
                 >
                   {permissionSummary.read}
                 </span>
-                <span className="text-xs text-gray-500">read</span>
+                <span className="text-muted-foreground text-xs">read</span>
               </div>
             )}
           </div>

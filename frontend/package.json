@@ -23,10 +23,10 @@
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
     "test:watch": "vitest --watch",
-    "prepare": "cd $(git rev-parse --show-toplevel 2>/dev/null || echo ..) && husky install frontend/.husky || true",
+    "prepare": "node scripts/install-husky.mjs",
     "clean": "rm -rf dist node_modules/.vite",
     "clean:vite": "rm -rf node_modules/.vite",
-    "postinstall": "cd $(git rev-parse --show-toplevel 2>/dev/null || echo ..) && husky install frontend/.husky || true",
+    "postinstall": "node scripts/install-husky.mjs",
     "knip": "knip"
   },
   "dependencies": {
@@ -81,6 +81,7 @@
     "date-fns": "^2.30.0",
     "embla-carousel-react": "^8.6.0",
     "framer-motion": "^12.15.0",
+    "gsap": "^3.15.0",
     "highlight.js": "^11.11.1",
     "jspdf": "^4.2.1",
     "lowlight": "^3.3.0",
@@ -96,6 +97,7 @@
     "tailwind-merge": "^2.6.0",
     "tailwindcss": "^4.1.13",
     "tailwindcss-animate": "^1.0.7",
+    "three": "^0.184.0",
     "vaul": "^1.1.2",
     "zod": "^3.25.76"
   },
@@ -114,6 +116,7 @@
     "@types/node": "^24.5.2",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "@types/three": "^0.184.1",
     "@typescript-eslint/eslint-plugin": "^6.14.0",
     "@typescript-eslint/parser": "^6.14.0",
     "@vitejs/plugin-react": "^5.1.4",

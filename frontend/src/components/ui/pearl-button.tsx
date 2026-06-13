@@ -1,7 +1,5 @@
 import React, { useState, forwardRef } from 'react';
 import { cn } from '@/lib/utils';
-import { useTheme } from '@/components/theme/ThemeProvider';
-
 interface PearlButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode;
   className?: string;
@@ -19,12 +17,11 @@ export const PearlButton = forwardRef<HTMLButtonElement, PearlButtonProps>(({
   ...props
 }, ref) => {
   const [isHovered, setIsHovered] = useState(false);
-  const { actualTheme } = useTheme();
 
   const getVariantStyles = () => {
     // Full literal class strings — dynamic `bg-${x}` / `text-${x}` would be excluded by Tailwind JIT in production builds
     const bgClassMap: Record<string, string> = {
-      blue:    'bg-[#1D2B4D]',
+      blue:    'bg-primary',
       sky:     'bg-sky-500',
       indigo:  'bg-indigo-600',
       cyan:    'bg-cyan-500',
@@ -39,7 +36,7 @@ export const PearlButton = forwardRef<HTMLButtonElement, PearlButtonProps>(({
     };
 
     const outlineTextClassMap: Record<string, string> = {
-      blue:    'text-[#1D2B4D]',
+      blue:    'text-primary',
       sky:     'text-sky-600',
       indigo:  'text-indigo-600',
       cyan:    'text-cyan-600',
@@ -53,113 +50,44 @@ export const PearlButton = forwardRef<HTMLButtonElement, PearlButtonProps>(({
       yellow:  'text-yellow-600',
     };
 
-    const backgroundClass = bgClassMap[color] ?? 'bg-[#1D2B4D]';
-    const outlineTextClass = outlineTextClassMap[color] ?? 'text-[#1D2B4D]';
+    const backgroundClass = bgClassMap[color] ?? 'bg-primary';
+    const outlineTextClass = outlineTextClassMap[color] ?? 'text-primary';
     const isLightColor = color === 'yellow' || color === 'amber' || color === 'sky' || color === 'cyan';
 
-    const baseStyles = {
-      light: {
-        primary: {
-          background: backgroundClass,
-          text: isLightColor ? 'text-slate-900 font-black tracking-tight' : 'text-white font-bold tracking-tight',
-          shadow: `shadow-[inset_0_2px_4px_rgba(255,255,255,0.4),0_10px_20px_rgba(0,0,0,0.1)]`,
-          hoverShadow: `hover:shadow-[inset_0_2px_4px_rgba(255,255,255,0.5),0_15px_30px_rgba(0,0,0,0.15)]`,
-          activeShadow: `active:shadow-[inset_0_4px_8px_rgba(0,0,0,0.3)]`,
-          overlayBg: 'bg-white/10',
-          highlightShadow: 'inset 0 12px 10px -10px rgba(255, 255, 255, 1)',
-          highlightBg: 'linear-gradient(180deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.05) 45%, rgba(255, 255, 255, 0) 100%)'
-        },
-        secondary: {
-          background: 'bg-slate-100',
-          text: 'text-slate-700 font-medium',
-          shadow: 'shadow-sm',
-          hoverShadow: 'hover:shadow-md',
-          activeShadow: 'active:shadow-inner',
-          overlayBg: 'bg-slate-500/5',
-          highlightShadow: 'none',
-          highlightBg: 'transparent'
-        },
-        outline: {
-          background: 'bg-transparent border border-slate-200',
-          text: outlineTextClass,
-          shadow: 'shadow-none',
-          hoverShadow: 'hover:bg-slate-50',
-          activeShadow: 'active:bg-slate-100',
-          overlayBg: 'bg-black/5',
-          highlightShadow: 'none',
-          highlightBg: 'transparent'
-        }
+    const styles = {
+      primary: {
+        background: backgroundClass,
+        text: isLightColor ? 'text-slate-900 font-semibold tracking-tight' : 'text-white font-semibold tracking-tight',
+        shadow: `shadow-[inset_0_2px_4px_rgba(255,255,255,0.4),0_10px_20px_rgba(0,0,0,0.1)]`,
+        hoverShadow: `hover:shadow-[inset_0_2px_4px_rgba(255,255,255,0.5),0_15px_30px_rgba(0,0,0,0.15)]`,
+        activeShadow: `active:shadow-[inset_0_4px_8px_rgba(0,0,0,0.3)]`,
+        overlayBg: 'bg-white/10',
+        highlightShadow: 'inset 0 12px 10px -10px rgba(255, 255, 255, 1)',
+        highlightBg: 'linear-gradient(180deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.05) 45%, rgba(255, 255, 255, 0) 100%)'
       },
-      monochrome: {
-        primary: {
-          background: 'bg-slate-900',
-          text: 'text-white font-semibold',
-          shadow: 'shadow-md',
-          hoverShadow: 'hover:shadow-lg',
-          activeShadow: 'active:shadow-inner',
-          overlayBg: 'bg-white/5',
-          highlightShadow: 'none',
-          highlightBg: 'transparent'
-        },
-        secondary: {
-          background: 'bg-slate-200',
-          text: 'text-slate-900',
-          shadow: 'shadow-md',
-          hoverShadow: 'hover:shadow-lg',
-          activeShadow: 'active:shadow-inner',
-          overlayBg: 'bg-slate-900/5',
-          highlightShadow: 'none',
-          highlightBg: 'transparent'
-        },
-        outline: {
-          background: 'bg-transparent border border-slate-300',
-          text: 'text-slate-800',
-          shadow: 'shadow-none',
-          hoverShadow: 'hover:shadow-sm',
-          activeShadow: 'active:bg-slate-100',
-          overlayBg: 'bg-slate-900/5',
-          highlightShadow: 'none',
-          highlightBg: 'transparent'
-        }
+      secondary: {
+        background: 'bg-secondary',
+        text: 'text-secondary-foreground font-medium',
+        shadow: 'shadow-sm',
+        hoverShadow: 'hover:shadow-md',
+        activeShadow: 'active:shadow-inner',
+        overlayBg: 'bg-slate-500/5',
+        highlightShadow: 'none',
+        highlightBg: 'transparent'
       },
-      dark: {
-        primary: {
-          background: backgroundClass,
-          text: isLightColor ? 'text-slate-900 font-black' : 'text-white font-bold',
-          shadow: 'shadow-[inset_0_2px_4px_rgba(255,255,255,0.2),0_10px_30px_rgba(0,0,0,0.5)]',
-          hoverShadow: 'hover:shadow-[inset_0_2px_4px_rgba(255,255,255,0.3),0_15px_40px_rgba(0,0,0,0.6)]',
-          activeShadow: 'active:shadow-inner',
-          overlayBg: 'bg-white/10',
-          highlightShadow: 'inset 0 12px 10px -10px rgba(255, 255, 255, 0.4)',
-          highlightBg: 'linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.02) 45%, rgba(255, 255, 255, 0) 100%)'
-        },
-        secondary: {
-          background: 'bg-slate-800',
-          text: 'text-slate-300',
-          shadow: 'shadow-md',
-          hoverShadow: 'hover:shadow-lg',
-          activeShadow: 'active:shadow-inner',
-          overlayBg: 'bg-white/5',
-          highlightShadow: 'none',
-          highlightBg: 'transparent'
-        },
-        outline: {
-          background: 'bg-transparent border border-white/20',
-          text: 'text-white',
-          shadow: 'shadow-none',
-          hoverShadow: 'hover:bg-white/5',
-          activeShadow: 'active:bg-white/10',
-          overlayBg: 'bg-white/5',
-          highlightShadow: 'none',
-          highlightBg: 'transparent'
-        }
+      outline: {
+        background: 'bg-transparent border border-border',
+        text: outlineTextClass,
+        shadow: 'shadow-none',
+        hoverShadow: 'hover:bg-accent',
+        activeShadow: 'active:bg-muted',
+        overlayBg: 'bg-black/5',
+        highlightShadow: 'none',
+        highlightBg: 'transparent'
       }
     };
 
-    const themeKey = (actualTheme === 'dark' || actualTheme === 'light' || actualTheme === 'monochrome') ? actualTheme : 'light';
-    const variantKey = variant || 'primary';
-
-    return baseStyles[themeKey][variantKey];
+    return styles[variant || 'primary'];
   };
 
   const getSizeStyles = () => {

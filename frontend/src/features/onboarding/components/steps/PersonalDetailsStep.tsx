@@ -74,8 +74,8 @@ export const PersonalDetailsStep = ({
 
   // Shared Styles
   const inputClasses =
-    'w-full px-4 py-3.5 bg-white border border-slate-200 rounded-xl text-[#1B2E5A] placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-200 hover:border-slate-300 shadow-sm'
-  const labelClasses = 'block text-sm font-semibold text-slate-700 mb-1.5 ml-1'
+    'w-full px-4 py-3.5 bg-card border border-border rounded-xl text-primary placeholder:text-muted-foreground focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-200 hover:border-border shadow-sm'
+  const labelClasses = 'block text-sm font-semibold text-foreground mb-1.5 ml-1'
 
   return (
     <div className="space-y-8">
@@ -90,10 +90,10 @@ export const PersonalDetailsStep = ({
             </Badge>
           )}
         </div>
-        <h1 className="text-3xl font-bold tracking-tight text-[#1B2E5A]">
+        <h1 className="text-primary text-3xl font-bold tracking-tight">
           {personalizedContent.title}
         </h1>
-        <p className="max-w-2xl text-lg leading-relaxed text-slate-500">
+        <p className="text-muted-foreground max-w-2xl text-lg leading-relaxed">
           {personalizedContent.description}
         </p>
       </div>
@@ -182,7 +182,9 @@ export const PersonalDetailsStep = ({
                 {isPhoneRequired ? (
                   <span className="text-red-500">*</span>
                 ) : (
-                  <span className="font-normal text-slate-400">(Optional)</span>
+                  <span className="text-muted-foreground font-normal">
+                    (Optional)
+                  </span>
                 )}
               </FormLabel>
               <FormControl>
@@ -214,7 +216,9 @@ export const PersonalDetailsStep = ({
                 {userClassification === 'withGST' ? (
                   <span className="text-red-500">*</span>
                 ) : (
-                  <span className="font-normal text-slate-400">(Optional)</span>
+                  <span className="text-muted-foreground font-normal">
+                    (Optional)
+                  </span>
                 )}
               </FormLabel>
               <FormControl>
@@ -255,7 +259,7 @@ export const PersonalDetailsStep = ({
                     <Textarea
                       {...field}
                       rows={3}
-                      className={`${inputClasses} bg-white`}
+                      className={`${inputClasses} bg-card`}
                       placeholder="Describe your professional experience and leadership background"
                     />
                   </FormControl>

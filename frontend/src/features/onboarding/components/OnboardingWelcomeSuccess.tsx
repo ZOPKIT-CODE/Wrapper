@@ -116,10 +116,10 @@ export const OnboardingWelcomeSuccess: React.FC<
   }, [currentStep, steps.length])
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-slate-100 via-[#1B2E5A]/[0.06] to-slate-50 p-4">
+    <div className="from-muted via-primary/[0.06] to-background relative min-h-screen overflow-hidden bg-gradient-to-br p-4">
       {/* Background decorative elements — deep blue wash (tenant dashboard) */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute top-20 left-10 h-72 w-72 rounded-full bg-[#1B2E5A]/10 blur-3xl" />
+        <div className="bg-primary/10 absolute top-20 left-10 h-72 w-72 rounded-full blur-3xl" />
         <div className="absolute right-10 bottom-20 h-96 w-96 rounded-full bg-blue-300/15 blur-3xl" />
       </div>
 
@@ -131,10 +131,10 @@ export const OnboardingWelcomeSuccess: React.FC<
               initial={{ scale: 0.9, opacity: 0, y: 30 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               transition={{ type: 'spring', stiffness: 100, damping: 15 }}
-              className="relative rounded-2xl border-r-4 border-b-8 border-blue-200/60 bg-white px-6 pt-10 pb-8 text-center shadow-[0_30px_60px_-12px_rgba(27,46,90,0.12),0_10px_20px_-5px_rgba(27,46,90,0.08)]"
+              className="bg-card relative rounded-2xl border-r-4 border-b-8 border-blue-200/60 px-6 pt-10 pb-8 text-center shadow-[0_30px_60px_-12px_rgba(27,46,90,0.12),0_10px_20px_-5px_rgba(27,46,90,0.08)]"
             >
               <div className="mb-5 flex justify-center px-1">
-                <div className="flex aspect-square w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/80 bg-white p-2 shadow-md ring-1 ring-slate-200/60 sm:w-20">
+                <div className="bg-card ring-border/60 flex aspect-square w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/80 p-2 shadow-md ring-1 sm:w-20">
                   <img
                     src={config.ONBOARDING_LOGO_URL}
                     alt="Zopkit"
@@ -148,7 +148,7 @@ export const OnboardingWelcomeSuccess: React.FC<
                 <div className="h-8 w-6 translate-x-1.5 translate-y-5 skew-y-12 transform rounded-l-sm bg-[#152247]" />
 
                 {/* Main Ribbon — deep blue (#1B2E5A) */}
-                <div className="relative flex transform cursor-default items-center justify-center rounded-lg bg-gradient-to-b from-[#243A6C] to-[#1B2E5A] px-10 py-3 text-xl font-black text-white shadow-lg transition-transform duration-300 hover:scale-[1.02]">
+                <div className="from-primary/90 to-primary relative flex transform cursor-default items-center justify-center rounded-lg bg-gradient-to-b px-10 py-3 text-xl font-black text-white shadow-lg transition-transform duration-300 hover:scale-[1.02]">
                   <span className="drop-shadow-md">Welcome to Zopkit!</span>
                   <div className="absolute top-1 right-2 bottom-1 left-2 rounded-md border-2 border-dashed border-white/25" />
                 </div>
@@ -157,7 +157,7 @@ export const OnboardingWelcomeSuccess: React.FC<
                 <div className="h-8 w-6 -translate-x-1.5 translate-y-5 -skew-y-12 transform rounded-r-sm bg-[#152247]" />
               </div>
 
-              <p className="text-sm font-bold tracking-wide text-[#1B2E5A] dark:text-blue-200">
+              <p className="text-primary text-sm font-bold tracking-wide dark:text-blue-200">
                 Grow · Scale · Thrive
               </p>
 
@@ -181,9 +181,9 @@ export const OnboardingWelcomeSuccess: React.FC<
                   className="relative mb-4 flex flex-col items-center"
                 >
                   {/* White Capsule/Pill Shape */}
-                  <div className="relative mb-2 flex h-16 w-28 items-center justify-center rounded-full bg-white shadow-lg">
+                  <div className="bg-card relative mb-2 flex h-16 w-28 items-center justify-center rounded-full shadow-lg">
                     {/* Glow effect */}
-                    <div className="absolute inset-0 rounded-full bg-white opacity-60 blur-xl"></div>
+                    <div className="bg-card absolute inset-0 rounded-full opacity-60 blur-xl"></div>
 
                     {/* Yellow Coins Inside */}
                     <div className="relative z-10 flex items-center gap-1">
@@ -210,10 +210,10 @@ export const OnboardingWelcomeSuccess: React.FC<
                   transition={{ delay: 0.5 }}
                   className="mb-3"
                 >
-                  <h2 className="mb-1.5 text-lg leading-tight font-bold text-[#1B2E5A] dark:text-slate-100">
+                  <h2 className="text-primary mb-1.5 text-lg leading-tight font-bold">
                     The All-in-One Platform
                   </h2>
-                  <p className="mx-auto mb-3 max-w-xs text-xs leading-relaxed text-slate-500">
+                  <p className="text-muted-foreground mx-auto mb-3 max-w-xs text-xs leading-relaxed">
                     Manage your team, finances, and growth in one unified
                     workspace designed for modern businesses.
                   </p>
@@ -227,14 +227,14 @@ export const OnboardingWelcomeSuccess: React.FC<
                   className="mt-2"
                 >
                   {currentStep < steps.length && (
-                    <p className="mb-2 text-xs text-slate-500">
+                    <p className="text-muted-foreground mb-2 text-xs">
                       Complete the setup above to continue
                     </p>
                   )}
                   <Button
                     onClick={handleGoToDashboard}
                     disabled={isNavigating || currentStep < steps.length}
-                    className="group relative mx-auto w-full max-w-xs rounded-xl bg-[#1B2E5A] py-5 text-sm font-bold text-white shadow-lg transition-all hover:bg-[#243A6C] hover:shadow-xl disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-60"
+                    className="group bg-primary hover:bg-primary/90 relative mx-auto w-full max-w-xs rounded-xl py-5 text-sm font-bold text-white shadow-lg transition-all hover:shadow-xl disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {isNavigating
                       ? 'Taking you there...'
@@ -267,13 +267,13 @@ export const OnboardingWelcomeSuccess: React.FC<
           transition={{ delay: 0.8 }}
           className="mb-2 flex justify-center"
         >
-          <div className="w-full max-w-6xl overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900">
+          <div className="border-border/80 bg-card w-full max-w-6xl overflow-hidden rounded-2xl border shadow-xl">
             {/* Header */}
-            <div className="flex h-12 items-center justify-between border-b border-slate-100 bg-slate-50/90 px-4 backdrop-blur-md sm:px-6 dark:border-slate-800 dark:bg-slate-900/80">
-              <h3 className="text-lg font-bold text-[#1B2E5A]">
+            <div className="border-border bg-muted/90 flex h-12 items-center justify-between border-b px-4 backdrop-blur-md sm:px-6">
+              <h3 className="text-primary text-lg font-bold">
                 Setting Up Your Workspace
               </h3>
-              <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
+              <div className="text-muted-foreground flex items-center gap-2 text-xs font-medium">
                 <span>
                   Progress: {Math.round((currentStep / steps.length) * 100)}%
                 </span>
@@ -287,7 +287,7 @@ export const OnboardingWelcomeSuccess: React.FC<
                 {/* Track Background - spans exactly from first circle center to last circle center */}
                 {/* With 4 columns, first circle center is at 12.5%, last at 87.5% */}
                 {/* So track spans 75% width, starting at 12.5% */}
-                <div className="absolute top-8 left-[12.5%] z-0 h-2 w-[75%] overflow-hidden rounded-full bg-slate-100">
+                <div className="bg-muted absolute top-8 left-[12.5%] z-0 h-2 w-[75%] overflow-hidden rounded-full">
                   <div
                     className="h-full w-full opacity-30"
                     style={{
@@ -309,9 +309,6 @@ export const OnboardingWelcomeSuccess: React.FC<
                         : '0%',
                   }}
                   transition={{ duration: 0.5, ease: 'easeInOut' }}
-                  style={{
-                    background: 'linear-gradient(to right, #1B2E5A, #3b82f6)',
-                  }}
                 />
 
                 {/* Steps Grid */}
@@ -328,29 +325,29 @@ export const OnboardingWelcomeSuccess: React.FC<
                       >
                         {/* Node Circle */}
                         <div
-                          className={`relative z-10 mx-auto flex h-16 w-16 scale-100 items-center justify-center rounded-full border-[3px] bg-white transition-all duration-500 ${
+                          className={`bg-card relative z-10 mx-auto flex h-16 w-16 scale-100 items-center justify-center rounded-full border-[3px] transition-all duration-500 ${
                             isActive
-                              ? 'scale-110 border-white shadow-xl ring-4 ring-[#1B2E5A]/25 ring-offset-2'
+                              ? 'border-primary/30 ring-primary/15 scale-105 ring-2'
                               : isCompleted
-                                ? 'scale-100 border-white bg-gradient-to-br from-[#1B2E5A] to-[#243A6C] text-white shadow-md'
-                                : 'border-slate-100 text-slate-300 shadow-sm'
+                                ? 'from-primary to-primary/90 scale-100 border-white bg-gradient-to-br text-white shadow-md'
+                                : 'border-border text-muted-foreground shadow-sm'
                           } `}
                         >
                           {isActive && (
-                            <div className="absolute inset-0 animate-ping rounded-full bg-[#1B2E5A]/20 opacity-30" />
+                            <div className="bg-primary/20 absolute inset-0 animate-ping rounded-full opacity-30" />
                           )}
 
                           {isCompleted ? (
                             <CheckCircle2 className="h-6 w-6 text-white transition-all duration-300" />
                           ) : (
                             <Icon
-                              className={`h-6 w-6 transition-all duration-300 ${isActive ? 'scale-110 text-[#1B2E5A]' : ''}`}
+                              className={`h-6 w-6 transition-all duration-300 ${isActive ? 'text-primary scale-110' : ''}`}
                             />
                           )}
 
                           {/* Checkmark badge */}
                           {isCompleted && (
-                            <div className="absolute -right-1 -bottom-1 rounded-full border border-slate-100 bg-white p-0.5 text-emerald-500 shadow-md">
+                            <div className="border-border bg-card absolute -right-1 -bottom-1 rounded-full border p-0.5 text-emerald-500 shadow-md">
                               <CheckCircle2 className="h-3 w-3" />
                             </div>
                           )}
@@ -358,15 +355,15 @@ export const OnboardingWelcomeSuccess: React.FC<
 
                         {/* Text Labels */}
                         <div className="mt-3 w-full px-1 text-center">
-                          <div className="mb-0.5 text-[9px] font-bold tracking-wider text-slate-400 uppercase">
+                          <div className="text-muted-foreground mb-0.5 text-[9px] font-bold tracking-wider uppercase">
                             Step 0{idx + 1}
                           </div>
                           <div
-                            className={`text-xs font-bold transition-all duration-300 ${isActive ? 'scale-105 text-[#1B2E5A]' : isCompleted ? 'text-slate-700' : 'text-slate-400'} `}
+                            className={`text-xs font-bold transition-all duration-300 ${isActive ? 'text-primary scale-105' : isCompleted ? 'text-foreground' : 'text-muted-foreground'} `}
                           >
                             {step.title}
                           </div>
-                          <div className="mt-0.5 inline-block rounded-full border border-slate-100 bg-slate-50 px-1.5 py-0.5 text-[9px] font-medium text-slate-500">
+                          <div className="border-border bg-muted text-muted-foreground mt-0.5 inline-block rounded-full border px-1.5 py-0.5 text-[9px] font-medium">
                             {step.desc}
                           </div>
                         </div>
@@ -388,11 +385,11 @@ export const OnboardingWelcomeSuccess: React.FC<
           transition={{ delay: 1.4 }}
           className="mt-4 text-center"
         >
-          <div className="inline-flex items-center gap-2 rounded-full border border-[#1B2E5A]/15 bg-white/90 px-6 py-3 shadow-lg backdrop-blur-sm dark:border-slate-700 dark:bg-slate-900/90">
+          <div className="border-border bg-muted/20 inline-flex items-center gap-2 rounded-lg border px-6 py-3">
             <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600" />
-            <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+            <span className="text-foreground text-sm font-semibold">
               Your organization is ready!{' '}
-              <span className="font-bold text-[#1B2E5A] dark:text-blue-300">
+              <span className="text-primary font-bold dark:text-blue-300">
                 1000 free credits
               </span>{' '}
               have been added to your account.

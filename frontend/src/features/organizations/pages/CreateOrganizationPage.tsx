@@ -289,10 +289,10 @@ export function CreateOrganizationPage() {
         }
       />
 
-      <Card className="border-slate-200/80 shadow-sm dark:border-slate-800">
-        <CardHeader className="space-y-4 border-b border-slate-100 pb-5 dark:border-slate-800">
-          <CardTitle className="flex items-center gap-2 text-lg font-semibold text-[#1B2E5A] dark:text-slate-100">
-            <Building className="h-5 w-5 text-[#1B2E5A] dark:text-[#1B2E5A]/60" />
+      <Card className="border-slate-200/80 shadow-sm">
+        <CardHeader className="space-y-4 border-b border-slate-100 pb-5">
+          <CardTitle className="flex items-center gap-2 text-lg font-semibold text-primary">
+            <Building className="h-5 w-5 text-primary" />
             {steps[currentStep].title}
           </CardTitle>
           <CardDescription className="text-sm">
@@ -602,7 +602,7 @@ export function CreateOrganizationPage() {
             )}
           </div>
 
-          <div className="sticky bottom-0 z-10 -mx-6 border-t border-slate-100 bg-white/95 px-6 py-4 backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">
+          <div className="sticky bottom-0 z-10 -mx-6 border-t border-slate-100 bg-white/95 px-6 py-4 backdrop-blur">
             <div className="flex flex-wrap justify-end gap-2">
               <Button
                 variant="outline"

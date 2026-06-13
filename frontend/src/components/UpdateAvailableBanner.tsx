@@ -238,7 +238,6 @@ export function UpdateAvailableBanner() {
         // Shape + elevation.
         'border-border rounded-xl border',
         // Dark theme: stronger border + slightly lighter surface so text pops.
-        'dark:border-white/25 dark:bg-neutral-800',
         // Background: slightly frosted; falls back to near-opaque for browsers
         // without backdrop-filter support.
         'bg-background/95 backdrop-blur-sm',

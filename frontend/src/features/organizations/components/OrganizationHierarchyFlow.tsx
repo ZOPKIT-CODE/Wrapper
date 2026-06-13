@@ -307,7 +307,7 @@ function convertHierarchyToFlow(
         type: 'smoothstep',
         animated: false,
         style: {
-          stroke: isLocation ? '#f59e0b' : '#1B2E5A',
+          stroke: isLocation ? '#f59e0b' : 'var(--primary)',
           strokeWidth: 2,
         },
         markerEnd: {

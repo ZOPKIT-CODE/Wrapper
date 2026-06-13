@@ -259,10 +259,8 @@ const analyzePermissionType = (permCode: string) => {
   ) {
     return {
       risk: 'high' as const,
-      color:
-        'border-rose-100 bg-white text-rose-700/70 dark:border-rose-900/30 dark:bg-slate-900 dark:text-rose-400/70',
-      selectedColor:
-        'border-rose-200 bg-gradient-to-br from-rose-50 via-rose-100 to-red-100 text-rose-900 shadow-sm dark:from-rose-900/40 dark:to-rose-800/20 dark:border-rose-700 dark:text-rose-100',
+      color: 'border-rose-100 bg-white text-rose-700',
+      selectedColor: 'border-rose-200 bg-rose-50 text-rose-800',
       icon: <Lock className="h-3.5 w-3.5" aria-hidden />,
     }
   }
@@ -275,19 +273,15 @@ const analyzePermissionType = (permCode: string) => {
   ) {
     return {
       risk: 'medium' as const,
-      color:
-        'border-amber-100 bg-white text-amber-700/70 dark:border-amber-900/30 dark:bg-slate-900 dark:text-amber-400/70',
-      selectedColor:
-        'border-amber-200 bg-gradient-to-br from-amber-50 via-orange-100 to-amber-100 text-amber-900 shadow-sm dark:from-amber-900/40 dark:to-amber-800/20 dark:border-amber-700 dark:text-amber-100',
+      color: 'border-amber-100 bg-white text-amber-700',
+      selectedColor: 'border-amber-200 bg-amber-50 text-amber-800',
       icon: <Edit className="h-3.5 w-3.5" aria-hidden />,
     }
   }
   return {
     risk: 'low' as const,
-    color:
-      'border-slate-100 bg-white text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400',
-    selectedColor:
-      'border-blue-200 bg-gradient-to-br from-blue-50 via-slate-50 to-blue-100 text-[#1B2E5A] shadow-md shadow-blue-500/15 dark:from-blue-950/50 dark:to-slate-900 dark:border-blue-700 dark:text-slate-100',
+    color: 'border-slate-200 bg-white text-slate-600',
+    selectedColor: 'border-emerald-200 bg-emerald-50 text-emerald-800',
     icon: <Eye className="h-3.5 w-3.5" aria-hidden />,
   }
 }
@@ -607,7 +601,7 @@ export function RoleDetailsPage() {
         title={
           <span className="flex flex-wrap items-center gap-3">
             <div
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[#1B2E5A]/10 text-sm font-semibold shadow-sm dark:border-slate-700"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-sm font-semibold"
               style={{ backgroundColor: `${role.color}20`, color: role.color }}
             >
               {role.metadata?.icon || '👤'}
@@ -737,8 +731,8 @@ export function RoleDetailsPage() {
                         </div>
                       </div>
                     </AccordionTrigger>
-                    <AccordionContent className="border-t border-gray-100 bg-white p-0 dark:border-gray-800 dark:bg-slate-950/30">
-                      <div className="divide-y divide-slate-100 dark:divide-slate-800/50">
+                    <AccordionContent className="border-t border-gray-100 bg-white p-0">
+                      <div className="divide-y divide-slate-100">
                         {app.modules?.map((module: any) => {
                           const rolePerms = module.rolePermissions || []
                           const isModuleActive = rolePerms.length > 0
@@ -777,7 +771,7 @@ export function RoleDetailsPage() {
                                   className={cn(
                                     'w-full rounded-lg border px-3 py-2 text-center text-[8px] font-black tracking-widest uppercase transition-colors',
                                     isAllModuleSelected
-                                      ? 'border-blue-500 bg-[#1B2E5A] text-white'
+                                      ? 'border-primary bg-primary text-white'
                                       : isModuleActive
                                         ? 'border-blue-200 bg-blue-50 text-[#1B2E5A] dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-200'
                                         : 'border-slate-200 bg-slate-50 text-slate-400 dark:border-slate-700 dark:bg-slate-900'

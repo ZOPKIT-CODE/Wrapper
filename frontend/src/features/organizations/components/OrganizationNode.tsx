@@ -110,12 +110,12 @@ export function OrganizationNode({ id, data, selected }: NodeProps<OrganizationN
 
   return (
     <>
-      <Handle type="target" position={Position.Top} className="!bg-[#1B2E5A] !w-3 !h-3" />
+      <Handle type="target" position={Position.Top} className="!bg-primary !w-3 !h-3" />
       
       <Card
         className={cn(
           "p-4 shadow-lg w-64 cursor-grab active:cursor-grabbing transition-all duration-200 hover:shadow-xl",
-          selected ? 'ring-2 ring-[#1B2E5A] ring-offset-2' : '',
+          selected ? 'ring-2 ring-primary ring-offset-2' : '',
           !isActive && 'opacity-60'
         )}
         onClick={handleNodeClick}
@@ -130,11 +130,11 @@ export function OrganizationNode({ id, data, selected }: NodeProps<OrganizationN
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <div className={cn(
               "p-2 rounded-lg shrink-0",
-              isLocation ? "bg-amber-100" : "bg-[#1B2E5A]/10"
+              isLocation ? "bg-amber-100" : "bg-primary/10"
             )}>
               <Icon className={cn(
                 "w-5 h-5",
-                isLocation ? "text-amber-600" : "text-[#1B2E5A]"
+                isLocation ? "text-amber-600" : "text-primary"
               )} />
             </div>
             <div className="flex-1 min-w-0">
@@ -239,7 +239,7 @@ export function OrganizationNode({ id, data, selected }: NodeProps<OrganizationN
         )}
       </Card>
 
-      <Handle type="source" position={Position.Bottom} className="!bg-[#1B2E5A] !w-3 !h-3" />
+      <Handle type="source" position={Position.Bottom} className="!bg-primary !w-3 !h-3" />
     </>
   );
 }

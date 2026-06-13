@@ -1187,7 +1187,7 @@ const PaymentSuccess: React.FC = () => {
                             : 'Total Paid'}
                         </p>
                         <motion.p
-                          className="text-xl font-black text-[#1B2E5A]"
+                          className="text-xl font-black text-primary"
                           animate={{ scale: [1, 1.05, 1] }}
                           transition={{ duration: 2, repeat: Infinity }}
                         >

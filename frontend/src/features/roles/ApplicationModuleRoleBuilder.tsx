@@ -476,7 +476,6 @@ export function ApplicationModuleRoleBuilder({
       }
     }
 
-    // Low Risk: Read/View - Soft Emerald/Blue Gradients
     return {
       risk: 'low',
       // Unselected
@@ -629,7 +628,7 @@ export function ApplicationModuleRoleBuilder({
 
   if (loading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-slate-50 dark:bg-slate-950">
+      <div className="flex h-screen w-full items-center justify-center bg-slate-50">
         <div className="flex flex-col items-center gap-4">
           <ZopkitRoundLoader size="xl" />
           <p className="animate-pulse text-sm font-medium text-slate-500 dark:text-slate-400">
@@ -735,7 +734,7 @@ export function ApplicationModuleRoleBuilder({
             <Shield className="h-6 w-6 text-[#1B2E5A] dark:text-blue-400" />
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight">
+            <h1 className="text-xl font-semibold tracking-tight">
               {initialRole?.roleId ? 'Edit Custom Role' : 'Role Builder'}
             </h1>
             <p className="hidden text-xs font-medium text-slate-500 sm:block dark:text-slate-400">
@@ -840,7 +839,7 @@ export function ApplicationModuleRoleBuilder({
                   <PearlButton
                     variant="outline"
                     onClick={onCancel}
-                    className="text-slate-500 hover:text-[#1B2E5A] dark:text-slate-400 dark:hover:text-white"
+                    className="text-slate-500 hover:text-primary"
                   >
                     Cancel
                   </PearlButton>

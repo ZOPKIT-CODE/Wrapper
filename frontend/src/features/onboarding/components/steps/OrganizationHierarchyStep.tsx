@@ -101,10 +101,10 @@ export const OrganizationHierarchyStep: React.FC<
             <Building2 className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-[#1B2E5A]">
+            <h2 className="text-primary text-2xl font-bold">
               Organization Structure
             </h2>
-            <p className="text-sm text-slate-600">
+            <p className="text-muted-foreground text-sm">
               Learn how to organize your company hierarchy
             </p>
           </div>
@@ -134,9 +134,7 @@ export const OrganizationHierarchyStep: React.FC<
 
       {/* Hierarchy Visualization */}
       <motion.div variants={fadeInUp} className="space-y-4">
-        <h3 className="text-lg font-semibold text-[#1B2E5A]">
-          Hierarchy Levels
-        </h3>
+        <h3 className="text-primary text-lg font-semibold">Hierarchy Levels</h3>
         <div className="space-y-3">
           {hierarchyLevels.map((level, index) => {
             const Icon = level.icon
@@ -157,22 +155,22 @@ export const OrganizationHierarchyStep: React.FC<
                       </div>
                       <div className="flex-1">
                         <div className="mb-1 flex items-center gap-2">
-                          <h4 className="font-semibold text-[#1B2E5A]">
+                          <h4 className="text-primary font-semibold">
                             {level.name}
                           </h4>
                           <Badge variant="outline" className="text-xs">
                             Level {level.level}
                           </Badge>
                         </div>
-                        <p className="mb-2 text-sm text-slate-600">
+                        <p className="text-muted-foreground mb-2 text-sm">
                           {level.description}
                         </p>
-                        <p className="text-xs text-slate-500 italic">
+                        <p className="text-muted-foreground text-xs italic">
                           Example: {level.example}
                         </p>
                       </div>
                       {index < hierarchyLevels.length - 1 && (
-                        <ArrowRight className="mt-3 h-5 w-5 flex-shrink-0 text-slate-400" />
+                        <ArrowRight className="text-muted-foreground mt-3 h-5 w-5 flex-shrink-0" />
                       )}
                     </div>
                   </CardContent>
@@ -199,7 +197,7 @@ export const OrganizationHierarchyStep: React.FC<
                   <div className="rounded-lg bg-blue-500 px-6 py-3 font-medium text-white shadow-md">
                     Primary Organization
                   </div>
-                  <div className="absolute top-full left-1/2 h-4 w-0.5 -translate-x-1/2 transform bg-slate-300" />
+                  <div className="bg-border absolute top-full left-1/2 h-4 w-0.5 -translate-x-1/2 transform" />
                 </div>
 
                 {/* Level 2 */}
@@ -208,13 +206,13 @@ export const OrganizationHierarchyStep: React.FC<
                     <div className="rounded-lg bg-indigo-500 px-4 py-2 text-sm text-white shadow-md">
                       Sub-Org
                     </div>
-                    <div className="absolute top-full left-1/2 h-4 w-0.5 -translate-x-1/2 transform bg-slate-300" />
+                    <div className="bg-border absolute top-full left-1/2 h-4 w-0.5 -translate-x-1/2 transform" />
                   </div>
                   <div className="relative">
                     <div className="rounded-lg bg-indigo-500 px-4 py-2 text-sm text-white shadow-md">
                       Sub-Org
                     </div>
-                    <div className="absolute top-full left-1/2 h-4 w-0.5 -translate-x-1/2 transform bg-slate-300" />
+                    <div className="bg-border absolute top-full left-1/2 h-4 w-0.5 -translate-x-1/2 transform" />
                   </div>
                 </div>
 
@@ -266,7 +264,7 @@ export const OrganizationHierarchyStep: React.FC<
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.5 + index * 0.1 }}
-                  className="flex items-start gap-2 text-sm text-slate-700"
+                  className="text-foreground flex items-start gap-2 text-sm"
                 >
                   <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-500" />
                   <span>{benefit}</span>

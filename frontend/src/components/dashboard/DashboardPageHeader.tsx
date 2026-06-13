@@ -19,7 +19,7 @@ export const DASHBOARD_SECTION_TITLE_CLASS =
  * Shared TabsList styles for tenant dashboard modules (Team, Organization, etc.).
  */
 export const DASHBOARD_TABS_LIST_CLASS =
-  'inline-flex h-auto min-h-9 flex-wrap gap-1 rounded-lg bg-white/80 border border-[#e6e3d8] p-1 text-muted-foreground'
+  'inline-flex h-auto min-h-9 flex-wrap gap-1 rounded-lg bg-background/80 border border-border p-1 text-muted-foreground'
 
 export interface DashboardPageHeaderProps {
   title: React.ReactNode

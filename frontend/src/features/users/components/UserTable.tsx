@@ -59,12 +59,12 @@ import {
 
 function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
-    active: 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-400',
-    inactive: 'border-gray-200 bg-gray-50 text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400',
-    pending: 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-400',
-    expired: 'border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-400',
-    cancelled: 'border-gray-200 bg-gray-50 text-gray-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-500',
-    accepted: 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-400',
+    active: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+    inactive: 'border-gray-200 bg-gray-50 text-gray-600',
+    pending: 'border-amber-200 bg-amber-50 text-amber-700',
+    expired: 'border-red-200 bg-red-50 text-red-700',
+    cancelled: 'border-gray-200 bg-gray-50 text-gray-500',
+    accepted: 'border-emerald-200 bg-emerald-50 text-emerald-700',
   }
   return (
     <Badge
@@ -79,7 +79,7 @@ function StatusBadge({ status }: { status: string }) {
 
 function TableSkeleton({ rows = 5, cols = 6 }: { rows?: number; cols?: number }) {
   return (
-    <div style={{ borderRadius: 12, border: '1px solid var(--zk-line)', overflow: 'hidden' }}>
+    <div style={{ borderRadius: 8, border: '1px solid var(--zk-line)', overflow: 'hidden' }}>
       <Table>
         <TableHeader>
           <TableRow style={{ background: 'var(--zk-bg-2)' }}>
@@ -114,7 +114,7 @@ function EmptyState({
   return (
     <div className="flex flex-col items-center justify-center py-20 text-center">
       <div
-        className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl"
+        className="mb-5 flex h-16 w-16 items-center justify-center rounded-lg"
         style={{ background: 'var(--zk-bg-2)', border: '1px solid var(--zk-line)' }}
       >
         <Icon className="h-8 w-8" style={{ color: 'var(--zk-navy)' }} />
@@ -199,7 +199,7 @@ export function UserTable({
   onToggleStatus,
   onRemoveUser,
 }: UserTableProps) {
-  const TH_STYLE = { fontSize: 11, fontFamily: 'var(--zk-mono)', fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: 'var(--zk-muted-2)' }
+  const TH_STYLE = { fontSize: 11, fontFamily: 'var(--zk-mono)', fontWeight: 500, letterSpacing: '0.02em', color: 'var(--zk-muted-2)' }
 
   return (
     <div className="space-y-4">
@@ -238,7 +238,7 @@ export function UserTable({
         />
       ) : (
         <>
-          <div style={{ borderRadius: 12, border: '1px solid var(--zk-line)', overflow: 'hidden', boxShadow: '0 1px 4px rgba(15,32,80,0.05)' }}>
+          <div style={{ borderRadius: 8, border: '1px solid var(--zk-line)', overflow: 'hidden' }}>
             <Table>
               <TableHeader>
                 <TableRow style={{ background: 'var(--zk-bg-2)' }}>
@@ -284,7 +284,7 @@ export function UserTable({
                       </TableCell>
                       <TableCell>
                         {user.isTenantAdmin ? (
-                          <Badge variant="outline" className="border-purple-200 bg-purple-50 text-purple-700 font-medium text-[11px]">Admin</Badge>
+                          <Badge variant="outline" className="border-border bg-muted font-medium text-[11px] text-primary">Admin</Badge>
                         ) : role ? (
                           <Badge variant="outline" className="font-medium text-[11px]" style={role.color ? { borderColor: role.color + '40', backgroundColor: role.color + '10', color: role.color } : undefined}>
                             {role.name}

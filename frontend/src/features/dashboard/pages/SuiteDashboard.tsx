@@ -258,7 +258,7 @@ const SuiteDashboard: React.FC = () => {
                             {getAppIcon(app.appCode, app.icon)}
                           </div>
                           <div>
-                            <h3 className="text-lg font-semibold text-[#1B2E5A] group-hover:text-[#1B2E5A]">
+                            <h3 className="text-lg font-semibold text-primary group-hover:text-primary">
                               {app.appName}
                             </h3>
                             <span

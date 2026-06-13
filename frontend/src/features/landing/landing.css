@@ -1,0 +1,789 @@
+/* Marketing display fonts — loaded only when landing shell mounts */
+@import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600;700;800&family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700;1,8..60,400&display=swap');
+
+/* Landing-only typography and motion (scoped via [data-landing]) */
+[data-landing] {
+  --landing-font-display: 'Inter Tight', ui-sans-serif, system-ui, sans-serif;
+  --landing-font-body:
+    'Inter', ui-sans-serif, -apple-system, BlinkMacSystemFont, system-ui,
+    sans-serif;
+  --landing-font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --landing-tracking-display: -0.025em;
+  --landing-tracking-mono: 0.14em;
+  font-family: var(--landing-font-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+[data-landing] .landing-display {
+  font-family: var(--landing-font-display);
+  letter-spacing: var(--landing-tracking-display);
+}
+
+[data-landing] .landing-mono {
+  font-family: var(--landing-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+[data-landing] .landing-section-eyebrow {
+  font-family: var(--landing-font-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: var(--landing-tracking-mono);
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+[data-landing] .landing-lead {
+  font-family: var(--landing-font-body);
+  font-size: 0.9375rem;
+  color: var(--muted-foreground);
+  line-height: 1.625;
+}
+
+@media (min-width: 640px) {
+  [data-landing] .landing-lead {
+    font-size: 1rem;
+  }
+}
+
+[data-landing] .landing-section {
+  scroll-margin-top: 5.5rem;
+}
+
+[data-landing] .landing-section-inner {
+  width: 100%;
+  max-width: 80rem;
+  margin-inline: auto;
+  padding-inline: 1rem;
+}
+
+@media (min-width: 640px) {
+  [data-landing] .landing-section-inner {
+    padding-inline: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  [data-landing] .landing-section-inner {
+    padding-inline: 2rem;
+  }
+}
+
+[data-landing] .landing-section-heading {
+  font-family: var(--landing-font-display);
+  letter-spacing: var(--landing-tracking-display);
+  font-size: 1.5rem;
+  line-height: 1.06;
+  font-weight: 600;
+  color: var(--foreground);
+  text-wrap: balance;
+}
+
+@media (min-width: 640px) {
+  [data-landing] .landing-section-heading {
+    font-size: 1.875rem;
+  }
+}
+
+[data-landing] .landing-input {
+  width: 100%;
+  border-radius: 0.125rem;
+  border: 1px solid var(--border);
+  background: var(--background);
+  font-size: 0.875rem;
+  color: var(--foreground);
+}
+
+[data-landing] .landing-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 1px var(--ring);
+}
+
+[data-landing] .landing-input::placeholder {
+  color: color-mix(in oklch, var(--muted-foreground) 70%, transparent);
+}
+
+[data-landing] .landing-industry-cell:focus-visible {
+  outline: 2px solid color-mix(in oklch, var(--foreground) 22%, transparent);
+  outline-offset: -2px;
+}
+
+/* Hero backdrop — OKLCH mesh aurora (Stripe / Linear / Vercel style) */
+[data-landing] .landing-hero-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  background-color: var(--background);
+}
+
+[data-landing] .landing-hero-backdrop__mesh {
+  position: absolute;
+  inset: -25% -15%;
+  background-color: var(--background);
+  background-image:
+    radial-gradient(
+      ellipse 85% 65% at 12% 8%,
+      color-mix(in oklch, var(--primary) 28%, transparent),
+      transparent 58%
+    ),
+    radial-gradient(
+      ellipse 75% 55% at 92% 6%,
+      color-mix(in oklch, var(--zk-blue-300) 35%, transparent),
+      transparent 52%
+    ),
+    radial-gradient(
+      ellipse 70% 50% at 50% -5%,
+      color-mix(in oklch, var(--zk-blue-100) 90%, var(--background)),
+      transparent 62%
+    ),
+    radial-gradient(
+      ellipse 80% 60% at 78% 68%,
+      color-mix(in oklch, var(--primary) 16%, transparent),
+      transparent 55%
+    ),
+    radial-gradient(
+      ellipse 90% 70% at 35% 88%,
+      color-mix(in oklch, var(--zk-blue-200) 55%, transparent),
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 55% 45% at 50% 58%,
+      color-mix(in oklch, var(--primary) 12%, transparent),
+      transparent 68%
+    );
+  opacity: 0.92;
+}
+
+[data-landing] .landing-hero-backdrop__mesh--drift {
+  background-image:
+    radial-gradient(
+      ellipse 80% 60% at 18% 14%,
+      color-mix(in oklch, var(--zk-blue-400) 22%, transparent),
+      transparent 56%
+    ),
+    radial-gradient(
+      ellipse 70% 55% at 82% 12%,
+      color-mix(in oklch, var(--primary) 20%, transparent),
+      transparent 54%
+    ),
+    radial-gradient(
+      ellipse 65% 48% at 62% 72%,
+      color-mix(in oklch, var(--illustration-info) 18%, transparent),
+      transparent 58%
+    ),
+    radial-gradient(
+      ellipse 75% 55% at 8% 78%,
+      color-mix(in oklch, var(--zk-blue-300) 20%, transparent),
+      transparent 55%
+    );
+  opacity: 0.65;
+  mix-blend-mode: multiply;
+  animation: landing-aurora-drift 32s ease-in-out infinite alternate;
+}
+
+[data-landing] .landing-hero-backdrop__horizon {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    transparent 48%,
+    color-mix(in oklch, var(--background) 70%, transparent) 78%,
+    var(--background) 100%
+  );
+}
+
+@keyframes landing-aurora-drift {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(2.5%, -1.5%) scale(1.04);
+  }
+  100% {
+    transform: translate(-2%, 2%) scale(1.02);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-landing] .landing-hero-backdrop__mesh--drift {
+    animation: none;
+    opacity: 0.45;
+  }
+}
+
+[data-landing][data-landing-theme='minimal'] .landing-hero-backdrop__mesh {
+  background-image:
+    radial-gradient(
+      ellipse 85% 65% at 10% 10%,
+      color-mix(in oklch, var(--primary) 22%, transparent),
+      transparent 58%
+    ),
+    radial-gradient(
+      ellipse 75% 55% at 90% 8%,
+      color-mix(in oklch, var(--zk-blue-200) 70%, transparent),
+      transparent 52%
+    ),
+    radial-gradient(
+      ellipse 72% 52% at 50% 0%,
+      color-mix(in oklch, var(--zk-blue-50) 95%, var(--background)),
+      transparent 65%
+    ),
+    radial-gradient(
+      ellipse 82% 62% at 72% 70%,
+      color-mix(in oklch, var(--primary) 14%, transparent),
+      transparent 56%
+    ),
+    radial-gradient(
+      ellipse 88% 68% at 28% 92%,
+      color-mix(in oklch, var(--zk-blue-100) 80%, transparent),
+      transparent 62%
+    ),
+    radial-gradient(
+      ellipse 58% 48% at 50% 55%,
+      color-mix(in oklch, var(--primary) 10%, transparent),
+      transparent 70%
+    );
+  opacity: 1;
+}
+
+[data-landing][data-landing-theme='minimal']
+  .landing-hero-backdrop__mesh--drift {
+  mix-blend-mode: normal;
+  opacity: 0.55;
+  background-image:
+    radial-gradient(
+      ellipse 78% 58% at 22% 18%,
+      color-mix(in oklch, var(--zk-blue-300) 28%, transparent),
+      transparent 54%
+    ),
+    radial-gradient(
+      ellipse 68% 52% at 78% 16%,
+      color-mix(in oklch, var(--primary) 16%, transparent),
+      transparent 52%
+    ),
+    radial-gradient(
+      ellipse 70% 50% at 55% 68%,
+      color-mix(in oklch, var(--zk-blue-200) 40%, transparent),
+      transparent 58%
+    );
+}
+
+@media (max-width: 767px) {
+  [data-landing] .landing-hero-backdrop__mesh,
+  [data-landing] .landing-hero-backdrop__mesh--drift {
+    inset: -35% -25%;
+  }
+
+  [data-landing] .landing-hero-backdrop__horizon {
+    background: linear-gradient(
+      to bottom,
+      transparent 0%,
+      transparent 42%,
+      color-mix(in oklch, var(--background) 75%, transparent) 72%,
+      var(--background) 100%
+    );
+  }
+}
+
+[data-landing][data-landing-theme='minimal'] .landing-hero-floor-glow {
+  background: radial-gradient(
+    ellipse 65% 100% at 50% 100%,
+    color-mix(in oklch, var(--foreground) 5%, transparent),
+    transparent 70%
+  );
+}
+
+[data-landing][data-landing-theme='minimal'] .landing-workflow-demo {
+  border-radius: 0.375rem;
+  box-shadow: none;
+}
+
+[data-landing] .landing-hero .landing-display,
+[data-landing] .landing-hero h1 {
+  font-family: var(--landing-font-display);
+  letter-spacing: var(--landing-tracking-display);
+}
+
+[data-landing] .landing-hero {
+  --landing-hero-nav-gap: clamp(4.5rem, 8vh, 6rem);
+  --landing-hero-headline-cta-gap: clamp(1.125rem, 2.2vh, 1.625rem);
+  --landing-hero-cta-visual-gap: clamp(2rem, 4vh, 3rem);
+  --landing-hero-bottom-gap: clamp(2.5rem, 4.5vh, 3.5rem);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  background: transparent;
+  color: var(--foreground);
+  font-family: var(--landing-font-body);
+  overflow-y: visible;
+  padding-top: var(--landing-hero-nav-gap);
+  padding-bottom: var(--landing-hero-bottom-gap);
+  padding-inline: clamp(1rem, 3vw, 1.5rem);
+}
+
+[data-landing] .landing-hero-copy {
+  position: relative;
+  z-index: 4;
+  width: 100%;
+  max-width: 54rem;
+  margin-inline: auto;
+}
+
+[data-landing] .landing-hero-headline-line + .landing-hero-headline-line {
+  margin-top: clamp(0.2rem, 0.6vh, 0.5rem);
+}
+
+[data-landing] .landing-hero-headline-sub {
+  margin-top: clamp(0.5rem, 1.2vh, 0.875rem) !important;
+}
+
+[data-landing] .landing-hero-subtext {
+  margin: clamp(0.625rem, 1.2vh, 0.875rem) auto 0;
+  max-width: 42ch;
+  text-align: center;
+  font-family: var(--landing-font-body);
+  font-size: clamp(0.875rem, 1.65vw, 1.0625rem);
+  line-height: 1.55;
+  font-weight: 400;
+  color: var(--muted-foreground);
+}
+
+[data-landing] .landing-hero-divider {
+  margin-top: clamp(0.875rem, 1.8vh, 1.25rem);
+}
+
+[data-landing] .landing-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-top: var(--landing-hero-headline-cta-gap);
+  position: relative;
+  z-index: 4;
+}
+
+[data-landing] .landing-hero-stage {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 82.5rem;
+  margin-top: var(--landing-hero-cta-visual-gap);
+  isolation: isolate;
+}
+
+@media (min-width: 768px) {
+  [data-landing] .landing-hero {
+    --landing-hero-bottom-gap: clamp(3.5rem, 6vh, 5rem);
+    --landing-hero-cta-visual-gap: clamp(2rem, 3.5vh, 2.75rem);
+    padding-bottom: var(--landing-hero-bottom-gap);
+  }
+
+  [data-landing] .landing-hero-stage {
+    min-height: clamp(400px, 56vh, 520px);
+    margin-bottom: clamp(0.5rem, 1.5vh, 1rem);
+  }
+
+  [data-landing] .landing-hero-illust-center {
+    min-height: clamp(360px, 48vh, 460px);
+    padding-bottom: clamp(0.5rem, 1vw, 0.875rem);
+  }
+
+  [data-landing] .landing-hero--cinematic .landing-hero-stage {
+    overflow: visible;
+  }
+}
+
+/* Hero illustration polish — surfaces only; layout and motion unchanged */
+[data-landing] .landing-hero-illust-dashboard-frame {
+  box-shadow:
+    0 0 0 1px color-mix(in oklch, var(--border) 90%, transparent),
+    0 4px 14px rgba(0, 0, 0, 0.04),
+    0 20px 44px rgba(0, 0, 0, 0.05);
+}
+
+[data-landing] .landing-hero-illust-side-card {
+  background: var(--background);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.03),
+    0 8px 24px rgba(0, 0, 0, 0.045);
+}
+
+[data-landing] .landing-hero-illust-cone {
+  opacity: 0.76;
+}
+
+[data-landing][data-landing-theme='minimal'] .landing-hero-illust-cone {
+  opacity: 0.58;
+}
+
+[data-landing] .landing-hero-illust-projector {
+  filter: drop-shadow(0 12px 22px rgba(0, 0, 0, 0.38))
+    drop-shadow(0 0 16px color-mix(in oklch, var(--primary) 10%, transparent));
+}
+
+[data-landing] .landing-hero-illust-connectors line,
+[data-landing] .landing-hero-illust-connectors path {
+  vector-effect: non-scaling-stroke;
+}
+
+[data-landing] .landing-workflow {
+  font-family: var(--landing-font-body);
+}
+
+[data-landing] .landing-product-rail {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+[data-landing] .landing-product-rail::-webkit-scrollbar {
+  display: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-landing] .landing-fade-in {
+    animation: landing-fade-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  [data-landing] .landing-fade-in-delay-1 {
+    animation-delay: 0.08s;
+  }
+
+  [data-landing] .landing-fade-in-delay-2 {
+    animation-delay: 0.16s;
+  }
+}
+
+@keyframes landing-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-landing] .landing-screenshot-swap {
+    animation: landing-screenshot-swap 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+}
+
+@keyframes landing-screenshot-swap {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+[data-landing] .landing-hero-glow {
+  background: radial-gradient(
+    ellipse 90% 55% at 75% -10%,
+    color-mix(in oklch, var(--primary) 14%, transparent),
+    transparent 65%
+  );
+}
+
+[data-landing] .landing-hero-stack {
+  position: relative;
+}
+
+[data-landing] .landing-hero-stack-back {
+  position: absolute;
+  inset: 12px -10px -10px 14px;
+  border-radius: 0.5rem;
+  border: 1px solid color-mix(in oklch, var(--border) 80%, transparent);
+  background: color-mix(in oklch, var(--muted) 50%, var(--background));
+  z-index: 0;
+}
+
+[data-landing] .landing-hero-stack > [role='tabpanel'] {
+  position: relative;
+  z-index: 1;
+}
+
+[data-landing] .landing-browser-clip::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 48px;
+  pointer-events: none;
+  background: linear-gradient(to top, var(--background), transparent);
+}
+
+[data-landing] .landing-rail-fade-left {
+  background: linear-gradient(to right, var(--background), transparent);
+}
+
+[data-landing] .landing-rail-fade-right {
+  background: linear-gradient(to left, var(--background), transparent);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-landing] .landing-rail-card {
+    transition:
+      background-color 0.2s ease,
+      transform 0.2s ease;
+  }
+
+  [data-landing] .landing-rail-card:hover {
+    transform: translateY(-2px);
+  }
+
+  [data-landing] .landing-closing-frame {
+    animation: landing-fade-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+  }
+}
+
+[data-landing] .landing-footer .landing-mono {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Marketing always renders light — independent of dashboard dark mode */
+[data-landing][data-landing-theme='minimal'] {
+  color-scheme: light;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.28 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.28 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.28 0 0);
+  --primary: oklch(0.291 0.075 264);
+  --primary-hover: oklch(0.24 0.065 264);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.28 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0.02 264);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.28 0 0);
+  --destructive: oklch(0.577 0.245 27);
+  --destructive-foreground: oklch(1 0 0);
+  --border: oklch(0.922 0.01 264);
+  --input: oklch(0.922 0.01 264);
+  --ring: oklch(0.291 0.075 264);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.28 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.28 0 0);
+  --sidebar: oklch(1 0 0);
+  --sidebar-foreground: oklch(0.28 0 0);
+  --sidebar-border: oklch(0.922 0.01 264);
+}
+
+/* Prevent global .dark from inverting marketing chrome */
+.dark [data-landing][data-landing-theme='minimal'] {
+  color-scheme: light;
+}
+
+/* Vercel-minimal light theme */
+[data-landing][data-landing-theme='minimal'] .landing-display {
+  letter-spacing: -0.025em;
+}
+
+[data-landing][data-landing-theme='minimal'] .landing-hero-glow,
+[data-landing][data-landing-theme='minimal'] .landing-hero-stack-back,
+[data-landing][data-landing-theme='minimal'] .landing-rail-fade-left,
+[data-landing][data-landing-theme='minimal'] .landing-rail-fade-right {
+  display: none;
+}
+
+[data-landing][data-landing-theme='minimal'] .landing-hero-context {
+  border: none;
+  background: transparent;
+  padding: 0;
+}
+
+[data-landing][data-landing-theme='minimal'] .landing-browser-frame {
+  border-radius: 0.375rem;
+  border-color: color-mix(in oklch, var(--foreground) 12%, transparent);
+  box-shadow: none;
+}
+
+[data-landing][data-landing-theme='minimal'] .landing-browser-frame--hero {
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.04),
+    0 8px 24px rgba(0, 0, 0, 0.04);
+}
+
+[data-landing][data-landing-theme='minimal'] .landing-browser-chrome {
+  background: var(--background);
+  border-color: color-mix(in oklch, var(--foreground) 10%, transparent);
+}
+
+[data-landing][data-landing-theme='minimal'] .landing-browser-url {
+  background: transparent;
+  border: 1px solid color-mix(in oklch, var(--foreground) 10%, transparent);
+  border-radius: 0.25rem;
+}
+
+[data-landing][data-landing-theme='minimal'] .landing-showcase-tab {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+
+[data-landing][data-landing-theme='minimal'] .landing-showcase-tab--vertical {
+  border-left: 1px solid transparent;
+  padding-left: 0.875rem;
+}
+
+[data-landing][data-landing-theme='minimal']
+  .landing-showcase-tab--vertical[aria-selected='true'] {
+  border-left-color: var(--foreground);
+}
+
+[data-landing][data-landing-theme='minimal'] .landing-showcase-tab--horizontal {
+  padding-left: 0;
+  padding-right: 0;
+  border-bottom: 1px solid transparent;
+}
+
+[data-landing][data-landing-theme='minimal']
+  .landing-showcase-tab--horizontal[aria-selected='true'] {
+  border-bottom-color: var(--foreground);
+}
+
+[data-landing][data-landing-theme='minimal'] .landing-section-muted {
+  background: var(--background);
+}
+
+[data-landing][data-landing-theme='minimal'] .landing-text-link {
+  color: var(--muted-foreground);
+}
+
+[data-landing][data-landing-theme='minimal'] .landing-text-link:hover {
+  color: var(--foreground);
+}
+
+[data-landing][data-landing-theme='minimal'] .landing-spotlight-bullet {
+  color: var(--muted-foreground);
+}
+
+[data-landing][data-landing-theme='minimal'] .landing-module-chip {
+  border-color: color-mix(in oklch, var(--foreground) 12%, transparent);
+  background: var(--background);
+  box-shadow: none;
+}
+
+[data-landing][data-landing-theme='minimal'] .landing-rail-card:hover {
+  transform: none;
+  background: transparent;
+}
+
+[data-landing][data-landing-theme='minimal'] .landing-testimonial-accent {
+  border-left-color: color-mix(in oklch, var(--foreground) 20%, transparent);
+}
+
+[data-landing][data-landing-theme='minimal'] .landing-avatar {
+  background: transparent;
+  border-color: color-mix(in oklch, var(--foreground) 15%, transparent);
+  color: var(--muted-foreground);
+}
+
+[data-landing][data-landing-theme='minimal'] .landing-contact-form {
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+[data-landing][data-landing-theme='minimal'] .landing-footer-minimal {
+  background: var(--background);
+}
+
+[data-landing][data-landing-theme='minimal']
+  .landing-footer-minimal
+  .landing-newsletter-box {
+  border: 1px solid color-mix(in oklch, var(--foreground) 10%, transparent);
+  background: transparent;
+}
+
+[data-landing][data-landing-theme='minimal'] .landing-industry-cell:hover {
+  background: transparent;
+}
+
+[data-landing] .landing-page-main > section:last-child {
+  border-bottom: none;
+}
+
+[data-landing][data-landing-theme='minimal'] .landing-btn-primary {
+  background-color: var(--foreground) !important;
+  color: var(--background) !important;
+}
+
+[data-landing][data-landing-theme='minimal'] .landing-btn-primary:hover {
+  opacity: 0.88;
+}
+
+[data-landing][data-landing-theme='minimal'] .landing-capability-index {
+  display: none;
+}
+
+[data-landing][data-landing-theme='minimal'] .landing-workflow-demo {
+  min-height: 28rem;
+}
+
+@media (max-width: 639px) {
+  [data-landing][data-landing-theme='minimal'] .landing-workflow-demo {
+    min-height: 22rem;
+  }
+}
+
+[data-landing][data-landing-theme='minimal']
+  .marketing-pricing
+  .shadow-zopkit\/10 {
+  box-shadow: none;
+}
+
+/* Flat marketing navbar */
+[data-landing][data-landing-theme='minimal'] .marketing-nav-bar {
+  background: var(--background);
+  border-color: color-mix(in oklch, var(--foreground) 10%, transparent);
+  backdrop-filter: none;
+}
+
+[data-landing][data-landing-theme='minimal'] .marketing-nav-link {
+  color: var(--muted-foreground);
+}
+
+[data-landing][data-landing-theme='minimal'] .marketing-nav-link:hover {
+  color: var(--foreground);
+}
+
+[data-landing][data-landing-theme='minimal'] .marketing-nav-cta {
+  background-color: var(--foreground) !important;
+  color: var(--background) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+[data-landing][data-landing-theme='minimal'] .marketing-nav-cta:hover {
+  opacity: 0.88;
+}
+
+[data-landing][data-landing-theme='minimal'] .marketing-nav-mobile-menu {
+  background: var(--background);
+  border-top: 1px solid var(--border);
+}
+
+/* Keep nav menus below hero copy stacking; close on scroll is handled in JS */
+[data-landing][data-landing-theme='minimal'] .marketing-nav-dropdown {
+  z-index: 40;
+}
+
+[data-landing][data-landing-theme='minimal'] .product-feature-card {
+  box-shadow: none;
+}

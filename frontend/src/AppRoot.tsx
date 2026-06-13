@@ -36,7 +36,7 @@ export const AppRoot = () => {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <NuqsAdapter>
-          <ThemeProvider defaultTheme="system" storageKey="zopkit-theme">
+          <ThemeProvider defaultTheme="light" storageKey="zopkit-theme">
             <Toaster position="top-right" richColors offset="80px" gap={12} />
             <NetworkQualityBanner />
             {/*

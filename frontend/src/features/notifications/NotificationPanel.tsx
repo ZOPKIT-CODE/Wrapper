@@ -101,10 +101,10 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
         </SheetHeader>
 
         {/* Toolbar */}
-        <div className="shrink-0 border-b border-gray-100 bg-white px-5 py-3 dark:border-slate-700 dark:bg-slate-900">
+        <div className="shrink-0 border-b border-gray-100 bg-white px-5 py-3">
           <div className="flex items-center justify-between gap-3">
             {/* Filter tabs */}
-            <div className="flex items-center gap-1 rounded-lg bg-gray-100 p-1 dark:bg-slate-800">
+            <div className="flex items-center gap-1 rounded-lg bg-gray-100 p-1">
               {(['all', 'unread'] as const).map((f) => (
                 <button
                   key={f}
@@ -129,7 +129,7 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
               <button
                 type="button"
                 onClick={handleMarkAllAsRead}
-                className="flex items-center gap-1 text-xs font-medium text-[#1B2E5A] hover:text-[#243A6C] dark:text-slate-400 dark:hover:text-slate-200"
+                className="flex items-center gap-1 text-xs font-medium text-primary hover:text-primary-hover"
               >
                 <Check className="h-3 w-3" />
                 Mark all read
@@ -139,7 +139,7 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
         </div>
 
         {/* Content */}
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-gray-50/60 dark:bg-slate-900/60">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-gray-50/60">
           <ScrollArea className="h-full min-h-0 flex-1">
             <div className="space-y-2 p-4">
               {loading ? (
@@ -149,15 +149,15 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
                 </div>
               ) : filteredNotifications.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 text-center">
-                  <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#1B2E5A]/8 dark:bg-slate-800">
-                    <Bell className="h-6 w-6 text-[#1B2E5A]/40 dark:text-slate-500" />
+                  <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/8">
+                    <Bell className="h-6 w-6 text-primary/40" />
                   </div>
                   <h3 className="mb-1 text-sm font-semibold text-gray-700 dark:text-slate-200">
                     {activeFilter === 'unread'
                       ? 'All caught up!'
                       : 'No notifications yet'}
                   </h3>
-                  <p className="mb-5 text-xs text-gray-400 dark:text-slate-500">
+                  <p className="mb-5 text-xs text-gray-400">
                     {activeFilter === 'unread'
                       ? "You've read everything."
                       : 'Notifications will appear here when there are updates.'}
@@ -169,7 +169,7 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
                       size="sm"
                       onClick={handleCreateSampleNotifications}
                       disabled={creatingSamples}
-                      className="border-[#1B2E5A]/20 text-xs text-[#1B2E5A] hover:bg-[#1B2E5A]/5 dark:border-slate-600 dark:text-slate-300"
+                      className="border-primary/20 text-xs text-primary hover:bg-primary/5"
                     >
                       {creatingSamples ? (
                         <>
@@ -200,12 +200,12 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
           </ScrollArea>
         </div>
 
-        <SheetFooter className="shrink-0 border-t border-gray-100 bg-white px-5 py-3 dark:border-slate-700 dark:bg-slate-900">
+        <SheetFooter className="shrink-0 border-t border-gray-100 bg-white px-5 py-3">
           <Button
             type="button"
             variant="outline"
             onClick={onClose}
-            className="w-full border-gray-200 text-sm text-gray-600 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+            className="w-full border-gray-200 text-sm text-gray-600 hover:bg-gray-50"
           >
             Close
           </Button>

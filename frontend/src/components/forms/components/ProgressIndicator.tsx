@@ -58,14 +58,14 @@ export const ProgressIndicator: React.FC<{ className?: string }> = ({ className 
     return stepSubSteps[stepIndex] || null;
   };
   return (
-    <div ref={indicatorRef} className={cn('w-80 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-8 h-full', className)}>
+    <div ref={indicatorRef} className={cn('w-80 border-r border-gray-200 bg-white p-8 h-full', className)}>
       {/* Brand/Logo Section */}
       <div className="mb-12">
         <div className="flex items-center space-x-3 mb-2">
-          <div className="w-8 h-8 bg-[#1B2E5A] dark:bg-blue-500 rounded-lg flex items-center justify-center">
+          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
             <span className="text-white font-bold text-sm">G</span>
           </div>
-          <span className="text-xl font-semibold text-[#1B2E5A] dark:text-gray-100">Zopkit</span>
+          <span className="text-xl font-semibold text-primary">Zopkit</span>
         </div>
       </div>
 
@@ -82,8 +82,8 @@ export const ProgressIndicator: React.FC<{ className?: string }> = ({ className 
               <div
                 className={cn(
                   'step-item flex items-center space-x-3 py-3 px-4 rounded-lg transition-all duration-200',
-                  isCurrent && 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700',
-                  isCompleted && 'hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer',
+                  isCurrent && 'bg-blue-50 border border-blue-200',
+                  isCompleted && 'hover:bg-gray-50 cursor-pointer',
                   isUpcoming && 'opacity-60'
                 )}
                 onClick={() => {
@@ -96,9 +96,9 @@ export const ProgressIndicator: React.FC<{ className?: string }> = ({ className 
                 <div
                   className={cn(
                     'flex items-center justify-center w-8 h-8 rounded-full border-2 transition-all duration-200',
-                    isCompleted && 'bg-green-500 dark:bg-green-400 border-green-500 dark:border-green-400 text-white',
-                    isCurrent && 'bg-[#1B2E5A] dark:bg-blue-500 border-[#1B2E5A] dark:border-blue-500 text-white',
-                    isUpcoming && 'bg-gray-200 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400'
+                    isCompleted && 'bg-green-500 border-green-500 text-white',
+                    isCurrent && 'bg-primary border-primary text-white',
+                    isUpcoming && 'bg-gray-200 border-gray-300 text-gray-500'
                   )}
                 >
                   {isCompleted ? (
@@ -113,9 +113,9 @@ export const ProgressIndicator: React.FC<{ className?: string }> = ({ className 
                   <p
                     className={cn(
                       'text-sm font-medium transition-colors',
-                      isCompleted && 'text-gray-500 dark:text-gray-400',
-                      isCurrent && 'text-blue-700 dark:text-blue-300 font-semibold',
-                      isUpcoming && 'text-gray-400 dark:text-gray-500'
+                      isCompleted && 'text-gray-500',
+                      isCurrent && 'text-blue-700 font-semibold',
+                      isUpcoming && 'text-gray-400'
                     )}
                   >
                     {title.toUpperCase()}
@@ -124,7 +124,7 @@ export const ProgressIndicator: React.FC<{ className?: string }> = ({ className 
 
                 {/* Current Step Indicator */}
                 {isCurrent && (
-                  <ChevronRight className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  <ChevronRight className="w-4 h-4 text-blue-600" />
                 )}
               </div>
 
@@ -136,16 +136,16 @@ export const ProgressIndicator: React.FC<{ className?: string }> = ({ className 
                       key={subIndex}
                       className={cn(
                         'flex items-center space-x-2 py-1 px-3 rounded-md',
-                        subIndex === 0 ? 'bg-blue-100 dark:bg-blue-900/30' : ''
+                        subIndex === 0 ? 'bg-blue-100' : ''
                       )}
                     >
                       <span className={cn(
                         'text-xs',
-                        subIndex === 0 ? 'font-medium text-blue-700 dark:text-blue-300' : 'text-gray-500 dark:text-gray-400'
+                        subIndex === 0 ? 'font-medium text-blue-700' : 'text-gray-500'
                       )}>
                         {subStep}
                       </span>
-                      {subIndex === 0 && <ChevronRight className="w-3 h-3 text-blue-600 dark:text-blue-400" />}
+                      {subIndex === 0 && <ChevronRight className="w-3 h-3 text-blue-600" />}
                     </div>
                   ))}
                 </div>
@@ -157,8 +157,8 @@ export const ProgressIndicator: React.FC<{ className?: string }> = ({ className 
 
       {/* Decorative Element */}
       <div className="mt-16 flex justify-center">
-        <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center opacity-60">
-          <FileText className="w-8 h-8 text-blue-400 dark:text-blue-500" />
+        <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center opacity-60">
+          <FileText className="w-8 h-8 text-blue-400" />
         </div>
       </div>
     </div>

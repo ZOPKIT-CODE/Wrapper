@@ -59,8 +59,8 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-5xl h-[90vh] flex flex-col p-0 overflow-hidden border-none bg-white dark:bg-slate-950 shadow-2xl">
-        <DialogHeader className="p-6 bg-slate-50/80 dark:bg-slate-900/80 border-b backdrop-blur-md">
+      <DialogContent className="sm:max-w-5xl h-[90vh] flex flex-col p-0 overflow-hidden border-none bg-white shadow-2xl">
+        <DialogHeader className="p-6 bg-slate-50/80 border-b backdrop-blur-md">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-primary/10 rounded-2xl flex items-center justify-center">
               <ShieldCheck className="h-6 w-6 text-primary" />
@@ -88,9 +88,9 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({
               { label: 'Point Mutations', val: summary.operationsChanged, icon: Activity, color: 'text-emerald-500', bg: 'bg-emerald-50' },
               { label: 'System Impacts', val: mode === 'global' ? tenantCount : 1, icon: Building2, color: 'text-orange-500', bg: 'bg-orange-50' },
             ].map((stat, i) => (
-              <div key={i} className={cn("p-4 rounded-3xl border flex flex-col items-center text-center transition-all hover:shadow-lg", stat.bg, "dark:bg-slate-900 border-slate-100 dark:border-slate-800")}>
+              <div key={i} className={cn("p-4 rounded-lg border flex flex-col items-center text-center transition-colors", stat.bg, "border-border")}>
                 <stat.icon className={cn("h-5 w-5 mb-2", stat.color)} />
-                <div className="text-2xl font-black text-[#1B2E5A] dark:text-white">{stat.val}</div>
+                <div className="text-2xl font-black text-primary">{stat.val}</div>
                 <div className="text-[9px] font-black uppercase text-slate-500 tracking-wider leading-none mt-1">{stat.label}</div>
               </div>
             ))}
@@ -99,7 +99,7 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({
           {/* Detailed Ledger */}
           <div className="space-y-6">
             <div className="flex items-center justify-between border-b pb-2">
-              <h4 className="text-[12px] font-black uppercase tracking-widest text-[#1B2E5A] dark:text-white">Detailed Change Ledger</h4>
+              <h4 className="text-[12px] font-black uppercase tracking-widest text-primary">Detailed Change Ledger</h4>
               <Badge variant="outline" className="text-[9px] font-bold uppercase">Chronological Order</Badge>
             </div>
 
@@ -107,12 +107,12 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({
               {Object.entries(costChanges).map(([appCode, changes]) => {
                 const app = applications.find(a => a.appCode === appCode);
                 return (
-                  <div key={appCode} className="rounded-3xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 p-6 space-y-4">
-                    <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                  <div key={appCode} className="rounded-3xl border border-slate-100 bg-slate-50/50 p-6 space-y-4">
+                    <div className="flex items-center justify-between border-b border-slate-200 pb-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-white dark:bg-slate-800 border shadow-sm flex items-center justify-center font-black text-[10px] text-primary">{appCode}</div>
+                        <div className="w-8 h-8 rounded-lg bg-white border shadow-sm flex items-center justify-center font-black text-[10px] text-primary">{appCode}</div>
                         <div>
-                          <h5 className="text-[13px] font-black text-[#1B2E5A] dark:text-white uppercase leading-none">{app?.appName || appCode}</h5>
+                          <h5 className="text-[13px] font-black text-primary uppercase leading-none">{app?.appName || appCode}</h5>
                           <p className="text-[9px] text-slate-500 font-bold uppercase mt-1 tracking-tighter">Application Domain Infrastructure</p>
                         </div>
                       </div>
@@ -126,8 +126,8 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({
                           <div className="text-[10px] font-black uppercase text-slate-400 mb-2 flex items-center gap-2">
                             <Sparkles className="w-3 h-3 text-primary" /> Application Batch Sync
                           </div>
-                          <div className="flex items-center justify-between bg-white dark:bg-slate-950 p-4 rounded-2xl border shadow-sm">
-                            <span className="text-[11px] font-black text-slate-600 dark:text-slate-400 uppercase">System Default Rate</span>
+                          <div className="flex items-center justify-between bg-white p-4 rounded-2xl border shadow-sm">
+                            <span className="text-[11px] font-black text-slate-600 uppercase">System Default Rate</span>
                             <div className="flex items-center gap-4">
                               <div className="text-right">
                                 <p className="text-[8px] font-bold text-slate-400 uppercase">FROM</p>
@@ -150,10 +150,10 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({
                       {changes.moduleCosts && Object.entries(changes.moduleCosts).map(([moduleCode, newCost]) => {
                         const module = app?.modules?.find(m => m.moduleCode === moduleCode);
                         return (
-                          <div key={moduleCode} className="bg-white dark:bg-slate-950 p-4 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col justify-between group h-fit">
+                          <div key={moduleCode} className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-between group h-fit">
                             <div className="flex items-start justify-between mb-3">
                               <div>
-                                <h6 className="text-[11px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-tight">{module?.moduleName || moduleCode}</h6>
+                                <h6 className="text-[11px] font-black text-blue-600 uppercase tracking-tight">{module?.moduleName || moduleCode}</h6>
                                 <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">{moduleCode}</p>
                               </div>
                               <Layers className="w-4 h-4 text-blue-200" />
@@ -164,7 +164,7 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({
                                 <span className="text-[11px] font-black text-slate-300 line-through m-0">VAR</span>
                                 <ChevronRight className="w-3 h-3 text-slate-200" />
                                 <div className="flex flex-col items-end">
-                                  <span className="text-[13px] font-black text-blue-600 dark:text-blue-400">{newCost}<span className="text-[9px] ml-0.5">CR</span></span>
+                                  <span className="text-[13px] font-black text-blue-600">{newCost}<span className="text-[9px] ml-0.5">CR</span></span>
                                   <Badge className="text-[7px] h-3 px-1 bg-blue-500/10 text-blue-600 border-none font-black">MODULE OVERRIDE</Badge>
                                 </div>
                               </div>
@@ -178,10 +178,10 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({
                         const currentOp = globalOperationCosts.find(op => op.operationCode === operationCode);
                         const currentCost = currentOp?.creditCost;
                         return (
-                          <div key={operationCode} className="bg-white dark:bg-slate-950 p-4 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col justify-between group h-fit">
+                          <div key={operationCode} className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-between group h-fit">
                             <div className="flex items-start justify-between mb-3">
                               <div>
-                                <h6 className="text-[11px] font-black text-[#1B2E5A] dark:text-white uppercase tracking-tight">{currentOp?.operationName || operationCode.split('.').pop()}</h6>
+                                <h6 className="text-[11px] font-black text-primary uppercase tracking-tight">{currentOp?.operationName || operationCode.split('.').pop()}</h6>
                                 <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest truncate w-24">{operationCode}</p>
                               </div>
                               <Activity className="w-4 h-4 text-emerald-200" />
@@ -192,7 +192,7 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({
                                 <span className="text-[11px] font-black text-slate-300 line-through m-0">{currentCost || '0'}</span>
                                 <ChevronRight className="w-3 h-3 text-slate-200" />
                                 <div className="flex flex-col items-end">
-                                  <span className="text-[13px] font-black text-emerald-600 dark:text-emerald-400">{newCost}<span className="text-[9px] ml-0.5">CR</span></span>
+                                  <span className="text-[13px] font-black text-emerald-600">{newCost}<span className="text-[9px] ml-0.5">CR</span></span>
                                   {currentCost !== undefined && (
                                     <Badge className={cn(
                                       "text-[7px] h-3 px-1 border-none font-black",
@@ -249,14 +249,14 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({
           </div>
         </div>
 
-        <DialogFooter className="p-6 bg-slate-50/50 dark:bg-slate-900/50 border-t flex items-center justify-between backdrop-blur-md">
-          <Button variant="ghost" onClick={onClose} className="text-xs font-black uppercase tracking-widest hover:bg-slate-100 dark:hover:bg-slate-800">
+        <DialogFooter className="p-6 bg-slate-50/50 border-t flex items-center justify-between backdrop-blur-md">
+          <Button variant="ghost" onClick={onClose} className="text-xs font-black uppercase tracking-widest hover:bg-slate-100">
             Cancel Review
           </Button>
           <div className="flex items-center gap-4">
-            <div className="text-right mr-4 border-r pr-6 hidden md:block border-slate-200 dark:border-slate-800">
+            <div className="text-right mr-4 border-r pr-6 hidden md:block border-slate-200">
               <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Total Modifications</p>
-              <p className="text-xl font-black text-[#1B2E5A] dark:text-white">{summary.operationsChanged + summary.modulesChanged + summary.appCostsChanged} Points</p>
+              <p className="text-xl font-black text-primary">{summary.operationsChanged + summary.modulesChanged + summary.appCostsChanged} Points</p>
             </div>
             <Button
               onClick={() => { onClose(); onProceed(); }}

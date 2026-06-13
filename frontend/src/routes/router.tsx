@@ -10,8 +10,12 @@ import { Suspense, useMemo } from 'react'
 import { useAuth } from '@/lib/auth/cognito-auth'
 import { useUserContextSafe } from '@/contexts/UserContextProvider'
 
-import { ZopkitRoundLoader } from '@/components/common/feedback/ZopkitRoundLoader'
+import { PageLoading } from '@/components/common/feedback/LoadingStates'
+import { LegacyLandingRedirect } from './LegacyLandingRedirect'
+import { DevOnlyRoute } from './DevOnlyRoute'
+import { CompanyAdminGate } from '@/components/auth/CompanyAdminGate'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
+import { MarketingRouteLayout } from '@/components/layout/MarketingRouteLayout'
 import ProtectedRoute from '@/components/auth/ProtectedRoute'
 import { OnboardingGuard, OnboardingPageGuard } from '@/features/onboarding'
 import { ErrorBoundary } from '@/errors/ErrorBoundary'
@@ -40,7 +44,6 @@ import {
   PaymentDetailsPage,
   BillingUpgradePage,
   Billing,
-  SuiteDashboard,
   ActivityPage,
   ApplicationPage,
   ApplicationDetailsPage,
@@ -67,16 +70,7 @@ import {
 } from './lazyPages'
 
 function LoadingScreen() {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
-      <div className="flex flex-col items-center text-center">
-        <ZopkitRoundLoader size="page" className="mb-6" />
-        <p className="text-base font-medium text-gray-600 dark:text-gray-300">
-          Your data is loading...
-        </p>
-      </div>
-    </div>
-  )
+  return <PageLoading message="Your data is loading..." />
 }
 
 function PaymentSuccessErrorFallback() {
@@ -110,7 +104,7 @@ function PaymentSuccessErrorFallback() {
   )
 }
 
-function AdminRoute({ children }: { children: React.ReactNode }) {
+function TenantAdminRoute({ children }: { children: React.ReactNode }) {
   const ctx = useUserContextSafe()
   const user = ctx?.user ?? null
 
@@ -175,13 +169,34 @@ const landingRoute = createRoute({
   path: '/landing',
   component: AuthRedirectLanding,
 })
+const landingV2Route = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/landing/v2',
+  component: LegacyLandingRedirect,
+})
+const landingClassicRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/landing/classic',
+  component: LegacyLandingRedirect,
+})
+const landingV3Route = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/landing/v3',
+  component: LegacyLandingRedirect,
+})
+const marketingLayoutRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  id: 'marketing',
+  component: MarketingRouteLayout,
+})
+
 const productRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/products/$productId',
   component: ProductPage,
 })
 const industryRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => marketingLayoutRoute,
   path: '/industries/$industrySlug',
   component: IndustryPage,
 })
@@ -269,15 +284,11 @@ const paymentCancelledRoute = createRoute({
   ),
 })
 
-// Suite
+// Legacy suite launcher — applications hub replaced SuiteDashboard
 const suiteRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/suite',
-  component: () => (
-    <ProtectedRoute>
-      <SuiteDashboard />
-    </ProtectedRoute>
-  ),
+  component: () => <Navigate to="/dashboard/applications" replace />,
 })
 
 // Dashboard layout
@@ -312,138 +323,138 @@ const dashboardOrganizationRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: '/organization',
   component: () => (
-    <AdminRoute>
+    <TenantAdminRoute>
       <OrganizationPage />
-    </AdminRoute>
+    </TenantAdminRoute>
   ),
 })
 const dashboardOrganizationCreateRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: '/organization/create',
   component: () => (
-    <AdminRoute>
+    <TenantAdminRoute>
       <OrganizationCreatePage />
-    </AdminRoute>
+    </TenantAdminRoute>
   ),
 })
 const dashboardRolesNewRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: '/roles/new',
   component: () => (
-    <AdminRoute>
+    <TenantAdminRoute>
       <RoleBuilderPage />
-    </AdminRoute>
+    </TenantAdminRoute>
   ),
 })
 const dashboardRolesEditRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: '/roles/$roleId/edit',
   component: () => (
-    <AdminRoute>
+    <TenantAdminRoute>
       <RoleBuilderPage />
-    </AdminRoute>
+    </TenantAdminRoute>
   ),
 })
 const dashboardRoleDetailRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: '/roles/$roleId',
   component: () => (
-    <AdminRoute>
+    <TenantAdminRoute>
       <RoleDetailsPage />
-    </AdminRoute>
+    </TenantAdminRoute>
   ),
 })
 const dashboardRolesRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: '/roles',
   component: () => (
-    <AdminRoute>
+    <TenantAdminRoute>
       <RolesPage />
-    </AdminRoute>
+    </TenantAdminRoute>
   ),
 })
 const dashboardBillingPaymentRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: '/billing/payments/$paymentId',
   component: () => (
-    <AdminRoute>
+    <TenantAdminRoute>
       <PaymentDetailsPage />
-    </AdminRoute>
+    </TenantAdminRoute>
   ),
 })
 const dashboardBillingUpgradeRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: '/billing/upgrade',
   component: () => (
-    <AdminRoute>
+    <TenantAdminRoute>
       <BillingUpgradePage />
-    </AdminRoute>
+    </TenantAdminRoute>
   ),
 })
 const dashboardBillingRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: '/billing',
   component: () => (
-    <AdminRoute>
+    <TenantAdminRoute>
       <Billing />
-    </AdminRoute>
+    </TenantAdminRoute>
   ),
 })
 const dashboardPermissionsRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: '/permissions',
   component: () => (
-    <AdminRoute>
+    <TenantAdminRoute>
       <Permissions />
-    </AdminRoute>
+    </TenantAdminRoute>
   ),
 })
 const dashboardSettingsRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: '/settings',
   component: () => (
-    <AdminRoute>
+    <TenantAdminRoute>
       <Settings />
-    </AdminRoute>
+    </TenantAdminRoute>
   ),
 })
 const dashboardUsersRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: '/users',
   component: () => (
-    <AdminRoute>
+    <TenantAdminRoute>
       <UserManagementPage />
-    </AdminRoute>
+    </TenantAdminRoute>
   ),
 })
 const dashboardActivityRoute = createRoute({
   getParentRoute: () => dashboardLayoutRoute,
   path: '/activity',
   component: () => (
-    <AdminRoute>
+    <TenantAdminRoute>
       <ActivityPage />
-    </AdminRoute>
+    </TenantAdminRoute>
   ),
 })
 
 // Public blog READER on the marketing site (read-only).
 const blogListRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => marketingLayoutRoute,
   path: '/blog',
   component: PublicBlogListPage,
 })
 const blogTagRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => marketingLayoutRoute,
   path: '/blog/tag/$tag',
   component: PublicBlogTagPage,
 })
 const blogSeriesRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => marketingLayoutRoute,
   path: '/blog/series/$slug',
   component: PublicBlogSeriesPage,
 })
 const blogPostRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => marketingLayoutRoute,
   path: '/blog/$slug',
   component: PublicBlogPostPage,
 })
@@ -451,51 +462,56 @@ const blogPostRoute = createRoute({
 const companyAdminBlogNewRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/company-admin/blog/new',
-  component: BlogEditorPage,
+  component: () => (
+    <CompanyAdminGate>
+      <BlogEditorPage />
+    </CompanyAdminGate>
+  ),
 })
 const companyAdminBlogEditRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/company-admin/blog/$postId/edit',
-  component: BlogEditorPage,
+  component: () => (
+    <CompanyAdminGate>
+      <BlogEditorPage />
+    </CompanyAdminGate>
+  ),
 })
 
-// Company Admin (auth wrappers commented out for local/dev access — restore before production)
 const companyAdminTenantRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/company-admin/tenants/$tenantId',
   component: () => (
-    // <ProtectedRoute skipOnboardingCheck>
-    //   <PermissionGuard requiredPermission="company:admin:access">
-    <TenantDetailsPage />
-    //   </PermissionGuard>
-    // </ProtectedRoute>
+    <CompanyAdminGate>
+      <TenantDetailsPage />
+    </CompanyAdminGate>
   ),
 })
 const companyAdminCampaignRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/company-admin/campaigns/$campaignId',
   component: () => (
-    // <ProtectedRoute skipOnboardingCheck>
-    //   <PermissionGuard requiredPermission="company:admin:access">
-    <CampaignDetailsPage />
-    //   </PermissionGuard>
-    // </ProtectedRoute>
+    <CompanyAdminGate>
+      <CampaignDetailsPage />
+    </CompanyAdminGate>
   ),
 })
 const companyAdminCreateCampaignRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/company-admin/seasonal-credits/new',
-  component: () => <CreateCampaignPage />,
+  component: () => (
+    <CompanyAdminGate>
+      <CreateCampaignPage />
+    </CompanyAdminGate>
+  ),
 })
 const companyAdminRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/company-admin',
   component: () => (
-    // <ProtectedRoute skipOnboardingCheck>
-    //   <PermissionGuard requiredPermission="company:admin:access">
-    <AdminDashboardPage />
-    //   </PermissionGuard>
-    // </ProtectedRoute>
+    <CompanyAdminGate>
+      <AdminDashboardPage />
+    </CompanyAdminGate>
   ),
 })
 
@@ -503,12 +519,20 @@ const companyAdminRoute = createRoute({
 const devEmailPreviewRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/dev/email-preview',
-  component: EmailPreviewPage,
+  component: () => (
+    <DevOnlyRoute>
+      <EmailPreviewPage />
+    </DevOnlyRoute>
+  ),
 })
 const devInvitePreviewRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/dev/invite-preview',
-  component: InviteAcceptDemo,
+  component: () => (
+    <DevOnlyRoute>
+      <InviteAcceptDemo />
+    </DevOnlyRoute>
+  ),
 })
 
 // ---------------------------------------------------------------------------
@@ -518,8 +542,17 @@ const devInvitePreviewRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   indexRoute,
   landingRoute,
+  landingV2Route,
+  landingClassicRoute,
+  landingV3Route,
+  marketingLayoutRoute.addChildren([
+    industryRoute,
+    blogListRoute,
+    blogTagRoute,
+    blogSeriesRoute,
+    blogPostRoute,
+  ]),
   productRoute,
-  industryRoute,
   privacyRoute,
   termsRoute,
   cookiesRoute,
@@ -551,10 +584,6 @@ const routeTree = rootRoute.addChildren([
     dashboardUsersRoute,
     dashboardActivityRoute,
   ]),
-  blogListRoute,
-  blogTagRoute,
-  blogSeriesRoute,
-  blogPostRoute,
   companyAdminBlogNewRoute,
   companyAdminBlogEditRoute,
   companyAdminTenantRoute,

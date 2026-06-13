@@ -16,10 +16,10 @@ interface ProtectedRouteProps {
 
 const LoadingSpinner: React.FC = () => {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
+    <div className="bg-background text-foreground flex min-h-screen items-center justify-center">
       <div className="text-center">
         <AnimatedLoader size="lg" className="mb-6" />
-        <p className="text-lg font-medium text-gray-600 dark:text-gray-300">
+        <p className="text-muted-foreground text-lg font-medium">
           Checking authentication...
         </p>
       </div>

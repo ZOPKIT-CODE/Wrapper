@@ -301,7 +301,7 @@ export const products: ProductData[] = [
     {
         id: "b2c-crm",
         name: "B2C CRM",
-        tagline: "AI-Powered Customer Engagement",
+        tagline: "Customer engagement for B2C teams",
         description: "Customer lifecycle management, AI-powered campaigns, smart segmentation, and engagement widgets.",
         iconName: "Users",
         gradient: "from-violet-500 to-purple-600",
@@ -349,7 +349,7 @@ export const products: ProductData[] = [
             { title: "AI Pricing Advisor", description: "'Rate My Rate' technology helps negotiate fair influencer prices.", icon: "Bot" },
             { title: "Analytics & Reporting", description: "Real-time insights into campaign performance and ROI.", icon: "BarChart" },
             { title: "Mobile App", description: "Manage campaigns and track performance on the go.", icon: "Smartphone" },
-            { title: "Integrations", description: "Seamlessly integrate with your existing tech stack.", icon: "Link" }
+            { title: "Integrations", description: "Connect to the tools your team already uses.", icon: "Link" }
         ],
         useCases: [
             { title: "E-Commerce Brands", description: "Unified partner marketing to track ROI across all channels." },
@@ -364,15 +364,15 @@ export const products: ProductData[] = [
 
 export const testimonials: Testimonial[] = [
     {
-        quote: "We replaced 8 different tools with this platform. Our team productivity increased by 40%.",
-        author: "Sarah Johnson",
-        role: "CEO",
-        company: "TechStart Inc."
+        quote: "We replaced several point tools with Zopkit. Our ops team spends less time reconciling data between systems.",
+        author: "Priya Mehta",
+        role: "COO",
+        company: "Northline Logistics"
     },
     {
-        quote: "The unified workflows are incredible. What used to take days now happens automatically.",
-        author: "Michael Chen",
-        role: "VP Sales",
-        company: "GrowthCo"
+        quote: "Billing, CRM, and HR finally share the same customer and employee records. Onboarding new hires is noticeably faster.",
+        author: "Arjun Desai",
+        role: "Head of Operations",
+        company: "Meridian Components"
     }
 ];

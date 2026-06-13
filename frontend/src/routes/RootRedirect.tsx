@@ -6,7 +6,7 @@ import { ZopkitRoundLoader } from '@/components/common/feedback/ZopkitRoundLoade
 const Landing = lazy(() => import('@/features/landing/pages/Landing'))
 
 /**
- * Root route ("/") — renders the Landing page directly.
+ * Root route ("/") — canonical marketing landing (illustration hero, no GSAP).
  *
  * Before showing the landing page it checks for a pending invitation token
  * and redirects to /invite/accept if one is found.
@@ -36,7 +36,7 @@ export function RootRedirect() {
 
   if (isLoading || isChecking) {
     return (
-      <div className="bg-background flex min-h-screen items-center justify-center">
+      <div className="bg-background text-foreground flex min-h-screen items-center justify-center">
         <div className="text-center">
           <ZopkitRoundLoader size="lg" className="mb-4" />
           <p className="text-muted-foreground text-sm">Loading...</p>
@@ -52,7 +52,7 @@ export function RootRedirect() {
   return (
     <Suspense
       fallback={
-        <div className="bg-background flex min-h-screen items-center justify-center">
+        <div className="bg-background text-foreground flex min-h-screen items-center justify-center">
           <ZopkitRoundLoader size="lg" />
         </div>
       }

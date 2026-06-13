@@ -74,7 +74,7 @@ function getEventIcon(type: string) {
 // Styling helper for the icon container
 function getEventStyles(type: string, isToday: boolean, isActivity: boolean) {
   if (isToday) return {
-      container: 'ring-4 ring-indigo-50 text-white shadow-md shadow-indigo-200',
+      container: 'ring-4 ring-secondary text-white shadow-sm',
       containerStyle: { backgroundColor: 'var(--zk-navy)' } as React.CSSProperties,
       line: ''
   }
@@ -86,11 +86,11 @@ function getEventStyles(type: string, isToday: boolean, isActivity: boolean) {
 
   switch (type) {
     case 'account_created':
-      return { container: 'ring-4 ring-indigo-50/10 text-white', containerStyle: { backgroundColor: 'var(--zk-navy)' } as React.CSSProperties, line: '' }
+      return { container: 'ring-4 ring-secondary text-white', containerStyle: { backgroundColor: 'var(--zk-navy)' } as React.CSSProperties, line: '' }
     case 'onboarding_completed':
       return { container: 'bg-emerald-500 ring-4 ring-emerald-50 text-white', containerStyle: {} as React.CSSProperties, line: '' }
     case 'plan_started':
-      return { container: 'bg-violet-500 ring-4 ring-violet-50 text-white', containerStyle: {} as React.CSSProperties, line: '' }
+      return { container: 'bg-primary ring-4 ring-secondary text-white', containerStyle: {} as React.CSSProperties, line: '' }
     case 'credit_purchase':
       return { container: 'bg-amber-500 ring-4 ring-amber-50 text-white', containerStyle: {} as React.CSSProperties, line: '' }
     default:
@@ -106,7 +106,7 @@ export function TimelineTab({ timelineData, timelineLoading, hasMore, isLoadingM
       <Card className="rounded-3xl overflow-hidden shadow-sm" style={{ border: '1px solid color-mix(in srgb, var(--zk-navy) 15%, transparent)', backgroundColor: 'var(--zk-paper)' }}>
         <CardHeader className="pb-8" style={{ borderBottom: '1px solid var(--zk-line)', backgroundColor: 'var(--zk-bg-2)' }}>
           <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl shadow-sm" style={{ backgroundColor: 'var(--zk-paper)', border: '1px solid color-mix(in srgb, var(--zk-navy) 15%, transparent)', color: 'var(--zk-navy)' }}>
+            <div className="flex h-12 w-12 items-center justify-center rounded-lg" style={{ backgroundColor: 'var(--zk-paper)', border: '1px solid color-mix(in srgb, var(--zk-navy) 15%, transparent)', color: 'var(--zk-navy)' }}>
               <ListOrdered className="w-6 h-6" />
             </div>
             <div>
@@ -165,7 +165,7 @@ export function TimelineTab({ timelineData, timelineLoading, hasMore, isLoadingM
                             </span>
                          </div>
                          
-                         <div className="rounded-2xl p-4 transition-all duration-300" style={isToday ? { backgroundColor: 'color-mix(in srgb, var(--zk-navy) 5%, transparent)', border: '1px solid color-mix(in srgb, var(--zk-navy) 10%, transparent)' } : { backgroundColor: 'var(--zk-paper)', border: '1px solid var(--zk-line)' }}>
+                         <div className="rounded-lg p-4" style={isToday ? { backgroundColor: 'color-mix(in srgb, var(--zk-navy) 5%, transparent)', border: '1px solid color-mix(in srgb, var(--zk-navy) 10%, transparent)' } : { backgroundColor: 'var(--zk-paper)', border: '1px solid var(--zk-line)' }}>
                              {/* Metadata rendering logic */}
                              {(!event.metadata || Object.keys(event.metadata).length === 0) ? (
                                 <p className="italic" style={{ fontFamily: 'var(--zk-font)', fontSize: 12, color: 'var(--zk-muted)' }}>No additional details</p>

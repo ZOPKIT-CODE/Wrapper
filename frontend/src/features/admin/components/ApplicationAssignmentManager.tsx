@@ -621,7 +621,7 @@ const ApplicationAssignmentManager: React.FC = () => {
             </TabsTrigger>
           </TabsList>
 
-          <div className="h-6 w-px bg-slate-200 dark:bg-slate-800" />
+          <div className="h-6 w-px bg-slate-200" />
 
           {hasChanges ? (
             <div className="animate-in fade-in slide-in-from-right-4 flex items-center gap-3 duration-500">

@@ -14,20 +14,49 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600;700&family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@300;400;500;600;700;800&family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=JetBrains+Mono:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700;1,8..60,400&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
           media="print" onload="this.media='all'">
     <noscript>
-      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600;700&family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@300;400;500;600;700;800&family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=JetBrains+Mono:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700;1,8..60,400&display=swap">
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
     </noscript>
     
     <!-- Favicon -->
     <link rel="manifest" href="/site.webmanifest">
     
     <!-- Theme -->
-    <meta name="theme-color" content="#3b82f6">
-    <meta name="color-scheme" content="light">
+    <meta name="theme-color" content="#ffffff">
+    <meta name="color-scheme" content="light dark">
+    <script>
+      (function () {
+        var key = 'zopkit-theme'
+        var theme = localStorage.getItem(key)
+        if (!theme) {
+          var legacy = localStorage.getItem('theme')
+          if (legacy === 'dark' || legacy === 'monochrome' || legacy === 'system' || legacy === 'light') {
+            theme = legacy
+            localStorage.setItem(key, legacy)
+            localStorage.removeItem('theme')
+          }
+        }
+        var root = document.documentElement
+        root.classList.remove('dark', 'monochrome')
+        root.removeAttribute('data-theme')
+        if (theme === 'dark') {
+          root.classList.add('dark')
+          root.dataset.theme = 'dark'
+        } else if (theme === 'monochrome') {
+          root.classList.add('monochrome')
+          root.dataset.theme = 'monochrome'
+        } else if (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          root.classList.add('dark')
+          root.dataset.theme = 'dark'
+        } else {
+          root.dataset.theme = 'light'
+        }
+      })()
+    </script>
   </head>
-  <body class="font-sans antialiased bg-gray-50 text-gray-900" style="background-color: #f9fafb; color: #111827;">
+  <body class="font-sans antialiased">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

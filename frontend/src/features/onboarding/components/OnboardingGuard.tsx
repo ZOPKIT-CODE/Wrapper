@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react'
 import { useAuth } from '@/lib/auth/cognito-auth'
 import { Navigate, useLocation } from '@tanstack/react-router'
 import { useAuthStatus, useOnboardingStatus } from '@/hooks/useSharedQueries'
-import AnimatedLoader from '@/components/common/feedback/AnimatedLoader'
+import { AuthFlowLoading } from '@/components/layout/AuthFlowLayout'
 import { logger } from '@/lib/logger'
 
 interface OnboardingGuardProps {
@@ -135,16 +135,7 @@ export const OnboardingGuard = React.memo(
       authLoading ||
       (isAuthenticated && (authLoading || onboardingLoading))
     ) {
-      return (
-        <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
-          <div className="text-center">
-            <AnimatedLoader size="lg" className="mb-6" />
-            <p className="text-lg font-medium text-gray-600 dark:text-gray-300">
-              Checking access...
-            </p>
-          </div>
-        </div>
-      )
+      return <AuthFlowLoading message="Checking access..." />
     }
 
     // If not authenticated AND Kinde is not loading, redirect to login
@@ -172,16 +163,7 @@ export const OnboardingGuard = React.memo(
     }
 
     // Fallback: show loading if we don't have clear status yet
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="text-center">
-          <AnimatedLoader size="lg" className="mb-6" />
-          <p className="text-lg font-medium text-gray-600 dark:text-gray-300">
-            Loading workspace...
-          </p>
-        </div>
-      </div>
-    )
+    return <AuthFlowLoading message="Loading workspace..." />
   }
 )
 

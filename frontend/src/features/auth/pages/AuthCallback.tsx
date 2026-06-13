@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useAuth } from '@/lib/auth/cognito-auth'
-import { ZopkitRoundLoader } from '@/components/common/feedback/ZopkitRoundLoader'
+import { AuthFlowLoading } from '@/components/layout/AuthFlowLayout'
 import { useNavigate } from '@tanstack/react-router'
 import {
   clearStaleAuthStorage,
@@ -12,6 +12,21 @@ import {
   consumeSilentAttempt,
   SILENT_SSO_ERROR_CODES,
 } from '@/lib/auth/silent-sso'
+
+function authErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message
+  if (typeof error === 'object' && error !== null && 'message' in error) {
+    return String((error as { message: unknown }).message)
+  }
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'error_description' in error
+  ) {
+    return String((error as { error_description: unknown }).error_description)
+  }
+  return ''
+}
 
 export function AuthCallback() {
   const { isLoading, isAuthenticated, error, user } = useAuth()
@@ -68,7 +83,7 @@ export function AuthCallback() {
           status_code?: number
         }
         const errorMessage =
-          authError.message || authError.error_description || ''
+          authErrorMessage(error) || authError.error_description || ''
         const errorCode = authError.error || ''
 
         const isInvalidGrant = isInvalidGrantError(error)
@@ -305,15 +320,5 @@ export function AuthCallback() {
     )
   }
 
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50">
-      <div className="text-center">
-        <ZopkitRoundLoader size="xl" className="mx-auto mb-4" />
-        <h2 className="mb-2 text-xl font-semibold text-[#1B2E5A]">
-          Completing authentication...
-        </h2>
-        <p className="text-gray-600">Please wait while we log you in.</p>
-      </div>
-    </div>
-  )
+  return <AuthFlowLoading message="Completing authentication..." />
 }
