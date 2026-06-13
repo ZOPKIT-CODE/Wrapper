@@ -1,5 +1,6 @@
 /** Fixed marketing navbar clearance when scrolling to in-page sections. */
-export const LANDING_NAV_SCROLL_OFFSET = 88
+/** Nav height + hero below-nav breathing room (keep in sync with landing.css). */
+export const LANDING_NAV_SCROLL_OFFSET = 92
 
 export const LANDING_SECTION_IDS = [
   'contact',

@@ -110,7 +110,7 @@ function ConnectorPath({
           strokeDasharray={1}
           initial={{ strokeDashoffset: 1 }}
           animate={{ strokeDashoffset: 0 }}
-          transition={{ duration: 0.6, delay: spec.pathDelay, ease: pathEase }}
+          transition={{ duration: 0.42, delay: spec.pathDelay, ease: pathEase }}
         />
       )}
       <motion.path
@@ -124,7 +124,7 @@ function ConnectorPath({
         strokeDasharray={1}
         initial={{ strokeDashoffset: 1 }}
         animate={{ strokeDashoffset: 0 }}
-        transition={{ duration: 0.6, delay: spec.pathDelay, ease: pathEase }}
+        transition={{ duration: 0.42, delay: spec.pathDelay, ease: pathEase }}
       />
       {!compact && (
         <motion.path

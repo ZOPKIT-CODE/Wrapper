@@ -206,9 +206,18 @@ export function TenantDetailsPage() {
   const { data: expiredBatchesData, isLoading: expiredBatchesLoading } =
     useExpiredHistory(tenantId ? { tenantId, limit: 100 } : undefined)
 
-  const activeBatches = activeBatchesData?.batches ?? []
-  const expiredBatches = expiredBatchesData?.batches ?? []
-  const allKnownBatches = [...activeBatches, ...expiredBatches]
+  const activeBatches = useMemo(
+    () => activeBatchesData?.batches ?? [],
+    [activeBatchesData?.batches]
+  )
+  const expiredBatches = useMemo(
+    () => expiredBatchesData?.batches ?? [],
+    [expiredBatchesData?.batches]
+  )
+  const allKnownBatches = useMemo(
+    () => [...activeBatches, ...expiredBatches],
+    [activeBatches, expiredBatches]
+  )
 
   const allocationSummaryByApp = useMemo(() => {
     const aggregate = new Map<

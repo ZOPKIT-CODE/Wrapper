@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { motion, MotionConfig } from 'framer-motion'
-import { useNavigate } from '@tanstack/react-router'
+import { Link } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
-import { MobileHeroSection } from './MobileHeroSection'
+import { MobileCinematicHero } from './MobileCinematicHero'
 import {
   landingHeroCopy,
   landingHeroLayout,
@@ -16,11 +16,13 @@ import { HeroOrchestratorDashboard } from './HeroOrchestratorDashboard'
 import { HeroStageConnectors } from './HeroStageConnectors'
 import { HeroProjectionBeam } from './HeroProjectionBeam'
 import { HeroProjectorPuck } from './HeroProjectorPuck'
-import { HeroScanFlash } from './HeroScanFlash'
+import { HeroCopyProjectionBeam } from './HeroCopyProjectionBeam'
+import { HeroCopyReceiveGlow } from './HeroCopyReceiveGlow'
 import { RobotBall } from './RobotBall'
 import './hero-cinematic.css'
+import './hero-copy-projection-beam.css'
+import './hero-copy-receive-glow.css'
 import './robot-ball.css'
-import './hero-scan-flash.css'
 import './hero-projection-beam.css'
 import './hero-projection-particles.css'
 import './hero-projector-puck.css'
@@ -104,33 +106,45 @@ const TX = (color = 'rgba(255,255,255,0.85)', size = 8, weight = 500) => ({
   letterSpacing: '0.02em',
 })
 
-// ─── Act 1–3: center fall → hold → descend to puck ─────────────────────────────
-function HeroStageBall({ isMobile }: { isMobile: boolean }) {
+// ─── Ch1–4: enter → project copy → descend + tilt → morph to puck ─────────────
+function HeroBallStory({ isMobile }: { isMobile: boolean }) {
   const m = landingHeroMotion
   const BALL_SIZE = isMobile ? 64 : 88
   const ballFilter = isMobile
-    ? 'drop-shadow(0 8px 16px rgba(0,0,0,0.55)) drop-shadow(0 0 14px rgba(77,200,255,0.55))'
-    : 'drop-shadow(0 12px 24px rgba(0,0,0,0.6)) drop-shadow(0 0 20px rgba(77,200,255,0.65)) drop-shadow(0 0 40px rgba(56,184,255,0.25))'
+    ? 'drop-shadow(0 0 12px rgba(94,231,255,0.55)) drop-shadow(0 0 20px rgba(46,140,255,0.25))'
+    : 'drop-shadow(0 0 16px rgba(94,231,255,0.65)) drop-shadow(0 0 32px rgba(77,200,255,0.35)) drop-shadow(0 8px 22px rgba(0,0,0,0.5))'
 
-  const puckLandTime = m.puckDelay
-  const centerLandFrac = m.ballCenterFallDur / puckLandTime
-  const holdEndFrac = m.ballDescentDelay / puckLandTime
   const descentPx = isMobile ? 200 : 265
+  const storyEnd = m.puckDelay + m.puckMorphDur
+  const enterEnd = m.ch1.enterDelay + m.ch1.enterDur
+  const travelStart = m.ch3.travelDelay
+  const travelEnd = m.ch3.travelDelay + m.ch3.travelDur
+  const tiltStart = travelStart + m.ch3.travelDur * m.ch3.tiltStartFrac
+
+  const enterFrac = enterEnd / storyEnd
+  const holdEndFrac = travelStart / storyEnd
+  const tiltStartFrac = tiltStart / storyEnd
+  const travelEndFrac = travelEnd / storyEnd
 
   return (
     <motion.div
       className="hero-stage-ball"
       initial={{ y: -170, opacity: 0, scale: 0.45 }}
       animate={{
-        y: [-170, 0, 0, descentPx],
-        opacity: [0, 1, 1, 0],
-        scale: [0.45, 1, 1, 0.8],
+        y: [-170, 0, 0, descentPx, descentPx],
+        opacity: [0, 1, 1, 1, 0],
+        scale: [0.45, 1, 1, 0.85, 0.75],
       }}
       transition={{
-        duration: puckLandTime,
-        delay: m.ballCenterDelay,
-        times: [0, centerLandFrac, holdEndFrac, 1],
-        ease: [[0.34, 1.15, 0.64, 1], 'linear', [0.42, 0, 0.58, 1]],
+        duration: storyEnd,
+        delay: m.ch1.enterDelay,
+        times: [0, enterFrac, holdEndFrac, travelEndFrac, 1],
+        ease: [
+          [0.34, 1.15, 0.64, 1],
+          'linear',
+          [0.33, 1, 0.68, 1],
+          [0.33, 1, 0.68, 1],
+        ],
       }}
       style={{
         position: 'absolute',
@@ -141,18 +155,24 @@ function HeroStageBall({ isMobile }: { isMobile: boolean }) {
         pointerEvents: 'none',
         filter: ballFilter,
         willChange: 'transform, opacity',
+        transformStyle: 'preserve-3d',
       }}
       aria-hidden="true"
     >
       <motion.div
-        animate={{ y: [0, -3, 0] }}
+        style={{ transformStyle: 'preserve-3d', position: 'relative' }}
+        initial={{ rotateX: 0 }}
+        animate={{
+          rotateX: [0, 0, 0, -m.ch3.tiltDeg, -m.ch3.tiltDeg],
+        }}
         transition={{
-          duration: 3.5,
-          repeat: Infinity,
-          ease: 'easeInOut',
-          delay: m.ballCenterFallDur,
+          duration: storyEnd,
+          delay: m.ch1.enterDelay,
+          times: [0, holdEndFrac, tiltStartFrac, travelEndFrac, 1],
+          ease: 'linear',
         }}
       >
+        <HeroCopyProjectionBeam isMobile={isMobile} />
         <RobotBall size={BALL_SIZE} />
       </motion.div>
     </motion.div>
@@ -377,13 +397,13 @@ const SIDE_LEFT = [
   {
     source: 'B2B CRM Agent',
     color: BLUE,
-    feeds: ['Lead scored: sample account', 'Pipeline updated (sample)'],
+    feeds: ['Lead scored: Northline Logistics', 'Pipeline updated · 3 deals'],
     integrations: ['CRM', 'Email'],
   },
   {
     source: 'Finance Agent',
     color: BLUE,
-    feeds: ['GST return filed (sample)', 'Invoice reconciled'],
+    feeds: ['GST return filed · Q4', '₹4.2L invoice reconciled'],
     integrations: ['Tally', 'GST'],
   },
 ]
@@ -589,11 +609,7 @@ function FloorGlow() {
       className="pointer-events-none absolute inset-x-0 bottom-0 z-[1]"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{
-        delay: m.act3.ballDescentDelay,
-        duration: 0.35,
-        ease: 'easeOut',
-      }}
+      transition={{ delay: m.puckDelay, duration: 0.35, ease: 'easeOut' }}
       aria-hidden="true"
     >
       <div
@@ -637,13 +653,13 @@ function FloorGlow() {
 
 // ─── Headline ──────────────────────────────────────────────────────────────────
 function Headline({ isMobile }: { isMobile: boolean }) {
-  const s1 = landingHeroMotion.act2
+  const s1 = landingHeroMotion.ch2
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.2, delay: s1.line1, ease: 'easeOut' }}
+      transition={{ duration: 0.01, delay: s1.line1, ease: 'easeOut' }}
       style={{
         textAlign: 'center',
         position: 'relative',
@@ -735,7 +751,6 @@ function Headline({ isMobile }: { isMobile: boolean }) {
 }
 
 function HeroActions({ onBookDemo }: { onBookDemo?: () => void }) {
-  const navigate = useNavigate()
   const handleBookDemo = onBookDemo ?? (() => scrollToLandingContact('smooth'))
 
   return (
@@ -743,27 +758,29 @@ function HeroActions({ onBookDemo }: { onBookDemo?: () => void }) {
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{
-        duration: landingHeroMotion.act2.ctaDur,
-        delay: landingHeroMotion.act2.cta,
+        duration: landingHeroMotion.ch2.ctaDur,
+        delay: landingHeroMotion.ch2.cta,
         ease: [0.22, 1, 0.36, 1],
       }}
       className="landing-hero-actions"
+      role="group"
+      aria-label="Get started"
     >
       <Button
         type="button"
         size="lg"
         onClick={handleBookDemo}
-        className="landing-btn-primary h-11 rounded-full px-7 text-sm font-medium"
+        aria-label="Book a demo, go to contact form"
+        className="landing-btn-primary landing-cta h-11 rounded-full px-7 text-sm font-medium"
       >
         Book a demo
       </Button>
-      <button
-        type="button"
-        onClick={() => navigate({ to: '/pricing' })}
-        className="landing-text-link cursor-pointer text-sm font-medium underline-offset-4 transition-colors hover:underline"
+      <Link
+        to="/pricing"
+        className="landing-text-link landing-cta-link cursor-pointer text-sm font-medium underline-offset-4 transition-colors hover:underline"
       >
         See pricing
-      </button>
+      </Link>
     </motion.div>
   )
 }
@@ -781,13 +798,14 @@ function DesktopPetpoojaHeroSection({
   return (
     <MotionConfig reducedMotion="user">
       <style>{PROJECTOR_STYLES}</style>
-      <section className="landing-hero landing-hero--cinematic border-border border-b">
+      <section className="landing-hero landing-hero--cinematic">
         <CinematicHeroBackdrop />
         <HeroCinematicAtmosphere />
 
         <FloorGlow />
 
         <div className="landing-hero-copy">
+          <HeroCopyReceiveGlow />
           <Headline isMobile={false} />
           <HeroActions onBookDemo={onBookDemo} />
         </div>
@@ -806,8 +824,7 @@ function DesktopPetpoojaHeroSection({
             boxSizing: 'border-box',
           }}
         >
-          <HeroScanFlash isMobile={false} />
-          <HeroStageBall isMobile={false} />
+          <HeroBallStory isMobile={false} />
           {sideRailsVisible && (
             <motion.div
               className="landing-hero-side-rail landing-hero-side-rail--left"
@@ -901,7 +918,7 @@ export function PetpoojaHeroSection({
 }) {
   const isMobile = useMobile()
   if (isMobile) {
-    return <MobileHeroSection onBookDemo={onBookDemo} />
+    return <MobileCinematicHero onBookDemo={onBookDemo} />
   }
   return <DesktopPetpoojaHeroSection onBookDemo={onBookDemo} />
 }

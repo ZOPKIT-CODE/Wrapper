@@ -1,82 +1,195 @@
-/* ─── Tiered hologram puck — idle motion ─── */
+/* ─── Sci-fi projector puck — SVG body + 3D stage + modular light projections ─── */
+
+.hero-projector-puck--sci {
+  --puck-tilt-x: 17deg;
+  --puck-tilt-z: 0deg;
+  --puck-core: #5ee7ff;
+  --puck-strip: #ff4d6d;
+  --puck-shadow: rgba(0, 0, 0, 0.78);
+  --puck-stage-h: 100%;
+}
+
+[data-landing] .hero-projector-puck--sci {
+  transform-style: preserve-3d;
+  overflow: visible;
+}
+
+/* Elongated cast shadow — extends below hero onto the light section */
+[data-landing] .hero-projector-puck__cast {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(-72px, -9vh, -48px);
+  width: min(440px, 128%);
+  height: clamp(72px, 11vh, 128px);
+  transform: translateX(-50%);
+  pointer-events: none;
+  z-index: 0;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse 100% 100% at 50% 0%,
+    rgba(15, 23, 42, 0.34) 0%,
+    rgba(15, 23, 42, 0.2) 28%,
+    rgba(15, 23, 42, 0.08) 52%,
+    rgba(15, 23, 42, 0.02) 68%,
+    transparent 78%
+  );
+  filter: blur(12px);
+}
+
+[data-landing] .hero-projector-puck__stage {
+  position: relative;
+  width: 100%;
+  height: var(--puck-stage-h);
+  transform-style: preserve-3d;
+  transform: rotateX(var(--puck-tilt-x)) rotateZ(var(--puck-tilt-z));
+  transform-origin: 50% 88%;
+  will-change: transform;
+}
+
+[data-landing] .hero-projector-puck__svg {
+  position: relative;
+  z-index: 2;
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* ─── Modular projection glows (physical light on floor + emitter) ─── */
+
+[data-landing] .hero-projector-puck__glow {
+  position: absolute;
+  pointer-events: none;
+  border-radius: 50%;
+  z-index: 1;
+}
+
+[data-landing] .hero-projector-puck__glow--shadow {
+  left: 50%;
+  bottom: 2%;
+  width: 78%;
+  height: 14%;
+  transform: translateX(-50%);
+  background: radial-gradient(
+    ellipse at 50% 50%,
+    var(--puck-shadow) 0%,
+    rgba(0, 0, 0, 0.45) 42%,
+    transparent 72%
+  );
+  filter: blur(6px);
+}
+
+[data-landing] .hero-projector-puck__glow--floor-core {
+  left: 50%;
+  bottom: 6%;
+  width: 34%;
+  height: 10%;
+  transform: translateX(-50%);
+  background: radial-gradient(
+    ellipse at 50% 50%,
+    color-mix(in srgb, var(--puck-core) 55%, transparent) 0%,
+    color-mix(in srgb, var(--puck-core) 18%, transparent) 45%,
+    transparent 72%
+  );
+  filter: blur(8px);
+  mix-blend-mode: screen;
+}
+
+[data-landing] .hero-projector-puck__glow--floor-strip-l,
+[data-landing] .hero-projector-puck__glow--floor-strip-r {
+  bottom: 5%;
+  width: 16%;
+  height: 8%;
+  filter: blur(10px);
+  mix-blend-mode: screen;
+  opacity: 0.85;
+}
+
+[data-landing] .hero-projector-puck__glow--floor-strip-l {
+  left: 14%;
+  background: radial-gradient(
+    ellipse at 50% 50%,
+    color-mix(in srgb, var(--puck-strip) 70%, transparent) 0%,
+    transparent 70%
+  );
+}
+
+[data-landing] .hero-projector-puck__glow--floor-strip-r {
+  right: 14%;
+  background: radial-gradient(
+    ellipse at 50% 50%,
+    color-mix(in srgb, var(--puck-strip) 70%, transparent) 0%,
+    transparent 70%
+  );
+}
+
+[data-landing] .hero-projector-puck__glow--core {
+  left: 50%;
+  top: 22%;
+  width: 28%;
+  height: 22%;
+  transform: translateX(-50%);
+  background: radial-gradient(
+    circle at 50% 50%,
+    color-mix(in srgb, var(--puck-core) 75%, #ffffff) 0%,
+    color-mix(in srgb, var(--puck-core) 35%, transparent) 38%,
+    transparent 68%
+  );
+  filter: blur(10px);
+  mix-blend-mode: screen;
+}
+
+/* ─── Composite body shadow (lifts puck off floor in 3D) ─── */
+
+[data-landing] .hero-projector-puck--sci.landing-hero-illust-projector {
+  filter: drop-shadow(0 14px 12px rgba(15, 23, 42, 0.55))
+    drop-shadow(0 28px 24px rgba(15, 23, 42, 0.28))
+    drop-shadow(0 0 36px color-mix(in srgb, var(--puck-core) 45%, transparent))
+    drop-shadow(0 0 72px color-mix(in srgb, var(--puck-core) 16%, transparent));
+}
+
+/* ─── Motion ─── */
 
 @keyframes pp-idle {
   0%,
   100% {
-    transform: translate3d(0, 0, 0) rotateX(0deg) rotateZ(0deg);
+    transform: rotateX(var(--puck-tilt-x)) rotateZ(var(--puck-tilt-z))
+      translate3d(0, 0, 0);
   }
-  20% {
-    transform: translate3d(0, -1.5px, 0) rotateX(1.4deg) rotateZ(-0.45deg);
-  }
-  45% {
-    transform: translate3d(0, -2.5px, 0) rotateX(0.5deg) rotateZ(0.35deg);
-  }
-  70% {
-    transform: translate3d(0, -1.2px, 0) rotateX(-1deg) rotateZ(0.55deg);
+  50% {
+    transform: rotateX(calc(var(--puck-tilt-x) - 1.5deg)) rotateZ(0.35deg)
+      translate3d(0, -2px, 0);
   }
 }
 
 @keyframes pp-hotspot {
   0%,
   100% {
-    opacity: 0.82;
+    opacity: 0.88;
     transform: scale(1);
   }
-  40% {
+  50% {
     opacity: 1;
     transform: scale(1.1);
-  }
-  70% {
-    opacity: 0.92;
-    transform: scale(1.04);
   }
 }
 
 @keyframes pp-hotspot-core {
   0%,
   100% {
-    opacity: 0.9;
+    opacity: 0.92;
     transform: scale(1);
   }
-  35% {
-    opacity: 1;
-    transform: scale(1.18);
-  }
-  65% {
-    opacity: 0.95;
-    transform: scale(1.06);
-  }
-}
-
-@keyframes pp-led-chase {
-  0%,
-  100% {
-    opacity: 0.35;
-  }
-  12% {
-    opacity: 1;
-  }
-  28% {
-    opacity: 0.5;
-  }
-}
-
-@keyframes pp-groove-pulse {
-  0%,
-  100% {
-    stroke-opacity: 0.55;
-    filter: brightness(0.9);
-  }
   50% {
-    stroke-opacity: 1;
-    filter: brightness(1.35);
+    opacity: 1;
+    transform: scale(1.16);
   }
 }
 
-@keyframes pp-band-pulse {
+@keyframes pp-strip-pulse {
   0%,
   100% {
-    opacity: 0.55;
+    opacity: 0.78;
   }
   50% {
     opacity: 1;
@@ -89,50 +202,85 @@
     stroke-opacity: 0.35;
   }
   50% {
-    stroke-opacity: 0.75;
+    stroke-opacity: 0.72;
   }
 }
 
-@keyframes pp-port-blink {
+@keyframes pp-cast-drift {
   0%,
   100% {
-    stroke-opacity: 0.2;
+    opacity: 0.72;
+    transform: translateX(-50%) scaleX(1);
   }
   50% {
-    stroke-opacity: 0.85;
+    opacity: 0.92;
+    transform: translateX(-50%) scaleX(1.08);
   }
 }
 
 @keyframes pp-glow-drift {
   0%,
   100% {
-    filter: drop-shadow(0 16px 28px rgba(0, 0, 0, 0.75))
-      drop-shadow(0 0 24px rgba(94, 231, 255, 0.42))
-      drop-shadow(0 0 48px rgba(46, 140, 255, 0.16));
+    filter: drop-shadow(0 14px 12px rgba(15, 23, 42, 0.55))
+      drop-shadow(0 28px 24px rgba(15, 23, 42, 0.28))
+      drop-shadow(
+        0 0 36px color-mix(in srgb, var(--puck-core) 48%, transparent)
+      )
+      drop-shadow(
+        0 0 72px color-mix(in srgb, var(--puck-core) 18%, transparent)
+      );
   }
   50% {
-    filter: drop-shadow(0 18px 30px rgba(0, 0, 0, 0.78))
-      drop-shadow(0 0 34px rgba(94, 231, 255, 0.62))
-      drop-shadow(0 0 60px rgba(46, 140, 255, 0.28));
+    filter: drop-shadow(0 16px 14px rgba(15, 23, 42, 0.62))
+      drop-shadow(0 32px 28px rgba(15, 23, 42, 0.32))
+      drop-shadow(
+        0 0 48px color-mix(in srgb, var(--puck-core) 62%, transparent)
+      )
+      drop-shadow(
+        0 0 88px color-mix(in srgb, var(--puck-core) 26%, transparent)
+      );
   }
 }
 
-[data-landing] .hero-projector-puck {
-  display: block;
-  flex-shrink: 0;
-  transform-style: preserve-3d;
+@keyframes pp-floor-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
-[data-landing] .hero-projector-puck--alive {
+[data-landing] .hero-projector-puck--alive .hero-projector-puck__cast {
+  animation: pp-cast-drift 5.5s ease-in-out infinite;
+}
+
+[data-landing] .hero-projector-puck--alive .hero-projector-puck__stage {
   animation: pp-idle 7s ease-in-out infinite;
-  transform-origin: center bottom;
 }
 
-[data-landing] .hero-projector-puck__svg {
-  display: block;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
+[data-landing]
+  .hero-projector-puck--alive.hero-projector-puck--sci.landing-hero-illust-projector {
+  animation: pp-glow-drift 5.5s ease-in-out infinite;
+}
+
+[data-landing]
+  .hero-projector-puck--alive
+  .hero-projector-puck__glow--floor-core,
+[data-landing]
+  .hero-projector-puck--alive
+  .hero-projector-puck__glow--floor-strip-l,
+[data-landing]
+  .hero-projector-puck--alive
+  .hero-projector-puck__glow--floor-strip-r {
+  animation: pp-floor-pulse 3.8s ease-in-out infinite;
+}
+
+[data-landing]
+  .hero-projector-puck--alive
+  .hero-projector-puck__glow--floor-strip-r {
+  animation-delay: 0.45s;
 }
 
 [data-landing] .hero-projector-puck__core {
@@ -147,53 +295,47 @@
   transform-box: fill-box;
 }
 
-[data-landing] .hero-projector-puck__led {
-  animation: pp-led-chase 2.1s ease-in-out infinite;
+[data-landing] .hero-projector-puck__strip {
+  animation: pp-strip-pulse 2.4s ease-in-out infinite;
 }
 
-[data-landing] .hero-projector-puck__groove {
-  animation: pp-groove-pulse 3.6s ease-in-out infinite;
-}
-
-[data-landing] .hero-projector-puck__band {
-  animation: pp-band-pulse 4.2s ease-in-out infinite;
-}
-
-[data-landing] .hero-projector-puck__band--2 {
-  animation-delay: 0.65s;
+[data-landing] .hero-projector-puck__strip--r {
+  animation-delay: 0.35s;
 }
 
 [data-landing] .hero-projector-puck__well-ring {
   animation: pp-well-breathe 3s ease-in-out infinite;
 }
 
-[data-landing] .hero-projector-puck__port {
-  animation: pp-port-blink 2.4s ease-in-out infinite;
-}
-
 [data-landing] .landing-hero-projection-puck {
-  perspective: 680px;
-  perspective-origin: 50% 100%;
+  perspective: 920px;
+  perspective-origin: 50% 72%;
 }
 
-[data-landing] .landing-hero--cinematic .hero-projector-puck--alive {
-  animation:
-    pp-idle 7s ease-in-out infinite,
-    pp-glow-drift 5.5s ease-in-out infinite;
+@media (max-width: 767px) {
+  .hero-projector-puck--sci {
+    --puck-tilt-x: 14deg;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  [data-landing] .hero-projector-puck--alive {
-    animation: none !important;
-  }
-
+  [data-landing] .hero-projector-puck--alive .hero-projector-puck__cast,
+  [data-landing] .hero-projector-puck--alive .hero-projector-puck__stage,
+  [data-landing]
+    .hero-projector-puck--alive.hero-projector-puck--sci.landing-hero-illust-projector,
+  [data-landing]
+    .hero-projector-puck--alive
+    .hero-projector-puck__glow--floor-core,
+  [data-landing]
+    .hero-projector-puck--alive
+    .hero-projector-puck__glow--floor-strip-l,
+  [data-landing]
+    .hero-projector-puck--alive
+    .hero-projector-puck__glow--floor-strip-r,
   [data-landing] .hero-projector-puck__core,
   [data-landing] .hero-projector-puck__core-hot,
-  [data-landing] .hero-projector-puck__led,
-  [data-landing] .hero-projector-puck__groove,
-  [data-landing] .hero-projector-puck__band,
-  [data-landing] .hero-projector-puck__well-ring,
-  [data-landing] .hero-projector-puck__port {
+  [data-landing] .hero-projector-puck__strip,
+  [data-landing] .hero-projector-puck__well-ring {
     animation: none !important;
   }
 }

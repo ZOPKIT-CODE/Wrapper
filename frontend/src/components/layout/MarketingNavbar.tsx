@@ -49,7 +49,7 @@ const MARKETING_NAV_PRODUCTS = [
 
 export const LANDING_SECTION_NAV_ITEMS = [
   { name: 'Workflows', link: '/#workflows' },
-  { name: 'Industries', link: '/#industries' },
+  { name: 'Verticals', link: '/#industries' },
   { name: 'Resources', link: '/#resources' },
 ] as const
 
@@ -321,6 +321,13 @@ export function MarketingNavbar({
         type="button"
         onClick={cta.action}
         disabled={cta.disabled}
+        aria-disabled={cta.disabled || undefined}
+        aria-busy={
+          cta.disabled && cta.label === 'Loading...' ? true : undefined
+        }
+        aria-label={
+          cta.label === 'Loading...' ? 'Checking sign-in status' : 'Sign in'
+        }
         className={cn(
           'cursor-pointer text-[13px] font-medium transition-colors',
           minimal
@@ -337,7 +344,11 @@ export function MarketingNavbar({
           onBookDemo?.()
         }}
         as="button"
-        className={cn(minimal && 'marketing-nav-cta', 'text-[13px]')}
+        aria-label="Book a demo, go to contact form"
+        className={cn(
+          minimal && 'marketing-nav-cta landing-cta',
+          'text-[13px]'
+        )}
       >
         Book a demo
       </NavbarButton>
@@ -354,7 +365,11 @@ export function MarketingNavbar({
           onBookDemo?.()
         }}
         as="button"
-        className={cn(minimal && 'marketing-nav-cta', 'w-full justify-center')}
+        aria-label="Book a demo, go to contact form"
+        className={cn(
+          minimal && 'marketing-nav-cta landing-cta',
+          'w-full justify-center'
+        )}
       >
         Book a demo
       </NavbarButton>
@@ -403,8 +418,8 @@ export function MarketingNavbar({
   return (
     <Navbar>
       <NavBody className={cn(minimal && 'marketing-nav-bar')}>
-        <NavbarLogo />
-        <div className="flex min-w-0 flex-1 flex-row items-center justify-center gap-0.5 px-6 text-[13px] font-medium">
+        <NavbarLogo minimal={minimal} />
+        <div className="flex min-w-0 flex-1 flex-row items-center justify-center gap-1 px-4 text-[13px] font-medium lg:px-8">
           <div
             className="relative shrink-0"
             onMouseEnter={handleProductsMouseEnter}
@@ -412,6 +427,9 @@ export function MarketingNavbar({
           >
             <button
               type="button"
+              aria-expanded={showProductsDropdown}
+              aria-haspopup="menu"
+              aria-controls="marketing-nav-products-menu"
               className={cn(
                 linkClass,
                 'flex items-center gap-1 whitespace-nowrap'
@@ -419,13 +437,18 @@ export function MarketingNavbar({
             >
               Products
               <ChevronRight
-                size={14}
-                className={`transition-transform duration-200 ${showProductsDropdown ? 'rotate-90' : ''}`}
+                size={13}
+                strokeWidth={1.75}
+                className="marketing-nav-chevron opacity-60"
+                aria-hidden="true"
               />
             </button>
             <AnimatePresence>
               {showProductsDropdown && (
                 <motion.div
+                  id="marketing-nav-products-menu"
+                  role="menu"
+                  aria-label="Products"
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 4 }}
@@ -454,6 +477,7 @@ export function MarketingNavbar({
                       {MARKETING_NAV_PRODUCTS.map((product) => (
                         <button
                           type="button"
+                          role="menuitem"
                           key={product.id}
                           onClick={() => {
                             closeNavDropdowns()
@@ -499,6 +523,9 @@ export function MarketingNavbar({
           >
             <button
               type="button"
+              aria-expanded={showIndustriesDropdown}
+              aria-haspopup="menu"
+              aria-controls="marketing-nav-industries-menu"
               className={cn(
                 linkClass,
                 'flex items-center gap-1 whitespace-nowrap'
@@ -506,13 +533,18 @@ export function MarketingNavbar({
             >
               Industries
               <ChevronRight
-                size={14}
-                className={`transition-transform duration-200 ${showIndustriesDropdown ? 'rotate-90' : ''}`}
+                size={13}
+                strokeWidth={1.75}
+                className="marketing-nav-chevron opacity-60"
+                aria-hidden="true"
               />
             </button>
             <AnimatePresence>
               {showIndustriesDropdown && (
                 <motion.div
+                  id="marketing-nav-industries-menu"
+                  role="menu"
+                  aria-label="Industries"
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 4 }}
@@ -541,6 +573,7 @@ export function MarketingNavbar({
                       {allIndustries.map((industry) => (
                         <button
                           type="button"
+                          role="menuitem"
                           key={industry.slug}
                           onClick={() => {
                             closeNavDropdowns()
@@ -575,14 +608,16 @@ export function MarketingNavbar({
           ))}
         </div>
 
-        <div className="ml-4 flex shrink-0 items-center gap-2">
+        <div className="ml-2 flex shrink-0 items-center gap-3 lg:ml-4">
           {desktopRight ?? defaultDesktopCta}
         </div>
       </NavBody>
 
       <MobileNav className={cn(minimal && 'marketing-nav-bar')}>
-        <MobileNavHeader>
-          <NavbarLogo />
+        <MobileNavHeader
+          className={cn(minimal && 'marketing-nav-mobile-header')}
+        >
+          <NavbarLogo minimal={minimal} />
           <button
             type="button"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}

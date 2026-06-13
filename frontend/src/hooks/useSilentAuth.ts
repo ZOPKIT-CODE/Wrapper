@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { logger } from '@/lib/logger'
 import { useAuth, type AuthUser } from '@/lib/auth/cognito-auth'
 import {
   clearStaleAuthStorage,
@@ -47,6 +48,62 @@ export const useSilentAuth = (): SilentAuthResult => {
     hasChecked: false,
     error: null,
   })
+
+  /**
+   * Perform silent login using hidden iframe
+   */
+  const performSilentLogin = useCallback(async (): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      const iframe = document.createElement('iframe')
+      iframe.style.display = 'none'
+      iframe.src = 'about:blank'
+
+      const cleanup = () => {
+        if (iframe.parentNode) {
+          iframe.parentNode.removeChild(iframe)
+        }
+      }
+
+      const timeout = setTimeout(() => {
+        cleanup()
+        reject(new Error('Silent authentication timeout'))
+      }, 10000) // 10 second timeout
+
+      iframe.onload = () => {
+        clearTimeout(timeout)
+        cleanup()
+        resolve()
+      }
+
+      iframe.onerror = () => {
+        clearTimeout(timeout)
+        cleanup()
+        reject(new Error('Silent authentication failed'))
+      }
+
+      try {
+        // NOTE (auth-migration drift): under the Cognito SDK, login() performs a
+        // full-page redirect and returns void — the old Kinde SDK returned a Promise.
+        // This hidden-iframe silent-auth path is broken-by-drift; the cast preserves
+        // the existing runtime behavior verbatim until the auth migration replaces it.
+        ;(login({ prompt: 'none' as never }) as unknown as Promise<void>)
+          .then(() => {
+            clearTimeout(timeout)
+            cleanup()
+            resolve()
+          })
+          .catch((error: unknown) => {
+            clearTimeout(timeout)
+            cleanup()
+            reject(error)
+          })
+      } catch (error) {
+        clearTimeout(timeout)
+        cleanup()
+        reject(error)
+      }
+    })
+  }, [login])
 
   /**
    * Check for existing authentication using domain cookies
@@ -159,68 +216,14 @@ export const useSilentAuth = (): SilentAuthResult => {
       return false
     }
   }, [
+    getToken,
+    performSilentLogin,
     idpIsAuthenticated,
     user,
     isLoading,
     state.isChecking,
     state.isAuthenticated,
   ])
-
-  /**
-   * Perform silent login using hidden iframe
-   */
-  const performSilentLogin = useCallback(async (): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      const iframe = document.createElement('iframe')
-      iframe.style.display = 'none'
-      iframe.src = 'about:blank'
-
-      const cleanup = () => {
-        if (iframe.parentNode) {
-          iframe.parentNode.removeChild(iframe)
-        }
-      }
-
-      const timeout = setTimeout(() => {
-        cleanup()
-        reject(new Error('Silent authentication timeout'))
-      }, 10000) // 10 second timeout
-
-      iframe.onload = () => {
-        clearTimeout(timeout)
-        cleanup()
-        resolve()
-      }
-
-      iframe.onerror = () => {
-        clearTimeout(timeout)
-        cleanup()
-        reject(new Error('Silent authentication failed'))
-      }
-
-      try {
-        // NOTE (auth-migration drift): under the Cognito SDK, login() performs a
-        // full-page redirect and returns void — the old Kinde SDK returned a Promise.
-        // This hidden-iframe silent-auth path is broken-by-drift; the cast preserves
-        // the existing runtime behavior verbatim until the auth migration replaces it.
-        ;(login({ prompt: 'none' as never }) as unknown as Promise<void>)
-          .then(() => {
-            clearTimeout(timeout)
-            cleanup()
-            resolve()
-          })
-          .catch((error: unknown) => {
-            clearTimeout(timeout)
-            cleanup()
-            reject(error)
-          })
-      } catch (error) {
-        clearTimeout(timeout)
-        cleanup()
-        reject(error)
-      }
-    })
-  }, [login])
 
   /**
    * Enhanced login function with organization support
@@ -293,10 +296,7 @@ export const useSilentAuth = (): SilentAuthResult => {
         try {
           accessToken = await getToken()
         } catch (tokenError) {
-          console.warn(
-            '⚠️ Silent Auth: Could not get access token:',
-            tokenError
-          )
+          logger.warn('⚠️ Silent Auth: Could not get access token:', tokenError)
         }
       }
 

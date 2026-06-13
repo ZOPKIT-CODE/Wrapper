@@ -1,6 +1,6 @@
 // Mobile hero — pixel-perfect desktop composition (1440×1280) scaled to mobile width.
 
-import { useNavigate } from '@tanstack/react-router'
+import { Link } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
 import { landingHeroCopy } from '../landing-hero-copy'
 import { landingFonts, landingType } from '../landing-typography'
@@ -1080,7 +1080,6 @@ const HD_VISIBLE_H = 1240
 const NAV_OFFSET = 112
 
 export function MobileHeroSection({ onBookDemo }: { onBookDemo?: () => void }) {
-  const navigate = useNavigate()
   const handleBookDemo = onBookDemo ?? (() => scrollToLandingContact('smooth'))
   const vw = typeof window !== 'undefined' ? window.innerWidth : 390
   const scale = vw / HD_W
@@ -1088,22 +1087,26 @@ export function MobileHeroSection({ onBookDemo }: { onBookDemo?: () => void }) {
   return (
     <section className="landing-hero border-border border-b">
       <LandingHeroBackdrop />
-      <div className="landing-hero-actions relative z-[4] px-4 pt-2 pb-4">
+      <div
+        className="landing-hero-actions relative z-[4] px-4 pt-2 pb-4"
+        role="group"
+        aria-label="Get started"
+      >
         <Button
           type="button"
           size="lg"
           onClick={handleBookDemo}
-          className="landing-btn-primary h-11 rounded-full px-7 text-sm font-medium"
+          aria-label="Book a demo, go to contact form"
+          className="landing-btn-primary landing-cta h-11 rounded-full px-7 text-sm font-medium"
         >
           Book a demo
         </Button>
-        <button
-          type="button"
-          onClick={() => navigate({ to: '/pricing' })}
-          className="landing-text-link cursor-pointer text-sm font-medium underline-offset-4 transition-colors hover:underline"
+        <Link
+          to="/pricing"
+          className="landing-text-link landing-cta-link text-sm font-medium underline-offset-4 transition-colors hover:underline"
         >
           See pricing
-        </button>
+        </Link>
       </div>
       <div
         style={{

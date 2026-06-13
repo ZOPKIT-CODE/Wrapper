@@ -1,4 +1,5 @@
 import { useCallback, useMemo } from 'react'
+import { logger } from '@/lib/logger'
 import { api } from '@/lib/api'
 import { useOptimizedQuery, useBatchedQueries } from './useOptimizedQuery'
 import { cache, cacheHelpers, CACHE_KEYS } from '@/lib/cache'
@@ -63,11 +64,7 @@ export interface PaymentStats {
 // Hook for comprehensive dashboard data management
 export function useDashboardData() {
   const { isExpired: isTrialExpired, expiredData } = useTrialStatus()
-  const {
-    tenantId,
-    isAuthenticated,
-    loading: authLoading,
-  } = useOrganizationAuth()
+  const { tenantId } = useOrganizationAuth()
 
   // Debug logging
 
@@ -106,10 +103,10 @@ export function useDashboardData() {
             return data.data
           }
           // If it's an object, return empty array
-          console.warn('Users API returned non-array data:', data)
+          logger.warn('Users API returned non-array data:', data)
           return []
         } else {
-          console.warn('Users API returned unexpected data type:', typeof data)
+          logger.warn('Users API returned unexpected data type:', typeof data)
           return []
         }
       },
@@ -147,16 +144,21 @@ export function useDashboardData() {
     return cachedApplications || []
   }, [cachedApplications])
 
-  // After removing APPLICATIONS query, indices shift: users is now [0], paymentStats is [1]
-  const users = Array.isArray(dashboardQueries.results[0]?.data)
-    ? dashboardQueries.results[0].data
-    : []
-  const paymentStats = dashboardQueries.results[1]?.data || {
-    totalRevenue: 0,
-    monthlyRevenue: 0,
-    subscriptions: { active: 0, trial: 0, expired: 0 },
-    growth: { revenue: 0, users: 0 },
-  }
+  const users = useMemo(() => {
+    const data = dashboardQueries.results[0]?.data
+    return Array.isArray(data) ? data : []
+  }, [dashboardQueries.results])
+
+  const paymentStats = useMemo(
+    () =>
+      dashboardQueries.results[1]?.data || {
+        totalRevenue: 0,
+        monthlyRevenue: 0,
+        subscriptions: { active: 0, trial: 0, expired: 0 },
+        growth: { revenue: 0, users: 0 },
+      },
+    [dashboardQueries.results]
+  )
 
   // Calculate metrics from available data
   const metrics = useMemo(() => {
@@ -174,7 +176,7 @@ export function useDashboardData() {
         weekAgo.setDate(weekAgo.getDate() - 7)
         return createdAt > weekAgo
       } catch (error) {
-        console.warn('Invalid createdAt date for user:', user)
+        logger.warn('Invalid createdAt date for user:', user)
         return false
       }
     }).length
@@ -214,13 +216,7 @@ export function useDashboardData() {
       console.error('❌ Failed to refresh dashboard:', error)
       toast.error('Failed to refresh dashboard')
     }
-  }, [
-    dashboardQueries,
-    isTrialExpiredWithData,
-    tenantId,
-    isAuthenticated,
-    authLoading,
-  ])
+  }, [dashboardQueries, isTrialExpiredWithData])
 
   // Force refresh function - clears all cache and refetches
   const forceRefresh = useCallback(async () => {

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useSearch, useNavigate } from '@tanstack/react-router'
 import { useAuth } from '@/lib/auth/cognito-auth'
 import { useQueryClient } from '@tanstack/react-query'
@@ -105,7 +105,7 @@ export function InviteAccept() {
           setInviteLoading(false)
         })
     }
-  }, [isAuthenticated, user, token])
+  }, [isAuthenticated, user, token, invitation])
 
   // ── Preserve token across OAuth redirect ───────────────────────────────
   useEffect(() => {
@@ -122,60 +122,8 @@ export function InviteAccept() {
       navigate({ to: `/invite/accept?token=${pending}`, replace: true })
   }, [token, navigate])
 
-  // ── Auto-accept as soon as auth + invitation are both ready ────────────
-  // autoAcceptFired prevents repeated calls when the auth context's user/auth
-  // objects get new references across re-renders (which would otherwise re-trigger
-  // this effect and spam the API after a 403 or transient error).
-  useEffect(() => {
-    if (
-      isAuthenticated &&
-      !isLoading &&
-      user &&
-      invitation &&
-      !autoAcceptFired.current
-    ) {
-      autoAcceptFired.current = true
-      handleAcceptInvitation()
-    }
-  }, [isAuthenticated, isLoading, user, invitation])
-
-  // ── Joining animation ───────────────────────────────────────────────────
-  useEffect(() => {
-    if (!accepting) {
-      joinTimers.current.forEach(clearTimeout)
-      setJoinStep(0)
-      return
-    }
-    setJoinStep(0)
-    joinTimers.current = [
-      setTimeout(() => setJoinStep(1), 300),
-      setTimeout(() => setJoinStep(2), 700),
-      setTimeout(() => setJoinStep(3), 1200),
-    ]
-    return () => joinTimers.current.forEach(clearTimeout)
-  }, [accepting])
-
-  // ── Handle Google sign-in ───────────────────────────────────────────────
-  const handleGoogleSignIn = async () => {
-    setGoogleLoading(true)
-    try {
-      // Cognito: `provider: 'google'` routes straight to Google federation via the
-      // backend /oauth/login?provider=google handler (no Kinde connection-id needed).
-      const opts: NonNullable<Parameters<typeof login>[0]> = {
-        provider: 'google',
-        popup: true,
-      }
-      if (invitation?.orgCode) opts.org_code = invitation.orgCode
-      await login(opts)
-    } catch (err) {
-      logger.error('Google sign-in error:', err)
-      toast.error('Failed to sign in with Google')
-      setGoogleLoading(false)
-    }
-  }
-
   // ── Accept invitation ───────────────────────────────────────────────────
-  const handleAcceptInvitation = async () => {
+  const handleAcceptInvitation = useCallback(async () => {
     if (!invitation || !user) return
     setAccepting(true)
 
@@ -231,6 +179,66 @@ export function InviteAccept() {
         )
         setAccepting(false)
       }
+    }
+  }, [
+    invitation,
+    user,
+    token,
+    invalidateAuthStatus,
+    invalidateOnboardingStatus,
+    queryClient,
+    navigate,
+  ])
+
+  // ── Auto-accept as soon as auth + invitation are both ready ────────────
+  // autoAcceptFired prevents repeated calls when the auth context's user/auth
+  // objects get new references across re-renders (which would otherwise re-trigger
+  // this effect and spam the API after a 403 or transient error).
+  useEffect(() => {
+    if (
+      isAuthenticated &&
+      !isLoading &&
+      user &&
+      invitation &&
+      !autoAcceptFired.current
+    ) {
+      autoAcceptFired.current = true
+      handleAcceptInvitation()
+    }
+  }, [isAuthenticated, isLoading, user, invitation, handleAcceptInvitation])
+
+  // ── Joining animation ───────────────────────────────────────────────────
+  useEffect(() => {
+    if (!accepting) {
+      joinTimers.current.forEach(clearTimeout)
+      setJoinStep(0)
+      return
+    }
+    setJoinStep(0)
+    joinTimers.current = [
+      setTimeout(() => setJoinStep(1), 300),
+      setTimeout(() => setJoinStep(2), 700),
+      setTimeout(() => setJoinStep(3), 1200),
+    ]
+    return () => joinTimers.current.forEach(clearTimeout)
+  }, [accepting])
+
+  // ── Handle Google sign-in ───────────────────────────────────────────────
+  const handleGoogleSignIn = async () => {
+    setGoogleLoading(true)
+    try {
+      // Cognito: `provider: 'google'` routes straight to Google federation via the
+      // backend /oauth/login?provider=google handler (no Kinde connection-id needed).
+      const opts: NonNullable<Parameters<typeof login>[0]> = {
+        provider: 'google',
+        popup: true,
+      }
+      if (invitation?.orgCode) opts.org_code = invitation.orgCode
+      await login(opts)
+    } catch (err) {
+      logger.error('Google sign-in error:', err)
+      toast.error('Failed to sign in with Google')
+      setGoogleLoading(false)
     }
   }
 

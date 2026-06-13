@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
+import { logger } from '@/lib/logger'
 import { useQueryClient } from '@tanstack/react-query'
 import {
   Card,
@@ -177,7 +178,7 @@ export const EntityManagement: React.FC = () => {
     totalPages: 0,
   })
 
-  const fetchEntities = async () => {
+  const fetchEntities = useCallback(async () => {
     try {
       setLoading(true)
       const response = await api.get('/admin/entities/all', {
@@ -199,11 +200,11 @@ export const EntityManagement: React.FC = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [searchTerm, entityTypeFilter, pagination.page, pagination.limit])
 
   useEffect(() => {
     fetchEntities()
-  }, [searchTerm, entityTypeFilter, pagination.page])
+  }, [fetchEntities])
 
   const handleViewDetails = async (entity: Entity) => {
     try {
@@ -224,7 +225,7 @@ export const EntityManagement: React.FC = () => {
           setEntityAllocations(allocationsResponse.data.data)
         }
       } catch (allocationsError) {
-        console.warn(
+        logger.warn(
           'Failed to fetch entity application allocations:',
           allocationsError
         )
@@ -283,7 +284,7 @@ export const EntityManagement: React.FC = () => {
           })
           queryClient.invalidateQueries({ queryKey: ['admin', 'entities'] })
         } catch (invalidateError) {
-          console.warn('Failed to invalidate queries:', invalidateError)
+          logger.warn('Failed to invalidate queries:', invalidateError)
           // Don't show error to user as this is not critical
         }
 

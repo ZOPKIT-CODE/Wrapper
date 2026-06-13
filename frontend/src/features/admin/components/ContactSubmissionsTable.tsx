@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import {
   Card,
   CardContent,
@@ -48,7 +48,7 @@ export const ContactSubmissionsTable: React.FC<
     'contact' | 'demo' | 'all'
   >(source)
 
-  const fetchSubmissions = async () => {
+  const fetchSubmissions = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -76,11 +76,11 @@ export const ContactSubmissionsTable: React.FC<
     } finally {
       setLoading(false)
     }
-  }
+  }, [selectedSource])
 
   useEffect(() => {
     fetchSubmissions()
-  }, [selectedSource])
+  }, [fetchSubmissions])
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString('en-US', {

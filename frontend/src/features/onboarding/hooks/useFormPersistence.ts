@@ -341,7 +341,7 @@ export const useFormPersistence = ({
     }
 
     return 1
-  }, [form, flowType, normalizeRestoredData])
+  }, [form, normalizeRestoredData, user?.email, user?.id])
 
   // Clear saved form data (backend + localStorage draft)
   const clearFormData = useCallback(() => {
@@ -361,7 +361,7 @@ export const useFormPersistence = ({
     } catch {
       // Silent error handling
     }
-  }, [flowType, user])
+  }, [flowType, user?.email, user?.id])
 
   // Auto-save with debounce (2 seconds)
   useEffect(() => {
@@ -403,7 +403,9 @@ export const useFormPersistence = ({
         }
       })
     }
-  }, []) // Only run on mount
+    // Mount-only auto-restore — guarded by hasRestoredRef.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return {
     saveFormData,

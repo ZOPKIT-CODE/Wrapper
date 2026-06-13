@@ -8,7 +8,6 @@ import React, {
   useMemo,
   ReactNode,
 } from 'react'
-import { useLocation } from '@tanstack/react-router'
 import { useAuth } from '@/lib/auth/cognito-auth'
 import { useAuthStatus, useTenant } from '@/hooks/useSharedQueries'
 import { toast } from 'sonner'
@@ -79,7 +78,6 @@ interface UserContextProviderProps {
 export const UserContextProvider: React.FC<UserContextProviderProps> =
   React.memo(({ children, refreshInterval = 30000 }) => {
     const { isAuthenticated, user: idpUser } = useAuth()
-    const location = useLocation()
     const [user, setUser] = useState<UserContextData | null>(null)
     const [tenant, setTenant] = useState<TenantData | null>(null)
     const [permissions, setPermissions] = useState<UserPermission[]>([])
@@ -108,84 +106,81 @@ export const UserContextProvider: React.FC<UserContextProviderProps> =
     idpUserRef.current = idpUser
 
     // Fetch user context from API (reads latest auth/tenant/kindeUser from refs so deps stay stable)
-    const fetchUserContext = useCallback(
-      async (showToast = false) => {
-        const authData = authDataRef.current
-        const tenantData = tenantDataRef.current
-        const idpUser = idpUserRef.current
-        try {
-          if (authData?.success && authData.authStatus) {
-            const authStatus = authData.authStatus
+    const fetchUserContext = useCallback(async (showToast = false) => {
+      const authData = authDataRef.current
+      const tenantData = tenantDataRef.current
+      const idpUser = idpUserRef.current
+      try {
+        if (authData?.success && authData.authStatus) {
+          const authStatus = authData.authStatus
 
-            // Create user object from authStatus with Kinde user data
-            const userName = idpUser?.givenName
-              ? `${idpUser.givenName}${idpUser.familyName ? ' ' + idpUser.familyName : ''}`
-              : authStatus.email || 'Unknown'
+          // Create user object from authStatus with Kinde user data
+          const userName = idpUser?.givenName
+            ? `${idpUser.givenName}${idpUser.familyName ? ' ' + idpUser.familyName : ''}`
+            : authStatus.email || 'Unknown'
 
-            const userData: UserContextData = {
-              userId: authStatus.userId,
-              idpSub: authStatus.userId,
-              email: authStatus.email,
-              name: userName,
-              tenantId: authStatus.tenantId,
-              isTenantAdmin: authStatus.isTenantAdmin || false,
-              isActive: true, // Assume active if authenticated
-              onboardingCompleted: authStatus.onboardingCompleted || false,
-              needsOnboarding: authStatus.needsOnboarding || false,
-            }
-
-            setUser(userData)
-
-            // Only set tenant when real tenant data has arrived. If tenantData is
-            // still loading, leave tenant as null so the sidebar shows 'Zopkit'
-            // instead of the misleading 'Organization' placeholder. The
-            // tenantIdStable effect below will call setTenant once useTenant
-            // resolves with the actual company name.
-            if (tenantData) {
-              setTenant({
-                tenantId: tenantData.tenantId || authStatus.tenantId,
-                companyName: tenantData.companyName || '',
-                subdomain: tenantData.subdomain || 'unknown',
-                industry: tenantData.industry || 'Business',
-                logoUrl: tenantData.logoUrl || undefined,
-              })
-            }
-            setPermissions(
-              authStatus.userPermissions || authStatus.legacyPermissions || []
-            )
-            setRoles(authStatus.userRoles || [])
-            setLastRefreshTime(new Date())
-
-            if (showToast) {
-              toast.success('Permissions refreshed successfully')
-            }
-          } else if (!authData?.authStatus?.isAuthenticated) {
-            // User is not authenticated
-            setUser(null)
-            setTenant(null)
-            setPermissions([])
-            setRoles([])
-            setLastRefreshTime(null)
+          const userData: UserContextData = {
+            userId: authStatus.userId,
+            idpSub: authStatus.userId,
+            email: authStatus.email,
+            name: userName,
+            tenantId: authStatus.tenantId,
+            isTenantAdmin: authStatus.isTenantAdmin || false,
+            isActive: true, // Assume active if authenticated
+            onboardingCompleted: authStatus.onboardingCompleted || false,
+            needsOnboarding: authStatus.needsOnboarding || false,
           }
-        } catch (error: any) {
-          console.error('❌ Failed to fetch user context:', error)
 
-          if (error.response?.status === 401) {
-            // Authentication failed - clear state
-            setUser(null)
-            setTenant(null)
-            setPermissions([])
-            setRoles([])
-            setLastRefreshTime(null)
-          } else if (showToast) {
-            toast.error('Failed to refresh permissions')
+          setUser(userData)
+
+          // Only set tenant when real tenant data has arrived. If tenantData is
+          // still loading, leave tenant as null so the sidebar shows 'Zopkit'
+          // instead of the misleading 'Organization' placeholder. The
+          // tenantIdStable effect below will call setTenant once useTenant
+          // resolves with the actual company name.
+          if (tenantData) {
+            setTenant({
+              tenantId: tenantData.tenantId || authStatus.tenantId,
+              companyName: tenantData.companyName || '',
+              subdomain: tenantData.subdomain || 'unknown',
+              industry: tenantData.industry || 'Business',
+              logoUrl: tenantData.logoUrl || undefined,
+            })
           }
-        } finally {
-          setLoading(false)
+          setPermissions(
+            authStatus.userPermissions || authStatus.legacyPermissions || []
+          )
+          setRoles(authStatus.userRoles || [])
+          setLastRefreshTime(new Date())
+
+          if (showToast) {
+            toast.success('Permissions refreshed successfully')
+          }
+        } else if (!authData?.authStatus?.isAuthenticated) {
+          // User is not authenticated
+          setUser(null)
+          setTenant(null)
+          setPermissions([])
+          setRoles([])
+          setLastRefreshTime(null)
         }
-      },
-      [location.pathname]
-    )
+      } catch (error: any) {
+        console.error('❌ Failed to fetch user context:', error)
+
+        if (error.response?.status === 401) {
+          // Authentication failed - clear state
+          setUser(null)
+          setTenant(null)
+          setPermissions([])
+          setRoles([])
+          setLastRefreshTime(null)
+        } else if (showToast) {
+          toast.error('Failed to refresh permissions')
+        }
+      } finally {
+        setLoading(false)
+      }
+    }, [])
 
     // Manual refresh function exposed to components
     const refreshUserContext = useCallback(async () => {
@@ -266,7 +261,7 @@ export const UserContextProvider: React.FC<UserContextProviderProps> =
           logoUrl: tenantData.logoUrl || undefined,
         })
       }
-    }, [tenantIdStable, user?.tenantId])
+    }, [tenantIdStable, user])
 
     // Auto-refresh effect
     useEffect(() => {

@@ -59,14 +59,14 @@ const LandingV2: React.FC = () => {
         <LandingProductScreenshotRail />
         <LandingWorkflowBlock />
         <LandingIndustriesGrid />
-        <LandingTestimonial quote={quote} />
+        <LandingTestimonial quotes={[quote]} />
         <LandingContactSection
           contactForm={contactForm}
           setContactForm={setContactForm}
           isSubmitting={isSubmittingContact}
           setIsSubmitting={setIsSubmittingContact}
         />
-        <LandingClosingCta onBookDemo={scrollToContact} />
+        <LandingClosingCta />
       </main>
 
       <LandingFooter marketing />

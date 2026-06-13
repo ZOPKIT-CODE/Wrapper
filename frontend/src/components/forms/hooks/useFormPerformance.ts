@@ -1,15 +1,16 @@
 import { useMemo, useCallback, useRef, useEffect, useState } from 'react'
 import { useFormContext } from '../contexts/FormContext'
 import type { FormValue, FormValues } from '../types'
+import { logger } from '@/lib/logger'
 
 /**
  * Hook for form performance optimizations
  */
 export const useFormPerformance = () => {
   const { methods } = useFormContext()
+  const watchedValues = methods.watch()
 
-  // Memoized form values to prevent unnecessary re-renders
-  const formValues = useMemo(() => methods.getValues(), [methods.watch()])
+  const formValues = watchedValues as FormValues
 
   // Memoized validation state
   const validationState = useMemo(
@@ -50,8 +51,9 @@ export const useFormPerformance = () => {
 
   // Cleanup timeouts on unmount
   useEffect(() => {
+    const timers = debounceRef.current
     return () => {
-      Object.values(debounceRef.current).forEach(clearTimeout)
+      Object.values(timers).forEach(clearTimeout)
     }
   }, [])
 
@@ -168,7 +170,7 @@ export const useLazyFieldComponents = () => {
             await import('../field-components/RadioField')
             break
           default:
-            console.warn(`Unknown field type: ${fieldType}`)
+            logger.warn(`Unknown field type: ${fieldType}`)
             return
         }
 
@@ -201,9 +203,10 @@ export const useFormAnalytics = () => {
   // Track step completion time
   useEffect(() => {
     const stepStartTime = Date.now()
+    const stepTimes = stepTimesRef.current
 
     return () => {
-      stepTimesRef.current[currentStep] = Date.now() - stepStartTime
+      stepTimes[currentStep] = Date.now() - stepStartTime
     }
   }, [currentStep])
 

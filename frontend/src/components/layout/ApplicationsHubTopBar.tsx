@@ -14,9 +14,9 @@ export function ApplicationsHubTopBar() {
     <header
       className="border-border sticky top-0 z-50 flex h-14 shrink-0 items-center gap-4 border-b px-6"
       style={{
-        background: 'color-mix(in oklch, var(--background) 88%, transparent)',
-        backdropFilter: 'saturate(1.5) blur(14px)',
-        WebkitBackdropFilter: 'saturate(1.5) blur(14px)',
+        background: 'color-mix(in oklch, var(--background) 68%, transparent)',
+        backdropFilter: 'saturate(1.5) blur(16px)',
+        WebkitBackdropFilter: 'saturate(1.5) blur(16px)',
         fontFamily: 'var(--zk-font)',
       }}
     >

@@ -349,7 +349,7 @@ const ApplicationAssignmentManager: React.FC = () => {
       setLoading(false)
     }
     // guard uses ref, no stale closure risk
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [])
 
   // Run once on mount — these callbacks have empty deps so their references never change
   useEffect(() => {

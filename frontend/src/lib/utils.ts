@@ -1,4 +1,5 @@
 import { User } from '@/types/user-management'
+import { logger } from '@/lib/logger'
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 
@@ -89,7 +90,7 @@ export class PerformanceMonitor {
   static endMeasure(name: string): number {
     const startTime = this.measurements.get(name)
     if (!startTime) {
-      console.warn(`No start time found for measurement: ${name}`)
+      logger.warn(`No start time found for measurement: ${name}`)
       return 0
     }
 
@@ -98,7 +99,7 @@ export class PerformanceMonitor {
 
     // Log slow operations
     if (duration > 100) {
-      console.warn(
+      logger.warn(
         `Slow operation detected: ${name} took ${duration.toFixed(2)}ms`
       )
     }

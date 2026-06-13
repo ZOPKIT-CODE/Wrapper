@@ -1,4 +1,5 @@
 import React from 'react'
+import { logger } from '@/lib/logger'
 import axios from 'axios'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/lib/auth/cognito-auth'
@@ -491,7 +492,7 @@ export function useRoles(filters?: {
           return rolesData
         }
       } catch (error) {
-        console.warn(
+        logger.warn(
           '⚠️ Failed to fetch from /admin/roles/all, trying fallback:',
           error instanceof Error ? error.message : error
         )
@@ -619,7 +620,7 @@ export function useDebounceCallback<T extends (...args: never[]) => unknown>(
   const [debounceTimer, setDebounceTimer] = React.useState<NodeJS.Timeout>()
 
   return React.useCallback(
-    ((...args) => {
+    (...args: Parameters<T>) => {
       if (debounceTimer) {
         clearTimeout(debounceTimer)
       }
@@ -629,7 +630,7 @@ export function useDebounceCallback<T extends (...args: never[]) => unknown>(
       }, delay)
 
       setDebounceTimer(newTimer)
-    }) as T,
+    },
     [callback, delay, debounceTimer]
-  )
+  ) as T
 }

@@ -95,7 +95,7 @@ export const NavBody = ({ children, className }: NavBodyProps) => {
     <div
       className={cn(
         'pointer-events-auto relative z-50 hidden flex-row items-center justify-between lg:flex',
-        'border-border bg-background/95 w-full border-b px-8 py-3 backdrop-blur-sm',
+        'border-border/60 bg-background/55 w-full border-b px-8 py-3 backdrop-blur-xl backdrop-saturate-150',
         className
       )}
     >
@@ -165,7 +165,7 @@ export const MobileNav = ({ children, className }: MobileNavProps) => {
     <div
       className={cn(
         'pointer-events-auto relative z-50 flex flex-col items-center justify-between lg:hidden',
-        'border-border bg-background/95 w-full border-b backdrop-blur-sm',
+        'border-border/60 bg-background/55 w-full border-b backdrop-blur-xl backdrop-saturate-150',
         className
       )}
     >
@@ -216,8 +216,38 @@ export const MobileNavMenu = ({
   )
 }
 
-export const NavbarLogo = ({ visible: _visible }: { visible?: boolean }) => {
+export const NavbarLogo = ({
+  visible: _visible,
+  minimal = false,
+}: {
+  visible?: boolean
+  minimal?: boolean
+}) => {
   ;(NavbarLogo as typeof NavbarLogo & NavbarLogoMarker).__isNavbarLogo = true
+
+  if (minimal) {
+    return (
+      <a
+        href="/"
+        className="marketing-nav-logo relative z-20 shrink-0"
+        aria-label="Zopkit home"
+      >
+        <img
+          src={config.LOGO_URL}
+          alt=""
+          className="marketing-nav-logo__mark block h-9 w-9 shrink-0 rounded-full object-cover"
+          aria-hidden="true"
+        />
+        <span className="marketing-nav-logo__title text-[15px] leading-none font-bold tracking-tight text-[#13204a]">
+          Zopkit
+        </span>
+        <span className="marketing-nav-logo__tagline text-[9px] leading-none font-medium tracking-[0.06em] text-[#7c84a0]">
+          Grow - Thrive - Scale
+        </span>
+      </a>
+    )
+  }
+
   return (
     <a href="/" className="relative z-20 flex shrink-0 items-center pl-2">
       <img
@@ -256,7 +286,7 @@ const SpotlightButton = ({
       onClick={onClick}
       onMouseMove={handleMouseMove}
       className={cn(
-        'group relative inline-flex items-center justify-center overflow-hidden rounded-full bg-neutral-950 px-6 py-2.5 font-medium text-neutral-50 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-neutral-500/20 active:scale-95',
+        'group relative inline-flex items-center justify-center overflow-hidden rounded-full bg-neutral-950 px-6 py-2.5 font-medium text-neutral-50 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-neutral-500/20 focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:outline-none active:scale-95',
         className
       )}
       {...props}

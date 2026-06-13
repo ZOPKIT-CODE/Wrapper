@@ -1,47 +1,42 @@
-@keyframes rb-focus-pulse {
+@keyframes rb-lens-pulse {
   0%,
   100% {
     opacity: 0.88;
     transform: scale(1);
   }
-  45% {
+  50% {
     opacity: 1;
     transform: scale(1.06);
   }
 }
 
-@keyframes rb-focus-ring-pulse {
+@keyframes rb-core-pulse {
   0%,
   100% {
-    opacity: 0.5;
+    opacity: 0.92;
   }
   50% {
     opacity: 1;
   }
 }
 
-[data-landing] .robot-ball__focus-core {
-  animation: rb-focus-pulse 2.4s ease-in-out infinite;
+[data-landing] .robot-ball__iris-ring,
+[data-landing] .robot-ball__core {
   transform-origin: center;
   transform-box: fill-box;
+  animation: rb-lens-pulse 2.4s ease-in-out infinite;
 }
 
-[data-landing] .robot-ball__focus-hot {
-  animation: rb-focus-pulse 2.4s ease-in-out infinite;
+[data-landing] .robot-ball__core-hot {
   transform-origin: center;
   transform-box: fill-box;
-}
-
-[data-landing] .robot-ball__focus-ring {
-  animation: rb-focus-ring-pulse 2.4s ease-in-out infinite;
-  transform-origin: center;
-  transform-box: fill-box;
+  animation: rb-core-pulse 2.4s ease-in-out infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  [data-landing] .robot-ball__focus-core,
-  [data-landing] .robot-ball__focus-hot,
-  [data-landing] .robot-ball__focus-ring {
+  [data-landing] .robot-ball__iris-ring,
+  [data-landing] .robot-ball__core,
+  [data-landing] .robot-ball__core-hot {
     animation: none !important;
   }
 }

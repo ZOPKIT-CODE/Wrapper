@@ -86,7 +86,7 @@ function buildParticles(
       id: i,
       kind,
       angle,
-      delay: coneDelay + coneDur * 0.3 + r1 * 1.85 + (i / count) * 0.04,
+      delay: coneDelay + coneDur * 0.25 + r1 * 1.1 + (i / count) * 0.03,
       duration,
       size,
       depth,

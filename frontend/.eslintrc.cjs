@@ -34,6 +34,32 @@ module.exports = {
   },
   overrides: [
     {
+      files: ['src/lib/logger.ts', 'src/features/onboarding/utils/onboardingLogger.ts', 'src/main.tsx'],
+      rules: { 'no-console': 'off' },
+    },
+    {
+      files: [
+        'src/components/ui/**/*.{ts,tsx}',
+        'src/contexts/**/*.{ts,tsx}',
+        'src/routes/router.tsx',
+        'src/lib/auth/cognito-auth.tsx',
+        'src/components/theme/ThemeProvider.tsx',
+        'src/components/forms/contexts/**/*.{ts,tsx}',
+        'src/components/common/feedback/**/*.{ts,tsx}',
+        'src/components/route-breadcrumb.tsx',
+        'src/components/common/UserAvatar.tsx',
+        'src/features/landing/components/Icons.tsx',
+        'src/features/landing/components/LandingCapabilityIllustrations.tsx',
+        'src/features/landing/components/OrbitalEcosystem.tsx',
+        'src/features/landing/landing-screenshots.tsx',
+        'src/features/notifications/SeasonalCreditsCongratulatoryModal.tsx',
+        'src/features/onboarding/components/OnboardingForm.tsx',
+        'src/features/roles/PermissionRefreshNotification.tsx',
+        'src/features/applications/components/HeroAgentDemo.tsx',
+      ],
+      rules: { 'react-refresh/only-export-components': 'off' },
+    },
+    {
       files: ['src/features/**/*.{ts,tsx}'],
       rules: {
         // Phase 0: warn on new hardcoded palette usage — burn down existing debt over time.

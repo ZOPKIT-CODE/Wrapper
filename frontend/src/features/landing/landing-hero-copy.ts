@@ -12,113 +12,130 @@ export const landingHeroLayout = {
   compactMax: 1199,
 } as const
 
-// ─── Act 1 — ball arrives center + scan flash ─────────────────────────────────
+// ─── Ch1 — ball enters from top to center ─────────────────────────────────────
 
-const act1 = {
-  ballCenterDelay: 0,
-  ballCenterFallDur: 0.8,
-  scanFlashDelay: 0.68,
-  scanFlashDur: 0.5,
+const ch1 = {
+  enterDelay: 0,
+  enterDur: 0.65,
 } as const
 
-const ACT1_END = act1.scanFlashDelay + act1.scanFlashDur
+const CH1_END = ch1.enterDelay + ch1.enterDur
 
-// ─── Act 2 — hero copy + CTAs ────────────────────────────────────────────────
+// ─── Ch2 — ball projects hero copy (steady cone, line-by-line) ───────────────
 
-const act2 = {
-  line1: ACT1_END + 0.04,
-  line2: ACT1_END + 0.14,
-  subtext: ACT1_END + 0.28,
-  divider: ACT1_END + 0.4,
-  cta: ACT1_END + 0.5,
-  headlineDur: 0.75,
-  lineDur: 0.62,
-  subtextDur: 0.52,
-  dividerDur: 0.42,
-  ctaDur: 0.48,
+const ch2 = {
+  copyBeamOn: CH1_END,
+  line1: CH1_END,
+  line2: CH1_END + 0.22,
+  subtext: CH1_END + 0.44,
+  divider: CH1_END + 0.66,
+  cta: CH1_END + 0.88,
+  lineDur: 0.32,
+  subtextDur: 0.28,
+  dividerDur: 0.24,
+  ctaDur: 0.32,
+  copyBeamOff: CH1_END + 1.05,
+  copyBeamRetractDur: 0.22,
+  copyBeamGrowDur: 0.18,
 } as const
 
-const ACT2_END = act2.cta + act2.ctaDur + 0.14
+const CH2_END = ch2.copyBeamOff + ch2.copyBeamRetractDur
 
-// ─── Act 3 — ball descends → puck morph ──────────────────────────────────────
+// ─── Ch3 — straight descent + upward tilt ────────────────────────────────────
 
-const act3 = {
-  ballDescentDelay: ACT2_END,
-  ballDescentDur: 0.9,
-  puckMorphDur: 0.48,
+const ch3 = {
+  travelDelay: CH2_END + 0.06,
+  travelDur: 0.85,
+  tiltDeg: 24,
+  /** Fraction into travel when rotateX begins (0–1). */
+  tiltStartFrac: 0.38,
 } as const
 
-const puckDelay = act3.ballDescentDelay + act3.ballDescentDur
-const ACT3_END = puckDelay + act3.puckMorphDur
+const TRAVEL_END = ch3.travelDelay + ch3.travelDur
 
-// ─── Act 4 — beam → screen → side cards ─────────────────────────────────────
+// ─── Ch4 — ball morphs into puck ─────────────────────────────────────────────
 
-const act4 = {
-  coneDur: 0.78,
-  screenDur: 0.74,
-  sideDur: 0.5,
-  sideStagger: 0.06,
-  connLead: 0.14,
+const ch4 = {
+  puckMorphDelay: TRAVEL_END,
+  puckMorphDur: 0.42,
 } as const
 
-const coneDelay = ACT3_END
-const screenDelay = coneDelay + act4.coneDur
-const sideLeft = screenDelay + act4.screenDur
-const sideRight = sideLeft + act4.sideStagger
-const connectors = sideRight + act4.connLead
+const puckDelay = ch4.puckMorphDelay
+const CH4_END = puckDelay + ch4.puckMorphDur
+
+// ─── Ch5 — puck projects orchestrator + side rails ───────────────────────────
+
+const ch5 = {
+  coneDelay: CH4_END + 0.05,
+  coneDur: 0.55,
+  screenDur: 0.52,
+  sideDur: 0.38,
+  sideStagger: 0.04,
+  connLead: 0.1,
+} as const
+
+const screenDelay = ch5.coneDelay + ch5.coneDur
+const sideLeft = screenDelay + ch5.screenDur
+const sideRight = sideLeft + ch5.sideStagger
+const connectors = sideRight + ch5.sideDur + ch5.connLead
 
 const conn = (offset: number) => connectors + offset
 
-/** Staged 4-act hero choreography (time-based on load). */
+/** Staged hero story — robo-ball projects copy, morphs to puck, projects HUD. */
 export const landingHeroMotion = {
-  act1,
-  act1End: ACT1_END,
-  act2,
-  act2End: ACT2_END,
-  act3,
-  act3End: ACT3_END,
-  act4,
+  ch1,
+  ch1End: CH1_END,
+  ch2,
+  ch2End: CH2_END,
+  ch3,
+  ch3End: TRAVEL_END,
+  ch4,
+  ch4End: CH4_END,
+  ch5,
 
-  /** @deprecated use act2 — kept for headline components */
-  scene1: { ...act2, end: ACT2_END },
+  /** @deprecated use ch2 */
+  act2: ch2,
+  act2End: CH2_END,
 
-  ballCenterDelay: act1.ballCenterDelay,
-  ballCenterFallDur: act1.ballCenterFallDur,
-  scanFlashDelay: act1.scanFlashDelay,
-  scanFlashDur: act1.scanFlashDur,
+  ballCenterDelay: ch1.enterDelay,
+  ballCenterFallDur: ch1.enterDur,
 
-  ballDescentDelay: act3.ballDescentDelay,
-  ballDescentDur: act3.ballDescentDur,
+  /** @deprecated scan flash removed — copy cone replaces it */
+  scanFlashDelay: CH1_END - 0.18,
+  scanFlashDur: 0.28,
+
+  ballDescentDelay: ch3.travelDelay,
+  ballDescentDur: ch3.travelDur,
   puckDelay,
-  puckMorphDur: act3.puckMorphDur,
+  puckMorphDur: ch4.puckMorphDur,
 
-  coneDelay,
-  coneDur: act4.coneDur,
+  coneDelay: ch5.coneDelay,
+  coneDur: ch5.coneDur,
   screenDelay,
-  screenDur: act4.screenDur,
+  screenDur: ch5.screenDur,
   sideLeft,
   sideRight,
-  sideDur: act4.sideDur,
+  sideDur: ch5.sideDur,
   connectors,
 
-  floorBurst: coneDelay + 0.1,
+  floorBurst: ch5.coneDelay + 0.08,
 
   conn: {
-    crmDot: conn(0.08),
-    crmPath: conn(0.16),
-    crmFlow: conn(0.5),
-    crmEnd: conn(0.5),
-    finDot: conn(0.2),
-    finPath: conn(0.28),
-    finFlow: conn(0.56),
-    finEnd: conn(0.56),
-    hrmsDot: conn(0.16),
-    hrmsPath: conn(0.24),
-    hrmsFlow: conn(0.52),
-    hrmsEnd: conn(0.52),
-    projDot: conn(0.24),
-    projPath: conn(0.32),
-    projFlow: conn(0.6),
-    projEnd: conn(0.6),
+    crmDot: conn(0.05),
+    crmPath: conn(0.1),
+    crmFlow: conn(0.32),
+    crmEnd: conn(0.32),
+    finDot: conn(0.12),
+    finPath: conn(0.18),
+    finFlow: conn(0.36),
+    finEnd: conn(0.36),
+    hrmsDot: conn(0.1),
+    hrmsPath: conn(0.15),
+    hrmsFlow: conn(0.34),
+    hrmsEnd: conn(0.34),
+    projDot: conn(0.15),
+    projPath: conn(0.2),
+    projFlow: conn(0.38),
+    projEnd: conn(0.38),
   },
 } as const

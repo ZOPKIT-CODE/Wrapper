@@ -39,7 +39,7 @@ export const TeamStep = ({
         shouldTouch: false,
       })
     }
-  }, [teamMembers])
+  }, [teamMembers, form])
 
   const getPersonalizedContent = () => {
     switch (userClassification) {

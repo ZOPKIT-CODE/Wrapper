@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 
 interface Organization {
@@ -187,7 +187,7 @@ export function useOrganizationHierarchyData(
   const [locations, setLocations] = useState<Location[]>([])
   const [loading, setLoading] = useState(false)
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true)
       const hierarchyResponse = await makeRequest(
@@ -284,11 +284,11 @@ export function useOrganizationHierarchyData(
     } finally {
       setLoading(false)
     }
-  }
+  }, [tenantId, makeRequest])
 
   useEffect(() => {
     loadData()
-  }, [tenantId])
+  }, [loadData])
 
   return { hierarchy, parentOrg, locations, loading, loadData, setLocations }
 }

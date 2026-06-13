@@ -2,6 +2,7 @@
 // This replaces the custom code generation that was causing infinite redirects
 
 import { JWT_SECRET, WRAPPER_DOMAIN } from '../lib/config'
+import { logger } from '@/lib/logger'
 
 // Define user interface for type safety - compatible with Kinde UserProfile
 interface User {
@@ -136,7 +137,7 @@ class JWTService {
         return Math.random().toString(36).substr(2, length)
       }
     } catch (error) {
-      console.warn('⚠️ Error generating random ID, using fallback:', error)
+      logger.warn('⚠️ Error generating random ID, using fallback:', error)
       return Math.random().toString(36).substr(2, length)
     }
   }
@@ -165,8 +166,8 @@ class JWTService {
    */
   private generateFallbackSecret(): string {
     const fallbackSecret = this.generateRandomId(64)
-    console.warn('⚠️ JWT_SECRET not set, using generated fallback secret')
-    console.warn('⚠️ Set JWT_SECRET environment variable for production use')
+    logger.warn('⚠️ JWT_SECRET not set, using generated fallback secret')
+    logger.warn('⚠️ Set JWT_SECRET environment variable for production use')
     return fallbackSecret
   }
 

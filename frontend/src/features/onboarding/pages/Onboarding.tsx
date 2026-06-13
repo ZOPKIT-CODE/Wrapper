@@ -38,6 +38,8 @@ const OnboardingPage: React.FC = () => {
         setTheme(originalTheme)
       }
     }
+    // Force light theme for onboarding; restore prior theme on unmount only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   if (isAuthLoading) {

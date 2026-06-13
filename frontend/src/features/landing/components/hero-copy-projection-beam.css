@@ -1,0 +1,21 @@
+/* ─── Copy-phase projection — short upward cone from robo-ball ─── */
+
+[data-landing] .hero-copy-projection-beam {
+  mix-blend-mode: screen;
+  overflow: visible;
+}
+
+[data-landing] .hero-copy-projection-beam__svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+[data-landing] .hero-copy-projection-beam__shape {
+  filter: blur(1.6px);
+}
+
+[data-landing] .hero-copy-projection-beam__core {
+  filter: blur(0.4px);
+  mix-blend-mode: screen;
+}

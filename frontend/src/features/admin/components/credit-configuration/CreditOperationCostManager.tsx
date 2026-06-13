@@ -592,7 +592,7 @@ const CreditOperationCostManager: React.FC = () => {
       })
       toast.error(`API test failed: ${message}`)
     }
-  }, [selectedTenant, activeTab, costChanges, operationCosts, applications])
+  }, [selectedTenant, applications])
 
   // Initialize data
   useEffect(() => {

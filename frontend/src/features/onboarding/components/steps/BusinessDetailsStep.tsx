@@ -1,4 +1,5 @@
 import { Input } from '@/components/ui/input'
+import { logger } from '@/lib/logger'
 import { Textarea } from '@/components/ui/textarea'
 import {
   Select,
@@ -121,7 +122,7 @@ export const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = memo(
         try {
           return autoPopulateLocalization(countryCode)
         } catch (error) {
-          console.warn(
+          logger.warn(
             'Error populating localization for country:',
             countryCode,
             error

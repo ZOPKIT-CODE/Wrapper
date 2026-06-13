@@ -194,22 +194,25 @@ export function RoleManagementDashboard() {
     navigate({ to: '/dashboard/roles/new' })
   }
 
-  const handleEditRole = useCallback(async (role: DashboardRole) => {
-    // Check if it's a system role
-    if (role.isSystemRole) {
-      if (role.roleName === 'Super Administrator') {
-        // toast.error('Super Administrator role cannot be edited. This role has predefined comprehensive permissions.');
+  const handleEditRole = useCallback(
+    async (role: DashboardRole) => {
+      // Check if it's a system role
+      if (role.isSystemRole) {
+        if (role.roleName === 'Super Administrator') {
+          // toast.error('Super Administrator role cannot be edited. This role has predefined comprehensive permissions.');
+          return
+        } else {
+          toast.error(
+            'System roles cannot be edited. Please create a custom role instead.'
+          )
+        }
         return
-      } else {
-        toast.error(
-          'System roles cannot be edited. Please create a custom role instead.'
-        )
       }
-      return
-    }
 
-    navigate({ to: `/dashboard/roles/${role.roleId}/edit` })
-  }, [])
+      navigate({ to: `/dashboard/roles/${role.roleId}/edit` })
+    },
+    [navigate]
+  )
 
   const handleViewRole = useCallback(
     (role: DashboardRole) => {
@@ -254,7 +257,7 @@ export function RoleManagementDashboard() {
         throw error
       }
     },
-    [triggerRefresh, invalidateRoles, refetchRoles, searchQuery, typeFilter]
+    [triggerRefresh, invalidateRoles, refetchRoles]
   )
 
   const bulkDeleteRoles = useCallback(
@@ -280,7 +283,7 @@ export function RoleManagementDashboard() {
         throw error
       }
     },
-    [triggerRefresh]
+    [triggerRefresh, invalidateRoles, refetchRoles]
   )
 
   const confirmDeleteRole = useCallback(async () => {

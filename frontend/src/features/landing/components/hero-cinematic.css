@@ -2,6 +2,8 @@
  * Shape system: marketing CTAs = pill; HUD screens = 12–14px; chips/tags = 4–6px; agent cards = flat top bar + 0–7px bottom.
  */
 [data-landing] .landing-hero--cinematic {
+  /* Tighter optical gap — headline sits closer under the light nav bar */
+  --landing-hero-below-nav: clamp(0.5rem, 0.9vh, 0.875rem);
   --holo-cyan: #5ee7ff;
   --holo-cyan-dim: rgba(94, 231, 255, 0.55);
   --holo-glass: rgba(8, 22, 48, 0.52);
@@ -9,6 +11,8 @@
   color: rgba(232, 244, 255, 0.95);
   background: #020610;
   isolation: isolate;
+  z-index: 2;
+  overflow: visible;
 }
 
 [data-landing] .landing-hero--cinematic .landing-display,
@@ -48,12 +52,16 @@
 }
 
 [data-landing] .landing-hero--cinematic .landing-btn-primary {
-  background-color: rgba(240, 248, 255, 0.96) !important;
-  color: #020610 !important;
+  background-color: #141a24 !important;
+  color: #ffffff !important;
   box-shadow:
-    0 0 0 1px rgba(94, 231, 255, 0.25),
-    0 8px 32px rgba(0, 0, 0, 0.45),
-    0 0 24px rgba(94, 231, 255, 0.15) !important;
+    0 0 0 1px rgba(94, 231, 255, 0.2),
+    0 8px 28px rgba(0, 0, 0, 0.35) !important;
+}
+
+[data-landing] .landing-hero--cinematic .landing-btn-primary:hover {
+  background-color: #0f141c !important;
+  opacity: 1 !important;
 }
 
 /* Lab backdrop */
@@ -180,6 +188,7 @@
 
 [data-landing] .hero-stage-ball {
   transform-origin: center center;
+  transform-style: preserve-3d;
 }
 
 [data-landing] .landing-hero--cinematic .landing-hero-illust-center {
@@ -421,6 +430,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  overflow: visible;
 }
 
 [data-landing] .landing-hero-projection-puck__inner {
@@ -430,6 +440,7 @@
   align-items: center;
   transform-origin: center bottom;
   will-change: opacity, transform;
+  overflow: visible;
 }
 
 /* Beam column — puck emitter to screen bottom */
@@ -575,4 +586,40 @@
   [data-landing] .landing-hero--cinematic .landing-hero-illust-cone {
     animation: none !important;
   }
+}
+
+/* Mobile cinematic hero (simplified story, same dark language as desktop) */
+[data-landing] .landing-hero--mobile-cine {
+  min-height: auto;
+  padding-bottom: 0;
+}
+
+[data-landing] .landing-hero-copy--mobile-cine {
+  position: relative;
+  z-index: 4;
+  padding: calc(var(--landing-marketing-nav-height) + 0.75rem) 1rem 1.25rem;
+}
+
+[data-landing] .landing-hero--mobile-cine .landing-hero-subtext {
+  color: rgba(148, 200, 255, 0.72);
+}
+
+[data-landing] .landing-hero-mobile-stage {
+  position: relative;
+  z-index: 3;
+  padding: 0 1rem 1.75rem;
+}
+
+[data-landing] .landing-hero-mobile-ball {
+  display: flex;
+  justify-content: center;
+  margin-bottom: -1.25rem;
+  position: relative;
+  z-index: 2;
+  filter: drop-shadow(0 0 16px rgba(94, 231, 255, 0.35));
+}
+
+[data-landing] .landing-hero-mobile-frame {
+  position: relative;
+  z-index: 1;
 }

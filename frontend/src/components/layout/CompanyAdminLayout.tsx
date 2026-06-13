@@ -9,7 +9,7 @@ export function CompanyAdminLayout({
 }) {
   return (
     <div className="bg-background text-foreground min-h-screen">
-      <header className="border-border bg-background/90 sticky top-0 z-30 flex h-14 items-center gap-6 border-b px-6 backdrop-blur">
+      <header className="border-border/60 bg-background/55 sticky top-0 z-30 flex h-14 items-center gap-6 border-b px-6 backdrop-blur-xl backdrop-saturate-150">
         <Link
           to="/company-admin"
           className="text-foreground flex items-center gap-2 text-sm font-semibold"

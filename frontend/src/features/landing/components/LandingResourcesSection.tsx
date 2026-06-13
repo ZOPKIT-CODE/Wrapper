@@ -1,44 +1,39 @@
-import {
-  ArrowUpRight,
-  FileText,
-  GraduationCap,
-  Users,
-  Zap,
-  type LucideIcon,
-} from 'lucide-react'
+import { ArrowUpRight } from 'lucide-react'
+import { Link } from '@tanstack/react-router'
+import { LandingScrollReveal } from '@/features/landing/components/LandingScrollReveal'
 import { LandingSectionIntro } from '@/features/landing/components/LandingSectionIntro'
 
-type ResourceItem = {
-  icon: LucideIcon
-  title: string
-  desc: string
-  to: string
-}
+type ResourceItem =
+  | { title: string; desc: string; href: string }
+  | { title: string; desc: string; to: '/blog' }
+  | {
+      title: string
+      desc: string
+      to: '/products/$productId'
+      params: { productId: 'zopkit-academy' }
+    }
 
 const RESOURCES: ResourceItem[] = [
   {
-    icon: FileText,
     title: 'Documentation',
     desc: 'Guides, API references, and setup playbooks',
-    to: '/docs',
+    to: '/blog',
   },
   {
-    icon: GraduationCap,
     title: 'Academy',
     desc: 'Video tutorials and role-based courses',
-    to: '/products/zopkit-academy',
+    to: '/products/$productId',
+    params: { productId: 'zopkit-academy' },
   },
   {
-    icon: Users,
     title: 'Community',
     desc: 'Connect with operators and admins',
-    to: '/community',
+    href: '/#contact',
   },
   {
-    icon: Zap,
     title: 'Support',
     desc: 'Priority help when your team is live',
-    to: '/help',
+    href: 'mailto:sales@zopkit.com',
   },
 ]
 
@@ -46,45 +41,68 @@ export function LandingResourcesSection() {
   return (
     <section
       id="resources"
-      className="landing-section border-border bg-background border-b py-20 sm:py-24"
+      className="landing-section landing-section-tint border-border border-b py-20 sm:py-24"
     >
       <div className="landing-section-inner">
-        <LandingSectionIntro
-          eyebrow="Resources"
-          title="Guides and support for your rollout"
-          lead="Documentation, training, and help channels for teams moving from pilot to production."
-          titleClassName="max-w-lg"
-        />
+        <LandingScrollReveal>
+          <LandingSectionIntro
+            eyebrow="Resources"
+            title="Guides and support for your rollout"
+            lead="Documentation, training, and help channels for teams moving from pilot to production."
+            titleClassName="max-w-lg"
+            animate={false}
+          />
+        </LandingScrollReveal>
 
-        <div className="border-border mt-10 grid border sm:grid-cols-2">
-          {RESOURCES.map((item, index) => (
-            <a
-              key={item.title}
-              href={item.to}
-              className={`landing-industry-cell group block p-8 transition-colors sm:p-10 ${
-                index % 2 === 0 ? 'border-border sm:border-r' : ''
-              } ${index < 2 ? 'border-border border-b' : ''}`}
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex min-w-0 items-center gap-3">
-                  <span className="border-border bg-muted/40 flex h-9 w-9 shrink-0 items-center justify-center rounded-md border">
-                    <item.icon
-                      className="text-muted-foreground h-4 w-4"
-                      aria-hidden
-                    />
-                  </span>
-                  <h3 className="landing-display text-foreground text-lg font-semibold">
+        <ul className="border-border mt-10 overflow-hidden rounded-lg border">
+          {RESOURCES.map((item, index) => {
+            const rowClassName =
+              'landing-resource-row group flex items-center justify-between gap-6 px-6 py-5 transition-colors sm:px-8 sm:py-6'
+            const rowContent = (
+              <>
+                <div className="min-w-0">
+                  <h3 className="landing-display text-foreground text-base font-semibold sm:text-lg">
                     {item.title}
                   </h3>
+                  <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
+                    {item.desc}
+                  </p>
                 </div>
-                <ArrowUpRight className="text-muted-foreground mt-2 h-4 w-4 shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
-              </div>
-              <p className="text-muted-foreground mt-3 pl-12 text-sm leading-relaxed">
-                {item.desc}
-              </p>
-            </a>
-          ))}
-        </div>
+                <ArrowUpRight
+                  className="text-muted-foreground h-4 w-4 shrink-0 opacity-40 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100"
+                  aria-hidden
+                />
+              </>
+            )
+
+            return (
+              <li
+                key={item.title}
+                className={index > 0 ? 'border-border border-t' : undefined}
+              >
+                <LandingScrollReveal delay={0.05 + index * 0.05}>
+                  {'href' in item ? (
+                    <a href={item.href} className={rowClassName}>
+                      {rowContent}
+                    </a>
+                  ) : 'params' in item ? (
+                    <Link
+                      to={item.to}
+                      params={item.params}
+                      className={rowClassName}
+                    >
+                      {rowContent}
+                    </Link>
+                  ) : (
+                    <Link to={item.to} className={rowClassName}>
+                      {rowContent}
+                    </Link>
+                  )}
+                </LandingScrollReveal>
+              </li>
+            )
+          })}
+        </ul>
       </div>
     </section>
   )

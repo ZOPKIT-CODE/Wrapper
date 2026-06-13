@@ -40,7 +40,36 @@ const Landing: React.FC = () => {
   const [isSubmittingContact, setIsSubmittingContact] = useState(false)
 
   const { scrollToContact } = useLandingSectionScroll()
-  const testimonial = testimonials[0]
+
+  useEffect(() => {
+    document.title = 'Zopkit — CRM, finance, and ops on one workspace'
+    const description =
+      'Shared identity, records, and billing across CRM, finance, HR, and operations. Book a demo to see the orchestrator on your stack.'
+
+    const setMeta = (name: string, content: string, property = false) => {
+      const attr = property ? 'property' : 'name'
+      let el = document.querySelector(`meta[${attr}="${name}"]`)
+      if (!el) {
+        el = document.createElement('meta')
+        el.setAttribute(attr, name)
+        document.head.appendChild(el)
+      }
+      el.setAttribute('content', content)
+    }
+
+    setMeta('description', description)
+    setMeta('og:title', 'Zopkit — One shared workspace', true)
+    setMeta('og:description', description, true)
+    setMeta('og:type', 'website', true)
+    setMeta(
+      'og:image',
+      'https://res.cloudinary.com/dr9vzaa7u/image/upload/v1771698937/Zopkit-full_n7lm0f.png',
+      true
+    )
+    setMeta('twitter:card', 'summary_large_image')
+    setMeta('twitter:title', 'Zopkit — One shared workspace')
+    setMeta('twitter:description', description)
+  }, [])
 
   useEffect(() => {
     const recoveryReason = consumeSessionRecoveryReason()
@@ -61,15 +90,18 @@ const Landing: React.FC = () => {
 
   return (
     <MarketingPageShell>
+      <a href="#main-content" className="landing-skip-link">
+        Skip to content
+      </a>
       <MarketingNavbar minimal onBookDemo={scrollToContact} />
 
-      <main className="landing-page-main">
+      <main id="main-content" className="landing-page-main">
         <PetpoojaHeroSection onBookDemo={scrollToContact} />
         <LandingCapabilityRow />
         <LandingWorkflowBlock />
         <LandingIndustriesGrid />
         <LandingResourcesSection />
-        <LandingTestimonial quote={testimonial} />
+        <LandingTestimonial quotes={testimonials} />
         <LandingContactSection
           contactForm={contactForm}
           setContactForm={setContactForm}
@@ -77,7 +109,7 @@ const Landing: React.FC = () => {
           setIsSubmitting={setIsSubmittingContact}
         />
 
-        <LandingClosingCta onBookDemo={scrollToContact} />
+        <LandingClosingCta />
       </main>
 
       <LandingFooter marketing />

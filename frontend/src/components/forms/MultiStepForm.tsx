@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useRef } from 'react'
+import { logger } from '@/lib/logger'
 import { useForm, FormProvider as RHFProvider } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { cn } from '@/lib/utils'
@@ -165,9 +166,6 @@ export const MultiStepForm: React.FC<MultiStepFormProps> = ({
     methods.formState.isDirty,
     methods.formState.isSubmitted,
     methods.formState.touchedFields,
-    methods.formState.errors,
-    currentStep,
-    debug,
   ])
 
   // Render field component
@@ -181,7 +179,7 @@ export const MultiStepForm: React.FC<MultiStepFormProps> = ({
       )[field.type]
 
     if (!FieldComponent) {
-      console.warn(`No component found for field type: ${field.type}`)
+      logger.warn(`No component found for field type: ${field.type}`)
       return null
     }
 

@@ -1,15 +1,37 @@
 import { useId } from 'react'
 
+/** Zopkit holographic palette — aligned with puck + hero cyan. */
+const CYAN = '#4dc8ff'
+const CYAN_BRIGHT = '#5ee7ff'
+const CYAN_DIM = '#2e8cb8'
+const NAVY_DEEP = '#060e1c'
+const NAVY_MID = '#122848'
+const NAVY_PANEL = '#1a3558'
+const NAVY_BAND = '#0c1628'
+
 type RobotBallProps = {
   size?: number
 }
 
-/** Sci-fi focus drone — white armor plates, central blue projector lens, red accent strips. */
+/** Panelled sphere — navy metallic shell, cyan rim LEDs, holographic eye. */
 export function RobotBall({ size = 90 }: RobotBallProps) {
   const uid = useId().replace(/:/g, '')
 
-  const panelStroke = '#080a0e'
-  const groove = 'rgba(8,10,14,0.85)'
+  const rimLights = [
+    { x: 50, y: 11, w: 16, h: 3.2 },
+    { x: 50, y: 86, w: 16, h: 3.2 },
+    { x: 11, y: 50, w: 3.2, h: 16 },
+    { x: 86, y: 50, w: 3.2, h: 16 },
+  ] as const
+
+  const cyanAccents = [
+    { x: 32, y: 28, w: 5, h: 2 },
+    { x: 62, y: 30, w: 4, h: 1.8 },
+    { x: 28, y: 62, w: 4.5, h: 2 },
+    { x: 64, y: 66, w: 5, h: 2 },
+    { x: 38, y: 72, w: 3.5, h: 1.6 },
+    { x: 70, y: 38, w: 3.5, h: 1.6 },
+  ] as const
 
   return (
     <svg
@@ -20,363 +42,286 @@ export function RobotBall({ size = 90 }: RobotBallProps) {
       aria-hidden="true"
     >
       <defs>
-        <radialGradient id={`${uid}-shell`} cx="38%" cy="30%" r="68%">
-          <stop offset="0%" stopColor="#f0f3f7" />
-          <stop offset="45%" stopColor="#d4dae2" />
-          <stop offset="100%" stopColor="#8e98a8" />
+        <radialGradient id={`${uid}-shell`} cx="38%" cy="28%" r="68%">
+          <stop offset="0%" stopColor="#3d6a9a" />
+          <stop offset="38%" stopColor="#1a3558" />
+          <stop offset="72%" stopColor="#122848" />
+          <stop offset="100%" stopColor={NAVY_DEEP} />
         </radialGradient>
-        <radialGradient id={`${uid}-plate-a`} cx="42%" cy="32%" r="65%">
-          <stop offset="0%" stopColor="#ffffff" />
-          <stop offset="55%" stopColor="#e2e8ef" />
-          <stop offset="100%" stopColor="#a8b2c0" />
+        <radialGradient id={`${uid}-panel`} cx="45%" cy="38%" r="55%">
+          <stop offset="0%" stopColor="#2f5688" />
+          <stop offset="100%" stopColor={NAVY_PANEL} />
         </radialGradient>
-        <radialGradient id={`${uid}-plate-b`} cx="58%" cy="68%" r="60%">
-          <stop offset="0%" stopColor="#eef1f5" />
-          <stop offset="100%" stopColor="#9aa5b4" />
-        </radialGradient>
-        <radialGradient id={`${uid}-recess`} cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#141820" />
-          <stop offset="100%" stopColor="#06080c" />
-        </radialGradient>
-        <radialGradient id={`${uid}-housing`} cx="48%" cy="44%" r="55%">
-          <stop offset="0%" stopColor="#2a3038" />
-          <stop offset="100%" stopColor="#0a0c10" />
-        </radialGradient>
-        <radialGradient id={`${uid}-iris`} cx="46%" cy="42%" r="58%">
-          <stop offset="0%" stopColor="#5ec8ff" />
-          <stop offset="28%" stopColor="#1a78e8" />
-          <stop offset="62%" stopColor="#0a3888" />
-          <stop offset="100%" stopColor="#020818" />
-        </radialGradient>
-        <radialGradient id={`${uid}-core`} cx="44%" cy="40%" r="52%">
-          <stop offset="0%" stopColor="#ffffff" />
-          <stop offset="22%" stopColor="#c8f0ff" />
-          <stop offset="55%" stopColor="#38b8ff" />
-          <stop offset="100%" stopColor="#0848a0" />
-        </radialGradient>
-        <radialGradient id={`${uid}-spec`} cx="32%" cy="26%" r="48%">
-          <stop offset="0%" stopColor="rgba(255,255,255,0.55)" />
-          <stop offset="100%" stopColor="rgba(255,255,255,0)" />
-        </radialGradient>
-        <linearGradient id={`${uid}-red`} x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="rgba(255,40,60,0)" />
-          <stop offset="20%" stopColor="#ff2848" />
-          <stop offset="50%" stopColor="#ff5570" />
-          <stop offset="80%" stopColor="#ff2848" />
-          <stop offset="100%" stopColor="rgba(255,40,60,0)" />
+        <linearGradient id={`${uid}-band-v`} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor={NAVY_DEEP} />
+          <stop offset="18%" stopColor={NAVY_BAND} />
+          <stop offset="50%" stopColor="#142a48" />
+          <stop offset="82%" stopColor={NAVY_BAND} />
+          <stop offset="100%" stopColor={NAVY_DEEP} />
         </linearGradient>
+        <linearGradient id={`${uid}-band-h`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={NAVY_DEEP} />
+          <stop offset="50%" stopColor={NAVY_MID} />
+          <stop offset="100%" stopColor={NAVY_DEEP} />
+        </linearGradient>
+        <radialGradient id={`${uid}-iris`} cx="48%" cy="42%" r="58%">
+          <stop offset="0%" stopColor="#d8f8ff" />
+          <stop offset="22%" stopColor={CYAN} />
+          <stop offset="55%" stopColor="#1a4a88" />
+          <stop offset="100%" stopColor={NAVY_DEEP} />
+        </radialGradient>
+        <radialGradient id={`${uid}-core`} cx="46%" cy="40%" r="50%">
+          <stop offset="0%" stopColor="#ffffff" />
+          <stop offset="35%" stopColor="#e8fcff" />
+          <stop offset="100%" stopColor={CYAN} />
+        </radialGradient>
+        <linearGradient id={`${uid}-rim`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#f0fcff" />
+          <stop offset="50%" stopColor={CYAN_BRIGHT} />
+          <stop offset="100%" stopColor={CYAN_DIM} />
+        </linearGradient>
+        <linearGradient id={`${uid}-accent`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#f8feff" />
+          <stop offset="100%" stopColor={CYAN} />
+        </linearGradient>
+        <radialGradient id={`${uid}-shine`} cx="32%" cy="22%" r="48%">
+          <stop offset="0%" stopColor="rgba(94,231,255,0.22)" />
+          <stop offset="100%" stopColor="rgba(94,231,255,0)" />
+        </radialGradient>
         <filter
-          id={`${uid}-bloom`}
-          x="-80%"
-          y="-80%"
-          width="260%"
-          height="260%"
+          id={`${uid}-cyan-glow`}
+          x="-120%"
+          y="-120%"
+          width="340%"
+          height="340%"
         >
-          <feGaussianBlur stdDeviation="2.8" result="b" />
+          <feGaussianBlur stdDeviation="2.2" result="b" />
           <feMerge>
             <feMergeNode in="b" />
             <feMergeNode in="SourceGraphic" />
           </feMerge>
         </filter>
         <filter
-          id={`${uid}-led`}
+          id={`${uid}-lens-glow`}
           x="-100%"
           y="-100%"
           width="300%"
           height="300%"
         >
-          <feGaussianBlur stdDeviation="1.2" />
+          <feGaussianBlur stdDeviation="3.2" result="b" />
+          <feMerge>
+            <feMergeNode in="b" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
         </filter>
-        <filter
-          id={`${uid}-red-glow`}
-          x="-50%"
-          y="-200%"
-          width="200%"
-          height="500%"
-        >
-          <feGaussianBlur stdDeviation="1.8" />
+        <filter id={`${uid}-soft`} x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="0.6" />
         </filter>
         <clipPath id={`${uid}-clip`}>
           <circle cx="50" cy="50" r="46" />
         </clipPath>
       </defs>
 
-      {/* Shadow under-sphere */}
-      <ellipse
-        cx="50"
-        cy="92"
-        rx="28"
-        ry="5"
-        fill="rgba(0,0,0,0.45)"
-        opacity="0.6"
-      />
-
-      {/* Base sphere */}
       <circle cx="50" cy="50" r="46" fill={`url(#${uid}-shell)`} />
-      <circle
-        cx="50"
-        cy="50"
-        r="46"
-        fill={`url(#${uid}-recess)`}
-        opacity="0.35"
-      />
+      <circle cx="50" cy="50" r="46" fill={`url(#${uid}-shine)`} />
 
       <g clipPath={`url(#${uid}-clip)`}>
-        {/* White armor gores */}
-        <path
-          d="M 28,11 Q 50,5 72,11 Q 67,28 58,34 Q 50,27 42,34 Q 33,28 28,11Z"
-          fill={`url(#${uid}-plate-a)`}
-          stroke={panelStroke}
-          strokeWidth="0.7"
-        />
-        <path
-          d="M 27,89 Q 50,95 73,89 Q 68,72 59,66 Q 50,73 41,66 Q 32,72 27,89Z"
-          fill={`url(#${uid}-plate-b)`}
-          stroke={panelStroke}
-          strokeWidth="0.7"
-        />
-        <path
-          d="M 71,11 Q 93,27 96,50 Q 83,54 75,48 Q 77,34 67,22 Z"
-          fill={`url(#${uid}-plate-a)`}
-          stroke={panelStroke}
-          strokeWidth="0.7"
-        />
-        <path
-          d="M 96,50 Q 93,73 71,89 Q 67,77 75,65 Q 83,59 75,48 Z"
-          fill={`url(#${uid}-plate-b)`}
-          stroke={panelStroke}
-          strokeWidth="0.7"
-        />
-        <path
-          d="M 29,11 Q 7,27 4,50 Q 17,54 25,48 Q 23,34 33,22 Z"
-          fill={`url(#${uid}-plate-a)`}
-          stroke={panelStroke}
-          strokeWidth="0.7"
-        />
-        <path
-          d="M 4,50 Q 7,73 29,89 Q 33,77 25,65 Q 17,59 25,48 Z"
-          fill={`url(#${uid}-plate-b)`}
-          stroke={panelStroke}
-          strokeWidth="0.7"
-        />
-
-        {/* Dark mechanical channels */}
-        <path
-          d="M 28,11 Q 50,5 72,11"
-          fill="none"
-          stroke={groove}
-          strokeWidth="1.8"
-        />
-        <path
-          d="M 27,89 Q 50,95 73,89"
-          fill="none"
-          stroke={groove}
-          strokeWidth="1.8"
-        />
-        <path
-          d="M 71,11 Q 93,27 96,50"
-          fill="none"
-          stroke={groove}
-          strokeWidth="1.4"
-        />
-        <path
-          d="M 4,50 Q 7,27 29,11"
-          fill="none"
-          stroke={groove}
-          strokeWidth="1.4"
-        />
-        <path
-          d="M 96,50 Q 93,73 71,89"
-          fill="none"
-          stroke={groove}
-          strokeWidth="1.4"
-        />
-        <path
-          d="M 4,50 Q 7,73 29,89"
-          fill="none"
-          stroke={groove}
-          strokeWidth="1.4"
-        />
-
-        {/* Vents / micro detail */}
-        {[22, 78].map((x) => (
-          <g key={x} opacity="0.55">
-            {[44, 48, 52, 56].map((y) => (
-              <rect
-                key={y}
-                x={x}
-                y={y}
-                width="2.2"
-                height="0.9"
-                rx="0.3"
-                fill="#0c1018"
-              />
-            ))}
-          </g>
-        ))}
-
-        {/* Red accent strips — equator */}
-        <path
-          d="M 6,50 Q 28,47 50,50 Q 72,53 94,50"
-          fill="none"
-          stroke={`url(#${uid}-red)`}
-          strokeWidth="2.4"
-          strokeLinecap="round"
-          filter={`url(#${uid}-red-glow)`}
+        <rect
+          x="44"
+          y="4"
+          width="12"
+          height="92"
+          fill={`url(#${uid}-band-v)`}
           opacity="0.95"
         />
-        {/* Red vertical arcs */}
-        <path
-          d="M 18,28 Q 14,50 18,72"
-          fill="none"
-          stroke="#ff3355"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-          filter={`url(#${uid}-red-glow)`}
-          opacity="0.85"
-        />
-        <path
-          d="M 82,28 Q 86,50 82,72"
-          fill="none"
-          stroke="#ff3355"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-          filter={`url(#${uid}-red-glow)`}
-          opacity="0.85"
+        <rect
+          x="4"
+          y="44"
+          width="92"
+          height="12"
+          fill={`url(#${uid}-band-h)`}
+          opacity="0.95"
         />
 
-        {/* Specular highlight */}
-        <ellipse cx="36" cy="26" rx="20" ry="12" fill={`url(#${uid}-spec)`} />
-      </g>
+        <path
+          d="M 8 8 Q 50 6 92 8 Q 88 44 50 44 Q 12 44 8 8 Z"
+          fill={`url(#${uid}-panel)`}
+          stroke="rgba(94,231,255,0.14)"
+          strokeWidth="0.45"
+        />
+        <path
+          d="M 8 92 Q 50 94 92 92 Q 88 56 50 56 Q 12 56 8 92 Z"
+          fill={`url(#${uid}-panel)`}
+          stroke="rgba(94,231,255,0.14)"
+          strokeWidth="0.45"
+        />
+        <path
+          d="M 8 8 Q 6 50 8 92 Q 44 88 44 50 Q 44 12 8 8 Z"
+          fill={`url(#${uid}-panel)`}
+          stroke="rgba(94,231,255,0.14)"
+          strokeWidth="0.45"
+        />
+        <path
+          d="M 92 8 Q 94 50 92 92 Q 56 88 56 50 Q 56 12 92 8 Z"
+          fill={`url(#${uid}-panel)`}
+          stroke="rgba(94,231,255,0.14)"
+          strokeWidth="0.45"
+        />
 
-      {/* Secondary blue status LEDs */}
-      {(
-        [
-          [34, 38],
-          [66, 38],
-          [34, 62],
-          [66, 62],
+        {[
           [50, 22],
           [50, 78],
-        ] as const
-      ).map(([x, y], i) => (
-        <rect
-          key={i}
-          x={x - 1.6}
-          y={y - 0.7}
-          width="3.2"
-          height="1.4"
-          rx="0.4"
-          fill="#4dc8ff"
-          filter={`url(#${uid}-led)`}
-          opacity="0.9"
+          [22, 50],
+          [78, 50],
+          [30, 30],
+          [70, 30],
+          [30, 70],
+          [70, 70],
+        ].map(([cx, cy], i) => (
+          <circle
+            key={i}
+            cx={cx}
+            cy={cy}
+            r="0.85"
+            fill="#1a3558"
+            stroke="rgba(94,231,255,0.2)"
+            strokeWidth="0.3"
+          />
+        ))}
+        <path
+          d="M 18 18 L 32 32 M 68 18 L 82 32 M 18 82 L 32 68 M 68 82 L 82 68"
+          stroke="rgba(94,231,255,0.1)"
+          strokeWidth="0.5"
         />
+
+        {cyanAccents.map(({ x, y, w, h }, i) => (
+          <rect
+            key={i}
+            x={x - w / 2}
+            y={y - h / 2}
+            width={w}
+            height={h}
+            rx="0.6"
+            fill={`url(#${uid}-accent)`}
+            opacity="0.8"
+            filter={`url(#${uid}-soft)`}
+          />
+        ))}
+      </g>
+
+      {rimLights.map(({ x, y, w, h }, i) => (
+        <g key={i} filter={`url(#${uid}-cyan-glow)`}>
+          <rect
+            x={x - w / 2}
+            y={y - h / 2}
+            width={w}
+            height={h}
+            rx="1"
+            fill={NAVY_DEEP}
+          />
+          <rect
+            x={x - w / 2 + 0.6}
+            y={y - h / 2 + 0.5}
+            width={w - 1.2}
+            height={h - 1}
+            rx="0.8"
+            fill={`url(#${uid}-rim)`}
+          />
+        </g>
       ))}
 
-      {/* ─── Central focus projector lens ─── */}
-      <circle cx="50" cy="50" r="23" fill={`url(#${uid}-housing)`} />
+      <circle cx="50" cy="50" r="22" fill={NAVY_MID} />
       <circle
         cx="50"
         cy="50"
-        r="23"
+        r="22"
         fill="none"
-        stroke="#1a2028"
-        strokeWidth="2"
+        stroke="rgba(94,231,255,0.28)"
+        strokeWidth="1.8"
       />
-      {[0, 45, 90, 135, 180, 225, 270, 315].map((deg, i) => {
+      {([0, 45, 90, 135, 180, 225, 270, 315] as const).map((deg, i) => {
         const r = (deg * Math.PI) / 180
         return (
           <circle
             key={i}
-            cx={50 + 20.5 * Math.cos(r)}
-            cy={50 + 20.5 * Math.sin(r)}
-            r="0.85"
-            fill="#3a4450"
+            cx={50 + 19 * Math.cos(r)}
+            cy={50 + 19 * Math.sin(r)}
+            r="0.75"
+            fill="#224a72"
           />
         )
       })}
-      <circle cx="50" cy="50" r="17.5" fill="#080c14" />
+      <circle cx="50" cy="50" r="17" fill={NAVY_DEEP} />
       <circle
         cx="50"
         cy="50"
-        r="17.5"
+        r="17"
         fill="none"
-        stroke="#1e2838"
+        stroke="rgba(94,231,255,0.18)"
         strokeWidth="1.2"
       />
-      <circle cx="50" cy="50" r="14" fill={`url(#${uid}-iris)`} />
+      <circle cx="50" cy="50" r="13.5" fill={`url(#${uid}-iris)`} />
       <circle
         cx="50"
         cy="50"
-        r="14"
+        r="13.5"
         fill="none"
-        stroke="#2088ff"
+        stroke={CYAN}
         strokeWidth="0.7"
-        opacity="0.6"
+        opacity="0.65"
+        filter={`url(#${uid}-lens-glow)`}
+        className="robot-ball__iris-ring"
       />
-      {/* Focus rings */}
-      {[11.5, 8.5, 5.5].map((r) => (
-        <circle
-          key={r}
-          cx="50"
-          cy="50"
-          r={r}
-          fill="none"
-          stroke="rgba(94,200,255,0.22)"
-          strokeWidth="0.45"
-        />
-      ))}
+      <circle cx="50" cy="50" r="8" fill="#030810" />
       <circle
         cx="50"
         cy="50"
-        r="9"
-        fill="none"
-        stroke="#40a8ff"
-        strokeWidth="1.4"
-        className="robot-ball__focus-ring"
-        filter={`url(#${uid}-bloom)`}
-      />
-      <circle
-        cx="50"
-        cy="50"
-        r="6.2"
+        r="6.5"
         fill={`url(#${uid}-core)`}
-        className="robot-ball__focus-core"
-        filter={`url(#${uid}-bloom)`}
+        filter={`url(#${uid}-lens-glow)`}
+        className="robot-ball__core"
       />
       <circle
         cx="50"
         cy="50"
         r="2.4"
         fill="#ffffff"
-        className="robot-ball__focus-hot"
-      />
-      <ellipse
-        cx="46"
-        cy="46"
-        rx="2.2"
-        ry="1.4"
-        fill="rgba(255,255,255,0.75)"
-        transform="rotate(-25,46,46)"
+        className="robot-ball__core-hot"
       />
 
-      {/* Horizontal lens flare */}
       <ellipse
         cx="50"
         cy="50"
-        rx="26"
+        rx="28"
         ry="2.2"
-        fill="rgba(120,220,255,0.12)"
-        filter={`url(#${uid}-bloom)`}
+        fill="rgba(94,231,255,0.35)"
+        filter={`url(#${uid}-soft)`}
       />
+      <ellipse cx="50" cy="50" rx="14" ry="1" fill="rgba(255,255,255,0.55)" />
 
-      {/* Outer rim */}
+      <ellipse
+        cx="36"
+        cy="28"
+        rx="18"
+        ry="11"
+        fill="rgba(94,231,255,0.12)"
+        transform="rotate(-20, 36, 28)"
+        clipPath={`url(#${uid}-clip)`}
+      />
       <circle
         cx="50"
         cy="50"
         r="46"
         fill="none"
-        stroke="rgba(180,200,220,0.35)"
+        stroke="rgba(94,231,255,0.32)"
+        strokeWidth="0.85"
+      />
+      <circle
+        cx="50"
+        cy="50"
+        r="46"
+        fill="none"
+        stroke="rgba(0,0,0,0.35)"
         strokeWidth="1"
       />
     </svg>

@@ -6,6 +6,8 @@ type LandingSectionIntroProps = {
   lead?: string
   className?: string
   titleClassName?: string
+  /** @default true — set false when wrapped in LandingScrollReveal */
+  animate?: boolean
 }
 
 export function LandingSectionIntro({
@@ -14,9 +16,10 @@ export function LandingSectionIntro({
   lead,
   className,
   titleClassName,
+  animate = true,
 }: LandingSectionIntroProps) {
   return (
-    <div className={cn('landing-fade-in max-w-3xl', className)}>
+    <div className={cn(animate && 'landing-fade-in', 'max-w-3xl', className)}>
       <p className="landing-section-eyebrow">{eyebrow}</p>
       <h2 className={cn('landing-section-heading mt-2', titleClassName)}>
         {title}

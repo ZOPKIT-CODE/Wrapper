@@ -1,38 +1,43 @@
-import api from '@/lib/api';
-import { Notification } from '@/features/notifications/types';
+import api from '@/lib/api'
+import { logger } from '@/lib/logger'
+import { Notification } from '@/features/notifications/types'
 
 export class NotificationService {
   /**
    * Get notifications for the current tenant/user
    */
-  static async getNotifications(options: {
-    limit?: number;
-    offset?: number;
-    includeRead?: boolean;
-    includeDismissed?: boolean;
-    type?: string;
-    priority?: string;
-  } = {}): Promise<Notification[]> {
+  static async getNotifications(
+    options: {
+      limit?: number
+      offset?: number
+      includeRead?: boolean
+      includeDismissed?: boolean
+      type?: string
+      priority?: string
+    } = {}
+  ): Promise<Notification[]> {
     try {
-      const params = new URLSearchParams();
+      const params = new URLSearchParams()
 
-      if (options.limit) params.append('limit', options.limit.toString());
-      if (options.offset) params.append('offset', options.offset.toString());
-      if (options.includeRead !== undefined) params.append('includeRead', options.includeRead.toString());
-      if (options.includeDismissed !== undefined) params.append('includeDismissed', options.includeDismissed.toString());
-      if (options.type) params.append('type', options.type);
-      if (options.priority) params.append('priority', options.priority);
+      if (options.limit) params.append('limit', options.limit.toString())
+      if (options.offset) params.append('offset', options.offset.toString())
+      if (options.includeRead !== undefined)
+        params.append('includeRead', options.includeRead.toString())
+      if (options.includeDismissed !== undefined)
+        params.append('includeDismissed', options.includeDismissed.toString())
+      if (options.type) params.append('type', options.type)
+      if (options.priority) params.append('priority', options.priority)
 
-      const response = await api.get(`/notifications?${params.toString()}`);
+      const response = await api.get(`/notifications?${params.toString()}`)
 
       if (response.data.success) {
-        return response.data.data;
+        return response.data.data
       }
 
-      throw new Error('Failed to fetch notifications');
+      throw new Error('Failed to fetch notifications')
     } catch (error) {
-      console.error('Error fetching notifications:', error);
-      throw error;
+      console.error('Error fetching notifications:', error)
+      throw error
     }
   }
 
@@ -41,16 +46,16 @@ export class NotificationService {
    */
   static async getUnreadCount(): Promise<number> {
     try {
-      const response = await api.get('/notifications/unread-count');
+      const response = await api.get('/notifications/unread-count')
 
       if (response.data.success) {
-        return response.data.data.count;
+        return response.data.data.count
       }
 
-      return 0;
+      return 0
     } catch (error) {
-      console.error('Error fetching unread count:', error);
-      return 0;
+      console.error('Error fetching unread count:', error)
+      return 0
     }
   }
 
@@ -59,16 +64,16 @@ export class NotificationService {
    */
   static async markAsRead(notificationId: string): Promise<Notification> {
     try {
-      const response = await api.put(`/notifications/${notificationId}/read`);
+      const response = await api.put(`/notifications/${notificationId}/read`)
 
       if (response.data.success) {
-        return response.data.data;
+        return response.data.data
       }
 
-      throw new Error('Failed to mark notification as read');
+      throw new Error('Failed to mark notification as read')
     } catch (error) {
-      console.error('Error marking notification as read:', error);
-      throw error;
+      console.error('Error marking notification as read:', error)
+      throw error
     }
   }
 
@@ -77,16 +82,16 @@ export class NotificationService {
    */
   static async markAsDismissed(notificationId: string): Promise<Notification> {
     try {
-      const response = await api.put(`/notifications/${notificationId}/dismiss`);
+      const response = await api.put(`/notifications/${notificationId}/dismiss`)
 
       if (response.data.success) {
-        return response.data.data;
+        return response.data.data
       }
 
-      throw new Error('Failed to dismiss notification');
+      throw new Error('Failed to dismiss notification')
     } catch (error) {
-      console.error('Error dismissing notification:', error);
-      throw error;
+      console.error('Error dismissing notification:', error)
+      throw error
     }
   }
 
@@ -95,16 +100,16 @@ export class NotificationService {
    */
   static async markAllAsRead(): Promise<{ markedAsRead: number }> {
     try {
-      const response = await api.put('/notifications/mark-all-read');
+      const response = await api.put('/notifications/mark-all-read')
 
       if (response.data.success) {
-        return response.data.data;
+        return response.data.data
       }
 
-      throw new Error('Failed to mark all notifications as read');
+      throw new Error('Failed to mark all notifications as read')
     } catch (error) {
-      console.error('Error marking all notifications as read:', error);
-      throw error;
+      console.error('Error marking all notifications as read:', error)
+      throw error
     }
   }
 
@@ -112,22 +117,22 @@ export class NotificationService {
    * Create a test notification (development only)
    */
   static async createTestNotification(data: {
-    type?: string;
-    title?: string;
-    message?: string;
-    priority?: string;
+    type?: string
+    title?: string
+    message?: string
+    priority?: string
   }): Promise<Notification> {
     try {
-      const response = await api.post('/notifications/test', data);
+      const response = await api.post('/notifications/test', data)
 
       if (response.data.success) {
-        return response.data.data;
+        return response.data.data
       }
 
-      throw new Error('Failed to create test notification');
+      throw new Error('Failed to create test notification')
     } catch (error) {
-      console.error('Error creating test notification:', error);
-      throw error;
+      console.error('Error creating test notification:', error)
+      throw error
     }
   }
 
@@ -139,34 +144,37 @@ export class NotificationService {
       {
         type: 'seasonal_credits',
         title: '🎄 Holiday Credits Available!',
-        message: 'You\'ve received 500 holiday credits to use across all your applications.',
-        priority: 'medium'
+        message:
+          "You've received 500 holiday credits to use across all your applications.",
+        priority: 'medium',
       },
       {
         type: 'system_update',
         title: '🚀 New Features Released',
-        message: 'Check out the latest updates including improved analytics and enhanced security.',
-        priority: 'low'
+        message:
+          'Check out the latest updates including improved analytics and enhanced security.',
+        priority: 'low',
       },
       {
         type: 'billing_reminder',
         title: '💳 Payment Due Soon',
         message: 'Your subscription payment of $29.99 is due in 5 days.',
-        priority: 'high'
+        priority: 'high',
       },
       {
         type: 'credit_expiry_warning',
         title: '⏰ Credits Expiring Soon',
-        message: '1,200 credits will expire in 3 days. Use them before they\'re gone!',
-        priority: 'urgent'
-      }
-    ];
+        message:
+          "1,200 credits will expire in 3 days. Use them before they're gone!",
+        priority: 'urgent',
+      },
+    ]
 
     for (const sample of samples) {
       try {
-        await this.createTestNotification(sample);
+        await this.createTestNotification(sample)
       } catch (error) {
-        console.warn('Failed to create sample notification:', error);
+        logger.warn('Failed to create sample notification:', error)
       }
     }
   }

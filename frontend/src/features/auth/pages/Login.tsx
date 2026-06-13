@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { logger } from '@/lib/logger'
 import { useAuth, type AuthUser } from '@/lib/auth/cognito-auth'
 import { useSilentSsoOnFocus } from '@/lib/auth/silent-sso'
 import { useNavigate, useSearch } from '@tanstack/react-router'
@@ -36,15 +37,15 @@ function extractCrmIntendedPath(returnTo: string): string {
     let intendedPath = returnUrl.pathname
     if (!intendedPath || intendedPath === '/') intendedPath = '/'
     if (intendedPath.includes('/callback')) {
-      console.warn('⚠️ Blocked redirect to callback, using fallback')
+      logger.warn('⚠️ Blocked redirect to callback, using fallback')
       intendedPath = '/'
     }
     if (intendedPath.includes('/login')) {
-      console.warn('⚠️ Blocked redirect to login, using fallback')
+      logger.warn('⚠️ Blocked redirect to login, using fallback')
       intendedPath = '/'
     }
     if (returnUrl.hostname.includes('wrapper.zopkit.com')) {
-      console.warn('⚠️ Blocked wrapper domain, using fallback')
+      logger.warn('⚠️ Blocked wrapper domain, using fallback')
       intendedPath = '/'
     }
     return intendedPath
@@ -64,7 +65,7 @@ function validateCrmReturnToUrl(returnTo: string): boolean {
     if (isDevelopment && returnUrl.hostname === 'localhost') return true
     const crmHostname = new URL(CRM_DOMAIN).hostname
     if (!returnUrl.hostname.includes(crmHostname)) {
-      console.warn('⚠️ Invalid CRM domain:', returnUrl.hostname)
+      logger.warn('⚠️ Invalid CRM domain:', returnUrl.hostname)
       return false
     }
     const wrapperHostname = new URL(config.WRAPPER_DOMAIN).hostname
@@ -73,7 +74,7 @@ function validateCrmReturnToUrl(returnTo: string): boolean {
       returnUrl.pathname.includes('/login') ||
       returnUrl.hostname.includes(wrapperHostname)
     ) {
-      console.warn('⚠️ Dangerous returnTo URL blocked:', returnUrl.pathname)
+      logger.warn('⚠️ Dangerous returnTo URL blocked:', returnUrl.pathname)
       return false
     }
     return true
@@ -317,7 +318,7 @@ export function Login() {
         try {
           await getToken()
         } catch (tokenError) {
-          console.warn('⚠️ Could not get token via getToken():', tokenError)
+          logger.warn('⚠️ Could not get token via getToken():', tokenError)
         }
         const currentUrl = new URL(window.location.href)
         currentUrl.searchParams.delete('returnTo')
@@ -397,9 +398,9 @@ export function Login() {
     }
     handlePostLoginRedirect()
     return () => cancel()
-    // NOTE: isRedirecting is intentionally NOT a dependency — it is set inside
-    // this effect, and including it caused the effect to tear down mid-request
-    // and cancel the status check.
+    // isRedirecting is intentionally omitted — it is set inside this effect and
+    // including it can cancel the status check mid-request.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, user, isLoading, returnTo, navigate])
 
   const handleBackToCRM = () => {

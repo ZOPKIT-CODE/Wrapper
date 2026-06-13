@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useState, useRef, useCallback } from 'react'
 import { useNavigate, useLocation } from '@tanstack/react-router'
 import { useAuth } from '@/lib/auth/cognito-auth'
 import useSilentAuth from '@/hooks/useSilentAuth'
@@ -51,6 +51,28 @@ export const SilentAuthGuard: React.FC<SilentAuthGuardProps> = ({
   const isPublicPath = publicPaths.some(
     (path) => location.pathname === path || location.pathname.startsWith(path)
   )
+
+  const handleAuthenticatedUser = useCallback(
+    async (_authState: Awaited<ReturnType<typeof getAuthState>>) => {
+      try {
+        setInitializationComplete(true)
+      } catch (error) {
+        logger.error(
+          '❌ SilentAuthGuard: Error handling authenticated user:',
+          error
+        )
+        setInitializationComplete(true)
+      }
+    },
+    []
+  )
+
+  const handleUnauthenticatedUser = useCallback(async () => {
+    if (!isPublicPath) {
+      navigate({ to: '/landing', replace: true })
+    }
+    setInitializationComplete(true)
+  }, [isPublicPath, navigate])
 
   // Reset init guard when user logs out so next login runs again
   useEffect(() => {
@@ -117,33 +139,9 @@ export const SilentAuthGuard: React.FC<SilentAuthGuardProps> = ({
     isChecking,
     checkSilentAuth,
     getAuthState,
+    handleAuthenticatedUser,
+    handleUnauthenticatedUser,
   ])
-
-  // Handle authenticated user routing
-  const handleAuthenticatedUser = async (
-    _authState: Awaited<ReturnType<typeof getAuthState>>
-  ) => {
-    try {
-      // Never auto-redirect from public paths — the landing page handles
-      // showing the correct CTA (Dashboard / Onboarding / Sign In).
-      setInitializationComplete(true)
-    } catch (error) {
-      logger.error(
-        '❌ SilentAuthGuard: Error handling authenticated user:',
-        error
-      )
-      setInitializationComplete(true)
-    }
-  }
-
-  // Handle unauthenticated user routing
-  const handleUnauthenticatedUser = async () => {
-    // If on a protected route, redirect to landing
-    if (!isPublicPath) {
-      navigate({ to: '/landing', replace: true })
-    }
-    setInitializationComplete(true)
-  }
 
   // Show loading spinner while initializing
   if (

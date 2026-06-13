@@ -264,7 +264,7 @@ export const AccountSettings: React.FC = () => {
         setIsSaving(false)
       }
     },
-    [logoFile, addToast, form]
+    [logoFile, addToast, form, queryClient]
   )
 
   if (isLoading) {

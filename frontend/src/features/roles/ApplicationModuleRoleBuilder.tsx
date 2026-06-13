@@ -203,7 +203,6 @@ export function ApplicationModuleRoleBuilder({
     }
 
     loadRoleBuilderOptions()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialRole])
 
   // Parse existing role permissions into selection format
@@ -839,7 +838,7 @@ export function ApplicationModuleRoleBuilder({
                   <PearlButton
                     variant="outline"
                     onClick={onCancel}
-                    className="text-slate-500 hover:text-primary"
+                    className="hover:text-primary text-slate-500"
                   >
                     Cancel
                   </PearlButton>

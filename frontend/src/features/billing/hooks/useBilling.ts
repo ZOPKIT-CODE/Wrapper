@@ -4,6 +4,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react'
+import { logger } from '@/lib/logger'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { useDashboardTabParam } from '@/hooks/useDashboardTabParam'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -206,7 +207,7 @@ export function useBilling() {
         const response = await creditAPI.getCurrentBalance()
         return response.data.data
       } catch (error: unknown) {
-        console.warn('Failed to fetch credit balance:', error)
+        logger.warn('Failed to fetch credit balance:', error)
         return {
           availableCredits: 0,
           freeCredits: 0,
@@ -227,7 +228,7 @@ export function useBilling() {
           const response = await creditAPI.getTenantAllocations()
           return response.data.data ?? []
         } catch (error: unknown) {
-          console.warn('Failed to fetch credit allocations:', error)
+          logger.warn('Failed to fetch credit allocations:', error)
           return []
         }
       },
@@ -243,7 +244,7 @@ export function useBilling() {
         const response = await creditAPI.getEntityBalances()
         return response.data.data ?? []
       } catch (error: unknown) {
-        console.warn('Failed to fetch entity balances:', error)
+        logger.warn('Failed to fetch entity balances:', error)
         return []
       }
     },
@@ -259,7 +260,7 @@ export function useBilling() {
         const response = await subscriptionAPI.getBillingHistory()
         return response.data.data ?? []
       } catch (error: unknown) {
-        console.warn('Failed to fetch billing history:', error)
+        logger.warn('Failed to fetch billing history:', error)
         return []
       }
     },

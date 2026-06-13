@@ -1,5 +1,6 @@
 import { useEffect, useCallback } from 'react'
 import { useFormContext } from '../contexts/FormContext'
+import { logger } from '@/lib/logger'
 
 export type PersistenceType = 'localStorage' | 'sessionStorage' | 'none'
 
@@ -57,7 +58,7 @@ export const useFormPersistence = (options: UseFormPersistenceOptions = {}) => {
       }
       storage.setItem(key, JSON.stringify(formData))
     } catch (error) {
-      console.warn('Failed to save form data:', error)
+      logger.warn('Failed to save form data:', error)
     }
   }, [storage, key, currentStep, methods])
 
@@ -80,7 +81,7 @@ export const useFormPersistence = (options: UseFormPersistenceOptions = {}) => {
         }
       }
     } catch (error) {
-      console.warn('Failed to load form data:', error)
+      logger.warn('Failed to load form data:', error)
     }
 
     return null
@@ -93,7 +94,7 @@ export const useFormPersistence = (options: UseFormPersistenceOptions = {}) => {
     try {
       storage.removeItem(key)
     } catch (error) {
-      console.warn('Failed to clear form data:', error)
+      logger.warn('Failed to clear form data:', error)
     }
   }, [storage, key])
 
@@ -113,13 +114,15 @@ export const useFormPersistence = (options: UseFormPersistenceOptions = {}) => {
     return null
   }, [loadFormData, methods])
 
+  const watchedValues = methods.watch()
+
   // Debounced save
   useEffect(() => {
     if (!persistOnChange) return
 
     const timeoutId = setTimeout(saveFormData, debounceMs)
     return () => clearTimeout(timeoutId)
-  }, [methods.watch(), persistOnChange, debounceMs, saveFormData])
+  }, [watchedValues, persistOnChange, debounceMs, saveFormData])
 
   // Save on step change
   useEffect(() => {

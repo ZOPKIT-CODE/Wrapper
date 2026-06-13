@@ -90,7 +90,7 @@ export function useOptimizedQuery<T>(options: UseOptimizedQueryOptions<T>) {
       handleTrialAwareError(error, onError)
       throw error
     }
-  }, [queryKey, queryFn, cacheKey, cacheTime, staleTime, onSuccess, onError])
+  }, [queryFn, cacheKey, cacheTime, staleTime, onSuccess, onError])
 
   // React Query with optimized settings
   const queryResult = useQuery({

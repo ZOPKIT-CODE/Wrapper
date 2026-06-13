@@ -1,59 +1,39 @@
-import { useNavigate } from '@tanstack/react-router'
-import { MarketingButton } from '@/components/marketing/MarketingButton'
-import { LandingBrowserFrame } from '@/features/landing/components/LandingBrowserFrame'
-import { LandingSectionIntro } from '@/features/landing/components/LandingSectionIntro'
-import { scrollToLandingContact } from '@/features/landing/landing-scroll'
+import { Link } from '@tanstack/react-router'
+import { LandingScrollReveal } from '@/features/landing/components/LandingScrollReveal'
 
-type LandingClosingCtaProps = {
-  onBookDemo?: () => void
-}
-
-export function LandingClosingCta({ onBookDemo }: LandingClosingCtaProps) {
-  const navigate = useNavigate()
-  const handleBookDemo = onBookDemo ?? (() => scrollToLandingContact('smooth'))
-
+export function LandingClosingCta() {
   return (
-    <section className="landing-closing landing-section border-border bg-background overflow-hidden border-b">
-      <div className="landing-section-inner py-20 sm:py-24">
-        <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
-          <div className="max-w-lg">
-            <LandingSectionIntro
-              eyebrow="Next steps"
-              title="See the workspace on your data, not a slide deck"
-              lead="Walk through CRM, finance, and ops in one session. We map your current stack and show where records can connect first."
-              titleClassName="max-w-md"
-            />
-
-            <div className="landing-fade-in landing-fade-in-delay-1 mt-8 flex flex-wrap items-center gap-4">
-              <MarketingButton type="button" onClick={handleBookDemo}>
-                Book a demo
-              </MarketingButton>
-              <MarketingButton
-                type="button"
-                marketingVariant="link"
-                onClick={() => navigate({ to: '/pricing' })}
+    <section className="landing-closing landing-section landing-section-tint border-border border-b py-12 sm:py-14">
+      <div className="landing-section-inner">
+        <LandingScrollReveal>
+          <div className="landing-closing-strip flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+            <div className="max-w-xl">
+              <p className="landing-section-eyebrow">Still evaluating?</p>
+              <p className="landing-display text-foreground mt-2 text-lg font-semibold sm:text-xl">
+                Compare plans or return to the form above when you are ready to
+                talk.
+              </p>
+              <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+                Most teams book after reviewing modules and pricing. No need to
+                submit the form twice.
+              </p>
+            </div>
+            <div className="flex shrink-0 flex-wrap items-center gap-4 sm:justify-end">
+              <Link
+                to="/pricing"
+                className="landing-btn-primary landing-cta inline-flex h-11 items-center rounded-full px-7 text-sm font-medium"
               >
                 See pricing
-              </MarketingButton>
+              </Link>
+              <a
+                href="#contact"
+                className="landing-text-link text-sm font-medium underline-offset-4 transition-colors hover:underline"
+              >
+                Back to contact form
+              </a>
             </div>
           </div>
-
-          <div className="landing-closing-frame landing-fade-in landing-fade-in-delay-2 min-w-0">
-            <LandingBrowserFrame
-              url="app.zopkit.com"
-              maxContentHeight={320}
-              variant="hero"
-            >
-              <img
-                src="/fa-dashboard.svg"
-                alt=""
-                className="block h-auto w-full"
-                loading="lazy"
-                decoding="async"
-              />
-            </LandingBrowserFrame>
-          </div>
-        </div>
+        </LandingScrollReveal>
       </div>
     </section>
   )

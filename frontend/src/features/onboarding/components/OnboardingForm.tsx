@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react'
+import { logger } from '@/lib/logger'
 import { useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/lib/auth/cognito-auth'
 import { queryKeys } from '@/hooks/useSharedQueries'
@@ -276,7 +277,7 @@ export const OnboardingForm = () => {
           error: String(error),
           stack: (error as Error)?.stack,
         })
-        console.warn('Failed to restore form data:', error)
+        logger.warn('Failed to restore form data:', error)
         sonnerToast.warning('Unable to restore previous progress', {
           description: 'Starting fresh onboarding process',
           duration: 4000,
@@ -291,6 +292,8 @@ export const OnboardingForm = () => {
     return () => {
       isMounted = false
     }
+    // Mount-only restore — hasRestoredRef prevents duplicate runs.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Sync the IdP profile into admin fields once the SDK resolves (it loads async).
@@ -710,14 +713,14 @@ export const OnboardingForm = () => {
       }
     },
     [
-      selectedFlow,
       clearFormData,
       form,
       setIsSubmitting,
       isRateLimited,
       recordAttempt,
       getTimeUntilReset,
-      setCurrentStep,
+      currentStep,
+      queryClient,
     ]
   )
 

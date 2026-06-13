@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/lib/auth/cognito-auth'
 import type { AxiosRequestConfig } from 'axios'
 import api from '@/lib/api'
@@ -34,19 +34,22 @@ const SuiteDashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null)
 
   /** Uses shared `api` client (auth interceptors + `/api` base URL). */
-  const makeRequest = async <T,>(
-    endpoint: string,
-    config: AxiosRequestConfig = {}
-  ): Promise<T> => {
-    const response = await api.request<T>({
-      url: endpoint,
-      ...config,
-    })
-    return response.data
-  }
+  const makeRequest = useCallback(
+    async <T,>(
+      endpoint: string,
+      config: AxiosRequestConfig = {}
+    ): Promise<T> => {
+      const response = await api.request<T>({
+        url: endpoint,
+        ...config,
+      })
+      return response.data
+    },
+    []
+  )
 
   // Load user's available applications
-  const loadApplications = async () => {
+  const loadApplications = useCallback(async () => {
     try {
       setLoading(true)
       const data = await makeRequest<{ applications: Application[] }>(
@@ -58,10 +61,9 @@ const SuiteDashboard: React.FC = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [makeRequest])
 
-  // Load user activity
-  const loadActivity = async () => {
+  const loadActivity = useCallback(async () => {
     try {
       const data = await makeRequest<{ activities: ActivityLog[] }>(
         '/suite/activity'
@@ -70,7 +72,7 @@ const SuiteDashboard: React.FC = () => {
     } catch (err: unknown) {
       console.error('Failed to load activity:', err)
     }
-  }
+  }, [makeRequest])
 
   // Launch application with SSO
   const launchApplication = async (appCode: string, appName: string) => {
@@ -129,7 +131,7 @@ const SuiteDashboard: React.FC = () => {
       loadApplications()
       loadActivity()
     }
-  }, [isAuthenticated])
+  }, [isAuthenticated, loadApplications, loadActivity])
 
   // Clear error after 5 seconds
   useEffect(() => {
@@ -258,7 +260,7 @@ const SuiteDashboard: React.FC = () => {
                             {getAppIcon(app.appCode, app.icon)}
                           </div>
                           <div>
-                            <h3 className="text-lg font-semibold text-primary group-hover:text-primary">
+                            <h3 className="text-primary group-hover:text-primary text-lg font-semibold">
                               {app.appName}
                             </h3>
                             <span
