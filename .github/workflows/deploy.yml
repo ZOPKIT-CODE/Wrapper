@@ -137,6 +137,24 @@ jobs:
             echo "($i) $c"; sleep 6
           done; echo "::error::health never 200"; exit 1
 
+      # Sibling worker rides the web service's run — SAME image, no migrate. The
+      # CRM/FA repos used to fire a SECOND repository_dispatch for the worker;
+      # two near-simultaneous dispatches raced this one `deploy-queue` and GitHub
+      # cancelled the older pending one (worker stuck a version back; recovered by
+      # hand). Deploying it here = ONE dispatch, ONE run, no race. crm-worker uses
+      # crm-web's tag (same image); fa-consumer rides fa-web. Runs only after the
+      # web service is healthy, so a broken web build never ships the worker.
+      - name: Deploy sibling worker
+        if: ${{ env.SERVICE == 'crm-web' || env.SERVICE == 'fa-web' }}
+        working-directory: ${{ env.TF_DIR }}
+        run: |
+          WK="${SERVICE%-web}-$([ "$SERVICE" = fa-web ] && echo consumer || echo worker)"
+          echo "Deploying sibling $WK at tag ${{ steps.cfg.outputs.tag }}"
+          aws ssm put-parameter --name "/zopkit/staging/deployed-tag/$WK" \
+            --value "${{ steps.cfg.outputs.tag }}" --type String --overwrite
+          terraform apply -auto-approve -lock-timeout=300s -target="module.services[\"$WK\"]"
+          aws ecs wait services-stable --cluster zopkit-staging-ecs --services "zopkit-staging-$WK"
+
   # Wrapper frontend: only on the wrapper repo's own deploys of wrapper-web.
   frontend:
     needs: deploy
