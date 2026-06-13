@@ -66,6 +66,27 @@ export default async function adminOrgRoutes(fastify: FastifyInstance): Promise<
         };
       }
 
+      // Platform admins are not tenant-scoped — return immediately, no DB lookup needed
+      if (req.userContext?.isPlatformAdmin) {
+        return {
+          success: true,
+          authStatus: {
+            isAuthenticated: true,
+            userId: req.userContext.userId,
+            internalUserId: null,
+            tenantId: null,
+            email: req.userContext.email,
+            isPlatformAdmin: true,
+            needsOnboarding: false,
+            onboardingCompleted: true,
+            userType: 'PLATFORM_ADMIN',
+            userPermissions: [],
+            userRoles: [],
+            legacyPermissions: []
+          }
+        };
+      }
+
       // Get user permissions and roles
       let userPermissions: any[] = [];
       let userRoles: any[] = [];
