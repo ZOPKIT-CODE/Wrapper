@@ -1,7 +1,6 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { db } from '../../../db/index.js';
 import { platformStaff, platformAuditLogs, PLATFORM_PERMISSIONS } from '../../../db/schema/platform/platform-staff.js';
-import { tenantUsers } from '../../../db/schema/index.js';
 import { eq, desc, and } from 'drizzle-orm';
 import { authenticateToken } from '../../../middleware/auth/auth.js';
 import { invalidateStaffCache } from '../../../middleware/auth/platform-permission-middleware.js';
@@ -134,16 +133,14 @@ export default async function platformStaffManagementRoutes(
       });
     }
 
-    // ── Resolve the grantor's internal userId ─────────────────────────────
-    const [grantor] = await db
-      .select({ userId: tenantUsers.userId })
-      .from(tenantUsers)
-      .where(eq(tenantUsers.idpSub, grantorContext.idpSub))
+    // Resolve the grantor's staffId from the platform pool (not tenant_users — platform
+    // admins are a separate identity). Null is acceptable for the bootstrap grant where
+    // the first platform admin has no prior staff record.
+    const [grantorStaff] = await db
+      .select({ staffId: platformStaff.staffId })
+      .from(platformStaff)
+      .where(eq(platformStaff.idpSub, grantorContext.idpSub))
       .limit(1);
-
-    if (!grantor) {
-      return reply.code(400).send({ error: 'Grantor user record not found' });
-    }
 
     const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
 
@@ -173,7 +170,7 @@ export default async function platformStaffManagementRoutes(
         email:              body.email.trim(),
         name:               body.name.trim(),
         grantedPermissions: body.permissions,
-        grantedBy:          grantor.userId,
+        grantedBy:          grantorStaff?.staffId ?? null,
         expiresAt,
         reason:             body.reason.trim(),
       })
@@ -213,17 +210,18 @@ export default async function platformStaffManagementRoutes(
       return reply.code(400).send({ error: 'reason is required (min 5 characters)' });
     }
 
-    const [revoker] = await db
-      .select({ userId: tenantUsers.userId })
-      .from(tenantUsers)
-      .where(eq(tenantUsers.idpSub, revokerContext.idpSub))
+    // Same pattern as grant: resolve the revoker from the platform pool.
+    const [revokerStaff] = await db
+      .select({ staffId: platformStaff.staffId })
+      .from(platformStaff)
+      .where(eq(platformStaff.idpSub, revokerContext.idpSub))
       .limit(1);
 
     const updated = await db
       .update(platformStaff)
       .set({
         isActive:      false,
-        revokedBy:     revoker?.userId ?? null,
+        revokedBy:     revokerStaff?.staffId ?? null,
         revokedAt:     new Date(),
         revokedReason: body.reason.trim(),
         updatedAt:     new Date(),

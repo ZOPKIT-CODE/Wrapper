@@ -515,7 +515,10 @@ async function processAuthenticatedUser(request: FastifyRequest, reply: FastifyR
 
   const isTenantAdmin = effectiveUserRecord?.isTenantAdmin || false;
   const email = effectiveUserRecord?.email || idpUser.email || '';
-  const isPlatformAdmin = isPlatformAdminIdentity({ groups: idpUser.groups, email });
+  // isPlatformAdmin must use the token email (idpUser.email), not the DB record's email.
+  // Using the DB email would allow a tenant row with a bootstrap-allowlist email to
+  // elevate to platform-admin even if the token's email differs.
+  const isPlatformAdmin = isPlatformAdminIdentity({ groups: idpUser.groups, email: idpUser.email });
   request.userContext = {
     userId: idpUser.userId,
     idpSub: idpUser.userId,
