@@ -11,6 +11,7 @@ import { RequestAnalyzer } from './request-analyzer.js';
 import { shouldLogVerbose } from '../../utils/verbose-log.js';
 import { getUserPermissions, checkPermissions } from './permission-middleware.js';
 import { isPlatformAdminIdentity } from './platform-plane.js';
+import { getActivePlatformStaff } from './platform-permission-middleware.js';
 import { SharedCache } from '../../utils/shared-cache.js';
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import type { OnboardingStatus } from '../../types/common.js';
@@ -486,8 +487,11 @@ async function processAuthenticatedUser(request: FastifyRequest, reply: FastifyR
 
   // Compute isPlatformAdmin first so needsOnboarding can be overridden for the platform plane.
   const isPlatformAdmin = isPlatformAdminIdentity({ groups: idpUser.groups, email: idpUser.email });
+  // Platform staff: DB-driven delegated access (1-min cache — minimal overhead for non-staff users).
+  const staffRecord = !isPlatformAdmin ? await getActivePlatformStaff(idpUser.userId) : null;
+  const isPlatformStaff = staffRecord !== null;
   const { needsOnboarding: rawNeedsOnboarding } = determineOnboardingStatus(effectiveUserRecord, tenantId);
-  const needsOnboarding = isPlatformAdmin ? false : rawNeedsOnboarding;
+  const needsOnboarding = (isPlatformAdmin || isPlatformStaff) ? false : rawNeedsOnboarding;
 
   let isSuperAdmin = false;
   if (effectiveUserRecord?.userId && tenantId) {
@@ -533,7 +537,8 @@ async function processAuthenticatedUser(request: FastifyRequest, reply: FastifyR
     isAdmin: isTenantAdmin,
     isTenantAdmin,
     isSuperAdmin,
-    isPlatformAdmin
+    isPlatformAdmin,
+    isPlatformStaff
   };
 
   request.user = {
@@ -616,8 +621,9 @@ export async function authMiddleware(request: FastifyRequest, reply: FastifyRepl
                 isAdmin: u.isTenantAdmin || false,
                 isTenantAdmin: u.isTenantAdmin || false,
                 isSuperAdmin: false,
-                // Operations/service tokens are never the platform-admin plane.
+                // Operations/service tokens are never the platform-admin or staff plane.
                 isPlatformAdmin: false,
+                isPlatformStaff: false,
               };
               request.user = {
                 id: request.userContext.userId,

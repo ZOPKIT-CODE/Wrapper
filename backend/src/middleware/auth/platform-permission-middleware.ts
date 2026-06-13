@@ -32,7 +32,7 @@ const staffCache = new Map<string, StaffCacheEntry>();
 function invalidateStaffCache(idpSub: string): void {
   staffCache.delete(idpSub);
 }
-export { invalidateStaffCache };
+export { invalidateStaffCache, getActivePlatformStaff };
 
 async function getActivePlatformStaff(
   idpSub: string
