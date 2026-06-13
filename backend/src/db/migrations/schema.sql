@@ -3140,9 +3140,6 @@ ALTER TABLE ONLY public.platform_audit_logs
     ADD CONSTRAINT platform_audit_logs_staff_id_fkey FOREIGN KEY (staff_id) REFERENCES public.platform_staff(staff_id);
 
 
--- platform_staff_granted_by_fkey and platform_staff_revoked_by_fkey removed (migration 0008).
-
-
 --
 -- Name: responsible_persons responsible_persons_assigned_by_tenant_users_user_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
