@@ -6,13 +6,13 @@
 #   Example: ./deploy-service.sh wrapper-web            # tag = current git SHA
 #            ./deploy-service.sh wrapper-web 1a2b3c4     # explicit tag
 #
-# Services: wrapper-web | crm-web | fa-web | fa-consumer
+# Services: wrapper-web | crm-web | crm-worker | fa-web | fa-consumer
 #
 # What it does (the 6-step deploy unit from the playbook):
 #   1. build   — docker build for linux/amd64 (Fargate is x86)
 #   2. push    — to the service's ECR repo, IMMUTABLE git-SHA tag (never :latest)
 #   3. migrate — run DB migrations as a one-off Fargate task (web services only)
-#   4. release — record the tag in image-tags.auto.tfvars.json + terraform apply
+#   4. release — record the tag in SSM (/<project>/<env>/deployed-tag/<svc>) + terraform apply
 #                -target just this service (one-app-at-a-time, others untouched)
 #   5. wait    — block until the ECS service reaches steady state
 #   6. smoke   — hit the health endpoint (web services only)
@@ -25,7 +25,6 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TF_DIR="$SCRIPT_DIR/terraform"
-TAGS_FILE="$TF_DIR/image-tags.auto.tfvars.json"   # terraform auto-loads *.auto.tfvars.json
 
 # ---- load config -----------------------------------------------------------
 [[ -f "$SCRIPT_DIR/deploy.env" ]] || { echo "✖ Missing $SCRIPT_DIR/deploy.env (copy deploy.env.example)"; exit 1; }
@@ -41,7 +40,7 @@ source "$SCRIPT_DIR/deploy.env"
 TASK_ASSIGN_PUBLIC_IP="${TASK_ASSIGN_PUBLIC_IP:-DISABLED}"  # ENABLED for public-subnet/no-NAT setups
 
 SERVICE="${1:-}"
-[[ -n "$SERVICE" ]] || { echo "Usage: $0 <wrapper-web|crm-web|fa-web|fa-consumer> [image_tag]"; exit 1; }
+[[ -n "$SERVICE" ]] || { echo "Usage: $0 <wrapper-web|crm-web|crm-worker|fa-web|fa-consumer> [image_tag]"; exit 1; }
 
 # ---- per-service config ----------------------------------------------------
 # Each backend lives in its OWN repo; set REPO/DOCKERFILE/CONTEXT accordingly.
@@ -58,6 +57,11 @@ case "$SERVICE" in
     DOCKERFILE="${CRM_DOCKERFILE:-server/Dockerfile}"; CONTEXT="."; TARGET="${CRM_TARGET:-production}"
     MIGRATE=true;  MIGRATE_CMD="${CRM_MIGRATE_CMD:-[\"npm\",\"run\",\"db:migrate\"]}"  # VERIFY for CRM image
     HEALTH_URL="${CRM_HEALTH_URL:-}" ;;
+  crm-worker)
+    ECR_REPO="crm-backend"; REPO="${CRM_REPO:?set CRM_REPO in deploy.env}"
+    DOCKERFILE="${CRM_DOCKERFILE:-server/Dockerfile}"; CONTEXT="."; TARGET="${CRM_TARGET:-production}"
+    MIGRATE=false; MIGRATE_CMD=''   # shares crm-web's DB — crm-web's deploy migrates
+    HEALTH_URL='' ;;                # headless (PROCESS_ROLE=worker), no ALB
   fa-web)
     ECR_REPO="fa-backend"; REPO="${FA_REPO:?set FA_REPO in deploy.env}"
     DOCKERFILE="${FA_DOCKERFILE:-server/Dockerfile}"; CONTEXT="."; TARGET="${FA_TARGET:-production}"
@@ -87,6 +91,12 @@ echo "════════════════════════�
 read -r -p "Proceed? [y/N] " ok; [[ "$ok" == "y" || "$ok" == "Y" ]] || exit 0
 
 # ---- 1+2. build & push -----------------------------------------------------
+# Idempotent rerun: ECR tags are IMMUTABLE — if this tag already exists, the
+# image is final; skip build+push instead of dying on the re-push (lets a
+# deploy that failed at a later step be re-run with the same tag).
+if aws ecr describe-images --repository-name "$ECR_REPO" --image-ids imageTag="$TAG"      --region "$AWS_REGION" >/dev/null 2>&1; then
+  echo "▶ [1/6+2/6] image $TAG already in ECR (immutable) — skipping build+push"
+else
 echo "▶ [1/6] docker build (linux/amd64)…"
 ( cd "$REPO" && docker build --platform linux/amd64 -f "$DOCKERFILE" --target "$TARGET" -t "$IMAGE" "$CONTEXT" )
 
@@ -94,22 +104,17 @@ echo "▶ [2/6] push to ECR…"
 aws ecr get-login-password --region "$AWS_REGION" \
   | docker login --username AWS --password-stdin "$ECR_HOST"
 docker push "$IMAGE"
+fi
 
 # ---- 3. release: record tag + terraform apply (registers the NEW task def) --
 # Must run BEFORE migrate: ECS run-task cannot override a container image, so the
 # migration task has to use a task definition that already points at the new image.
-echo "▶ [3/6] record tag in image-tags.auto.tfvars.json + terraform apply…"
-[[ -f "$TAGS_FILE" ]] || echo '{"service_image_tags":{}}' > "$TAGS_FILE"
-# merge: set this service's tag, keep the others
-tmp="$(mktemp)"
-SERVICE="$SERVICE" TAG="$TAG" node -e '
-  const fs=require("fs"); const f=process.argv[1];
-  const j=JSON.parse(fs.readFileSync(f,"utf8")); j.service_image_tags=j.service_image_tags||{};
-  j.service_image_tags[process.env.SERVICE]=process.env.TAG;
-  fs.writeFileSync(f, JSON.stringify(j,null,2)+"\n");
-' "$TAGS_FILE" 2>/dev/null || {
-  # node not on PATH here? fall back to jq
-  jq --arg s "$SERVICE" --arg t "$TAG" '.service_image_tags[$s]=$t' "$TAGS_FILE" > "$tmp" && mv "$tmp" "$TAGS_FILE"; }
+echo "▶ [3/6] record tag in SSM + terraform apply…"
+# SSM is the single source of truth for the deployed tag — terraform's data
+# source reads it during this apply and every later one (no stale git record).
+aws ssm put-parameter \
+  --name "/${NAME_PREFIX%%-*}/${NAME_PREFIX#*-}/deployed-tag/${SERVICE}" \
+  --value "$TAG" --type String --overwrite --region "$AWS_REGION" > /dev/null
 ( cd "$TF_DIR" && terraform apply -auto-approve -target="module.services[\"$SERVICE\"]" )
 
 # ---- 4. migrate (web services only) — uses the new task def from step 3 -----

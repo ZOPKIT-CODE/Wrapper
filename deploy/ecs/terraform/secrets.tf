@@ -48,12 +48,16 @@ locals {
 
     crm = [
       "DATABASE_URL",
+      "MIGRATION_DATABASE_URL", # privileged (migrator role) — one-off migrate task only; app uses least-privilege DATABASE_URL
+      "SENTRY_DSN",
       "JWT_SECRET",
       "JWT_SECRET_PREVIOUS",
       "WRAPPER_SERVICE_TOKEN",
       "FA_JWT_SECRET",
       "BREVO_API_KEY",
       "BREVO_WEBHOOK_SECRET",
+      "BREVO_SENDER_EMAIL", # FROM address for all CRM email; unset = Brevo rejects every send
+      "BREVO_SENDER_NAME",
       "SES_SNS_WEBHOOK_SECRET",
       "ANTHROPIC_API_KEY",
       "GOOGLE_CLIENT_ID",
@@ -68,6 +72,7 @@ locals {
 
     fa = [
       "DATABASE_URL",
+      "MIGRATION_DATABASE_URL", # privileged (migrator role) — one-off migrate task only; app uses least-privilege DATABASE_URL
       "JWT_SECRET",
       "JWT_REFRESH_SECRET",
       "JWT_SECRET_PREVIOUS",
