@@ -10,6 +10,7 @@ import { tenants, tenantUsers, customRoles, onboardingFormData } from '../../../
 import { eq, and, desc } from 'drizzle-orm';
 import { TenantService } from '../../../services/tenant-service.js';
 import { verifyCognitoToken } from '../../auth/services/cognito-service.js';
+import { isPlatformAdminIdentity } from '../../../middleware/auth/platform-plane.js';
 import { SubscriptionService } from '../../../features/subscriptions/index.js';
 import { shouldLogVerbose } from '../../../utils/verbose-log.js';
 
@@ -29,7 +30,7 @@ async function validateTokenAnyIdp(token: string): Promise<Record<string, unknow
   if (!ci?.sub) {
     throw new Error('Invalid Cognito token');
   }
-  return { idpSub: ci.sub, userId: ci.sub, email: ci.email, name: ci.name };
+  return { idpSub: ci.sub, userId: ci.sub, email: ci.email, name: ci.name, groups: ci.groups };
 }
 
 // Helper function to extract token from request
@@ -212,6 +213,7 @@ export default async function statusManagementRoutes(
       let email = null;
       let idpSub = null;
 
+      let idpGroups: string[] | undefined;
       try {
         const token = extractToken(request);
         if (token) {
@@ -219,6 +221,7 @@ export default async function statusManagementRoutes(
           idpSub = idpToken.idpSub || idpToken.userId;
           userId = idpToken.userId;
           email = idpToken.email;
+          idpGroups = idpToken.groups as string[] | undefined;
         }
       } catch (authErr: unknown) {
         if (shouldLogVerbose()) Logger.log('info', 'general', 'onboarding-status', 'Token validation failed, using query params', { error: (authErr as Error).message });
@@ -239,6 +242,34 @@ export default async function statusManagementRoutes(
             needsOnboarding: true,
             onboardingStep: null,
             message: 'No user information provided'
+          }
+        };
+      }
+
+      // Platform admins live outside the tenant plane — they have no tenant_users record
+      // and must never be routed through onboarding. Short-circuit here so Login.tsx
+      // redirects them to /company-admin instead of /onboarding.
+      if (isPlatformAdminIdentity({ groups: idpGroups, email: email as string | null })) {
+        return {
+          success: true,
+          data: {
+            isOnboarded: true,
+            needsOnboarding: false,
+            isPlatformAdmin: true,
+            onboardingStep: 'completed',
+            savedFormData: {},
+            user: { id: idpSub, email, idpSub }
+          },
+          authStatus: {
+            isAuthenticated: true,
+            userId: idpSub,
+            internalUserId: null,
+            tenantId: null,
+            email,
+            isPlatformAdmin: true,
+            needsOnboarding: false,
+            onboardingCompleted: true,
+            userType: 'PLATFORM_ADMIN',
           }
         };
       }
