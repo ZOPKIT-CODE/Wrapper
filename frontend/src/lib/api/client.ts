@@ -23,6 +23,7 @@ function notifySessionExpired() {
     '/pricing',
     '/products',
     '/industries',
+    '/blog',
   ]
   const isPublic = publicPaths.some(
     (p) =>

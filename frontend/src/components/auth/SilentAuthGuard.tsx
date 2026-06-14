@@ -46,10 +46,15 @@ export const SilentAuthGuard: React.FC<SilentAuthGuardProps> = ({
     '/security',
     '/products',
     '/industries',
+    '/blog',
   ]
 
+  // Use exact match for '/' only; for all other paths allow prefix match so
+  // sub-routes (e.g. /blog/my-post) are covered too.
   const isPublicPath = publicPaths.some(
-    (path) => location.pathname === path || location.pathname.startsWith(path)
+    (path) =>
+      location.pathname === path ||
+      (path !== '/' && location.pathname.startsWith(path))
   )
 
   // Reset init guard when user logs out so next login runs again

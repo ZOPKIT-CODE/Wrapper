@@ -378,15 +378,15 @@ export function Login() {
           navigate({ to: safeReturn || '/company-admin', replace: true })
         } else if (
           parkedReturn &&
-          status.user &&
-          status.isOnboarded &&
-          !status.needsOnboarding
+          status.data?.user &&
+          status.data?.isOnboarded &&
+          !status.data?.needsOnboarding
         ) {
           navigate({ to: parkedReturn, replace: true })
         } else if (
-          status.user &&
-          status.isOnboarded &&
-          !status.needsOnboarding
+          status.data?.user &&
+          status.data?.isOnboarded &&
+          !status.data?.needsOnboarding
         ) {
           navigate({ to: '/dashboard/applications', replace: true })
         } else if (
