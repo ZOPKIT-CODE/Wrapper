@@ -96,6 +96,11 @@ export const DEFAULT_CRM_ROLES: DefaultRoleDefinition[] = [
         // ── User / Role Management ────────────────────────────────────────
         users:               ['read', 'create', 'update', 'delete'],
         roles:               ['read', 'create', 'update', 'delete'],
+        // Tenant admin namespace — flattens to crm.admin.* which the admin-write
+        // routes enumerate via requirePermission (territories, settings, AI, …).
+        // Org Admin gets these by matrix expansion; CRM Admin needs them listed
+        // here (QA 2026-06-14: every crm.admin.* code was held by NO role → 403).
+        admin:               ['layouts', 'modules', 'users', 'settings', 'territories', 'roles', 'ai'],
       },
     },
   },

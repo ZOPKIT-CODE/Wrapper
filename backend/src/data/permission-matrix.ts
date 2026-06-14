@@ -385,6 +385,29 @@ export const BUSINESS_SUITE_MATRIX = {
         ]
       },
 
+      // Tenant administration — gates the crm.admin.* routes (territories,
+      // settings/integrations, AI, etc.). Org Admin auto-expands every module
+      // code here; CRM Admin lists them in default-crm-roles. Without this module
+      // NO role held the crm.admin.* codes the admin routes enumerate via
+      // requirePermission(), so every admin-WRITE route 403'd while the modules
+      // stayed browsable (QA 2026-06-14: "Failed to create territory"; same root
+      // cause silently blocked settings/integrations/AI/etc.).
+      admin: {
+        moduleCode: 'admin',
+        moduleName: 'CRM Administration',
+        description: 'Tenant-admin configuration: territories, settings/integrations, AI, layouts, modules, users, roles',
+        isCore: false,
+        permissions: [
+          { code: 'territories', name: 'Manage Territories', description: 'Create/edit territories, members, rules, and record assignments' },
+          { code: 'settings',    name: 'Manage Settings',    description: 'Tenant settings, integrations (Slack/Twilio), data-sharing, inbox-sync, DLQ admin' },
+          { code: 'ai',          name: 'Manage AI',          description: 'Configure AI features and providers' },
+          { code: 'layouts',     name: 'Admin: Layouts',     description: 'Administer page layouts and assignments (admin namespace)' },
+          { code: 'modules',     name: 'Admin: Modules',     description: 'Administer custom modules' },
+          { code: 'users',       name: 'Admin: Users',       description: 'Administer tenant users' },
+          { code: 'roles',       name: 'Admin: Roles',       description: 'Administer tenant roles and permissions' },
+        ]
+      },
+
       custom_buttons: {
         moduleCode: 'custom_buttons',
         moduleName: 'Custom Buttons',
